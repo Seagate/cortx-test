@@ -248,11 +248,11 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         if data_needed_for_query['name'] == 'S3bench':
             results = {
-                'Sessions': statistics_column_headings
+                'Concurrency': statistics_column_headings
             }
         else:
             results = {
-                'Sessions': multiple_buckets_headings
+                'Concurrency': multiple_buckets_headings
             }
 
         for session in sessions:
@@ -370,7 +370,6 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
         skipttfb = False
 
     return temp_data, run_state
-
 
 
 def get_dash_table_from_dataframe(dataframe, bench, column_id, states=None):
@@ -494,8 +493,11 @@ def get_metadata_latencies(data_needed_for_query):
             db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                      collection=db_collection)
 
-            if "Run_State" in db_data[0].keys():
-                run_state = db_data[0]['Run_State']
+            try:
+                if "Run_State" in db_data[0].keys():
+                    run_state = db_data[0]['Run_State']
+            except IndexError:
+                run_state = "successful"
 
             temp_data.append(get_average_data(
                 count, db_data, "Latency", "Avg", 1000))
@@ -545,8 +547,11 @@ def get_bucktops(data_needed_for_query):
     try:
         results = db_data[0]["Bucket_Ops"]
 
-        if "Run_State" in db_data[0].keys():
-            run_state_list = [db_data[0]['Run_State']] * len(bucket_ops)
+        try:
+            if "Run_State" in db_data[0].keys():
+                run_state_list = [db_data[0]['Run_State']] * len(bucket_ops)
+        except IndexError:
+            run_state_list = ["successful"] * len(bucket_ops)
 
         for bucket_operation in bucket_ops:
             temp_data = []

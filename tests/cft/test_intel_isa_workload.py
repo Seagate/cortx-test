@@ -36,9 +36,9 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
 from libs.ha.ha_common_libs import HALibs
+from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
-from scripts.s3_bench import s3bench
 
 
 class TestIntelISAIO:
@@ -59,6 +59,7 @@ class TestIntelISAIO:
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.ha_obj = HALibs()
+        cls.prov_obj = ProvDeployK8sCortxLib()
         cls.node_list = []
         cls.hlt_list = []
         cls.reset_s3config = False
@@ -145,47 +146,6 @@ class TestIntelISAIO:
                 self.test_dir_path,
                 resp)
 
-    def write_read_validate_file(self, bucket_name, test_file, count, block_size):
-        """
-        Create test_file with file_size(count*blocksize) and upload to bucket_name
-        validate checksum after download and deletes the file
-        """
-        file_path = os.path.join(self.test_dir_path, test_file)
-
-        self.log.info("Creating a file with name %s", test_file)
-        system_utils.create_file(file_path, count, "/dev/urandom", block_size)
-
-        self.log.info("Retrieving checksum of file %s", test_file)
-        resp1 = system_utils.get_file_checksum(file_path)
-        assert_utils.assert_true(resp1[0], resp1[1])
-        chksm_before_put_obj = resp1[1]
-
-        self.log.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
-        resp = self.s3t_obj.put_object(bucket_name, test_file, file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Validate upload of object %s ", test_file)
-        resp = self.s3t_obj.object_list(bucket_name)
-        assert_utils.assert_in(test_file, resp[1], f"Failed to upload create {test_file}")
-
-        self.log.info("Removing local file from client and downloading object")
-        system_utils.remove_file(file_path)
-        resp = self.s3t_obj.object_download(bucket_name, test_file, file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Verifying checksum of downloaded file with old file should be same")
-        resp = system_utils.get_file_checksum(file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        chksm_after_dwnld_obj = resp[1]
-        assert_utils.assert_equal(chksm_before_put_obj, chksm_after_dwnld_obj)
-
-        self.log.info("Delete the file from the bucket")
-        self.s3t_obj.delete_object(bucket_name, test_file)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Delete downloaded file")
-        system_utils.remove_file(file_path)
-
     def basic_io_with_parity_check_enabled(self, bucket_name, parity_check: bool = True):
         """
         Set the read verify flag to true
@@ -194,8 +154,6 @@ class TestIntelISAIO:
         self.log.info("STARTED: Basic IO with parity check")
         self.log.info("Parity Check :%s", parity_check)
 
-        basic_io_config = self.test_config["test_basic_io"]
-
         if parity_check:
             if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
                     CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
@@ -203,7 +161,7 @@ class TestIntelISAIO:
                     "Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
                 for node in range(self.num_nodes):
                     S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
-                                            parameter=basic_io_config["parity_check_flag"],
+                                            parameter=self.test_config["test_basic_io"],
                                             value=True,
                                             host=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
@@ -216,56 +174,8 @@ class TestIntelISAIO:
                 # TODO : restart s3 and motr services
                 self.log.info(
                     "Procedure yet to be defined for restarting services within containers")
-
-        self.log.info("Step 3: Creating bucket %s", bucket_name)
-        resp = self.s3t_obj.create_bucket(bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 4: Perform write/read/validate/delete with multiples object sizes. ")
-        for b_size, max_count in basic_io_config["io_upper_limits"].items():
-            for count in range(0, max_count):
-                test_file = "basic_io_" + str(count) + str(b_size)
-                if str(b_size).lower() == "kb":
-                    block_size = "1K"
-                else:
-                    block_size = "1M"
-                self.write_read_validate_file(bucket_name, test_file, count, block_size)
-
-        self.log.info("Step 5: Delete bucket %s", bucket_name)
-        resp = self.s3t_obj.delete_bucket(bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("ENDED: Basic IO with parity check")
-
-    def io_workload(self, bucket_prefix):
-        """
-        S3 bench workload test executed for each of Erasure coding config
-        """
-        self.log.info("STARTED: S3 bench workload test")
-        workloads = [
-            "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
-            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
-        ]
-        clients = self.test_config["test_io_workload"]["clients"]
-        resp = s3bench.setup_s3bench()
-        assert (resp, resp), "Could not setup s3bench."
-        for workload in workloads:
-            bucket_name = bucket_prefix + "-" + str(workload).lower()
-            if "Kb" in workload:
-                samples = 50
-            elif "Mb" in workload:
-                samples = 10
-            else:
-                samples = 5
-            resp = s3bench.s3bench(self.access_key, self.secret_key, bucket=bucket_name,
-                                   num_clients=clients,
-                                   num_sample=samples, obj_name_pref="test-object-",
-                                   obj_size=workload,
-                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
-            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
-            assert not s3bench.check_log_file_error(resp[1]), \
-                f"S3bench workload for object size {workload} failed. " \
-                f"Please read log file {resp[1]}"
-            self.log.info("ENDED: S3 bench workload test")
+            self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name,
+                                                       s3t_obj=self.s3t_obj)
 
     # Ordering maintained for LR2
     # Order - 1  TEST-23540
@@ -300,7 +210,8 @@ class TestIntelISAIO:
         Metadata Device per CVG : 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26969")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 8 : TEST-26960 (deployment test)
 
@@ -331,7 +242,8 @@ class TestIntelISAIO:
         Metadata Device per CVG : 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26970")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 11 : TEST-26973 (Placeholder for degraded test - Marked R2 Future)
     # Order 12 : TEST-26961
@@ -362,7 +274,8 @@ class TestIntelISAIO:
         Metadata Device per CVG : 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26971")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 15 : TEST-26974 (Placeholder for degraded test - Marked R2 Future)
     # Order 16 : TEST-26962
@@ -393,7 +306,8 @@ class TestIntelISAIO:
         Metadata Device per CVG : 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26972")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Ordering maintained for K8s based Cortx
     # Order 1 -  TEST-29485 (Deployment test)
@@ -425,7 +339,8 @@ class TestIntelISAIO:
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29487")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 4 -  TEST-29488 (Deployment test)
     @pytest.mark.run(order=5)
@@ -456,7 +371,8 @@ class TestIntelISAIO:
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29490")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 7 -  TEST-29491 (Deployment test)
     @pytest.mark.run(order=8)
@@ -487,7 +403,8 @@ class TestIntelISAIO:
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29493")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 10 -  TEST-29494 (Deployment test)
     @pytest.mark.run(order=11)
@@ -518,7 +435,8 @@ class TestIntelISAIO:
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29496")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)
 
     # Order 13 -  TEST-29497 (Deployment test)
     @pytest.mark.run(order=14)
@@ -549,4 +467,5 @@ class TestIntelISAIO:
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29499")
-        self.io_workload(bucket_name)
+        self.prov_obj.io_workload(secret_key=self.secret_key, access_key=self.access_key,
+                                  bucket_prefix=bucket_name)

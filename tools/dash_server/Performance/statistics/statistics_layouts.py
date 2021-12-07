@@ -152,7 +152,7 @@ stats_input_options = [
             html.P("Benchmark Configuration » ", style=style_filters_captions),
             Dropdown(
                 id='perf_sessions_dropdown',
-                placeholder="Select Sessions",
+                placeholder="Select Concurrency",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(

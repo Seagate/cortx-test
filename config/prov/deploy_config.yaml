@@ -1,6 +1,6 @@
 nodes_3:
   config_1:
-    sns_data : 5
+    sns_data : 3
     sns_parity : 1
     sns_spare : 0
     dix_data : 1
@@ -8,9 +8,6 @@ nodes_3:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 12
   config_2:
     sns_data : 4
     sns_parity : 2
@@ -20,33 +17,33 @@ nodes_3:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 12
   config_3:
     sns_data : 3
     sns_parity : 3
     sns_spare : 0
     dix_data : 1
-    dix_parity : 1
+    dix_parity : 2
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 12
   config_4:
-    sns_data : 1
-    sns_parity : 2
+    sns_data : 2
+    sns_parity : 1
     sns_spare : 0
     dix_data : 1
     dix_parity : 1
     dix_spare : 0
     cvg_per_node : 1
     data_disk_per_cvg : 2
-    total_disk_per_node : 4
-    total_n_k_s : 3
-    total_disk_per_cluster : 6
+  config_5:
+    sns_data : 5
+    sns_parity : 4
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 2
+    dix_spare : 0
+    cvg_per_node : 3
+    data_disk_per_cvg : 1
 
 nodes_4:
   config_1:
@@ -58,21 +55,15 @@ nodes_4:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 16
   config_2:
     sns_data : 6
     sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 1
+    dix_parity : 2
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 16
   config_3:
     sns_data : 5
     sns_parity : 3
@@ -82,9 +73,6 @@ nodes_4:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 16
   config_4:
     sns_data : 4
     sns_parity : 4
@@ -94,9 +82,24 @@ nodes_4:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 16
+  config_5:
+    sns_data : 3
+    sns_parity : 1
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 2
+    dix_spare : 0
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
+  config_6:
+    sns_data : 4
+    sns_parity : 1
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 2
+    dix_spare : 0
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
 
 nodes_5:
   config_1:
@@ -104,13 +107,10 @@ nodes_5:
     sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 3
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 5
-    total_disk_per_cluster : 20
   config_2:
     sns_data : 6
     sns_parity : 4
@@ -120,9 +120,6 @@ nodes_5:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 10
-    total_disk_per_cluster : 20
   config_3:
     sns_data : 5
     sns_parity : 5
@@ -132,21 +129,15 @@ nodes_5:
     dix_spare : 0
     cvg_per_node : 1
     data_disk_per_cvg : 2
-    total_disk_per_node : 4
-    total_n_k_s : 10
-    total_disk_per_cluster : 10
   config_4:
     sns_data : 10
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 3
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 15
   config_5:
     sns_data : 8
     sns_parity : 7
@@ -156,35 +147,26 @@ nodes_5:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 15
   config_6:
     sns_data : 4
-    sns_parity : 1
+    sns_parity : 2
     sns_spare : 0
     dix_data : 1
     dix_parity : 3
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 5
-    total_disk_per_cluster : 20
 
 nodes_6:
   config_1:
-    sns_data : 12
-    sns_parity : 6
+    sns_data : 5
+    sns_parity : 1
     sns_spare : 0
     dix_data : 1
     dix_parity : 5
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 18
-    total_disk_per_cluster : 24
   config_2:
     sns_data : 9
     sns_parity : 3
@@ -194,21 +176,15 @@ nodes_6:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 24
   config_3:
-    sns_data : 8
-    sns_parity : 4
+    sns_data : 12
+    sns_parity : 6
     sns_spare : 0
     dix_data : 1
     dix_parity : 4
     dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 24
+    cvg_per_node : 3
+    data_disk_per_cvg : 1
   config_4:
     sns_data : 4
     sns_parity : 2
@@ -218,45 +194,24 @@ nodes_6:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 18
   config_5:
-    sns_data : 5
-    sns_parity : 1
-    sns_spare : 0
-    dix_data : 1
-    dix_parity : 5
-    dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 24
-  config_6:
-    sns_data : 3
+    sns_data : 4
     sns_parity : 3
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 3
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 24
-  config_7:
+  config_6:
     sns_data : 7
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
     dix_parity : 3
     dix_spare : 0
-    cvg_per_node : 3
-    data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 18
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
 
 nodes_7:
   config_1:
@@ -268,9 +223,6 @@ nodes_7:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 1
-    total_disk_per_cluster : 28
   config_2:
     sns_data : 5
     sns_parity : 4
@@ -280,9 +232,6 @@ nodes_7:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 9
-    total_disk_per_cluster : 21
   config_3:
     sns_data : 10
     sns_parity : 4
@@ -292,9 +241,6 @@ nodes_7:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 14
-    total_disk_per_cluster : 28
   config_4:
     sns_data : 4
     sns_parity : 3
@@ -304,9 +250,6 @@ nodes_7:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 7
-    total_disk_per_cluster : 28
   config_5:
     sns_data : 8
     sns_parity : 6
@@ -314,23 +257,17 @@ nodes_7:
     dix_data : 1
     dix_parity : 6
     dix_spare : 0
-    cvg_per_node : 3
-    data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 14
-    total_disk_per_cluster : 21
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
   config_6:
     sns_data : 6
     sns_parity : 1
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 4
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 7
-    total_disk_per_cluster : 28
 
 nodes_8:
   config_1:
@@ -338,13 +275,10 @@ nodes_8:
     sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 4
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 6
-    total_disk_per_cluster : 32
   config_2:
     sns_data : 8
     sns_parity : 8
@@ -354,9 +288,6 @@ nodes_8:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 16
-    total_disk_per_cluster : 32
   config_3:
     sns_data : 16
     sns_parity : 8
@@ -366,33 +297,24 @@ nodes_8:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 24
-    total_disk_per_cluster : 24
   config_4:
     sns_data : 12
     sns_parity : 4
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 7
+    dix_spare : 0
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
+  config_5:
+    sns_data : 5
+    sns_parity : 3
     sns_spare : 0
     dix_data : 1
     dix_parity : 6
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 16
-    total_disk_per_cluster : 32
-  config_5:
-    sns_data : 5
-    sns_parity : 3
-    sns_spare : 0
-    dix_data : 1
-    dix_parity : 3
-    dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 32
   config_6:
     sns_data : 9
     sns_parity : 7
@@ -402,9 +324,6 @@ nodes_8:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 16
-    total_disk_per_cluster : 32
 
 nodes_9:
   config_1:
@@ -412,25 +331,19 @@ nodes_9:
     sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 5
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 9
-    total_disk_per_cluster : 36
   config_2:
-    sns_data : 12
-    sns_parity : 6
+    sns_data : 8
+    sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 5
+    dix_parity : 8
     dix_spare : 0
-    cvg_per_node : 3
-    data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 18
-    total_disk_per_cluster : 27
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
   config_3:
     sns_data : 20
     sns_parity : 7
@@ -440,9 +353,6 @@ nodes_9:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 27
-    total_disk_per_cluster : 27
   config_4:
     sns_data : 9
     sns_parity : 9
@@ -452,21 +362,24 @@ nodes_9:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 18
-    total_disk_per_cluster : 27
   config_5:
     sns_data: 5
     sns_parity: 4
     sns_spare: 0
     dix_data: 1
-    dix_parity: 4
+    dix_parity: 7
     dix_spare: 0
     cvg_per_node: 2
     data_disk_per_cvg: 2
-    total_disk_per_node: 7
-    total_n_k_s: 9
-    total_disk_per_cluster: 36
+  config_6:
+    sns_data: 12
+    sns_parity: 6
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 5
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
 
 nodes_10:
   config_1:
@@ -474,13 +387,10 @@ nodes_10:
     sns_parity : 1
     sns_spare : 0
     dix_data : 1
-    dix_parity : 1
+    dix_parity : 5
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 10
-    total_disk_per_cluster : 40
   config_2:
     sns_data : 8
     sns_parity : 2
@@ -490,33 +400,24 @@ nodes_10:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 10
-    total_disk_per_cluster : 40
   config_3:
     sns_data : 7
-    sns_parity : 3
+    sns_parity : 4
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 6
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 18
-    total_disk_per_cluster : 27
   config_4:
     sns_data : 6
     sns_parity : 4
     sns_spare : 0
     dix_data : 1
-    dix_parity : 4
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 10
-    total_disk_per_cluster : 40
   config_5:
     sns_data : 5
     sns_parity : 5
@@ -524,36 +425,18 @@ nodes_10:
     dix_data : 1
     dix_parity : 7
     dix_spare : 0
-    cvg_per_node : 3
-    data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 10
-    total_disk_per_cluster : 40
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
   config_6:
-    sns_data: 10
-    sns_parity: 10
-    sns_spare: 0
-    dix_data: 1
-    dix_parity: 5
-    dix_spare: 0
-    cvg_per_node: 3
-    data_disk_per_cvg: 1
-    total_disk_per_node: 7
-    total_n_k_s: 20
-    total_disk_per_cluster: 30
-  config_7:
     sns_data: 15
     sns_parity: 5
     sns_spare: 0
     dix_data: 1
-    dix_parity: 2
+    dix_parity:
     dix_spare: 0
     cvg_per_node: 2
     data_disk_per_cvg: 2
-    total_disk_per_node: 7
-    total_n_k_s: 20
-    total_disk_per_cluster: 40
-  config_8:
+  config_7:
     sns_data: 14
     sns_parity: 6
     sns_spare: 0
@@ -562,9 +445,6 @@ nodes_10:
     dix_spare: 0
     cvg_per_node: 3
     data_disk_per_cvg: 1
-    total_disk_per_node: 7
-    total_n_k_s: 20
-    total_disk_per_cluster: 30
 
 nodes_11:
   config_1:
@@ -572,37 +452,28 @@ nodes_11:
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 5
+    dix_parity : 6
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 11
-    total_disk_per_cluster : 44
   config_2:
     sns_data : 7
-    sns_parity : 4
+    sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 4
+    dix_parity : 6
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 11
-    total_disk_per_cluster : 33
   config_3:
     sns_data : 17
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 22
-    total_disk_per_cluster : 33
   config_4:
     sns_data : 8
     sns_parity : 3
@@ -612,33 +483,24 @@ nodes_11:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 11
-    total_disk_per_cluster : 44
   config_5:
     sns_data : 10
     sns_parity : 1
     sns_spare : 0
     dix_data : 1
-    dix_parity : 1
+    dix_parity : 9
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 11
-    total_disk_per_cluster : 44
   config_6:
     sns_data : 16
     sns_parity : 6
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 10
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 22
-    total_disk_per_cluster : 33
 
 nodes_12:
   config_1:
@@ -650,45 +512,33 @@ nodes_12:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 48
   config_2:
     sns_data : 9
     sns_parity : 3
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 9
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 36
   config_3:
     sns_data : 8
-    sns_parity : 4
+    sns_parity : 5
     sns_spare : 0
     dix_data : 1
     dix_parity : 8
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 48
   config_4:
     sns_data : 7
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 5
+    dix_parity : 7
     dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 48
+    cvg_per_node : 1
+    data_disk_per_cvg : 3
   config_5:
     sns_data : 6
     sns_parity : 6
@@ -698,21 +548,15 @@ nodes_12:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 12
-    total_disk_per_cluster : 48
   config_6:
     sns_data : 16
     sns_parity : 8
     sns_spare : 0
     dix_data : 1
-    dix_parity : 4
+    dix_parity : 10
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 24
-    total_disk_per_cluster : 48
   config_7:
     sns_data: 5
     sns_parity: 3
@@ -722,9 +566,6 @@ nodes_12:
     dix_spare: 0
     cvg_per_node: 3
     data_disk_per_cvg: 1
-    total_disk_per_node: 7
-    total_n_k_s: 8
-    total_disk_per_cluster: 36
   config_8:
     sns_data: 20
     sns_parity: 4
@@ -734,9 +575,6 @@ nodes_12:
     dix_spare: 0
     cvg_per_node: 2
     data_disk_per_cvg: 2
-    total_disk_per_node: 7
-    total_n_k_s: 24
-    total_disk_per_cluster: 36
 
 nodes_13:
   config_1:
@@ -744,25 +582,19 @@ nodes_13:
     sns_parity : 6
     sns_spare : 0
     dix_data : 1
-    dix_parity : 6
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 13
-    total_disk_per_cluster : 39
   config_2:
     sns_data : 8
-    sns_parity : 5
+    sns_parity : 6
     sns_spare : 0
     dix_data : 1
-    dix_parity : 5
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 13
-    total_disk_per_cluster : 52
   config_3:
     sns_data : 9
     sns_parity : 4
@@ -772,33 +604,24 @@ nodes_13:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 13
-    total_disk_per_cluster : 39
   config_4:
     sns_data : 11
     sns_parity : 2
     sns_spare : 0
     dix_data : 1
-    dix_parity : 6
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 13
-    total_disk_per_cluster : 52
   config_5:
-    sns_data : 4
+    sns_data : 10
     sns_parity : 3
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 9
     dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 7
-    total_disk_per_cluster : 52
+    cvg_per_node : 1
+    data_disk_per_cvg : 3
   config_6:
     sns_data : 20
     sns_parity : 6
@@ -808,9 +631,6 @@ nodes_13:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 26
-    total_disk_per_cluster : 39
 
 nodes_14:
   config_1:
@@ -822,9 +642,6 @@ nodes_14:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 14
-    total_disk_per_cluster : 42
   config_2:
     sns_data : 8
     sns_parity : 7
@@ -834,9 +651,6 @@ nodes_14:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 56
   config_3:
     sns_data : 11
     sns_parity : 3
@@ -846,21 +660,15 @@ nodes_14:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 14
-    total_disk_per_cluster : 42
   config_4:
     sns_data : 18
     sns_parity : 6
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 8
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 24
-    total_disk_per_cluster : 56
   config_5:
     sns_data : 21
     sns_parity : 7
@@ -870,21 +678,15 @@ nodes_14:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 28
-    total_disk_per_cluster : 42
   config_6:
     sns_data : 5
     sns_parity : 3
     sns_spare : 0
     dix_data : 1
-    dix_parity : 3
+    dix_parity : 8
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 56
 
 nodes_15:
   config_1:
@@ -896,66 +698,48 @@ nodes_15:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 60
   config_2:
     sns_data : 9
     sns_parity : 6
     sns_spare : 0
     dix_data : 1
-    dix_parity : 6
+    dix_parity : 8
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 45
   config_3:
     sns_data : 10
     sns_parity : 5
     sns_spare : 0
     dix_data : 1
-    dix_parity : 5
+    dix_parity : 9
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 60
   config_4:
     sns_data : 12
-    sns_parity : 3
+    sns_parity : 4
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 12
+    dix_spare : 0
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
+  config_5:
+    sns_data : 7
+    sns_parity : 4
+    sns_spare : 0
+    dix_data : 1
+    dix_parity : 8
+    dix_spare : 0
+    cvg_per_node : 2
+    data_disk_per_cvg : 2
+  config_6:
+    sns_data : 25
+    sns_parity : 5
     sns_spare : 0
     dix_data : 1
     dix_parity : 14
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 15
-    total_disk_per_cluster : 60
-  config_5:
-    sns_data : 5
-    sns_parity : 3
-    sns_spare : 0
-    dix_data : 1
-    dix_parity : 3
-    dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 8
-    total_disk_per_cluster : 60
-  config_6:
-    sns_data : 25
-    sns_parity : 5
-    sns_spare : 0
-    dix_data : 1
-    dix_parity : 10
-    dix_spare : 0
-    cvg_per_node : 2
-    data_disk_per_cvg : 2
-    total_disk_per_node : 7
-    total_n_k_s : 30
-    total_disk_per_cluster : 60

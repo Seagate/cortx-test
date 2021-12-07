@@ -343,6 +343,7 @@ class S3Lib(S3Rest):
         :return: response.
         """
         bucket = self.s3_resource.Bucket(bucket_name)
+        self.object_list(bucket_name)
         if force:
             LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
@@ -350,8 +351,9 @@ class S3Lib(S3Rest):
             response = bucket.objects.all().delete()
             LOGGER.debug(
                 "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
+            self.object_list(bucket_name)
         response = bucket.delete()
-        LOGGER.debug("Bucket deleted '%s' successfully. Response: %s", bucket_name,response)
+        LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name,response)
 
         return response
 

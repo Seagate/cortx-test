@@ -185,7 +185,7 @@ test_25280:
     error_code: 4101
     message: "{} can not update the password for {}"
     message_id: "update_not_allowed"
-    current_password: "Seagate@123"
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25282:
     error_code: 4101
     message: "{} can not update the email id for {}"
@@ -199,7 +199,7 @@ test_25279:
     error_code: 4101
     message: "{} can not update the password for {}"
     message_id: "update_not_allowed"
-    current_password: "Seagate@123"
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25281:
     error_code: 4101
     message: "{} can not update the email id for {}"
@@ -256,3 +256,13 @@ test_28509:
     status_code: 400
 test_28508:
     status_code: 400
+test_32171:
+    error_code: 4101
+    message: "{} can not update the role for {}"
+    message_id: "update_not_allowed"
+test_32180:
+    error_code: 4101
+    message: "Cannot delete the last {} user"
+    message_id: "user_permission_denied"
+test_32181:
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="

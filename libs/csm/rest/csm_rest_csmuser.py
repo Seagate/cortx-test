@@ -106,9 +106,11 @@ class RestCsmUser(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     def create_csm_user(self, user_type="valid", user_role="manage",
-                        save_new_user=False):
+                        save_new_user=False, user_email=None, user_password=None):
         """
         This function will create new CSM user
+        :param user_password: User password
+        :param user_email: User email id
         :param user_type: type of user required
         :param user_role: User role type.
         :param save_new_user: to store newly created user to config
@@ -123,6 +125,10 @@ class RestCsmUser(RestTestLib):
 
             # Creating required payload to be added for request
             data = self.create_payload_for_new_csm_user(user_type, user_role)
+            if user_email:
+                data.update({"email":  user_email})
+            if user_password:
+                data.update({"password": user_password})
             user_data = json.dumps(data)
             if user_type == "missing":
                 user_data = const.MISSING_USER_DATA
@@ -214,9 +220,11 @@ class RestCsmUser(RestTestLib):
     @RestTestLib.authenticate_and_login
     def list_csm_users(self, expect_status_code, offset=None, limit=None,
                        sort_by=None, sort_dir=None, return_actual_response=False,
-                       verify_negative_scenario=False):
+                       verify_negative_scenario=False, username=None, role=None):
         """
         This function will list all existing csm users
+        :param role: value for user role
+        :param username: value for username
         :param expect_status_code: expected status code
         :param offset: value for offset parameter <int>
         :param limit: value for limit parameter <int>
@@ -238,7 +246,9 @@ class RestCsmUser(RestTestLib):
             parameters = {"offset": [offset, "offset="],
                           "limit": [limit, "limit="],
                           "sort_by": [sort_by, "sortby="],
-                          "sort_dir": [sort_dir, "dir="]}
+                          "sort_dir": [sort_dir, "dir="],
+                          "username": [username, "username="],
+                          "role": [role, "role="]}
             params_selected = [
                 value for key, value in parameters.items() if value[0] is not None]
             if len(params_selected):
@@ -806,7 +816,7 @@ class RestCsmUser(RestTestLib):
     @RestTestLib.authenticate_and_login
     def delete_csm_user(self, user_id):
         """
-        This function will create new CSM user
+        This function will delete CSM user
         :param user_type: type of user required
         :param user_role: User role type.
         :param save_new_user: to store newly created user to config
@@ -831,6 +841,35 @@ class RestCsmUser(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+
+    def delete_user_with_header(self, user_id, header):
+        """
+        This function will delete CSM user
+        :param user_type: type of user required
+        :param user_role: User role type.
+        :param save_new_user: to store newly created user to config
+        :header: for csm user authentication
+        :return obj: response of delete user operation
+        """
+        try:
+            # Building request url
+            self.log.debug("Deleting CSM user")
+            endpoint = self.config["csmuser_endpoint"]
+            endpoint = f"{endpoint}/{user_id}"
+            self.log.debug(
+                "Endpoint for CSM user creation is  %s", endpoint)
+
+            # Fetching api response
+            return self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestCsmUser.delete_csm_user.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+
 
     @RestTestLib.authenticate_and_login
     def update_csm_account_password(self, username, old_password, new_password):
