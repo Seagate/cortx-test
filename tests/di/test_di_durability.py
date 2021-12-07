@@ -89,6 +89,7 @@ class TestDIDurability:
         self.integrity_param = const.S3_METADATA_CHECK
         self.sleep_time = 10
         self.file_size = 5
+        self.file_sizes = [64, 128, 256, 512, 1024, 4 * 1024, 8 * 1024, 16 * 1024, 32 * 1024]
         self.host_ip = CMN_CFG["nodes"][0]["host"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
@@ -281,8 +282,7 @@ class TestDIDurability:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
-        file_sizes = [64, 128, 256, 512, 1024, 4 * 1024, 8 * 1024, 16 * 1024, 32 * 1024]
-        for file_size in file_sizes:
+        for file_size in self.file_sizes:
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
@@ -305,53 +305,39 @@ class TestDIDurability:
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
+    @CTFailOn(error_handler)
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
         """
-        Test to verify object integrity during the upload with different
-        checksum.
+        Test to verify object integrity during the upload with different checksum.
+        file size == 64 KB - 32MB
         """
-        self.log.info(
-            "STARTED: Test to verify object integrity during the upload with "
-            "different checksum.")
-        self.log.info("Step 1: Create N objects of size 10MB")
-        self.file_lst = []
-        for i in range(self.secure_range.randint(2, 8)):
-            file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
-            system_utils.create_file(file_path, 10)
-            self.file_lst.append(file_path)
-        self.log.info(
-            "Step 1: Created %s object of size 10MB", len(self.file_lst))
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
-                      "checksum ) for all obj")
-        checksum_dict = {}
-        for file in self.file_lst:
-            checksum_dict[file] = system_utils.calculate_checksum(file)
-        self.log.info(
-            "Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for "
-            "all obj")
-        self.log.info(
-            "Step 3: Put objects into bucket with different calculated "
-            "checksum pass in content-md5 field")
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        try:
-            self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=self.file_lst[-1],
-                file_path=self.file_lst[-1],
-                content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
-        except CTException as error:
-            self.log.debug(
-                "Failed to put %s with an incorrect checksum %s", self.file_lst[-1], error)
-            assert_utils.assert_in(
-                "The Content-MD5 you specified is not valid", error.message, error.message)
-        self.log.info(
-            "Step 3: Failed to put objects into bucket with different "
-            "calculated checksum")
-        self.log.info(
-            "ENDED: Test to verify object integrity during the upload with "
-            "different checksum.")
+        self.log.info("STARTED: Test to verify object integrity during the upload with different "
+                      "checksum.")
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_default_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
+        for file_size in self.file_sizes:
+            self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
+            location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
+                                                              data_folder_prefix=self.test_dir_path)
+            self.log.debug("csm: %s", csm[1])
+            self.log.info("Corrupting checksum at client side")
+            csm[1] = csm[1]+"=="
+            try:
+                self.s3_test_obj.create_bucket(self.bucket_name)
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=self.object_name, file_path=location,
+                                            content_md5=csm[1])
+            except CTException as err:
+                self.log.info("Put object failed with %s", err)
+        self.log.info("ENDED: Test to verify object integrity during the upload with different "
+                      "checksum.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
