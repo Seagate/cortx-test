@@ -149,7 +149,7 @@ class DIErrorDetection:
 
         return True, skip_mark
 
-    def get_file_and_checksum(self, size, data_folder_prefix):
+    def get_file_and_csum(self, size, data_folder_prefix):
         """
         this function will create a corrupted file
         :param size: size of file

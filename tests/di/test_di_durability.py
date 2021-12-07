@@ -280,23 +280,28 @@ class TestDIDurability:
         if config_res[1]:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info("Step 1: Creating file and calculating checksum")
-        location, csm = self.di_err_lib.get_file_and_checksum(size=1024,
+        self.log.debug("Executing test as flags are set to default")
+        file_sizes = [64, 128, 256, 512, 1024, 4 * 1024, 8 * 1024, 16 * 1024, 32 * 1024]
+        for file_size in file_sizes:
+            self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
+            location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
-        self.log.debug("csm: %s", csm[1])
-        try:
-            self.s3_test_obj.create_bucket(self.bucket_name)
-            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
-                                        file_path=location, content_md5=csm[1])
-        except CTException as err:
-            self.log.info("Put object failed with %s", err)
-        try:
-            self.s3_test_obj.object_download(bucket_name=self.bucket_name,
-                                             obj_name=self.object_name, file_path=self.file_path)
-            if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
-                assert True
-        except CTException as err:
-            self.log.info("Download object failed with %s", err)
+            self.log.debug("csm: %s", csm[1])
+            try:
+                self.s3_test_obj.create_bucket(self.bucket_name)
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=self.object_name, file_path=location,
+                                            content_md5=csm[1])
+            except CTException as err:
+                self.log.info("Put object failed with %s", err)
+            try:
+                self.s3_test_obj.object_download(bucket_name=self.bucket_name,
+                                                 obj_name=self.object_name,
+                                                 file_path=self.file_path)
+                if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
+                    assert True
+            except CTException as err:
+                self.log.info("Download object failed with %s", err)
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
