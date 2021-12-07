@@ -863,8 +863,8 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22913')
-    def test_22913(self):
+    @pytest.mark.tags('TEST-29813')
+    def test_29813(self):
         """
         Test to verify object integrity during the the upload with correct checksum.
         Specify checksum and checksum algorithm or ETAG during
