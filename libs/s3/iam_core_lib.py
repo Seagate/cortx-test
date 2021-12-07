@@ -192,7 +192,7 @@ class IamLib(IAMRest):
         return response
 
     def update_user(self, new_user_name: str = None,
-            user_name: str = None) -> dict:
+                    user_name: str = None) -> dict:
         """
         Updating given user.
 
@@ -304,6 +304,26 @@ class IamPolicy(IAMRest):
 
         return response
 
+    def create_policy_with_tags(self, policy_name: str = None, policy_document: str = None,
+                                tags: list = None, **kwargs) -> object:
+        """
+        Creates a policy as per policy document with tags.
+
+        :param policy_name: The name of the policy to create.
+        :param policy_document: TThe JSON policy document that you want to use as the content
+        for the new policy.
+        :param tags: A list of tags that you want to attach to the new IAM customer managed policy.
+         Each tag consists of a key name and an associated value.
+        """
+        response = self.iam.create_policy(
+            PolicyName=policy_name,
+            PolicyDocument=policy_document,
+            Tags=tags,
+            **kwargs
+        )
+
+        return response
+
     def delete_policy(self, policy_arn: str = None) -> dict:
         """
         Deletes a policy.
@@ -311,5 +331,15 @@ class IamPolicy(IAMRest):
         :param policy_arn: The ARN of the policy to delete.
         """
         response = self.iam_resource.Policy(policy_arn).delete()
+
+        return response
+
+    def get_policy(self, policy_arn: str = None) -> dict:
+        """
+        Retrieves information about the specified managed policy.
+
+        :param policy_arn: The ARN of the policy to get.
+        """
+        response = self.iam.get_policy(PolicyArn='string')
 
         return response

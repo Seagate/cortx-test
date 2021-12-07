@@ -88,6 +88,29 @@ class IamPolicyTestLib(IamPolicy):
 
         return True, policy
 
+    def create_policy_with_tags(self, policy_name: str = None, policy_document: str = None,
+                                tags: list = None, **kwargs) -> tuple:
+        """
+        Creates a policy as per policy document with tags.
+
+        :param policy_name: The name of the policy to create.
+        :param policy_document: TThe JSON policy document that you want to use as the content
+        for the new policy.
+        :param tags: A list of tags that you want to attach to the new IAM customer managed policy.
+         Each tag consists of a key name and an associated value.
+        """
+        try:
+
+            policy = super().create_policy_with_tags(policy_name, policy_document, tags, **kwargs)
+            LOGGER.info("Created policy %s.", policy.arn)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.create_policy_with_tags.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, policy
+
     def delete_policy(self, policy_arn: str = None) -> tuple:
         """
         Deletes a policy.
@@ -100,6 +123,23 @@ class IamPolicyTestLib(IamPolicy):
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
                              IamPolicyTestLib.create_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def get_policy(self, policy_arn: str = None) -> tuple:
+        """
+        Retrieves information about the specified managed policy.
+
+        :param policy_arn: The ARN of the policy to get.
+        """
+        try:
+            response = super().get_policy(policy_arn)
+            LOGGER.info("policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.get_policy.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
