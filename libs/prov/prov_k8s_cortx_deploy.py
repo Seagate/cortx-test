@@ -708,8 +708,8 @@ class ProvDeployK8sCortxLib:
         """
         cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
                                             self.deploy_cfg["destroy_cluster"])
-        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
+        cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
+        cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
         # cmd4 = "docker image prune -a"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
