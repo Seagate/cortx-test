@@ -517,4 +517,3 @@ FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} 
                            "--parity {} --spare {}"
 FIELD_CLUSTER_PREPARE = "cluster prepare"
 FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
-
