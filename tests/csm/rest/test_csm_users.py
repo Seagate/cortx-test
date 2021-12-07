@@ -5208,3 +5208,103 @@ class TestCsmUser():
             response = self.csm_user.custom_rest_login(username=usr, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32177')
+    def test_32177(self):
+        """
+        Test that manage user should be able to create and delete users with manage and monitor role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        roles = ['monitor', 'admin', 'manage']
+        new_users = [[], [], []]
+        self.log.info("Deleting all csm users except predefined ones...")
+        self.config.delete_csm_users()
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 1: Listing all csm users")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=const.SUCCESS_STATUS,
+            return_actual_response=True)
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == const.SUCCESS_STATUS
+        user_data = response.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing CSM users count: %s", existing_user)
+        self.log.info("Max csm users : %s", const.MAX_CSM_USERS)
+        user_creation_count = const.MAX_CSM_USERS - existing_user
+        self.log.info("New users to create: %s", user_creation_count)
+        self.log.info("Step 2: Creating users with random role")
+        for _ in range(user_creation_count):
+            self.log.info("Creating csm user")
+            role = roles[random.randrange(0, 3)]
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role=role)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            new_users[roles.index(role)].append(response.json()["username"])
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all random csm users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 3: Creating {} admin users and deleting it "
+                      "except last admin".format(user_creation_count))
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="admin")
+            self.log.info("Verifying if admin user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all csm admin users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 4: Creating {} manage users and deleting it except "
+                      "default manage user".format(user_creation_count))
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="manage")
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all csm manage users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 5: Creating {} monitor users and deleting it "
+                      "except default monitor user".format(user_creation_count))
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="monitor")
+            self.log.info("Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all csm monitor users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
