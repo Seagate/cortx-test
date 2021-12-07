@@ -309,7 +309,6 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
-    @CTFailOn(error_handler)
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
         """
         Test to verify object integrity during the upload with different checksum.
@@ -647,39 +646,45 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
+    @CTFailOn(error_handler)
     def test_disable_checksum_should_not_validate_file_no_error_22930(self):
         """
         Disabling of Checksum feature should not do any checksum validation even if data
         corrupted.
         """
+        self.log.info("STARTED: Disabling of Checksum feature should not do any checksum "
+                      "validation even if data corrupted")
         if self.di_err_lib.validate_disabled_config():
+            self.log.debug("Skipping test as flags are not set as test requirement")
             pytest.skip()
-        self.log.info(
-            "STARTED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 3: created a corrupted file at location %s", location)
-        self.log.info("Step 4: enable data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if status:
-            self.log.info("Step 3: enabled data corruption")
-        else:
-            self.log.info("Step 3: failed to enable data corruption")
-            assert False
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         bucket_name=self.bucket_name,
-                                         obj_name=self.object_name)
-        # we should get same corrupted file (first byte f)
-        # we should get error (first byte z)
-        self.log.info(
-            "ENDED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
+        self.log.debug("Executing test as flags are set as test requirement")
+        try:
+            self.s3_test_obj.create_bucket(self.bucket_name)
+            location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.debug("Step 1: created a corrupted file at location %s", location)
+            fault_status = self.fi_adapter.set_fault_injection(flag=True)
+            if fault_status[0]:
+                self.log.debug("Step 2: fault injection set")
+            else:
+                self.log.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+                assert False
+            self.log.info("Step 3: enable data corruption")
+            status = self.fi_adapter.enable_data_block_corruption()
+            if status:
+                self.log.debug("Step 3: enabled data corruption")
+            else:
+                self.log.debug("Step 3: failed to enable data corruption")
+                assert False
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                        object_name=self.object_name, file_path=location)
+            self.s3_test_obj.object_download(file_path=self.file_path,
+                                             bucket_name=self.bucket_name,
+                                             obj_name=self.object_name)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+        self.log.info("ENDED: Disabling of Checksum feature should not do any checksum validation "
+                      "even if data corrupted")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
