@@ -81,7 +81,7 @@ class DIFeatureControl:
         :param section: s3config section.
         :param flag: flag to be updated.
         :param value: value of flag.
-        :param backup_path: modified s3config file
+        :keyword backup_path: modified s3config file
         """
         LOGGER.info("Setting %s flag value to %s in s3server config file", flag, value)
         try:
@@ -153,7 +153,7 @@ class DIFeatureControl:
             for pod in pods_list:
                 resp = self.get_s3server_config_file(master_node, pod)
                 flag_value.append(resp[section][flag])
-                LOGGER.info("Pods: %s flag: %s flag_value: %s",pod,flag,resp[section][flag])
+                LOGGER.info("Pods: %s flag: %s flag_value: %s", pod, flag, resp[section][flag])
             if len(set(flag_value)) == 1:
                 return True, flag_value[0]
             else:
