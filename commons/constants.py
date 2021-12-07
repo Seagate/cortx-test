@@ -378,8 +378,10 @@ SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provision
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
-K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
-               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
+K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
+K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
+
+
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"

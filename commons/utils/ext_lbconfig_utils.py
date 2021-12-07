@@ -90,6 +90,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
+    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
@@ -161,16 +162,19 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
         sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_S3_CERT_PATH))
     sys_utils.execute_cmd(cmd="mkdir -p {}".format(
         os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
-    resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_CRT_FILE.format(cm_const.LOCAL_S3_CERT_PATH))
-    assert_utils.assert_true(resp[0], resp[1])
-
+    cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
+        pods_list[0], cm_const.K8S_CRT_PATH, cm_const.LOCAL_S3_CERT_PATH)
+    resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
+    LOGGER.debug("Resp : %s", resp)
     LOGGER.info("Coping the stx.pem to %s", cm_const.LOCAL_PEM_PATH)
     if os.path.exists(cm_const.LOCAL_PEM_PATH):
         sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
     sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
         os.path.abspath(cm_const.LOCAL_PEM_PATH))))
-    resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_PEM_FILE.format(cm_const.LOCAL_PEM_PATH))
-    assert_utils.assert_true(resp[0], resp[1])
+    cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
+        pods_list[0], cm_const.K8S_PEM_PATH, cm_const.LOCAL_PEM_PATH)
+    resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
+    LOGGER.debug("Resp : %s", resp)
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd("puppet agent --disable")
