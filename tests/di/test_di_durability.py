@@ -328,16 +328,22 @@ class TestDIDurability:
                                                               data_folder_prefix=self.test_dir_path)
             self.log.debug("csm: %s", csm[1])
             self.log.info("Corrupting checksum at client side")
-            csm[1] = csm[1]+"=="
+            corrupted_csm = "DddddDdDdDddddddddddd=="
             try:
                 self.s3_test_obj.create_bucket(self.bucket_name)
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=self.object_name, file_path=location,
-                                            content_md5=csm[1])
+                                            content_md5=corrupted_csm)
             except CTException as err:
                 self.log.info("Put object failed with %s", err)
-        self.log.info("ENDED: Test to verify object integrity during the upload with different "
-                      "checksum.")
+                err_str = str(err)
+                if "An error occurred (InvalidDigest) when calling the PutObject operation: " \
+                   "The Content-MD5 you specified is not valid" in err_str:
+                    assert True
+                else:
+                    assert False
+            self.log.info("ENDED: Test to verify object integrity during the upload with different "
+                          "checksum.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
