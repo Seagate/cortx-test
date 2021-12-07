@@ -163,18 +163,20 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     sys_utils.execute_cmd(cmd="mkdir -p {}".format(
         os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
     cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
-        pods_list[0], cm_const.K8S_CRT_PATH, cm_const.LOCAL_S3_CERT_PATH)
+        pods_list[0], cm_const.K8S_CRT_PATH, "/root/ca.crt")
     resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
     LOGGER.debug("Resp : %s", resp)
+    m_node_obj.copy_file_to_local("/root/ca.crt", cm_const.LOCAL_S3_CERT_PATH)
     LOGGER.info("Coping the stx.pem to %s", cm_const.LOCAL_PEM_PATH)
     if os.path.exists(cm_const.LOCAL_PEM_PATH):
         sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
     sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
         os.path.abspath(cm_const.LOCAL_PEM_PATH))))
     cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
-        pods_list[0], cm_const.K8S_PEM_PATH, cm_const.LOCAL_PEM_PATH)
+        pods_list[0], cm_const.K8S_PEM_PATH, "/root/stx.pem")
     resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
     LOGGER.debug("Resp : %s", resp)
+    m_node_obj.copy_file_to_local("/root/stx.pem", cm_const.LOCAL_PEM_PATH)
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd("puppet agent --disable")
