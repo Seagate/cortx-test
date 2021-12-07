@@ -801,23 +801,24 @@ class HAK8s:
         return resp
 
     @staticmethod
-    def restore_pod(pod_obj, way_to_restore, restore_params: dict = None):
+    def restore_pod(pod_obj, restore_method, restore_params: dict = None):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
-        :param way_to_restore: Way to restore pod
+        :param restore_method: Restore method to be used depending on shutdown method
+        ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
         :return: Bool, response
         """
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
 
-        if way_to_restore == "scale_replicas":
+        if restore_method == common_const.RESTORE_SCALE_REPLICAS:
             resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
-        elif way_to_restore == "k8s":
+        elif restore_method == common_const.RESTORE_DEPLOYMENT_K8S:
             resp = pod_obj.recover_deployment_k8s(deployment_name=deployment_name,
                                                   backup_path=deployment_backup)
-        elif way_to_restore == "helm":
+        elif restore_method == common_const.RESTORE_DEPLOYMENT_HELM:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
         return resp

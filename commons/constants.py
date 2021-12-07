@@ -382,3 +382,8 @@ K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+
+# Pod restore methods
+RESTORE_SCALE_REPLICAS = "scale_replicas"
+RESTORE_DEPLOYMENT_K8S = "k8s"
+RESTORE_DEPLOYMENT_HELM = "helm"
