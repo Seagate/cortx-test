@@ -39,6 +39,7 @@ LOGGER = logging.getLogger(__name__)
 def configure_rsyslog():
     """
      Configure rsyslog to configure logging of the HAProxy service
+     return: rsyslog restart command execution response
     """
     rsysconf_path = "/etc/rsyslog.conf"
     if os.path.exists(rsysconf_path):
