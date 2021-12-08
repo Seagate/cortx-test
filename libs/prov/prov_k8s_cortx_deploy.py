@@ -1086,8 +1086,7 @@ class ProvDeployK8sCortxLib:
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
-            for line_status in pod_status.split("\\n"):
-                LOGGER.info(line_status)
+            LOGGER.debug(pod_status)
             LOGGER.info("Step to Check s3 server status")
             resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
             pod_name = resp[1]
