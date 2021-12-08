@@ -119,7 +119,8 @@ class TestContDeployment:
         self.log.debug("TEST file destroy_setup_flag = %s", self.destroy_setup_flag)
         self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
         self.log.debug("DIX %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
-        self.log.debug("CVG per node are %s \n Data disk per cvg are %s", self.cvg_per_node, self.data_disk_per_cvg)
+        self.log.debug("CVG per node are %s \n Data disk per cvg are %s",
+                       self.cvg_per_node, self.data_disk_per_cvg)
         while count > 0:
             self.log.info("The iteration no is %s", count)
             self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
