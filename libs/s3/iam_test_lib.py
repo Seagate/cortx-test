@@ -86,7 +86,7 @@ class IamTestLib(IamLib):
             # Adding sleep in sec due to ldap sync issue EOS-6783
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
-        except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
@@ -102,7 +102,7 @@ class IamTestLib(IamLib):
             LOGGER.info("listing all users")
             response = super().list_users()["Users"]
             LOGGER.info(response)
-        except (self.iam.exceptions.UserNotFoundException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users.__name__,
                          error)
@@ -123,7 +123,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
-        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
                          error)
@@ -151,7 +151,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
-        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
                          error)
@@ -170,7 +170,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Delete user %s.", user_name)
             response = poll(super().delete_user, user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_user.__name__,
                          error)
@@ -189,7 +189,7 @@ class IamTestLib(IamLib):
             LOGGER.info("list access keys.")
             response = super().list_access_keys(user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_access_keys.__name__,
                          error)
@@ -214,7 +214,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Update access key.")
             response = poll(super().update_access_key, access_key_id, status, user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_access_key.__name__,
                          error)
@@ -237,7 +237,7 @@ class IamTestLib(IamLib):
                 new_user_name)
             response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user.__name__,
                          error)
@@ -271,10 +271,7 @@ class IamTestLib(IamLib):
                 "%Y-%m-%d %H:%M:%S")
             user_dict['password_reset_required'] = login_profile.password_reset_required
             LOGGER.debug(user_dict)
-        except (self.iam.exceptions.PasswordPolicyViolationException,
-                self.iam.exceptions.NoSuchEntityException,
-                self.iam.exceptions.InvalidUserTypeException,
-                ClientError, Exception) as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user_login_profile.__name__,
                          error)
