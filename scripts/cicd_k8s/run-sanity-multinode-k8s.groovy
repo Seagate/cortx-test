@@ -25,7 +25,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/lc_dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
