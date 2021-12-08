@@ -132,7 +132,7 @@ def find_distinct_values(key: str,
 # collection.find(query).sort([("_id", pymongo.DESCENDING)]).limit(1)
 @pymongo_exception
 def get_aggregate(query: dict, group_query: dict, uri: str, db_name: str, collection: str
-                    ) -> (bool, int):
+                  ) -> (bool, int):
     """
     Count search results for query from MongoDB database
 
@@ -156,4 +156,3 @@ def get_aggregate(query: dict, group_query: dict, uri: str, db_name: str, collec
             return list(result)[0]
         except IndexError:
             return {}
-
