@@ -23,9 +23,10 @@ Test class that contains MOTR K8s tests.
 """
 
 import logging
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
-from libs.motr import TEMP_PATH
 from random import SystemRandom
+
+from libs.motr import TEMP_PATH
+from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
 

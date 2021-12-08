@@ -24,8 +24,9 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
-from commons import constants as common_const
+
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -42,6 +43,8 @@ class MotrCoreK8s():
         for node in range(len(CMN_CFG["nodes"])):
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
+                self.master_uname = CMN_CFG["nodes"][node]["username"]
+                self.master_passwd = CMN_CFG["nodes"][node]["password"]
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
                                    password=CMN_CFG["nodes"][node]["password"])
@@ -183,6 +186,7 @@ class MotrCoreK8s():
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
+    # pylint: disable=too-many-arguments
     def cp_cmd(self, b_size, count, obj, layout, file, node, client_num):
         """M0CP command creation"""
         if client_num is None:
@@ -207,6 +211,7 @@ class MotrCoreK8s():
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
+    # pylint: disable=too-many-arguments
     def cat_cmd(self, b_size, count, obj, layout, file, node, client_num):
         """M0CAT command creation"""
         if client_num is None:
