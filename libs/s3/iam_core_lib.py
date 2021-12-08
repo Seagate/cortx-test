@@ -343,3 +343,40 @@ class IamPolicy(IAMRest):
         response = self.iam.get_policy(PolicyArn='string')
 
         return response
+
+    def create_role(self, assume_role_policy_document: str = None, role_name: str = None) -> dict:
+        """
+        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+         :param role_name: The name of the role to create.
+        """
+        response = self.iam.create_role(
+            AssumeRolePolicyDocument=assume_role_policy_document,
+            RoleName=role_name,
+        )
+
+        return response
+
+    def create_role_with_tags(self,
+                              assume_role_policy_document: str = None,
+                              role_name: str = None,
+                              tags: list = None,
+                              **kwargs) -> dict:
+        """
+        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+        :param role_name: The name of the role to create.
+        :param tags: A list of tags that you want to attach to the new role.
+        """
+        response = self.iam.create_role(
+            RoleName=role_name,
+            AssumeRolePolicyDocument=assume_role_policy_document,
+            Tags=tags,
+            **kwargs
+        )
+
+        return response

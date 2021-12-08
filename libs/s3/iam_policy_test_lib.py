@@ -144,3 +144,46 @@ class IamPolicyTestLib(IamPolicy):
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
+
+    def create_role(self, assume_role_policy_document: str = None, role_name: str = None) -> tuple:
+        """
+        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+         :param role_name: The name of the role to create.
+        """
+        try:
+            response = super().create_role(assume_role_policy_document, role_name)
+            LOGGER.info("create role %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.create_role.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def create_role_with_tags(self,
+                              assume_role_policy_document: str = None,
+                              role_name: str = None,
+                              tags: list = None,
+                              **kwargs) -> tuple:
+        """
+        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+        :param role_name: The name of the role to create.
+        :param tags: A list of tags that you want to attach to the new role.
+        """
+        try:
+            response = super().create_role_with_tags(assume_role_policy_document, role_name)
+            LOGGER.info("create role with tags %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.create_role.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
