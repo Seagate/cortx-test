@@ -222,6 +222,8 @@ class ProvDeployK8sCortxLib:
             format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+        resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
+        LOGGER.info("\n %s", resp1)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
