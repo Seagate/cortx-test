@@ -226,7 +226,7 @@ class S3TestLib(S3Lib):
         :param bucket_name: Name of the bucket.
         :return: (Boolean, list of objects)
         """
-        LOGGER.info("Listing Objects in a particular bucket")
+        LOGGER.info("Listing Objects from bucket: %s", bucket_name)
         try:
             response = super().object_list(bucket_name)
         except (ClientError, Exception) as error:
