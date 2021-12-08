@@ -383,3 +383,8 @@ K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+
+# Pod restore methods
+RESTORE_SCALE_REPLICAS = "scale_replicas"
+RESTORE_DEPLOYMENT_K8S = "k8s"
+RESTORE_DEPLOYMENT_HELM = "helm"
