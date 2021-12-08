@@ -134,12 +134,11 @@ k8s_cortx_deploy:
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
     openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
-    consul: 'hashicorp/consul:1.10.0'
-    kafka: '3.0.0-debian-10-r7'
-    zookeeper: '3.7.0-debian-10-r182'
-    gluster: 'docker.io/gluster/gluster-centos:latest'
-    rancher: 'rancher/local-path-provisioner:v0.0.20'
-    busybox: 'busybox'
+    consul: 'ghcr.io/seagate/consul:1.10.0'
+    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
+    zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
+    rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
+    busybox: 'ghcr.io/seagate/busybox:latest'
   cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata' ]
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
