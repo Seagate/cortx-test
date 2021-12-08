@@ -336,7 +336,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
         group_query = {
             "_id": "null",
             "total_objs": { "$sum": "$Objects"},
-            "sum_throughput": {"$sum": "$Throughput"}, 
+            "sum_throughput": {"$sum": "$Throughput"},
             "sum_iops": {"$sum": "$IOPS"},
             "avg_lat": {"$avg": "$Latency"},
             "avg_lat_avg": {"$avg": "$Latency.Avg"},
@@ -344,7 +344,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             "avg_ttfb_avg": {"$avg": "$TTFB.Avg"},
             "avg_ttfb_99p": {"$avg": "$TTFB.Avg"},
             }
-        
+
         cursor = get_aggregate(query=query, group_query=group_query, uri=uri, db_name=db_name,
                         collection=db_collection)
         if not cursor:
@@ -352,7 +352,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             "_id": "null", "total_objs": "NA", "sum_throughput": "NA", "sum_iops": "NA",
             "avg_lat": "NA", "avg_lat_avg": "NA", "run_state": "NA", "avg_ttfb_avg": "NA",
             "avg_ttfb_99p": "NA"}
-            
+
         if cursor['total_objs'] != "NA":
             added_objects = cursor['total_objs']
         if 'failed' in cursor['run_state']:
@@ -371,7 +371,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             temp_data.append(round_off(cursor['avg_lat']))
 
         skipttfb = False
-    
+
     temp_data.insert(0, added_objects)
     return temp_data, run_state
 
