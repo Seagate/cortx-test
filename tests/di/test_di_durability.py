@@ -860,60 +860,6 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity of large objects with the multipart "
             "threshold to value greater than the object size.")
 
-
-@pytest.fixture(scope="class", autouse=False)
-def setup_multipart_fixture(request):
-    """
-    Yield fixture to setup pre requisites and teardown them.
-    Part before yield will be invoked prior to each test case and
-    part after yield will be invoked after test call i.e as teardown.
-    """
-    request.cls.log = logging.getLogger(__name__)
-    request.cls.log.info("STARTED: Setup test operations.")
-    request.cls.secure_range = secrets.SystemRandom()
-    request.cls.s3_test_obj = S3TestLib()
-    request.cls.s3_mp_test_obj = S3MultipartTestLib()
-    request.cls.hostnames = list()
-    request.cls.connections = list()
-    request.cls.nodes = CMN_CFG["nodes"]
-    if request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
-            request.cls.cmn_cfg["product_type"] == PROD_TYPE_NODE:
-        for node in request.cls.nodes:
-            node_obj = Node(hostname=node["hostname"],
-                            username=node["username"],
-                            password=node["password"])
-            node_obj.connect()
-            request.cls.connections.append(node_obj)
-            request.cls.hostnames.append(node["hostname"])
-    elif request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
-            request.cls.cmn_cfg["product_type"] == PROD_TYPE_K8S:
-        request.cls.log.error("Product family: LC")
-        # Add k8s masters
-        for node in request.cls.nodes:
-            if node["node_type"].lower() == "master":
-                node_obj = LogicalNode(hostname=node["hostname"],
-                                       username=node["username"],
-                                       password=node["password"])
-                request.cls.connections.append(node_obj)
-                request.cls.hostnames.append(node["hostname"])
-
-    request.cls.account_name = di_lib.get_random_account_name()
-    s3_acc_passwd = di_cfg.s3_acc_passwd
-    request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(request.cls.account_name,
-                                                                   s3_acc_passwd)
-    request.cls.bucket_name = di_lib.get_random_bucket_name()
-    # create bucket
-
-    request.cls.acc_del = False
-    request.cls.log.info("ENDED: setup test operations.")
-    yield
-    request.cls.log.info("STARTED: Teardown operations")
-    request.cls.log.info("Deleting the file created locally for object")
-    if system_utils.path_exists(request.cls.file_path):
-        system_utils.remove_dirs(request.cls.test_dir_path)
-    request.cls.log.info("Local file was deleted")
-    request.cls.log.info("ENDED: Teardown operations")
-
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -925,10 +871,7 @@ def setup_multipart_fixture(request):
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if read_flag[0]:
-            pytest.skip()
+        # to do for read flag check
         self.log.info("Step 1: create a file")
         buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
                                            seed=self.data_gen.get_random_seed())
@@ -949,6 +892,37 @@ def setup_multipart_fixture(request):
         # to do verify object download failure
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29812')
+    def test_29812(self):
+        """
+        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
+        """
+        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
+                      "(at s3 checksum) and verify read (Get).")
+        # to do read flag check
+        self.log.info("Step 1: create a file")
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a file at location %s", location)
+        self.log.info("Step 2: enable checksum feature")
+        # to do enabling checksum feature
+        self.log.info("Step 3: upload a file with incorrect checksum")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        self.s3_test_obj.object_download(file_path=self.file_path,
+                                         obj_name=self.object_name,
+                                         bucket_name=self.bucket_name)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # to do verify object download failure
+        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
+                      "(at s3 checksum) and verify read (Get).")
 
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
@@ -1011,8 +985,7 @@ def setup_multipart_fixture(request):
                                                          data_folder_prefix=self.test_dir_path)
         self.log.info("Step 1: created a corrupted file at location %s", location)
         self.log.info("Step 2: upload a object")
-        self.s3_cmd_test_obj.put_object(bucket_name=self.bucket_name, file_path=location,
-                                        object_name=self.object_name)
+        # to do put object using s3cmd
         self.log.info("Step 3: download a object")
         # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
         #                                                     my_key=self.object_name,
@@ -1022,6 +995,60 @@ def setup_multipart_fixture(request):
         # to do verify object download failure
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+
+
+@pytest.fixture(scope="class", autouse=False)
+def setup_multipart_fixture(request):
+    """
+    Yield fixture to setup pre requisites and teardown them.
+    Part before yield will be invoked prior to each test case and
+    part after yield will be invoked after test call i.e as teardown.
+    """
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("STARTED: Setup test operations.")
+    request.cls.secure_range = secrets.SystemRandom()
+    request.cls.s3_test_obj = S3TestLib()
+    request.cls.s3_mp_test_obj = S3MultipartTestLib()
+    request.cls.hostnames = list()
+    request.cls.connections = list()
+    request.cls.nodes = CMN_CFG["nodes"]
+    if request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+            request.cls.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+        for node in request.cls.nodes:
+            node_obj = Node(hostname=node["hostname"],
+                            username=node["username"],
+                            password=node["password"])
+            node_obj.connect()
+            request.cls.connections.append(node_obj)
+            request.cls.hostnames.append(node["hostname"])
+    elif request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+            request.cls.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+        request.cls.log.error("Product family: LC")
+        # Add k8s masters
+        for node in request.cls.nodes:
+            if node["node_type"].lower() == "master":
+                node_obj = LogicalNode(hostname=node["hostname"],
+                                       username=node["username"],
+                                       password=node["password"])
+                request.cls.connections.append(node_obj)
+                request.cls.hostnames.append(node["hostname"])
+
+    request.cls.account_name = di_lib.get_random_account_name()
+    s3_acc_passwd = di_cfg.s3_acc_passwd
+    request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(request.cls.account_name,
+                                                                   s3_acc_passwd)
+    request.cls.bucket_name = di_lib.get_random_bucket_name()
+    # create bucket
+
+    request.cls.acc_del = False
+    request.cls.log.info("ENDED: setup test operations.")
+    yield
+    request.cls.log.info("STARTED: Teardown operations")
+    request.cls.log.info("Deleting the file created locally for object")
+    if system_utils.path_exists(request.cls.file_path):
+        system_utils.remove_dirs(request.cls.test_dir_path)
+    request.cls.log.info("Local file was deleted")
+    request.cls.log.info("ENDED: Teardown operations")
 
 
 @pytest.mark.usefixtures("setup_multipart_fixture")

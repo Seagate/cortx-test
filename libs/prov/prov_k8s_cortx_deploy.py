@@ -1108,8 +1108,8 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
                                                     master_node_list[0].username,
-                                                    master_node_list[0].password, eth1_ip,
-                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+                                                    master_node_list[0].password,
+                                                    eth1_ip)
             LOGGER.info("Step to Create S3 account and configure credentials")
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
