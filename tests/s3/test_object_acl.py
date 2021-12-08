@@ -4137,7 +4137,7 @@ class TestObjectACL:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
     @pytest.mark.sanity
-    @pytest.mark.tags("TEST-17181")
+    @pytest.mark.tags("TEST-7572")
     def test_put_object_acl_public_read_write_169(self):
         """Put-object-acl from cross account on obj with public-read-write canned-acl permission."""
         self.log.info(
