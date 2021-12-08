@@ -419,7 +419,7 @@ class HAK8s:
         """
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            resp = pod_obj.send_sync_command("cortx-data-pod")
             if not resp:
                 LOGGER.info("Cluster is restarting without sync")
         LOGGER.info("Stop the cluster")
@@ -440,7 +440,7 @@ class HAK8s:
             return False, "Cluster is not started"
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            resp = pod_obj.send_sync_command("cortx-data-pod")
             if not resp:
                 LOGGER.info("Sync command is not executed")
         return True, resp
