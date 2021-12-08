@@ -467,6 +467,8 @@ KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
 KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
+                         "jsonpath='{{.items[-1:].metadata.name}}'"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
