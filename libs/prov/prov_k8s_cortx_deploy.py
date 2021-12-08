@@ -708,18 +708,27 @@ class ProvDeployK8sCortxLib:
         """
         cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
                                             self.deploy_cfg["destroy_cluster"])
-        cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        # cmd4 = "docker image prune -a"
+        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
+        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
+        cmd4 = "ls -lhR /etc/3rd-party/"
+        cmd5 = "ls -lhR /var/data/3rd-party/"
+        cmd6 = "ls -lhR /mnt/fs-local-volume/"
+        # cmd7 = "docker image prune -a"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
+                # resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
+                # LOGGER.debug("resp : %s", resp)
+                # resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+                # LOGGER.debug("resp : %s", resp)
+                resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd6, read_lines=True)
+                LOGGER.debug("resp : %s", resp)
+                # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
                 # LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
@@ -1061,7 +1070,9 @@ class ProvDeployK8sCortxLib:
                                         size_data_disk="20Gi", size_metadata="20Gi")
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
-                LOGGER.info("The solution yaml file is %s\n", file)
+                LOGGER.info("The detailed solution yaml file is\n")
+                for line in file.readlines():
+                    LOGGER.info(line)
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
@@ -1070,6 +1081,8 @@ class ProvDeployK8sCortxLib:
                                              self.docker_username,
                                              self.docker_password, self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
+            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS, read_lines=True)
+            LOGGER.debug("\n=== POD STATUS ===\n %s", pod_status)
             LOGGER.info("Step to Check s3 server status")
             resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
             pod_name = resp[1]
