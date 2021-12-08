@@ -1083,7 +1083,8 @@ class ProvDeployK8sCortxLib:
                                              self.docker_username,
                                              self.docker_password, self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
-            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS, read_lines=True)
+            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+                                                         read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n %s", pod_status)
             LOGGER.info("Step to Check s3 server status")
             resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
