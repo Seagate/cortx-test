@@ -373,7 +373,7 @@ class HAK8s:
             return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
-                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
+                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
@@ -798,4 +798,27 @@ class HAK8s:
                 break
 
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
+        return resp
+
+    @staticmethod
+    def restore_pod(pod_obj, restore_method, restore_params: dict = None):
+        """
+        Helper function to restore pod based on way_to_restore
+        :param pod_obj: Object of master node
+        :param restore_method: Restore method to be used depending on shutdown method
+        ("scale_replicas", "k8s", "helm")
+        :param restore_params: Dict which has parameters required to restore pods
+        :return: Bool, response
+        """
+        deployment_name = restore_params["deployment_name"]
+        deployment_backup = restore_params.get("deployment_backup", None)
+
+        if restore_method == common_const.RESTORE_SCALE_REPLICAS:
+            resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
+        elif restore_method == common_const.RESTORE_DEPLOYMENT_K8S:
+            resp = pod_obj.recover_deployment_k8s(deployment_name=deployment_name,
+                                                  backup_path=deployment_backup)
+        elif restore_method == common_const.RESTORE_DEPLOYMENT_HELM:
+            resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
+
         return resp
