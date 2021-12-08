@@ -156,3 +156,4 @@ def get_aggregate(query: dict, group_query: dict, uri: str, db_name: str, collec
             return list(result)[0]
         except IndexError:
             return {}
+
