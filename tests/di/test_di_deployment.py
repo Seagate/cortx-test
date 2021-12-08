@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Failure Domain (k8s based Cortx) Test Suite."""
+"""DI tests with multiple EC deployment (k8s based Cortx) Test Suite."""
 import logging
 import math
 import time
@@ -58,7 +58,14 @@ class TestDIDeployment:
                 cls.worker_node_list.append(node_obj)
         cls.di_err_lib = DIErrorDetection()
 
-    def get_durability_config(self, num_nodes) -> list:
+    @staticmethod
+    def get_durability_config(num_nodes) -> list:
+        """
+        Get 3 EC configs based on the number of nodes given as args..
+        EC config will be calculated considering CVG as 1,2,3.
+        param: num_nodes : Number of nodes
+        return : list of configs. (List of Dictionary)
+        """
         config_list = []
         for i in range(1, 4):
             config = {}
@@ -88,6 +95,9 @@ class TestDIDeployment:
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-22496')
     def test_22496(self):
+        """
+        Test Checksum validation for multiple Erasure Coding scheme.
+        """
         num_nodes = len(self.worker_node_list)
         self.log.info("Number of worker nodes : %s",num_nodes)
         config_list = self.get_durability_config(num_nodes)
