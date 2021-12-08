@@ -45,6 +45,7 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -457,3 +458,157 @@ class TestPodFailure:
 
         LOGGER.info(
             "ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26444")
+    @CTFailOn(error_handler)
+    def test_degraded_deletes_safe_pod_shutdown(self):
+        """
+        This test tests degraded deletes before and after safe pod shutdown
+        """
+        LOGGER.info("STARTED: Test to verify degraded deletes before and after safe pod shutdown.")
+        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Step 1: Create 150 buckets and perform WRITEs with variable size objects.")
+        buckets = [f"test-26444-bucket-{i}-{str(int(time.time()))}" for i in range(151)]
+        for bucket in buckets:
+            resp = self.ha_obj.ha_s3_workload_operation(
+                s3userinfo=self.s3_clean, log_prefix=bucket, skipread=True, skipcleanup=True,
+                nsamples=1, nclients=1)
+            assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_test_obj.bucket_list()
+        assert_utils.assert_equal(150, len(resp[1]), resp)
+        LOGGER.info("Step 1: Sucessfully created 150 buckets & "
+                    "perform WRITEs with variable size objects.")
+        LOGGER.info("Step 2: Shutdown/Delete the data pod safely by making replicas=0")
+        LOGGER.info("Get pod name to be Shutdown/Deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+        LOGGER.info("Shutdown/Delete pod %s", pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        self.dploymnt_name = resp[1]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
+        LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster is in degraded state")
+        LOGGER.info("Step 5: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Checked services status that were running on pod %s are in offline "
+                    "state", pod_name)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 6: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 5: Perform DELETEs on random 140 buckets")
+        for _ in range(141):
+            del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
+            resp = s3_test_obj.delete_bucket(bucket_name=del_bucket, force=True)
+            assert_utils.assert_true(resp[0], resp)
+        resp = s3_test_obj.bucket_list()
+        assert_utils.assert_equal(10, len(resp[1]), resp)
+        LOGGER.info("Step 5: Successfully performed DELETEs on random 140 buckets")
+        LOGGER.info("Step 6: Perform READs on the remaining 10 buckets and delete the same.")
+        for bucket in buckets:
+            resp = self.ha_obj.ha_s3_workload_operation(
+                s3userinfo=self.s3_clean, log_prefix=bucket, skipwrite=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Successfully performed READs on the remaining 10 buckets.")
+        LOGGER.info("COMPLETED: Test to verify degraded deletes before & after safe pod shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26644")
+    @CTFailOn(error_handler)
+    def test_degraded_deletes_unsafe_pod_shutdown(self):
+        """
+        This test tests degraded deletes before and after unsafe pod shutdown
+        """
+        LOGGER.info(
+            "STARTED: Test to verify degraded deletes before and after unsafe pod shutdown.")
+        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Step 1: Create 150 buckets and perform WRITEs with variable size objects.")
+        buckets = [f"test-26644-bucket-{i}-{str(int(time.time()))}" for i in range(151)]
+        for bucket in buckets:
+            resp = self.ha_obj.ha_s3_workload_operation(
+                s3userinfo=self.s3_clean, log_prefix=bucket, skipread=True, skipcleanup=True,
+                nsamples=1, nclients=1)
+            assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_test_obj.bucket_list()
+        assert_utils.assert_equal(150, len(resp[1]), resp)
+        LOGGER.info("Step 1: Sucessfully created 150 buckets & "
+                    "perform WRITEs with variable size objects.")
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Delete Deployment for %s pod response: %s", pod_name, resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by Delete Deployment")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.dploymnt_backup = resp[1]
+        self.dploymnt_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+        LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster is in degraded state")
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Checked services status that were running on %s are in offline "
+                    "state", pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 6: Perform DELETEs on random 140 buckets")
+        for _ in range(141):
+            del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
+            resp = s3_test_obj.delete_bucket(bucket_name=del_bucket, force=True)
+            assert_utils.assert_true(resp[0], resp)
+        resp = s3_test_obj.bucket_list()
+        assert_utils.assert_equal(10, len(resp[1]), resp)
+        LOGGER.info("Step 6: Successfully performed DELETEs on random 140 buckets")
+        LOGGER.info("Step 7: Perform READs on the remaining 10 buckets.")
+        for bucket in buckets:
+            resp = self.ha_obj.ha_s3_workload_operation(
+                s3userinfo=self.s3_clean, log_prefix=bucket, skipwrite=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Successfully performed READs on the remaining 10 buckets.")
+        LOGGER.info(
+            "COMPLETED: Test to verify degraded deletes before and after unsafe pod shutdown.")
