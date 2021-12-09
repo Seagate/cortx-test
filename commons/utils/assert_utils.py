@@ -26,6 +26,7 @@ from hamcrest import assert_that, equal_to, has_length, contains_string, \
     equal_to_ignoring_case, has_entries, has_key, has_value, contains_exactly, \
     contains_inanyorder, has_items, has_item, all_of, any_of
 
+
 def assert_equals(actual, matcher, reason: str = ""):
     """assert_equals"""
     assert_that(matcher, equal_to(actual), reason)
@@ -239,10 +240,10 @@ def assert_is_not_none(actual,reason=""):
     assert actual != None, reason
 
 
-def assert_poll(method=None, *args, condition=None, **kwargs):
+def assert_poll(method, *args, condition=None, **kwargs):
     """assert poll method to wait for a function/target to return a certain expected condition."""
     flag, resp = False, None
-    timeout, step = kwargs.get("timeout", 60), kwargs.get("step", 10)
+    timeout, step = kwargs.pop("timeout", 60), kwargs.pop("step", 10)
     end_time = time.time() + timeout
     while time.time() <= end_time:
         resp = method(*args, **kwargs)
