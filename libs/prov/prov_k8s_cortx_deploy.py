@@ -22,7 +22,6 @@
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-
 import json
 import logging
 import os
@@ -226,7 +225,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("\n %s", resp1)
         openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/", read_lines=True)
         LOGGER.info("\n %s", openldap_dir_residue)
-        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/", read_lines=True)
+        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
+                                                  read_lines=True)
         LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
@@ -714,28 +714,16 @@ class ProvDeployK8sCortxLib:
         """
         cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
                                             self.deploy_cfg["destroy_cluster"])
-        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        cmd4 = "ls -lhR /etc/3rd-party/"
-        cmd5 = "ls -lhR /var/data/3rd-party/"
-        cmd6 = "ls -lhR /mnt/fs-local-volume/"
-        # cmd7 = "docker image prune -a"
+        cmd2 = "ls -lhR /etc/3rd-party/"
+        cmd3 = "ls -lhR /var/data/3rd-party/"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                # resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd6, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -961,7 +949,7 @@ class ProvDeployK8sCortxLib:
         returns: updated csv file with its path
         """
         fields = ['ITERATION', 'POD STATUS']
-        with open(csv_filepath, 'w')as fptr:
+        with open(csv_filepath, 'w') as fptr:
             # writing the fields
             write = csv.writer(fptr)
             write.writerow(fields)
@@ -1116,7 +1104,7 @@ class ProvDeployK8sCortxLib:
                 script_path = PROV_CFG["config_haproxy"]["setup_haproxy"]
                 cmd = f'chmod {script_path} && sh {script_path}'
                 resp = system_utils.execute_cmd(cmd=cmd)
-                assert_utils.assert_true(resp[0],resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
