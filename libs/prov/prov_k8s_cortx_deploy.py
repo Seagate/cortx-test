@@ -717,7 +717,6 @@ class ProvDeployK8sCortxLib:
         # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
         cmd4 = "ls -lhR /etc/3rd-party/"
         cmd5 = "ls -lhR /var/data/3rd-party/"
-        cmd6 = "ls -lhR /mnt/fs-local-volume/"
         # cmd7 = "docker image prune -a"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
@@ -730,8 +729,6 @@ class ProvDeployK8sCortxLib:
                 resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
                 resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd6, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
                 # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
                 # LOGGER.debug("resp : %s", resp)
