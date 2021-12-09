@@ -146,6 +146,7 @@ def run_remote_cmd_wo_decision(
         error = stderr.read()
         if error:
             LOGGER.debug("Error: %s", str(error))
+    client.close()
     return output, error, exit_status
 
 

@@ -38,9 +38,9 @@ class TestExecuteK8Sanity:
     def setup_class(cls):
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
-        logger.info("ENDED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
         cls.system_random = SystemRandom()
+        logger.info("ENDED: Setup Operation")
 
     def test_motr_k8s_lib(cls):
         """

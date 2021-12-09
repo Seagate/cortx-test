@@ -169,7 +169,14 @@ class MotrCoreK8s():
         return node_name
 
     def dd_cmd(self, b_size, count, file, node):
-        """DD command for creating new file"""
+        """
+        DD command for creating new file
+
+        :b_size: Block size
+        :count: Block count
+        :file: Output file name
+        :node: on which node file need to create
+        """
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
                                                         common_cmd.CREATE_FILE.format(
                                                             "/dev/urandom", file, b_size, count))
@@ -188,7 +195,17 @@ class MotrCoreK8s():
 
     # pylint: disable=too-many-arguments
     def cp_cmd(self, b_size, count, obj, layout, file, node, client_num):
-        """M0CP command creation"""
+        """
+        M0CP command creation
+
+        :b_size: Block size
+        :count: Block count
+        :obj: Object ID
+        :layout: Layout ID
+        :file: Output file name
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
@@ -213,7 +230,17 @@ class MotrCoreK8s():
 
     # pylint: disable=too-many-arguments
     def cat_cmd(self, b_size, count, obj, layout, file, node, client_num):
-        """M0CAT command creation"""
+        """
+        M0CAT command creation
+
+        :b_size: Block size
+        :count: Block count
+        :obj: Object ID
+        :layout: Layout ID
+        :file: Output file name
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
@@ -237,7 +264,14 @@ class MotrCoreK8s():
                                        f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node, client_num):
-        """M0UNLINK command creation"""
+        """
+        M0UNLINK command creation
+
+        :obj: Object ID
+        :layout: Layout ID
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
@@ -260,7 +294,13 @@ class MotrCoreK8s():
                                        f'"{cmd}" Failed, Please check the log')
 
     def diff_cmd(self, file1, file2, node):
-        """DD command for creating new file"""
+        """
+        DD command for creating new file
+
+        :file1: first file
+        :file2: second file
+        :node: compare files on which node
+        """
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
                                                         common_cmd.DIFF.format(file1, file2))
         result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
@@ -276,16 +316,23 @@ class MotrCoreK8s():
                                        f'"{cmd}" Failed, Please check the log')
 
     def md5sum_cmd(self, file1, file2, node):
-        """MD5SUM command creation"""
+        """
+        MD5SUM command creation
+
+        :file1: first file
+        :file2: second file
+        :node: compare files on which node
+        """
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
                                                         common_cmd.MD5SUM.format(file1, file2))
         result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                       self.master_uname,
                                                                       self.master_passwd)
         log.info("%s , %s", result, error1)
-        if ret:
-            log.info('"%s" Failed, Please check the log', cmd)
-            assert False
+        assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
+        #if ret:
+        #    log.info('"%s" Failed, Please check the log', cmd)
+        #    assert False
         if (b"ERROR" or b"Error") in error1:
             log.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
