@@ -485,36 +485,46 @@ class TestDIDurability:
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("STARTED: Data chunk checksum validation (Motr blocks data or metadata of "
+                      "data blocks) and validate checksum error detection by S3/Motr")
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_default_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
-            "and validate checksum error detection by S3/Motr")
-        self.log.info("Step 1: Create a bucket.")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
+        self.log.debug("Executing test as flags are set to default")
+        self.log.info("Step 1: Create a corrupted file.")
         location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
                                                          data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.log.info("Step 3: enable data corruption")
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
+        fault_status = self.fi_adapter.set_fault_injection(flag=True)
+        if fault_status[0]:
+            self.log.debug("Step 2: fault injection set")
+        else:
+            self.log.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+            assert False
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 3: enabled data corruption")
+            self.log.debug("Step 2: enabled data corruption")
         else:
-            self.log.info("Step 3: failed to enable data corruption")
+            self.log.debug("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.log.info("Step 5: Verify get object.")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        self.log.info("Step 5: response %s", resp)
-        # get operation should fail
+        self.log.info("Step 2: Enabled data corruption")
+        try:
+            self.log.info("Step 3: Create bucket and upload object")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                        file_path=location)
+            self.s3_test_obj.object_download(file_path=self.file_path, obj_name=self.object_name,
+                                             bucket_name=self.bucket_name)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+            # search for internal error
         # to do verify with motr logs
-        self.log.info(
-            "ENDED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
-            "and validate checksum error detection by S3/Motr")
+        status = self.fi_adapter
+        self.log.info("ENDED: Data chunk checksum validation (Motr blocks data or metadata of "
+                      "data blocks) and validate checksum error detection by S3/Motr")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -858,7 +868,6 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity of large objects with the multipart "
             "threshold to value greater than the object size.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29813')
@@ -869,29 +878,48 @@ class TestDIDurability:
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
-        # to do for read flag check
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_default_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
+        # simulating checksum corruption with data corruption
         # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
-                                                     my_key=self.object_name,
-                                                     start_byte=8888,
-                                                     stop_byte=9999)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
+        self.log.info("Step 1: create a corrupted file")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
+        fault_status = self.fi_adapter.set_fault_injection(flag=True)
+        if fault_status[0]:
+            self.log.debug("Step 2: fault injection set")
+        else:
+            self.log.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+            assert False
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.debug("Step 2: enabled data corruption")
+        else:
+            self.log.debug("Step 2: failed to enable data corruption")
+            assert False
+        self.log.info("Step 2: Enabled data corruption")
+        try:
+            self.log.info("Step 3: Create bucket and upload object")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                        file_path=location)
+            self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
+                                                         my_key=self.object_name,
+                                                         start_byte=8888, stop_byte=9999)
+            self.s3_test_obj.object_download(file_path=self.file_path, obj_name=self.object_name,
+                                             bucket_name=self.bucket_name)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+            # search for internal error
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
@@ -901,28 +929,45 @@ class TestDIDurability:
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
-        # to do read flag check
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_enabled_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
+        # simulating checksum corruption with data corruption
         # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         obj_name=self.object_name,
-                                         bucket_name=self.bucket_name)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
+        self.log.info("Step 1: create a corrupted file")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
+        fault_status = self.fi_adapter.set_fault_injection(flag=True)
+        if fault_status[0]:
+            self.log.debug("Step 2: fault injection set")
+        else:
+            self.log.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+            assert False
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.debug("Step 2: enabled data corruption")
+        else:
+            self.log.debug("Step 2: failed to enable data corruption")
+            assert False
+        self.log.info("Step 2: Enabled data corruption")
+        try:
+            self.log.info("Step 3: Create bucket and upload object")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                        file_path=location)
+            self.s3_test_obj.object_download(file_path=self.file_path, obj_name=self.object_name,
+                                             bucket_name=self.bucket_name)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+            # search for internal error
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29816')
@@ -944,8 +989,8 @@ class TestDIDurability:
         self.log.info("Step 1: Create a corrupted file.")
         location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
                                                          data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: enabling data corruption")
+        self.log.info("Step 1: Created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
         fault_status = self.fi_adapter.set_fault_injection(flag=True)
         if fault_status[0]:
             self.log.debug("Step 2: fault injection set")
@@ -958,17 +1003,17 @@ class TestDIDurability:
         else:
             self.log.debug("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 3: upload a file")
+        self.log.info("Step 2: Enabled data corruption")
+        self.log.info("Step 3: Upload a file using aws cli")
         self.s3_test_obj.create_bucket(self.bucket_name)
-        self.s3_cmd_test_obj.object_upload_cli(bucket_name=self.bucket_name,
-                                               object_name=self.object_name,
-                                               obj_size=1024 * 1024 * 5,
-                                               file_path=location)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # resp = self.s3_test_obj.object_download(file_path=self.file_path,
-        #                                         bucket_name=self.bucket_name,
-        #                                         obj_name=self.object_name)
-        # to do verify object download failure
+        self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                               object_name=self.object_name, file_path=location)
+        try:
+            self.s3_test_obj.object_download(bucket_name=self.bucket_name,
+                                             obj_name=self.object_name, file_path=self.file_path)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+            # search for internal error
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
