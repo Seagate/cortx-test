@@ -106,7 +106,7 @@ class TestHA:
         LOGGER.info("Running test_receiver.py in background and Waiting for event to publish...")
         resp = self.master_node_obj.execute_cmd("python /root/daemon.py")
         LOGGER.info("Check that the host is pinging")
-        resp= node_obj.execute_cmd(cmd=common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
+        resp= self.master_node_obj.execute_cmd(cmd=common_cmd.CMD_PING.format(master_node_obj.hostname), read_lines=True)
         resp = self.master_node_obj.execute_cmd(cmd=comm.K8S_GET_PODS, read_lines=True)
         # This is sample pod_name used, later might be changed
         pod_name='tomcat' 
@@ -160,13 +160,14 @@ class TestHA:
 
     @pytest.mark.tags("TEST-30220")
     def test_30220(self):
-        """TC5: To verify Publish the pod failure event in message bus to Hare - Stop pod using replicaset"""
+        """TC5: To verify Publish the pod failure - Stop pod using replicaset"""
         LOGGER.info("Running test_receiver.py in background and Waiting for event to publish...")
         resp = self.master_node_obj.execute_cmd("python /root/daemon.py")
         LOGGER.info("Check that the host is pinging")
         resp= node_obj.execute_cmd(cmd=common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
         #Note: deployement.yaml file which may change once cortx-stack+ kubernetes is available
-        resp = self.master_node_obj.execute_cmd("kubectl create -f /root/deployment.yaml", read_lines=True)
+        resp = self.master_node_obj.execute_cmd("kubectl create -f /root/deployment.yaml", \
+                                                read_lines=True)
         resp = resp[0].strip()
         if resp == "replicaset.apps/my-replicaset created":
             LOGGER.info("The replicaset is successfully created")
@@ -218,8 +219,8 @@ class TestHA:
         LOGGER.info("STARTED: Teardown Operation")
         resp = self.master_node_obj.execute_cmd("pkill -f /root/test_receiver.py")
         resp = self.master_node_obj.execute_cmd("rm -f /root/pidfile")
-        LOGGER.info("ENDED: Teardown Operation")  
-    
+        LOGGER.info("ENDED: Teardown Operation")
+
     def test_ha7(self):
         """Verify Publish the pod online event in message bus to Hare - restart node"""
         LOGGER.info("Running test_receiver.py in background and Waiting for event to publish...")

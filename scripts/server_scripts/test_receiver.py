@@ -5,7 +5,6 @@ import json
 import traceback
 import os
 from cortx.utils.message_bus import MessageConsumer
-import subprocess
 
 
 if __name__ == '__main__':
@@ -26,10 +25,8 @@ if __name__ == '__main__':
                 consumer.ack()
                 with open('/root/file.txt', 'w') as f:
                     print(msg, file=f)
-            except Exception as e:
-                print(e)
-                print(traceback.format_exe())
+            except Exception as exc:
+                print(exc)
+                print(traceback.format_exc())
                 sys.exit(0)
     sys.exit(0)
-
-
