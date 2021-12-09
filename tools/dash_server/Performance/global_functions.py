@@ -80,11 +80,15 @@ def round_off(value, base=1):
             (base) - round off to nearest base
     Returns: (int) - rounded off number
     """
-    if value < 10:
-        return round(value, 3)
-    if value < 26:
-        return int(value)
-    return base * round(value / base)
+    try:
+        value = float(value)
+        if value < 10:
+            return round(value, 3)
+        if value < 26:
+            return int(value)
+        return base * round(value / base)
+    except (ValueError, TypeError):
+        return "NA"
 
 
 def get_distinct_keys(release, field_to_query, query):
