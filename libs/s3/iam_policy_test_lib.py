@@ -187,3 +187,39 @@ class IamPolicyTestLib(IamPolicy):
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
+
+    def delete_role(self, role_name: str = None):
+        """
+        Deletes the specified role. The role must not have any policies attached.
+
+        :param role_name: The name of the role to delete.
+        """
+        try:
+            response = super().delete_role(role_name)
+            LOGGER.info("delete role %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.delete_role.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def delete_role_policy(self, role_name: str = None, policy_name: str = None) -> tuple:
+        """
+        Deletes the specified inline policy that is embedded in the specified IAM role.
+
+        :param role_name: The name (friendly name, not ARN) identifying the role that the policy
+        is embedded in.
+        :param policy_name: The name of the inline policy to delete from the specified IAM role.
+        """
+        try:
+            response = super().delete_role_policy(role_name, policy_name)
+            LOGGER.info("delete policy for role %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.delete_role_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response

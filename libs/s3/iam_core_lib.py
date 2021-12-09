@@ -380,3 +380,30 @@ class IamPolicy(IAMRest):
         )
 
         return response
+
+    def delete_role(self, role_name: str = None):
+        """
+        Deletes the specified role. The role must not have any policies attached.
+
+        :param role_name: The name of the role to delete.
+        """
+        response = self.iam.delete_role(
+            RoleName=role_name
+        )
+
+        return response
+
+    def delete_role_policy(self, role_name: str = None, policy_name: str = None):
+        """
+        Deletes the specified inline policy that is embedded in the specified IAM role.
+
+        :param role_name: The name (friendly name, not ARN) identifying the role that the policy
+        is embedded in.
+        :param policy_name: The name of the inline policy to delete from the specified IAM role.
+        """
+        response = self.iam.delete_role_policy(
+            RoleName=role_name,
+            PolicyName=policy_name
+        )
+
+        return response
