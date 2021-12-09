@@ -19,6 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """DI tests with multiple EC deployment (k8s based Cortx) Test Suite."""
+from __future__ import division
+
 import logging
 import math
 import time
