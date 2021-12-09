@@ -42,7 +42,7 @@ from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from config import di_cfg
 from config import CMN_CFG
 from libs.s3 import S3_CFG
-from commons.constants import const
+from commons.constants import const, MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -973,6 +973,7 @@ class TestDIDurability:
         S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
         and verify read (Get).
         SZ <= Data Unit Sz
+
         """
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
@@ -996,4 +997,41 @@ class TestDIDurability:
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
-
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22912')
+    def test_22912(self):
+        """
+        Test to verify object integrity during the the upload with correct checksum.
+        Specify checksum and checksum algorithm or ETAG during
+        PUT(MD5 with and without digest, CRC ( check multi-part))
+        """
+        sz = 128 * MB
+        self.log.info("STARTED TEST-22912: Test to verify object integrity "
+                      "during the the upload with correct checksum.")
+        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.read_param)
+        if read_flag[0]:
+            pytest.skip()
+        self.log.info("Step 1: create a file")
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        location = self.data_gen.create_file_from_buf(fbuf=buff, name=self.file_path, size=sz)
+        self.log.info("Step 1: created a file at location %s", location)
+        self.log.info("Step 2: enable checksum feature")
+        # to do enabling checksum feature
+        self.log.info("Step 3: upload a file with incorrect checksum")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        dwn_file_name = os.path.split(self.file_path)[-1]
+        dwn_file_dir = os.path.split(self.file_path)[0]
+        dwn_file_path = os.path.join(dwn_file_dir, 'dwn' + dwn_file_name)
+        self.s3_test_obj.object_download(file_path=dwn_file_path,
+                                         obj_name=self.object_name,
+                                         bucket_name=self.bucket_name)
+        file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
+        assert_utils.assert_string(csm, file_checksum, 'Checksum mismatch found')
+        self.log.info("Step 4: verify download object passes without 5xx error code")
+        self.log.info("ENDED TEST-22912")
