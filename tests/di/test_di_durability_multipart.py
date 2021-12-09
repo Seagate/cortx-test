@@ -59,7 +59,6 @@ from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 
-
 @pytest.fixture(scope="class", autouse=False)
 def setup_multipart_fixture(request):
     """
@@ -114,6 +113,7 @@ def setup_multipart_fixture(request):
     request.cls.log.info("ENDED: Teardown operations")
 
 
+# pylint: disable=no-member
 @pytest.mark.usefixtures("setup_multipart_fixture")
 class TestDICheckMultiPart:
     """DI Test suite for F23B Multipart files."""
@@ -398,7 +398,6 @@ class TestDICheckMultiPart:
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
 
-
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -428,4 +427,3 @@ class TestDICheckMultiPart:
         else:
             self.log.info("Step 2: enabled data corruption")
         self.log.info("Step 3: upload a file using multipart upload")
-

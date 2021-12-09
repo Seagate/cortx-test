@@ -147,7 +147,7 @@ class S3CmdFacade:
         object_uri = kwargs.get('object_uri')
         if not os.path.exists(file_path):
             os.mkdir(file_path)
-        cmd = s3cmd.build_get_command(local_file_path=file_path, object_uri)
+        cmd = s3cmd.build_get_command(local_file_path=file_path, object_uri=object_uri)
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
         return response
