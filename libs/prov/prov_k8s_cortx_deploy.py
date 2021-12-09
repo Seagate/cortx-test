@@ -224,6 +224,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
         LOGGER.info("\n %s", resp1)
+        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/", read_lines=True)
+        LOGGER.info("\n %s", openldap_dir_residue)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -1104,6 +1106,16 @@ class ProvDeployK8sCortxLib:
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
+
+            LOGGER.info("Check if HAproxy is installed")
+            resp = system_utils.is_rpm_installed("haproxy22")
+            if not resp[0]:
+                LOGGER.debug("HAproxy not installed,installing it")
+                script_path = PROV_CFG["config_haproxy"]["setup_haproxy"]
+                cmd = f'chmod {script_path} && sh {script_path}'
+                resp = system_utils.execute_cmd(cmd=cmd)
+                assert_utils.assert_true(resp[0],resp[1])
+
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
                                                     master_node_list[0].username,

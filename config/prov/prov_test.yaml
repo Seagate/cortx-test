@@ -154,10 +154,12 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+
 test_basic_io:
   io_upper_limits:
     Kb: 130
     Mb: 50
+
 config_metallb:
   check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \
@@ -172,3 +174,6 @@ config_metallb:
   new_config_file: 'metallb_config.yaml'
   remote_path: '/root/metallb_config.yaml'
   apply_config: 'kubectl apply -f metallb_config.yaml'
+
+config_haproxy:
+  setup_haproxy: 'scripts/cicd_k8s/lb_haproxy.sh'
