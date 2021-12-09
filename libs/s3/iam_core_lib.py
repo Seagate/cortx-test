@@ -344,6 +344,35 @@ class IamPolicy(IAMRest):
 
         return response
 
+    def list_policies(self,
+                      scope: str = 'All',
+                      only_attached: bool = True,
+                      path_prefix: str = "/",
+                      policy_usage_filter: str = "PermissionsPolicy",
+                      max_items: int = 123,
+                      **kwargs) -> dict:
+        """
+        Lists all the managed policies that are available in account.
+
+        :param scope: The scope to use for filtering the results.
+        :param only_attached: A flag to filter the results to only the attached policies.
+        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+         If it is not included, it defaults to a slash (/), listing all policies.
+        :param policy_usage_filter: The policy usage method to use for filtering the results.
+        :param max_items:Use this only when paginating results to indicate the maximum number of
+         items you want in the response.
+        """
+        response = self.iam.list_policies(
+            Scope=scope,
+            OnlyAttached=only_attached,
+            PathPrefix=path_prefix,
+            PolicyUsageFilter=policy_usage_filter,
+            MaxItems=max_items,
+            **kwargs
+        )
+
+        return response
+
     def create_role(self, assume_role_policy_document: str = None, role_name: str = None) -> dict:
         """
         creates a role name and attaches a trust policy to it that is provided as a Policy Document.
@@ -404,6 +433,44 @@ class IamPolicy(IAMRest):
         response = self.iam.delete_role_policy(
             RoleName=role_name,
             PolicyName=policy_name
+        )
+
+        return response
+
+    def list_role_policies(self, role_name: str = None, marker: str = None, max_items: int = 123):
+        """
+        Lists the names of the inline policies that are embedded in the specified IAM role.
+
+        :param role_name: The name of the role to list policies for.
+        :param marker: Use this parameter only when paginating results and only after you receive
+         a response indicating that the results are truncated.
+        :param max_items: Use this only when paginating results to indicate the maximum number of
+        items you want in the response.
+        """
+        response = self.iam.list_role_policies(
+            RoleName=role_name,
+            Marker=marker,
+            MaxItems=max_items
+        )
+
+        return response
+
+    def list_roles(self, path_prefix: str = "/", max_items: int = 123, **kwargs):
+        """
+        Lists the IAM roles that have the specified path prefix. If there are none,
+         the operation returns an empty list.
+
+        :param path_prefix: The path prefix for filtering the results.
+         For example, the prefix /application_abc/component_xyz/ gets all roles whose path starts
+         with /application_abc/component_xyz/. This parameter is optional.
+         If it is not included, it defaults to a slash (/), listing all roles.
+        :param max_items: Use this only when paginating results to indicate the maximum number of
+         items you want in the response.
+        """
+        response = self.iam.list_roles(
+            PathPrefix=path_prefix,
+            MaxItems=max_items,
+            **kwargs
         )
 
         return response
