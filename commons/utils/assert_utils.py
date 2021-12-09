@@ -250,4 +250,4 @@ def assert_poll(method=None, *args, condition=None, **kwargs):
             flag = True
             break
         time.sleep(step)
-    assert_true(flag, f"condition: {eval(condition.format(resp))}, resp:{resp}")
+    assert_true(flag, f"condition: {condition.format(resp)}, resp:{resp[1]}")
