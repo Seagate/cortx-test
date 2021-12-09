@@ -162,13 +162,9 @@ class TestBucketACL:
         resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.acl_obj.get_bucket_acl(self.bucket_name)
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equals(
-            resp[1][1][0]["Permission"],
-            "FULL_CONTROL",
-            resp[1])
+        assert_utils.assert_poll(self.acl_obj.get_bucket_acl,
+                                 self.bucket_name,
+                                 condition="{}[1][1][0]['Permission']=='FULL_CONTROL'")
         self.log.info("verify Get Bucket ACL of existing Bucket")
 
     @pytest.mark.parallel
