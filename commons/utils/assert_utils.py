@@ -20,6 +20,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import re
+import time
 from difflib import unified_diff
 from hamcrest import assert_that, equal_to, has_length, contains_string, \
     equal_to_ignoring_case, has_entries, has_key, has_value, contains_exactly, \
@@ -236,3 +237,17 @@ def assert_greater_equal(actual, matcher, reason=""):
 def assert_is_not_none(actual,reason=""):
     """ AssertIsNotNone Implementation."""
     assert actual != None, reason
+
+
+def assert_poll(method=None, *args, condition=None, **kwargs):
+    """assert poll method to wait for a function/target to return a certain expected condition."""
+    flag, resp = False, None
+    timeout, step = kwargs.get("timeout", 60), kwargs.get("step", 10)
+    end_time = time.time() + timeout
+    while time.time() <= end_time:
+        resp = method(*args, **kwargs)
+        if eval(condition.format(resp)):
+            flag = True
+            break
+        time.sleep(step)
+    assert_true(flag, f"condition: {eval(condition.format(resp))}, resp:{resp}")
