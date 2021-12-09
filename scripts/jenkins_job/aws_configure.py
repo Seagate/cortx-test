@@ -166,7 +166,13 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+    if CMN_CFG["product_family"] == "LC":
+        m_node = os.getenv("M_NODE")
+        pwd = os.getenv("PASSWD")
+        uname = "root"
+        sb.collect_support_bundle_k8s(m_node=m_node, username=uname, password=pwd, local_dir_path=bundle_dir)
+    else:
+        sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
 
 def test_collect_crash_files():
     """

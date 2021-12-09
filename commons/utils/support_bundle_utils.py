@@ -211,7 +211,7 @@ def collect_support_bundle_k8s(m_node: str, username: str, password: str, local_
         for line in resp:
             if ".tar" in line:
                 out = line.split()[1]
-                file = out.strip()
+                file = out.strip('\"')
     remote_path = os.path.join(scripts_path, file)
     local_path = os.path.join(local_dir_path, file)
     m_node_obj.copy_file_to_local(remote_path, local_path)

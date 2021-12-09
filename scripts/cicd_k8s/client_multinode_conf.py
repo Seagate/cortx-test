@@ -120,6 +120,8 @@ def main():
     parser.add_argument("--password", help="password for nodes", required=True)
     args = parser.parse_args()
     master_node = args.master_node
+    os.environ["M_NODE"] = master_node
+    os.environ["PASSWD"] = args.password
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
