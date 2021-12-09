@@ -1102,7 +1102,7 @@ class ProvDeployK8sCortxLib:
             if not resp[0]:
                 LOGGER.debug("HAproxy not installed,installing it")
                 script_path = PROV_CFG["config_haproxy"]["setup_haproxy"]
-                cmd = f'chmod {script_path} && sh {script_path}'
+                cmd = f'chmod +x {script_path} && sh {script_path}'
                 resp = system_utils.execute_cmd(cmd=cmd)
                 assert_utils.assert_true(resp[0], resp[1])
 
