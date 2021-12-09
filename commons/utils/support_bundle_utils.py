@@ -30,6 +30,7 @@ from commons import commands as cm_cmd
 from commons import constants as cm_const
 from commons.utils import assert_utils
 from config import CMN_CFG
+from commons.helpers.pods_helper import LogicalNode
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -183,3 +184,36 @@ def collect_crash_files(local_dir):
         LOGGER.info("Crash files are generated and copied at %s", local_dir)
     else:
         LOGGER.info("No Crash files are generated.")
+
+def collect_support_bundle_k8s(m_node: str, username: str, password: str, local_dir_path: str,
+                               scripts_path: str = cm_const.K8S_SCRIPTS_PATH):
+    """
+    Utility function to get the support bundle created with services script and copied to
+    client.
+    :param m_node: hostname for master node
+    :param username: username for node
+    :param password: password for node
+    :param local_dir_path: local dir path on client
+    :param scripts_path: services scripts path on master node
+    :return: Boolean, response
+    """
+    flg = False
+    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
+    if os.path.exists("cm_const.K8S_SCRIPTS_PATH/*.tar"):
+        m_node_obj.execute_cmd(cmd="rm -f cm_const.K8S_SCRIPTS_PATH/*.tar")
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
+    for line in resp:
+        if "All done" in line:
+            flg = True
+    if flg is False:
+        return False, "Support bundle not generated."
+    else:
+        for line in resp:
+            if ".tar" in line:
+                out = line.split()[1]
+                file = out.strip()
+    remote_path = os.path.join(scripts_path, file)
+    local_path = os.path.join(local_dir_path, file)
+    m_node_obj.copy_file_to_local(remote_path, local_path)
+
+    return True, "Support Bundle created and copied."

@@ -479,6 +479,7 @@ HELM_GET_VALUES = "helm get values {}"
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
