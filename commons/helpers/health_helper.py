@@ -648,8 +648,6 @@ class Health(Host):
                 LOG.error("Node health failure: %s", node_health_failure)
                 return False, node_health_failure
 
-            return True, "cluster on {} up and running.".format(self.hostname)
-
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             resp = self.is_motr_online()
             if resp:
@@ -657,6 +655,8 @@ class Health(Host):
             else:
                 resp_msg = "cluster health is not good"
             return resp, resp_msg
+
+        return True, "cluster on {} up and running.".format(self.hostname)
 
     def reboot_node(self):
         """Reboot node
