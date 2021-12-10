@@ -774,6 +774,7 @@ def check_cortx_cluster_health():
         health.disconnect()
     LOGGER.info("Cluster status is healthy.")
 
+
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
     LOGGER.info("Check cluster storage for all nodes.")
