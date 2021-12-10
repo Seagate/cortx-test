@@ -178,6 +178,10 @@ class DataGenerator:
             LOGGER.error(f"An error {oe} occurred while creating path.")
 
         name = os.path.join(params.DATAGEN_HOME, data_folder_prefix, name)
+        return self.__save_data_to_file(fbuf, iosize, name, off, size)
+
+    # pylint: disable=max-args, R0201
+    def __save_data_to_file(self, fbuf, iosize, name, off, size):
         with open(name, 'wb', 512 * 1024) as fd:  # buffer size
             while off <= size:
                 if size < 1024:
@@ -196,6 +200,20 @@ class DataGenerator:
                     fd.write(fbuf[off:off + iosize])
                 off += iosize
         return name
+
+    def create_file_from_buf(self,
+                             fbuf: Any,
+                             name: str,
+                             size: int) -> str:
+        """ Create file from a buffer with given name/path."""
+        if size < 1024:
+            iosize = 1024
+        elif (size >= 1024) & (size < 1024 * 1024):
+            iosize = 4096
+        elif size >= 1024 * 1024:
+            iosize = 1024 * 64
+        off = 0
+        return self.__save_data_to_file(fbuf, iosize, name, off, size)
 
     @staticmethod
     def add_first_byte_to_buffer(buffer, first_byte):
