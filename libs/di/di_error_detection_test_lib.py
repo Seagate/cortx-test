@@ -25,11 +25,9 @@ These are top level functions and classes used by test classes.
 import logging
 
 from commons.constants import const
-from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,14 +45,6 @@ class DIErrorDetection:
         self.write_param = const.S3_DI_WRITE_CHECK
         self.read_param = const.S3_DI_READ_CHECK
         self.integrity_param = const.S3_METADATA_CHECK
-        self.master_node_list = []
-        self.nodes = CMN_CFG["nodes"]
-        for node in self.nodes:
-            if node["node_type"].lower() == "master":
-                node_obj = LogicalNode(hostname=node["hostname"],
-                                       username=node["username"],
-                                       password=node["password"])
-                self.master_node_list.append(node_obj)
 
     def create_corrupted_file(self, size, first_byte, data_folder_prefix):
         """
@@ -97,29 +87,26 @@ class DIErrorDetection:
     def validate_valid_config(self, default_cfg: bool = False):
         """
         This function needs optimization.
-        :param default_cfg:
-        :return:
+        :param: default_cfg Boolean
+        :return:tuple
         """
         skip_mark = True
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.write_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.write_param)
         LOGGER.debug("%s resp : %s", self.write_param, resp)
         if resp[0]:
             write_flag = resp[1]
         else:
             return False, resp[1]
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.read_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.read_param)
         LOGGER.debug("%s resp : %s", self.read_param, resp)
         if resp[0]:
             read_flag = resp[1]
         else:
             return False, resp[1]
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.integrity_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.integrity_param)
         LOGGER.debug("%s resp : %s", self.integrity_param, resp)
         if resp[0]:
             integrity_flag = resp[1]
@@ -142,8 +129,7 @@ class DIErrorDetection:
         """
         skip_mark = True
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.write_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.write_param)
         LOGGER.debug("%s resp : %s", self.write_param, resp)
         if resp[0]:
             write_flag = resp[1]
@@ -151,8 +137,7 @@ class DIErrorDetection:
             return False, resp[1]
 
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.read_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.read_param)
         LOGGER.debug("%s resp : %s", self.read_param, resp)
         if resp[0]:
             read_flag = resp[1]
@@ -160,8 +145,7 @@ class DIErrorDetection:
             return False, resp[1]
 
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.integrity_param,
-                                                              master_node=self.master_node_list[0])
+                                                              flag=self.integrity_param)
         LOGGER.debug("%s resp : %s", self.integrity_param, resp)
         if resp[0]:
             integrity_flag = resp[1]
