@@ -300,6 +300,7 @@ class TestDIWithChangingS3Params:
                 assert False
         except CTException as err:
             self.log.info("Test failed with %s", err)
+            assert False
         self.log.info("Ended: Test to verify copy of copied object using simple object upload "
                       "with Data Integrity flag ON for write and OFF for read")
 
@@ -343,6 +344,7 @@ class TestDIWithChangingS3Params:
             self.s3obj.delete_bucket(bucket_name_2, force=True)
         except CTException as err:
             self.log.info("Test failed with %s", err)
+            assert False
         self.log.info("Ended: Test to verify copy object with chunk upload and GET operation "
                       "with range read with file size 50mb with DI flag ON for write and OFF for "
                       "read")
@@ -391,6 +393,7 @@ class TestDIWithChangingS3Params:
                 assert False
         except CTException as err:
             self.log.info("Test failed with %s", err)
+            assert False
         self.log.info("Ended: Test to overwrite an object using copy object api with Data "
                       "Integrity flag ON for write and OFF for read")
 
@@ -447,6 +450,7 @@ class TestDIWithChangingS3Params:
                 assert False
         except CTException as err:
             self.log.info("Test failed with %s", err)
+            assert False
 
     @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity

@@ -296,6 +296,7 @@ class TestDIDurability:
                     assert False
             except CTException as err:
                 self.log.info("Download object failed with %s", err)
+                assert False
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
@@ -507,7 +508,7 @@ class TestDIDurability:
                                              bucket_name=self.bucket_name)
         except CTException as err:
             self.log.info("Test failed with %s", err)
-            # search for internal error
+            # search for internal error, if not found assert False
         # to do verify with motr logs
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
@@ -682,6 +683,7 @@ class TestDIDurability:
                 assert False
         except CTException as err:
             self.log.info("Test failed with %s", err)
+            assert False
         self.log.info("ENDED: Disabling of Checksum feature should not do any checksum validation "
                       "even if data corrupted")
 
@@ -899,7 +901,7 @@ class TestDIDurability:
             #                                  bucket_name=self.bucket_name)
         except CTException as err:
             self.log.info("Test failed with %s", err)
-            # search for internal error
+            # search for internal error, if not found assert False
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
             self.log.info("Step 2: Disabled data corruption")
@@ -945,7 +947,7 @@ class TestDIDurability:
                                              bucket_name=self.bucket_name)
         except CTException as err:
             self.log.info("Test failed with %s", err)
-            # search for internal error
+            # search for internal error, if not found assert False
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
             self.log.info("Step 2: Disabled data corruption")
@@ -992,7 +994,7 @@ class TestDIDurability:
                                              obj_name=self.object_name, file_path=self.file_path)
         except CTException as err:
             self.log.info("Test failed with %s", err)
-            # search for internal error
+            # search for internal error, if not found assert False
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
             self.log.info("Step 2: Disabled data corruption")
@@ -1040,7 +1042,7 @@ class TestDIDurability:
                                              obj_name=self.object_name, file_path=self.file_path)
         except CTException as err:
             self.log.info("Test failed with %s", err)
-            # search for internal error
+            # search for internal error, if not found assert False
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
             self.log.info("Step 2: Disabled data corruption")
