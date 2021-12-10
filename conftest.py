@@ -761,6 +761,9 @@ def check_cortx_cluster_health():
     LOGGER.info("Check cluster status for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -769,8 +772,6 @@ def check_cortx_cluster_health():
         assert_utils.assert_true(result[0],
                                  f'Cluster Node {hostname} failed in health check. Reason: {result}')
         health.disconnect()
-        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            break
     LOGGER.info("Cluster status is healthy.")
 
 def check_cluster_storage():
@@ -778,6 +779,9 @@ def check_cluster_storage():
     LOGGER.info("Check cluster storage for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -786,8 +790,6 @@ def check_cluster_storage():
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
         health.disconnect()
-        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            break
 
 def pytest_runtest_logstart(nodeid, location):
     """
