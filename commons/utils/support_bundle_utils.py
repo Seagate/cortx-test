@@ -31,7 +31,6 @@ from commons import constants as cm_const
 from commons.utils import assert_utils
 from config import CMN_CFG
 from commons.helpers.pods_helper import LogicalNode
-from libs.ha.ha_common_libs_k8s import HAK8s as ha_lib_obj
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -260,3 +259,5 @@ def collect_crash_files_k8s(local_dir_path: str):
 
     if flg:
         LOGGER.info("Crash files are generated and copied to %s", )
+    else:
+        LOGGER.info("No crash files are generated.")
