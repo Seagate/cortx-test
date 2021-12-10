@@ -30,6 +30,7 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
+from libs.di.fi_adapter import S3FailureInjection
 LOGGER = logging.getLogger(__name__)
 
 
@@ -42,6 +43,7 @@ class DIErrorDetection:
     def __init__(self):
         self.data_gen = DataGenerator()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
+        self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.config_section = "S3_SERVER_CONFIG"
         self.write_param = const.S3_DI_WRITE_CHECK
         self.read_param = const.S3_DI_READ_CHECK
@@ -161,3 +163,26 @@ class DIErrorDetection:
                                                   data_folder_prefix=data_folder_prefix)
         csm = system_utils.calculate_checksum(file_path=location, filter_resp=True)
         return location, csm
+
+    def enable_data_corruption_set_fault_injection(self):
+        fault_status = self.fi_adapter.set_fault_injection(flag=True)
+        if fault_status[0]:
+            LOGGER.debug("Step 2: fault injection set")
+            status = self.fi_adapter.enable_data_block_corruption()
+            if status:
+                LOGGER.debug("Step 2: enabled data corruption")
+                return True
+            else:
+                LOGGER.debug("Step 2: failed to enable data corruption")
+        else:
+            LOGGER.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+        return False
+
+    def disable_data_corruption_set_fault_injection(self):
+        fault_status = self.fi_adapter.set_fault_injection(flag=False)
+        if fault_status[0]:
+            LOGGER.debug("Step 2: fault injection unset")
+            return True
+        else:
+            LOGGER.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+        return False
