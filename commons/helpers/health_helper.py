@@ -650,11 +650,8 @@ class Health(Host):
 
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             resp = self.is_motr_online()
-            if resp:
-                resp_msg = "cluster is up and running"
-            else:
-                resp_msg = "cluster health is not good"
-            return resp, resp_msg
+            if not resp:
+                return resp, "cluster health is not good"
 
         return True, "cluster on {} up and running.".format(self.hostname)
 
