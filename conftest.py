@@ -47,6 +47,7 @@ from commons import Globals
 from commons import cortxlogging
 from commons import params
 from commons import report_client
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -760,6 +761,9 @@ def check_cortx_cluster_health():
     LOGGER.info("Check cluster status for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -773,9 +777,12 @@ def check_cortx_cluster_health():
 
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
-    LOGGER.info("Check cluster status for all nodes.")
+    LOGGER.info("Check cluster storage for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
