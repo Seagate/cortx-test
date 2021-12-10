@@ -264,8 +264,6 @@ class TestDIWithChangingS3Params:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
-        if self.di_err_lib.validate_default_config():
-            pytest.skip()
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         bucket_name_3 = self.get_bucket_name()
@@ -287,6 +285,7 @@ class TestDIWithChangingS3Params:
             resp_cp_cp = self.s3obj.copy_object(source_bucket=bucket_name_2,
                                                 source_object=obj_name_2,
                                                 dest_bucket=bucket_name_3, dest_object=obj_name_3)
+            self.log.debug(resp_cp_cp)
             self.s3obj.object_download(bucket_name=bucket_name_3, obj_name=obj_name_3,
                                        file_path=self.F_PATH_COPY)
             self.s3obj.delete_bucket(bucket_name_1, force=True)
@@ -296,7 +295,6 @@ class TestDIWithChangingS3Params:
                                                 file_path_2=self.F_PATH_COPY)
             if result:
                 self.log.info("Checksum matched for downloaded files")
-                assert True
             else:
                 self.log.info("Checksum match failed for downloaded files")
                 assert False
@@ -336,6 +334,7 @@ class TestDIWithChangingS3Params:
             self.log.debug(resp_put)
             resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
                                              dest_bucket=bucket_name_2, dest_object=obj_name_2)
+            self.log.debug(resp_cp)
             resp_rr = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=bucket_name_2,
                                                                    my_key=obj_name_2,
                                                                    start_byte=8888, stop_byte=9999)
@@ -430,7 +429,8 @@ class TestDIWithChangingS3Params:
                                                        object_name=obj_name, upload_id=mpu_id,
                                                        part_number=i+1)
                 parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
-                S3H_OBJ.restart_s3server_processes() # to do for LC
+                S3H_OBJ.restart_s3server_processes()
+                # to do for LC
                 i += 1
             resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
                                                                     bucket=bucket_name,
@@ -448,6 +448,7 @@ class TestDIWithChangingS3Params:
         except CTException as err:
             self.log.info("Test failed with %s", err)
 
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
