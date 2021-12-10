@@ -226,6 +226,7 @@ CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-k
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
+CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"

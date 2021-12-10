@@ -31,6 +31,7 @@ from commons import constants as cm_const
 from commons.utils import assert_utils
 from config import CMN_CFG
 from commons.helpers.pods_helper import LogicalNode
+from libs.ha.ha_common_libs_k8s import HAK8s as ha_lib_obj
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -185,20 +186,23 @@ def collect_crash_files(local_dir):
     else:
         LOGGER.info("No Crash files are generated.")
 
-def collect_support_bundle_k8s(m_node: str, username: str, password: str, local_dir_path: str,
-                               scripts_path: str = cm_const.K8S_SCRIPTS_PATH):
+def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const.K8S_SCRIPTS_PATH):
     """
     Utility function to get the support bundle created with services script and copied to
     client.
-    :param m_node: hostname for master node
-    :param username: username for node
-    :param password: password for node
     :param local_dir_path: local dir path on client
     :param scripts_path: services scripts path on master node
     :return: Boolean
     """
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            m_node_obj = LogicalNode(hostname=host, username=username, password=password)
+
     flg = False
-    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
     for line in resp:
         if ".tar" in line:
@@ -217,3 +221,43 @@ def collect_support_bundle_k8s(m_node: str, username: str, password: str, local_
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
         return False
+
+def collect_crash_files_k8s(local_dir_path: str):
+    """
+    Collect all the crash files created at predefined locations.
+    :param local_dir_path: local dir path on client
+    :return: Boolean
+    """
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            m_node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    flg = False
+    pod_list = m_node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+    crash_dir = "/root/crash_dir/"
+    if m_node_obj.path_exists(crash_dir):
+        m_node_obj.remove_dir(crash_dir)
+
+    for pod in pod_list:
+        LOGGER.info("Checking crash files for %s pod", pod)
+        resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod, namespace=cm_const.NAMESPACE,
+                                command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                                               f"{cm_cmd.CMD_FIND_FILE}",
+                                decode=True)
+        if resp:
+            flg = True
+            for count, file in enumerate(resp):
+                file1 = file.split("/")
+                file2 = file1[len(file1 - 1)]
+                remote_path = os.path.join(crash_dir, file2)
+                m_node_obj.execute_cmd(cmd=cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD
+                                       .format(pod, file, remote_path))
+                local_path = os.path.join(local_dir_path, file2)
+                m_node_obj.copy_file_to_local(remote_path, local_path)
+
+    if flg:
+        LOGGER.info("Crash files are generated and copied to %s", )

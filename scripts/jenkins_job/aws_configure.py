@@ -167,11 +167,7 @@ def test_collect_support_bundle_single_cmd():
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
     if CMN_CFG["product_family"] == "LC":
-        m_node = os.getenv("M_NODE")
-        pwd = os.getenv("HOST_PASS")
-        uname = "root"
-        LOGGER.info("Connecting node %s to generate SB", m_node)
-        sb.collect_support_bundle_k8s(m_node=m_node, username=uname, password=pwd, local_dir_path=bundle_dir)
+        sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
     else:
         sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
 
@@ -184,7 +180,10 @@ def test_collect_crash_files():
         LOGGER.info("Removing existing directory %s", crash_dir)
         shutil.rmtree(crash_dir)
     os.mkdir(crash_dir)
-    sb.collect_crash_files(crash_dir)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_crash_files_k8s(local_dir_path=crash_dir)
+    else:
+        sb.collect_crash_files(crash_dir)
 
 
 if __name__ == '__main':
