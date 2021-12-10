@@ -190,6 +190,10 @@ class DIErrorDetection:
         return location, csm
 
     def enable_data_corruption_set_fault_injection(self):
+        """
+        wrapper for enabling data corruption and
+        setting fault injection
+        """
         fault_status = self.fi_adapter.set_fault_injection(flag=True)
         if fault_status[0]:
             LOGGER.debug("Step 2: fault injection set")
@@ -197,17 +201,17 @@ class DIErrorDetection:
             if status:
                 LOGGER.debug("Step 2: enabled data corruption")
                 return True
-            else:
-                LOGGER.debug("Step 2: failed to enable data corruption")
         else:
             LOGGER.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
         return False
 
     def disable_data_corruption_set_fault_injection(self):
+        """
+        wrapper for disabling data corruption and
+        unsetting fault injection
+        """
         fault_status = self.fi_adapter.set_fault_injection(flag=False)
         if fault_status[0]:
             LOGGER.debug("Step 2: fault injection unset")
             return True
-        else:
-            LOGGER.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
         return False

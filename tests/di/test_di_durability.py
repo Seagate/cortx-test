@@ -293,7 +293,7 @@ class TestDIDurability:
                                                  obj_name=self.object_name,
                                                  file_path=self.file_path)
                 if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
-                    continue
+                    self.log.info("Checksum Validated")
                 else:
                     assert False
             except CTException as err:
@@ -336,7 +336,7 @@ class TestDIDurability:
                 err_str = str(err)
                 if "An error occurred (InvalidDigest) when calling the PutObject operation: " \
                    "The Content-MD5 you specified is not valid" in err_str:
-                    continue
+                    self.log.info("Error string matched")
                 else:
                     assert False
             self.log.info("ENDED: Test to verify object integrity during the upload with different "
