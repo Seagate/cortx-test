@@ -250,14 +250,13 @@ def collect_crash_files_k8s(local_dir_path: str):
                                 decode=True)
         if resp:
             flg = True
-            for count, file in enumerate(resp):
-                file1 = file.split("/")
-                file2 = file1[len(file1 - 1)]
-                remote_path = os.path.join(crash_dir, file2)
-                m_node_obj.execute_cmd(cmd=cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD
-                                       .format(pod, file, remote_path))
-                local_path = os.path.join(local_dir_path, file2)
-                m_node_obj.copy_file_to_local(remote_path, local_path)
+            file1 = resp.split("/")
+            file2 = file1[len(file1) - 1]
+            remote_path = os.path.join(crash_dir, file2)
+            m_node_obj.execute_cmd(cmd=cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD
+                                   .format(pod, resp, remote_path))
+            local_path = os.path.join(local_dir_path, file2)
+            m_node_obj.copy_file_to_local(remote_path, local_path)
 
     if flg:
         LOGGER.info("Crash files are generated and copied to %s", )
