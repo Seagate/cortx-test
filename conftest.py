@@ -47,6 +47,7 @@ from commons import Globals
 from commons import cortxlogging
 from commons import params
 from commons import report_client
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -768,12 +769,16 @@ def check_cortx_cluster_health():
         assert_utils.assert_true(result[0],
                                  f'Cluster Node {hostname} failed in health check. Reason: {result}')
         health.disconnect()
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            continue
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            break
     LOGGER.info("Cluster status is healthy.")
-
 
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
-    LOGGER.info("Check cluster status for all nodes.")
+    LOGGER.info("Check cluster storage for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
         hostname = node['hostname']
@@ -784,7 +789,11 @@ def check_cluster_storage():
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
         health.disconnect()
-
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            continue
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            break
 
 def pytest_runtest_logstart(nodeid, location):
     """
