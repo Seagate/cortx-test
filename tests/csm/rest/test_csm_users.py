@@ -45,6 +45,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -62,6 +63,7 @@ class TestCsmUser():
         cls.csm_cluster = RestCsmCluster()
         cls.s3user = RestS3user()
         cls.s3_account_obj = RestS3user()
+        cls.s3auth_obj = S3AuthServerRestAPI()
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
@@ -110,6 +112,7 @@ class TestCsmUser():
             try:
                 response = self.s3_account_obj.delete_s3_account_user(username=usr)
                 if response.status_code != HTTPStatus.OK:
+                    self.log.error(response.status_code)
                     s3_delete_failed.append(usr)
             except BaseException as err:
                 self.log.warning("Ignoring %s while deleting user: %s", err, usr)
@@ -5044,7 +5047,6 @@ class TestCsmUser():
         test_cfg = self.csm_conf["test_32174"]
         new_password = test_cfg["new_password"]
         current_password = CSM_REST_CFG["csm_user_manage"]["password"]
-        monitor_usr = s3_usr = []
         self.log.info("Creating a csm manage user and fetch its password for further use")
         response = self.csm_user.create_csm_user(user_type="valid", 
                                                  user_role="manage", user_password=current_password)
@@ -5080,7 +5082,6 @@ class TestCsmUser():
             self.log.info("Verifying if monitor user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
-            monitor_usr.append(username)
             self.created_users.append(username)
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'monitor', "User is not created with monitor role"
@@ -5091,8 +5092,6 @@ class TestCsmUser():
             self.log.info("Verifying if s3 user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
             username = response.json()["account_name"]
-            s3_usr.append(username)
-            self.log.info("s3 users list is %s ", s3_usr)
             self.created_s3_users.append(username)
             self.log.info("users list is %s", self.created_users)
             self.log.info("Verified User %s got created successfully", username)
@@ -5113,7 +5112,7 @@ class TestCsmUser():
         response = self.csm_user.custom_rest_login(username=self.created_users[2], password=new_password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 6: Login with first manage user and change password for all monitor users")
-        for usr in monitor_usr:
+        for usr in self.created_users[2:6]:
             response = self.csm_user.edit_csm_user(login_as=new_user,
                                                    user=usr,
                                                    password=new_password,
@@ -5123,13 +5122,13 @@ class TestCsmUser():
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
         payload = {"password": new_password, "current_password": current_password}
-        for usr in s3_usr:
+        for usr in self.created_s3_users:
             response = self.s3user.edit_s3_account_user_invalid_password(
                 username=usr,
                 payload=json.dumps(payload),
                 login_as=new_user)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
-            response = self.csm_user.custom_rest_login(username, new_password)
+            response = self.s3auth_obj.custom_rest_login(usr, new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -5269,8 +5268,8 @@ class TestCsmUser():
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
-        self.log.info("Step 3: Creating {} admin users and deleting it "
-                      "except last admin".format(user_creation_count))
+        self.log.info("Step 3: Creating %s admin users and deleting it "
+                      "except last admin", user_creation_count))
         for _ in range(user_creation_count):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="admin")
@@ -5286,8 +5285,8 @@ class TestCsmUser():
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
-        self.log.info("Step 4: Creating {} manage users and deleting it except "
-                      "default manage user".format(user_creation_count))
+        self.log.info("Step 4: Creating %s manage users and deleting it except "
+                      "default manage user", user_creation_count)
         for _ in range(user_creation_count):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="manage")
@@ -5303,8 +5302,8 @@ class TestCsmUser():
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
-        self.log.info("Step 5: Creating {} monitor users and deleting it "
-                      "except default monitor user".format(user_creation_count))
+        self.log.info("Step 5: Creating %s monitor users and deleting it "
+                      "except default monitor user", user_creation_count)
         for _ in range(user_creation_count):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="monitor")
