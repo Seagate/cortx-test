@@ -3,9 +3,9 @@
 # Specify a configuration file.
 #rcfile=
 
-# Python code to execute, usually for sys.path manipulation such as
-# pygtk.require().
-# init-hook="import pytest_patterns"
+# Python code to execute, usually for sys.path manipulation
+# https://stackoverflow.com/a/39207275
+init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()))"
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
@@ -166,6 +166,7 @@ enable=abstract-class-instantiated,
        hex-method,
        idiv-method,
        implicit-str-concat,
+       import-error,
        import-outside-toplevel,
        import-self,
        import-star-module-level,
@@ -302,6 +303,7 @@ enable=abstract-class-instantiated,
        redundant-unittest-assert,
        reimported,
        relative-beyond-top-level,
+       relative-import,
        reload-builtin,
        repeated-keyword,
        return-arg-in-generator,
