@@ -80,8 +80,6 @@ class TestDIDurability:
         self.integrity_param = const.S3_METADATA_CHECK
         self.sleep_time = 10
         self.file_size = 5
-        self.file_sizes = [64*1024, 128*1024, 256*1024, 512*1024, 1024*1024, 2*1024*1024,
-                           4*1024*1024, 8*1024*1024, 16*1024*1024, 32*1024*1024]
         self.host_ip = CMN_CFG["nodes"][0]["host"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
