@@ -631,8 +631,8 @@ class Health(Host):
                     pcs_failed_data[group] = value
             node_health_failure = {}
             if pcs_failed_data:
-                LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname,
-                          pcs_result)
+                LOG.debug(" ********* PCS status Response for %s ********* \n %s \n",
+                          self.hostname, pcs_result)
                 LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
                           self.hostname, clone_set_dict)
                 LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
@@ -641,8 +641,8 @@ class Health(Host):
                           self.hostname, group_dict)
                 node_health_failure['PCS_STATUS'] = pcs_failed_data
             if node_hctl_failure:
-                LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname,
-                          hctl_result)
+                LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n",
+                          self.hostname, hctl_result)
                 node_health_failure['HCTL_STATUS'] = node_hctl_failure
             if node_health_failure:
                 LOG.error("Node health failure: %s", node_health_failure)
@@ -653,9 +653,10 @@ class Health(Host):
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             resp = self.is_motr_online()
             if resp:
-                return True, "cluster is up and running"
+                resp_msg = "cluster is up and running"
             else:
-                return False, "cluster health is not good"
+                resp_msg = "cluster health is not good"
+            return resp, resp_msg
 
     def reboot_node(self):
         """Reboot node
