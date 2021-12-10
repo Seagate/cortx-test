@@ -298,56 +298,194 @@ class IamPolicyTestLib(IamPolicy):
 
         return True, response
 
-    def attach_policy(self, name: str = None, policy_arn: str = None) -> tuple:
+    def attach_group_policy(self, group_name: str = None, policy_arn: str = None) -> tuple:
         """
         Attaches the specified managed policy to the specified IAM group.
 
-        :param name: The Group's name identifier.
-        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to attach.
+        :param group_name: The name (friendly name, not ARN) of the group to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
         try:
-            response = super().attach_policy(name, policy_arn)
-            LOGGER.info("Attach policy %s.", response)
+            response = super().attach_group_policy(group_name, policy_arn)
+            LOGGER.info("attach group policy %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
-                             IamPolicyTestLib.attach_policy.__name__,
+                             IamPolicyTestLib.attach_group_policy.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
 
-    def detach_policy(self, name: str = None, policy_arn: str = None) -> tuple:
+    def detach_group_policy(self, group_name: str = None, policy_arn: str = None) -> tuple:
         """
         Removes the specified managed policy from the specified IAM group.
 
-        :param name: The Group's name identifier.
+        :param group_name: The name (friendly, not ARN) of the IAM group to detach the policy from.
         :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
         """
         try:
-            response = super().detach_policy(name, policy_arn)
-            LOGGER.info("detach policy %s.", response)
+            response = super().detach_group_policy(group_name, policy_arn)
+            LOGGER.info("detach group policy %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
-                             IamPolicyTestLib.detach_policy.__name__,
+                             IamPolicyTestLib.detach_group_policy.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
 
-    def attached_policies(self, name: str = None) -> tuple:
+    def list_attached_group_policies(self,
+                                     group_name: str = None,
+                                     path_prefix: str = "/",
+                                     marker: str = None,
+                                     max_items: int = 123) -> tuple:
         """
-        A collection of Policy resources.A Policy Collection will include all resources by default,
-         and extreme caution should be taken when performing actions on all resources.
+        Lists all managed policies that are attached to the specified IAM group.
 
-        :param name: The Group's name identifier.
+        :param group_name: The name (friendly, not ARN) of the group to list attached policies for.
+        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        If it is not included, it defaults to a slash (/), listing all policies.
+        :param marker: Use this parameter only when paginating results and only after you receive
+        a response indicating that the results are truncated.
+        :param max_items: Use this only when paginating results to indicate the maximum number of
+        items you want in the response.
         :Returns: A list of Policy resources.
         """
         try:
-            response = super().attached_policies(name)
-            LOGGER.info("attached policies %s.", response)
+            response = super().list_attached_group_policies(
+                group_name, path_prefix, marker, max_items)
+            LOGGER.info("list attached group policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
-                             IamPolicyTestLib.attached_policies.__name__,
+                             IamPolicyTestLib.list_attached_group_policies.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def attach_user_policy(self, user_name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Attaches the specified managed policy to the specified user.
+
+        :param user_name: The name (friendly name, not ARN) of the IAM user to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
+        """
+        try:
+            response = super().attach_user_policy(user_name, policy_arn)
+            LOGGER.info("attached user policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.attach_user_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def detach_user_policy(self, user_name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Removes the specified managed policy from the specified user.
+
+        :param user_name: The name (friendly, not ARN) of the IAM user to detach the policy from.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        try:
+            response = super().detach_user_policy(user_name, policy_arn)
+            LOGGER.info("detach user policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.detach_user_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def list_attached_role_policies(self,
+                                    role_name: str = None,
+                                    path_prefix: str = "/",
+                                    marker: str = None,
+                                    max_items: int = 123) -> tuple:
+        """
+        Lists all managed policies that are attached to the specified IAM role.
+
+        :param role_name: The name (friendly, not ARN) of the role to list attached policies for.
+        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        If it is not included, it defaults to a slash (/), listing all policies.
+        :param marker: Use this parameter only when paginating results and only after you receive
+        a response indicating that the results are truncated.
+        :param max_items: Use this only when paginating results to indicate the maximum number of
+        items you want in the response.
+        """
+        try:
+            response = super().list_attached_role_policies(role_name, path_prefix, marker,
+                                                           max_items)
+            LOGGER.info("list attached role policies %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.list_attached_role_policies.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def attach_role_policy(self, role_name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Attaches the specified managed policy to the specified IAM role
+
+        :param role_name: The name (friendly name, not ARN) of the role to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
+        """
+        try:
+            response = super().attach_role_policy(role_name, policy_arn)
+            LOGGER.info("attach role policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.attach_role_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def detach_role_policy(self, role_name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Removes the specified managed policy from the specified role.
+
+        :param role_name: role_name: str = None, policy_arn: str = None):
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        try:
+            response = super().detach_role_policy(role_name, policy_arn)
+            LOGGER.info("detach role policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.detach_role_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def list_attached_user_policies(self,
+                                    user_name: str = None,
+                                    path_prefix: str = "/",
+                                    marker: str = None,
+                                    max_items: int = 123) -> tuple:
+        """
+        Lists all managed policies that are attached to the specified IAM user.
+
+        :param user_name: The name (friendly, not ARN) of the user to list attached policies for.
+        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+         If it is not included, it defaults to a slash (/), listing all policies.
+        :param marker: Use this parameter only when paginating results and only after you receive
+         a response indicating that the results are truncated.
+        :param max_items: Use this only when paginating results to indicate the maximum number of
+        items you want in the response.
+        """
+        try:
+            response = super().list_attached_user_policies(user_name, path_prefix, marker,
+                                                           max_items)
+            LOGGER.info("list attached user policies %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.list_attached_user_policies.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
