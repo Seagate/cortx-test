@@ -28,12 +28,6 @@ import pytest
 import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
-from commons.constants import PROD_FAMILY_LC
-from commons.constants import PROD_FAMILY_LR
-from commons.constants import PROD_TYPE_K8S
-from commons.constants import PROD_TYPE_NODE
-from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
@@ -41,7 +35,6 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from config import di_cfg
 from config import CMN_CFG
 from libs.s3 import S3_CFG
 from commons.constants import const, MB
@@ -52,8 +45,6 @@ from libs.s3 import cortxcli_test_lib
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from libs.di import di_lib
-from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 
@@ -1073,10 +1064,10 @@ class TestDIDurability:
         sz = 128 * MB
         self.log.info("STARTED TEST-22912: Test to verify object integrity "
                       "during the the upload with correct checksum.")
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if read_flag[0]:
-            pytest.skip()
+        # config_res = self.di_err_lib.validate_enabled_config()
+        # if config_res[1]:
+        #     self.log.debug("Skipping test as flags are not set to default")
+        #     pytest.skip()
         self.log.info("Step 1: create a file")
         buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
                                            seed=self.data_gen.get_random_seed())
@@ -1095,7 +1086,6 @@ class TestDIDurability:
                                          obj_name=self.object_name,
                                          bucket_name=self.bucket_name)
         file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
-        assert_utils.assert_string(csm, file_checksum, 'Checksum mismatch found')
+        assert_utils.assert_exact_string(csm, file_checksum, 'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
-
