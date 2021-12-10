@@ -597,9 +597,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
         LOGGER.info("Step 6: IOs are running successfully.")
-        self.restored = True
 
         LOGGER.info(
             "Completed: Verify IOs before and after data pod failure, "
             "pod shutdown by deleting pod using kubectl delete.")
-
