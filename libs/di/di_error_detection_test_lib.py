@@ -25,7 +25,6 @@ These are top level functions and classes used by test classes.
 import logging
 
 from commons.constants import const
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
