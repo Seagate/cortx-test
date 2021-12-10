@@ -148,7 +148,7 @@ deactivate
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
         		  }
-        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
@@ -166,7 +166,7 @@ deactivate
 } catch (err) {
     echo "Caught error in crash files collection: ${err}"
 }
-		     } */
+		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
