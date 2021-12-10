@@ -297,3 +297,58 @@ class IamPolicyTestLib(IamPolicy):
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
+
+    def attach_policy(self, name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Attaches the specified managed policy to the specified IAM group.
+
+        :param name: The Group's name identifier.
+        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to attach.
+        """
+        try:
+            response = super().attach_policy(name, policy_arn)
+            LOGGER.info("Attach policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.attach_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def detach_policy(self, name: str = None, policy_arn: str = None) -> tuple:
+        """
+        Removes the specified managed policy from the specified IAM group.
+
+        :param name: The Group's name identifier.
+        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        try:
+            response = super().detach_policy(name, policy_arn)
+            LOGGER.info("detach policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.detach_policy.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
+
+    def attached_policies(self, name: str = None) -> tuple:
+        """
+        A collection of Policy resources.A Policy Collection will include all resources by default,
+         and extreme caution should be taken when performing actions on all resources.
+
+        :param name: The Group's name identifier.
+        :Returns: A list of Policy resources.
+        """
+        try:
+            response = super().attached_policies(name)
+            LOGGER.info("attached policies %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.attached_policies.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response

@@ -474,3 +474,37 @@ class IamPolicy(IAMRest):
         )
 
         return response
+
+    def attach_policy(self, name: str = None, policy_arn: str = None):
+        """
+        Attaches the specified managed policy to the specified IAM group.
+
+        :param name: The Group's name identifier.
+        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to attach.
+        """
+        response = self.iam_resource.Group(name).attach_policy(PolicyArn=policy_arn)
+
+        return response
+
+    def detach_policy(self, name: str = None, policy_arn: str = None):
+        """
+        Removes the specified managed policy from the specified IAM group.
+
+        :param name: The Group's name identifier.
+        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        response = self.iam_resource.Group(name).detach_policy(PolicyArn=policy_arn)
+
+        return response
+
+    def attached_policies(self, name: str = None) -> list:
+        """
+        A collection of Policy resources.A Policy Collection will include all resources by default,
+         and extreme caution should be taken when performing actions on all resources.
+
+        :param name: The Group's name identifier.
+        :Returns: A list of Policy resources.
+        """
+        attached_polices = list(self.iam_resource.Group(name).attached_policies.all().Policy)
+
+        return attached_polices
