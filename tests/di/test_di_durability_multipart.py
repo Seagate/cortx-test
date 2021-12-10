@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -25,9 +24,11 @@ F-23B : Data Durability/Integrity test module for Multipart Files.
 import os
 import os.path
 import logging
-import pytest
 import secrets
 from time import perf_counter_ns
+
+import pytest
+
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
@@ -39,13 +40,9 @@ from commons.utils import system_utils
 from commons.params import TEST_DATA_FOLDER, DATAGEN_HOME
 from config import di_cfg
 from config import CMN_CFG
-from config.s3 import S3CMD_CNF
-from config.s3 import S3_CFG
 from commons.constants import MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.di.di_feature_control import DIFeatureControl
 from libs.s3 import s3_multipart
-from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3 import SECRET_KEY, ACCESS_KEY
@@ -194,6 +191,7 @@ class TestDICheckMultiPart:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
+    # pylint: disable=max-args
     def do_multipart_upload(self, bucket_name, object_name, object_path, file_size, total_parts):
         """Initiate multipart upload, upload parts and complete it.
         Assumes bucket is already created.

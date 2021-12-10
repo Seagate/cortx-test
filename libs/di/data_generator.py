@@ -180,6 +180,7 @@ class DataGenerator:
         name = os.path.join(params.DATAGEN_HOME, data_folder_prefix, name)
         return self.__save_data_to_file(fbuf, iosize, name, off, size)
 
+    # pylint: disable=max-args, R0201
     def __save_data_to_file(self, fbuf, iosize, name, off, size):
         with open(name, 'wb', 512 * 1024) as fd:  # buffer size
             while off <= size:
@@ -204,6 +205,7 @@ class DataGenerator:
                              fbuf: Any,
                              name: str,
                              size: int) -> str:
+        """ Create file from a buffer with given name/path."""
         if size < 1024:
             iosize = 1024
         elif (size >= 1024) & (size < 1024 * 1024):
