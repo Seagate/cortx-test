@@ -75,6 +75,7 @@ class TestCsmUser():
             s3acc_already_present = cls.config.setup_csm_s3()
         assert s3acc_already_present
         cls.created_users = []
+        cls.created_s3_users = []
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
         cls.csm_conf_path = cons.CSM_CONF_PATH
@@ -102,6 +103,19 @@ class TestCsmUser():
         self.log.info("delete failed list %s", delete_failed)
         assert len(delete_failed) == 0, "Delete failed for users"
         self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Deleting all s3 users except predefined ones...")
+        s3_delete_failed = []
+        for usr in self.created_s3_users:
+            self.log.info("Sending request to delete s3 user %s", usr)
+            try:
+                response = self.s3_account_obj.delete_s3_account_user(username=usr)
+                if response.status_code != HTTPStatus.OK:
+                    s3_delete_failed.append(usr)
+            except BaseException as err:
+                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+        self.log.info("delete failed list %s", s3_delete_failed)
+        assert len(s3_delete_failed) == 0, "Delete failed for s3 users"
+        self.log.info("s3 users except pre-defined ones deleted.")
         self.log.info("[COMPLETED] ######### Teardown #########")
 
     @pytest.mark.lc
@@ -5079,7 +5093,7 @@ class TestCsmUser():
             username = response.json()["account_name"]
             s3_usr.append(username)
             self.log.info("s3 users list is %s ", s3_usr)
-            self.created_users.append(username)
+            self.created_s3_users.append(username)
             self.log.info("users list is %s", self.created_users)
             self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 4: Login with first manage user and change password for second")
@@ -5117,9 +5131,6 @@ class TestCsmUser():
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username, new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
-            response = self.s3_account_obj.delete_s3_account_user(username=usr)
-            if response.status_code == HTTPStatus.OK:
-                self.created_users.remove(usr)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr
