@@ -28,7 +28,6 @@ import logging
 import pytest
 import secrets
 from time import perf_counter_ns
-from boto3.s3.transfer import TransferConfig
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
@@ -37,8 +36,6 @@ from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons.exceptions import CTException
-from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, DATAGEN_HOME
 from config import di_cfg
 from config import CMN_CFG
@@ -52,11 +49,9 @@ from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3 import SECRET_KEY, ACCESS_KEY
-from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
-from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 
 @pytest.fixture(scope="class", autouse=False)

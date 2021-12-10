@@ -29,13 +29,7 @@ from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
-from commons.utils import system_utils
-from config.s3 import S3CMD_CNF
-from config.s3 import S3_CFG
-from libs.s3 import SECRET_KEY, ACCESS_KEY
-from libs.s3.s3_blackbox_test_lib import S3CMD
-from libs.s3.s3_cmd_test_lib import S3CmdTestLib
-from libs.s3.s3_test_lib import S3TestLib
+
 
 LOGGER = logging.getLogger(__name__)
 
