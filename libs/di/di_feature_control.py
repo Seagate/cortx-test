@@ -71,8 +71,8 @@ class DIFeatureControl:
             for node in self.nodes:
                 if node["node_type"].lower() == "master":
                     node_obj = LogicalNode(hostname=node["hostname"],
-                                    username=node["username"],
-                                    password=node["password"])
+                                           username=node["username"],
+                                           password=node["password"])
                     node_obj.connect()
                     self.connections.append(node_obj)
                     hostnames.append(node["hostname"])
@@ -184,9 +184,9 @@ class DIFeatureControl:
             flag_value = []
             try:
                 for node in self.connections:
-                    resp = self.verify_flag_enable(section=section,flag=flag,node_obj=node)
+                    resp = self.verify_flag_enable(section=section, flag=flag, node_obj=node)
                     flag_value.append(resp[0])
-                    LOGGER.info("Node: %s flag: %s flag_value: %s",node.hostname, flag, resp[0])
+                    LOGGER.info("Node: %s flag: %s flag_value: %s", node.hostname, flag, resp[0])
                 if len(set(flag_value)) == 1:
                     return True, flag_value[0]
                 else:
@@ -196,7 +196,7 @@ class DIFeatureControl:
                 return False, ex
 
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
-             self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
             flag_value = []
             try:
                 master_node = self.connections[0]
