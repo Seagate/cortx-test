@@ -318,6 +318,11 @@ class TestDIDurability:
         self.log.debug("Executing test as flags are set to default")
         file_sizes = [64*1024, 128*1024, 256*1024, 512*1024, 1024*1024, 2*1024*1024, 4*1024*1024,
                       8*1024*1024, 16*1024*1024, 32*1024*1024]
+        try:
+            self.s3_test_obj.create_bucket(self.bucket_name)
+        except CTException as err:
+            self.log.info("Failed with %s", err)
+            assert False
         for file_size in file_sizes:
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
@@ -326,7 +331,6 @@ class TestDIDurability:
             self.log.info("Attempting to upload object with corrupted checksum from client")
             corrupted_csm = "DddddDdDdDddddddddddd=="
             try:
-                self.s3_test_obj.create_bucket(self.bucket_name)
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=self.object_name, file_path=location,
                                             content_md5=corrupted_csm)
