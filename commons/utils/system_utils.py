@@ -665,7 +665,6 @@ def split_file(filename, size, split_count, random_part_size=False):
     :param random_part_size: True for random size parts, False for equal size parts
     :return: [{"Output":partname, "Size":partsize}]
     """
-
     if os.path.exists(filename):
         LOGGER.debug("Deleting existing file: %s", str(filename))
         remove_file(filename)
@@ -689,7 +688,6 @@ def split_file(filename, size, split_count, random_part_size=False):
                 split_fin.write(fin.read(read_bytes))
                 res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
     LOGGER.debug(res_d)
-
     return res_d
 
 

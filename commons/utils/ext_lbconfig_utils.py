@@ -22,12 +22,13 @@
 Module to maintain External Load Balancer set utils
 """
 
-import os
-import logging
 import json
-from commons.helpers.pods_helper import LogicalNode
+import logging
+import os
+
 from commons import commands as cm_cmd
 from commons import constants as cm_const
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils as sys_utils
 
@@ -35,21 +36,61 @@ from commons.utils import system_utils as sys_utils
 LOGGER = logging.getLogger(__name__)
 
 
+def configure_rsyslog():
+    """
+     Configure rsyslog to configure logging of the HAProxy service
+     return: rsyslog restart command execution response
+    """
+    rsysconf_path = "/etc/rsyslog.conf"
+    if os.path.exists(rsysconf_path):
+        with open(rsysconf_path, 'r') as f_read:
+            rsyslog = f_read.readlines()
+        with open("/etc/rsyslog_dummy.conf", 'w') as f_write:
+            for line in rsyslog:
+                if "# Provides UDP syslog reception" in line:
+                    f_write.write(line)
+                    f_write.write(
+                        "$ModLoad imudp\n$UDPServerAddress 127.0.0.1\n$UDPServerRun 514\n")
+                    continue
+                if "$ModLoad imudp" in line or "$UDPServerAddress 127.0.0.1" in line\
+                        or "$UDPServerRun 514" in line:
+                    continue
+                f_write.write(line)
+        sys_utils.execute_cmd("rm -f {}".format(rsysconf_path))
+        sys_utils.execute_cmd("mv {} {}".format("/etc/rsyslog_dummy.conf", rsysconf_path))
+        sys_utils.execute_cmd("rm -f {}".format("/etc/rsyslog_dummy.conf"))
+    else:
+        LOGGER.info("Couldn't find %s ", rsysconf_path)
+    rsyslogd_path = "/etc/rsyslog.d/haproxy.conf"
+    haproxylog_path = "/var/log/haproxy.log"
+    if os.path.exists(rsyslogd_path):
+        sys_utils.execute_cmd("rm -f {}".format(rsyslogd_path))
+    sys_utils.execute_cmd(cmd="mkdir -p /etc/rsyslog.d/")
+    with open(rsyslogd_path, 'w') as f_write:
+        f_write.write(f"if ($programname == 'haproxy') then -{haproxylog_path}\n")
+
+    if os.path.exists(haproxylog_path):
+        sys_utils.execute_cmd("rm -f {}".format(haproxylog_path))
+    sys_utils.execute_cmd(f"touch {haproxylog_path}")
+    sys_utils.execute_cmd(f"chmod 755 {haproxylog_path}")
+    resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("rsyslog"))
+    return resp
+
+
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str,
-                         pem_remote_path: str = cm_const.K8S_PEM_PATH):
+def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str):
     """
     Implement external Haproxy LB
     :param m_node: hostname for master node
     :param username: username for node
     :param password: password for node
     :param ext_ip: External LB IP from client node setup
-    :param pem_remote_path: Remote file path from master node for .pem file
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
+    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
@@ -101,7 +142,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str,
             if "# 9080 s3_auth" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server s3authserver-instance{index} " \
-                           f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']}    " \
+                           f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']} " \
                            f"#port mapped to 9080\n"
                     f_write.write(line)
                 continue
@@ -113,16 +154,33 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str,
                     f_write.write(line)
                 continue
             f_write.write(line)
-    LOGGER.info("Coping the PEM from one of the nodes of CORTX deployment to the LB host.")
-    pem_local_path = "/etc/ssl/stx/stx.pem"
-    if os.path.exists(pem_local_path):
-        sys_utils.execute_cmd("rm -f {}".format(pem_local_path))
-    sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
-    m_node_obj.copy_file_to_local(remote_path=pem_remote_path, local_path=pem_local_path)
-
+    LOGGER.info("Configuring rsyslog to Configure Logging for HAProxy")
+    resp = configure_rsyslog()
+    LOGGER.debug("Configuring rsyslog response = %s", resp)
+    LOGGER.info("Coping the ca.crt to %s", cm_const.LOCAL_S3_CERT_PATH)
+    if os.path.exists(cm_const.LOCAL_S3_CERT_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_S3_CERT_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(
+        os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
+    cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
+        pods_list[0], cm_const.K8S_CRT_PATH, "/root/ca.crt")
+    resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
+    LOGGER.debug("Resp : %s", resp)
+    m_node_obj.copy_file_to_local("/root/ca.crt", cm_const.LOCAL_S3_CERT_PATH)
+    LOGGER.info("Coping the stx.pem to %s", cm_const.LOCAL_PEM_PATH)
+    if os.path.exists(cm_const.LOCAL_PEM_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
+        os.path.abspath(cm_const.LOCAL_PEM_PATH))))
+    cmd = cm_cmd.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(
+        pods_list[0], cm_const.K8S_PEM_PATH, "/root/stx.pem")
+    resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
+    LOGGER.debug("Resp : %s", resp)
+    m_node_obj.copy_file_to_local("/root/stx.pem", cm_const.LOCAL_PEM_PATH)
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
-
+    resp = sys_utils.execute_cmd("puppet agent --disable")
+    assert_utils.assert_true(resp[0], resp[1])
     LOGGER.info("Setting s3 endpoints of ext LB on client.")
     sys_utils.execute_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:

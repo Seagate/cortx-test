@@ -143,11 +143,11 @@ def get_degraded_schema(data):
 
 
 statistics_column_headings = [
-    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
     'Read TTFB 99% (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
-    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
     'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 bucketops_headings = [
