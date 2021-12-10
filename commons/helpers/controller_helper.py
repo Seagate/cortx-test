@@ -79,6 +79,17 @@ class ControllerLib:
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                           remote_path=runner_path)
 
+        runner_path = cons.REMOTE_DAEMON_PATH
+        local_path = cons.DAEMON_OP_PATH
+        LOGGER.info("Copying file %s to %s", local_path, runner_path)
+        self.node_obj.copy_file_to_remote(local_path=local_path,
+                                          remote_path=runner_path)
+
+        runner_path = cons.REMOTE_RECEIVER_PATH
+        local_path = cons.RECEIVER_OP_PATH
+        LOGGER.info("Copying file %s to %s", local_path, runner_path)
+        self.node_obj.copy_file_to_remote(local_path=local_path,
+                                          remote_path=runner_path)
         if not self.node_obj.path_exists(path=runner_path):
             self.copy = False
 
