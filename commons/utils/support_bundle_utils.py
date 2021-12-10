@@ -195,25 +195,25 @@ def collect_support_bundle_k8s(m_node: str, username: str, password: str, local_
     :param password: password for node
     :param local_dir_path: local dir path on client
     :param scripts_path: services scripts path on master node
-    :return: Boolean, response
+    :return: Boolean
     """
     flg = False
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
-    if os.path.exists("cm_const.K8S_SCRIPTS_PATH/*.tar"):
-        m_node_obj.execute_cmd(cmd="rm -f cm_const.K8S_SCRIPTS_PATH/*.tar")
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
     for line in resp:
-        if "All done" in line:
+        if ".tar" in line:
             flg = True
-    if flg is False:
-        return False, "Support bundle not generated."
-    else:
-        for line in resp:
-            if ".tar" in line:
-                out = line.split()[1]
-                file = out.strip('\"')
-    remote_path = os.path.join(scripts_path, file)
-    local_path = os.path.join(local_dir_path, file)
-    m_node_obj.copy_file_to_local(remote_path, local_path)
+            out = line.split()[1]
+            file = out.strip('\"')
+            LOGGER.info("Support bundle generated: %s", file)
+            remote_path = os.path.join(scripts_path, file)
+            local_path = os.path.join(local_dir_path, file)
+            m_node_obj.copy_file_to_local(remote_path, local_path)
 
-    return True, "Support Bundle created and copied."
+    if flg:
+        LOGGER.info("Support bundle %s generated and copied to %s path.",
+                    file, local_path)
+        return True
+    else:
+        LOGGER.info("Support Bundle not generated; response: %s", resp)
+        return False

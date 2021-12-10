@@ -151,6 +151,8 @@ deactivate
         		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
+export HOST_PASS="${HOST_PASS}"
+export M_NODE="${M_NODE}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
 deactivate
 '''
@@ -160,6 +162,8 @@ deactivate
                   }
              try {
              sh label: '', script: '''source venv/bin/activate
+export HOST_PASS="${HOST_PASS}"
+export M_NODE="${M_NODE}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --health_check False --target ${Target_Node}
 deactivate
 '''
