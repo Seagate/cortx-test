@@ -314,6 +314,7 @@ class S3AuthServerRestAPI(RestS3user):
 
         return status, response
 
+# pylint: disable=too-many-arguments
     def create_custom_iam_user(
         self, user_name, password, s3_access_key, s3_secret_key , iam_access_key=None,
         iam_secret_key=None ) -> tuple:
@@ -425,6 +426,7 @@ class S3AuthServerRestAPI(RestS3user):
 
         return status, response
 
+# pylint: disable=too-many-arguments
     def create_custom_iam_accesskey(
         self, user_name, s3_access_key, s3_secret_key , iam_access_key=None,
         iam_secret_key=None ) -> tuple:
@@ -515,6 +517,7 @@ class S3AuthServerRestAPI(RestS3user):
 
         return status, response
 
+# pylint: disable=too-many-arguments
     def update_custom_iam_accesskey(
             self, user_name, user_access_key, s3_access_key, s3_secret_key , iam_access_key=None,
             iam_secret_key=None, **kwargs) -> tuple:
