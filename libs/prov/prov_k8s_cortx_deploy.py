@@ -222,6 +222,8 @@ class ProvDeployK8sCortxLib:
             format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+        resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
+        LOGGER.info("\n %s", resp1)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -282,8 +284,6 @@ class ProvDeployK8sCortxLib:
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
             for key, value in data.items():
-                if key in ("kafka", "zookeeper"):
-                    value = "bitnami/" + key + ":" + value
                 cmd = common_cmd.CMD_DOCKER_PULL.format(value)
                 obj.execute_cmd(cmd=cmd)
         return True
@@ -351,7 +351,6 @@ class ProvDeployK8sCortxLib:
         :Keyword: data_disk_per_cvg: data disk required per cvg
         :Keyword: size_metadata: size of metadata disk
         :Keyword: size_data_disk: size of data disk
-        :Keyword: glusterfs_size: size of glusterfs
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
@@ -373,7 +372,6 @@ class ProvDeployK8sCortxLib:
         dix_spare = kwargs.get("dix_spare", 0)
         size_metadata = kwargs.get("size_metadata", '20Gi')
         size_data_disk = kwargs.get("size_data_disk", '20Gi')
-        glusterfs_size = kwargs.get("glusterfs_size", '20Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
@@ -457,8 +455,7 @@ class ProvDeployK8sCortxLib:
                                             dix_parity,
                                             dix_spare,
                                             size_metadata,
-                                            size_data_disk,
-                                            glusterfs_size)
+                                            size_data_disk)
         if not resp_cvg[0]:
             return False, "Fail to update the cvg details in solution file"
 
@@ -515,8 +512,7 @@ class ProvDeployK8sCortxLib:
                             dix_parity: int,
                             dix_spare: int,
                             size_metadata: str,
-                            size_data_disk: str,
-                            glusterfs_size: str):
+                            size_data_disk: str):
 
         """
         Method to update the cvg
@@ -534,7 +530,6 @@ class ProvDeployK8sCortxLib:
         :Param: dix_spare:
         :Param: size_metadata: size of metadata disk
         :Param: size_data_disk: size of data disk
-        :Param: glusterfs_size: size of glusterfs
         :returns the status ,filepath
         """
         nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
@@ -545,7 +540,6 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']  # Parent key
             storage = parent_key['storage']  # child of child key
             cmn_storage_sets = common['storage_sets']  # child of child key
-            common['glusterfs']['size'] = glusterfs_size
             total_cvg = storage.keys()
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
@@ -716,18 +710,27 @@ class ProvDeployK8sCortxLib:
         """
         cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
                                             self.deploy_cfg["destroy_cluster"])
-        cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        # cmd4 = "docker image prune -a"
+        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
+        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
+        cmd4 = "ls -lhR /etc/3rd-party/"
+        cmd5 = "ls -lhR /var/data/3rd-party/"
+        cmd6 = "ls -lhR /mnt/fs-local-volume/"
+        # cmd7 = "docker image prune -a"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
+                # resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
+                # LOGGER.debug("resp : %s", resp)
+                # resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+                # LOGGER.debug("resp : %s", resp)
+                resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+                resp = worker.execute_cmd(cmd=cmd6, read_lines=True)
+                LOGGER.debug("resp : %s", resp)
+                # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
                 # LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
@@ -809,10 +812,15 @@ class ProvDeployK8sCortxLib:
         details = resp.json()
         access_key = details['access_key']
         secret_key = details["secret_key"]
+
         try:
+            LOGGER.info("Configure AWS on Client")
+            resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
+            LOGGER.debug("resp : %s", resp)
             LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
+            resp = system_utils.execute_cmd(
                 common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+            LOGGER.debug("resp : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -1061,11 +1069,12 @@ class ProvDeployK8sCortxLib:
                                         sns_spare=sns_spare, dix_data=dix_data,
                                         dix_parity=dix_parity, dix_spare=dix_spare,
                                         cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
-                                        size_data_disk="20Gi", size_metadata="20Gi",
-                                        glusterfs_size="20Gi")
+                                        size_data_disk="20Gi", size_metadata="20Gi")
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
-                LOGGER.info("The solution yaml file is %s\n", file)
+                LOGGER.info("The detailed solution yaml file is\n")
+                for line in file.readlines():
+                    LOGGER.info(line)
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
@@ -1074,6 +1083,10 @@ class ProvDeployK8sCortxLib:
                                              self.docker_username,
                                              self.docker_password, self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
+            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+                                                         read_lines=True)
+            LOGGER.debug("\n=== POD STATUS ===\n")
+            LOGGER.debug(pod_status)
             LOGGER.info("Step to Check s3 server status")
             resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
             pod_name = resp[1]
@@ -1094,8 +1107,8 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
                                                     master_node_list[0].username,
-                                                    master_node_list[0].password, eth1_ip,
-                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+                                                    master_node_list[0].password,
+                                                    eth1_ip)
             LOGGER.info("Step to Create S3 account and configure credentials")
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
