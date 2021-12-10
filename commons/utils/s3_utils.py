@@ -211,6 +211,7 @@ def poll(target, *args, condition=None, **kwargs) -> Any:
                 return response
         except Exception as response:
             LOGGER.error(response)
+        LOGGER.info("SYNC: retrying for %s", str(target.__name__))
         time.sleep(step)
 
     return target(*args, **kwargs)

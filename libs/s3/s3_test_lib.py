@@ -365,6 +365,7 @@ class S3TestLib(S3Lib):
             LOGGER.info("You have opted to delete buckets.")
             start_time = perf_counter()
             if force:
+                LOGGER.info("Trying polling mechanism as bucket is getting deleted forcefully.")
                 response = poll(super().delete_bucket, bucket_name, force)
             else:
                 response = super().delete_bucket(bucket_name, force)

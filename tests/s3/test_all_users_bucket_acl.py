@@ -121,9 +121,8 @@ class TestAllUsersBucketAcl:
             "STARTED: Check listing of objects in bucket without "
             "Authentication when AllUsers have READ permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
-        self.create_bucket_put_object(self.bucket_name, self.obj_name,
-                                      self.test_file_path,
-                                      self.mb_count)
+        self.create_bucket_put_object(
+            self.bucket_name, self.obj_name, self.test_file_path, self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = self.acl_obj.put_bucket_acl(self.bucket_name, grant_read=self.group_uri)
@@ -136,7 +135,7 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_equal(resp[1][1][0]["Permission"], "READ", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Trying to list objects of a bucket from other unsigned user")
-        resp = self.no_auth_obj.object_list(self.bucket_name)
+        resp = s3_utils.poll(self.no_auth_obj.object_list, self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Listed objects of a bucket from other unsigned user successfully")
         self.log.info(
@@ -525,10 +524,10 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_equal(resp[1][1][0]["Permission"], "WRITE", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Putting an object in the bucket from other unsigned user")
-        resp = self.no_auth_obj.put_object(
-            self.bucket_name,
-            self.new_obj_name,
-            self.test_file_path)
+        resp = s3_utils.poll(self.no_auth_obj.put_object,
+                             self.bucket_name,
+                             self.new_obj_name,
+                             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: An object %s is put to bucket %s successfully",
@@ -540,17 +539,10 @@ class TestAllUsersBucketAcl:
             acl="private")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Bucket ACL is set to 'private' successfully")
-        self.log.info(
-            "Step 6: Reading objects of bucket %s",
-            self.bucket_name
-        )
-        resp = self.s3_test_obj.object_list(
-            self.bucket_name
-        )
+        self.log.info("Step 6: Reading objects of bucket %s", self.bucket_name)
+        resp = s3_utils.poll(self.s3_test_obj.object_list, self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 6: Read objects of bucket %s successfully",
-            self.bucket_name)
+        self.log.info("Step 6: Read objects of bucket %s successfully", self.bucket_name)
         self.log.info(
             "ENDED: Create an object in bucket without Authentication when "
             "AllUsers have WRITE permission")
@@ -569,10 +561,7 @@ class TestAllUsersBucketAcl:
             " AllUsers have WRITE permission")
         self.log.info("Step 1: Creating a bucket and uploading an object")
         self.create_bucket_put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path,
-            self.mb_count)
+            self.bucket_name, self.obj_name, self.test_file_path, self.mb_count)
         self.log.info("Step 1: Created a bucket and uploaded an object")
         self.log.info("Step 2: Changing bucket permission to AllUsers WRITE")
         resp = self.acl_obj.put_bucket_acl(self.bucket_name, grant_write=self.group_uri)
@@ -585,13 +574,9 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_equal(resp[1][1][0]["Permission"], "WRITE", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info("Step 4: Deleting an object of a bucket from other unsigned user")
-        resp = self.no_auth_obj.delete_object(
-            self.bucket_name,
-            self.obj_name)
+        resp = s3_utils.poll(self.no_auth_obj.delete_object, self.bucket_name, self.obj_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 4: Deleted an object of a bucket from other"
-            "unsigned user successfully")
+        self.log.info("Step 4: Deleted an object of a bucket from other unsigned user successfully")
         self.log.info(
             "ENDED: Delete an object from bucket without Authentication when "
             "AllUsers have WRITE permission")
