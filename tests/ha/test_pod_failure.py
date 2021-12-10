@@ -588,7 +588,7 @@ class TestPodFailure:
 
         LOGGER.info(
             "Step 6: Start IOs on degraded cluster.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455-1')
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
