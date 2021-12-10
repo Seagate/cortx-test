@@ -45,7 +45,6 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
-from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -63,7 +62,6 @@ class TestCsmUser():
         cls.csm_cluster = RestCsmCluster()
         cls.s3user = RestS3user()
         cls.s3_account_obj = RestS3user()
-        cls.s3auth_obj = S3AuthServerRestAPI()
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
@@ -5117,7 +5115,7 @@ class TestCsmUser():
                 payload=json.dumps(payload),
                 login_as=new_user)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
-            response = self.s3auth_obj.custom_rest_login(username, new_password)
+            response = self.csm_user.custom_rest_login(username, new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             response = self.s3_account_obj.delete_s3_account_user(username=usr)
             if response.status_code == HTTPStatus.OK:
@@ -5172,21 +5170,25 @@ class TestCsmUser():
             self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 4: change role of first 5 manage users to monitor")
         for usr in manage_usr[0:6]:
+            self.log.info("Editing role for %s manage user", usr)
             response = self.csm_user.edit_csm_user(user=usr,
                                                    role="monitor")
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("Step 5: change role of first 5 monitor users to manage")
         for usr in monitor_usr[0:6]:
+            self.log.info("Editing role for %s monitor user", usr)
             response = self.csm_user.edit_csm_user(user=usr,
                                                    role="manage")
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("Step 6: change role of first 2 admin users to manage")
+        self.log.info("Editing role for %s admin user", usr)
         for usr in admin_usr[0:3]:
             response = self.csm_user.edit_csm_user(user=usr,
                                                    role="manage")
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("Step 7: Change passwords and emails of all 10 monitor users and try login")
         for usr in manage_usr:
+            self.log.info("Editing password and email for %s manage user", usr)
             response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
                                                    password=new_password, current_password=password)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
@@ -5194,6 +5196,7 @@ class TestCsmUser():
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 8: Change passwords and emails of all 10 manage users and try login")
         for usr in monitor_usr:
+            self.log.info("Editing password and email for %s monitor user", usr)
             response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
                                                    password=new_password, current_password=password)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
@@ -5201,6 +5204,7 @@ class TestCsmUser():
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 9: Change passwords and emails of all 3 admin users and try login")
         for usr in admin_usr[2:6]:
+            self.log.info("Editing password and email for %s admin user", usr)
             response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
                                                    password=new_password, current_password=password)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
@@ -5239,8 +5243,8 @@ class TestCsmUser():
         user_creation_count = const.MAX_CSM_USERS - existing_user
         self.log.info("New users to create: %s", user_creation_count)
         self.log.info("Step 2: Creating users with random role")
-        for _ in range(user_creation_count):
-            self.log.info("Creating csm user")
+        for count in range(user_creation_count):
+            self.log.info("Creating csm user %s", count)
             role = roles[random.randrange(0, 3)]
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role=role)
@@ -5260,7 +5264,7 @@ class TestCsmUser():
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="admin")
             self.log.info("Verifying if admin user was created successfully")
-            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            assert response.status_code == HTTPStatus.CREATED.value
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
@@ -5300,6 +5304,7 @@ class TestCsmUser():
             self.created_users.append(response.json()["username"])
         self.log.info("Deleting all csm monitor users except predefined ones...")
         for usr in self.created_users:
+            self.log.info("Deleting user %s", usr)
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
