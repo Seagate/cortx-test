@@ -127,7 +127,7 @@ nodes_5:
     dix_data : 1
     dix_parity : 3
     dix_spare : 0
-    cvg_per_node : 1
+    cvg_per_node : 2
     data_disk_per_cvg : 2
   config_4:
     sns_data : 10
