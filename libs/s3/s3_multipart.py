@@ -206,6 +206,42 @@ class Multipart(S3Lib):
 
         return response
 
+    def upload_part_copy(self,
+                         copy_source: str = None,
+                         bucket_name: str = None,
+                         object_name: str = None,
+                         upload_id: str = None,
+                         part_number: int = 0,
+                         **kwargs) -> dict:
+        """
+        Upload parts of a specific multipart upload.
+
+        :param copy_source: source of part copy.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :upload_id: upload id of the multipart upload
+        :part_number: part number to be uploaded
+        :**kwargs: optional params dict
+        :return:
+        """
+        content_md5 = kwargs.get("content_md5", None)
+        copy_source_range = kwargs.get("copy_source_range", None)
+        if content_md5:
+            response = self.s3_client.upload_part_copy(
+                Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                CopySource=copy_source,
+                CopySourceRange=copy_source_range,
+                ContentMD5=content_md5)
+        else:
+            response = self.s3_client.upload_part_copy(
+                Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                CopySource=copy_source,
+                CopySourceRange=copy_source_range
+            )
+        logging.debug(response)
+        return response
 
 class ProgressPercentage:
     """Call back for sending progress"""
