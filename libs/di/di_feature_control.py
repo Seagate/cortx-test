@@ -156,7 +156,7 @@ class DIFeatureControl:
                           False if given flag is disabled
         """
         backup_path = LOCAL_S3_CONFIG
-        LOGGER.info(f"Verify DI flags on {node_obj.hostname}")
+        LOGGER.info("Verify DI flags on %s",node_obj.hostname)
 
         status, resp = node_obj.copy_file_to_local(const.S3_CONFIG, backup_path)
         if not status:
@@ -167,8 +167,7 @@ class DIFeatureControl:
         LOGGER.info(resp)
         if resp[section][flag]:
             return True, f"{flag} flag is set on {node_obj.hostname}"
-        else:
-            return False, f"{flag} flag is not set on {node_obj.hostname}"
+        return False, f"{flag} flag is not set on {node_obj.hostname}"
 
     def verify_s3config_flag_all_nodes(self, section: str, flag: str):
         """
@@ -177,7 +176,6 @@ class DIFeatureControl:
         :param flag: flag to be verified.
         :return Tuple[Boolean,Boolean]: Boolean - True if operation successful else False
                                  Boolean - flag_value
-
         """
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
@@ -194,7 +192,6 @@ class DIFeatureControl:
             except Exception as ex:
                 LOGGER.error(f"Exception Occurred while reading {flag}: %s", ex)
                 return False, ex
-
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
             flag_value = []
@@ -209,7 +206,6 @@ class DIFeatureControl:
                     return True, flag_value[0]
                 else:
                     return False, f"S3 config values for {flag} are not equal in all pods."
-
             except Exception as ex:
                 LOGGER.error(f"Exception Occurred while reading {flag}: %s", ex)
                 return False, ex
