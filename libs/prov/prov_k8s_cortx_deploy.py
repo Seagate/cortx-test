@@ -1101,6 +1101,7 @@ class ProvDeployK8sCortxLib:
             resp = system_utils.is_rpm_installed("haproxy22")
             if not resp[0]:
                 LOGGER.debug("HAproxy not installed,installing it")
+                system_utils.execute_cmd(cmd="userdel haproxy")
                 script_path = PROV_CFG["config_haproxy"]["setup_haproxy"]
                 cmd = f'chmod +x {script_path} && sh {script_path}'
                 resp = system_utils.execute_cmd(cmd=cmd)
