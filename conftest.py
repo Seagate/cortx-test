@@ -792,6 +792,7 @@ def check_cluster_storage():
         assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
         health.disconnect()
 
+
 def pytest_runtest_logstart(nodeid, location):
     """
     Hook used to identify if it is good to start next test.
