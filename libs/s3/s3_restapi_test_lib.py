@@ -22,6 +22,7 @@
 """S3 REST API operation Library."""
 
 import logging
+import time
 import urllib
 
 from commons import errorcodes as err
@@ -32,7 +33,6 @@ from commons.utils.s3_utils import convert_xml_to_dict
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from config.s3 import S3_CFG
-from config import CMN_CFG
 from config import CSM_REST_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -264,6 +264,7 @@ class S3AuthServerRestAPI(RestS3user):
         if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
             LOGGER.error("s3auth restapi request failed, reason: %s", response_data)
             return False, response_data["ErrorResponse"]["Error"]["Message"]
+        time.sleep(S3_CFG["sync_step"])  # Added for direct rest call to sync.
 
         return True, response_data
 
