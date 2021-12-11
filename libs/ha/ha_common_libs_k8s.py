@@ -57,11 +57,8 @@ class HAK8s:
         self.system_health = SystemHealth()
         self.setup_type = CMN_CFG["setup_type"]
         self.vm_username = os.getenv(
-            "QA_VM_POOL_ID", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["uname"]))
-        self.vm_password = os.getenv(
-            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["passwd"]))
+            "QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
+        self.vm_password = os.getenv("QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
         self.bmc_user = CMN_CFG["bmc"]["username"]
         self.bmc_pwd = CMN_CFG["bmc"]["password"]
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]
@@ -363,24 +360,25 @@ class HAK8s:
         :return: bool/operation response
         """
         workloads = [
-            "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
-            "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
+            "0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]
         if self.setup_type == "HW":
-            workloads.extend(["1GB", "2GB", "3GB", "4GB", "5GB"])
+            workloads.extend(["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
             return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
-                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket-{log_prefix}",
+                s3userinfo['accesskey'], s3userinfo['secretkey'],
+                bucket=f"bucket-{workload.lower()}-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3b_url"])
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
-                return resp, f"s3bench operation failed with {resp[1]}"
+                return resp, f"s3bench operation failed with {resp}"
         return True, "Sucessfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
@@ -822,3 +820,66 @@ class HAK8s:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
         return resp
+
+    def ha_s3bench_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
+                             skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                             output=None):
+        """
+        This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
+        :param event: Thread event to be sent in case of parallel IOs
+        :param log_prefix: Test number prefix for log file
+        :param s3userinfo: S3 user info
+        :param skipread: Skip reading objects created in this run if True
+        :param skipwrite: Skip writing objects created in this run if True
+        :param skipcleanup: Skip deleting objects created in this run if True
+        :param nsamples: Number of samples of object
+        :param nclients: Number of clients/workers
+        :param output: Queue to fill results
+        :return: None
+        """
+        pass_res = []
+        fail_res = []
+        results = dict()
+        workloads = [
+            "0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]
+        if self.setup_type == "HW":
+            workloads.extend(["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"])
+
+        resp = s3bench.setup_s3bench()
+        if not resp:
+            return resp, "Couldn't setup s3bench on client machine."
+        for workload in workloads:
+            resp = s3bench.s3bench(
+                s3userinfo['accesskey'], s3userinfo['secretkey'],
+                bucket=f"bucket-{workload.lower()}-{log_prefix}", num_clients=nclients,
+                num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
+                skip_write=skipwrite, skip_read=skipread, obj_size=workload,
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
+                end_point=S3_CFG["s3b_url"])
+            if event.is_set():
+                fail_res.append(resp)
+            else:
+                pass_res.append(resp)
+
+        results["pass_res"] = pass_res
+        results["fail_res"] = fail_res
+
+        output.put(results)
+
+    @staticmethod
+    def check_s3bench_log(file_paths: list, pass_logs=True):
+        """
+        Function to find out error is reported in given file or not
+        :param str file_paths: log file paths to be parsed
+        :param pass_logs: if True check for passed logs else check for failed logs
+        :return: False (if error is seen) else True
+        :rtype: Boolean, list
+        """
+        log_list = []
+        for log in file_paths:
+            LOGGER.info("Parsing log file %s", log)
+            resp = s3bench.check_log_file_error(file_path=log)
+            log_list.append(log) if (pass_logs and resp) or (not pass_logs and not resp) else log
+
+        return not resp, log_list
