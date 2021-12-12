@@ -35,7 +35,6 @@ from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
-from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
 
@@ -81,12 +80,14 @@ elif proc_name in ["testrunner.py", "testrunner"]:
         target = os.environ.get("TARGET") if os.environ.get("TARGET") else None
 else:
     target = None
-if target:
+if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
     _use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else None
     use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1] if _use_ssl else True
+    os.environ["USE_SSL"] = str(use_ssl)
 
     _validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else None
     validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1] if _validate_certs else True
+    os.environ["VALIDATE_CERTS"] = str(validate_certs)
 
 
 def build_s3_endpoints() -> dict:
@@ -96,8 +97,8 @@ def build_s3_endpoints() -> dict:
     lb_flg = setup_details.get('lb') not in [None, '', "FQDN without protocol(http/s)"]
     s3_url = setup_details.get('lb') if lb_flg else "s3.seagate.com"
     iam_url = setup_details.get('lb') if lb_flg else "iam.seagate.com"
-    ssl_flg = ast.literal_eval(str(use_ssl).title())
-    cert_flg = ast.literal_eval(str(validate_certs).title())
+    ssl_flg = ast.literal_eval(str(os.environ.get("USE_SSL")).title())
+    cert_flg = ast.literal_eval(str(os.environ.get("VALIDATE_CERTS")).title())
     s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
     if ssl_flg:
         s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
@@ -117,18 +118,18 @@ else:
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CMN_CFG.update(S3_CFG)
-JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
-                                                target=target, target_key="csm")
+JMETER_CFG = configmanager.get_config_wrapper(
+    fpath=CSM_CONFIG, config_key="JMeterConfig", target=target, target_key="csm")
 
 if PROD_FAMILY_LC == CMN_CFG["product_family"]:
-    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall_LC",
-                                                target=target, target_key="csm")
+    CSM_REST_CFG = configmanager.get_config_wrapper(
+        fpath=CSM_CONFIG, config_key="Restcall_LC", target=target, target_key="csm")
 else:
-    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
-                                                target=target, target_key="csm")
+    CSM_REST_CFG = configmanager.get_config_wrapper(
+        fpath=CSM_CONFIG, config_key="Restcall", target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
-RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
-                                           target=target, target_key="csm")
+RAS_VAL = configmanager.get_config_wrapper(
+    fpath=RAS_CONFIG_PATH, target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)

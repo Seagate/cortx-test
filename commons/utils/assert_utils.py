@@ -25,6 +25,7 @@ from hamcrest import assert_that, equal_to, has_length, contains_string, \
     equal_to_ignoring_case, has_entries, has_key, has_value, contains_exactly, \
     contains_inanyorder, has_items, has_item, all_of, any_of
 
+
 def assert_equals(actual, matcher, reason: str = ""):
     """assert_equals"""
     assert_that(matcher, equal_to(actual), reason)

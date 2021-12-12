@@ -62,15 +62,15 @@ def create_db_entry(m_node, username: str, password: str,
     for line in mgnt_resp:
         if "cortx-control-pod" in line:
             mgmt_vip = line.split()[6]
-    print("Cortx control pod running on: %s", mgmt_vip)
+    print("Cortx control pod running on: ", mgmt_vip)
     output_node = node_obj.execute_cmd(com_cmds.CMD_GET_NODE, read_lines=True)
     for line in output_node:
         if "worker" in line:
             out = line.split()[0]
             host_list.append(out)
     num_nodes = len(host_list) - 1
-    print("Total number of nodes in cluster: %d", num_nodes)
-    print("Creating DB entry for setup: %s", new_setupname)
+    print("Total number of nodes in cluster: ", num_nodes)
+    print("Creating DB entry for setup: ", new_setupname)
     with open(json_file, 'r') as file:
         json_data = json.load(file)
 
@@ -103,7 +103,7 @@ def create_db_entry(m_node, username: str, password: str,
     json_data["csm"]["csm_admin_user"].update(
         username=admin_user, password=admin_passwd)
 
-    print("new file data: %s", json_data)
+    print("new file data: ", json_data)
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
@@ -141,16 +141,18 @@ def main():
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
-    output = sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
+    output = sysutils.run_local_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
         "--dbuser {} --dbpassword {}".format(config['default']['setup_entry_json'],
-                    json_data['DB_USER'], json_data['DB_PASSWORD']))
+                    json_data['DB_USER'], json_data['DB_PASSWORD']), flg=True)
+    print("Output for DB entry: ", output)
     if "Entry already exits" in str(output):
         print("DB already exists for target: %s, so will update it.", setupname)
-        sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
-            "--dbuser {} --dbpassword {} --new_entry False"
-                             .format(config['default']['setup_entry_json'],
-                                     json_data['DB_USER'], json_data['DB_PASSWORD']))
-
+        out = sysutils.run_local_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
+                                     "--dbuser {} --dbpassword {} --new_entry False"
+                                     .format(config['default']['setup_entry_json'],
+                                             json_data['DB_USER'], json_data['DB_PASSWORD']),
+                                     flg=True)
+        print("Output for updated DB entry: ", out)
     print("Mutlinode Server-Client Setup Done.")
 
 

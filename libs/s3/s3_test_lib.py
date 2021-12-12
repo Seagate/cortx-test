@@ -226,7 +226,7 @@ class S3TestLib(S3Lib):
         :param bucket_name: Name of the bucket.
         :return: (Boolean, list of objects)
         """
-        LOGGER.info("Listing Objects in a particular bucket")
+        LOGGER.info("Listing Objects from bucket: %s", bucket_name)
         try:
             response = super().object_list(bucket_name)
         except (ClientError, Exception) as error:
@@ -365,6 +365,7 @@ class S3TestLib(S3Lib):
             LOGGER.info("You have opted to delete buckets.")
             start_time = perf_counter()
             if force:
+                LOGGER.info("Trying polling mechanism as bucket is getting deleted forcefully.")
                 response = poll(super().delete_bucket, bucket_name, force)
             else:
                 response = super().delete_bucket(bucket_name, force)
@@ -618,7 +619,7 @@ class S3TestLib(S3Lib):
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket, key)
+            response = poll(super().get_object, bucket, key)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
