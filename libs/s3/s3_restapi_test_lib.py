@@ -516,35 +516,3 @@ class S3AuthServerRestAPI(RestS3user):
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
 
         return status, response
-
-    # pylint: disable=too-many-arguments
-    def update_custom_iam_accesskey(
-            self, user_name, user_access_key, s3_access_key, s3_secret_key , iam_access_key=None,
-            iam_secret_key=None, **kwargs) -> tuple:
-        """
-        Update iam account user accesskey using s3authserver rest api.
-        changes status of the specified set of keys from Active to Inactive, or vice versa
-
-        :param user_name: Name of s3 iam user.
-        :param user_access_key: Access key of the iam user.
-        :param s3_access_key: access_key of s3 user.
-        :param s3_secret_key: secret_key of s3 user.
-        :param iam_access_key: access_key of IAM user.
-        :param iam_secret_key: secret_key of IAM user.
-        :param status: accesskey status may be Active/Inactive.
-        :return: bool, response of update accesskey of iam user.
-        """
-        status = kwargs.get("status", "Active")
-        payload = {"Action": "UpdateAccessKey"}
-        if user_name:
-            payload["UserName"] = user_name
-        if iam_access_key:
-            payload["access_key"] = iam_access_key
-        if iam_secret_key:
-            payload["secret_key"] = iam_secret_key
-        payload["Status"] = status
-        payload["AccessKeyId"] = user_access_key
-        status, response = self.execute_restapi_on_s3authserver(
-            payload, s3_access_key, s3_secret_key)
-
-        return status, response
