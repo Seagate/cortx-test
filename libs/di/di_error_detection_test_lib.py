@@ -29,6 +29,7 @@ from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
 
+
 LOGGER = logging.getLogger(__name__)
 
 
