@@ -31,6 +31,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils import support_bundle_utils as sb
 from config import CMN_CFG
+from multiprocessing import Process
 
 
 class TestR2SupportBundle:
@@ -125,6 +126,7 @@ class TestR2SupportBundle:
         self.LOGGER.debug("Verified logs are generated on each node")
 
     @pytest.mark.cluster_user_ops
+    @pytest.mark.lr
     @pytest.mark.support_bundle
     @pytest.mark.tags("TEST-20114")
     def test_20114_generate_support_bundle_single_command(self):
@@ -145,6 +147,7 @@ class TestR2SupportBundle:
             "Step 2: Verified logs are generated for each component on each node")
 
     @pytest.mark.cluster_user_ops
+    @pytest.mark.lr
     @pytest.mark.support_bundle
     @pytest.mark.tags("TEST-20115")
     def test_20115_generate_support_bundle_component(self):
@@ -163,3 +166,41 @@ class TestR2SupportBundle:
         self.r2_verify_support_bundle(resp[1], test_comp_list)
         self.LOGGER.info(
             "Step 2: Verified logs are generated for each component on each node")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.lc
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-32752")
+    def test_32752(self):
+        """
+        Validate status of support bundle for LC
+        """
+        self.LOGGER.info("Step 1: Generating support bundle ")
+        dest_dir = "file:///var/log/cortx/support_bundle"
+        SB_identifier = system_utils.random_string_generator(10)
+        msg = "TEST-32752"
+        self.LOGGER.info("Support Bundle identifier of : %s ", SB_identifier)
+        generate_SB_process = Process(
+            target=sb.generate_support_bundle_LC,
+            args=(dest_dir, SB_identifier, None, msg))
+
+        generate_SB_process.start()
+        self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
+        resp = sb.support_bundle_status_LC(SB_identifier)
+        if ("In-Progress" in resp):
+            self.LOGGER.info("support bundle generation is In-progress status")
+        elif("Successfully generated" in resp):
+            self.assertTrue(False, f"Support bundle got generated very quickly need to check manually: {resp}")
+        else:
+            self.assertTrue(False, f"Support bundle is not generated: {resp}")
+
+        generate_SB_process.join()
+
+        self.LOGGER.info("Step 3: checking completed status of support bundle")
+        resp = sb.support_bundle_status_LC(SB_identifier)
+        if ("Successfully generated" in resp):
+            self.LOGGER.info("support bundle generation completed")
+        elif("In-Progress" in resp):
+            self.assertTrue(False, f"Support bundle is In-progress state, which is unexpected: {resp}")
+        else:
+            self.assertTrue(False, f"Support bundle is not generated: {resp}")
