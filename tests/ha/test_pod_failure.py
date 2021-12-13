@@ -737,8 +737,8 @@ class TestPodFailure:
         output = Queue()
         bucket_list = list(s3data.keys())
         LOGGER.info("Step 3: Start Continuous DELETEs in background")
-        get_random_buck = [bucket_list.pop(random.randrange(len(bucket_list))) for _ in range(
-            bucket_num - 10)]
+        get_random_buck = [bucket_list.pop(random.SystemRandom().randrange(len(bucket_list)))
+                           for _ in range(bucket_num - 10)]
         args = {'s3_test_obj': s3_test_obj, 's3data': get_random_buck, 'output': output}
         thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
                                   args=(event,), kwargs=args)

@@ -898,10 +898,9 @@ class HAK8s:
         for bucket_name in s3data:
             resp = s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
             if event.is_set() and not resp[0]:
-                fail_buck_del.update(bucket_name)
+                fail_buck_del.append(bucket_name)
             elif not resp[0]:
-                pass_buck_del.update(bucket_name)
+                pass_buck_del.append(bucket_name)
         results["pass_buck_del"] = pass_buck_del
         results["fail_buck_del"] = fail_buck_del
         output.put(results)
-
