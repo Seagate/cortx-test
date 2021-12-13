@@ -302,8 +302,7 @@ class IamPolicy(IAMRest):
         response = self.iam.create_policy(
             PolicyName=policy_name,
             PolicyDocument=policy_document,
-            **kwargs
-        )
+            **kwargs)
 
         return response
 
@@ -352,31 +351,12 @@ class IamPolicy(IAMRest):
             PathPrefix=path_prefix,
             PolicyUsageFilter=policy_usage_filter,
             MaxItems=max_items,
-            **kwargs
-        )
+            **kwargs)
 
         return response
 
-    def create_role(self, assume_role_policy_document: str = None, role_name: str = None) -> dict:
-        """
-        create a role name and attaches a trust policy to it that is provided as a Policy Document.
-
-        :param assume_role_policy_document: The trust relationship policy document that grants an
-         entity permission to assume the role.
-        :param role_name: The name of the role to create.
-        """
-        response = self.iam.create_role(
-            AssumeRolePolicyDocument=assume_role_policy_document,
-            RoleName=role_name,
-        )
-
-        return response
-
-    def create_role_with_tags(self,
-                              assume_role_policy_document: str = None,
-                              role_name: str = None,
-                              tags: list = None,
-                              **kwargs) -> dict:
+    def create_role(self, assume_role_policy_document: str = None,
+                    role_name: str = None, **kwargs) -> dict:
         """
         create a role name and attaches a trust policy to it that is provided as a Policy Document.
 
@@ -386,11 +366,8 @@ class IamPolicy(IAMRest):
         :param tags: A list of tags that you want to attach to the new role.
         """
         response = self.iam.create_role(
-            RoleName=role_name,
             AssumeRolePolicyDocument=assume_role_policy_document,
-            Tags=tags,
-            **kwargs
-        )
+            RoleName=role_name, **kwargs)
 
         return response
 
@@ -401,8 +378,7 @@ class IamPolicy(IAMRest):
         :param role_name: The name of the role to delete.
         """
         response = self.iam.delete_role(
-            RoleName=role_name
-        )
+            RoleName=role_name)
 
         return response
 
@@ -416,8 +392,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.delete_role_policy(
             RoleName=role_name,
-            PolicyName=policy_name
-        )
+            PolicyName=policy_name)
 
         return response
 
@@ -434,8 +409,7 @@ class IamPolicy(IAMRest):
         response = self.iam.list_role_policies(
             RoleName=role_name,
             Marker=marker,
-            MaxItems=max_items
-        )
+            MaxItems=max_items)
 
         return response
 
@@ -454,8 +428,7 @@ class IamPolicy(IAMRest):
         response = self.iam.list_roles(
             PathPrefix=path_prefix,
             MaxItems=max_items,
-            **kwargs
-        )
+            **kwargs)
 
         return response
 
@@ -468,8 +441,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.attach_group_policy(
             GroupName=group_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -482,8 +454,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.detach_group_policy(
             GroupName=group_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -508,8 +479,7 @@ class IamPolicy(IAMRest):
             GroupName=group_name,
             PathPrefix=path_prefix,
             Marker=marker,
-            MaxItems=max_items
-        )
+            MaxItems=max_items)
 
         return response
 
@@ -522,8 +492,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.attach_user_policy(
             UserName=user_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -536,8 +505,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.detach_user_policy(
             UserName=user_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -561,8 +529,7 @@ class IamPolicy(IAMRest):
             RoleName=role_name,
             PathPrefix=path_prefix,
             Marker=marker,
-            MaxItems=max_items
-        )
+            MaxItems=max_items)
 
         return response
 
@@ -575,8 +542,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.attach_role_policy(
             RoleName=role_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -589,8 +555,7 @@ class IamPolicy(IAMRest):
         """
         response = self.iam.detach_role_policy(
             RoleName=role_name,
-            PolicyArn=policy_arn
-        )
+            PolicyArn=policy_arn)
 
         return response
 
@@ -614,8 +579,7 @@ class IamPolicy(IAMRest):
             UserName=user_name,
             PathPrefix=path_prefix,
             Marker=marker,
-            MaxItems=max_items
-        )
+            MaxItems=max_items)
 
         return response
 
@@ -646,7 +610,6 @@ class IamPolicy(IAMRest):
             nextToken=next_token,
             policyDocument=policy_document,
             policyType=policy_type,
-            validatePolicyResourceType=validate_policy_resource_type
-        )
+            validatePolicyResourceType=validate_policy_resource_type)
 
         return response
