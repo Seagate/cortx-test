@@ -107,19 +107,18 @@ class S3FailureInjection(EnableFailureInjection):
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC:
             pass
 
-    def _inject_fault(self, fault_type=None, s3_instances_per_node=1):
+    def _inject_fault(self, fault_type=None, fault_operation='enable', s3_instances_per_node=1):
         """Injects fault by directly connecting to all Nodes and using REST API.
         Works for s3 server instance = 1
         TODO: Check if output is needed
         """
         stdout = list()
         status = list()
-        enable = commands.FI_ENABLE
         f_type = fault_type if not fault_type else commands.DI_DATA_CORRUPT_ON_WRITE
         start_port = commands.S3_SRV_START_PORT
         if s3_instances_per_node == 1:
             h_p = f'localhost:{start_port}'
-            fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {enable}'
+            fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                          f',{f_type},0,0'
                          f'" {h_p}'
                          )
@@ -138,7 +137,7 @@ class S3FailureInjection(EnableFailureInjection):
                 start_port = commands.S3_SRV_START_PORT
                 for ix in range(s3_instances_per_node):
                     h_p = f'localhost:{start_port}'
-                    fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {enable}'
+                    fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                                  f',{f_type},0,0'
                                  f'" {h_p}'
                                  )
