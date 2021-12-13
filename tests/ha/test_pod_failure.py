@@ -480,7 +480,7 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 1: IOs are running successfully.")
+        LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment.")
         LOGGER.info("Get pod name to be deleted")
@@ -555,7 +555,7 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 1: IOs are running successfully.")
+        LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod by kubectl delete.")
         LOGGER.info("Get pod name to be deleted")
@@ -587,8 +587,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info(
-            "Step 6: Start IOs on degraded cluster.")
+        LOGGER.info("Step 6: Start IOs on degraded cluster.")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
