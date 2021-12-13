@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-"""Python library using boto3 module to perform AWS Identity & Access Management (IAM) policies."""
+"""Python library using boto3 module to perform AWS Identity & Access Management (IAM) role."""
 
 import logging
 from botocore.exceptions import ClientError
@@ -28,13 +28,13 @@ from config.s3 import S3_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-from libs.s3.iam_core_lib import IamPolicy
+from libs.s3.iam_core_lib import IamRole
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class IamRoleTestLib(IamPolicy):
+class IamRoleTestLib(IamRole):
     """Class initialising s3 connection and including functions for iam role operations."""
 
     def __init__(
@@ -116,18 +116,18 @@ class IamRoleTestLib(IamPolicy):
 
         return True, response
 
-    def list_role_policies(self, role_name: str = None, marker: str = None, max_items: int = 123):
+    def list_role_policies(self, **kwargs) -> tuple:
         """
         List the names of the inline policies that are embedded in the specified IAM role.
 
-        :param role_name: The name of the role to list policies for.
-        :param marker: Use this parameter only when paginating results and only after you receive
-         a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param role_name: The name of the role to list policies for.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
         try:
-            response = super().list_role_policies(role_name, marker, max_items)
+            response = super().list_role_policies(**kwargs)
             LOGGER.info("List role policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
@@ -137,19 +137,19 @@ class IamRoleTestLib(IamPolicy):
 
         return True, response
 
-    def list_roles(self, path_prefix: str = "/", max_items: int = 123, **kwargs) -> tuple:
+    def list_roles(self, **kwargs) -> tuple:
         """
         List the IAM roles that have the specified path prefix.
 
-        :param path_prefix: The path prefix for filtering the results. For example, the prefix
-        /application_abc/component_xyz/ gets all roles whose path starts with
-        /application_abc/component_xyz/. This parameter is optional. If it is not included,
-        it defaults to a slash (/), listing all roles.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. For example, the prefix
+        # /application_abc/component_xyz/ gets all roles whose path starts with
+        # /application_abc/component_xyz/. This parameter is optional. If it is not included,
+        # it defaults to a slash (/), listing all roles.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
         try:
-            response = super().list_roles(path_prefix, max_items, **kwargs)
+            response = super().list_roles(**kwargs)
             LOGGER.info("List roles %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
@@ -195,25 +195,20 @@ class IamRoleTestLib(IamPolicy):
 
         return True, response
 
-    def list_attached_role_policies(self,
-                                    role_name: str = None,
-                                    path_prefix: str = "/",
-                                    marker: str = None,
-                                    max_items: int = 123) -> tuple:
+    def list_attached_role_policies(self, role_name: str = None, **kwargs) -> tuple:
         """
         List all managed policies that are attached to the specified IAM role.
 
         :param role_name: The name (friendly, not ARN) of the role to list attached policies for.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-        If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-        a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
         try:
-            response = super().list_attached_role_policies(role_name, path_prefix, marker,
-                                                           max_items)
+            response = super().list_attached_role_policies(role_name, **kwargs)
             LOGGER.info("list attached role policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",

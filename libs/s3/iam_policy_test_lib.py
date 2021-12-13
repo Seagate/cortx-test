@@ -104,7 +104,7 @@ class IamPolicyTestLib(IamPolicy):
             LOGGER.info("Deleted policy %s.", policy_arn)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
-                             IamPolicyTestLib.create_policy.__name__,
+                             IamPolicyTestLib.delete_policy.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
@@ -127,27 +127,20 @@ class IamPolicyTestLib(IamPolicy):
 
         return True, response
 
-    def list_policies(self,
-                      scope: str = 'All',
-                      only_attached: bool = True,
-                      path_prefix: str = "/",
-                      policy_usage_filter: str = "PermissionsPolicy",
-                      **kwargs) -> tuple:
+    def list_policies(self, **kwargs) -> tuple:
         """
         List all the managed policies that are available in account.
 
-        :param scope: The scope to use for filtering the results.
-        :param only_attached: A flag to filter the results to only the attached policies.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-         If it is not included, it defaults to a slash (/), listing all policies.
-        :param policy_usage_filter: The policy usage method to use for filtering the results.
+        # :param scope: The scope to use for filtering the results.
+        # :param only_attached: A flag to filter the results to only the attached policies.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all policies.
+        # :param policy_usage_filter: The policy usage method to use for filtering the results.
         # :param max_items:Use this only when paginating results to indicate the maximum number of
         #  items you want in the response.
         """
-        kwargs.setdefault("max_items", 123)
         try:
-            response = super().list_policies(
-                scope, only_attached, path_prefix, policy_usage_filter, **kwargs)
+            response = super().list_policies(**kwargs)
             LOGGER.info("list policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
@@ -193,26 +186,21 @@ class IamPolicyTestLib(IamPolicy):
 
         return True, response
 
-    def list_attached_group_policies(self,
-                                     group_name: str = None,
-                                     path_prefix: str = "/",
-                                     marker: str = None,
-                                     max_items: int = 123) -> tuple:
+    def list_attached_group_policies(self, group_name: str = None, **kwargs) -> tuple:
         """
         List all managed policies that are attached to the specified IAM group.
 
         :param group_name: The name (friendly, not ARN) of the group to list attached policies for.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-        If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-        a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         :Returns: A list of Policy resources.
         """
         try:
-            response = super().list_attached_group_policies(
-                group_name, path_prefix, marker, max_items)
+            response = super().list_attached_group_policies(group_name, **kwargs)
             LOGGER.info("list attached group policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
@@ -258,25 +246,20 @@ class IamPolicyTestLib(IamPolicy):
 
         return True, response
 
-    def list_attached_user_policies(self,
-                                    user_name: str = None,
-                                    path_prefix: str = "/",
-                                    marker: str = None,
-                                    max_items: int = 123) -> tuple:
+    def list_attached_user_policies(self, user_name: str = None, **kwargs) -> tuple:
         """
         List all managed policies that are attached to the specified IAM user.
 
         :param user_name: The name (friendly, not ARN) of the user to list attached policies for.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-         If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-         a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
         try:
-            response = super().list_attached_user_policies(user_name, path_prefix, marker,
-                                                           max_items)
+            response = super().list_attached_user_policies(user_name, **kwargs)
             LOGGER.info("list attached user policies %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
@@ -311,7 +294,7 @@ class IamPolicyTestLib(IamPolicy):
             LOGGER.info("validate policy %s.", response)
         except ClientError as error:
             LOGGER.exception("Error in  %s: %s",
-                             IamPolicyTestLib.list_attached_user_policies.__name__,
+                             IamPolicyTestLib.validate_policy.__name__,
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 

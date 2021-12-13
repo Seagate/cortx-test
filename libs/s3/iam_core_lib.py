@@ -299,10 +299,8 @@ class IamPolicy(IAMRest):
         :param policy_name: The name of the policy to create.
         :param policy_document: The policy document.
         """
-        response = self.iam.create_policy(
-            PolicyName=policy_name,
-            PolicyDocument=policy_document,
-            **kwargs)
+        response = self.iam.create_policy(PolicyName=policy_name, PolicyDocument=policy_document,
+                                          **kwargs)
 
         return response
 
@@ -326,109 +324,19 @@ class IamPolicy(IAMRest):
 
         return response
 
-    # pylint: disable=too-few-public-methods
-    def list_policies(self,
-                      scope: str = 'All',
-                      only_attached: bool = True,
-                      path_prefix: str = "/",
-                      policy_usage_filter: str = "PermissionsPolicy",
-                      **kwargs) -> dict:
+    def list_policies(self, **kwargs) -> dict:
         """
         List all the managed policies that are available in account.
 
-        :param scope: The scope to use for filtering the results.
-        :param only_attached: A flag to filter the results to only the attached policies.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-        If it is not included, it defaults to a slash (/), listing all policies.
-        :param policy_usage_filter: The policy usage method to use for filtering the results.
+        # :param scope: The scope to use for filtering the results.
+        # :param only_attached: A flag to filter the results to only the attached policies.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param policy_usage_filter: The policy usage method to use for filtering the results.
         # :param max_items:Use this only when paginating results to indicate the maximum number of
         # items you want in the response.
         """
-        max_items = kwargs.pop("max_items", 123)
-        response = self.iam.list_policies(
-            Scope=scope,
-            OnlyAttached=only_attached,
-            PathPrefix=path_prefix,
-            PolicyUsageFilter=policy_usage_filter,
-            MaxItems=max_items,
-            **kwargs)
-
-        return response
-
-    def create_role(self, assume_role_policy_document: str = None,
-                    role_name: str = None, **kwargs) -> dict:
-        """
-        create a role name and attaches a trust policy to it that is provided as a Policy Document.
-
-        :param assume_role_policy_document: The trust relationship policy document that grants an
-         entity permission to assume the role.
-        :param role_name: The name of the role to create.
-        :param tags: A list of tags that you want to attach to the new role.
-        """
-        response = self.iam.create_role(
-            AssumeRolePolicyDocument=assume_role_policy_document,
-            RoleName=role_name, **kwargs)
-
-        return response
-
-    def delete_role(self, role_name: str = None):
-        """
-        Delete the specified role. The role must not have any policies attached.
-
-        :param role_name: The name of the role to delete.
-        """
-        response = self.iam.delete_role(
-            RoleName=role_name)
-
-        return response
-
-    def delete_role_policy(self, role_name: str = None, policy_name: str = None):
-        """
-        Delete the specified inline policy that is embedded in the specified IAM role.
-
-        :param role_name: The name(friendly name, not ARN) identifying the role that the policy
-        is embedded in.
-        :param policy_name: The name of the inline policy to delete from the specified IAM role.
-        """
-        response = self.iam.delete_role_policy(
-            RoleName=role_name,
-            PolicyName=policy_name)
-
-        return response
-
-    def list_role_policies(self, role_name: str = None, marker: str = None, max_items: int = 123):
-        """
-        List the names of the inline policies that are embedded in the specified IAM role.
-
-        :param role_name: The name of the role to list policies for.
-        :param marker: Use this parameter only when paginating results and only after you receive
-         a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
-        """
-        response = self.iam.list_role_policies(
-            RoleName=role_name,
-            Marker=marker,
-            MaxItems=max_items)
-
-        return response
-
-    def list_roles(self, path_prefix: str = "/", max_items: int = 123, **kwargs):
-        """
-        List the IAM roles that have the specified path prefix.
-
-        If there are none, the operation returns an empty list.
-        :param path_prefix: The path prefix for filtering the results.
-         For example, the prefix /application_abc/component_xyz/ gets all roles whose path starts
-         with /application_abc/component_xyz/. This parameter is optional.
-         If it is not included, it defaults to a slash (/), listing all roles.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-         items you want in the response.
-        """
-        response = self.iam.list_roles(
-            PathPrefix=path_prefix,
-            MaxItems=max_items,
-            **kwargs)
+        response = self.iam.list_policies(**kwargs)
 
         return response
 
@@ -439,9 +347,7 @@ class IamPolicy(IAMRest):
         :param group_name: The name(friendly name, not ARN) of the group to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
-        response = self.iam.attach_group_policy(
-            GroupName=group_name,
-            PolicyArn=policy_arn)
+        response = self.iam.attach_group_policy(GroupName=group_name, PolicyArn=policy_arn)
 
         return response
 
@@ -452,34 +358,24 @@ class IamPolicy(IAMRest):
         :param group_name: The name(friendly, not ARN) of the IAM group to detach the policy from.
         :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
         """
-        response = self.iam.detach_group_policy(
-            GroupName=group_name,
-            PolicyArn=policy_arn)
+        response = self.iam.detach_group_policy(GroupName=group_name, PolicyArn=policy_arn)
 
         return response
 
-    def list_attached_group_policies(self,
-                                     group_name: str = None,
-                                     path_prefix: str = "/",
-                                     marker: str = None,
-                                     max_items: int = 123) -> list:
+    def list_attached_group_policies(self, group_name: str = None, **kwargs) -> list:
         """
         List all managed policies that are attached to the specified IAM group.
 
         :param group_name: The name(friendly, not ARN) of the group to list attached policies for.
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-        If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-        a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         :Returns: A list of Policy resources.
         """
-        response = self.iam.list_attached_group_policies(
-            GroupName=group_name,
-            PathPrefix=path_prefix,
-            Marker=marker,
-            MaxItems=max_items)
+        response = self.iam.list_attached_group_policies(GroupName=group_name, **kwargs)
 
         return response
 
@@ -490,9 +386,7 @@ class IamPolicy(IAMRest):
         :param user_name: The name(friendly name, not ARN) of the IAM user to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
-        response = self.iam.attach_user_policy(
-            UserName=user_name,
-            PolicyArn=policy_arn)
+        response = self.iam.attach_user_policy(UserName=user_name, PolicyArn=policy_arn)
 
         return response
 
@@ -509,77 +403,19 @@ class IamPolicy(IAMRest):
 
         return response
 
-    def list_attached_role_policies(self,
-                                    role_name: str = None,
-                                    path_prefix: str = "/",
-                                    marker: str = None,
-                                    max_items: int = 123) -> dict:
-        """
-        List all managed policies that are attached to the specified IAM role.
-
-        :param role_name: The name(friendly name, not ARN) of the role to list attached policies for
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-        If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-        a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
-        """
-        response = self.iam.list_attached_role_policies(
-            RoleName=role_name,
-            PathPrefix=path_prefix,
-            Marker=marker,
-            MaxItems=max_items)
-
-        return response
-
-    def attach_role_policy(self, role_name: str = None, policy_arn: str = None):
-        """
-        Attache the specified managed policy to the specified IAM role.
-
-        :param role_name: The name(friendly name, not ARN) of the role to attach the policy to.
-        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
-        """
-        response = self.iam.attach_role_policy(
-            RoleName=role_name,
-            PolicyArn=policy_arn)
-
-        return response
-
-    def detach_role_policy(self, role_name: str = None, policy_arn: str = None):
-        """
-        Remove the specified managed policy from the specified role.
-
-        :param role_name: role_name: str = None, policy_arn: str = None):
-        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
-        """
-        response = self.iam.detach_role_policy(
-            RoleName=role_name,
-            PolicyArn=policy_arn)
-
-        return response
-
-    def list_attached_user_policies(self,
-                                    user_name: str = None,
-                                    path_prefix: str = "/",
-                                    marker: str = None,
-                                    max_items: int = 123) -> dict:
+    def list_attached_user_policies(self, user_name: str = None, **kwargs) -> dict:
         """
         List all managed policies that are attached to the specified IAM user.
 
         :param user_name: The name(friendly name, not ARN) of the user to list attached policies for
-        :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-         If it is not included, it defaults to a slash (/), listing all policies.
-        :param marker: Use this parameter only when paginating results and only after you receive
-         a response indicating that the results are truncated.
-        :param max_items: Use this only when paginating results to indicate the maximum number of
-        items you want in the response.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
-        response = self.iam.list_attached_user_policies(
-            UserName=user_name,
-            PathPrefix=path_prefix,
-            Marker=marker,
-            MaxItems=max_items)
+        response = self.iam.list_attached_user_policies(UserName=user_name, **kwargs)
 
         return response
 
@@ -605,11 +441,117 @@ class IamPolicy(IAMRest):
         locale = kwargs.get("locale", "DE")
         max_result = kwargs.get("max_results", 123)
         response = self.iam.validate_policy(
-            locale=locale,
-            maxResults=max_result,
-            nextToken=next_token,
-            policyDocument=policy_document,
-            policyType=policy_type,
+            locale=locale, maxResults=max_result, nextToken=next_token,
+            policyDocument=policy_document, policyType=policy_type,
             validatePolicyResourceType=validate_policy_resource_type)
+
+        return response
+
+
+class IamRole(IAMRest):
+    """Class initialising s3 connection and including functions for iam role operations."""
+
+    def create_role(self, assume_role_policy_document: str = None,
+                    role_name: str = None, **kwargs) -> dict:
+        """
+        create a role name and attaches a trust policy to it that is provided as a Policy Document.
+
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+        :param role_name: The name of the role to create.
+        # :param tags: A list of tags that you want to attach to the new role.
+        """
+        response = self.iam.create_role(AssumeRolePolicyDocument=assume_role_policy_document,
+                                        RoleName=role_name, **kwargs)
+
+        return response
+
+    def delete_role(self, role_name: str = None):
+        """
+        Delete the specified role. The role must not have any policies attached.
+
+        :param role_name: The name of the role to delete.
+        """
+        response = self.iam.delete_role(RoleName=role_name)
+
+        return response
+
+    def delete_role_policy(self, role_name: str = None, policy_name: str = None):
+        """
+        Delete the specified inline policy that is embedded in the specified IAM role.
+
+        :param role_name: The name(friendly name, not ARN) identifying the role that the policy
+        is embedded in.
+        :param policy_name: The name of the inline policy to delete from the specified IAM role.
+        """
+        response = self.iam.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
+
+        return response
+
+    def list_role_policies(self, **kwargs) -> dict:
+        """
+        List the names of the inline policies that are embedded in the specified IAM role.
+
+        # :param role_name: The name of the role to list policies for.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
+        """
+        response = self.iam.list_role_policies(**kwargs)
+
+        return response
+
+    def list_roles(self, **kwargs):
+        """
+        List the IAM roles that have the specified path prefix.
+
+        If there are none, the operation returns an empty list.
+        # :param path_prefix: The path prefix for filtering the results.
+        #  For example, the prefix /application_abc/component_xyz/ gets all roles whose path starts
+        #  with /application_abc/component_xyz/. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all roles.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        #  items you want in the response.
+        """
+        response = self.iam.list_roles(**kwargs)
+
+        return response
+
+    def list_attached_role_policies(self, role_name: str = None, **kwargs) -> dict:
+        """
+        List all managed policies that are attached to the specified IAM role.
+
+        :param role_name: The name(friendly name, not ARN) of the role to list attached policies for
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
+        """
+        response = self.iam.list_attached_role_policies(RoleName=role_name, **kwargs)
+
+        return response
+
+    def attach_role_policy(self, role_name: str = None, policy_arn: str = None):
+        """
+        Attache the specified managed policy to the specified IAM role.
+
+        :param role_name: The name(friendly name, not ARN) of the role to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
+        """
+        response = self.iam.attach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
+
+        return response
+
+    def detach_role_policy(self, role_name: str = None, policy_arn: str = None):
+        """
+        Remove the specified managed policy from the specified role.
+
+        :param role_name: role_name: str = None, policy_arn: str = None):
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        response = self.iam.detach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
 
         return response
