@@ -18,3 +18,7 @@ s3_operation_data:
 
 copy_obj_data:
   bkt_cnt: 2
+
+s3_bucket_data:
+  no_buckets_for_deg_deletes: 150
+  workload_sizes_mbs: [1, 2, 4, 8]

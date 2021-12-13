@@ -822,3 +822,26 @@ class HAK8s:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
         return resp
+
+    @staticmethod
+    def delete_s3_bucket_data(event, s3_test_obj=None, s3data=None, output=None):
+        """
+        This function executes s3 bucket delete operation on in parallel with thread event.
+        :param event: Thread event to be sent for parallel IOs
+        :param s3_test_obj: s3 test object for the buckets to be deleted
+        :param s3data: S3 data info to get the bucket name
+        :param output: Queue to fill results
+        :return: None
+        """
+        pass_buck_del = dict()
+        fail_buck_del = dict()
+        results = dict()
+        for bucket_name in s3data.keys():
+            resp = s3_test_obj.delete_bucket(bucket_name)
+            if event.is_set():
+                fail_buck_del.update({bucket_name: resp})
+            else:
+                fail_buck_del.update({bucket_name: resp})
+        results["pass_buck_del"] = pass_buck_del
+        results["fail_buck_del"] = fail_buck_del
+        output.put(results)
