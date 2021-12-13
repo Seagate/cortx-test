@@ -5442,7 +5442,7 @@ class TestCsmUser():
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("Step 3: Creating %s admin users and deleting it "
-                      "except last admin", user_creation_count))
+                      "except last admin", user_creation_count)
         for _ in range(user_creation_count):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="admin")
