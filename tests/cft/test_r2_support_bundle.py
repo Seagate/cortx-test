@@ -181,12 +181,12 @@ class TestR2SupportBundle:
         msg = "TEST-32752"
         self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
         generate_sb_process = Process(
-            target=sb.generate_sb_LC,
+            target=sb.generate_sb_lc,
             args=(dest_dir, sb_identifier, None, msg))
 
         generate_sb_process.start()
         self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
-        resp = sb.sb_status_LC(sb_identifier)
+        resp = sb.sb_status_lc(sb_identifier)
         if "In-Progress" in resp:
             self.LOGGER.info("support bundle generation is In-progress status")
         elif "Successfully generated" in resp:
@@ -198,7 +198,7 @@ class TestR2SupportBundle:
         generate_sb_process.join()
 
         self.LOGGER.info("Step 3: checking completed status of support bundle")
-        resp = sb.sb_status_LC(sb_identifier)
+        resp = sb.sb_status_lc(sb_identifier)
         if "Successfully generated" in resp:
             self.LOGGER.info("support bundle generation completed")
         elif "In-Progress" in resp:
