@@ -490,7 +490,8 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
+                                           f"by deleting deployment")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment",
                     pod_name)
         self.dploymnt_backup = resp[1]
