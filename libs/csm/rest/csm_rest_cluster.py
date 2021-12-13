@@ -20,13 +20,13 @@
 #
 """Test library for CSM related cluster operations."""
 import os
-import json
-import random
-import time
 import re
+import time
+
 import yaml
 
 from commons import commands as common_cmd
+from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -172,3 +172,27 @@ class RestCsmCluster(RestTestLib):
             if pod_name in line and 'Error' in line:
                 return True
         return False
+
+    def restart_control_pod(self, nd_obj):
+        """
+        Stop and start control pod
+        :param nd_obj: Master node object
+        :return True/False: If pod restart is successful
+        """
+        pod_name = nd_obj.get_pod_name(CONTROL_POD_NAME_PREFIX)
+        if not pod_name[0]:
+            return pod_name
+        resp = nd_obj.delete_pod(pod_name[1])
+        if not resp[0]:
+            return resp
+        self.log.info("Step : Check if control pod is re-deployed")
+        pod_up = False
+        for _ in range(3):
+            resp = nd_obj.get_pod_name(CONTROL_POD_NAME_PREFIX)
+            if resp[0]:
+                pod_up = True
+                break
+            time.sleep(30)
+        if not pod_up:
+            return pod_up, "Pod is not up"
+        return pod_up, "Pod is restarted"
