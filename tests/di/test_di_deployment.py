@@ -296,6 +296,10 @@ class TestDIDeployment:
             self.log.info("Perform IO operation (Multipart Object)")
             self.multipart_io_with_fi(s3t_obj=s3t_obj, bucket_name="test-33650-mpu")
 
+            self.log.info("Disable Fault Injection")
+            resp = self.fi_adapter.set_fault_injection(flag=False)
+            assert_utils.assert_true(resp[0], resp[1])
+
             self.log.info("Step to Destroy setup")
             resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0], self.worker_node_list)
             assert_utils.assert_true(resp[0], resp[1])
