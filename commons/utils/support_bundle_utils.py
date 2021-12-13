@@ -29,6 +29,7 @@ from commons.helpers.node_helper import Node
 from commons import commands as cm_cmd
 from commons import constants as cm_const
 from commons.utils import assert_utils
+from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 
 # Global Constants
@@ -183,3 +184,62 @@ def collect_crash_files(local_dir):
         LOGGER.info("Crash files are generated and copied at %s", local_dir)
     else:
         LOGGER.info("No Crash files are generated.")
+
+def generate_support_bundle_LC(dest_dir: str, SB_identifier: str,
+                               pod_name: str = None, msg: str = "SB"):
+    """
+    This function is used to generate support bundle
+    :param dest_dir: target directory to create support bundle into
+    :param SB_identifier: support bundle identifier
+    :param pod_name: name of the pod in which support bundle is generated
+    :param msg: Relevant comment to link to support bundle request
+    :rtype response of support bundle generate command
+    """
+    LOGGER.info("Generating support bundle")
+
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    if pod_name is None:
+        pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+
+    resp = node_obj.send_k8s_cmd(
+        operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+        command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                       f"{cm_cmd.SUPPORT_BUNDLE_LC.format(dest_dir, SB_identifier, msg)}",
+        decode=True)
+    return resp
+
+def support_bundle_status_LC(SB_identifier: str, pod_name: str = None):
+    """
+    This function is used to get the support bundle status
+    :param pod_name: name of the pod in which support bundle is generated
+    :param SB_identifier: support bundle identifier
+    :rtype response of support bundle status command
+    """
+    LOGGER.info("Getting support bundle status")
+
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    if pod_name is None:
+        pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+
+    resp = node_obj.send_k8s_cmd(
+        operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+        command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                       f"{cm_cmd.SUPPORT_BUNDLE_STATUS_LC.format(SB_identifier)}",
+        decode=True)
+    return resp

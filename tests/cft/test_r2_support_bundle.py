@@ -24,17 +24,13 @@ from __future__ import absolute_import
 import os
 import logging
 import pytest
-import string
-import random
 import time
 
 from commons import constants as const
-from commons import commands
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils import support_bundle_utils as sb
-from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from multiprocessing import Process
 
@@ -48,19 +44,6 @@ class TestR2SupportBundle:
         cls.LOGGER.info("TestR2SupportBundle  Test setup started...")
 
         cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
-        cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.worker_node_list = []
-        cls.host_list = []
-        for node in range(cls.num_nodes):
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
-                cls.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
-            else:
-                cls.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
-
-        resp = cls.node_obj.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
-        cls.pod_name = resp[1]
 
     def setup_method(self):
         """Create test data directory"""
@@ -142,42 +125,6 @@ class TestR2SupportBundle:
 
         self.LOGGER.debug("Verified logs are generated on each node")
 
-        def generate_support_bundle_LC(self, pod_name: str, dest_dir: str,
-                                   SB_identifier: str, msg: str = "SB"):
-        """
-        This function is used to generate support bundle
-        :param pod_name: name of the pod in which support bundle is generated
-        :param dest_dir: target directory to create support bundle into
-        :param SB_identifier: support bundle identifier
-        :param msg: Relevant comment to link to support bundle request
-        :rtype response of support bundle generate command
-        """
-        self.LOGGER.info("Generating support bundle")
-
-        resp = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-            command_suffix=f"-c {const.HAX_CONTAINER_NAME} -- "
-                           f"{commands.SUPPORT_BUNDLE_LC.format(dest_dir, SB_identifier, msg)}",
-            decode=True)
-        return resp
-
-    def support_bundle_status_LC(self, pod_name: str,
-                                          SB_identifier: str):
-        """
-        This function is used to get the support bundle status
-        :param pod_name: name of the pod in which support bundle is generated
-        :param SB_identifier: support bundle identifier
-        :rtype response of support bundle status command
-        """
-        self.LOGGER.info("Getting support bundle status")
-
-        resp = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-            command_suffix=f"-c {const.HAX_CONTAINER_NAME} -- "
-                           f"{commands.SUPPORT_BUNDLE_STATUS_LC.format(SB_identifier)}",
-            decode=True)
-        return resp
-
     @pytest.mark.cluster_user_ops
     @pytest.mark.lr
     @pytest.mark.support_bundle
@@ -231,17 +178,15 @@ class TestR2SupportBundle:
         self.LOGGER.info("Step 1: Generating support bundle ")
         dest_dir = "file:///var/log/cortx/support_bundle"
         SB_identifier = system_utils.random_string_generator(10)
-        msg = "TEST-20115"
+        msg = "TEST-32752"
         self.LOGGER.info("Support Bundle identifier of : %s ", SB_identifier)
         generate_SB_process = Process(
-            target=self.generate_support_bundle_LC,
-            args=(self.pod_name, dest_dir, SB_identifier, msg))
+            target=sb.generate_support_bundle_LC,
+            args=(dest_dir, SB_identifier, None, msg))
 
         generate_SB_process.start()
-        time.sleep(5)
-
         self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
-        resp = self.support_bundle_status_LC(self.pod_name, SB_identifier)
+        resp = sb.support_bundle_status_LC(SB_identifier)
         if ("In-Progress" in resp):
             self.LOGGER.info("support bundle generation is In-progress status")
         elif("Successfully generated" in resp):
@@ -252,7 +197,7 @@ class TestR2SupportBundle:
         generate_SB_process.join()
 
         self.LOGGER.info("Step 3: checking completed status of support bundle")
-        resp = self.support_bundle_status_LC(self.pod_name, SB_identifier)
+        resp = sb.support_bundle_status_LC(SB_identifier)
         if ("Successfully generated" in resp):
             self.LOGGER.info("support bundle generation completed")
         elif("In-Progress" in resp):
