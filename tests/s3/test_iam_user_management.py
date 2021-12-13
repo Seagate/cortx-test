@@ -67,6 +67,7 @@ class TestIAMUserManagement:
         cls.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.log.info("Setup s3 bench tool")
         cls.log.info("Check s3 bench tool installed.")
+        cls.s3_iam_account_dict = dict()
         cls.iam_test_obj = iam_test_lib.IamTestLib()
         res = system_utils.path_exists("/root/go/src/s3bench")
         if not res:
@@ -111,7 +112,6 @@ class TestIAMUserManagement:
         self.auth_file_change = False
         self.del_iam_user = False
 
-        self.s3_iam_account_dict = dict()
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
         self.END_LOG_FORMAT = "##### Test Ended -  "
