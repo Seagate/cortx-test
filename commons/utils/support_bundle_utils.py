@@ -81,7 +81,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
     return True, local_sb_path
 
 # pylint: disable=too-many-arguments
-def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
+def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None, size_limit=None, services_list=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param local_dir: Local directory where support bundles will be copied
@@ -115,6 +115,14 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         command = command + ''.join(" -c ")
         command = command + ''.join(comp_list)
     resp = node_list[0].execute_cmd(cmd=command)
+    #Form the command if size limit is provided in parameters
+    if size_limit is not None:
+    	command = command + ''.join(" --size_limit ")
+        command = command + ''.join(size_limit)
+    #Form the command if Services limit is provided in paramaters
+    if services_list is not None:
+       command = command + ''.join(" --modules ")
+       command = command + ''.join(services_list)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))
     assert_utils.assert_true(resp[0], resp[1])
     start_time = time.time()
@@ -130,7 +138,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
         if str(status).count(success_msg) == num_nodes:
-            LOGGER.info(success_msg)
+            iLOGGER.info(success_msg)
             for node in range(num_nodes):
                 LOGGER.info("Archiving and copying Support bundle from server")
                 sb_tar_file = "".join([bundle_id, ".srvnode{}.tar"]).format(node)

@@ -82,8 +82,26 @@ class TestR2SupportBundle:
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
         return True
+     
+    def def size_verify(self,size,component_dir_name):
+        """
+        This function is used to verify Support bundle content
+        :param size: whoch specifies size limit for log collection
+        :param component_dir_name: directory used to verify size limit log files
+        :rtype bool
+        """
+        files=os.listdir(component_dir_name)
+	number=len(files)
+	#Converstion of 50MB to bytes, 50*1024=51200KB and 51200*1024=52428800bytes
+	for file in files:
+            if os.path.getsize(file)==52428800:
+	        count+=1
+	if count==number:
+            return True
+        else:
+            return False 
 
-    def r2_verify_support_bundle(self, bundle_id, test_comp_list):
+    def r2_verify_support_bundle(self, bundle_id, test_comp_list, size_limit):
         """
         This function is used to verify support bundle content
         :param bundle_id: bundle id generated after support bundle generation command triggered
@@ -119,6 +137,12 @@ class TestR2SupportBundle:
                         "component_dir not found %s", component_dir_name)
                     assert_utils.assert_true(
                         found, 'Component Directory in support bundle not found')
+                if size_limit:
+                    resp=self.size_verify(size_limit,component_dir_name)
+                    if resp:
+                        self.LOGGER.info("Component dir %s is with limited size", component_dir_name)
+                    else:
+                        self.LOGGER.error("Component dir %s is not with limited size", component_dir_name)
             self.LOGGER.debug(
                 "Verified logs are generated for each component for this node")
 
@@ -163,3 +187,24 @@ class TestR2SupportBundle:
         self.r2_verify_support_bundle(resp[1], test_comp_list)
         self.LOGGER.info(
             "Step 2: Verified logs are generated for each component on each node")
+    
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-32603")
+    def test_32603_generate_support_bundle_sizelimit(self):
+    	"""
+        Validate Support Bundle conatins specified size limit logs
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        resp =sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_32603",comp_list="'s3server'", size_limit="50M")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.LOGGER.info("Step 1: Geneerated Support Bundle through cli")
+        test_comp_list= ["s3"]
+        size_limit='50M'
+        self.LOGGER.info(
+            "step 2: Verifying Logs files are with specified size or not")
+        self.r2_verify_support_bundle(resp[1], test_comp_list, size_limit)
+        self.LOGGER.info(
+            "Step 2: Verified logs are with specified size limit")
+
