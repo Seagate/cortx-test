@@ -494,7 +494,7 @@ class TestPodFailure:
                 'nclients': 1, 'nsamples': 50, 'skipwrite': True, 'skipcleanup': True,
                 'output': output}
 
-        thread = threading.Thread(target=self.ha_obj.ha_s3bench_operation,
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
