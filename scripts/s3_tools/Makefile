@@ -155,6 +155,16 @@ s3bench-install:
 	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
 	@echo "###Installed s3bench tool###"
 
+hsbench-install:
+
+	@echo "###Installing hsbench tool###"
+	rm -rf /root/go/src/github.com/markhpc/hsbench
+	sudo yum install -y go
+	go get github.com/markhpc/hsbench
+	cd /home/perf/go/src/github.com/markhpc/hsbench
+	go build
+	@echo "###Installed s3bench tool###"
+
 bashrc-configure:
 	@echo "###Configuring bashrc for setting ulimit for avoiding file-descriptor out of range issue###"
 	echo 'ulimit -n 999999' >> ~/.bashrc
