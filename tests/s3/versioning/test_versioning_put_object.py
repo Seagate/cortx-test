@@ -22,10 +22,9 @@
 
 import logging
 import os
-import pytest
 import time
-
 from collections import defaultdict
+import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
