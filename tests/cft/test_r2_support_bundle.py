@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import os
 import logging
+import time
 from multiprocessing import Process
 import pytest
 
@@ -185,15 +186,16 @@ class TestR2SupportBundle:
             args=(dest_dir, sb_identifier, None, msg))
 
         generate_sb_process.start()
+        time.sleep(2)
         self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
         resp = sb.sb_status_lc(sb_identifier)
         if "In-Progress" in resp:
             self.LOGGER.info("support bundle generation is In-progress status")
         elif "Successfully generated" in resp:
-            self.LOGGER.error(f"Support bundle got generated "
+            assert_utils.assertTrue(False, f"Support bundle got generated "
                               f"very quickly need to check manually: {resp}")
         else:
-            self.LOGGER.error(f"Support bundle is not generated: {resp}")
+            assert_utils.assertTrue(False, f"Support bundle is not generated: {resp}")
 
         generate_sb_process.join()
 
@@ -202,7 +204,7 @@ class TestR2SupportBundle:
         if "Successfully generated" in resp:
             self.LOGGER.info("support bundle generation completed")
         elif "In-Progress" in resp:
-            self.LOGGER.error(f"Support bundle is In-progress state, "
+            assert_utils.assertTrue(False, f"Support bundle is In-progress state, "
                               f"which is unexpected: {resp}")
         else:
-            self.LOGGER.error(False, f"Support bundle is not generated: {resp}")
+            assert_utils.assertTrue(False, f"Support bundle is not generated: {resp}")
