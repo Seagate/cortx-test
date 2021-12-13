@@ -31,6 +31,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import path_exists
+from commons.utils.s3_utils import poll
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
@@ -170,10 +171,10 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("READ")
         self.log.info(
             "Step 3: Uploading same object into bucket using unsigned account")
-        resp = self.no_auth_obj.put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path)
+        resp = poll(self.no_auth_obj.put_object,
+                    self.bucket_name,
+                    self.obj_name,
+                    self.test_file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Uploaded same object into bucket successfully")
@@ -202,7 +203,7 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("READ")
         self.log.info(
             "Step 3: Deleting an object from bucket using unsigned account")
-        resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
+        resp = poll(self.no_auth_obj.delete_object, self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Deleted an object from bucket using unsigned account successfully")
@@ -741,10 +742,10 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: upload same object in that bucket using unsigned account")
-        resp = self.no_auth_obj.put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path)
+        resp = poll(self.no_auth_obj.put_object,
+                    self.bucket_name,
+                    self.obj_name,
+                    self.test_file_path)
         assert resp[0], resp[1]
         self.log.info(
             "ENDED:Put an object with same name in bucket without Autentication "
@@ -773,9 +774,9 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: Get object from that bucket using unsigned account")
-        resp = self.no_auth_obj.get_object(
-            self.bucket_name,
-            self.obj_name)
+        resp = poll(self.no_auth_obj.get_object,
+                    self.bucket_name,
+                    self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "ENDED:GET an object from bucket without Authentication "
@@ -804,7 +805,8 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: Get object acl from that bucket using unsigned account")
-        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
+        resp = poll(self.acl_obj.get_object_acl, self.bucket_name, self.obj_name,
+                    condition="{}[1]['Grants'][0]['Permission']=='FULL_CONTROL'")
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == "FULL_CONTROL", resp[1]
         self.log.info(
@@ -838,7 +840,8 @@ class TestAllUsersObjectAcl:
         self.log.info(
             "Step 3: Changed object's acl to FULL_CONTROL for all users")
         self.log.info("Step 4: Verifying that object's acl is changed")
-        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
+        resp = poll(self.acl_obj.get_object_acl, self.bucket_name, self.obj_name,
+                    condition="{}[1]['Grants'][0]['Permission']=='WRITE_ACP'")
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == "WRITE_ACP", resp[1]
         self.log.info("Step 4: Verified that object's acl is changed")
