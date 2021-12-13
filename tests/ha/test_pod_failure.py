@@ -462,13 +462,13 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32454")
     @CTFailOn(error_handler)
-    def test_io_operation_safe_pod_shutdown(self):
+    def test_io_operation_pod_shutdown_scale_replicas(self):
         """
-        Verify IOs before and after data pod failure; pod shutdown by making replicas 0
+        Verify IOs before and after data pod failure; pod shutdown by making replicas=0
         """
         LOGGER.info(
             "STARTED: Verify IOs before and after data pod failure; pod shutdown "
-            "by making replicas 0")
+            "by making replicas=0")
 
         LOGGER.info(
             "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
@@ -480,16 +480,16 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 1: IOs are running successfully.")
+        LOGGER.info("Step 1: IOs are completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
-        LOGGER.info("Get pod name to be Shutdown")
+        LOGGER.info("Get pod name to be shutdown")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)
         LOGGER.info("Shutdown pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to Shutdown pod {pod_name} by making "
+        assert_utils.assert_false(resp[0], f"Failed to shutdown pod {pod_name} by making "
                                   "replicas=0")
         LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", pod_name)
         self.deployment_name = resp[1]
@@ -524,7 +524,7 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 6: IOs are running successfully.")
+        LOGGER.info("Step 6: IOs are completed successfully.")
 
         LOGGER.info(
             "Completed: Verify IOs before and after data pod failure; pod shutdown "
