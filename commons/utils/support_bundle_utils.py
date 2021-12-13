@@ -215,7 +215,7 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
 
     if flg:
         LOGGER.info("Support bundle %s generated and copied to %s path.",
-                    file, local_path)
+                    file, local_dir_path)
         return True
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
@@ -258,6 +258,6 @@ def collect_crash_files_k8s(local_dir_path: str):
             m_node_obj.copy_file_to_local(remote_path, local_path)
 
     if flg:
-        LOGGER.info("Crash files are generated and copied to %s", )
+        LOGGER.info("Crash files are generated and copied to %s", local_dir_path)
     else:
         LOGGER.info("No crash files are generated.")
