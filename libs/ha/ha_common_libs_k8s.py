@@ -848,7 +848,9 @@ class HAK8s:
 
         resp = s3bench.setup_s3bench()
         if not resp:
-            return resp, "Couldn't setup s3bench on client machine."
+            status = (resp, "Couldn't setup s3bench on client machine.")
+            output.put(status)
+            sys.exit(1)
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],

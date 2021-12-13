@@ -307,6 +307,7 @@ class TestPodFailure:
         LOGGER.info(
             "ENDED: Test to verify degraded reads before and after unsafe pod shutdown.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-23552")
@@ -470,12 +471,12 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32444")
     @CTFailOn(error_handler)
-    def continuous_reads_during_pod_down(self):
+    def test_continuous_reads_during_pod_down(self):
         """
         This test tests degraded reads while pod is down
         """
         LOGGER.info("STARTED: Test to verify degraded reads during pod is going down.")
-        e = threading.Event()
+        event = threading.Event()
 
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -493,7 +494,8 @@ class TestPodFailure:
                 'nclients': 1, 'nsamples': 50, 'skipwrite': True, 'skipcleanup': True,
                 'output': output}
 
-        thread = threading.Thread(target=self.ha_obj.ha_s3bench_operation, args=(e,), kwargs=args)
+        thread = threading.Thread(target=self.ha_obj.ha_s3bench_operation,
+                                  args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
 
@@ -506,7 +508,7 @@ class TestPodFailure:
         pod_name = random.sample(pod_list, 1)
 
         LOGGER.info("Deleting pod %s", pod_name)
-        e.set()
+        event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
@@ -535,7 +537,7 @@ class TestPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of pod are in online state")
-        e.clear()
+        event.clear()
 
         thread.join()
         responses = output.get()
@@ -556,7 +558,7 @@ class TestPodFailure:
         self.s3_clean = None
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444', nusers=1, nbuckets=10)
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
