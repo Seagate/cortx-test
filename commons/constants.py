@@ -41,6 +41,7 @@ PROD_TYPE_NODE = "node"
 POD_NAME_PREFIX = "cortx-data-pod"
 HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
+CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -209,6 +210,10 @@ class Rest:
     S3_ACCESS_LL = 16
     S3_SECRET_UL = 40
     S3_SECRET_LL = 8
+    IAM_ACCESS_UL = 128
+    IAM_ACCESS_LL = 16
+    IAM_SECRET_UL = 40
+    IAM_SECRET_LL = 8
     MAX_S3_USERS = 1000
     MAX_BUCKETS = 1000
     MAX_IAM_USERS = 1000
@@ -236,6 +241,13 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+    PERF_STAT_METRICS = ["throughput_read",
+                         "throughput_write",
+                         "iops_read_object",
+                         "latency_create_object",
+                         "iops_write_object",
+                         "iops_read_bucket",
+                         "iops_write_bucket"]
 
 
 # aws cli errors
