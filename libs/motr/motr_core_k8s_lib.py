@@ -24,9 +24,12 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
-from commons import constants as common_const
+
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 
 log = logging.getLogger(__name__)
@@ -40,12 +43,15 @@ class MotrCoreK8s():
         for node in range(len(CMN_CFG["nodes"])):
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
+                self.master_uname = CMN_CFG["nodes"][node]["username"]
+                self.master_passwd = CMN_CFG["nodes"][node]["password"]
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
                                    password=CMN_CFG["nodes"][node]["password"])
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
         self.node_dict = self._get_cluster_info
+        self.node_pod_dict = self.get_node_pod_dict()
         
     
     @property
@@ -79,15 +85,20 @@ class MotrCoreK8s():
                         node_dict[nodename]['m0client'].append({"ep":svc["ep"], "fid":svc["fid"]})
             return node_dict
 
-    def get_data_pod_list(self):
+    def get_node_pod_dict(self):
         """
-        Returns all the data pod names
+        Returns all the node and data pod names in dict format
         """
+        node_pod_dict={}
         cmd = "| awk '/cortx-data-pod/ {print $1}'"
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
-        return [node.strip() for node in response.split('\n')]
+        pod_list = [node.strip() for node in response.split('\n')]
+        for pod_name in pod_list:
+            node_name = self.get_node_name_from_pod_name(pod_name)
+            node_pod_dict[node_name] = pod_name
+        return node_pod_dict
 
     def get_primary_cortx_node(self):
         """ 
@@ -140,3 +151,189 @@ class MotrCoreK8s():
            return len(cluster_info_dic[self.get_primary_cortx_node()]["m0client"])
         return None
 
+    def get_node_name_from_pod_name(self, data_pod=None):
+        """
+        To get Node name from data_pod
+
+        :param data_pod: Name of the data pod
+        :type: str
+        :returns: Corresponding Node name
+        :rtype: str
+        """
+        cmd = "hostname"
+        node_name = self.node_obj.send_k8s_cmd(
+            operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                           f"-- {cmd}",
+            decode=True)
+        return node_name
+
+    def dd_cmd(self, b_size, count, file, node):
+        """
+        DD command for creating new file
+
+        :b_size: Block size
+        :count: Block count
+        :file: Output file name
+        :node: on which node file need to create
+        """
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                        common_cmd.CREATE_FILE.format(
+                                                            "/dev/urandom", file, b_size, count))
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    # pylint: disable=too-many-arguments
+    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num):
+        """
+        M0CP command creation
+
+        :b_size: Block size
+        :count: Block count
+        :obj: Object ID
+        :layout: Layout ID
+        :file: Output file name
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
+        if client_num is None:
+            client_num = 0
+        node_dict = self.get_cortx_node_endpoints(node)
+        cmd1 = common_cmd.M0CP.format(node_dict["m0client"][client_num]["ep"],
+                                      node_dict["hax_ep"],
+                                      node_dict["m0client"][client_num]["fid"],
+                                      self.profile_fid, b_size.lower(),
+                                      count, obj, layout, file)
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], cmd1)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    # pylint: disable=too-many-arguments
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num):
+        """
+        M0CAT command creation
+
+        :b_size: Block size
+        :count: Block count
+        :obj: Object ID
+        :layout: Layout ID
+        :file: Output file name
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
+        if client_num is None:
+            client_num = 0
+        node_dict = self.get_cortx_node_endpoints(node)
+        cmd1 = common_cmd.M0CAT.format(node_dict["m0client"][client_num]["ep"],
+                                       node_dict["hax_ep"],
+                                       node_dict["m0client"][client_num]["fid"],
+                                       self.profile_fid, b_size.lower(),
+                                       count, obj, layout, file)
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], cmd1)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def unlink_cmd(self, obj, layout, node, client_num):
+        """
+        M0UNLINK command creation
+
+        :obj: Object ID
+        :layout: Layout ID
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
+        if client_num is None:
+            client_num = 0
+        node_dict = self.get_cortx_node_endpoints(node)
+        cmd1 = common_cmd.M0UNLINK.format(node_dict["m0client"][client_num]["ep"],
+                                          node_dict["hax_ep"],
+                                          node_dict["m0client"][client_num]["fid"],
+                                          self.profile_fid, obj, layout)
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], cmd1)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def diff_cmd(self, file1, file2, node):
+        """
+        DD command for creating new file
+
+        :file1: first file
+        :file2: second file
+        :node: compare files on which node
+        """
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                        common_cmd.DIFF.format(file1, file2))
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def md5sum_cmd(self, file1, file2, node):
+        """
+        MD5SUM command creation
+
+        :file1: first file
+        :file2: second file
+        :node: compare files on which node
+        """
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                        common_cmd.MD5SUM.format(file1, file2))
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
+        #if ret:
+        #    log.info('"%s" Failed, Please check the log', cmd)
+        #    assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
