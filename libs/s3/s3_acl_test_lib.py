@@ -133,11 +133,11 @@ class S3AclTestLib(Acl):
         :return: True, dict.
         """
         try:
-            response = self.s3_client.copy_object(
-                Bucket=dest_bucket,
-                CopySource='/{}/{}'.format(source_bucket, source_object),
-                Key=dest_object,
-                ACL=acl)
+            response = poll(self.s3_client.copy_object,
+                            Bucket=dest_bucket,
+                            CopySource='/{}/{}'.format(source_bucket, source_object),
+                            Key=dest_object,
+                            ACL=acl)
 
             LOGGER.debug(response)
         except (ClientError, Exception) as error:
