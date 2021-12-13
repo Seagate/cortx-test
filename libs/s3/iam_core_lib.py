@@ -32,6 +32,7 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-few-public-methods
 class IAMRest:
     """Library for creating BOTO3 IAM Rest Library."""
 
@@ -276,10 +277,10 @@ class IamLib(IAMRest):
 
     def change_password(self, old_password: str = None, new_password: str = None):
         """
-        Changes the password of the IAM user with the IAM user
-        boto3.client object requesting for the password change.
-        IAM object should be created with Access and Secret key of IAM
-        user which is requesting for the password change.
+        Change the password of the IAM user with the IAM user.
+
+        boto3.client object requesting for the password change. IAM object should be created with
+        Access and Secret key of IAM user which is requesting for the password change.
         :param old_password: Old user password.
         :param new_password: New user password.
         :return: None
@@ -290,35 +291,17 @@ class IamLib(IAMRest):
 class IamPolicy(IAMRest):
     """Class initialising s3 connection and including functions for iam policy operations."""
 
-    def create_policy(self, policy_name: str = None, policy_document: str = None) -> object:
+    def create_policy(self, policy_name: str = None,
+                      policy_document: str = None, **kwargs) -> object:
         """
-        Creates a policy as per policy document.
+        Create a policy as per policy document.
 
         :param policy_name: The name of the policy to create.
         :param policy_document: The policy document.
         """
         response = self.iam.create_policy(
             PolicyName=policy_name,
-            PolicyDocument=policy_document
-        )
-
-        return response
-
-    def create_policy_with_tags(self, policy_name: str = None, policy_document: str = None,
-                                tags: list = None, **kwargs) -> object:
-        """
-        Creates a policy as per policy document with tags.
-
-        :param policy_name: The name of the policy to create.
-        :param policy_document: TThe JSON policy document that you want to use as the content
-        for the new policy.
-        :param tags: A list of tags that you want to attach to the new IAM customer managed policy.
-         Each tag consists of a key name and an associated value.
-        """
-        response = self.iam.create_policy(
-            PolicyName=policy_name,
             PolicyDocument=policy_document,
-            Tags=tags,
             **kwargs
         )
 
@@ -326,7 +309,7 @@ class IamPolicy(IAMRest):
 
     def delete_policy(self, policy_arn: str = None) -> dict:
         """
-        Deletes a policy.
+        Delete a policy.
 
         :param policy_arn: The ARN of the policy to delete.
         """
@@ -336,7 +319,7 @@ class IamPolicy(IAMRest):
 
     def get_policy(self, policy_arn: str = None) -> dict:
         """
-        Retrieves information about the specified managed policy.
+        Retrieve information about the specified managed policy.
 
         :param policy_arn: The ARN of the policy to get.
         """
@@ -344,24 +327,25 @@ class IamPolicy(IAMRest):
 
         return response
 
+    # pylint: disable=too-few-public-methods
     def list_policies(self,
                       scope: str = 'All',
                       only_attached: bool = True,
                       path_prefix: str = "/",
                       policy_usage_filter: str = "PermissionsPolicy",
-                      max_items: int = 123,
                       **kwargs) -> dict:
         """
-        Lists all the managed policies that are available in account.
+        List all the managed policies that are available in account.
 
         :param scope: The scope to use for filtering the results.
         :param only_attached: A flag to filter the results to only the attached policies.
         :param path_prefix: The path prefix for filtering the results. This parameter is optional.
-         If it is not included, it defaults to a slash (/), listing all policies.
+        If it is not included, it defaults to a slash (/), listing all policies.
         :param policy_usage_filter: The policy usage method to use for filtering the results.
-        :param max_items:Use this only when paginating results to indicate the maximum number of
-         items you want in the response.
+        # :param max_items:Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
+        max_items = kwargs.pop("max_items", 123)
         response = self.iam.list_policies(
             Scope=scope,
             OnlyAttached=only_attached,
@@ -375,11 +359,11 @@ class IamPolicy(IAMRest):
 
     def create_role(self, assume_role_policy_document: str = None, role_name: str = None) -> dict:
         """
-        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+        create a role name and attaches a trust policy to it that is provided as a Policy Document.
 
         :param assume_role_policy_document: The trust relationship policy document that grants an
          entity permission to assume the role.
-         :param role_name: The name of the role to create.
+        :param role_name: The name of the role to create.
         """
         response = self.iam.create_role(
             AssumeRolePolicyDocument=assume_role_policy_document,
@@ -394,7 +378,7 @@ class IamPolicy(IAMRest):
                               tags: list = None,
                               **kwargs) -> dict:
         """
-        creates a role name and attaches a trust policy to it that is provided as a Policy Document.
+        create a role name and attaches a trust policy to it that is provided as a Policy Document.
 
         :param assume_role_policy_document: The trust relationship policy document that grants an
          entity permission to assume the role.
@@ -412,7 +396,7 @@ class IamPolicy(IAMRest):
 
     def delete_role(self, role_name: str = None):
         """
-        Deletes the specified role. The role must not have any policies attached.
+        Delete the specified role. The role must not have any policies attached.
 
         :param role_name: The name of the role to delete.
         """
@@ -424,7 +408,7 @@ class IamPolicy(IAMRest):
 
     def delete_role_policy(self, role_name: str = None, policy_name: str = None):
         """
-        Deletes the specified inline policy that is embedded in the specified IAM role.
+        Delete the specified inline policy that is embedded in the specified IAM role.
 
         :param role_name: The name(friendly name, not ARN) identifying the role that the policy
         is embedded in.
@@ -439,7 +423,7 @@ class IamPolicy(IAMRest):
 
     def list_role_policies(self, role_name: str = None, marker: str = None, max_items: int = 123):
         """
-        Lists the names of the inline policies that are embedded in the specified IAM role.
+        List the names of the inline policies that are embedded in the specified IAM role.
 
         :param role_name: The name of the role to list policies for.
         :param marker: Use this parameter only when paginating results and only after you receive
@@ -457,9 +441,9 @@ class IamPolicy(IAMRest):
 
     def list_roles(self, path_prefix: str = "/", max_items: int = 123, **kwargs):
         """
-        Lists the IAM roles that have the specified path prefix. If there are none,
-         the operation returns an empty list.
+        List the IAM roles that have the specified path prefix.
 
+        If there are none, the operation returns an empty list.
         :param path_prefix: The path prefix for filtering the results.
          For example, the prefix /application_abc/component_xyz/ gets all roles whose path starts
          with /application_abc/component_xyz/. This parameter is optional.
@@ -477,7 +461,7 @@ class IamPolicy(IAMRest):
 
     def attach_group_policy(self, group_name: str = None, policy_arn: str = None):
         """
-        Attaches the specified managed policy to the specified IAM group.
+        Attache the specified managed policy to the specified IAM group.
 
         :param group_name: The name(friendly name, not ARN) of the group to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
@@ -491,7 +475,7 @@ class IamPolicy(IAMRest):
 
     def detach_group_policy(self, group_name: str = None, policy_arn: str = None):
         """
-        Removes the specified managed policy from the specified IAM group.
+        Remove the specified managed policy from the specified IAM group.
 
         :param group_name: The name(friendly, not ARN) of the IAM group to detach the policy from.
         :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
@@ -509,7 +493,7 @@ class IamPolicy(IAMRest):
                                      marker: str = None,
                                      max_items: int = 123) -> list:
         """
-        Lists all managed policies that are attached to the specified IAM group.
+        List all managed policies that are attached to the specified IAM group.
 
         :param group_name: The name(friendly, not ARN) of the group to list attached policies for.
         :param path_prefix: The path prefix for filtering the results. This parameter is optional.
@@ -531,7 +515,7 @@ class IamPolicy(IAMRest):
 
     def attach_user_policy(self, user_name: str = None, policy_arn: str = None):
         """
-        Attaches the specified managed policy to the specified user.
+        Attache the specified managed policy to the specified user.
 
         :param user_name: The name(friendly name, not ARN) of the IAM user to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
@@ -545,7 +529,7 @@ class IamPolicy(IAMRest):
 
     def detach_user_policy(self, user_name: str = None, policy_arn: str = None):
         """
-        Removes the specified managed policy from the specified user.
+        Remove the specified managed policy from the specified user.
 
         :param user_name: The name(friendly name, not ARN) of the IAM user to detach the policy from
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
@@ -563,7 +547,7 @@ class IamPolicy(IAMRest):
                                     marker: str = None,
                                     max_items: int = 123) -> dict:
         """
-        Lists all managed policies that are attached to the specified IAM role.
+        List all managed policies that are attached to the specified IAM role.
 
         :param role_name: The name(friendly name, not ARN) of the role to list attached policies for
         :param path_prefix: The path prefix for filtering the results. This parameter is optional.
@@ -584,7 +568,7 @@ class IamPolicy(IAMRest):
 
     def attach_role_policy(self, role_name: str = None, policy_arn: str = None):
         """
-        Attaches the specified managed policy to the specified IAM role
+        Attache the specified managed policy to the specified IAM role.
 
         :param role_name: The name(friendly name, not ARN) of the role to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
@@ -598,7 +582,7 @@ class IamPolicy(IAMRest):
 
     def detach_role_policy(self, role_name: str = None, policy_arn: str = None):
         """
-        Removes the specified managed policy from the specified role.
+        Remove the specified managed policy from the specified role.
 
         :param role_name: role_name: str = None, policy_arn: str = None):
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
@@ -616,7 +600,7 @@ class IamPolicy(IAMRest):
                                     marker: str = None,
                                     max_items: int = 123) -> dict:
         """
-        Lists all managed policies that are attached to the specified IAM user.
+        List all managed policies that are attached to the specified IAM user.
 
         :param user_name: The name(friendly name, not ARN) of the user to list attached policies for
         :param path_prefix: The path prefix for filtering the results. This parameter is optional.
@@ -642,10 +626,10 @@ class IamPolicy(IAMRest):
                         next_token: str = None,
                         **kwargs) -> dict:
         """
-        Requests the validation of a policy and returns a list of findings. The findings help you
-        identify issues and provide actionable recommendations to resolve the issue and enable you
-        to author functional policies that meet security best practices.
+        Request the validation of a policy and returns a list of findings.
 
+        The findings help you identify issues and provide actionable recommendations to resolve the
+        issue and enable you to author functional policies that meet security best practices.
         #:param locale: The locale to use for localizing the findings.
         #:param max_results: The maximum number of results to return in the response.
         :param next_token: A token used for pagination of results returned.
