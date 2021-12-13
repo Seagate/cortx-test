@@ -634,3 +634,35 @@ class IamPolicy(IAMRest):
         )
 
         return response
+
+    def validate_policy(self,
+                        policy_document: str = None,
+                        validate_policy_resource_type: str = None,
+                        policy_type: str = None,
+                        next_token: str = None,
+                        **kwargs) -> dict:
+        """
+        Requests the validation of a policy and returns a list of findings. The findings help you
+        identify issues and provide actionable recommendations to resolve the issue and enable you
+        to author functional policies that meet security best practices.
+
+        #:param locale: The locale to use for localizing the findings.
+        #:param max_results: The maximum number of results to return in the response.
+        :param next_token: A token used for pagination of results returned.
+        :param policy_document: The JSON policy document to use as the content for the policy.
+        :param policy_type: The type of policy to validate. Identity policies grant permissions to
+         IAM principals.
+        :param validate_policy_resource_type: The type of resource to attach to your resource policy
+        """
+        locale = kwargs.get("locale", "DE")
+        max_result = kwargs.get("max_results", 123)
+        response = self.iam.validate_policy(
+            locale=locale,
+            maxResults=max_result,
+            nextToken=next_token,
+            policyDocument=policy_document,
+            policyType=policy_type,
+            validatePolicyResourceType=validate_policy_resource_type
+        )
+
+        return response

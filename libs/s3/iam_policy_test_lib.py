@@ -490,3 +490,34 @@ class IamPolicyTestLib(IamPolicy):
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
+
+    def validate_policy(self,
+                        policy_document: str = None,
+                        validate_policy_resource_type: str = None,
+                        policy_type: str = None,
+                        next_token: str = None,
+                        **kwargs) -> tuple:
+        """
+        Requests the validation of a policy and returns a list of findings. The findings help you
+        identify issues and provide actionable recommendations to resolve the issue and enable you
+        to author functional policies that meet security best practices.
+
+        #:param locale: The locale to use for localizing the findings.
+        #:param max_results: The maximum number of results to return in the response.
+        :param next_token: A token used for pagination of results returned.
+        :param policy_document: The JSON policy document to use as the content for the policy.
+        :param policy_type: The type of policy to validate. Identity policies grant permissions to
+         IAM principals.
+        :param validate_policy_resource_type: The type of resource to attach to your resource policy
+        """
+        try:
+            response = super().validate_policy(policy_document, validate_policy_resource_type,
+                                               policy_type, next_token, **kwargs)
+            LOGGER.info("validate policy %s.", response)
+        except ClientError as error:
+            LOGGER.exception("Error in  %s: %s",
+                             IamPolicyTestLib.list_attached_user_policies.__name__,
+                             error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args)
+
+        return True, response
