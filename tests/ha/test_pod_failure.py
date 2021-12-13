@@ -490,7 +490,7 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by deleting deployment")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment",
                     pod_name)
         self.dploymnt_backup = resp[1]
@@ -526,7 +526,7 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 6: IOs are running successfully.")
+        LOGGER.info("Step 6: IOs completed Successfully.")
 
         LOGGER.info(
             "Completed: Verify IOs before and after data pod failure; pod shutdown "
@@ -538,7 +538,8 @@ class TestPodFailure:
     @CTFailOn(error_handler)
     def test_pod_shutdown_kubectl_delete(self):
         """
-        Verify IOs before and after data pod failure; pod shutdown by deleting deployment.
+        Verify IOs before and after data pod failure; pod shutdown deleting pod
+        using kubectl delete.
         """
         LOGGER.info(
             "STARTED: Verify IOs before and after data pod failure, "
@@ -564,7 +565,7 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete",
                     pod_name)
 
@@ -596,7 +597,7 @@ class TestPodFailure:
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
-        LOGGER.info("Step 6: IOs are running successfully.")
+        LOGGER.info("Step 6: IOs completed successfully.")
 
         LOGGER.info(
             "Completed: Verify IOs before and after data pod failure, "
