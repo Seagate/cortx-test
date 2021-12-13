@@ -572,35 +572,45 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
+        if self.di_err_lib.validate_disabled_config():
+            pytest.skip()
         self.log.info(
             "STARTED: With Checksum flag  Disabled, download of the chunk uploaded object should"
             "succeed ( 30 MB -100 MB).")
+        file_size = const.NORMAL_UPLOAD_SIZES
+
         self.log.info(
-            "Step 1: Disable checksum verification flag.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Disabled checksum flag successfully.")
-        self.log.info(
-            "Step 2: Create a bucket and upload object of size 200 MB into a bucket.")
+            "Step 1: Create a bucket and upload object of size {size}} MB into a bucket.")
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-        system_utils.create_file(self.file_path, 200)
-        self.s3_test_obj.put_object(self.bucket_name, self.object_name)
+        for size in file_size:
+            self.log.info("Step 1: create a file of size {size}")
+            file_path_upload = self.file_path + "TEST_22916_"+ size +"_upload"
+            if os.path.exists(file_path_upload):
+                os.remove(file_path_upload)
+            buff, csm = self.data_gen.generate(size=size,
+                                               seed=self.data_gen.get_random_seed())
+            location = self.data_gen.create_file_from_buf(fbuf=buff, 
+                                                          name=file_path_upload, 
+                                                          size=size)
+            
+            self.s3_test_obj.put_object(self.bucket_name, self.object_name, location)
+            self.log.info(
+                "Step 1: Created a bucket and upload object of size {size} into a bucket.")
+            self.log.info(
+                "Step 2: Download chunk uploaded object of size {size}.")
+            file_path_download = self.file_path + "TEST_22916_"+ size +"_download"
+            if os.path.exists(file_path_download):
+                os.remove(file_path_download) 
+            
+            res = self.s3_test_obj.object_download(
+                self.bucket_name, self.object_name, file_path_download)
+            assert_utils.assert_true(res[0], res)
+            self.log.info(
+                "Step 2: Download chunk uploaded object is successful.")
         self.log.info(
-            "Step 2: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 3: Download chunk uploaded object.")
-        if os.path.exists(self.file_path):
-            os.remove(self.file_path)
-        res = self.s3_mp_test_obj.object_download(
-            self.bucket_name, self.object_name, self.file_path)
-        assert_utils.assert_true(res[0], res)
-        self.log.info(
-            "Step 3: Download chunk uploaded object is successful.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
+                "ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
+                "succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
