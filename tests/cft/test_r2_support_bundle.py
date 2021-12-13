@@ -101,7 +101,7 @@ class TestR2SupportBundle:
         else:
             return False 
 
-    def r2_verify_support_bundle(self, bundle_id, test_comp_list, size_limit):
+    def r2_verify_support_bundle(self, bundle_id, test_comp_list, size_limit, services=None):
         """
         This function is used to verify support bundle content
         :param bundle_id: bundle id generated after support bundle generation command triggered
@@ -143,6 +143,11 @@ class TestR2SupportBundle:
                         self.LOGGER.info("Component dir %s is with limited size", component_dir_name)
                     else:
                         self.LOGGER.error("Component dir %s is not with limited size", component_dir_name)
+                if service_list:
+                     if os.path.isfile(constants.AUTHSERVER_LOG_PATH):
+                        self.LOGGER.info("Component dir is with specifed authserver file")
+                     else: 
+                        self.LOGGER.error("Component dir is not with specifed authserver file")
             self.LOGGER.debug(
                 "Verified logs are generated for each component for this node")
 
@@ -207,4 +212,23 @@ class TestR2SupportBundle:
         self.r2_verify_support_bundle(resp[1], test_comp_list, size_limit)
         self.LOGGER.info(
             "Step 2: Verified logs are with specified size limit")
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-32606")
+    def test_32606_generate_support_bundle_using_services_filter(self):
+        """
+        Vaidate Support Bundle contains specified services for component "
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        resp =sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_32606", services="s3:Authserver,CSM")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.LOGGER.info("step 1: Generated support bundle through cli")
+        self.LOGGER.info(
+            "step 2: Verifying Logs files are with sepcified services or not")
+        service_list=["Authserver"]
+        self.r2_verify_support_bundle(resp[1],service_list)
+        self.LOGGER.info(
+            "step 2: Verified logs are sepcified services")
+        
 
