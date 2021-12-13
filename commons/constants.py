@@ -234,7 +234,11 @@ class Rest:
     }
     PERF_STAT_METRICS = ["throughput_read",
                          "throughput_write",
-                         "iops_read_object"]
+                         "iops_read_object",
+                         "latency_create_object",
+                         "iops_write_object",
+                         "iops_read_bucket",
+                         "iops_write_bucket"]
 
 
 # aws cli errors
