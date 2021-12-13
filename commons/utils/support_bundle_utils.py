@@ -138,7 +138,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None, siz
         status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
         if str(status).count(success_msg) == num_nodes:
-            iLOGGER.info(success_msg)
+            LOGGER.info(success_msg)
             for node in range(num_nodes):
                 LOGGER.info("Archiving and copying Support bundle from server")
                 sb_tar_file = "".join([bundle_id, ".srvnode{}.tar"]).format(node)
