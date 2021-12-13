@@ -367,11 +367,6 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
 
-        LOGGER.info("Cleaning up s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
-
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -379,7 +374,7 @@ class TestPodFailure:
         self.s3_clean = resp[2]
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info(
@@ -449,11 +444,6 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
 
-        LOGGER.info("Cleaning up s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
-
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -461,7 +451,7 @@ class TestPodFailure:
         self.s3_clean = resp[2]
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info(
@@ -551,11 +541,6 @@ class TestPodFailure:
         LOGGER.info("Step 2: Successfully completed READs and verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Cleaning up s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
-
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -563,7 +548,7 @@ class TestPodFailure:
         self.s3_clean = resp[2]
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")

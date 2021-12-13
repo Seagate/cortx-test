@@ -359,11 +359,9 @@ class HAK8s:
         :param nclients: Number of clients/workers
         :return: bool/operation response
         """
-        workloads = [
-            "0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
-            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]
+        workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
-            workloads.extend(["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"])
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
@@ -840,11 +838,9 @@ class HAK8s:
         pass_res = []
         fail_res = []
         results = dict()
-        workloads = [
-            "0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
-            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]
+        workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
-            workloads.extend(["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"])
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
