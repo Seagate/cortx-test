@@ -21,12 +21,15 @@
 """Test library for System Stats related operations.
    Author: Divya Kachhwaha
 """
-import math
 import datetime
+import math
+
 import dateutil.relativedelta
+from prometheus_client.parser import text_string_to_metric_families
+
 import commons.errorcodes as err
-from commons.exceptions import CTException
 from commons.constants import Rest as const
+from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -66,9 +69,9 @@ class SystemStats(RestTestLib):
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            SystemStats.get_stats.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           SystemStats.get_stats.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -121,7 +124,7 @@ class SystemStats(RestTestLib):
             self.log.info("Expected total samples : %s", total_sample)
         else:
             if interval is not None:
-                samples = math.ceil(diff_sec/interval)
+                samples = math.ceil(diff_sec / interval)
                 self.log.info(
                     "Requires Interval or total Sample : %s", samples)
             else:
@@ -193,8 +196,100 @@ class SystemStats(RestTestLib):
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            SystemStats.get_metrics.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           SystemStats.get_metrics.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def get_perf_stats(self):
+        """
+        Read the metric list
+        :return [list]: metric list
+        """
+        try:
+            # Building request url
+            self.log.info("Reading perf stats...")
+            endpoint = self.config["perf_stats_endpoint"]
+            self.log.info("Endpoint for reading stats is %s", endpoint)
+            # Fetching api response
+            response = self.restapi.rest_call(request_type="get",
+                                              endpoint=endpoint,
+                                              headers=self.headers)
+            return response
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           SystemStats.get_perf_stats.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    def get_perf_stats_custom_login(self, header):
+        """
+        Read the metric list
+        :param str header: Header for authentication
+        :return [list]: metric list
+        """
+        try:
+            # Building request url
+            self.log.info("Reading perf stats...")
+            endpoint = self.config["perf_stats_endpoint"]
+            self.log.info("Endpoint for reading stats is %s", endpoint)
+            # Fetching api response
+            response = self.restapi.rest_call(request_type="get",
+                                              endpoint=endpoint,
+                                              headers=header)
+            return response
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           SystemStats.get_perf_stats.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    def validate_perf_metrics(self, text, value=None):
+        """
+        Validate perf metrics rest api output for all metrics names and value
+        :param str text: metrics text format output of rest call
+        :param int value: Value which should be expected from rest call
+        :return True/False: If all metrics are present in text param with provided value
+        """
+        self.log.info("Validating perf metrics")
+        expected_values = const.PERF_STAT_METRICS
+        family = list(text_string_to_metric_families(text))
+        for item in family:
+            items = item.samples
+            for sample in items:
+                sample_value = sample.value
+                sample_name = sample.name
+                value_matched = True
+                if value and value != sample_value:
+                    value_matched = False
+                if sample_name in expected_values and value_matched:
+                    expected_values.remove(sample_name)
+                else:
+                    return False, sample_name
+        return len(expected_values) == 0, expected_values
+
+    def check_prometheus_compatibility(self, text):
+        """
+        Check format of text with prometheus format by using parsing method
+        :param str text: metrics text format output of rest call
+        :return True/False: If metrics text format is as per prometheus format
+        """
+        self.log.info("Validating perf metrics format with prometheus format")
+        try:
+            for family in text_string_to_metric_families(text):
+                for sample in family.samples:
+                    self.log.info("Name: {0} Labels: {1} Value: {2}".format(*sample))
+            return True
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           SystemStats.check_prometheus_compatibility.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
