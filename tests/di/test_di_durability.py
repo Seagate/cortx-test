@@ -590,10 +590,10 @@ class TestDIDurability:
                 os.remove(file_path_upload)
             buff, csm = self.data_gen.generate(size=size,
                                                seed=self.data_gen.get_random_seed())
-            location = self.data_gen.create_file_from_buf(fbuf=buff, 
-                                                          name=file_path_upload, 
+            location = self.data_gen.create_file_from_buf(fbuf=buff,
+                                                          name=file_path_upload,
                                                           size=size)
-            
+
             self.s3_test_obj.put_object(self.bucket_name, self.object_name, location)
             self.log.info(
                 "Step 1: Created a bucket and upload object of size {size} into a bucket.")
@@ -601,7 +601,7 @@ class TestDIDurability:
                 "Step 2: Download chunk uploaded object of size {size}.")
             file_path_download = self.file_path + "TEST_22916_"+ size +"_download"
             if os.path.exists(file_path_download):
-                os.remove(file_path_download) 
+                os.remove(file_path_download)
             
             res = self.s3_test_obj.object_download(
                 self.bucket_name, self.object_name, file_path_download)

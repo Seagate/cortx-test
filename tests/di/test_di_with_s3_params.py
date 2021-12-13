@@ -161,8 +161,7 @@ class TestDIWithChangingS3Params:
             file_path_download = self.F_PATH_COPY + "TEST_29173_"+ size +"_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-            res = self.s3obj.object_download(
-                self.bucket_name, self.object_name, file_path_download)
+            res = self.s3obj.object_download(bucket_name, obj_name, file_path_download)
             sys_util.assert_true(res[0], res)
 
             self.log.info(
@@ -276,7 +275,8 @@ class TestDIWithChangingS3Params:
 
         self.log.info("Step 1: create a file ")
         if os.path.exists(self.F_PATH):
-                os.remove(self.F_PATH)
+            os.remove(self.F_PATH)
+        
         sys_util.create_file(fpath=self.F_PATH, count=1)
 
         self.log.info("Step 2: Upload file to a bucket = {bucket_name_1}")
