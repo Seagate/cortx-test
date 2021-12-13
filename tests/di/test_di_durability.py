@@ -602,7 +602,7 @@ class TestDIDurability:
             file_path_download = self.file_path + "TEST_22916_"+ size +"_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-            
+
             res = self.s3_test_obj.object_download(
                 self.bucket_name, self.object_name, file_path_download)
             assert_utils.assert_true(res[0], res)

@@ -276,7 +276,7 @@ class TestDIWithChangingS3Params:
         self.log.info("Step 1: create a file ")
         if os.path.exists(self.F_PATH):
             os.remove(self.F_PATH)
-        
+
         sys_util.create_file(fpath=self.F_PATH, count=1)
 
         self.log.info("Step 2: Upload file to a bucket = {bucket_name_1}")
