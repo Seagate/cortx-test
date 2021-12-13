@@ -386,3 +386,21 @@ class LogicalNode(Host):
                 container_list.append(each)
 
         return container_list
+
+    def copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
+        """
+        Helper function to copy file on node to specified container inside the specified pod at the specified path
+        :param: local_file_path : Absolute local file path on the node
+        :param: pod_name: Pod name where container resides
+        :param: container_path: Path inside container where the file will be copied
+        :param: container_name: Name of the container where the file will be copied
+        """
+        try:
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, container_path, container_name)
+            output = self.execute_cmd(cmd=cmd, exc=False)
+            status = True if output else False
+            return status
+        except Exception as error:
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      LogicalNode.copy_file_to_container.__name__, error)
+            return False, error
