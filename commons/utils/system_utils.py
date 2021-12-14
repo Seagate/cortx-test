@@ -146,6 +146,7 @@ def run_remote_cmd_wo_decision(
         error = stderr.read()
         if error:
             LOGGER.debug("Error: %s", str(error))
+    client.close()
     return output, error, exit_status
 
 
@@ -1072,7 +1073,7 @@ def get_s3_url(cfg, node_index):
     return final_urls
 
 
-def random_metadata_generator(
+def random_string_generator(
         size: int = 6,
         chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
     """
