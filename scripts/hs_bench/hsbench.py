@@ -28,7 +28,6 @@ import pandas as pd
 
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
-from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
 cfg_obj = read_yaml("scripts/hs_bench/config.yaml")[1]
