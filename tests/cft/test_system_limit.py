@@ -648,8 +648,8 @@ class TestS3IOSystemLimits:
                          random.SystemRandom().randint(metadata_limit+1, 4000)]
         for metadata in metadata_size:
             object_name = f"mp-obj-test20271{metadata}"
-            m_key = system_utils.random_metadata_generator(10)
-            m_value = system_utils.random_metadata_generator(metadata-10)
+            m_key = system_utils.random_string_generator(10)
+            m_value = system_utils.random_string_generator(metadata-10)
 
             obj_size = random.SystemRandom().randint(5, 20)
 

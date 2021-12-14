@@ -18,3 +18,8 @@ s3_operation_data:
 
 copy_obj_data:
   bkt_cnt: 2
+
+s3_bench_workloads: ["0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
+                     "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]
+
+s3_bench_large_workloads: ["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"]
