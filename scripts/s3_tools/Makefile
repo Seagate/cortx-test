@@ -161,7 +161,7 @@ hsbench-install:
 	rm -rf /root/go/src/github.com/markhpc/hsbench
 	sudo yum install -y go
 	go get github.com/markhpc/hsbench
-	cd /home/perf/go/src/github.com/markhpc/hsbench
+	cd /root/go/src/github.com/markhpc/hsbench
 	go build
 	@echo "###Installed s3bench tool###"
 

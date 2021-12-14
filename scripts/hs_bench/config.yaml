@@ -1,7 +1,4 @@
 log_dir: "log/latest/"
-hsbench_path: "/root/go/src/github.com/markhpc/hsbench"
-cmd_go: "sudo yum install -y go"
-hsbench_get: "go get github.com/markhpc/hsbench"
 
 log_format:
     format: "%(asctime)s - %(message)s"

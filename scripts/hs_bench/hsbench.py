@@ -22,14 +22,12 @@
 
 """Script will be responsible to invoke hsbench tool."""
 
-import argparse
 import logging
 from datetime import datetime, timedelta
 import pandas as pd
 
-from commons.utils import assert_utils
 from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs, remove_dirs
+from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
@@ -69,7 +67,7 @@ def check_log_file_error(file_path, errors=None):
     """
     if not errors:
         errors = ["failed ", "panic", "status code",
-                  "does not exist", "InternalError", "ServiceUnavailable"]
+                  "does not exist", "InternalError", "send request failed"]
     error_found = False
     LOGGER.info("Debug: Log File Path {}".format(file_path))
     resp_filtered = []
@@ -87,11 +85,19 @@ def hsbench(
         secret_key,
         end_point="https://s3.seagate.com",
         obj_size="4K",
-        test_duration=10,
-        threads=10,
+        test_duration=1,
+        threads=1,
         bucket=1,
         json_path="file1",
-        duration=None,
+        report_interval=1,
+        mode_order=False,
+        bucket_prefix=False,
+        obj_name_pref=False,
+        num_test_repeat=False,
+        key_retrive_once_blist=False,
+        no_objects=False,
+        csv_path=False,
+        region=False,
         log_file_prefix=""):
     """
     To run hsbench tool
@@ -99,11 +105,25 @@ def hsbench(
     :param secret_key: S3 secret key
     :param end_point: Endpoint for the operations
     :param obj_size: Object size to be used e.g. 1Kb, 2Mb, 4Gb
-    :test_duration: Maximum test duration in seconds <-1 for unlimited> (default 60)
+    :param test_duration: Maximum test duration in seconds <-1 for unlimited> 
+                          (default 60)
     :param threads: Number of threads to run
     :param bucket: Number of buckets to distribute IOs across
+    :param json_path: Write JSON output to this file
+    :param report_interval(float): Number of seconds between report intervals 
+                                   (default 1)
+    :param mode_order(str): Run modes in order.  See NOTES for more info 
+                            (default "cxiplgdcx")
+    :param bucket_prefix(str): Prefix for buckets (default "hotsauce_bench")
+    :param obj_name_pref(str): Prefix for objects
+    :param num_test_repeat(int): Number of times to repeat test (default 1)
+    :param key_retrive_once_blist(int): Maximum number of keys to retreive 
+                                        at once for bucket listings (default 1000)
+    :param no_objects(int): Maximum number of objects <-1 for unlimited> 
+                            (default -1)
+    :param csv_path(str): Write CSV output to this file
+    :param region(str): Region for testing (default "us-east-1")
     :param log_file_prefix: Test number prefix for log file
-    :json_path: Write JSON output to this file
     :return: tuple with json response and log path
     """
     result = []
@@ -114,26 +134,28 @@ def hsbench(
     cmd = f"./hsbench -a={access_key} -s={secret_key} " \
           f"-u={end_point} -d={test_duration} -z={obj_size} -t={threads} -b={bucket} -j={json_path} "
 
+   if mode_order:
+        cmd = cmd + " -m=" + mode_order
+    if bucket_prefix:
+        cmd = cmd + " -bp=" + bucket_prefix
+    if obj_name_pref:
+        cmd = cmd + " -op=" + obj_name_pref
+    if num_test_repeat:
+        cmd = cmd + " -l=" + str(num_test_repeat)
+    if key_retrive_once_blist:
+        cmd = cmd + " -mk=" + str(key_retrive_once_blist)
+    if no_objects:
+        cmd = cmd + " -n=" + str(no_objects)
+    if csv_path:
+        cmd = cmd + " -o=" + csv_path
+    if region:
+        cmd = cmd + " -r=" + region
+
     cmd = f"{cmd}>> {log_path} 2>&1"
 
-    # In case duration is None
-    if not duration:
-        duration = "0h0m"
-
-    # Calculating execution time based on the duration given
-    hour, mins = duration.lower().replace("h", ":").replace("m", "").split(":")
-    dur_time = str(
-        datetime.now() +
-        timedelta(
-            hours=int(hour),
-            minutes=int(mins)))[11:19]
-
-    # Executing hsbench based on the current time and expected duration time
-    # calculated
-    while str(datetime.now())[11:19] <= dur_time:
-        res1 = run_local_cmd(cmd)
-        LOGGER.debug("Response: %s", res1)
-        result.append(res1[1])
+    res1 = run_local_cmd(cmd)
+    LOGGER.debug("Response: %s", res1)
+    result.append(res1[1])
 
     return json_path, log_path
 
@@ -162,7 +184,7 @@ def parse_hsbench_output(file_path):
         return data_dict
 
     except Exception as exc:
-        print(f"Encountered error in file: {file_path} , and Exeption is" , exc)
+        LOGGER.error(f"Encountered error in file: {file_path} , and Exeption is" , exc)
 
 #Todo not supported more than 2 mode_type
 def parse_metrics_value(metric_name, mode_type, operation, parse_data):
