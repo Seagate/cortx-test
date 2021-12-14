@@ -3327,7 +3327,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
-        self.created_users.append(user_id)
+        self.created_users.append(userid)
         self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
         self.log.info("Creating manage user")
@@ -3399,7 +3399,8 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-25275')
     def test_25275(self):
         """
-        Test case for verifying Manage user is not able to create admin user
+        Test case for verifying Manage user is not able to create admin user and
+        Manage user should be able to create new Manage and monitor users
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -3421,16 +3422,17 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="manage")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
+        username = response.json()["username"]
+        self.created_users.append(username)
         self.log.info("Step 3: Verify create monitor user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="monitor")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
-        self.log.info("Sending request to delete csm user %s", username)
-        response = self.csm_user.delete_csm_user(user_id)
-        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        username = response.json()["username"]
+        self.created_users.append(username)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-
+ 
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
