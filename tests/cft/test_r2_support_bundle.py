@@ -89,7 +89,7 @@ class TestR2SupportBundle:
 	files=os.listdir(component_dir_name)
 	number=len(files)
 	for file in files:
-            if os.path.getsize(file)==1048576:
+            if os.path.getsize(file)>=800000 and os.path.getsize(file)<=1300000:
                 count+=1
 	if count==number:
             return True
