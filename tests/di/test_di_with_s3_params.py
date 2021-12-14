@@ -130,13 +130,9 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        res_default = self.di_err_lib.validate_default_config()
         res_disable = self.di_err_lib.validate_disabled_config()
-        if ((not res_default[1]) and (not res_disable[1])):
-            self.log.info("Skipping test neither flags are set to default"
-                            "nor DI flags are enabled" )
-            self.log.info("validate_default_config %s", res_default)
-            self.log.info("validate_disable_config %s", res_disable)
+        if not res_disable[1]:
+            self.log.info("Skipping test DI flags are not enabled" )
             pytest.skip()
 
         self.log.info(
@@ -265,11 +261,9 @@ class TestDIWithChangingS3Params:
         Test to verify copy object to different bucket with same
         object name with Data Integrity disabled.
         """
-        res_default = self.di_err_lib.validate_default_config()
         res_disable = self.di_err_lib.validate_disabled_config()
-        if res_default[1] and res_disable[1]:
-            self.log.info("Skipping test neither flags are set to default config "
-                            "nor DI flags are set to disabled config" )
+        if res_disable[1]:
+            self.log.info("Skipping test when DI flags are not set to disabled config" )
             pytest.skip()
         self.log.info(
             "STARTED: Test to verify copy object to different bucket with same"

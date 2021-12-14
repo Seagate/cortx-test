@@ -573,11 +573,9 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
-        res_default = self.di_err_lib.validate_default_config()
         res_disable = self.di_err_lib.validate_disabled_config()
-        if res_default[1] and res_disable[1]:
-            self.log.info("Skipping test either flags are not set to default"
-                            "or checksum flag is not disabled" )
+        if res_disable[1]:
+            self.log.info("Skipping test  checksum flag is not disabled" )
             pytest.skip()
 
         self.log.info(
