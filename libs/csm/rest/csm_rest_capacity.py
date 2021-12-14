@@ -27,6 +27,7 @@ from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
+
 class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
     operations"""
@@ -41,8 +42,7 @@ class SystemCapacity(RestTestLib):
             # Building request url
             self.log.info("Reading System Capacity...")
             endpoint = self.config["capacity_endpoint"]
-            self.log.info(
-                "Endpoint for reading capacity is {}".format(endpoint))
+            self.log.info("Endpoint for reading capacity is %s", endpoint)
 
             # Fetching api response
             response = self.restapi.rest_call(request_type="get",
@@ -80,3 +80,51 @@ class SystemCapacity(RestTestLib):
         used_percent = response_json['usage_percentage']
         cap_unit = response_json['unit']
         return total_cap, avail_cap, used_cap, used_percent, cap_unit
+
+    def get_degraded_capacity(self):
+        """
+        Get degraded capacity from CSM
+        TODO: Dummy function as degraded capacity csm specs is not defined yet.
+        """
+        self.log.info("Reading System Capacity...")
+        endpoint = self.config["decapacity_endpoint"]
+        self.log.info("Endpoint for reading capacity is %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
+                                          headers=self.headers)
+        return response
+
+    def verify_degraded_capacity(self,resp:dict, healthy=None, degraded=None,
+                                critical=None, damaged=None, err_margin:int=0):
+        """
+        TODO: Dummy function as degraded capacity csm specs is not defined yet.
+        resp is dict
+        """
+        checklist = []
+        if healthy is not None:
+            checklist.append("healthy")
+        if degraded is not None:
+            checklist.append("degraded")
+        if critical is not None:
+            checklist.append("critical")
+        if damaged is not None:
+            checklist.append("damaged")
+
+        result_flag = True
+        result_msg = ""
+        for chk in checklist:
+            expected = eval(chk)
+            actual = resp[chk]
+            self.log.info("Expected %s byte count within error margin %s bytes of : %s"
+                            "bytes", chk, err_margin, expected)
+            self.log.info("Actual healthy byte count : %s", actual)
+            flag = expected - err_margin <= actual <= expected + err_margin
+            if flag:
+                msg = f"{chk} byte count check passed.\n"
+                self.log.info(msg)
+            else:
+                msg = f"{chk} byte count check failed.\n"
+                self.log.error(msg)
+            result_msg = result_msg + msg
+            result_flag = result_flag and flag
+            return result_flag, result_msg

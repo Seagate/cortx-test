@@ -1,0 +1,4 @@
+test_dummy:
+  object_size:
+    start_range: 10
+    stop_range: 100
