@@ -136,7 +136,7 @@ class TestDIWithChangingS3Params:
             self.log.info("Skipping test neither flags are set to default"
                             "nor DI flags are enabled" )
             self.log.info("validate_default_config %s", res_default)
-            self.log.info("validate_disable_config %s", res_disable)             
+            self.log.info("validate_disable_config %s", res_disable)     
             pytest.skip()
 
         self.log.info(
