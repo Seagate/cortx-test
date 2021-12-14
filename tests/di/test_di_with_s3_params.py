@@ -181,7 +181,6 @@ class TestDIWithChangingS3Params:
                 break
             self.log.info("Step 3: Checksum validation is successful.")
 
-
         self.s3obj.delete_bucket(bucket_name, force=True)
         if result:
             assert True
@@ -313,10 +312,8 @@ class TestDIWithChangingS3Params:
         self.log.info(
                 "Step 4: Validate Etag of source and copied object.")
 
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert True
-        else:
-            assert False
+        assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                       "ETAG validation failed:")
         self.log.info(
                 "Step 4: Etag validation is successful.")
         self.log.info(
