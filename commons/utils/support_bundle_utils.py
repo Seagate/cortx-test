@@ -131,7 +131,6 @@ def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
-
     while timeout > time.time() - start_time:
         time.sleep(180)
         LOGGER.info("Checking Support Bundle status")
