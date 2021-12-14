@@ -31,6 +31,10 @@ NWORKERS = 32
 # run in parallel.
 NGREENLETS = 32
 
+#SB contansts
+MIN = 800000
+MAX = 1300000
+
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
