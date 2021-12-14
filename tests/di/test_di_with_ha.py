@@ -144,6 +144,7 @@ class TestDICheckHA:
             remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
+    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.lc
     @pytest.mark.data_integrity
     @pytest.mark.data_durability

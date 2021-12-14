@@ -306,6 +306,7 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity during the upload "
             "with correct checksum.")
 
+    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
