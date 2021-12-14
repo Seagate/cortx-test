@@ -36,6 +36,7 @@ from config import CMN_CFG
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
 from commons.utils import system_utils as sys_util
 
@@ -48,7 +49,6 @@ class TestDIWithChangingS3Params:
     def setup_class(cls):
         """
         Function will be invoked prior to each test case.
-
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
@@ -256,43 +256,53 @@ class TestDIWithChangingS3Params:
         Test to verify copy of copied object using simple object upload with
         Data Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("Started: Test to verify copy of copied object using simple object upload "
+                      "with Data Integrity flag ON for write and OFF for read")
+        self.log.debug("Checking setup status")
+        valid,skip_mask = self.di_err_lib.validate_default_config()
+        if not valid or skip_mask:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         bucket_name_3 = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
         obj_name_2 = self.get_object_name()
         obj_name_3 = self.get_object_name()
-        self.s3obj.create_bucket(bucket_name=bucket_name_1)
-        self.s3obj.create_bucket(bucket_name=bucket_name_2)
-        self.s3obj.create_bucket(bucket_name=bucket_name_3)
         sys_util.create_file(fpath=self.F_PATH, count=1)
-        resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                                     file_path=self.F_PATH)
-        self.log.info(resp)
-        resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1,
-                                         source_object=obj_name_1,
-                                         dest_bucket=bucket_name_2,
-                                         dest_object=obj_name_2)
-        self.log.info(resp_cp)
-        resp_cp_cp = self.s3obj.copy_object(source_bucket=bucket_name_2,
-                                            source_object=obj_name_2,
-                                            dest_bucket=bucket_name_3,
-                                            dest_object=obj_name_3)
-        self.s3obj.object_download(bucket_name=bucket_name_3,
-                                   obj_name=obj_name_3, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
-        self.s3obj.delete_bucket(bucket_name_1, force=True)
-        self.s3obj.delete_bucket(bucket_name_2, force=True)
-        self.s3obj.delete_bucket(bucket_name_3, force=True)
-        if result:
-            if resp_cp[1]['CopyObjectResult']['ETag'] == resp_cp_cp[1]['CopyObjectResult']['ETag']:
-                assert True
+        try:
+            self.s3obj.create_bucket(bucket_name=bucket_name_1)
+            self.s3obj.create_bucket(bucket_name=bucket_name_2)
+            self.s3obj.create_bucket(bucket_name=bucket_name_3)
+            resp_put = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                             file_path=self.F_PATH)
+            self.log.debug(resp_put)
+            resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1,
+                                             source_object=obj_name_1, dest_bucket=bucket_name_2,
+                                             dest_object=obj_name_2)
+            self.log.debug(resp_cp)
+            resp_cp_cp = self.s3obj.copy_object(source_bucket=bucket_name_2,
+                                                source_object=obj_name_2,
+                                                dest_bucket=bucket_name_3, dest_object=obj_name_3)
+            self.log.debug(resp_cp_cp)
+            self.s3obj.object_download(bucket_name=bucket_name_3, obj_name=obj_name_3,
+                                       file_path=self.F_PATH_COPY)
+            self.s3obj.delete_bucket(bucket_name_1, force=True)
+            self.s3obj.delete_bucket(bucket_name_2, force=True)
+            self.s3obj.delete_bucket(bucket_name_3, force=True)
+            result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                                file_path_2=self.F_PATH_COPY)
+            if result:
+                self.log.info("Checksum matched for downloaded files")
             else:
+                self.log.info("Checksum match failed for downloaded files")
                 assert False
-        else:
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
             assert False
+        self.log.info("Ended: Test to verify copy of copied object using simple object upload "
+                      "with Data Integrity flag ON for write and OFF for read")
 
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
@@ -303,35 +313,41 @@ class TestDIWithChangingS3Params:
         GET operation with range read with file size 50mb
         with Data Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("Started: Test to verify copy object with chunk upload and GET operation "
+                      "with range read with file size 50mb with DI flag ON for write and OFF for "
+                      "read")
+        self.log.debug("Checking setup status")
+        valid,skip_mask = self.di_err_lib.validate_default_config()
+        if not valid or skip_mask:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
         obj_name_2 = self.get_object_name()
-        self.s3obj.create_bucket(bucket_name=bucket_name_1)
-        self.s3obj.create_bucket(bucket_name=bucket_name_2)
         sys_util.create_file(fpath=self.F_PATH, count=50)
-        resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                                     file_path=self.F_PATH)
-        self.log.info(resp)
-        self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
-                               dest_bucket=bucket_name_2, dest_object=obj_name_2)
-        resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=bucket_name_2,
-                                                            my_key=obj_name_2,
-                                                            start_byte=8888, stop_byte=9999)
-        resp_full = self.s3obj.object_download(bucket_name=bucket_name_2,
-                                               obj_name=obj_name_2,
-                                               file_path=self.F_PATH_COPY)
-        self.log.info(resp)
-        self.log.info(resp_full)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
-        self.s3obj.delete_bucket(bucket_name_1, force=True)
-        self.s3obj.delete_bucket(bucket_name_2, force=True)
-        if result:
-            assert True
-        else:
+        try:
+            self.s3obj.create_bucket(bucket_name=bucket_name_1)
+            self.s3obj.create_bucket(bucket_name=bucket_name_2)
+            resp_put = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                             file_path=self.F_PATH)
+            self.log.debug(resp_put)
+            resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
+                                             dest_bucket=bucket_name_2, dest_object=obj_name_2)
+            self.log.debug(resp_cp)
+            resp_rr = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=bucket_name_2,
+                                                                   my_key=obj_name_2,
+                                                                   start_byte=8888, stop_byte=9999)
+            self.log.debug(resp_rr)
+            self.s3obj.delete_bucket(bucket_name_1, force=True)
+            self.s3obj.delete_bucket(bucket_name_2, force=True)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
             assert False
+        self.log.info("Ended: Test to verify copy object with chunk upload and GET operation "
+                      "with range read with file size 50mb with DI flag ON for write and OFF for "
+                      "read")
 
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
@@ -341,37 +357,49 @@ class TestDIWithChangingS3Params:
         Test to overwrite an object using copy object api with
         Data Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("Started: Test to overwrite an object using copy object api with Data "
+                      "Integrity flag ON for write and OFF for read")
+        self.log.debug("Checking setup status")
+        self.log.debug("Checking setup status")
+        valid,skip_mask = self.di_err_lib.validate_default_config()
+        if not valid or skip_mask:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+
+        self.log.debug("Executing test as flags are set to default")
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
-        self.s3obj.create_bucket(bucket_name=bucket_name_1)
-        self.s3obj.create_bucket(bucket_name=bucket_name_2)
-        sys_util.create_file(fpath=self.F_PATH, count=50)
-        resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                                     file_path=self.F_PATH)
-        self.log.info(resp)
-        resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1,
-                                         source_object=obj_name_1,
-                                         dest_bucket=bucket_name_2,
-                                         dest_object=obj_name_1)
-        self.log.info(resp_cp)
-        resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_2,
-                                         source_object=obj_name_1,
-                                         dest_bucket=bucket_name_1,
-                                         dest_object=obj_name_1)
-        self.log.info(resp_cp)
-        self.s3obj.object_download(bucket_name=bucket_name_1,
-                                   obj_name=obj_name_1, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
-        self.s3obj.delete_bucket(bucket_name_1, force=True)
-        self.s3obj.delete_bucket(bucket_name_2, force=True)
-        if result:
-            assert True
-        else:
+        sys_util.create_file(fpath=self.F_PATH, count=1)
+        try:
+            self.s3obj.create_bucket(bucket_name=bucket_name_1)
+            self.s3obj.create_bucket(bucket_name=bucket_name_2)
+            resp_put = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                             file_path=self.F_PATH)
+            self.log.debug(resp_put)
+            resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
+                                             dest_bucket=bucket_name_2, dest_object=obj_name_1)
+            self.log.debug(resp_cp)
+            resp_cp_cp = self.s3obj.copy_object(source_bucket=bucket_name_2,
+                                                source_object=obj_name_1,
+                                                dest_bucket=bucket_name_1, dest_object=obj_name_1)
+            self.log.info(resp_cp_cp)
+            self.s3obj.object_download(bucket_name=bucket_name_1, obj_name=obj_name_1,
+                                       file_path=self.F_PATH_COPY)
+            res = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+            self.s3obj.delete_bucket(bucket_name_1, force=True)
+            self.s3obj.delete_bucket(bucket_name_2, force=True)
+            if res:
+                assert True
+            else:
+                assert False
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
             assert False
+        self.log.info("Ended: Test to overwrite an object using copy object api with Data "
+                      "Integrity flag ON for write and OFF for read")
 
+    @pytest.mark.skip(reason="Not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
@@ -380,45 +408,53 @@ class TestDIWithChangingS3Params:
         Test to verify multipart upload with s3server restart after every upload
         with Data Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_default_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         parts = list()
-        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
-                                          split_count=5, random_part_size=False)
-        self.log.info(res_sp_file)
-        self.s3obj.create_bucket(bucket_name=bucket_name)
-        res = self.s3_mp_test_obj.create_multipart_upload(bucket_name,
-                                                          obj_name)
-        mpu_id = res[1]["UploadId"]
-        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        self.log.info("Uploading parts into bucket")
-        i = 0
-        while i < 5:
-            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
-                data = file_pointer.read()
-            resp = self.s3_mp_test_obj.upload_part(body=data,
-                                                   bucket_name=bucket_name,
-                                                   object_name=obj_name,
-                                                   upload_id=mpu_id, part_number=i+1)
-            parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
-            S3H_OBJ.restart_s3server_processes()
-            i += 1
-        resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id,
-                                                                parts=parts,
-                                                                bucket=bucket_name,
-                                                                object_name=obj_name)
-        self.log.info(resp_cu)
-        self.s3obj.object_download(bucket_name=bucket_name,
-                                   obj_name=obj_name, file_path=self.F_PATH_COPY)
-        self.s3obj.delete_bucket(bucket_name, force=True)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
-        if result:
-            assert True
-        else:
+        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25, split_count=5,
+                                          random_part_size=False)
+        self.log.debug(res_sp_file)
+        try:
+            self.s3obj.create_bucket(bucket_name=bucket_name)
+            res_mpu = self.s3_mp_test_obj.create_multipart_upload(bucket_name, obj_name)
+            mpu_id = res_mpu[1]["UploadId"]
+            self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+            self.log.debug("Uploading parts into bucket")
+            i = 0
+            while i < 5:
+                with open(res_sp_file[i]["Output"], "rb") as file_pointer:
+                    data = file_pointer.read()
+                resp = self.s3_mp_test_obj.upload_part(body=data, bucket_name=bucket_name,
+                                                       object_name=obj_name, upload_id=mpu_id,
+                                                       part_number=i+1)
+                parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
+                S3H_OBJ.restart_s3server_processes()
+                # to do for LC
+                i += 1
+            resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
+                                                                    bucket=bucket_name,
+                                                                    object_name=obj_name)
+            self.log.info(resp_cu)
+            self.s3obj.object_download(bucket_name=bucket_name, obj_name=obj_name,
+                                       file_path=self.F_PATH_COPY)
+            self.s3obj.delete_bucket(bucket_name, force=True)
+            result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                                file_path_2=self.F_PATH_COPY)
+            if result:
+                assert True
+            else:
+                assert False
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
             assert False
 
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
@@ -428,78 +464,70 @@ class TestDIWithChangingS3Params:
         using simple object upload with Data Integrity
         flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.debug("Checking setup status")
+        config_res = self.di_err_lib.validate_default_config()
+        if config_res[1]:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
         obj_name_2 = self.get_object_name()
-        self.s3obj.create_bucket(bucket_name=bucket_name_1)
-        self.s3obj.create_bucket(bucket_name=bucket_name_2)
-        # test scene 1
-        self.log.info("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: enable data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if status:
-            self.log.info("Step 2: enabled data corruption")
-        else:
-            self.log.info("Step 2: failed to enable data corruption")
-            assert False
-        self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                              file_path=location)
-        resp = self.s3obj.copy_object(source_bucket=bucket_name_1,
-                                      source_object=obj_name_1,
-                                      dest_bucket=bucket_name_2,
-                                      dest_object=obj_name_2)
-        self.log.info(resp)
-        # this copy operation should fail
-        resp = self.s3obj.object_download(bucket_name=bucket_name_1,
-                                          obj_name=obj_name_1, file_path=self.F_PATH)
-        self.log.info(resp)
-        # this get operation should fail
-        # test scene 2
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                              file_path=location)
-        resp = self.s3obj.copy_object(source_bucket=bucket_name_1,
-                                      source_object=obj_name_1,
-                                      dest_bucket=bucket_name_2,
-                                      dest_object=obj_name_2)
-        self.log.info(resp)
-        # this copy operation should fail
-        resp = self.s3obj.object_download(bucket_name=bucket_name_1,
-                                          obj_name=obj_name_1,
-                                          file_path=self.F_PATH)
-        self.log.info(resp)
-        # this get operation should fail
-        self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                              file_path=self.F_PATH)
-        self.s3obj.object_download(bucket_name=bucket_name_1,
-                                   obj_name=obj_name_1, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH,
-                                            file_path_2=self.F_PATH_COPY)
-        if result:
-            assert True
-        else:
-            assert False
-        # to do disable corruption
-        # ETAG should match
-        # test scene 3
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='K',
-                                                         data_folder_prefix=self.test_dir_path)
-        # to do enable read corruption
-        self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                              file_path=location)
-        self.s3obj.object_download(bucket_name=bucket_name_1,
-                                   obj_name=obj_name_1, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH,
-                                            file_path_2=self.F_PATH_COPY)
-        # checksum should match
-        if result:
-            assert True
-        else:
-            assert False
+        try:
+            self.s3obj.create_bucket(bucket_name=bucket_name_1)
+            self.s3obj.create_bucket(bucket_name=bucket_name_2)
+            self.log.info("Step 1: Create a corrupted file.")
+            location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 1: created a corrupted file at location %s", location)
+            self.log.info("Step 2: Enable data corruption")
+            fault_status = self.fi_adapter.set_fault_injection(flag=True)
+            if fault_status[0]:
+                self.log.debug("Step 2: fault injection set")
+            else:
+                self.log.debug("Step 2: failed to set fault injection. Reason: %s", fault_status[1])
+                assert False
+            status = self.fi_adapter.enable_data_block_corruption()
+            if status:
+                self.log.debug("Step 2: enabled data corruption")
+            else:
+                self.log.debug("Step 2: failed to enable data corruption")
+                assert False
+            self.log.info("Step 2: Enabled data corruption")
+            self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                  file_path=location)
+            resp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
+                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
+            self.log.info(resp)
+            # this copy operation should fail
+            resp = self.s3obj.object_download(bucket_name=bucket_name_1,
+                                              obj_name=obj_name_1, file_path=self.F_PATH)
+            self.log.info(resp)
+            # this get operation should fail
+            # test scene 2
+            location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                  file_path=location)
+            resp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
+                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
+            self.log.info(resp)
+            # this copy operation should fail
+            resp = self.s3obj.object_download(bucket_name=bucket_name_1, obj_name=obj_name_1,
+                                              file_path=self.F_PATH)
+            self.log.info(resp)
+            # this get operation should fail
+            self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                  file_path=self.F_PATH)
+            self.s3obj.object_download(bucket_name=bucket_name_1, obj_name=obj_name_1,
+                                       file_path=self.F_PATH_COPY)
+            result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                                file_path_2=self.F_PATH_COPY)
+            if result:
+                assert True
+            else:
+                assert False
+            # to do disable corruption
+        except CTException as err:
+            self.log.info("Test failed with %s", err)

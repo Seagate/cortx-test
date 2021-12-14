@@ -391,7 +391,7 @@ class Sizes:
 KB = 1024
 MB = KB * KB
 GB = MB * MB
-NORMAL_UPLOAD_SIZES = [0 * KB, 4 * KB, 8 * KB, 64 * KB, 256 * KB,
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB,
                        16 * MB, 32 * MB, 64 * MB, 128 * MB]
 MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
                           128 * MB, 256 * MB, 512 * MB, 1024 * MB]

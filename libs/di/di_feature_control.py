@@ -84,7 +84,7 @@ class DIFeatureControl:
         :param section: s3config section.
         :param flag: flag to be updated.
         :param value: value of flag.
-        :param backup_path: modified s3config file
+        :keyword backup_path: modified s3config file
         """
         LOGGER.info("Setting %s flag value to %s in s3server config file", flag, value)
         try:
