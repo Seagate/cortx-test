@@ -130,8 +130,8 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        res_disable = self.di_err_lib.validate_disabled_config()
-        if not res_disable[1]:
+        valid,skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or not skipmark:
             self.log.info("Skipping test DI flags are not enabled" )
             pytest.skip()
 
@@ -261,8 +261,8 @@ class TestDIWithChangingS3Params:
         Test to verify copy object to different bucket with same
         object name with Data Integrity disabled.
         """
-        res_disable = self.di_err_lib.validate_disabled_config()
-        if res_disable[1]:
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or skipmark:
             self.log.info("Skipping test when DI flags are not set to disabled config" )
             pytest.skip()
         self.log.info(
