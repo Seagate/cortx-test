@@ -399,7 +399,7 @@ class TestR2SupportBundle:
             machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
                 log_path = log_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
@@ -422,15 +422,15 @@ class TestR2SupportBundle:
             machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
                 log_path = file_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
                 self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
-                for x in range(1, len(lines)):
-                    line = lines[x].split()
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
                     file_size = int(line[4][:-2])
                     if file_size > constants.LOG_PATH_FILE_SIZE_MB_UTILS[file_path]:
                         assert_utils.assert_true(False, f"Utils max file size is: "
@@ -454,7 +454,7 @@ class TestR2SupportBundle:
             machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
                 log_path = log_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
@@ -477,15 +477,15 @@ class TestR2SupportBundle:
             machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
                 log_path = file_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
                 self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
-                for x in range(1, len(lines)):
-                    line = lines[x].split()
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
                     file_size = int(line[4][:-2])
                     if file_size > constants.LOG_PATH_FILE_SIZE_MB_HARE[file_path]:
                         assert_utils.assert_true(False, f"HARE max file size is: "
