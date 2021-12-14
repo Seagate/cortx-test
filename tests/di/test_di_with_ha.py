@@ -144,8 +144,9 @@ class TestDICheckHA:
             remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
-    @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags("TEST-22926")
     @CTFailOn(error_handler)
     def test_reads_after_cluster_restart(self):
