@@ -337,7 +337,7 @@ class TestDICheckMultiPart:
         except Exception as fault:
             self.log.error(fault)
         else:
-             assert False, 'Download passed'
+            assert False, 'Download passed'
 
         download_checksum = system_utils.calculate_checksum(download_path, binary_bz64=False)[1]
         assert_utils.assert_exact_string(file_checksum, download_checksum,
@@ -428,7 +428,6 @@ class TestDICheckMultiPart:
         SZ >= Data Unit Sz
 
         """
-        cmd_sz = '5MB'
         size = 5 * MB
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
@@ -444,7 +443,7 @@ class TestDICheckMultiPart:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -474,4 +473,3 @@ class TestDICheckMultiPart:
             self.log.error(fault)
         else:
             assert False, 'Download passed'
-

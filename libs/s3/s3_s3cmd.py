@@ -146,11 +146,8 @@ class S3CmdFacade:
         return response
 
     @classmethod
-    def download_object_s3cmd(
-            cls,
-            bucket_name: str = None,
-            file_path: str = None,
-            **kwargs) -> tuple:
+    def download_object_s3cmd(cls, bucket_name: str = None, file_path: str = None,
+                              **kwargs) -> tuple:
         """
         Downloading s3 object to a local dir.
 

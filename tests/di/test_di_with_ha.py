@@ -30,17 +30,18 @@ from http import HTTPStatus
 from time import perf_counter_ns
 
 import pytest
-
+from commons.constants import MB
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils.system_utils import make_dirs
-from commons.utils.system_utils import remove_dirs
+from commons.utils.system_utils import remove_dirs, remove_file
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
+from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
@@ -101,11 +102,9 @@ class TestDICheckHA:
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.s3_test_obj = S3TestLib()
-        cls.test_file = "di-mp_obj"
-        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DITestMultipartUpload")
         if not os.path.exists(cls.test_dir_path):
             resp = make_dirs(cls.test_dir_path)
-        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def setup_method(self):
         """
@@ -113,7 +112,6 @@ class TestDICheckHA:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
-        self.restored = True
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -122,6 +120,7 @@ class TestDICheckHA:
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "di-fi-bkt-{}".format(self.random_time)
         self.object_name = "di-fi-obj-{}".format(self.random_time)
+        self.file_path = os.path.join(self.test_dir_path, di_lib.get_random_file_name())
         LOGGER.info("Done: Setup operations. ")
 
     def teardown_method(self):
@@ -129,19 +128,20 @@ class TestDICheckHA:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
-        if self.restored:
-            LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            if not resp[0]:
-                resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-                assert_utils.assert_true(resp[0], resp[1])
-            if self.s3_clean:
-                LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-                assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
 
-            if os.path.exists(self.test_dir_path):
-                remove_dirs(self.test_dir_path)
+        if os.path.exists(self.test_dir_path):
+            self.log.debug("Deleting existing file: %s", str(self.file_path))
+            remove_file(self.file_path)
+            remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -150,12 +150,14 @@ class TestDICheckHA:
     @CTFailOn(error_handler)
     def test_reads_after_cluster_restart(self):
         """
-        This test verifies READs after cluster restart on WRITEs before shutdown
+        Induce data corruption and verify READs before and after after cluster restart .
         """
+        size = 10 * MB
         LOGGER.info("Started: DI Flag(S3_READ_DI) enabled and corrupted file flags error during"
                     " read even after node/cluster reboots.")
         LOGGER.info("STEP 1: Perform WRITEs with 10 MB file")
-        if self.di_err_lib.validate_default_config():
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        if not valid or skip_mark:
             pytest.skip()
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'TEST-22926'
@@ -163,9 +165,9 @@ class TestDICheckHA:
         self.log.info("Step 1: Create a bucket.")
         self.s3_test_obj.create_bucket(self.bucket_name)
         self.log.info("Step 2: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
+        self.edtl.create_file(size, first_byte='z', name=self.file_path)
+        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 3: enable data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
@@ -176,15 +178,15 @@ class TestDICheckHA:
         self.log.info("Step 4: Put object in a bucket.")
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                     object_name=self.object_name,
-                                    file_path=location)
+                                    file_path=self.file_path)
         self.log.info("Step 5: Verify get object.")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_false(resp[0], resp)
-        self.log.info("Step 5: Verified read (Get) of an object whose metadata is "
-                      "corrupted.")
+
+        self.log.info("Step 5: Verified read (Get) of an object whose metadata is corrupted.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
-            operation="shutdown_signal", resource="cluster")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")

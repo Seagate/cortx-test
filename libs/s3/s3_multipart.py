@@ -314,4 +314,3 @@ class MultipartUsingBoto(S3Lib):
         except Exception as error:
             LOGGER.error("Error in multipart_upload: %s", str(error))
             raise error
-
