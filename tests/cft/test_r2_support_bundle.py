@@ -320,8 +320,8 @@ class TestR2SupportBundle:
                 assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
                                                f"does not exist on pod: {pod} resp: {resp}")
             lines = resp.splitlines()
-            for x in range(1,len(lines)):
-                line = lines[x].split()
+            for count in range(1,len(lines)):
+                line = lines[count].split()
                 file_size = int(line[4][:-2])
                 if file_size > constants.MAX_LOG_FILE_SIZE_CSM_MB:
                     assert_utils.assert_true(False, f"CSM max file size is: "
@@ -345,12 +345,12 @@ class TestR2SupportBundle:
             machine_id = sb.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
                 log_path = log_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                    f"does not exist on pod: {pod} resp: {resp}")
-                self.LOGGER.info(f"S3 log files: {resp}")
+                self.LOGGER.info("S3 log files: %s", resp)
         self.LOGGER.info("Successfully validated S3 log file paths for all pods")
 
     @pytest.mark.lc
@@ -374,7 +374,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
-                self.LOGGER.info(f"S3 log files on path {log_path}: {resp}")
+                self.LOGGER.info("S3 log files on path %s: %s", log_path, resp)
                 for x in range(1, len(lines)):
                     line = lines[x].split()
                     file_size = int(line[4][:-2])
@@ -405,7 +405,7 @@ class TestR2SupportBundle:
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                    f"does not exist on pod: {pod} resp: {resp}")
-                self.LOGGER.info(f"Utils log files: {resp}")
+                self.LOGGER.info(f"Utils log files: %s", resp)
         self.LOGGER.info("Successfully validated Utils log file paths for all pods")
 
     @pytest.mark.lc
@@ -429,7 +429,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
-                self.LOGGER.info(f"Utils log files on path {log_path}: {resp}")
+                self.LOGGER.info(f"Utils log files on path %s: %s", log_path, resp)
                 for x in range(1, len(lines)):
                     line = lines[x].split()
                     file_size = int(line[4][:-2])
@@ -460,7 +460,7 @@ class TestR2SupportBundle:
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                    f"does not exist on pod: {pod} resp: {resp}")
-                self.LOGGER.info(f"HARE log files: {resp}")
+                self.LOGGER.info("HARE log files: %s", resp)
         self.LOGGER.info("Successfully validated HARE log file paths for all pods")
 
     @pytest.mark.lc
@@ -484,7 +484,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
-                self.LOGGER.info(f"HARE log files on path {log_path}: {resp}")
+                self.LOGGER.info(f"HARE log files on path %s: %s", log_path, resp)
                 for x in range(1, len(lines)):
                     line = lines[x].split()
                     file_size = int(line[4][:-2])

@@ -363,7 +363,7 @@ def get_machine_id_for_pod(pod_name: str):
             password = CMN_CFG["nodes"][node]["password"]
             m_node_obj = LogicalNode(hostname=host, username=username, password=password)
 
-    LOGGER.info(f"Getting machine id for pod: {pod_name}")
+    LOGGER.info("Getting machine id for pod: %s", pod_name)
     resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
                                    command_suffix="cat /etc/machine-id",
                                    decode=True)
