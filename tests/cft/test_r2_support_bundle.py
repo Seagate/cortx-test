@@ -301,7 +301,7 @@ class TestR2SupportBundle:
             if "No such file" in resp:
                 assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
                             f"does not exist on pod: {pod} resp: {resp}")
-            self.LOGGER.info(f"CSM log files: {resp}")
+            self.LOGGER.info("CSM log files: %s", resp)
         self.LOGGER.info("Successfully validated CSM log path")
 
     @pytest.mark.lc
@@ -368,15 +368,15 @@ class TestR2SupportBundle:
             machine_id = sb.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
                 log_path = file_path.format(machine_id)
-                self.LOGGER.info(f"log path: {log_path}")
+                self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
                 self.LOGGER.info("S3 log files on path %s: %s", log_path, resp)
-                for x in range(1, len(lines)):
-                    line = lines[x].split()
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
                     file_size = int(line[4][:-2])
                     if file_size > constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]:
                         assert_utils.assert_true(False, f"S3 max file size is: "
@@ -405,7 +405,7 @@ class TestR2SupportBundle:
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                    f"does not exist on pod: {pod} resp: {resp}")
-                self.LOGGER.info(f"Utils log files: %s", resp)
+                self.LOGGER.info("Utils log files: %s", resp)
         self.LOGGER.info("Successfully validated Utils log file paths for all pods")
 
     @pytest.mark.lc
@@ -429,7 +429,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
-                self.LOGGER.info(f"Utils log files on path %s: %s", log_path, resp)
+                self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
                 for x in range(1, len(lines)):
                     line = lines[x].split()
                     file_size = int(line[4][:-2])
@@ -484,7 +484,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(False, f"Log path {log_path} "
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
-                self.LOGGER.info(f"HARE log files on path %s: %s", log_path, resp)
+                self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
                 for x in range(1, len(lines)):
                     line = lines[x].split()
                     file_size = int(line[4][:-2])
