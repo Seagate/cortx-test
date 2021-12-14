@@ -26,7 +26,6 @@ import logging
 import os
 import random
 import time
-from http import HTTPStatus
 from time import perf_counter_ns
 
 import pytest
@@ -44,11 +43,8 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.di.di_feature_control import DIFeatureControl
-from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -74,6 +70,8 @@ class TestDICheckHA:
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
+        cls.host_master_list = list()
+        cls.host_worker_list = list()
         cls.node_master_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
@@ -105,11 +103,13 @@ class TestDICheckHA:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DITestMultipartUpload")
         if not os.path.exists(cls.test_dir_path):
             resp = make_dirs(cls.test_dir_path)
+            LOGGER.info("Created dir %s", cls.test_dir_path)
 
     def setup_method(self):
         """
         This function will be invoked prior to each test case.
         """
+        self.edtl = DIErrorDetection()
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         LOGGER.info("Check the overall status of the cluster.")
@@ -159,31 +159,30 @@ class TestDICheckHA:
         valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
-        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'TEST-22926'
 
-        self.log.info("Step 1: Create a bucket.")
+        LOGGER.info("Step 1: Create a bucket.")
         self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
+        LOGGER.info("Step 2: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
         # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
-        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
-        self.log.info("Step 3: enable data corruption")
+        LOGGER.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
+        LOGGER.info("Step 3: enable data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 3: enabled data corruption")
+            LOGGER.info("Step 3: enabled data corruption")
         else:
-            self.log.info("Step 3: failed to enable data corruption")
+            LOGGER.info("Step 3: failed to enable data corruption")
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
+        LOGGER.info("Step 4: Put object in a bucket.")
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                     object_name=self.object_name,
                                     file_path=self.file_path)
-        self.log.info("Step 5: Verify get object.")
+        LOGGER.info("Step 5: Verify get object.")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_false(resp[0], resp)
 
-        self.log.info("Step 5: Verified read (Get) of an object whose metadata is corrupted.")
+        LOGGER.info("Step 5: Verified read (Get) of an object whose metadata is corrupted.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
@@ -206,4 +205,3 @@ class TestDICheckHA:
         LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
         LOGGER.info("Completed: DI Flag(S3_READ_DI) enabled and corrupted file flags error during"
                     " read even after node/cluster reboots.")
-

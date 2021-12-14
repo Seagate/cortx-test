@@ -614,6 +614,7 @@ class S3TestLib(S3Lib):
         """
         Retrieve object from specified S3 bucket.
 
+        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
         :param bucket: The bucket name containing the object.
         :return: (Boolean, Response)

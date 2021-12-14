@@ -25,8 +25,6 @@ import os
 import os.path
 import logging
 import secrets
-from time import perf_counter_ns
-
 import pytest
 
 from commons.constants import PROD_FAMILY_LC
@@ -50,6 +48,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3 import s3_s3cmd
+
 
 @pytest.fixture(scope="class", autouse=False)
 def setup_multipart_fixture(request):
