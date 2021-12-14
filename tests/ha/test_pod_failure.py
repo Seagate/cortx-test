@@ -81,6 +81,7 @@ class TestPodFailure:
         cls.restored = True
         cls.s3_clean = cls.test_prefix = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
 
