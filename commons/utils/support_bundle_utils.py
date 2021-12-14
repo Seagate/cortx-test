@@ -83,7 +83,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
     return True, local_sb_path
 
 
-# pylint: disable=too-many-arguments
+# pylint: disable=max-args
 def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=None,services=None):
     """
     Collect support bundles from various components using single support bundle cmd
