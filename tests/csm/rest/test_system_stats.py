@@ -20,18 +20,25 @@
 #
 """Tests system statistics using REST API
 """
-import time
-import random
 import logging
+import random
+import time
+from http import HTTPStatus
+
 import pytest
-from libs.csm.rest.csm_rest_stats import SystemStats
-from commons.utils import assert_utils
+
+from commons import configmanager
 from commons import cortxlogging
 from commons.constants import Rest as const
-from commons import configmanager
+from commons.helpers.pods_helper import LogicalNode
+from commons.utils import assert_utils
+from config import CMN_CFG
+from libs.csm.rest.csm_rest_cluster import RestCsmCluster
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_stats import SystemStats
+
 
 class TestSystemStats():
-
     """System Health Testsuite
     """
 
@@ -44,6 +51,13 @@ class TestSystemStats():
         cls.log.info("Initiating Rest Client for Alert ...")
         cls.test_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_system_stats.yaml")
+        cls.csm_user = RestCsmUser()
+        cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                 username=CMN_CFG["nodes"][0]["username"],
+                                 password=CMN_CFG["nodes"][0]["password"])
+        cls.csm_cluster = RestCsmCluster()
+        cls.username = cls.csm_user.config["csm_admin_user"]["username"]
+        cls.user_pass = cls.csm_user.config["csm_admin_user"]["password"]
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -53,7 +67,7 @@ class TestSystemStats():
         and appropriate json response for metric stats
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started - %s #####" , test_case_name)
+        self.log.info("##### Test started - %s #####", test_case_name)
         expected_response = const.SUCCESS_STATUS
         response = self.system_stats.get_stats()
         assert_utils.assert_equals(response.status_code, expected_response,
@@ -181,8 +195,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info("Expected response : %s",expected_response)
-            self.log.info("Actual response : %s",response.status_code)
+            self.log.info("Expected response : %s", expected_response)
+            self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid METRICS.")
 
@@ -195,8 +209,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=invalid_sample)
-            self.log.info("Expected response : %s",expected_response)
-            self.log.info("Actual response : %s",response.status_code)
+            self.log.info("Expected response : %s", expected_response)
+            self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid TOTAL samples.")
 
@@ -209,8 +223,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=invalid_interval,
                                                    total_sample=total_sample)
-            self.log.info("Expected response : %s",expected_response)
-            self.log.info("Actual response : %s",response.status_code)
+            self.log.info("Expected response : %s", expected_response)
+            self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid INTERVALS.")
 
@@ -223,8 +237,8 @@ class TestSystemStats():
                                                    to_time=to_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info("Expected response : %s",expected_response)
-            self.log.info("Actual response : %s",response.status_code)
+            self.log.info("Expected response : %s", expected_response)
+            self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    f"Status code check failed with invalid FROM"
                                    " time :{invalid_time}.")
@@ -235,8 +249,8 @@ class TestSystemStats():
                                                    to_time=invalid_time,
                                                    interval=interval,
                                                    total_sample=total_sample)
-            self.log.info("Expected response : %s",expected_response)
-            self.log.info("Actual response : %s",response.status_code)
+            self.log.info("Expected response : %s", expected_response)
+            self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
                                    "Status code check failed with invalid TO time.")
 
@@ -263,8 +277,8 @@ class TestSystemStats():
         # response = self.system_stats.get_stats(from_time=from_time,
         #                                       to_time=to_time,
         #                                       total_sample=total_sample)
-        #self.log.info(f"Expected response : {expected_response}")
-        #self.log.info(f"Actual response : {response.status_code}")
+        # self.log.info(f"Expected response : {expected_response}")
+        # self.log.info(f"Actual response : {response.status_code}")
         # assert_utils.assert_equals(response.status_code, expected_response,
         #                 "Status code check failed with missing METRIC param.")
 
@@ -274,8 +288,8 @@ class TestSystemStats():
         response = self.system_stats.get_stats(metrics=[metric],
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed with missing FROM param.")
 
@@ -298,8 +312,8 @@ class TestSystemStats():
         response = self.system_stats.get_stats(metrics=[metric],
                                                from_time=from_time,
                                                to_time=to_time)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing TOTAL"
                                    " SAMPLE AND INTERVAL param.")
@@ -312,8 +326,8 @@ class TestSystemStats():
                                                from_time=from_time,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing "
                                    "INTERVAL param and with TOTAL SAMPLE.")
@@ -326,8 +340,8 @@ class TestSystemStats():
                                                from_time=from_time,
                                                to_time=to_time,
                                                interval=interval)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_equals(response.status_code, expected_response,
                                    "Status code check failed with missing TOTAL"
                                    " SAMPLE param and with INTERVA.")
@@ -355,8 +369,8 @@ class TestSystemStats():
                                                from_time=from_time,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
@@ -367,8 +381,8 @@ class TestSystemStats():
                                                from_time=empty_val,
                                                to_time=to_time,
                                                total_sample=total_sample)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
@@ -379,8 +393,8 @@ class TestSystemStats():
                                                from_time=from_time,
                                                to_time=empty_val,
                                                total_sample=total_sample)
-        self.log.info("Expected response : %s",expected_response)
-        self.log.info("Actual response : %s",response.status_code)
+        self.log.info("Expected response : %s", expected_response)
+        self.log.info("Actual response : %s", response.status_code)
         assert_utils.assert_in(response.status_code, expected_response,
                                "Status code check failed.")
 
@@ -415,7 +429,7 @@ class TestSystemStats():
             actual_response = response.json()
 
             self.log.debug("Verifying the metric name:%s",
-                actual_response["metrics"][0]["name"])
+                           actual_response["metrics"][0]["name"])
             assert_utils.assert_equals(
                 actual_response["metrics"][0]["name"], metric, "Metric name mismatch")
             expected_cnt = self.system_stats.expected_entry_cnt(
@@ -474,7 +488,7 @@ class TestSystemStats():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason = "Failing due to EOS-23026")
+    @pytest.mark.skip(reason="Failing due to EOS-23026")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16545')
@@ -501,7 +515,7 @@ class TestSystemStats():
                                                    to_time=to_time)
             assert_utils.assert_equals(response.status_code,
                                        expected_response,
-                            f"Status code check failed for metric: {metric}")
+                                       f"Status code check failed for metric: {metric}")
             actual_response = response.json()['message']
             self.log.info(actual_response)
             assert_utils.assert_in(error_msg,
@@ -533,8 +547,204 @@ class TestSystemStats():
                                                login_as="s3account_user")
         assert_utils.assert_equals(response.status_code,
                                    expected_response,
-                            f"Status code check failed for metric: {metric}")
+                                   f"Status code check failed for metric: {metric}")
         actual_response = response.text
         assert_utils.assert_in(error_msg, actual_response,
                                f"Couldnt find {error_msg} in {actual_response}")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32674')
+    def test_32674(self):
+        """
+        Check the api response for unauthorized request for stats
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to True")
+        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Modify header to invalid key")
+        header['Authorization1'] = header.pop('Authorization')
+        self.log.info("Step 5: Call metrics with invalid key in header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
+                                   "Status code check failed for invalid key access")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32675')
+    def test_32675(self):
+        """
+        Check the api response for appropriate error when missing Param provided
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to True")
+        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Modify header for missing params")
+        header[''] = header.pop('Authorization')
+        header[''] = ''
+        self.log.info("Step 5: Call metrics with missing params in header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
+                                   "Status code check failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32676')
+    def test_32676(self):
+        """
+        Check the api response when telemetry_auth: 'false' and without key and value
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to False")
+        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Modify header to delete key and value")
+        del header['Authorization']
+        self.log.info("Step 5: Call metrics with deleted key and value in header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+                                   "Status code check failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32677')
+    def test_32677(self):
+        """
+        Check the api response when telemetry_auth: 'false' and with valid key and value
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to False")
+        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Call metrics with valid header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+                                   "Status code check failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32678')
+    def test_32678(self):
+        """
+        Check the api response when telemetry_auth: 'false' and invalid value
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to False")
+        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Modify header for invalid value")
+        header['Authorization'] = 'abc'
+        self.log.info("Step 5: Call metrics with invalid header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+                                   "Status code check failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32679')
+    def test_32679(self):
+        """
+        Check the api response when telemetry_auth:'true', key=valid and value="Invalid"
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to True")
+        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Modify header for invalid value")
+        header['Authorization'] = 'abc'
+        self.log.info("Step 5: Call metrics with invalid header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
+                                   "Status code check failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32661')
+    def test_32661(self):
+        """
+        Check all Metrics Name and data with zero values are coming (ALL Metrics)
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Change telemetry_auth to True")
+        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        self.log.info("Step 2: Delete control pod and wait for restart")
+        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Call metrics with valid header")
+        response = self.system_stats.get_perf_stats_custom_login(header)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+                                   "Status code check failed")
+        self.log.info("Step 5: Check metric data with zero values")
+        text = response.text()
+        resp, val = self.system_stats.validate_perf_metrics(text, 0)
+        assert_utils.assert_true(resp, f"Metric data validation failed: {val}")
+        self.log.info("Step 6: Verified metric data with zero values")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32662')
+    def test_32662(self):
+        """
+        Check the Metrics data are in correct format which is supported by Prometheus
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get perf metrics data")
+        resp = self.system_stats.get_perf_stats()
+        text = resp.text()
+        self.log.info("Step-2: Check perf data compatibility with prometheus ")
+        resp = self.system_stats.check_prometheus_compatibility(text)
+        assert_utils.assert_true(resp, "Metric data compatibility with prometheus failed")
+        self.log.info("Step 3: Verified metric data compatibility with prometheus")
         self.log.info("##### Test ended -  %s #####", test_case_name)
