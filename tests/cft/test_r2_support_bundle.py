@@ -46,12 +46,11 @@ class TestR2SupportBundle:
         cls.LOGGER.info("TestR2SupportBundle  Test setup started...")
 
         cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
-        num_nodes = len(CMN_CFG["nodes"])
-        for node in range(num_nodes):
-            if CMN_CFG["nodes"][node]["node_type"] == "master":
-                host = CMN_CFG["nodes"][node]["hostname"]
-                username = CMN_CFG["nodes"][node]["username"]
-                password = CMN_CFG["nodes"][node]["password"]
+        for node in CMN_CFG["nodes"]:
+            if node["node_type"] == "master":
+                host = node["hostname"]
+                username = node["username"]
+                password = node["password"]
                 cls.node_obj = LogicalNode(hostname=host, username=username, password=password)
 
     def setup_method(self):
@@ -342,7 +341,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
                 log_path = log_path.format(machine_id)
                 self.LOGGER.info("log path: %s", log_path)
@@ -365,7 +364,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
                 log_path = file_path.format(machine_id)
                 self.LOGGER.info("log path: %s", log_path)
@@ -397,7 +396,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
                 log_path = log_path.format(machine_id)
                 self.LOGGER.info(f"log path: {log_path}")
@@ -420,7 +419,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
                 log_path = file_path.format(machine_id)
                 self.LOGGER.info(f"log path: {log_path}")
@@ -452,7 +451,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for log_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
                 log_path = log_path.format(machine_id)
                 self.LOGGER.info(f"log path: {log_path}")
@@ -475,7 +474,7 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         for pod in pod_list:
             self.LOGGER.info("Checking log path of %s pod", pod)
-            machine_id = sb.get_machine_id_for_pod(pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             for file_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
                 log_path = file_path.format(machine_id)
                 self.LOGGER.info(f"log path: {log_path}")

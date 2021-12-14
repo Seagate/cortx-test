@@ -336,35 +336,15 @@ def log_file_size_on_path(pod_name: str, log_path: str):
     """
     Getting log file sizes in MB on given path and pod
     """
-    num_nodes = len(CMN_CFG["nodes"])
-    for node in range(num_nodes):
-        if CMN_CFG["nodes"][node]["node_type"] == "master":
-            host = CMN_CFG["nodes"][node]["hostname"]
-            username = CMN_CFG["nodes"][node]["username"]
-            password = CMN_CFG["nodes"][node]["password"]
+    for node in CMN_CFG["nodes"]:
+        if node["node_type"] == "master":
+            host = node["hostname"]
+            username = node["username"]
+            password = node["password"]
             m_node_obj = LogicalNode(hostname=host, username=username, password=password)
 
     LOGGER.info("Getting log file sizes on path: %s of %s pod", log_path, pod_name)
     resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
                                    command_suffix=f"-- ls -l --block-size=MB {log_path}",
-                                   decode=True)
-    return resp
-
-
-def get_machine_id_for_pod(pod_name: str):
-    """
-    Getting machine id for given pod
-    """
-    num_nodes = len(CMN_CFG["nodes"])
-    for node in range(num_nodes):
-        if CMN_CFG["nodes"][node]["node_type"] == "master":
-            host = CMN_CFG["nodes"][node]["hostname"]
-            username = CMN_CFG["nodes"][node]["username"]
-            password = CMN_CFG["nodes"][node]["password"]
-            m_node_obj = LogicalNode(hostname=host, username=username, password=password)
-
-    LOGGER.info("Getting machine id for pod: %s", pod_name)
-    resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
-                                   command_suffix="cat /etc/machine-id",
                                    decode=True)
     return resp
