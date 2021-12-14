@@ -51,7 +51,7 @@ def create_log(resp, log_file_prefix, size):
     path = f"{LOG_DIR}{log_file_prefix}_hsbench_{size}_{now}.log"
     # Writing complete response in file, appends response in case of duration
     # given
-    with open(path, "a") as fd_write:
+    with open(path, "a", encoding="utf-8") as fd_write:
         for i in resp:
             fd_write.write(i)
 
@@ -69,13 +69,13 @@ def check_log_file_error(file_path, errors=None):
         errors = ["failed ", "panic", "status code",
                   "does not exist", "InternalError", "send request failed"]
     error_found = False
-    LOGGER.info("Debug: Log File Path {}".format(file_path))
-    with open(file_path, "r") as hs_log_file:
+    LOGGER.info("Debug: Log File Path %d",file_path)
+    with open(file_path, "r", encoding="utf-8") as hs_log_file:
         for line in hs_log_file:
             for error in errors:
                 if error.lower() in line.lower():
                     error_found = True
-                    LOGGER.error(f"{error} Found in HSBench Run : {line}")
+                    LOGGER.error("%d Found in HSBench Run : %d",error, line)
                     return error_found
     return error_found
 
@@ -104,21 +104,21 @@ def hsbench(
     :param secret_key: S3 secret key
     :param end_point: Endpoint for the operations
     :param obj_size: Object size to be used e.g. 1Kb, 2Mb, 4Gb
-    :param test_duration: Maximum test duration in seconds <-1 for unlimited> 
+    :param test_duration: Maximum test duration in seconds <-1 for unlimited>
                           (default 60)
     :param threads: Number of threads to run
     :param bucket: Number of buckets to distribute IOs across
     :param json_path: Write JSON output to this file
-    :param report_interval(float): Number of seconds between report intervals 
+    :param report_interval(float): Number of seconds between report intervals
                                    (default 1)
-    :param mode_order(str): Run modes in order.  See NOTES for more info 
+    :param mode_order(str): Run modes in order.  See NOTES for more info
                             (default "cxiplgdcx")
     :param bucket_prefix(str): Prefix for buckets (default "hotsauce_bench")
     :param obj_name_pref(str): Prefix for objects
     :param num_test_repeat(int): Number of times to repeat test (default 1)
-    :param key_retrive_once_blist(int): Maximum number of keys to retreive 
+    :param key_retrive_once_blist(int): Maximum number of keys to retreive
                                         at once for bucket listings (default 1000)
-    :param no_objects(int): Maximum number of objects <-1 for unlimited> 
+    :param no_objects(int): Maximum number of objects <-1 for unlimited>
                             (default -1)
     :param csv_path(str): Write CSV output to this file
     :param region(str): Region for testing (default "us-east-1")
@@ -165,31 +165,26 @@ def parse_hsbench_output(file_path):
     :file_path: Generated JSON file after hsbench tool
     :return: dictionary/list of the content
     """
-    try:
-        json_data = []
-        keys = ['Mode', 'Seconds', 'Ops', 'Mbps',
-                'Iops', 'MinLat', 'AvgLat', 'MaxLat']
-        values = []
-        with open(file_path, 'r') as list_ops:
-            json_data = json.load(list_ops)
-        for data in json_data:
-            value = []
-            if(data['IntervalName'] == 'TOTAL'):
-                for key in keys:
-                    value.append(data[key])
-                values.append(value)
-        table_op = pd.DataFrame(values, columns=keys)
-        table_op.reset_index(inplace=False)
-        data_dict = table_op.to_dict("records")
-        return data_dict
+    json_data = []
+    keys = ['Mode', 'Seconds', 'Ops', 'Mbps',
+            'Iops', 'MinLat', 'AvgLat', 'MaxLat']
+    values = []
+    with open(file_path, 'r', encoding="utf-8") as list_ops:
+        json_data = json.load(list_ops)
+    for data in json_data:
+        value = []
+        if data['IntervalName'] == 'TOTAL':
+            for key in keys:
+                value.append(data[key])
+            values.append(value)
+    table_op = pd.DataFrame(values, columns=keys)
+    table_op.reset_index(inplace=False)
+    data_dict = table_op.to_dict("records")
+    return data_dict
 
-    except Exception as exc:
-        LOGGER.error(f"Encountered error in file: {file_path} , and Exeption is" , exc)
-
-#Todo not supported more than 2 mode_type
 def parse_metrics_value(metric_name, mode_type, operation, parse_data):
     """
-    :param metric_name: Name of Metrics 
+    :param metric_name: Name of Metrics
     :param mode_type:list(str): Type of Mode i.e GET, PUT, BINIT, LIST
     :param operation: Type of operation i.e Mbps, Iops, Ops, AvgLat
     :param parse_data: dictionary/list of the content
@@ -200,13 +195,12 @@ def parse_metrics_value(metric_name, mode_type, operation, parse_data):
             if in_line_data['Mode'] == mode_type[0]:
                 if in_line_data[operation]:
                     return metric_name, str(in_line_data[operation]), in_line_data['Seconds']
-    else:
-        vv1 = []
-        tt1 = []
-        for in_line_data in parse_data:
-            for modes in mode_type:
-                if in_line_data['Mode'] == modes:
-                    if in_line_data[operation]:
-                        vv1.append(int(in_line_data[operation]))
-                        tt1.append(int(in_line_data['Seconds']))
-        return metric_name, str(vv1[0]+vv1[1]), tt1[0]+tt1[1]
+    vv1 = []
+    tt1 = []
+    for in_line_data in parse_data:
+        for modes in mode_type:
+            if in_line_data['Mode'] == modes:
+                if in_line_data[operation]:
+                    vv1.append(int(in_line_data[operation]))
+                    tt1.append(int(in_line_data['Seconds']))
+    return metric_name, str(vv1[0]+vv1[1]), tt1[0]+tt1[1]
