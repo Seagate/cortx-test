@@ -503,32 +503,32 @@ class TestPodFailure:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
-        LOGGER.info("Step 5: Check services status that were running on pod %s", pod_name)
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Checked services status that were running on pod %s are in offline "
+        LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
                     "state", pod_name)
-        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 6: Checked services status on remaining pods are in online state")
-        LOGGER.info("Step 7: Perform DELETEs on random %s buckets", bucket_num-10)
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 6: Perform DELETEs on random %s buckets", bucket_num-10)
         for _ in range(bucket_num-10+1):
             del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
             resp = s3_test_obj.delete_bucket(bucket_name=del_bucket, force=True)
             assert_utils.assert_true(resp[0], resp)
         resp = s3_test_obj.bucket_list()
         assert_utils.assert_equal(10, len(resp[1]), resp)
-        LOGGER.info("Step 7: Successfully performed DELETEs on random %s buckets", bucket_num-10)
-        LOGGER.info("Step 8: Perform READs on the remaining 10 buckets and delete the same.")
+        LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", bucket_num-10)
+        LOGGER.info("Step 7: Perform READs on the remaining 10 buckets and delete the same.")
         for bucket in buckets:
             resp = self.ha_obj.ha_s3_workload_operation(
                 s3userinfo=self.s3_clean, log_prefix=bucket, skipwrite=True)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Successfully performed READs on the remaining 10 buckets.")
+        LOGGER.info("Step 7: Successfully performed READs on the remaining 10 buckets.")
         LOGGER.info("COMPLETED: Test to verify degraded deletes before & after safe pod shutdown.")
 
     @pytest.mark.ha
@@ -919,8 +919,8 @@ class TestPodFailure:
                                            " (unsafe)")
         LOGGER.info("Step 4: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
-        self.dploymnt_backup = resp[1]
-        self.dploymnt_name = resp[2]
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
         self.restore_pod = True
         self.restore_method = const.RESTORE_DEPLOYMENT_K8S
 
@@ -1025,8 +1025,8 @@ class TestPodFailure:
                                            " (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
-        self.dploymnt_backup = resp[1]
-        self.dploymnt_name = resp[2]
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
         self.restore_pod = True
         self.restore_method = const.RESTORE_DEPLOYMENT_K8S
 
