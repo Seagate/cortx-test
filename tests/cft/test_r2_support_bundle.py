@@ -138,7 +138,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(
                         found, 'Component Directory in support bundle not found')
                 if size is not None:
-                    resp=self.size_verify(component_dir_name):
+                    resp=self.size_verify(component_dir_name)
 		    if resp:
                         self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
                     else:
