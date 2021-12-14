@@ -5124,7 +5124,7 @@ class TestCsmUser():
         self.log.info("Step 2: Creating a valid csm user with existing user email")
         response = self.csm_user.create_csm_user(
             user_type="valid", user_role="manage", user_email="manage_user@seagate.com")
-        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed"
+        assert response.status_code == HTTPStatus.CREATED.value, "Status code check failed"
         username2 = response.json()["username"]
         self.created_users.append(username2)
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -5157,8 +5157,8 @@ class TestCsmUser():
         self.created_users.append(username2)
         response = self.csm_user.edit_csm_user(user=username2,
                                                email="manage_user@seagate.com")
-        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed"
-        self.log.info("Verified: Email update not working for existing email")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Verified: Email update working for existing email")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr
