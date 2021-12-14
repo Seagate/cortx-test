@@ -39,7 +39,7 @@ from config import CSM_CFG
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
-from libs.s3 import S3H_OBJ, s3_test_lib
+from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
 from libs.s3 import iam_test_lib
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -180,48 +180,6 @@ class TestIAMUserManagement:
             self.log.info("Restarted s3 authserver successfully")
 
         self.log.info("ENDED : Teardown operations for test function")
-
-    # pylint: disable=too-many-arguments
-    def s3_iam_ios(self,
-               access_key,
-               secret_key,
-               bucket=None,
-               log_file_prefix="parallel_io",
-               duration="0h1m",
-               obj_size="24Kb",
-               **kwargs):
-        """
-        Perform io's for specific durations.
-
-        1. Create bucket.
-        2. perform io's for specified durations.
-        3. Check executions successful.
-        """
-        kwargs.setdefault("num_clients", 2)
-        kwargs.setdefault("num_sample", 5)
-        kwargs.setdefault("obj_name_pref", "load_gen_")
-        kwargs.setdefault("end_point", S3_CFG["s3_url"])
-        self.log.info("STARTED: s3 io's operations.")
-        bucket = bucket if bucket else self.io_bucket_name
-        resp = self.s3_obj.create_bucket(bucket)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = s3bench.s3bench(
-            access_key,
-            secret_key,
-            bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
-            num_clients=kwargs["num_clients"],
-            num_sample=kwargs["num_sample"],
-            obj_name_pref=kwargs["obj_name_pref"],
-            obj_size=obj_size,
-            duration=duration,
-            log_file_prefix=log_file_prefix)
-        self.log.info(resp)
-        assert_utils.assert_true(
-            os.path.exists(
-                resp[1]),
-            f"failed to generate log: {resp[1]}")
-        self.log.info("ENDED: s3 io's operations.")
 
     def s3_ios(self,
                bucket=None,
@@ -1091,7 +1049,18 @@ class TestIAMUserManagement:
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Perform io's")
-            self.s3_iam_ios(access_key,secret_key)
+            bucket = f"bucket{s3_acc_name}"
+            obj = f"object{iam_user}.txt"
+            if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Created bucket: %s ", bucket)
+            else:
+                assert False, "Failed to create bucket."
+            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", bucket)
+            else:
+                assert False, "Put object Failed."
+            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", bucket)
         self.log.info(
             "ENDED: Test create IAM User with different combination of the valid AWS secret key "
             "and run IO using it")
@@ -1131,7 +1100,18 @@ class TestIAMUserManagement:
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Perform io's")
-            self.s3_iam_ios(access_key,secret_key)
+            bucket = f"bucket{s3_acc_name}"
+            obj = f"object{iam_user}.txt"
+            if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Created bucket: %s ", bucket)
+            else:
+                assert False, "Failed to create bucket."
+            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", bucket)
+            else:
+                assert False, "Put object Failed."
+            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", bucket)
         self.log.info(
             "ENDED: Test create IAM User with different combination of the valid AWS access key "
             "and run IO using it")
