@@ -269,8 +269,13 @@ class MultipartUsingBoto(S3Lib):
         config = self.get_transfer_config()
         key = kwargs.get('key')  # key is s3 server side name with prefix.
         assert not key
-        self.s3_resource.Object(bucket_name, key). \
-            download_file(file_path,
-                          Config=config,
-                          Callback=ProgressPercentage(file_path)
-                          )
+        try:
+            self.s3_resource.Object(bucket_name, key). \
+                download_file(file_path,
+                              Config=config,
+                              Callback=ProgressPercentage(file_path)
+                              )
+        except Exception as error:
+            LOGGER.error("Error in multipart_upload: %s", str(error))
+            raise error
+

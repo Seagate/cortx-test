@@ -158,9 +158,10 @@ class S3MultipartTestLib(Multipart):
             parts = list()
             uploaded_bytes = 0
             single_part_size = int(multipart_obj_size) // int(total_parts)
-            if os.path.exists(multipart_obj_path):
-                os.remove(multipart_obj_path)
-            create_file(multipart_obj_path, multipart_obj_size)
+            if kwargs.get('create_file', True):
+                if os.path.exists(multipart_obj_path):
+                    os.remove(multipart_obj_path)
+                create_file(multipart_obj_path, multipart_obj_size)
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
