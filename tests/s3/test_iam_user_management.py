@@ -36,6 +36,7 @@ from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
 from commons.exceptions import CTException
 from config import CSM_CFG
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ, s3_test_lib
