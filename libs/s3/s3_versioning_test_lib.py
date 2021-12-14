@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class S3VersioningTestLib(Versioning):
-    """Class initialising s3 connection and including methods for multipart operations."""
+    """Class initialising s3 connection and including methods for versioning operations."""
 
     def __init__(self,
                  access_key: str = ACCESS_KEY,
