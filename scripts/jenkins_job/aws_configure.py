@@ -166,7 +166,10 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
+    else:
+        sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
 
 def test_collect_crash_files():
     """
@@ -177,7 +180,10 @@ def test_collect_crash_files():
         LOGGER.info("Removing existing directory %s", crash_dir)
         shutil.rmtree(crash_dir)
     os.mkdir(crash_dir)
-    sb.collect_crash_files(crash_dir)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_crash_files_k8s(local_dir_path=crash_dir)
+    else:
+        sb.collect_crash_files(crash_dir)
 
 
 if __name__ == '__main':

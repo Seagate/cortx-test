@@ -226,6 +226,7 @@ CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-k
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
+CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -483,6 +484,7 @@ HELM_GET_VALUES = "helm get values {}"
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -521,3 +523,8 @@ FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} 
                            "--parity {} --spare {}"
 FIELD_CLUSTER_PREPARE = "cluster prepare"
 FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
+
+# LC Support Bundle
+SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
+              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
