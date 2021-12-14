@@ -79,6 +79,8 @@ def check_log_file_error(file_path, errors=None):
                     return error_found
     return error_found
 
+# pylint: disable-msg=too-many-arguments
+# pylint: disable-msg=too-many-locals
 def hsbench(
         access_key,
         secret_key,
