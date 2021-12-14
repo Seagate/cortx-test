@@ -23,7 +23,8 @@
 """Script will be responsible to invoke hsbench tool."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
+import json
 import pandas as pd
 
 from commons.utils.config_utils import read_yaml
@@ -69,9 +70,8 @@ def check_log_file_error(file_path, errors=None):
                   "does not exist", "InternalError", "send request failed"]
     error_found = False
     LOGGER.info("Debug: Log File Path {}".format(file_path))
-    resp_filtered = []
-    with open(file_path, "r") as hsLogFile:
-        for line in hsLogFile:
+    with open(file_path, "r") as hs_log_file:
+        for line in hs_log_file:
             for error in errors:
                 if error.lower() in line.lower():
                     error_found = True
@@ -131,9 +131,10 @@ def hsbench(
     LOGGER.info("Running hs bench tool")
     # GO command formatter
     cmd = f"./hsbench -a={access_key} -s={secret_key} " \
-          f"-u={end_point} -d={test_duration} -z={obj_size} -t={threads} -b={bucket} -j={json_path} "
+          f"-u={end_point} -d={test_duration} -z={obj_size} " \
+          f"-t={threads} -b={bucket} -j={json_path} -ri={report_interval}"
 
-   if mode_order:
+    if mode_order:
         cmd = cmd + " -m=" + mode_order
     if bucket_prefix:
         cmd = cmd + " -bp=" + bucket_prefix
