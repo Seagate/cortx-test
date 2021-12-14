@@ -84,7 +84,7 @@ class TestR2SupportBundle:
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
         return True
-   
+     
     def size_verify(self,component_dir_name):
         """
         This function which is used to verify component directory has specific size limit logs
@@ -92,7 +92,7 @@ class TestR2SupportBundle:
         files=os.listdir(component_dir_name)
         number=len(files)
         for file in files:
-            if os.path.getsize(file)>=contants.MIN and os.path.getsize(file)<=conatants.MAX:
+            if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
                 count+=1
         if count==number:
             return True
@@ -139,7 +139,7 @@ class TestR2SupportBundle:
                         found, 'Component Directory in support bundle not found')
                 if size is not None:
                     resp=self.size_verify(component_dir_name):
-					if resp:
+		    if resp:
                         self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
                     else:
                         self.LOGGER.error("Component dir %s is not with limited size logs",component_dir_name)
@@ -246,7 +246,7 @@ class TestR2SupportBundle:
         """
         self.LOGGER.info("Step 1: Generating support bundle through cli")
         resp = sb.create_support_bundle_single_cmd(
-            self.bundle_dir, bundle_name="test_20115", comp_list="'s3server;csm;provisioner'",size='1M')
+            self.bundle_dir, bundle_name="test_32603", comp_list="'s3server;csm;provisioner'", size='1M')
         assert_utils.assert_true(resp[0], resp[1])
         self.LOGGER.info("Step 1: Generated support bundle through cli")
         size='1M'
@@ -266,7 +266,7 @@ class TestR2SupportBundle:
         """
         self.LOGGER.info("Step 1: Generating support bundle through cli")
         resp = sb.create_support_bundle_single_cmd(
-            self.bundle_dir, bundle_name="test_20115", comp_list="'s3server'",services="S3:Authserver")
+            self.bundle_dir, bundle_name="test_32606", comp_list="'s3server'",services="S3:Authserver")
         assert_utils.assert_true(resp[0], resp[1])
         self.LOGGER.info("Step 1: Generated support bundle through cli")
         services=['Authserver']
