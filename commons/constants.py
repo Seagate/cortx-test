@@ -210,6 +210,10 @@ class Rest:
     S3_ACCESS_LL = 16
     S3_SECRET_UL = 40
     S3_SECRET_LL = 8
+    IAM_ACCESS_UL = 128
+    IAM_ACCESS_LL = 16
+    IAM_SECRET_UL = 40
+    IAM_SECRET_LL = 8
     MAX_S3_USERS = 1000
     MAX_BUCKETS = 1000
     MAX_IAM_USERS = 1000
@@ -387,10 +391,14 @@ class Sizes:
 KB = 1024
 MB = KB * KB
 GB = MB * MB
-NORMAL_UPLOAD_SIZES = [0 * KB, 4 * KB, 8 * KB, 64 * KB, 256 * KB,
+#Removing 0Byte File Size for now.
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB,
                        16 * MB, 32 * MB, 64 * MB, 128 * MB]
 MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
                           128 * MB, 256 * MB, 512 * MB, 1024 * MB]
+
+NORMAL_UPLOAD_SIZES_IN_MB = [1, 4, 8, 16, 32, 64, 128]
+MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256,512, 1024]
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"

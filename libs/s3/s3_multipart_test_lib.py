@@ -428,6 +428,47 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    def upload_part_copy(self,
+                         copy_source: str=None,
+                         bucket_name: str = None,
+                         object_name: str = None,
+                         **kwargs
+                         ) -> tuple:
+        """
+        Upload part using uploadPartCopy
+       :param bucket_name: Name of the bucket.
+       :param object_name: Name of the object.
+       :keyword upload_id: Id of complete multipart upload.
+       :keyword part_number: upload part no.
+       :keyword content_md5: base64-encoded MD5 digest of message
+       :return: (Boolean, response)
+       """
+        try:
+            content_md5 = kwargs.get("content_md5", None)
+            copy_source_range = kwargs.get("copy_source_range", None)
+            part_number = kwargs.get("part_number", None)
+            upload_id = kwargs.get("upload_id", None)
+            LOGGER.info("uploading part copy")
+            if content_md5:
+                response = super().upload_part_copy(bucket_name, object_name,
+                                                    upload_id=upload_id, part_number=part_number,
+                                                    copy_source=copy_source,
+                                                    copy_source_range=copy_source_range,
+                                                    content_md5=content_md5)
+            else:
+                response = super().upload_part_copy(bucket_name, object_name,
+                                                    upload_id=upload_id, part_number=part_number,
+                                                    copy_source=copy_source,
+                                                    copy_source_range=copy_source_range
+                                               )
+            LOGGER.info(response)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_part_copy.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+        return True, response
+
     def abort_multipart_all(
             self,
             bucket: str = None,
