@@ -43,10 +43,11 @@ from _pytest.main import Session
 from filelock import FileLock
 from strip_ansi import strip_ansi
 
-from commons import Globals, s3_dns
+from commons import Globals
 from commons import cortxlogging
 from commons import params
 from commons import report_client
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -229,6 +230,18 @@ def pytest_addoption(parser):
     parser.addoption(
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
+    )
+    parser.addoption(
+        "--product_family", action="store", default='LC',
+        help="Product Type LR or LC."
+    )
+    parser.addoption(
+        "--validate_certs", action="store", default=True,
+        help="Decide whether to Validate HTTPS/SSL certificate to S3 endpoint."
+    )
+    parser.addoption(
+        "--use_ssl", action="store", default=True,
+        help="Decide whether to use HTTPS/SSL connection for S3 endpoint."
     )
 
 
@@ -748,6 +761,9 @@ def check_cortx_cluster_health():
     LOGGER.info("Check cluster status for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -761,9 +777,12 @@ def check_cortx_cluster_health():
 
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
-    LOGGER.info("Check cluster status for all nodes.")
+    LOGGER.info("Check cluster storage for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -814,9 +833,7 @@ def pytest_runtest_logstart(nodeid, location):
     # Check health status of target
     target = Globals.TARGET
     h_chk = Globals.HEALTH_CHK
-    if not Globals.LOCAL_RUN and not skip_health_check:
-        check_health(target)
-    elif Globals.LOCAL_RUN and h_chk and not skip_health_check:
+    if h_chk and not skip_health_check:
         check_health(target)
 
 
@@ -994,24 +1011,3 @@ def filter_report_session_finish(session):
                     "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))
-
-
-@pytest.fixture(autouse=False)
-def get_db_cfg(request):
-    from config import S3_CFG
-    if request.config.getoption('--target'):
-        setup_query = {"setupname": request.config.getoption('--target')}
-        from commons.configmanager import get_config_db
-        setup_details = get_config_db(
-            setup_query=setup_query)[request.config.getoption("--target")]
-        if "lb" in setup_details.keys() and setup_details.get(
-                'lb') not in [None, '', "FQDN without protocol(http/s)"]:
-            if "s3_url" in S3_CFG.keys():
-                S3_CFG["s3_url"] = f"https://{setup_details.get('lb')}"
-                S3_CFG["iam_url"] = f"https://{setup_details.get('lb')}:9443"
-        if "s3_dns" in setup_details.keys() and setup_details.get('s3_dns'):
-            if request.config.getoption("--nodes"):
-                node_count = len(request.config.getoption("--nodes"))
-            else:
-                node_count = len(setup_details["nodes"])
-            s3_dns.dns_rr(S3_CFG, node_count, setup_details)

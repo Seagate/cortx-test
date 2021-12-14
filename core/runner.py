@@ -24,6 +24,7 @@ import getpass
 import json
 import os
 import pathlib
+import secrets
 import threading
 import random
 import uuid
@@ -241,3 +242,23 @@ class LRUCache:
             pass
         finally:
             self._lock.release()
+
+
+class InMemoryDB(LRUCache):
+    """In memory storage"""
+
+    def pop_one(self) -> tuple:
+        """
+        Pop one table entry randomly.
+        """
+        self._lock.acquire()
+        keys = list(self.table.keys())
+        if len(keys) == 0:
+            self._lock.release()
+            return False, False
+        key = secrets.choice(keys)
+        try:
+            val = self.table.pop(key)
+        finally:
+            self._lock.release()
+        return key, val

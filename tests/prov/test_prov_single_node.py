@@ -77,6 +77,7 @@ class TestProvSingleNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-19439")
     def test_deployment_single_node(self):
         """
