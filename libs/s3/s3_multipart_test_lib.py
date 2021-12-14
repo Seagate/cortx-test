@@ -431,8 +431,6 @@ class S3MultipartTestLib(Multipart):
                          copy_source: str=None,
                          bucket_name: str = None,
                          object_name: str = None,
-                         upload_id: str = None,
-                         part_number: int = 0,
                          **kwargs
                          ) -> tuple:
         """
@@ -447,6 +445,8 @@ class S3MultipartTestLib(Multipart):
         try:
             content_md5 = kwargs.get("content_md5", None)
             copy_source_range = kwargs.get("copy_source_range", None)
+            part_number = kwargs.get("part_number", None)
+            upload_id = kwargs.get("upload_id", None)
             LOGGER.info("uploading part copy")
             if content_md5:
                 response = super().upload_part_copy(bucket_name, object_name,
@@ -463,7 +463,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_part.__name__,
+                         S3MultipartTestLib.upload_part_copy.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
         return True, response

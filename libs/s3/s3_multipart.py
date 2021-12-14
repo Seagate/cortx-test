@@ -210,8 +210,6 @@ class Multipart(S3Lib):
                          copy_source: str = None,
                          bucket_name: str = None,
                          object_name: str = None,
-                         upload_id: str = None,
-                         part_number: int = 0,
                          **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload.
@@ -226,6 +224,8 @@ class Multipart(S3Lib):
         """
         content_md5 = kwargs.get("content_md5", None)
         copy_source_range = kwargs.get("copy_source_range", None)
+        upload_id  = kwargs.get("upload_id", None)
+        part_number = kwargs.get("part_number", None)
         if content_md5:
             response = self.s3_client.upload_part_copy(
                 Bucket=bucket_name, Key=object_name,
