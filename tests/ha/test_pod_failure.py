@@ -79,7 +79,7 @@ class TestPodFailure:
         cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
-        cls.s3_clean = cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
+        cls.s3_clean = cls.test_prefix = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
@@ -156,15 +156,6 @@ class TestPodFailure:
                 LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
-
-            # Check if s3bench objects cleanup is required
-            if self.s3bench_cleanup:
-                for user_info in self.s3bench_cleanup.values():
-                    resp = self.ha_obj.ha_s3_workload_operation(
-                        s3userinfo=user_info, log_prefix=self.test_prefix,
-                        skipwrite=True, skipread=True)
-                    assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Cleanup: Deleted s3 objects and buckets.")
 
             if os.path.exists(self.test_dir_path):
                 remove_dirs(self.test_dir_path)
@@ -374,7 +365,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
@@ -444,7 +435,6 @@ class TestPodFailure:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3bench_cleanup = None
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
 
@@ -452,10 +442,10 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info(
@@ -707,7 +697,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
