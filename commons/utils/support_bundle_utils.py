@@ -111,11 +111,10 @@ def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=
         LOGGER.info("Available space on srvnode %s : %s", node, res)
     LOGGER.info("Starting support bundle creation")
     command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
-    # Form the command if component list is provided in parameters
+    # Form the command if component list, size, services  is provided in parameters
     if comp_list is not None:
         command = command + ''.join(" -c ")
         command = command + ''.join(comp_list)
-    #Form the commnad if  size and services is provided in parameter
     if size is not None:
         command = command + ''.join(" --size_limit ")
         command = command + ''.join(size)
