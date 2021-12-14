@@ -92,7 +92,6 @@ def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=
     :param comp_list: List of components for SB collection
     :return: boolean
     """
-
     remote_dir = cm_const.R2_SUPPORT_BUNDLE_PATH
     node_list = []
     num_nodes = len(CMN_CFG["nodes"])
@@ -105,7 +104,6 @@ def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=
     for node in range(num_nodes):
         if node_list[node].path_exists(remote_dir):
             node_list[node].remove_dir(remote_dir)
-
     LOGGER.info("Checking for available space before generating SB.")
     for node in range(num_nodes):
         res = node_list[node].execute_cmd(cmd=cm_cmd.CMD_SPACE_CHK)
@@ -117,11 +115,10 @@ def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=
     if comp_list is not None:
         command = command + ''.join(" -c ")
         command = command + ''.join(comp_list)
-    #Form the commnad if component list is provided in parameter
+    #Form the commnad if  size and services is provided in parameter
     if size is not None:
         command = command + ''.join(" --size_limit ")
         command = command + ''.join(size)
-    #Form the command if component list is provided in parameter
     if services is not None:
         command = command + ''.join(" --modules ")
         command = command + ''.join(services)
