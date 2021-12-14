@@ -104,6 +104,8 @@ class TestR2SupportBundle:
         This function is used to verify support bundle content
         :param bundle_id: bundle id generated after support bundle generation command triggered
         :param test_comp_list: list of component expected in support bundle
+        :param size : size of the log files expected in support bundle
+        :param services: services of the components should be generated
         :rtype bool
         """
         self.LOGGER.debug("Verifying logs are generated on each node")
