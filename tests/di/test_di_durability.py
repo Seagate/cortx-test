@@ -32,6 +32,7 @@ from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
+from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -564,7 +565,7 @@ class TestDIDurability:
             "ENDED: Create Motr panic by some misconfiguration in Motr and Verify S3 checksum"
             " error detection.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22916')
     def test_disable_checkum_validation_download_chunk_upload_22916(self):
@@ -572,34 +573,36 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
-        if self.di_err_lib.validate_disabled_config():
+        res_default = self.di_err_lib.validate_default_config()
+        res_disable = self.di_err_lib.validate_disabled_config()
+        if res_default[1] and res_disable[1]:
+            self.log.info("Skipping test either flags are not set to default"
+                            "or checksum flag is not disabled" )
             pytest.skip()
+
         self.log.info(
             "STARTED: With Checksum flag  Disabled, download of the chunk uploaded object should"
             "succeed ( 30 MB -100 MB).")
-        file_size = const.NORMAL_UPLOAD_SIZES
-
         self.log.info(
-            "Step 1: Create a bucket and upload object of size {size}} MB into a bucket.")
+            "Step 1: Create a bucket and upload object into a bucket." )
+
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-        for size in file_size:
-            self.log.info("Step 1: create a file of size {size}")
-            file_path_upload = self.file_path + "TEST_22916_"+ size +"_upload"
+
+        for size in NORMAL_UPLOAD_SIZES_IN_MB:
+            self.log.info("Step 1: create a file of size %sMB", size)
+            file_path_upload = self.file_path + "TEST_22916_"+ str(size) +"MB_upload"
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-            buff, csm = self.data_gen.generate(size=size,
-                                               seed=self.data_gen.get_random_seed())
-            location = self.data_gen.create_file_from_buf(fbuf=buff,
-                                                          name=file_path_upload,
-                                                          size=size)
 
-            self.s3_test_obj.put_object(self.bucket_name, self.object_name, location)
+            system_utils.create_file(file_path_upload, size)
+            self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
+
             self.log.info(
-                "Step 1: Created a bucket and upload object of size {size} into a bucket.")
+                "Step 1: Created a bucket and upload object of %s MB into a bucket.", size)
             self.log.info(
-                "Step 2: Download chunk uploaded object of size {size}.")
-            file_path_download = self.file_path + "TEST_22916_"+ size +"_download"
+                "Step 2: Download chunk uploaded object of size %s MB.", size)
+            file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
 

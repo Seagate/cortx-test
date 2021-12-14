@@ -33,10 +33,12 @@ from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from config import CMN_CFG
+from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_PATH
+from commons.utils import assert_utils
 from commons.utils import system_utils as sys_util
 
 
@@ -119,7 +121,7 @@ class TestDIWithChangingS3Params:
         cls.log.info("Deleted a backup file and directory")
         cls.log.info("ENDED: Teardown class operations.")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
@@ -128,21 +130,26 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        if not self.di_err_lib.validate_disabled_config():
+        res_default = self.di_err_lib.validate_default_config()
+        res_disable = self.di_err_lib.validate_disabled_config()
+        if ((not res_default[1]) and (not res_disable[1])):
+            self.log.info("Skipping test neither flags are set to default"
+                            "nor DI flags are enabled" )
+            self.log.info("validate_default_config %s", res_default)
+            self.log.info("validate_disable_config %s", res_disable)             
             pytest.skip()
 
         self.log.info(
             "STARTED: Normal File upload with DI flag enable for read and write")
 
-        file_size = const.NORMAL_UPLOAD_SIZES
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
         result = True
-        for size in file_size:
+        for size in NORMAL_UPLOAD_SIZES:
             self.log.info("Step 1: create a file of size %s MB", size)
 
-            file_path_upload = self.F_PATH + "TEST_29173_"+ size +"_upload"
+            file_path_upload = self.F_PATH + "TEST_29173_"+ str(size) +"_upload"
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
 
@@ -153,22 +160,23 @@ class TestDIWithChangingS3Params:
                                                           size=size)
             self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name,
                                   file_path=location)
+            self.log.debug("Step 1: Checksum of uploaded file is %s",csm)
             self.log.info(
-                "Step 1: Created a bucket and upload object of size {size} into a bucket.")
+                "Step 1: Created a bucket and upload object of %s.", size)
             self.log.info(
-                "Step 2: Download chunk uploaded object of size {size}.")
+                "Step 2: Download chunk uploaded object of size %s.",size)
 
-            file_path_download = self.F_PATH_COPY + "TEST_29173_"+ size +"_download"
+            file_path_download = self.F_PATH_COPY + "TEST_29173_"+ str(size) +"_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
             res = self.s3obj.object_download(bucket_name, obj_name, file_path_download)
-            sys_util.assert_true(res[0], res)
+            assert_utils.assert_true(res[0], res)
 
             self.log.info(
                 "Step 2: Download chunk uploaded object is successful.")
 
             self.log.info(
-                "Step 3: Calculate checksum of both uploaded and downloaded file.")
+                "Step 3: Validate checksum of both uploaded and downloaded file.")
             self.s3obj.delete_object(bucket_name=bucket_name, obj_name=obj_name)
             result = sys_util.validate_checksum(file_path_1=file_path_upload,
                                                 file_path_2=file_path_download)
@@ -176,6 +184,7 @@ class TestDIWithChangingS3Params:
                 self.log.info("Step 3: Checksum validation failed.")
                 break
             self.log.info("Step 3: Checksum validation is successful.")
+
 
         self.s3obj.delete_bucket(bucket_name, force=True)
         if result:
@@ -248,7 +257,6 @@ class TestDIWithChangingS3Params:
         else:
             assert True
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
@@ -257,7 +265,11 @@ class TestDIWithChangingS3Params:
         Test to verify copy object to different bucket with same
         object name with Data Integrity disabled.
         """
-        if self.di_err_lib.validate_disabled_config():
+        res_default = self.di_err_lib.validate_default_config()
+        res_disable = self.di_err_lib.validate_disabled_config()
+        if res_default[1] and res_disable[1]:
+            self.log.info("Skipping test neither flags are set to default config "
+                            "nor DI flags are set to disabled config" )
             pytest.skip()
         self.log.info(
             "STARTED: Test to verify copy object to different bucket with same"
@@ -268,8 +280,8 @@ class TestDIWithChangingS3Params:
         bucket_name_2 = self.get_bucket_name()
         obj_name = self.get_object_name()
         self.log.info(
-            "Step 1: Create a 2 different bucket1 = {bucket_name_1} "
-            "and bucket2={bucket_name_2}.")
+            "Step 1: Create a 2 different bucket1 = %s "
+            "and bucket2 = %s.", bucket_name_1, bucket_name_2)
         self.s3obj.create_bucket(bucket_name=bucket_name_1)
         self.s3obj.create_bucket(bucket_name=bucket_name_2)
 
@@ -279,12 +291,12 @@ class TestDIWithChangingS3Params:
 
         sys_util.create_file(fpath=self.F_PATH, count=1)
 
-        self.log.info("Step 2: Upload file to a bucket = {bucket_name_1}")
+        self.log.info("Step 2: Upload file to a bucket = %s",bucket_name_1)
         resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name,
                                      file_path=self.F_PATH)
-        self.log.info("Step 2: Upload file to a bucket = {bucket_name_1}")
+        self.log.info("Step 2: Upload file to a bucket = %s",bucket_name_1)
         self.log.info(resp)
-        res = self.s3obj.object_list(bucket_name_2)
+        res = self.s3obj.object_list(bucket_name_1)
         if obj_name not in res[1]:
             return res, "object not listed in bucket {bucket_name_1}"
 
@@ -294,13 +306,13 @@ class TestDIWithChangingS3Params:
                                          dest_bucket=bucket_name_2,
                                          dest_object=obj_name)
         self.log.info(resp_cp)
-        sys_util.assert_true(resp_cp[0], resp_cp)
+        assert_utils.assert_true(resp_cp[0], resp_cp)
 
         self.log.info(
                 "Step 3: Copy object to different bucket is successful.")
         res = self.s3obj.object_list(bucket_name_2)
         if obj_name not in res[1]:
-            return res, "object not listed in bucket {bucket_name_2}"
+            return res, "object not listed in bucket"
         self.s3obj.delete_bucket(bucket_name_1, force=True)
         self.s3obj.delete_bucket(bucket_name_2, force=True)
 
@@ -314,7 +326,7 @@ class TestDIWithChangingS3Params:
         self.log.info(
                 "Step 4: Etag validation is successful.")
         self.log.info(
-                "STARTED: Test to verify copy object to different bucket with same"
+                "ENDED: Test to verify copy object to different bucket with same"
                 "object name with Data Integrity disabled.")
 
     @pytest.mark.data_integrity
