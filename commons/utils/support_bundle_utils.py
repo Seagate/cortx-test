@@ -35,6 +35,7 @@ from commons.helpers.pods_helper import LogicalNode
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
+
 # pylint: disable=too-many-arguments
 def create_support_bundle_individual_cmd(node, username, password, remote_dir, local_dir, component="all"):
     """
@@ -81,6 +82,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
     return True, local_sb_path
 
+
 # pylint: disable=too-many-arguments
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     """
@@ -99,7 +101,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         uname = CMN_CFG["nodes"][node]["username"]
         passwd = CMN_CFG["nodes"][node]["password"]
         node_list.append(Node(hostname=host,
-                                  username=uname, password=passwd))
+                              username=uname, password=passwd))
     for node in range(num_nodes):
         if node_list[node].path_exists(remote_dir):
             node_list[node].remove_dir(remote_dir)
@@ -151,6 +153,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     LOGGER.info("Support bundle generated successfully.")
     return True, bundle_id
 
+
 def collect_crash_files(local_dir):
     """
     Collect all the crash files created at predefined locations.
@@ -184,6 +187,7 @@ def collect_crash_files(local_dir):
         LOGGER.info("Crash files are generated and copied at %s", local_dir)
     else:
         LOGGER.info("No Crash files are generated.")
+
 
 def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const.K8S_SCRIPTS_PATH):
     """
@@ -221,6 +225,7 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
         LOGGER.info("Support Bundle not generated; response: %s", resp)
         return False
 
+
 def collect_crash_files_k8s(local_dir_path: str):
     """
     Collect all the crash files created at predefined locations.
@@ -244,9 +249,9 @@ def collect_crash_files_k8s(local_dir_path: str):
     for pod in pod_list:
         LOGGER.info("Checking crash files for %s pod", pod)
         resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod, namespace=cm_const.NAMESPACE,
-                                command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
-                                               f"{cm_cmd.CMD_FIND_FILE}",
-                                decode=True)
+                                       command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                                                      f"{cm_cmd.CMD_FIND_FILE}",
+                                       decode=True)
         if resp:
             flg = True
             file1 = resp.split("/")
@@ -261,3 +266,64 @@ def collect_crash_files_k8s(local_dir_path: str):
         LOGGER.info("Crash files are generated and copied to %s", local_dir_path)
     else:
         LOGGER.info("No crash files are generated.")
+
+
+def generate_sb_lc(dest_dir: str, sb_identifier: str,
+                   pod_name: str = None, msg: str = "SB"):
+    """
+    This function is used to generate support bundle
+    :param dest_dir: target directory to create support bundle into
+    :param sb_identifier: support bundle identifier
+    :param pod_name: name of the pod in which support bundle is generated
+    :param msg: Relevant comment to link to support bundle request
+    :rtype response of support bundle generate command
+    """
+    LOGGER.info("Generating support bundle")
+
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    if pod_name is None:
+        pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+
+    resp = node_obj.send_k8s_cmd(
+        operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+        command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                       f"{cm_cmd.SUPPORT_BUNDLE_LC.format(dest_dir, sb_identifier, msg)}",
+        decode=True)
+    return resp
+
+
+def sb_status_lc(sb_identifier: str, pod_name: str = None):
+    """
+    This function is used to get the support bundle status
+    :param pod_name: name of the pod in which support bundle is generated
+    :param sb_identifier: support bundle identifier
+    :rtype response of support bundle status command
+    """
+    LOGGER.info("Getting support bundle status")
+
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        if CMN_CFG["nodes"][node]["node_type"] == "master":
+            host = CMN_CFG["nodes"][node]["hostname"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
+            node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    if pod_name is None:
+        pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+
+    resp = node_obj.send_k8s_cmd(
+        operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+        command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+                       f"{cm_cmd.SUPPORT_BUNDLE_STATUS_LC.format(sb_identifier)}",
+        decode=True)
+    return resp
