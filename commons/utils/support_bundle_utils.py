@@ -84,7 +84,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 
 # pylint: disable=too-many-arguments
-def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None, size=None, services=None):
+def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=None,services=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param local_dir: Local directory where support bundles will be copied
