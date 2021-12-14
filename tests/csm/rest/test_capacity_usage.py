@@ -51,6 +51,10 @@ class TestSystemCapacity():
         cls.csm_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_capacity.yaml")
         cls.s3user = RestS3user()
+        cls.akey = ""
+        cls.skey = ""
+        cls.s3_user = ""
+        cls.bucket = ""
         cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
                                    CMN_CFG["nodes"][0]["username"],
                                    CMN_CFG["nodes"][0]["password"])
@@ -66,39 +70,12 @@ class TestSystemCapacity():
             cls.username.append(CMN_CFG["nodes"][node]["username"])
             cls.password.append(CMN_CFG["nodes"][node]["password"])
             cls.host_list.append(host)
-            #cls.srvnode_list.append(f"srvnode-{node + 1}")
-            # cls.rpdu_encl_ip.append(CMN_CFG["nodes"][node]["encl_rpdu"]["ip"])
-            # cls.rpdu_encl_user.append(
-            #    CMN_CFG["nodes"][node]["encl_rpdu"]["user"])
-            # cls.rpdu_encl_pwd.append(
-            #    CMN_CFG["nodes"][node]["encl_rpdu"]["pwd"])
-            # cls.rpdu_encl_port.append(
-            #    CMN_CFG["nodes"][node]["encl_rpdu"]["port"])
-            # cls.lpdu_encl_ip.append(CMN_CFG["nodes"][node]["encl_lpdu"]["ip"])
-            # cls.lpdu_encl_user.append(
-            #    CMN_CFG["nodes"][node]["encl_lpdu"]["user"])
-            # cls.lpdu_encl_pwd.append(
-            #    CMN_CFG["nodes"][node]["encl_lpdu"]["pwd"])
-            # cls.lpdu_encl_port.append(
-            #    CMN_CFG["nodes"][node]["encl_lpdu"]["port"])
             cls.node_list.append(Node(hostname=host,
                                       username=cls.username[node],
                                       password=cls.password[node]))
-            # cls.hlt_list.append(Health(hostname=cls.host,
-            #                           username=cls.username[node],
-            #                           password=cls.password[node]))
             cls.bmc_list.append(Bmc(hostname=host,
                                     username=cls.username[node],
                                     password=cls.password[node]))
-            # cls.sys_list.append(
-            #    CortxCliSystemtOperations(
-            #        host=cls.host,
-            #        username=cls.username[node],
-            #        password=cls.password[node]))
-        cls.akey = ""
-        cls.skey = ""
-        cls.s3_user = ""
-        cls.bucket = ""
 
     def setup_method(self):
         """
