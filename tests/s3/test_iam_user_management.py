@@ -181,6 +181,7 @@ class TestIAMUserManagement:
 
         self.log.info("ENDED : Teardown operations for test function")
 
+    # pylint: disable=too-many-arguments
     def s3_iam_ios(self,
                access_key,
                secret_key,
@@ -1009,7 +1010,7 @@ class TestIAMUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-32398")
-    def test_32704(self):
+    def test_32398(self):
         """Update status of access for IAM user through REST"""
         self.log.info(
             "STARTED: Update status of access for IAM user through REST")
@@ -1098,8 +1099,8 @@ class TestIAMUserManagement:
     @pytest.mark.lc
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
-    @pytest.mark.tags("TEST-32278")
-    def test_32278(self):
+    @pytest.mark.tags("TEST-32279")
+    def test_32279(self):
         """
         Test create IAM User with different combination of the valid AWS access key and run IO
         using it.
