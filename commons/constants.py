@@ -421,3 +421,11 @@ HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
 RESTORE_SCALE_REPLICAS = "scale_replicas"
 RESTORE_DEPLOYMENT_K8S = "k8s"
 RESTORE_DEPLOYMENT_HELM = "helm"
+
+# log rotation
+LOG_PATH_CSM = "/etc/cortx/log/csm"
+MAX_LOG_FILE_SIZE_CSM_MB = 16
+LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5, "/etc/cortx/log/auth/{}/server/":20,
+                            "/etc/cortx/log/s3/{}/haproxy/":5}
+LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/":5}
+LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}

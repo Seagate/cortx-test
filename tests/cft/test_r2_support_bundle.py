@@ -32,6 +32,7 @@ from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils import support_bundle_utils as sb
+from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 
 
@@ -45,6 +46,13 @@ class TestR2SupportBundle:
         cls.LOGGER.info("TestR2SupportBundle  Test setup started...")
 
         cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
+        num_nodes = len(CMN_CFG["nodes"])
+        for node in range(num_nodes):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                host = CMN_CFG["nodes"][node]["hostname"]
+                username = CMN_CFG["nodes"][node]["username"]
+                password = CMN_CFG["nodes"][node]["password"]
+                cls.node_obj = LogicalNode(hostname=host, username=username, password=password)
 
     def setup_method(self):
         """Create test data directory"""
@@ -91,6 +99,7 @@ class TestR2SupportBundle:
         """
         files=os.listdir(component_dir_name)
         number=len(files)
+        count = 0
         for file in files:
             if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
                 count+=1
@@ -139,7 +148,7 @@ class TestR2SupportBundle:
                         found, 'Component Directory in support bundle not found')
                 if size is not None:
                     resp=self.size_verify(component_dir_name)
-		    if resp:
+                    if resp:
                         self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
                     else:
                         self.LOGGER.error("Component dir %s is not with limited size logs",component_dir_name)
@@ -276,3 +285,212 @@ class TestR2SupportBundle:
         self.r2_verify_support_bundle(resp[1], test_comp_list, services)
         self.LOGGER.info(
             "Step 2: Verified logs are generated with specified services")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31246")
+    def test_31246(self):
+        """
+        Validate CSM log path exists
+        """
+        self.LOGGER.info("Checking log path for CSM")
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
+            if "No such file" in resp:
+                assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
+                            f"does not exist on pod: {pod} resp: {resp}")
+            self.LOGGER.info(f"CSM log files: {resp}")
+        self.LOGGER.info("Successfully validated CSM log path")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31258")
+    def test_31258(self):
+        """
+        Validate CSM log files size are within defined max limit
+        """
+        self.LOGGER.info("Checking log file size for CSM")
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
+            if "No such file" in resp:
+                assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
+                                               f"does not exist on pod: {pod} resp: {resp}")
+            lines = resp.splitlines()
+            for x in range(1,len(lines)):
+                line = lines[x].split()
+                file_size = int(line[4][:-2])
+                if file_size > constants.MAX_LOG_FILE_SIZE_CSM_MB:
+                    assert_utils.assert_true(False, f"CSM max file size is: "
+                        f"{constants.MAX_LOG_FILE_SIZE_CSM_MB}MB and actual file size is:"
+                            f"{file_size}MB for file:{line[-1]}")
+        self.LOGGER.info("Successfully validated CSM log files size, "
+                         "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31247")
+    def test_31247(self):
+        """
+        Validate S3 log path exists
+        """
+        self.LOGGER.info("Checking s3 log file paths")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for log_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
+                log_path = log_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                   f"does not exist on pod: {pod} resp: {resp}")
+                self.LOGGER.info(f"S3 log files: {resp}")
+        self.LOGGER.info("Successfully validated S3 log file paths for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31259")
+    def test_31259(self):
+        """
+        Validate S3 log files size are within defined max limit
+        """
+        self.LOGGER.info("Checking log file size for S3")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_S3:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info(f"S3 log files on path {log_path}: {resp}")
+                for x in range(1, len(lines)):
+                    line = lines[x].split()
+                    file_size = int(line[4][:-2])
+                    if file_size > constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]:
+                        assert_utils.assert_true(False, f"S3 max file size is: "
+                            f"{constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]}MB "
+                                f"and actual file size is: {file_size}MB for file:{line[-1]}")
+        self.LOGGER.info("Successfully validated S3 log files size, "
+                             "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31249")
+    def test_31249(self):
+        """
+        Validate Utils log path exists
+        """
+        self.LOGGER.info("Checking Utils log file paths")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for log_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
+                log_path = log_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                   f"does not exist on pod: {pod} resp: {resp}")
+                self.LOGGER.info(f"Utils log files: {resp}")
+        self.LOGGER.info("Successfully validated Utils log file paths for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31261")
+    def test_31261(self):
+        """
+        Validate Utils log files size are within defined max limit
+        """
+        self.LOGGER.info("Checking log file size for Utils")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info(f"Utils log files on path {log_path}: {resp}")
+                for x in range(1, len(lines)):
+                    line = lines[x].split()
+                    file_size = int(line[4][:-2])
+                    if file_size > constants.LOG_PATH_FILE_SIZE_MB_UTILS[file_path]:
+                        assert_utils.assert_true(False, f"Utils max file size is: "
+                            f"{constants.LOG_PATH_FILE_SIZE_MB_UTILS[file_path]}MB "
+                                f"and actual file size is: {file_size}MB for file:{line[-1]}")
+        self.LOGGER.info("Successfully validated Utils log files size, "
+                             "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31248")
+    def test_31248(self):
+        """
+        Validate HARE log path exists
+        """
+        self.LOGGER.info("Checking HARE log file paths")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for log_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
+                log_path = log_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                   f"does not exist on pod: {pod} resp: {resp}")
+                self.LOGGER.info(f"HARE log files: {resp}")
+        self.LOGGER.info("Successfully validated HARE log file paths for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31260")
+    def test_31260(self):
+        """
+        Validate HARE log files size are within defined max limit
+        """
+        self.LOGGER.info("Checking log file size for HARE")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = sb.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info(f"log path: {log_path}")
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info(f"HARE log files on path {log_path}: {resp}")
+                for x in range(1, len(lines)):
+                    line = lines[x].split()
+                    file_size = int(line[4][:-2])
+                    if file_size > constants.LOG_PATH_FILE_SIZE_MB_HARE[file_path]:
+                        assert_utils.assert_true(False, f"HARE max file size is: "
+                            f"{constants.LOG_PATH_FILE_SIZE_MB_HARE[file_path]}MB "
+                                f"and actual file size is: {file_size}MB for file:{line[-1]}")
+        self.LOGGER.info("Successfully validated HARE log files size, "
+                             "all files are within max limit")
