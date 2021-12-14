@@ -28,10 +28,10 @@ import hashlib
 import logging
 import json
 import xmltodict
+from config import S3_CFG
 from hashlib import md5
 from random import shuffle
 from typing import Any
-
 
 
 
@@ -195,19 +195,23 @@ def convert_xml_to_dict(xml_response) -> dict:
         return xml_response
 
 
-def poll(target, *args, **kwargs) -> Any:
+def poll(target, *args, condition=None, **kwargs) -> Any:
     """Method to wait for a function/target to return a certain expected condition."""
-    timeout = kwargs.pop("timeout", 60)
-    step = kwargs.pop("step", 10)
+    timeout = kwargs.pop("timeout", S3_CFG["sync_delay"])
+    step = kwargs.pop("step", S3_CFG["sync_step"])
     expected = kwargs.pop("expected", dict)
     end_time = time.time() + timeout
     while time.time() <= end_time:
         try:
             response = target(*args, **kwargs)
-            if isinstance(response, expected) or response:
+            if condition:
+                if eval(condition.format(response)):
+                    return response
+            elif isinstance(response, expected) or response:
                 return response
         except Exception as response:
             LOGGER.error(response)
+        LOGGER.info("SYNC: retrying for %s", str(target.__name__))
         time.sleep(step)
 
     return target(*args, **kwargs)
