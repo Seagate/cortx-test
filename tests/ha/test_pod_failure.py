@@ -365,7 +365,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
@@ -442,7 +442,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
@@ -539,7 +539,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
@@ -737,9 +737,9 @@ class TestPodFailure:
         output = Queue()
         bucket_list = list(s3data.keys())
         LOGGER.info("Step 3: Start Continuous DELETEs in background")
-        get_random_buck = [bucket_list.pop(random.SystemRandom().randrange(len(bucket_list)))
-                           for _ in range(bucket_num - 10)]
-        args = {'s3_test_obj': s3_test_obj, 's3data': get_random_buck, 'output': output}
+        get_random_buck = random.sample(bucket_list, (bucket_num - 10))
+        remain_buck = list(set(bucket_list) - set(get_random_buck))
+        args = {'s3_test_obj': s3_test_obj, 's3bucklist': get_random_buck, 'output': output}
         thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -791,8 +791,8 @@ class TestPodFailure:
                     "and Download and verify checksum on remaining/FailedToDelete buckets.")
         failed_buck = responses['fail_buck_del']
         LOGGER.info("Get the buckets from expected failed buckets list which FailedToDelete")
-        bucket_list.extend(failed_buck)
-        for bucket_name in bucket_list:
+        remain_buck.extend(failed_buck)
+        for bucket_name in remain_buck:
             download_file = self.test_file + str(s3data[bucket_name][0])
             download_path = os.path.join(self.test_dir_path, download_file)
             resp = s3_test_obj.object_download(
@@ -902,19 +902,15 @@ class TestPodFailure:
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
                     "failed/error.")
-        LOGGER.info("Cleaning up s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26441', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
         LOGGER.info("ENDED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
