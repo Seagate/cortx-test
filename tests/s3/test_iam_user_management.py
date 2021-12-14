@@ -1046,7 +1046,7 @@ class TestIAMUserManagement:
             access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
             resp = self.auth_obj.create_custom_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Perform io's")
             bucket = f"bucket{s3_acc_name}"
@@ -1056,11 +1056,11 @@ class TestIAMUserManagement:
             else:
                 assert False, "Failed to create bucket."
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
-                self.log.info("Put Object: %s in the bucket: %s with IAM user", bucket)
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
                 assert False, "Put object Failed."
             if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
-                self.log.info("Delete Object: %s and bucket: %s with S3 account", bucket)
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
         self.log.info(
             "ENDED: Test create IAM User with different combination of the valid AWS secret key "
             "and run IO using it")
@@ -1107,11 +1107,11 @@ class TestIAMUserManagement:
             else:
                 assert False, "Failed to create bucket."
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
-                self.log.info("Put Object: %s in the bucket: %s with IAM user", bucket)
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
                 assert False, "Put object Failed."
             if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
-                self.log.info("Delete Object: %s and bucket: %s with S3 account", bucket)
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
         self.log.info(
             "ENDED: Test create IAM User with different combination of the valid AWS access key "
             "and run IO using it")
