@@ -162,17 +162,17 @@ class TestDIDeployment:
             # Perform Multipart Upload
             # TODO: Call the libs function for Multipart upload with corruption
 
-            self.log.info(f'Download the object and expect error response')
+            self.log.info('Download the object and expect error response')
             resp = s3t_obj.get_object(bucket_name, obj_name)
 
             self.log.info(f'Check the uploaded and downloaded object size')
             uploaded_obj_size = resp[1]["ContentLength"]
-            self.log.info(f'size of uploaded object {obj_name} is: {uploaded_obj_size} bytes')
+            self.log.info('size of uploaded object %s is: %s bytes',obj_name,uploaded_obj_size)
             try:
                 content = resp[1]["Body"].read()
-                self.log.info(f'size of downloaded object {obj_name} is: {len(content)} bytes')
+                self.log.info('size of downloaded object %s is: %s bytes',obj_name,len(content))
             except Exception as error:
-                self.log.info(f'downloaded object is not complete: {error}')
+                self.log.info('downloaded object is not complete: %s',error)
             else:
                 if uploaded_obj_size == len(content):
                     assert_utils.assert_false(True, "uploaded and downloaded object size is same. "
