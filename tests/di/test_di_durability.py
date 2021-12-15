@@ -608,7 +608,7 @@ class TestDIDurability:
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22926')
     def test_enable_validation_induce_corruption_detect_error_22926(self):
-        """     
+        """
         With Flag enabled, when data or metadata corruption induced, download of
         corrupted data should flag error.
         """
