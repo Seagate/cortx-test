@@ -60,6 +60,8 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 
+CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
+
 # aws s3 commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
 CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
@@ -224,6 +226,7 @@ CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-k
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
+CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -465,6 +468,8 @@ KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
 KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
+                         "jsonpath='{{.items[-1:].metadata.name}}'"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -479,6 +484,7 @@ HELM_GET_VALUES = "helm get values {}"
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -517,3 +523,8 @@ FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} 
                            "--parity {} --spare {}"
 FIELD_CLUSTER_PREPARE = "cluster prepare"
 FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
+
+# LC Support Bundle
+SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
+              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"

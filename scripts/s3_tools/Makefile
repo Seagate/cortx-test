@@ -26,21 +26,23 @@
 ACCESS=None
 SECRET=None
 ENDPOINT=s3.seagate.com
-VERIFY_SSL='True'
-VALIDATE_CERTS='True'
+VERIFY_SSL=True
+VALIDATE_CERTS=True
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 APACHE_J_METER=apache-jmeter-5.4.1.tgz
 
-ifeq ($(VERIFY_SSL),'True')
+ifeq ($(VERIFY_SSL), True)
    ssl=--ssl
-   endpoint = https://$(ENDPOINT)
+   endpoint=https://$(ENDPOINT)
+   iam_port=9443
 else
    ssl=--no-ssl
-   endpoint = http://$(ENDPOINT)
+   endpoint=http://$(ENDPOINT)
+   iam_port=9080
 endif
 
-ifeq ($(VALIDATE_CERTS),'True')
+ifeq ($(VALIDATE_CERTS), True)
    certificate=--check-certificate
 else
    certificate=--no-check-certificate
@@ -61,6 +63,7 @@ aws-configure:
 	aws configure set plugins.endpoint awscli_plugin_endpoint
 	aws configure set s3.endpoint_url $(endpoint)
 	aws configure set s3api.endpoint_url $(endpoint)
+	aws configure set iam.endpoint_url $(endpoint):$(iam_port)
 	aws configure set default.ca_bundle $(CA_CRT)
 	aws configure set aws_access_key_id $(ACCESS)
 	aws configure set aws_secret_access_key $(SECRET)
@@ -103,7 +106,7 @@ s3fs-configure:
 
 	@echo "###configure s3fs in current machine###"
 	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
-	trust anchor $(CA_CRT)
+	-trust anchor $(CA_CRT)
 	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
@@ -124,7 +127,7 @@ minio-configure:
 
 	@echo "###Configure minio client in current machine###"
 	./mc config host add s3 $(endpoint) $(ACCESS) $(SECRET) --api S3v4
-	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
+	-cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
 	@echo "###configured minio client in current machine###"
 
 
@@ -148,8 +151,18 @@ s3bench-install:
 	rm -rf /root/go/src/s3bench
 	sudo yum install -y go
 	go get github.com/Seagate/s3bench
-	trust anchor /etc/ssl/stx-s3-clients/s3/ca.crt
+	-trust anchor $(CA_CRT)
 	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
+	@echo "###Installed s3bench tool###"
+
+hsbench-install:
+
+	@echo "###Installing hsbench tool###"
+	rm -rf /root/go/src/github.com/markhpc/hsbench
+	sudo yum install -y go
+	go get github.com/markhpc/hsbench
+	cd /root/go/src/github.com/markhpc/hsbench
+	go build
 	@echo "###Installed s3bench tool###"
 
 bashrc-configure:

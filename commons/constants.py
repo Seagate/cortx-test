@@ -31,6 +31,10 @@ NWORKERS = 32
 # run in parallel.
 NGREENLETS = 32
 
+#SB contansts
+MIN = 800000
+MAX = 1300000
+
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
@@ -41,6 +45,7 @@ PROD_TYPE_NODE = "node"
 POD_NAME_PREFIX = "cortx-data-pod"
 HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
+CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -77,8 +82,12 @@ IEM_DIRECTORY = "/opt/seagate/cortx/iem/iec_mapping"
 SSPL_LOG_FILE_PATH = "/var/log/cortx/sspl/sspl.log"
 COMMON_CONFIG_PATH = "config/common_config.yaml"
 TELNET_OP_PATH = "scripts/server_scripts/telnet_operations.py"
+RECEIVER_OP_PATH = "scripts/server_scripts/test_receiver.py"
+DAEMON_OP_PATH = "scripts/server_scripts/daemon.py"
 CSM_CONF = "config/csm/csm_config.yaml"
 REMOTE_TELNET_PATH = "/root/telnet_operations.py"
+REMOTE_RECEIVER_PATH = "/root/test_receiver.py"
+REMOTE_DAEMON_PATH = "/root/daemon.py"
 CTRL_LOG_PATH = "/root/telnet.xml"
 SELINUX_FILE_PATH = "/etc/selinux/config"
 HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
@@ -117,6 +126,7 @@ CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
+LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -204,9 +214,14 @@ class Rest:
     S3_ACCESS_LL = 16
     S3_SECRET_UL = 40
     S3_SECRET_LL = 8
+    IAM_ACCESS_UL = 128
+    IAM_ACCESS_LL = 16
+    IAM_SECRET_UL = 40
+    IAM_SECRET_LL = 8
     MAX_S3_USERS = 1000
     MAX_BUCKETS = 1000
     MAX_IAM_USERS = 1000
+    MAX_CSM_USERS = 100
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -230,6 +245,13 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+    PERF_STAT_METRICS = ["throughput_read",
+                         "throughput_write",
+                         "iops_read_object",
+                         "latency_create_object",
+                         "iops_write_object",
+                         "iops_read_bucket",
+                         "iops_write_bucket"]
 
 
 # aws cli errors
@@ -370,6 +392,18 @@ class Sizes:
     GB = MB * KB
 
 
+KB = 1024
+MB = KB * KB
+GB = MB * MB
+#Removing 0Byte File Size for now.
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB,
+                       16 * MB, 32 * MB, 64 * MB, 128 * MB]
+MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
+                          128 * MB, 256 * MB, 512 * MB, 1024 * MB]
+
+NORMAL_UPLOAD_SIZES_IN_MB = [1, 4, 8, 16, 32, 64, 128]
+MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256,512, 1024]
+
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
@@ -377,8 +411,13 @@ SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provision
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
-K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
-               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
+K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
+K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+
+# Pod restore methods
+RESTORE_SCALE_REPLICAS = "scale_replicas"
+RESTORE_DEPLOYMENT_K8S = "k8s"
+RESTORE_DEPLOYMENT_HELM = "helm"
