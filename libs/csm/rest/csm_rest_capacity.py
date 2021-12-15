@@ -87,7 +87,7 @@ class SystemCapacity(RestTestLib):
         TODO: Dummy function as degraded capacity csm specs is not defined yet.
         """
         self.log.info("Reading System Capacity...")
-        endpoint = self.config["decapacity_endpoint"]
+        endpoint = self.config["degraded_cap_endpoint"]
         self.log.info("Endpoint for reading capacity is %s", endpoint)
         # Fetching api response
         response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
