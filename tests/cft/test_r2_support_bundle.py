@@ -228,10 +228,10 @@ class TestR2SupportBundle:
         if "In-Progress" in resp:
             self.LOGGER.info("support bundle generation is In-progress status")
         elif "Successfully generated" in resp:
-            assert_utils.assertTrue(False, f"Support bundle got generated "
+            assert_utils.assert_true(False, f"Support bundle got generated "
                               f"very quickly need to check manually: {resp}")
         else:
-            assert_utils.assertTrue(False, f"Support bundle is not generated: {resp}")
+            assert_utils.assert_true(False, f"Support bundle is not generated: {resp}")
 
         generate_sb_process.join()
 
@@ -240,10 +240,10 @@ class TestR2SupportBundle:
         if "Successfully generated" in resp:
             self.LOGGER.info("support bundle generation completed")
         elif "In-Progress" in resp:
-            assert_utils.assertTrue(False, f"Support bundle is In-progress state, "
+            assert_utils.assert_true(False, f"Support bundle is In-progress state, "
                               f"which is unexpected: {resp}")
         else:
-            assert_utils.assertTrue(False, f"Support bundle is not generated: {resp}")
+            assert_utils.assert_true(False, f"Support bundle is not generated: {resp}")
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.support_bundle
