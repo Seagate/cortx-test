@@ -139,7 +139,7 @@ class TestR2SupportBundle:
                         found, 'Component Directory in support bundle not found')
                 if size is not None:
                     resp=self.size_verify(component_dir_name)
-		    if resp:
+                    if resp:
                         self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
                     else:
                         self.LOGGER.error("Component dir %s is not with limited size logs",component_dir_name)
