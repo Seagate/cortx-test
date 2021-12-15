@@ -84,12 +84,28 @@ class TestR2SupportBundle:
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
         return True
+     
+    def size_verify(self,component_dir_name):
+        """
+        This function which is used to verify component directory has specific size limit logs
+        """
+        files=os.listdir(component_dir_name)
+        number=len(files)
+        for file in files:
+            if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
+                count+=1
+        if count==number:
+            return True
+        else:
+            return False
 
-    def r2_verify_support_bundle(self, bundle_id, test_comp_list):
+    def r2_verify_support_bundle(self, bundle_id, test_comp_list, size=None, services=None):
         """
         This function is used to verify support bundle content
         :param bundle_id: bundle id generated after support bundle generation command triggered
         :param test_comp_list: list of component expected in support bundle
+        :param size : size of the log files expected in support bundle
+        :param services: services of the components should be generated
         :rtype bool
         """
         self.LOGGER.debug("Verifying logs are generated on each node")
@@ -121,6 +137,18 @@ class TestR2SupportBundle:
                         "component_dir not found %s", component_dir_name)
                     assert_utils.assert_true(
                         found, 'Component Directory in support bundle not found')
+                if size is not None:
+                    resp=self.size_verify(component_dir_name)
+		    if resp:
+                        self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
+                    else:
+                        self.LOGGER.error("Component dir %s is not with limited size logs",component_dir_name)
+                if services is not None:
+                     auth_services= os.path.isfile(constants.AUTHSERVER_LOG_PATH)
+                     if auth_services:
+                        self.LOGGER.info("specified Authserver files are generated")
+                     else:
+                        self.LOGGER.info("specified Autthserver files are not generated")
             self.LOGGER.debug(
                 "Verified logs are generated for each component for this node")
 
@@ -208,3 +236,43 @@ class TestR2SupportBundle:
                               f"which is unexpected: {resp}")
         else:
             assert_utils.assertTrue(False, f"Support bundle is not generated: {resp}")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-32603")
+    def test_32603_generate_support_bundle_size_limit(self):
+        """
+        Validate  support bundle size limit filter for each log
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        resp = sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_32603", comp_list="'s3server;csm;provisioner'", size='1M')
+        assert_utils.assert_true(resp[0], resp[1])
+        self.LOGGER.info("Step 1: Generated support bundle through cli")
+        size='1M'
+        test_comp_list = ["csm", "s3", "provisioner"]
+        self.LOGGER.info(
+            "Step 2: Verifying logs are generated with speicified size limit")
+        self.r2_verify_support_bundle(resp[1], test_comp_list,size)
+        self.LOGGER.info(
+            "Step 2: Verified logs are generated with specific size limit")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-32606")
+    def test_32606_generate_support_bundle_service_filter(self):
+        """
+        Validate  support bundle service filter
+        """
+        self.LOGGER.info("Step 1: Generating support bundle through cli")
+        resp = sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_32606", comp_list="'s3server'",services="S3:Authserver")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.LOGGER.info("Step 1: Generated support bundle through cli")
+        services=['Authserver']
+        test_comp_list = ["s3"]
+        self.LOGGER.info(
+            "Step 2: Verifying logs are generated with speicified services")
+        self.r2_verify_support_bundle(resp[1], test_comp_list, services)
+        self.LOGGER.info(
+            "Step 2: Verified logs are generated with specified services")
