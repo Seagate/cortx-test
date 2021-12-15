@@ -306,6 +306,7 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity during the upload "
             "with correct checksum.")
 
+    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
@@ -313,46 +314,41 @@ class TestDIDurability:
         Test to verify object integrity during the upload with different
         checksum.
         """
-        self.log.info(
-            "STARTED: Test to verify object integrity during the upload with "
-            "different checksum.")
+        self.log.info("STARTED: Verify object integrity during the upload with different checksum.")
         self.log.info("Step 1: Create N objects of size 10MB")
         self.file_lst = []
-        for i in range(self.secure_range.randint(2, 8)):
+        for i in range(self.secure_range.randint(2, 4)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info(
-            "Step 1: Created %s object of size 10MB", len(self.file_lst))
+        self.log.info("Step 1: Created %s object of size 10MB", len(self.file_lst))
         self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
                       "checksum ) for all obj")
         checksum_dict = {}
         for file in self.file_lst:
             checksum_dict[file] = system_utils.calculate_checksum(file)
-        self.log.info(
-            "Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for "
-            "all obj")
-        self.log.info(
-            "Step 3: Put objects into bucket with different calculated "
-            "checksum pass in content-md5 field")
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum )"
+                      " for all obj")
+        self.log.info("Step 3: Put objects into bucket with different calculated "
+                      "checksum pass in content-md5 field")
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         try:
-            self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=self.file_lst[-1],
-                file_path=self.file_lst[-1],
-                content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                        object_name=self.file_lst[-1],
+                                        file_path=self.file_lst[-1],
+                                        content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
         except CTException as error:
-            self.log.debug(
-                "Failed to put %s with an incorrect checksum %s", self.file_lst[-1], error)
-            assert_utils.assert_in(
-                "The Content-MD5 you specified is not valid", error.message, error.message)
-        self.log.info(
-            "Step 3: Failed to put objects into bucket with different "
-            "calculated checksum")
-        self.log.info(
-            "ENDED: Test to verify object integrity during the upload with "
-            "different checksum.")
+            self.log.debug("Failed to put %s with an incorrect checksum %s",
+                           self.file_lst[-1], error)
+            assert_utils.assert_in("The Content-MD5 you specified is not valid",
+                                   error.message, error.message)
+            self.log.info("Step 3: Failed to put objects into bucket with different "
+                          "calculated checksum")
+        for m_file in self.file_lst:
+            system_utils.remove_file(m_file)
+        self.log.info("ENDED: Test to verify object integrity during the upload with "
+                      "different checksum.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
