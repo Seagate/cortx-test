@@ -370,6 +370,7 @@ class TestMultipartUpload:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_multipart_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-5597')
     @CTFailOn(error_handler)
     def test_multipart_upload_through_configuration_file_2071(self):
