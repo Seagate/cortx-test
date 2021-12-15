@@ -26,6 +26,7 @@ import logging
 import os
 import time
 from typing import Tuple
+
 from commons import commands
 from commons import constants as const
 from commons.helpers.host import Host
@@ -353,24 +354,23 @@ class LogicalNode(Host):
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
 
-    def get_all_pods_and_ips(self,pod_prefix):
+    def get_all_pods_and_ips(self, pod_prefix):
         """
         Helper function to get pods name with pod_prefix and their IPs
         :param: pod_prefix: Prefix to define the pod category
         :return: dict
         """
         pod_dict = {}
-        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS,read_lines=True)
-        log.debug("output : %s",output)
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS, read_lines=True)
         for lines in output:
             if pod_prefix in lines:
                 data = lines.strip()
                 pod_name = data.split()[0]
-                pod_ip = data.split()[1].replace("\n","")
+                pod_ip = data.split()[1].replace("\n", "")
                 pod_dict[pod_name.strip()] = pod_ip.strip()
-        return  pod_dict
+        return pod_dict
 
-    def get_container_of_pod(self,pod_name,container_prefix):
+    def get_container_of_pod(self, pod_name, container_prefix):
         """
         Helper function to get container with container_prefix from the specified pod_name
         :param: pod_name : Pod name to query container of
@@ -387,20 +387,48 @@ class LogicalNode(Host):
 
         return container_list
 
+    def get_recent_pod_name(self):
+        """
+        Helper function to get name of recently created pod
+        :return: str
+        """
+        log.info("Get most recently created pod name")
+        cmd = commands.KUBECTL_GET_RECENT_POD
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        pod_name = output[0].strip()
+        return pod_name
+
+    def get_all_pods(self, pod_prefix=None) -> list:
+        """
+        Helper function to get all pods name with pod_prefix
+        :param: pod_prefix: Prefix to define the pod category
+        :return: list
+        """
+        pods_list = []
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_NAMES, read_lines=True)
+        pods = [line.strip().replace("\n", "") for line in output]
+        if pod_prefix is not None:
+            for each in pods:
+                if pod_prefix in each:
+                    pods_list.append(each)
+        else:
+            pods_list = pods
+        log.debug("Pods list : %s", pods_list)
+        return pods_list
+
     def copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
-        """
-        Helper function to copy file on node to specified container inside the specified pod at the specified path
-        :param: local_file_path : Absolute local file path on the node
-        :param: pod_name: Pod name where container resides
-        :param: container_path: Path inside container where the file will be copied
-        :param: container_name: Name of the container where the file will be copied
-        """
-        try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, container_path, container_name)
-            output = self.execute_cmd(cmd=cmd, exc=False)
-            status = True if output else False
-            return status
-        except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.copy_file_to_container.__name__, error)
-            return False, error
+            """
+            Helper function to copy file on node to specified container inside the specified pod at the specified path
+            :param: local_file_path : Absolute local file path on the node
+            :param: pod_name: Pod name where container resides
+            :param: container_path: Path inside container where the file will be copied
+            :param: container_name: Name of the container where the file will be copied
+            """
+            try:
+                cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, container_path, container_name)
+                output = self.execute_cmd(cmd=cmd, exc=False)
+                return True, output
+            except Exception as error:
+                log.error("*ERROR* An exception occurred in %s: %s",
+                        LogicalNode.copy_file_to_container.__name__, error)
+                return False, error
