@@ -20,13 +20,23 @@
 #
 """Tests System capacity scenarios using REST API
 """
+from http import HTTPStatus
 import logging
+import time
+import random
 import pytest
 from libs.csm.rest.csm_rest_capacity import SystemCapacity
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.ha.ha_common_libs import HALibs
+from libs.s3 import s3_misc
+from commons import configmanager
+from commons.helpers.bmc_helper import Bmc
 from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons import cortxlogging
 from config import CMN_CFG
+
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -38,9 +48,61 @@ class TestSystemCapacity():
         cls.log.info("Initializing test setups ......")
         cls.system_capacity = SystemCapacity()
         cls.log.info("Initiating Rest Client ...")
+        cls.csm_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_capacity.yaml")
+        cls.s3user = RestS3user()
+        cls.akey = ""
+        cls.skey = ""
+        cls.s3_user = ""
+        cls.bucket = ""
         cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
-                                    CMN_CFG["nodes"][0]["username"],
-                                    CMN_CFG["nodes"][0]["password"])
+                                   CMN_CFG["nodes"][0]["username"],
+                                   CMN_CFG["nodes"][0]["password"])
+        cls.ha_obj = HALibs()
+        cls.node_list = []
+        cls.host_list = []
+        cls.bmc_list = []
+        cls.username = []
+        cls.password = []
+        cls.num_nodes = len(CMN_CFG["nodes"])
+        for node in range(cls.num_nodes):
+            host = CMN_CFG["nodes"][node]["hostname"]
+            cls.username.append(CMN_CFG["nodes"][node]["username"])
+            cls.password.append(CMN_CFG["nodes"][node]["password"])
+            cls.host_list.append(host)
+            cls.node_list.append(Node(hostname=host,
+                                      username=cls.username[node],
+                                      password=cls.password[node]))
+            cls.bmc_list.append(Bmc(hostname=host,
+                                    username=cls.username[node],
+                                    password=cls.password[node]))
+
+    def setup_method(self):
+        """
+        Setup method for creating s3 user
+        """
+        self.log.info("Creating S3 account")
+        resp = self.s3user.create_s3_account()
+        assert resp.status_code == HTTPStatus.CREATED.value, "Failed to create S3 account."
+        self.akey = resp.json()["access_key"]
+        self.skey = resp.json()["secret_key"]
+        self.s3_user = resp.json()["account_name"]
+        self.bucket = f"bucket{self.s3_user}"
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+            self.bucket, self.akey, self.skey)
+        assert s3_misc.create_bucket(
+            self.bucket, self.akey, self.skey), "Failed to create bucket."
+
+    def teardown_method(self):
+        """
+        Teardowm method for deleting s3 account created in setup.
+        """
+        self.log.info("Deleting bucket %s & associated objects",self.bucket)
+        assert s3_misc.delete_objects_bucket(
+            self.bucket, self.akey, self.skey), "Failed to delete bucket."
+        self.log.info("Deleting S3 account %s created in setup", self.s3_user)
+        resp = self.s3user.delete_s3_account_user(self.s3_user)
+        assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -67,3 +129,80 @@ class TestSystemCapacity():
             csm_unit, 'BYTES', "Capacity unit check failed.")
         self.log.info("Capacity reported by CSM matched HCTL response.")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('Dummy')
+    def test_dummy(self):
+        """Dummy test F-71E
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_dummy"]
+
+        self.log.info("[Start] Checking cluster capacity")
+        results = self.system_capacity.parse_capacity_usage()
+        assert results is None
+        self.log.info("[End] Checking cluster capacity")
+
+        self.log.info("[Start] Checking degraded capacity on Consul")
+        consul_resp = "TBD"
+        result = self.system_capacity.verify_degraded_capacity(consul_resp, healthy=None,
+            degraded=0, critical=0, damaged=0, err_margin=0)
+        assert result[0], result[1]
+        self.log.info("[End] Checking degraded capacity on Consul")
+
+        self.log.info("[Start] Checking degraded capacity on HCTL")
+        result = self.health_helper.get_sys_capacity()
+        hctl_resp = "Parse the result for damaged, critical,healthy... byte"
+        result = self.system_capacity.verify_degraded_capacity(hctl_resp, healthy=None, degraded=0,
+                                                               critical=0, damaged=0, err_margin=0)
+        assert result[0], result[1]
+        self.log.info("[End] Checking degraded capacity on HCTL")
+
+        self.log.info("[Start] Checking degraded capacity on CSM")
+        resp = self.system_capacity.get_degraded_capacity()
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed."
+        csm_resp = resp.json()
+        result = self.system_capacity.verify_degraded_capacity(csm_resp, healthy=None, degraded=0,
+                                                               critical=0, damaged=0, err_margin=0)
+        assert result[0], result[1]
+        self.log.info("[End] Checking degraded capacity on CSM")
+
+        for node in range(self.num_nodes+1):
+            self.log.info("[Start] Bringing down Node %s", node)
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
+                                                          bmc_obj=self.bmc_list[node],
+                                                          node_obj=self.node_list[node])
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not shutdown yet.")
+
+            self.log.info(
+                "Verified %s is powered off and not pinging.", self.host_list[node])
+            self.log.info("[End] Bringing down Node %s", node)
+
+            # Capacity checks
+            self.log.info("[Start] Start some IOs on %s", node)
+            obj = f"object{self.s3_user}.txt"
+            write_bytes_mb = random.randint(
+                test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
+
+            self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
+                          self.bucket)
+            resp = s3_misc.create_put_objects(
+                obj, self.bucket, self.akey, self.skey, object_size=write_bytes_mb)
+            assert resp, "Put object Failed"
+            self.log.info("[End] Start some IOs on %s", node)
+
+            self.log.info(
+                "[Start] Power on node back from BMC/ssc-cloud and check node status")
+            resp = self.ha_obj.host_power_on(
+                host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not powered on yet.")
+            # To get all the services up and running
+            time.sleep(40)
+            self.log.info("Verified %s is powered on and pinging.",
+                          self.host_list[node])
+            self.log.info(
+                "[End] Power on node back from BMC/ssc-cloud and check node status")
