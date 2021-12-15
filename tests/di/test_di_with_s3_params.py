@@ -191,28 +191,55 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI disabled
         """
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test as DI flags are not disabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: With DI flag  Disabled, copy object to the same"
+                    "bucket with different name")
         # to do verify configs
-        self.log.info("Step 1::: Setting up params and restarting server")
-        self.log.info("Step 2::: Creating file and bucket")
+        self.log.info("Step 1:: Creating  bucket and upload object")
         bucket_name = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
-        obj_name_2 = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name_1,
                                      file_path=self.F_PATH)
         self.log.info(resp)
+        self.log.info("Step 1:: Created bucket with  %s and uploading object %s",
+                    bucket_name,obj_name_1)
+        self.log.info("Step 2:: List object in bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_1 not in res[1]:
+            return res, "object not listed in bucket {bucket_name_1}"
+        self.log.info("Step 2:: Object listed in bucket")
+        obj_name_2 = self.get_object_name()
+        self.log.info("Step 3:: Copy object=%s to  same bucket in "
+                    "destination object=%s", obj_name_1, obj_name_2)
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name,
                                          source_object=obj_name_1,
                                          dest_bucket=bucket_name,
                                          dest_object=obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_bucket(bucket_name, force=True)
-        self.log.info("Step 3::: Comparing ETags")
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert True
+        self.log.info("Step 3:: Successfully Copied object to same bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_2 not in res[1]:
+            return res, "object not listed in bucket {bucket_name_2}"
+
+        self.s3obj.object_download(bucket_name=bucket_name,
+                                   obj_name=obj_name_2, file_path=self.F_PATH_COPY)
+        self.log.info("Step 4:: Validate ETAG and checksum")
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+        if result:
+            assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                    "ETAG validation failed:")
         else:
             assert False
+        self.log.info("Step 4:: Checksum and ETAG validation is successful")
+        self.s3obj.delete_bucket(bucket_name, force=True)
+        self.log.info("ENDED: With DI flag  Disabled, copy object to the same"
+                    "bucket with different name")
 
     @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
@@ -223,27 +250,55 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI enabled
         """
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or not skipmark:
+            self.log.info("Skipping test as DI flags are not disabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: With DI flag  Enabled, copy object to the same"
+                    "bucket with different name")
         # to do verify configs
-        self.log.info("Step 2::: Creating file and bucket")
+        self.log.info("Step 1:: Creating  bucket and upload object")
         bucket_name = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
-        obj_name_2 = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name_1,
                                      file_path=self.F_PATH)
         self.log.info(resp)
+        self.log.info("Step 1:: Created bucket with  %s and uploading object %s",
+                    bucket_name,obj_name_1)
+        self.log.info("Step 2:: List object in bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_1 not in res[1]:
+            return res, "object not listed in bucket {bucket_name_1}"
+        self.log.info("Step 2:: Object listed in bucket")
+        obj_name_2 = self.get_object_name()
+        self.log.info("Step 3:: Copy object=%s to  same bucket in "
+                    "destination object=%s", obj_name_1, obj_name_2)
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name,
                                          source_object=obj_name_1,
                                          dest_bucket=bucket_name,
                                          dest_object=obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_bucket(bucket_name, force=True)
-        self.log.info("Step 3::: Comparing ETags")
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert False
+        self.log.info("Step 3:: Successfully Copied object to same bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_2 not in res[1]:
+            return res, "object not listed in bucket {bucket_name_2}"
+
+        self.s3obj.object_download(bucket_name=bucket_name,
+                                   obj_name=obj_name_2, file_path=self.F_PATH_COPY)
+        self.log.info("Step 4:: Validate ETAG and checksum")
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+        if result:
+            assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                    "ETAG validation failed:")
         else:
-            assert True
+            assert False
+        self.log.info("Step 4:: Checksum and ETAG validation is successful")
+        self.s3obj.delete_bucket(bucket_name, force=True)
+        self.log.info("ENDED: With DI flag Enabled, copy object to the same"
+                    "bucket with different name")
 
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29281')

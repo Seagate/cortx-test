@@ -590,7 +590,8 @@ class TestDIDurability:
             system_utils.create_file(file_path_upload, size)
             self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
 
-            self.log.info("Step 1: Created a bucket and upload object of %s MB into a bucket.", size)
+            self.log.info("Step 1: Created a bucket and upload object of %s MB into a "
+                        "bucket.", size)
             self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
             file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
             if os.path.exists(file_path_download):
@@ -600,14 +601,14 @@ class TestDIDurability:
                 self.bucket_name, self.object_name, file_path_download)
             assert_utils.assert_true(res[0], res)
             self.log.info("Step 2: Download chunk uploaded object is successful.")
-        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
-                "succeed ( 30 MB -100 MB).")
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
+                    "uploaded object should succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22926')
     def test_enable_validation_induce_corruption_detect_error_22926(self):
-        """
+        """     
         With Flag enabled, when data or metadata corruption induced, download of
         corrupted data should flag error.
         """
