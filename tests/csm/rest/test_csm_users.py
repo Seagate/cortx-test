@@ -3327,7 +3327,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
-        self.created_users.append(user_id)
+        self.created_users.append(userid)
         self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
         self.log.info("Creating manage user")
@@ -3399,7 +3399,8 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-25275')
     def test_25275(self):
         """
-        Test case for verifying Manage user is not able to create admin user
+        Test case for verifying Manage user is not able to create admin user and
+        Manage user should be able to create new Manage and monitor users
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -3421,16 +3422,17 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="manage")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
+        username = response.json()["username"]
+        self.created_users.append(username)
         self.log.info("Step 3: Verify create monitor user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="monitor")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
-        self.log.info("Sending request to delete csm user %s", username)
-        response = self.csm_user.delete_csm_user(user_id)
-        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        username = response.json()["username"]
+        self.created_users.append(username)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-
+ 
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -5122,7 +5124,7 @@ class TestCsmUser():
         self.log.info("Step 2: Creating a valid csm user with existing user email")
         response = self.csm_user.create_csm_user(
             user_type="valid", user_role="manage", user_email="manage_user@seagate.com")
-        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed"
+        assert response.status_code == HTTPStatus.CREATED.value, "Status code check failed"
         username2 = response.json()["username"]
         self.created_users.append(username2)
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -5155,8 +5157,8 @@ class TestCsmUser():
         self.created_users.append(username2)
         response = self.csm_user.edit_csm_user(user=username2,
                                                email="manage_user@seagate.com")
-        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed"
-        self.log.info("Verified: Email update not working for existing email")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Verified: Email update working for existing email")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr
@@ -5442,7 +5444,7 @@ class TestCsmUser():
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("Step 3: Creating %s admin users and deleting it "
-                      "except last admin", user_creation_count))
+                      "except last admin", user_creation_count)
         for _ in range(user_creation_count):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="admin")

@@ -31,6 +31,10 @@ NWORKERS = 32
 # run in parallel.
 NGREENLETS = 32
 
+#SB contansts
+MIN = 800000
+MAX = 1300000
+
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
@@ -41,6 +45,7 @@ PROD_TYPE_NODE = "node"
 POD_NAME_PREFIX = "cortx-data-pod"
 HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
+CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -209,6 +214,10 @@ class Rest:
     S3_ACCESS_LL = 16
     S3_SECRET_UL = 40
     S3_SECRET_LL = 8
+    IAM_ACCESS_UL = 128
+    IAM_ACCESS_LL = 16
+    IAM_SECRET_UL = 40
+    IAM_SECRET_LL = 8
     MAX_S3_USERS = 1000
     MAX_BUCKETS = 1000
     MAX_IAM_USERS = 1000
@@ -236,6 +245,13 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+    PERF_STAT_METRICS = ["throughput_read",
+                         "throughput_write",
+                         "iops_read_object",
+                         "latency_create_object",
+                         "iops_write_object",
+                         "iops_read_bucket",
+                         "iops_write_bucket"]
 
 
 # aws cli errors
@@ -379,10 +395,14 @@ class Sizes:
 KB = 1024
 MB = KB * KB
 GB = MB * MB
-NORMAL_UPLOAD_SIZES = [0 * KB, 4 * KB, 8 * KB, 64 * KB, 256 * KB,
+#Removing 0Byte File Size for now.
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB,
                        16 * MB, 32 * MB, 64 * MB, 128 * MB]
 MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
                           128 * MB, 256 * MB, 512 * MB, 1024 * MB]
+
+NORMAL_UPLOAD_SIZES_IN_MB = [1, 4, 8, 16, 32, 64, 128]
+MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256,512, 1024]
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
@@ -401,3 +421,12 @@ HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
 RESTORE_SCALE_REPLICAS = "scale_replicas"
 RESTORE_DEPLOYMENT_K8S = "k8s"
 RESTORE_DEPLOYMENT_HELM = "helm"
+
+# log rotation
+LOG_PATH_CSM = "/etc/cortx/log/csm"
+MAX_LOG_FILE_SIZE_CSM_MB = 16
+LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5,
+                            "/etc/cortx/log/auth/{}/server/":20,
+                            "/etc/cortx/log/s3/{}/haproxy/":5}
+LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/":5}
+LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}

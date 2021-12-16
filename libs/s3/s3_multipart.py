@@ -206,6 +206,42 @@ class Multipart(S3Lib):
 
         return response
 
+    def upload_part_copy(self,
+                         copy_source: str = None,
+                         bucket_name: str = None,
+                         object_name: str = None,
+                         **kwargs) -> dict:
+        """
+        Upload parts of a specific multipart upload.
+
+        :param copy_source: source of part copy.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :upload_id: upload id of the multipart upload
+        :part_number: part number to be uploaded
+        :**kwargs: optional params dict
+        :return:
+        """
+        content_md5 = kwargs.get("content_md5", None)
+        copy_source_range = kwargs.get("copy_source_range", None)
+        upload_id  = kwargs.get("upload_id", None)
+        part_number = kwargs.get("part_number", None)
+        if content_md5:
+            response = self.s3_client.upload_part_copy(
+                Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                CopySource=copy_source,
+                CopySourceRange=copy_source_range,
+                ContentMD5=content_md5)
+        else:
+            response = self.s3_client.upload_part_copy(
+                Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                CopySource=copy_source,
+                CopySourceRange=copy_source_range
+            )
+        logging.debug(response)
+        return response
 
 class ProgressPercentage:
     """Call back for sending progress"""
@@ -269,8 +305,12 @@ class MultipartUsingBoto(S3Lib):
         config = self.get_transfer_config()
         key = kwargs.get('key')  # key is s3 server side name with prefix.
         assert not key
-        self.s3_resource.Object(bucket_name, key). \
-            download_file(file_path,
-                          Config=config,
-                          Callback=ProgressPercentage(file_path)
-                          )
+        try:
+            self.s3_resource.Object(bucket_name, key). \
+                download_file(file_path,
+                              Config=config,
+                              Callback=ProgressPercentage(file_path)
+                              )
+        except Exception as error:
+            LOGGER.error("Error in multipart_upload: %s", str(error))
+            raise error
