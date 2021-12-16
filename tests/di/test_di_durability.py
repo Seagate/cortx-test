@@ -32,6 +32,7 @@ from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
+from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -305,6 +306,7 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity during the upload "
             "with correct checksum.")
 
+    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
@@ -312,46 +314,41 @@ class TestDIDurability:
         Test to verify object integrity during the upload with different
         checksum.
         """
-        self.log.info(
-            "STARTED: Test to verify object integrity during the upload with "
-            "different checksum.")
+        self.log.info("STARTED: Verify object integrity during the upload with different checksum.")
         self.log.info("Step 1: Create N objects of size 10MB")
         self.file_lst = []
-        for i in range(self.secure_range.randint(2, 8)):
+        for i in range(self.secure_range.randint(2, 4)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info(
-            "Step 1: Created %s object of size 10MB", len(self.file_lst))
+        self.log.info("Step 1: Created %s object of size 10MB", len(self.file_lst))
         self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
                       "checksum ) for all obj")
         checksum_dict = {}
         for file in self.file_lst:
             checksum_dict[file] = system_utils.calculate_checksum(file)
-        self.log.info(
-            "Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for "
-            "all obj")
-        self.log.info(
-            "Step 3: Put objects into bucket with different calculated "
-            "checksum pass in content-md5 field")
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum )"
+                      " for all obj")
+        self.log.info("Step 3: Put objects into bucket with different calculated "
+                      "checksum pass in content-md5 field")
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         try:
-            self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=self.file_lst[-1],
-                file_path=self.file_lst[-1],
-                content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                        object_name=self.file_lst[-1],
+                                        file_path=self.file_lst[-1],
+                                        content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
         except CTException as error:
-            self.log.debug(
-                "Failed to put %s with an incorrect checksum %s", self.file_lst[-1], error)
-            assert_utils.assert_in(
-                "The Content-MD5 you specified is not valid", error.message, error.message)
-        self.log.info(
-            "Step 3: Failed to put objects into bucket with different "
-            "calculated checksum")
-        self.log.info(
-            "ENDED: Test to verify object integrity during the upload with "
-            "different checksum.")
+            self.log.debug("Failed to put %s with an incorrect checksum %s",
+                           self.file_lst[-1], error)
+            assert_utils.assert_in("The Content-MD5 you specified is not valid",
+                                   error.message, error.message)
+            self.log.info("Step 3: Failed to put objects into bucket with different "
+                          "calculated checksum")
+        for m_file in self.file_lst:
+            system_utils.remove_file(m_file)
+        self.log.info("ENDED: Test to verify object integrity during the upload with "
+                      "different checksum.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -564,7 +561,7 @@ class TestDIDurability:
             "ENDED: Create Motr panic by some misconfiguration in Motr and Verify S3 checksum"
             " error detection.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22916')
     def test_disable_checkum_validation_download_chunk_upload_22916(self):
@@ -572,35 +569,39 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
-        self.log.info(
-            "STARTED: With Checksum flag  Disabled, download of the chunk uploaded object should"
-            "succeed ( 30 MB -100 MB).")
-        self.log.info(
-            "Step 1: Disable checksum verification flag.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Disabled checksum flag successfully.")
-        self.log.info(
-            "Step 2: Create a bucket and upload object of size 200 MB into a bucket.")
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test  checksum flag is not disabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
+                    "uploaded object should succeed ( 30 MB -100 MB).")
+        self.log.info("Step 1: Create a bucket and upload object into a bucket.")
+
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-        system_utils.create_file(self.file_path, 200)
-        self.s3_test_obj.put_object(self.bucket_name, self.object_name)
-        self.log.info(
-            "Step 2: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 3: Download chunk uploaded object.")
-        if os.path.exists(self.file_path):
-            os.remove(self.file_path)
-        res = self.s3_mp_test_obj.object_download(
-            self.bucket_name, self.object_name, self.file_path)
-        assert_utils.assert_true(res[0], res)
-        self.log.info(
-            "Step 3: Download chunk uploaded object is successful.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
+
+        for size in NORMAL_UPLOAD_SIZES_IN_MB:
+            self.log.info("Step 1: create a file of size %sMB", size)
+            file_path_upload = self.file_path + "TEST_22916_"+ str(size) +"MB_upload"
+            if os.path.exists(file_path_upload):
+                os.remove(file_path_upload)
+
+            system_utils.create_file(file_path_upload, size)
+            self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
+
+            self.log.info("Step 1: Created a bucket and upload object of %s MB into a bucket.", size)
+            self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
+            file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
+            if os.path.exists(file_path_download):
+                os.remove(file_path_download)
+
+            res = self.s3_test_obj.object_download(
+                self.bucket_name, self.object_name, file_path_download)
+            assert_utils.assert_true(res[0], res)
+            self.log.info("Step 2: Download chunk uploaded object is successful.")
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
+                "succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
