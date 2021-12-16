@@ -613,14 +613,11 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
     Globals.ALL_RESULT = report
     setattr(item, "rep_" + report.when, report)
-    try:
+    if hasattr(item, 'call_duration'):
         attr = getattr(item, 'call_duration')
-        LOGGER.info('Setting attribute call_duration')
-    except AttributeError as attr_error:
-        LOGGER.warning('Exception %s occurred', str(attr_error))
-        setattr(item, "call_duration", call.duration)
-    else:
         setattr(item, "call_duration", call.duration + attr)
+    else:
+        setattr(item, "call_duration", call.duration)
 
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
