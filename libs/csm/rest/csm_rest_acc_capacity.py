@@ -20,10 +20,15 @@
 #
 """Test library for account capacity related operations.
 """
+import os
+
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class AccountCapacity(RestTestLib):
@@ -88,3 +93,40 @@ class AccountCapacity(RestTestLib):
         if len(acc_local_copy):
             self.log.error("Accounts not found in rest output: %s", acc_local_copy)
         return len(acc_local_copy) == 0, acc_local_copy
+
+    def perform_io_validate_data_usage(self, user_data, workload_in_mb: list,
+                                       validate_data_usage: bool) -> bool:
+        """
+        Perform put operation using specified S3 account on the given bucket and validate data usage
+        param: user_data - list of userdata
+        return : Boolean
+        """
+        s3_user = user_data[0]
+        access_key = user_data[1]
+        secret_key = user_data[2]
+        bucket_name = user_data[3]
+        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+        total_cap = 0
+        try:
+            for sz in workload_in_mb:
+                test_file = f"file_io_{sz}"
+                file_path = os.path.join(TEST_DATA_FOLDER, test_file)
+                self.log.info("Creating a file with name %s", test_file)
+                system_utils.create_file(file_path, sz, "/dev/urandom")
+
+                self.log.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
+                resp = s3t_obj.put_object(bucket_name, test_file, file_path)
+                system_utils.remove_file(file_path)
+                total_cap = total_cap + sz
+
+                if validate_data_usage:
+                    self.log.info("Verify capacity of account after put operations")
+                    s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+                    # resp = self.acc_capacity.verify_account_capacity(s3_account)
+                    # TODO : return False if comparison failed
+        except BaseException as error:
+            self.log.error("Error in %s: %s",
+                           AccountCapacity.perform_io_validate_data_usage.__name__,
+                           error)
+            return False
+        return True
