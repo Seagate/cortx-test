@@ -79,8 +79,7 @@ class TestProvK8Cortx:
         while int(time.time()) < end_time:
             data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
             assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
-            pod_name = ' '.join([str(elem) for elem in data_pod_list[1]])
-            resp = self.deploy_lc_obj.get_hctl_status(self.master_node_list[0], pod_name)
+            resp = self.deploy_lc_obj.get_hctl_status(self.master_node_list[0], data_pod_list[1][0])
             if resp[0]:
                 LOGGER.info("All the services are online. Time Taken : %s",
                             (int(time.time()) - start_time))
