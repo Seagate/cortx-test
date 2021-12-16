@@ -914,7 +914,12 @@ class HAK8s:
 
     def put_get_delete(self, event, s3_test_obj, **kwargs):
         """
-
+        Helper function to put, get and delete objects.
+        :param event: Thread event to be sent for parallel IOs
+        :param s3_test_obj: s3 test object for the buckets to be deleted
+        :param kwargs: test_prefix, test_dir_path, output, skipput, skipget, skipdel, bkt_list,
+        s3_data, bkts_to_wr, di_check, bkts_to_del
+        :return: None
         """
         workload = HA_CFG["s3_bucket_data"]["workload_sizes_mbs"]
         test_prefix = kwargs.get("test_prefix")
@@ -1012,5 +1017,4 @@ class HAK8s:
             LOGGER.info("Deleted %s number of buckets.", count)
 
             res = (event_del_bkt, fail_del_bkt)
-            LOGGER.info("RES: %s", res)
             output.put(res)
