@@ -330,3 +330,21 @@ def sb_status_lc(sb_identifier: str, pod_name: str = None):
                        f"{cm_cmd.SUPPORT_BUNDLE_STATUS_LC.format(sb_identifier)}",
         decode=True)
     return resp
+
+
+def log_file_size_on_path(pod_name: str, log_path: str):
+    """
+    Getting log file sizes in MB on given path and pod
+    """
+    for node in CMN_CFG["nodes"]:
+        if node["node_type"] == "master":
+            host = node["hostname"]
+            username = node["username"]
+            password = node["password"]
+            m_node_obj = LogicalNode(hostname=host, username=username, password=password)
+
+    LOGGER.info("Getting log file sizes on path: %s of %s pod", log_path, pod_name)
+    resp = m_node_obj.send_k8s_cmd(operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+                                   command_suffix=f"-- ls -l --block-size=MB {log_path}",
+                                   decode=True)
+    return resp

@@ -67,13 +67,14 @@ deactivate
 			steps{
 				script {
 			        env.Sanity_Failed = true
+			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
 echo 'Creating s3 account and configuring awscli on client'
-pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node} --health_check False
+pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node}
 set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
@@ -88,13 +89,18 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
 deactivate
 '''	)
 				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Sanity due to bad health of deployment')
+                    }
                     if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
@@ -111,6 +117,7 @@ deactivate
 			steps {
 				script {
 			        env.Sanity_Failed = false
+			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
@@ -129,13 +136,18 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Regression due to bad health of deployment')
+                    }
 				}
 			}
 		}
