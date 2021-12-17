@@ -73,16 +73,16 @@ class TestProvK8Cortx:
                                                           self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
-        LOGGER.info("Step 2: Check s3 server status.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,self.master_node_list)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Done.")
-        LOGGER.info("Step 3: Check Pods Status.")
+        LOGGER.info("Step 2: Check Pods Status.")
         path = self.deploy_cfg["k8s_dir"]
         for node in self.master_node_list:
             resp = self.deploy_lc_obj.validate_cluster_status(node, path)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 3: Done.")
+            LOGGER.info("Step 2: Done.")
+        LOGGER.info("Step 3: Check s3 server status.")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,self.master_node_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
 
     @pytest.mark.lc
@@ -209,7 +209,7 @@ class TestProvK8Cortx:
         node_list = resp[1:]
         LOGGER.info("Identify pods and nodes are equal.")
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
-        LOGGER.info("Test Completed."
+        LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -243,4 +243,3 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
-        

@@ -1135,6 +1135,7 @@ class ProvDeployK8sCortxLib:
         """
         Function to check s3 server status
         """
+        LOGGER.info("Step to Check s3 server status")
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         start_time = int(time.time())
         end_time = start_time + 1800  # 30 mins timeout
@@ -1147,4 +1148,5 @@ class ProvDeployK8sCortxLib:
                             (int(time.time()) - start_time))
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
+            LOGGER.info("s3 Server Status Check Completed")
         return resp
