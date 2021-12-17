@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python  # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -912,6 +912,8 @@ class HAK8s:
         results["fail_buck_del"] = fail_buck_del
         output.put(results)
 
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
     def put_get_delete(self, event, s3_test_obj, **kwargs):
         """
         Helper function to put, get and delete objects.
@@ -997,7 +999,7 @@ class HAK8s:
             fail_del_bkt = []
             count = 0
             while count < bkts_to_del:
-                for bkt_num in range(len(bucket_list)):
+                for _ in range(len(bucket_list)):
                     try:
                         s3_test_obj.delete_bucket(bucket_name=bucket_list[0], force=True)
                     except CTException as error:

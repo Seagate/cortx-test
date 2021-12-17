@@ -1330,7 +1330,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from WRITEs background process")
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()
+        while len(wr_resp) != 3: wr_resp = wr_output.get()       # pylint: disable=C0321
         s3_data = wr_resp[0]                  # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]            # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]             # Contains buckets which failed when event was clear
@@ -1338,13 +1338,13 @@ class TestPodFailure:
                                                      f"create/put operations {fail_put_bkt}.")
 
         buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_true(len(buckets), f"No buckets found.")
+        assert_utils.assert_true(len(buckets), "No buckets found.")
 
         LOGGER.info("Failed buckets while in-flight create/put operation : %s", event_put_bkt)
 
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()
+        while len(del_resp) != 2: del_resp = del_output.get()      # pylint: disable=C0321
         event_del_bkt = del_resp[0]          # Contains buckets when event was set
         fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
@@ -1360,7 +1360,7 @@ class TestPodFailure:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()        # pylint: disable=C0321
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1380,7 +1380,7 @@ class TestPodFailure:
                 'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()
+        while len(del_resp) != 2: del_resp = del_output.get()        # pylint: disable=C0321
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or fail_del_bkt, f"Failed to delete buckets:"
@@ -1438,7 +1438,7 @@ class TestPodFailure:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()
+        while len(wr_resp) != 3: wr_resp = wr_output.get()      # pylint: disable=C0321
         s3_data = wr_resp[0]           # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]     # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]      # Contains buckets which failed when event was clear
@@ -1446,7 +1446,7 @@ class TestPodFailure:
                                   "Expected pass, buckets which failed in create/put operations "
                                   f"{fail_put_bkt} and {event_put_bkt}.")
         buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_true(len(buckets), f"No buckets found.")
+        assert_utils.assert_true(len(buckets), "No buckets found.")
 
         LOGGER.info("Starting READs on %s buckets", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -1511,7 +1511,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from READs background process")
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()         # pylint: disable=C0321
         event_bkt_get = rd_resp[0]            # Contains buckets when event was set
         fail_bkt_get = rd_resp[1]             # Contains buckets which failed when event was clear
         event_di_bkt = rd_resp[2]             # Contains buckets when event was set
@@ -1528,7 +1528,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()
+        while len(del_resp) != 2: del_resp = del_output.get()     # pylint: disable=C0321
         event_del_bkt = del_resp[0]          # Contains buckets when event was set
         fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
@@ -1547,7 +1547,7 @@ class TestPodFailure:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()      # pylint: disable=C0321
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1567,7 +1567,7 @@ class TestPodFailure:
                 'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()
+        while len(del_resp) != 2: del_resp = del_output.get()       # pylint: disable=C0321
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or fail_del_bkt, f"Failed to delete buckets:"
