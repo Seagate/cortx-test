@@ -899,9 +899,14 @@ class TestPodFailure:
         LOGGER.info("Step 3: Start Continuous DELETEs in background")
         get_random_buck = random.sample(bucket_list, (bucket_num - 10))
         remain_buck = list(set(bucket_list) - set(get_random_buck))
-        args = {'s3_test_obj': s3_test_obj, 's3bucklist': get_random_buck, 'output': output}
-        thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
-                                  args=(event,), kwargs=args)
+        # args = {'s3_test_obj': s3_test_obj, 's3bucklist': get_random_buck, 'output': output}
+        # thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
+        #                           args=(event,), kwargs=args)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.put_get_delete,
+                                  args=(event, s3_test_obj,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 3: Successfully started DELETEs in background")
@@ -944,12 +949,12 @@ class TestPodFailure:
         event.clear()
         thread.join()
         responses = output.get()
-        assert_utils.assert_false(len(responses['pass_buck_del']),
+        assert_utils.assert_false(len(responses['fail_del_bkt']),
                                   f"Bucket deletion failed when cluster was online"
                                   f"{responses['pass_buck_del']}")
         LOGGER.info("Step 8: Verify status for In-flight DELETEs while pod is going down "
                     "and Download and verify checksum on remaining/FailedToDelete buckets.")
-        failed_buck = responses['fail_buck_del']
+        failed_buck = responses['event_del_bkt']
         LOGGER.info("Get the buckets from expected failed buckets list which FailedToDelete")
         remain_buck.extend(failed_buck)
         for bucket_name in remain_buck:
