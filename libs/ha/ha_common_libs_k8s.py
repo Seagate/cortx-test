@@ -943,8 +943,8 @@ class HAK8s:
                 object_name = f"obj_{bucket_name}"
                 file_path = os.path.join(test_dir_path, f"{bucket_name}.txt")
                 try:
-                    resp = s3_test_obj.create_bucket_put_object(bucket_name, object_name, file_path,
-                                                                size_mb)
+                    s3_test_obj.create_bucket_put_object(bucket_name, object_name, file_path,
+                                                         size_mb)
                     upload_chm = self.cal_compare_checksum(file_list=[file_path], compare=False)[0]
                     s3_data.update({bucket_name: (object_name, upload_chm)})
                 except CTException as error:

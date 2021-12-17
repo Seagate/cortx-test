@@ -1219,7 +1219,7 @@ class TestPodFailure:
         event.clear()
         thread.join()
         responses = output.get()
-        LOGGER.info("Step 6: Verify status for In-flight WRITEs while pod is going down "
+        LOGGER.info("Step 6: Verify status for In-flight READs and WRITEs while pod is going down "
                     "should be failed/error.")
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
