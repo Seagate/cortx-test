@@ -1251,7 +1251,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test to verify Continuous WRITEs and DELETEs during data pod down by "
                     "delete deployment.")
         event = threading.Event()
-        wr_bucket = HA_CFG["bg_bucket_ops"]["no_write_buckets"]
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         wr_output = Queue()
         del_output = Queue()
@@ -1413,7 +1413,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test to verify Continuous READs and DELETEs during data pod down by "
                     "delete deployment.")
         event = threading.Event()
-        wr_bucket = HA_CFG["bg_bucket_ops"]["no_write_buckets"]
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         wr_output = Queue()
         rd_output = Queue()
@@ -1428,7 +1428,7 @@ class TestPodFailure:
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Step 1: Performing Continuous WRITEs and DELETEs with variable object sizes. "
+        LOGGER.info("Step 1: Performing Continuous READs and DELETEs with variable object sizes. "
                     "0B + (1KB - 512MB) during data pod down by delete deployment.")
 
         LOGGER.info("Perform WRITEs on %s buckets", wr_bucket)

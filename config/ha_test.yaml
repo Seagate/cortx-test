@@ -30,5 +30,4 @@ s3_bench_workloads: ["0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512
 s3_bench_large_workloads: ["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"]
 
 bg_bucket_ops:
-  no_write_buckets: 150
   no_del_buckets: 100
