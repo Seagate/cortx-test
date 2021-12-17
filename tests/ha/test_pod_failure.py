@@ -1317,7 +1317,7 @@ class TestPodFailure:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = random.sample(range(1, total_parts+1), total_parts//2)
+        part_numbers = random.sample(list(range(1, total_parts+1)), total_parts//2)
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
         if os.path.exists(self.multipart_obj_path):
