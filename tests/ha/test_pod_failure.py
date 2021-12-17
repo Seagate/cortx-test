@@ -899,9 +899,6 @@ class TestPodFailure:
         LOGGER.info("Step 3: Start Continuous DELETEs in background")
         get_random_buck = random.sample(bucket_list, (bucket_num - 10))
         remain_buck = list(set(bucket_list) - set(get_random_buck))
-        # args = {'s3_test_obj': s3_test_obj, 's3bucklist': get_random_buck, 'output': output}
-        # thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
-        #                           args=(event,), kwargs=args)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': output}
 
@@ -948,13 +945,16 @@ class TestPodFailure:
         LOGGER.info("Step 7: Services status on remaining pod are in online state")
         event.clear()
         thread.join()
-        responses = output.get()
-        assert_utils.assert_false(len(responses['fail_del_bkt']),
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = output.get()  # pylint: disable=C0321
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(fail_del_bkt),
                                   f"Bucket deletion failed when cluster was online"
-                                  f"{responses['pass_buck_del']}")
+                                  f"{fail_del_bkt}")
         LOGGER.info("Step 8: Verify status for In-flight DELETEs while pod is going down "
                     "and Download and verify checksum on remaining/FailedToDelete buckets.")
-        failed_buck = responses['event_del_bkt']
+        failed_buck = event_del_bkt
         LOGGER.info("Get the buckets from expected failed buckets list which FailedToDelete")
         remain_buck.extend(failed_buck)
         for bucket_name in remain_buck:

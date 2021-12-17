@@ -884,34 +884,6 @@ class HAK8s:
 
         return not resp, log_list
 
-    @staticmethod
-    def delete_s3_bucket_data(event, s3_test_obj=None, s3bucklist=None, output=None):
-        """
-        This function executes s3 bucket delete operation in parallel with thread event.
-        :param event: Thread event to be sent for parallel IOs
-        :param s3_test_obj: s3 test object for the buckets to be deleted
-        :param s3bucklist: S3 bucket name list to be deleted
-        :param output: Queue to fill results
-        :return: None
-        """
-        pass_buck_del = []   # List of bucket which is expected to be deleted (Online cluster)
-        fail_buck_del = []   # List of bucket which is expected to Fail to delete (Degraded cluster)
-        results = dict()
-        for bucket_name in s3bucklist:
-            try:
-                s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
-            except CTException as error:
-                LOGGER.error("Error in %s: %s",
-                             S3TestLib.delete_bucket.__name__,
-                             error)
-                if event.is_set():
-                    fail_buck_del.append(bucket_name)
-                else:
-                    pass_buck_del.append(bucket_name)
-        results["pass_buck_del"] = pass_buck_del
-        results["fail_buck_del"] = fail_buck_del
-        output.put(results)
-
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
     def put_get_delete(self, event, s3_test_obj, **kwargs):
