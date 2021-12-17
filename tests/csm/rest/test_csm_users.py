@@ -1189,6 +1189,13 @@ class TestCsmUser():
         username = response.json()["username"]
         userid = response.json()["id"]
         actual_response = response.json()
+        created_time = actual_response["created_time"]
+        modified_time_format = self.csm_user.edit_datetime_format(created_time)
+        actual_response["created_time"] = modified_time_format
+        updated_time = actual_response["updated_time"]
+        modified_time = self.csm_user.edit_datetime_format(updated_time)
+        actual_response["updated_time"] = modified_time
+        self.log.info("Printing actual response %s:", actual_response)
         self.log.info(
             "Fetching list of all users")
         response1 = self.csm_user.list_csm_users(
@@ -1203,6 +1210,14 @@ class TestCsmUser():
             if item["username"] == username:
                 expected_response = item
                 break
+        self.log.info("expected response is %s:", expected_response)
+        created_time = expected_response["created_time"]
+        modified_time_format = self.csm_user.edit_datetime_format(created_time) 
+        expected_response["created_time"] = modified_time_format
+        updated_time = expected_response["updated_time"]
+        modified_time = self.csm_user.edit_datetime_format(updated_time)
+        expected_response["updated_time"] = modified_time
+        self.log.info("Printing expected response %s:", expected_response)
         self.log.info("Verifying the actual response %s is matching the "
                       "expected response %s", actual_response, expected_response)
         assert (config_utils.verify_json_response(
