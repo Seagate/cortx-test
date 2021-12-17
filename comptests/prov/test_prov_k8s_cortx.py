@@ -69,24 +69,19 @@ class TestProvK8Cortx:
         """
         LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
         LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        resp = self.deploy_lc_obj.deploy_cortx_k8s_cluster(self.master_node_list,
-                                                           self.worker_node_list)
+        resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
-
-        LOGGER.info("Step 2: Check Pods Status.")
+        LOGGER.info("Step 2: Check s3 server status.")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,self.master_node_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Done.")
+        LOGGER.info("Step 3: Check Pods Status.")
         path = self.deploy_cfg["k8s_dir"]
         for node in self.master_node_list:
             resp = self.deploy_lc_obj.validate_cluster_status(node, path)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Done.")
-
-        LOGGER.info("Step 3: Check hctl Status.")
-        pod_name = self.master_node_obj.get_pod_name()
-        assert_utils.assert_true(pod_name[0], pod_name[1])
-        resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Done.")
+            LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
 
     @pytest.mark.lc

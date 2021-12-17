@@ -1131,3 +1131,22 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
+
+    @staticmethod
+    def check_s3_status(master_node_obj: LogicalNode,master_node_list: list):
+        """
+        Function to check s3 server status
+        """
+        deploy_ff_cfg = PROV_CFG["deploy_ff"]
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        while int(time.time()) < end_time:
+            data_pod_list = ProvDeployK8sCortxLib.get_data_pods(master_node_obj)
+            assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
+            resp = ProvDeployK8sCortxLib.get_hctl_status(master_node_list[0], data_pod_list[1][0])
+            if resp[0]:
+                LOGGER.info("All the services are online. Time Taken : %s",
+                            (int(time.time()) - start_time))
+                break
+            time.sleep(deploy_ff_cfg["per_step_delay"])
+        return resp
