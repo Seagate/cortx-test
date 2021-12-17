@@ -63,6 +63,8 @@ class AccountCapacity(RestTestLib):
     def verify_account_capacity(self, accounts):
         """
         Verifies given account capacity with rest capacity output
+        param: accounts: List of accounts with account info dict
+        return: True/False based on verification
         """
         if len(accounts) == 1:
             response = self.get_account_capacity(accounts[0]["account_name"])

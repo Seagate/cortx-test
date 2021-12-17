@@ -55,12 +55,12 @@ class TestAccountCapacity():
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting buckets %s & associated objects", self.buckets_created)
         for bucket in self.buckets_created:
-            assert s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2]), \
-                "Failed to delete bucket."
+            resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
+            assert_utils.assert_true(resp, "Failed to delete bucket.")
         self.log.info("Deleting S3 account %s created in test", self.account_created)
         for account in self.account_created:
             resp = self.s3user.delete_s3_account_user(account)
-            assert resp.status_code == HTTPStatus.OK, "Failed to delete account"
+            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "Failed to delete account")
         self.log.info("[ENDED] ######### Teardown #########")
 
     @pytest.mark.csmrest
@@ -75,7 +75,8 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Creating S3 account")
         resp = self.s3user.create_s3_account()
-        assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
         access_key = resp.json()["access_key"]
         secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
@@ -85,7 +86,8 @@ class TestAccountCapacity():
             bucket = "bucket%s" % int(time.time())
             self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                           bucket, access_key, secret_key)
-            assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
+            assert_utils.assert_true(s3_misc.create_bucket(bucket, access_key, secret_key),
+                                     "Failed to create bucket")
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
             self.log.info("Start: Put operations")
@@ -96,7 +98,7 @@ class TestAccountCapacity():
                           bucket)
             resp = s3_misc.create_put_objects(
                 obj, bucket, access_key, secret_key, object_size=write_bytes_mb)
-            assert resp, "Put object Failed"
+            assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("End: Put operations")
             self.log.info("verify capacity of account after put operations")
             s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
