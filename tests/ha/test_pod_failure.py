@@ -1383,9 +1383,8 @@ class TestPodFailure:
         while len(del_resp) != 2: del_resp = del_output.get()        # pylint: disable=C0321
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
-        assert_utils.assert_false(len(event_del_bkt) or fail_del_bkt, f"Failed to delete buckets:"
-                                                                      f"{event_del_bkt} and "
-                                                                      f"{fail_del_bkt}")
+        assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
 
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
@@ -1517,11 +1516,9 @@ class TestPodFailure:
         event_di_bkt = rd_resp[2]             # Contains buckets when event was set
         fail_di_bkt = rd_resp[3]              # Contains buckets which failed when event was clear
 
-        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt), "Expected pass, buckets "
-                                                                         "which failed in read are:"
-                                                                         f"{fail_bkt_get} and "
-                                                                         "failed in di check are:"
-                                                                         f"{fail_di_bkt}")
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt),
+                                  "Expected pass, buckets which failed in read are:"
+                                  f" {fail_bkt_get} and failed in di check are: {fail_di_bkt}")
 
         LOGGER.info("Failed buckets while in-flight read operation : %s", event_bkt_get)
         LOGGER.info("Failed buckets while in-flight di check operation : %s", event_di_bkt)
@@ -1570,9 +1567,8 @@ class TestPodFailure:
         while len(del_resp) != 2: del_resp = del_output.get()       # pylint: disable=C0321
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
-        assert_utils.assert_false(len(event_del_bkt) or fail_del_bkt, f"Failed to delete buckets:"
-                                                                      f"{event_del_bkt} and "
-                                                                      f"{fail_del_bkt}")
+        assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
 
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
