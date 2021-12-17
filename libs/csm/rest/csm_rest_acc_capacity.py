@@ -59,3 +59,32 @@ class AccountCapacity(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    def verify_account_capacity(self, accounts):
+        """
+        Verifies given account capacity with rest capacity output
+        param: accounts: List of accounts with account info dict
+        return: True/False based on verification
+        """
+        if len(accounts) == 1:
+            response = self.get_account_capacity(accounts[0]["account_name"])
+            rest_data = response.json()
+            if len(rest_data) != 1:
+                self.log.error("Rest call received more than 1 account record: %s", rest_data)
+                return False, accounts
+        else:
+            response = self.get_account_capacity()
+            rest_data = response.json()
+        acc_local_copy = accounts.copy()
+        for account in accounts:
+            for rest_op in rest_data:
+                if account["account_name"] == rest_op["account_name"]:
+                    acc_local_copy.remove(account)
+                    if account["capacity"] != rest_op["capacity"] or \
+                            account["unit"] != rest_op["unit"]:
+                        self.log.error("Account information is not matched: User given: %s, "
+                                       "Rest received: %s", account, rest_op)
+                        return False, account
+        if len(acc_local_copy):
+            self.log.error("Accounts not found in rest output: %s", acc_local_copy)
+        return len(acc_local_copy) == 0, acc_local_copy
