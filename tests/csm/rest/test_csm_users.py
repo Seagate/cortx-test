@@ -94,8 +94,9 @@ class TestCsmUser():
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting all csm users except predefined ones...")
         delete_failed = []
+        if self.created_users or self.created_s3_users:
+           time.sleep(3)             #EOS-27030
         for usr in self.created_users:
-            time.sleep(3)
             self.log.info("Sending request to delete csm user %s", usr)
             try:
                 response = self.csm_user.delete_csm_user(usr)
@@ -109,7 +110,6 @@ class TestCsmUser():
         self.log.info("Deleting all s3 users except predefined ones...")
         s3_delete_failed = []
         for usr in self.created_s3_users:
-            time.sleep(3)
             self.log.info("Sending request to delete s3 user %s", usr)
             try:
                 response = self.s3_account_obj.delete_s3_account_user(username=usr)
