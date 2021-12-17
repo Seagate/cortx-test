@@ -415,3 +415,13 @@ class LogicalNode(Host):
             pods_list = pods
         log.debug("Pods list : %s", pods_list)
         return pods_list
+
+    def get_machine_id_for_pod(self, pod_name: str):
+        """
+        Getting machine id for given pod
+        """
+        log.info("Getting machine id for pod: %s", pod_name)
+        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                 command_suffix="cat /etc/machine-id",
+                                 decode=True)
+        return resp

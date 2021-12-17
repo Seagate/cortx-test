@@ -609,10 +609,12 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None) -> tuple:
+            key: str = None,
+            raise_exec: bool = True) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
+        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
         :param bucket: The bucket name containing the object.
         :return: (Boolean, Response)
@@ -624,8 +626,14 @@ class S3TestLib(S3Lib):
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
+            if raise_exec:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            else:
+                if error.response['Error']['Code'] == 'NoSuchKey':
+                    LOGGER.info('No object found - returning empty')
+                    return False, dict()
+                else:
+                    return False, error.response
         return True, response
 
     def list_objects_with_prefix(
