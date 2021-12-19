@@ -33,6 +33,7 @@ from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
+from commons.utils import s3_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
@@ -41,8 +42,8 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import S3_CFG
 
 
-class TestMultipartUploadGetPut:
-    """Multipart Upload Test Suite."""
+class TestMultipartUploadPartCopy:
+    """Multipart Upload PartCopy Test Suite."""
     @classmethod
     def setup_class(cls):
         """
@@ -90,6 +91,8 @@ class TestMultipartUploadGetPut:
         self.mpu_partcopy_bkt = "mpu-partcopy-bkt-{}".format(perf_counter_ns())
         self.mpu_partcopy_obj = "mpu-partcopy-obj-{}".format(perf_counter_ns())
         self.s3bio_obj = S3BackgroundIO(self.s3_test_obj, self.io_bucket_name)
+        self.s3mpu_obj = S3MultipartTestLib()
+        self.s3t_obj = S3TestLib()
         # create bucket
         self.log.info("Creating a bucket with name : %s", self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -454,20 +457,56 @@ class TestMultipartUploadGetPut:
         self.log.info("Start S3 background IOs.")
         self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Create bucket1.")
+        resp = self.s3t_obj.create_bucket(self.bucket_name1)
+        assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 2: Initiate multipart upload by performing CreateMultipartUpload.")
+        resp = self.s3mpu_obj.create_multipart_upload(self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        mpu_id1 = resp[1]["UploadId"]
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
                       "parts can have sizes aligned and unaligned with motr unit sizes. Make sure "
                       "the entire object is > 5GB.")
+        resp = create_file(self.test_file, count=MPART_CFG["test_29171"]["file_size"])
+        assert_utils.assert_true(resp[0], resp[1])
+        chunks = s3_utils.get_unaligned_parts(
+            self.test_file, total_parts=MPART_CFG["test_29171"]["total_parts"], random=True)
+        status, parts = self.s3mpu_obj.upload_parts_sequential(
+            mpu_id1, self.bucket_name, self.object_name, parts=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
+        res = self.s3mpu_obj.list_parts(mpu_id1, self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Get the part details and perform CompleteMultipartUpload.")
-        self.log.info("Step 6: Create bucket 2.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        res = self.s3mpu_obj.complete_multipart_upload(
+            mpu_id1, sorted_part_list, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 6: Create bucket2.")
+        resp = self.s3t_obj.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 7: Initiate multipart upload by performing CreateMultipartUpload2.")
-        self.log.info("Step 8: Upload part2 by copying byterange 5MB-5GB from object1 to uploadID2")
-        self.log.info("Step 9: Upload part1 by copying entire object1 byterange >5GB to uploadID2.")
-        self.log.info("Step 10: Upload part4 by copying byterange <5MB from object1 to uploadID2.")
-        self.log.info("Step 11: Upload part3 by normal file upload.")
-        self.log.info("Step 12: list the parts uploaded.")
-        self.log.info("Step 13: Complete the MPU.")
+        resp = self.s3mpu_obj.create_multipart_upload(self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        mpu_id2 = resp[1]["UploadId"]
+        self.log.info("Step 8: Upload part1 by copying object1 to it.")
+        response = self.s3_mpu_test_obj.upload_part_copy(
+            f"{self.bucket_name}/{self.object_name}", self.bucket_name2, self.object_name2,
+            part_number=1, upload_id=mpu_id2)
+        assert_utils.assert_true(response[0], response)
+        self.log.info("Step 9: Upload part part 2, 3 using simple upload.")
+        chunks = s3_utils.get_unaligned_parts(
+            self.test_file, total_parts=MPART_CFG["test_29171"]["total_parts"], random=True)
+        status, parts = self.s3mpu_obj.upload_parts_sequential(
+            mpu_id2, self.bucket_name, self.object_name, parts=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
+        self.log.info("Step 10: list the parts uploaded.")
+        res = self.s3mpu_obj.list_parts(mpu_id1, self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 11: Complete the MPU.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        res = self.s3mpu_obj.complete_multipart_upload(
+            mpu_id1, sorted_part_list, self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(res[0], res[1])
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
         self.s3bio_obj.validate()
