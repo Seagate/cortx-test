@@ -18,27 +18,27 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Multipart Upload test module."""
+"""Multipart upload PartCopy object test module."""
 
 import logging
 import random
-import time
-import multiprocessing
 import os
+from time import perf_counter_ns
+
 import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.s3_utils import get_precalculated_parts
-from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
+from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3 import S3_CFG, S3H_OBJ, CMN_CFG
+from libs.s3 import S3_CFG
 
 
 class TestMultipartUploadGetPut:
@@ -51,9 +51,6 @@ class TestMultipartUploadGetPut:
         cls.log = logging.getLogger(__name__)
         cls.s3_test_obj = S3TestLib()
         cls.s3_mpu_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.aws_config_path = []
-        cls.aws_config_path.append(S3_CFG["aws_config_path"])
-        cls.actions = ["backup", "restore"]
         cls.test_file = "mpu_obj"
         cls.test_file_partcopy = "mpu_partcopy_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUploadRedesign")
@@ -63,7 +60,7 @@ class TestMultipartUploadGetPut:
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.downloaded_file = "{}{}".format("get_blackboxs3obj", time.perf_counter_ns())
+        cls.downloaded_file = "{}{}".format("get_blackboxs3obj", perf_counter_ns())
         cls.downloaded_file_path = os.path.join(
             cls.test_dir_path, cls.downloaded_file)
 
@@ -80,22 +77,19 @@ class TestMultipartUploadGetPut:
 
     def setup_method(self):
         """
-        This is called before each test in this test suite
+        This is called before each test in this test suite.
         """
         self.log.info("STARTED: Setup operations")
-        self.random_time = int(time.perf_counter_ns())
-        self.bucket_name = "mpu-bkt-{}".format(self.random_time)
-        self.object_name = "mpu-obj-{}".format(self.random_time)
-        self.mpu_partcopy_bkt = "mpu-partcopy-bkt-{}".format(self.random_time)
-        self.mpu_partcopy_obj = "mpu-partcopy-obj-{}".format(self.random_time)
-
-        self.log.info("Taking a backup of aws config file located at %s to %s...",
-                      self.aws_config_path, self.config_backup_path)
-        resp = backup_or_restore_files(self.actions[0], self.config_backup_path,
-                                       self.aws_config_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Taken a backup of aws config file located at %s to %s",
-                      self.aws_config_path, self.config_backup_path)
+        self.bucket_name = "mpu-bkt-{}".format(perf_counter_ns())
+        self.io_bucket_name = "mpu-io-bkt-{}".format(perf_counter_ns())
+        self.bucket_name1 = "mpu-bkt1-{}".format(perf_counter_ns())
+        self.bucket_name2 = "mpu-bkt2-{}".format(perf_counter_ns())
+        self.object_name = "mpu-obj-{}".format(perf_counter_ns())
+        self.object_name1 = "mpu-obj1-{}".format(perf_counter_ns())
+        self.object_name2 = "mpu-obj2-{}".format(perf_counter_ns())
+        self.mpu_partcopy_bkt = "mpu-partcopy-bkt-{}".format(perf_counter_ns())
+        self.mpu_partcopy_obj = "mpu-partcopy-obj-{}".format(perf_counter_ns())
+        self.s3bio_obj = S3BackgroundIO(self.s3_test_obj, self.io_bucket_name)
         # create bucket
         self.log.info("Creating a bucket with name : %s", self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -109,26 +103,13 @@ class TestMultipartUploadGetPut:
         This is called after each test in this test suite
         """
         self.log.info("STARTED: Teardown operations")
+        self.s3bio_obj.cleanup()
         resp = self.s3_test_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith("mpu-bkt")]
         if pref_list:
             resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Restoring aws config file from %s to %s...",
-            self.config_backup_path,
-            self.aws_config_path)
-        resp = backup_or_restore_files(
-            self.actions[1], self.config_backup_path, self.aws_config_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Restored aws config file from %s to %s",
-            self.config_backup_path,
-            self.aws_config_path)
-        self.log.info("Deleting a backup file and directory...")
-        if path_exists(self.config_backup_path):
-            remove_dirs(self.config_backup_path)
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup file and directory")
@@ -415,8 +396,8 @@ class TestMultipartUploadGetPut:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.mpu_partcopy_bkt, res[1])
         self.log.info("Created a bucket with name : %s", self.mpu_partcopy_bkt)
-        mpu_partcopy_bkt3 = "mpu-partcopy-bkt3".format(self.random_time)
-        mpu_partcopy_obj3 = "mpu-partcopy-obj3".format(self.random_time)
+        mpu_partcopy_bkt3 = "mpu-partcopy-bkt3".format(perf_counter_ns())
+        mpu_partcopy_obj3 = "mpu-partcopy-obj3".format(perf_counter_ns())
         self.log.info("Creating a bucket with name : %s", mpu_partcopy_bkt3)
         res = self.s3_test_obj.create_bucket(mpu_partcopy_bkt3)
         assert_utils.assert_true(res[0], res[1])
@@ -461,15 +442,17 @@ class TestMultipartUploadGetPut:
         self.log.info("ENDED: Test Copy object created  recursively by MPU-UploadPartCopy")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-32721')
+    @pytest.mark.tags('TEST-32730')
     @CTFailOn(error_handler)
-    def test_32721(self):
+    def test_32730(self):
         """
         Upload part copy.
 
         Upload object UploadPartCopy having part sizes within aws part size limits using byte-range.
         """
         self.log.info("STARTED: Upload object UploadPartCopy using byte-range param")
+        self.log.info("Start S3 background IOs.")
+        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Create bucket1.")
         self.log.info("Step 2: Initiate multipart upload by performing CreateMultipartUpload.")
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
@@ -485,15 +468,19 @@ class TestMultipartUploadGetPut:
         self.log.info("Step 11: Upload part3 by normal file upload.")
         self.log.info("Step 12: list the parts uploaded.")
         self.log.info("Step 13: Complete the MPU.")
-        self.log.info("Step 14: Check IOs running or not.")
+        self.log.info("Stop & validate S3 background IOs.")
+        self.s3bio_obj.stop()
+        self.s3bio_obj.validate()
         self.log.info("ENDED: Upload object UploadPartCopy using byte-range param")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-32730')
+    @pytest.mark.tags('TEST-32721')
     @CTFailOn(error_handler)
-    def test_32730(self):
+    def test_32721(self):
         """Upload 2 objects parallelly using uploadPartCopy."""
         self.log.info("STARTED: Upload 2 objects parallelly using uploadPartCopy.")
+        self.log.info("Start S3 background IOs.")
+        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Create bucket1.")
         self.log.info("Step 2: Initiate multipart upload by performing CreateMultipartUpload1.")
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
@@ -507,7 +494,9 @@ class TestMultipartUploadGetPut:
         self.log.info("Step 9: Parallelly upload part1 by copying object1 to both these uploadIDs.")
         self.log.info("Step 10: Perform ListParts prallely on these 2 uploadIDs.")
         self.log.info("Step 11: Complete MPU for both uploadIDs.")
-        self.log.info("Step 12: Check IOs running or not.")
+        self.log.info("Stop & validate S3 background IOs.")
+        self.s3bio_obj.stop()
+        self.s3bio_obj.validate()
         self.log.info("ENDED: Upload 2 objects parallelly using uploadPartCopy.")
 
     @pytest.mark.s3_ops
@@ -516,6 +505,8 @@ class TestMultipartUploadGetPut:
     def test_32734(self):
         """Overwrite the failed UploadCopyPart for byte range to successful uploadPartCopy."""
         self.log.info("STARTED: Overwrite the failed UploadCopyPart for byte range to successful.")
+        self.log.info("Start S3 background IOs.")
+        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Create bucket1.")
         self.log.info("Step 2: Initiate multipart upload by performing CreateMultipartUpload.")
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
@@ -531,7 +522,9 @@ class TestMultipartUploadGetPut:
         self.log.info("Step 11: Upload part1 by copying byte range within upload part size limits.")
         self.log.info("Step 12: list the parts uploaded.")
         self.log.info("Step 13: Complete the MPU.")
-        self.log.info("Step 14: Check IOs running or not.")
+        self.log.info("Stop & validate S3 background IOs.")
+        self.s3bio_obj.stop()
+        self.s3bio_obj.validate()
         self.log.info("ENDED: Overwrite the failed UploadCopyPart for byte range to successful.")
 
     @pytest.mark.s3_ops
@@ -540,6 +533,8 @@ class TestMultipartUploadGetPut:
     def test_32734(self):
         """Uploading part using UploadPartCopy which is from another account."""
         self.log.info("STARTED: Uploading part using UploadPartCopy which is from another account.")
+        self.log.info("Start S3 background IOs.")
+        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Create bucket1")
         self.log.info("Step 2: Initiate multipart upload by performing CreateMultipartUpload.")
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order.")
@@ -554,5 +549,7 @@ class TestMultipartUploadGetPut:
         self.log.info("Step 11: After that upload part 2 by copying entire object 1.")
         self.log.info("Step 12: list the parts uploaded.")
         self.log.info("Step 13: Complete the MPU.")
-        self.log.info("Step 14: Check IOs running or not.")
+        self.log.info("Stop & validate S3 background IOs.")
+        self.s3bio_obj.stop()
+        self.s3bio_obj.validate()
         self.log.info("ENDED: Uploading part using UploadPartCopy which is from another account.")
