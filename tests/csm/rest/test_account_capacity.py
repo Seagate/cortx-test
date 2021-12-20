@@ -21,11 +21,9 @@
 """Tests Account capacity scenarios using REST API
 """
 import logging
-import multiprocessing
 import random
 import time
 from http import HTTPStatus
-from itertools import repeat
 from multiprocessing import Pool
 
 import pytest
@@ -201,7 +199,7 @@ class TestAccountCapacity():
         self.log.info("Expected data usage in MB : %s", expected_data_usage)
         s3_account = [{"account_name": s3_user, "capacity": expected_data_usage, "unit": 'MB'}]
         resp = self.acc_capacity.verify_account_capacity(s3_account)
-        assert_utils.assert_true(resp[0],resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
 
@@ -252,6 +250,6 @@ class TestAccountCapacity():
         self.log.info("Expected data usage in MB : %s", expected_data_usage)
         s3_account = [{"account_name": s3_user, "capacity": expected_data_usage, "unit": 'MB'}]
         resp = self.acc_capacity.verify_account_capacity(s3_account)
-        assert_utils.assert_true(resp[0],resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
