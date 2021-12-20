@@ -1533,7 +1533,7 @@ class TestPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 10: Create multiple buckets and run IOs and verify DI one the same")
+        LOGGER.info("Step 10: Create multiple buckets and run IOs and verify DI on the same")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32447', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
