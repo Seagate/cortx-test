@@ -346,7 +346,8 @@ class HAK8s:
             skipwrite: bool = False,
             skipcleanup: bool = False,
             nsamples: int = 20,
-            nclients: int = 10):
+            nclients: int = 10,
+            large_workload: bool = False):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW.
@@ -357,10 +358,11 @@ class HAK8s:
         :param skipcleanup: Skip deleting objects created in this run if True
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
+        :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
         workloads = HA_CFG["s3_bench_workloads"]
-        if self.setup_type == "HW":
+        if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         resp = s3bench.setup_s3bench()
