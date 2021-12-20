@@ -43,6 +43,7 @@ from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from config import di_cfg
 from config import CMN_CFG
 from libs.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 from commons.constants import const, MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.s3.s3_test_lib import S3TestLib
@@ -54,10 +55,33 @@ from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 
 
 class TestDIDurability:
     """DI Durability Test suite."""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.jc_obj = JCloudClient()
+        cls.log.info("setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = cls.jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            cls.log.info(res)
+            assert_utils.assert_true(
+                res, "Error: jcloudclient.jar or jclient.jar file does not exists")
+        resp = cls.jc_obj.update_jclient_jcloud_properties()
+        assert_utils.assert_true(resp, resp)
 
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
@@ -577,30 +601,43 @@ class TestDIDurability:
         self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
                     "uploaded object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
-
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-
+        command = self.jc_obj.create_cmd_format(self.bucket_name, "mb",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+        resp = system_utils.execute_cmd(command)
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
         for size in NORMAL_UPLOAD_SIZES_IN_MB:
-            self.log.info("Step 1: create a file of size %sMB", size)
+            self.log.info("Create a file of size %sMB", size)
             file_path_upload = self.file_path + "TEST_22916_"+ str(size) +"MB_upload"
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
 
             system_utils.create_file(file_path_upload, size)
-            self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
-
-            self.log.info("Step 1: Created a bucket and upload object of %s MB into a "
+            self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
                         "bucket.", size)
-            self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
+            put_cmd_str = "{} {}".format("put", self.file_path)
+            command = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
+                                            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                            chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
+            self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
+            
+            self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
+            
             file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-
-            res = self.s3_test_obj.object_download(
-                self.bucket_name, self.object_name, file_path_download)
-            assert_utils.assert_true(res[0], res)
-            self.log.info("Step 2: Download chunk uploaded object is successful.")
+            bucket_str = "{0}/{1} {1}".format(self.bucket_name, file_path_download)
+            command = self.create_cmd_format(bucket_str, "get",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
+            self.log.info("Step: 3 Object was downloaded successfully")
         self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
                     "uploaded object should succeed ( 30 MB -100 MB).")
 
