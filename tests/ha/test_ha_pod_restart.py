@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python  # pylint: disable=R0902
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -74,6 +74,7 @@ class TestPodRestart:
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
 
@@ -150,6 +151,7 @@ class TestPodRestart:
                 system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34072")
@@ -233,6 +235,7 @@ class TestPodRestart:
 
         LOGGER.info("ENDED: Test to verify READs after data pod restart.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34074")
