@@ -28,6 +28,7 @@ from multiprocessing import Process
 
 import pytest
 import time
+from commons import commands as comm
 from commons import constants as cons
 from commons.helpers import node_helper
 from commons.utils import assert_utils, system_utils
@@ -35,10 +36,13 @@ from commons.configmanager import config_utils
 from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
 from commons.exceptions import CTException
+from commons.helpers.node_helper import Node
 from config import CSM_CFG
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from libs.csm.csm_setup import CSMConfigsCheck
 from scripts.s3_bench import s3bench
+from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
 from libs.s3 import iam_test_lib
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
@@ -69,6 +73,9 @@ class TestIAMUserManagement:
         cls.log.info("Setup s3 bench tool")
         cls.log.info("Check s3 bench tool installed.")
         cls.s3_iam_account_dict = dict()
+        cls.csm_cluster = RestCsmCluster()
+        cls.nd_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
+        cls.config = CSMConfigsCheck()
         cls.iam_test_obj = iam_test_lib.IamTestLib()
         res = system_utils.path_exists("/root/go/src/s3bench")
         if not res:
@@ -642,6 +649,56 @@ class TestIAMUserManagement:
     @pytest.mark.lc
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.tags("TEST-32695")
+    def test_32695(self):
+        """
+        Test control pod deletion should not affect existing user I/O
+        """
+        self.log.info(
+            "STARTED: Test control pod deletion should not affect existing user I/O")
+        self.log.info("Step 1: Create s3 Account")
+        s3_acc_name = self.s3_user.format(perf_counter_ns())
+        email_id = "{}@seagate.com".format(s3_acc_name)
+        resp = self.rest_obj.create_s3_account(s3_acc_name, email_id, self.acc_password)
+        self.s3_iam_account_dict[s3_acc_name]=[]
+        assert_utils.assert_true(resp[0], resp[1])
+        s3_access_key = resp[1]["access_key"]
+        s3_secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
+        iam_user = "iamuser-{}".format(perf_counter_ns())
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        resp = self.auth_obj.create_custom_iam_user(
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3 : Perform io's & Delete control pod")
+        bucket = f"bucket{s3_acc_name}"
+        obj = f"object{iam_user}.txt"
+        if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
+            self.log.info("Created bucket: %s ", bucket)
+        else:
+            assert False, "Failed to create bucket."
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                            read_lines=False,
+                                            exc=False)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        self.log.info("Delete control pod")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_DELETE_POD.format(pod_name),
+                                            read_lines=False,
+                                            exc=False)
+        if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
+            self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
+        else:
+            assert False, "Put object Failed."
+        if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+            self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
+        self.log.info(
+            "ENDED: Test control pod deletion should not affect existing user I/O")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-32397")
     def test_32397(self):
@@ -1115,6 +1172,66 @@ class TestIAMUserManagement:
         self.log.info(
             "ENDED: Test create IAM User with different combination of the valid AWS access key "
             "and run IO using it")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.tags("TEST-32280")
+    def test_32280(self):
+        """
+        Test create, get, edit and delete max number of IAM User with custom AWS access key and
+        secret key
+        """
+        self.log.info(
+            "STARTED: Test create, get, edit and delete max number of IAM User with custom"
+            " AWS access key and secret key")
+        # TODO START: do we need to delete accounts ?
+        self.log.info("Deleting all S3 users except predefined ones...")
+        self.config.delete_s3_users()
+        self.log.info("Users except pre-defined ones deleted.")
+        # TODO END
+        self.log.info("Step 1: Create s3 Account")
+        s3_acc_name = self.s3_user.format(perf_counter_ns())
+        email_id = "{}@seagate.com".format(s3_acc_name)
+        resp = self.rest_obj.create_s3_account(s3_acc_name, email_id, self.acc_password)
+        self.s3_iam_account_dict[s3_acc_name]=[]
+        assert_utils.assert_true(resp[0], resp[1])
+        s3_access_key = resp[1]["access_key"]
+        s3_secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Creating & Editing %s Max IAM users...", cons.Rest.MAX_IAM_USERS)
+        for i in range(cons.Rest.MAX_IAM_USERS):
+            self.log.info("[START] Create s3iamuser count : %s", i + 1)
+            iam_user = "iamuser-{}".format(perf_counter_ns())
+            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+            resp = self.auth_obj.create_custom_iam_user(
+                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("[END] Created s3iamuser : %s count : %s ", iam_user, i + 1)
+            ## TODO START : Editing IAM user's
+            self.log.info("Editing %s IAM user's ??")
+            ## TODO END
+        #  check error on 1001th IAM user
+        self.log.info("Step 3: Try to create 1001th s3iamuser using direct REST API call")
+        iam_user = "iamuser-{}".format(perf_counter_ns())
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        resp = self.auth_obj.create_custom_iam_user(
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 4: Verifying list all iam users")
+        iam_test_obj = iam_test_lib.IamTestLib(access_key=s3_access_key, secret_key=s3_secret_key)
+        resp = iam_test_obj.list_users()
+        assert_utils.assert_true(resp[0], resp[1])
+        user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
+        assert_utils.assert_list_item(user_list, iam_user)
+        self.log.info("Listed user count : %s", len(user_list))
+        err_msg = f"Number of users less than {cons.Rest.MAX_IAM_USERS}"
+        assert len(user_list) == cons.Rest.MAX_IAM_USERS, err_msg
+        self.log.info(
+            "ENDED: Test create, get, edit and delete max number of IAM User with custom"
+            " AWS access key and secret key")
 
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
