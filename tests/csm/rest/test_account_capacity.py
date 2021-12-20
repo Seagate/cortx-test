@@ -139,7 +139,8 @@ class TestAccountCapacity():
             assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
-            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
 
         with Pool(len(data_all)) as pool:
             resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
@@ -178,7 +179,8 @@ class TestAccountCapacity():
             assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
-            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
 
         with Pool(len(data_all)) as pool:
             resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
