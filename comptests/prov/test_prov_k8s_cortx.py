@@ -253,7 +253,7 @@ class TestProvK8Cortx:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Executing cortx cluster shutdown command.")
-        LOGGER.info("Step 1: Check whether cluster shutdown command ran.")
+        LOGGER.info("Step 1: Check whether cluster shutdown command ran successfully.")
         resp = self.master_node_obj.execute_cmd(
             cmd=commands.CLSTR_STOP_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
         assert_utils.assert_true(resp)
@@ -271,7 +271,7 @@ class TestProvK8Cortx:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Executing cortx cluster restart command.")
-        LOGGER.info("Step 1: Check whether cluster restart command ran.")
+        LOGGER.info("Step 1: Check whether cluster restart command ran successfully.")
         resp = self.master_node_obj.execute_cmd(
             cmd=commands.CLSTR_START_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
         assert_utils.assert_true(resp)
