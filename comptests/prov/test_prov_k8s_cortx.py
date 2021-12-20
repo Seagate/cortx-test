@@ -80,7 +80,7 @@ class TestProvK8Cortx:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2: Done.")
         LOGGER.info("Step 3: Check s3 server status.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,self.master_node_list)
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, self.master_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
@@ -254,13 +254,14 @@ class TestProvK8Cortx:
         LOGGER.info("Test Started.")
         LOGGER.info("Executing cortx cluster shutdown command.")
         LOGGER.info("Step 1: Check whether cluster shutdown command run.")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CLSTR_STOP_CMD.format('deploy-scripts/k8_cortx_cloud'),read_lines=True)
+        resp = self.master_node_obj.execute_cmd(
+            cmd=commands.CLSTR_STOP_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
         assert_utils.assert_true(resp)
         LOGGER.info("Step 2: Checking whether all CORTX Data pods have been shutdown.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_POD_STATUS)
         assert_utils.assert_true(resp)
         LOGGER.info("Test Completed.")
-    
+
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32939")
@@ -271,7 +272,8 @@ class TestProvK8Cortx:
         LOGGER.info("Test Started.")
         LOGGER.info("Executing cortx cluster restart command.")
         LOGGER.info("Step 1: Check whether cluster restart command run.")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CLSTR_START_CMD.format('deploy-scripts/k8_cortx_cloud'),read_lines=True)
+        resp = self.master_node_obj.execute_cmd(
+            cmd=commands.CLSTR_START_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
         assert_utils.assert_true(resp)
         LOGGER.info("Step 2: Checking whether all CORTX Data pods have been restarted.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_POD_STATUS)
