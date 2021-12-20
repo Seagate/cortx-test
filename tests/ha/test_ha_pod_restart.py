@@ -69,6 +69,7 @@ class TestPodRestart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
+        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
 
@@ -103,6 +104,10 @@ class TestPodRestart:
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         self.restored = True
+        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
+        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
+        self.object_name = "ha-mp-obj-{}".format(self.random_time)
         LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
