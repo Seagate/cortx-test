@@ -891,8 +891,18 @@ class HAK8s:
         Helper function to put, get and delete objects.
         :param event: Thread event to be sent for parallel IOs
         :param s3_test_obj: s3 test object for the buckets to be deleted
-        :param kwargs: test_prefix, test_dir_path, output, skipput, skipget, skipdel, bkt_list,
-        s3_data, bkts_to_wr, di_check, bkts_to_del
+        :param kwargs:
+        test_prefix: Mandatory param,
+        test_dir_path: Mandatory param,
+        output: Mandatory param,
+        skipput: True if put is expected to be skipped,
+        skipget: True if get is expected to be skipped,
+        skipdel: True if delete is expected to be skipped,
+        bkt_list: List of buckets on which operations to be performed (optional),
+        s3_data: Dict to store bucket, object and checksum related info (Mandatory for get),
+        bkts_to_wr: Mandatory param for put,
+        di_check: Flag to enable/disable di check (optional),
+        bkts_to_del: Required in case of counted delete operation (optional)
         :return: None
         """
         workload = HA_CFG["s3_bucket_data"]["workload_sizes_mbs"]
@@ -985,7 +995,7 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(10)
+                        time.sleep(HA_CFG["common_params"]["10sec_delay"])
                         bucket_list = s3_test_obj.bucket_list()[1]
 
             LOGGER.info("Deleted %s number of buckets.", count)

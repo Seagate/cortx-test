@@ -6,6 +6,9 @@ common_params:
   loop_count: 11
   power_on_time: 600
   power_off_time: 600
+  10sec_delay: 10
+  20sec_delay: 20
+
 
 s3_operation_data:
   no_csm_users: 10

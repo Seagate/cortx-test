@@ -1283,7 +1283,7 @@ class TestPodFailure:
         thread1.start()
         LOGGER.info("Successfully started WRITEs in background")
 
-        time.sleep(20)
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
@@ -1463,7 +1463,7 @@ class TestPodFailure:
         thread1.start()
         LOGGER.info("Successfully started READs in background")
 
-        time.sleep(20)
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
