@@ -28,10 +28,14 @@ import random
 import time
 from time import perf_counter_ns
 
+import pytest
+
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
-from commons.utils.system_utils import make_dirs
+from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -88,7 +92,7 @@ class TestPodRestart:
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         if not os.path.exists(cls.test_dir_path):
-            resp = make_dirs(cls.test_dir_path)
+            resp = system_utils.make_dirs(cls.test_dir_path)
             LOGGER.info("Created path: %s", resp)
         cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
@@ -127,4 +131,60 @@ class TestPodRestart:
                 LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("COMPLETED: Teardown completed.")
+            if os.path.exists(self.test_dir_path):
+                system_utils.remove_dirs(self.test_dir_path)
+        LOGGER.info("Done: Teardown completed.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34072")
+    @CTFailOn(error_handler)
+    def test_reads_after_pod_restart(self):
+        """
+        This test tests READs after data pod restart
+        """
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34074")
+    @CTFailOn(error_handler)
+    def test_write_after_pod_restart(self):
+        """
+        This test tests WRITEs after data pod restart
+        """
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34077")
+    @CTFailOn(error_handler)
+    def test_deletes_after_pod_restart(self):
+        """
+        This test tests DELETEs after data pod restart
+        """
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34080")
+    @CTFailOn(error_handler)
+    def test_mpu_after_pod_restart(self):
+        """
+        This test tests multipart upload after data pod restart
+        """
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34082")
+    @CTFailOn(error_handler)
+    def test_partial_mpu_after_pod_restart(self):
+        """
+        This test tests partial multipart upload after data pod restart
+        """
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34083")
+    @CTFailOn(error_handler)
+    def test_copy_obj_after_pod_restart(self):
+        """
+        This test tests copy object after data pod restart
+        """
