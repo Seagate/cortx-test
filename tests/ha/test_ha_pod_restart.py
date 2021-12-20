@@ -196,7 +196,7 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in online state")
 
-        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 5GB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34072'
         self.s3_clean = users
@@ -314,7 +314,7 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
 
-        LOGGER.info("Step 9: Perform WRITEs-READs-Verify with variable object sizes. 0B - 5GB")
+        LOGGER.info("Step 9: Perform WRITEs-READs-Verify with variable object sizes. (0B - 5GB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34074-1'
         self.s3_clean.update(users)
