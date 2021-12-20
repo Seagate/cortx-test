@@ -123,7 +123,7 @@ class TestAccountCapacity():
         s3acct_cnt = 2
         validate_data_usage = True
 
-        data = []
+        data_all = []
         self.log.info("Creating  %s S3 account and buckets", s3acct_cnt)
         for cnt in range(0, s3acct_cnt):
             self.log.info("Create S3 Account : %s", cnt)
@@ -139,13 +139,9 @@ class TestAccountCapacity():
             assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
-            data.append([s3_user, access_key, secret_key, bucket])
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
 
-        data_all = []
-        for each in data:
-            data_all.append((each, NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
-
-        with Pool(len(data)) as pool:
+        with Pool(len(data_all)) as pool:
             resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
         assert_utils.assert_true(all(resp),
                                  "Failure in Performing IO operations on S3 accounts")
@@ -166,8 +162,7 @@ class TestAccountCapacity():
 
         bucket_cnt = 2
         validate_data_usage = False
-        data = []
-
+        data_all = []
         self.log.info("Create S3 Account")
         resp = self.s3user.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
@@ -183,13 +178,9 @@ class TestAccountCapacity():
             assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
-            data.append([s3_user, access_key, secret_key, bucket])
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
 
-        data_all = []
-        for each in data:
-            data_all.append((each, NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
-
-        with Pool(len(data)) as pool:
+        with Pool(len(data_all)) as pool:
             resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
         assert_utils.assert_true(all(resp),
                                  "Failure in Performing IO operations on S3 accounts")
@@ -216,7 +207,7 @@ class TestAccountCapacity():
 
         parallel_io_cnt = 2
         validate_data_usage = False
-        data = []
+        data_all = []
 
         self.log.info("Create S3 Account")
         resp = self.s3user.create_s3_account()
@@ -226,21 +217,18 @@ class TestAccountCapacity():
         s3_user = resp.json()["account_name"]
         self.account_created.append(s3_user)
 
-        bucket = f"test-33371-bucket"
+        bucket = "test-33371-bucket"
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       bucket, access_key, secret_key)
         assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
         self.log.info("bucket created successfully")
         self.buckets_created.append([bucket, access_key, secret_key])
 
-        for cnt in range(0, parallel_io_cnt):
-            data.append([s3_user, access_key, secret_key, bucket])
+        for _ in range(0, parallel_io_cnt):
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
 
-        data_all = []
-        for each in data:
-            data_all.append((each, NORMAL_UPLOAD_SIZES_IN_MB, validate_data_usage))
-
-        with Pool(len(data)) as pool:
+        with Pool(len(data_all)) as pool:
             resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
         assert_utils.assert_true(all(resp),
                                  "Failure in Performing IO operations on S3 accounts")
