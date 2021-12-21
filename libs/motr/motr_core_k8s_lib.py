@@ -179,7 +179,7 @@ class MotrCoreK8s():
             raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
                remote_file_path, result[1]))
         m0crate_run_cmd = f'm0crate -S {remote_file_path}'
-        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node, 
+        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node,\
             remote_file_path, common_const.HAX_CONTAINER_NAME)
         log.info(result)
         if not result[0]:
@@ -369,8 +369,8 @@ class MotrCoreK8s():
             log.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
-    
-    @staticmethod                        
+
+    @staticmethod                    
     def byte_conversion(size):
         """ Convert file size of GB/MB/KB into bytes
         :param: size: size of the file in either G, M or K i.e 2G, 1m

@@ -36,8 +36,11 @@ logger = logging.getLogger(__name__)
 
 M0CRATE_WORKLOAD_YML = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
 M0CRATE_TEST_CSV = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
+CSV_DATA = []
 with open(M0CRATE_TEST_CSV) as CSV_FH:
-    CSV_DATA = [row for row in csv.DictReader(CSV_FH)]
+    for row in csv.DictReader(CSV_FH):
+        CSV_DATA.append(row)
+
 
 @pytest.fixture(params=CSV_DATA)
 def param_loop(request):
@@ -46,6 +49,7 @@ def param_loop(request):
     param: list of values to go over one by one
     """
     return request.param
+
 
 class TestExecuteK8Sanity:
     """Execute Motr K8s Test suite"""
@@ -57,10 +61,10 @@ class TestExecuteK8Sanity:
         cls.motr_obj = MotrCoreK8s()
         cls.system_random = SystemRandom()
         logger.info("ENDED: Setup Operation")
-   
+
     def teardown_class(self):
         """Teardown of Node object"""
-        del self.motr_obj    
+        del self.motr_obj
 
     def test_motr_k8s_lib(self):
         """
