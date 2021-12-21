@@ -362,7 +362,7 @@ class S3BackgroundIO:
         :param duration: Duration of the test in the format NhMm for N hours and M minutes.
         :param log_prefix: Prefix for s3bench logs.
         """
-        self.log_prefix = log_prefix if log_prefix else log_prefix
+        self.log_prefix = log_prefix if log_prefix else self.log_prefix
         if not self.bucket_exists:
             LOG.info("Creating IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
