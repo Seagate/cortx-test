@@ -42,6 +42,11 @@ from libs.s3 import S3_CFG
 
 class TestMultipartUploadGetPut:
     """Multipart Upload Test Suite."""
+    # pylint: disable=attribute-defined-outside-init
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-locals
+
     @classmethod
     def setup_class(cls):
         """
@@ -50,8 +55,6 @@ class TestMultipartUploadGetPut:
         cls.log = logging.getLogger(__name__)
         cls.s3_test_obj = S3TestLib()
         cls.s3_mpu_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.aws_config_path = []
-        cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.test_file = "mpu_obj"
         cls.test_file_partcopy = "mpu_partcopy_obj"
@@ -87,14 +90,6 @@ class TestMultipartUploadGetPut:
         self.object_name = "mpu-obj-{}".format(self.random_time)
         self.mpu_partcopy_bkt = "mpu-partcopy-bkt-{}".format(self.random_time)
         self.mpu_partcopy_obj = "mpu-partcopy-obj-{}".format(self.random_time)
-
-        self.log.info("Taking a backup of aws config file located at %s to %s...",
-                      self.aws_config_path, self.config_backup_path)
-        resp = backup_or_restore_files(self.actions[0], self.config_backup_path,
-                                       self.aws_config_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Taken a backup of aws config file located at %s to %s",
-                      self.aws_config_path, self.config_backup_path)
         # create bucket
         self.log.info("Creating a bucket with name : %s", self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -114,17 +109,6 @@ class TestMultipartUploadGetPut:
         if pref_list:
             resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Restoring aws config file from %s to %s...",
-            self.config_backup_path,
-            self.aws_config_path)
-        resp = backup_or_restore_files(
-            self.actions[1], self.config_backup_path, self.aws_config_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Restored aws config file from %s to %s",
-            self.config_backup_path,
-            self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
         if path_exists(self.config_backup_path):
             remove_dirs(self.config_backup_path)
@@ -395,7 +379,8 @@ class TestMultipartUploadGetPut:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         keys = list(uploaded_parts2.keys())
-        uploaded_parts2.pop('2')  # removed part 2 as we are going to uplaod only one part here
+        uploaded_parts2.pop('2')  # removed part 2 as we are going to upload only one part here
+        random.shuffle(keys)
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
                                                                          self.mpu_partcopy_bkt,
@@ -440,6 +425,7 @@ class TestMultipartUploadGetPut:
         keys = list(uploaded_parts2.keys())
         uploaded_parts2.pop('2')  # removed part 2 as we are going to uplaod only one part here
         self.log.info("Uploading parts")
+        random.shuffle(keys)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id3,
                                                                          mpu_partcopy_bkt3,
                                                                          mpu_partcopy_obj3,
