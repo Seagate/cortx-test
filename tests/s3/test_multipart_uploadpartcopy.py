@@ -30,7 +30,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.s3_utils import get_precalculated_parts
-from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
+from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import MPART_CFG
@@ -118,6 +118,10 @@ class TestMultipartUploadGetPut:
         self.log.info("ENDED: Teardown operations")
 
     def create_and_complete_mpu(self, mpu_cfg):
+        """
+        Initiates multipart, uploads parts, completes multipart upload,
+        gets the uploaded object and compares ETags
+        """
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         uploaded_parts = get_precalculated_parts(self.mp_obj_path, mpu_cfg["part_sizes"],
                                                  chunk_size=mpu_cfg["chunk_size"])
@@ -411,8 +415,8 @@ class TestMultipartUploadGetPut:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.mpu_partcopy_bkt, res[1])
         self.log.info("Created a bucket with name : %s", self.mpu_partcopy_bkt)
-        mpu_partcopy_bkt3 = "mpu-partcopy-bkt3".format(self.random_time)
-        mpu_partcopy_obj3 = "mpu-partcopy-obj3".format(self.random_time)
+        mpu_partcopy_bkt3 = "mpu-partcopy-bkt3-{}".format(self.random_time)
+        mpu_partcopy_obj3 = "mpu-partcopy-obj3-{}".format(self.random_time)
         self.log.info("Creating a bucket with name : %s", mpu_partcopy_bkt3)
         res = self.s3_test_obj.create_bucket(mpu_partcopy_bkt3)
         assert_utils.assert_true(res[0], res[1])
