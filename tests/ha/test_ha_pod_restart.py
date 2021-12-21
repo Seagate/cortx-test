@@ -220,7 +220,7 @@ class TestPodRestart:
         LOGGER.info("Step 6: Successfully started the pod")
 
         LOGGER.info("Step 7: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
@@ -304,7 +304,7 @@ class TestPodRestart:
         LOGGER.info("Step 6: Successfully started the pod")
 
         LOGGER.info("Step 7: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
