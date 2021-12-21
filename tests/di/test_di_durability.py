@@ -326,8 +326,9 @@ class TestDIDurability:
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
             self.log.debug("csm: %s, location: %s", csm[1], location)
-            self.log.info("Attempting to upload object with corrupted checksum from client")
-            corrupted_csm = "DddddDdDdDddddddddddd=="
+            corrupted_csm = system_utils.random_string_generator(size=24)
+            self.log.info("Attempting to upload object with corrupted checksum from client %s",
+                          corrupted_csm)
             bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
                 self.s3_test_obj.create_bucket(bucket_name)
