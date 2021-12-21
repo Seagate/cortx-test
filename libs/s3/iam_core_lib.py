@@ -81,9 +81,9 @@ class IAMRest:
                                                    endpoint_url=endpoint_url)
             else:
                 LOGGER.info("Skipped: create iam client, resource object with boto3.")
-        except Exception as err:
-            if "unreachable network" not in str(err):
-                LOGGER.critical(err)
+        except Exception as error:
+            if "unreachable network" not in str(error):
+                LOGGER.critical(error)
 
     def __del__(self):
         """Destroy all core objects."""

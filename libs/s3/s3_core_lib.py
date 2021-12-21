@@ -23,21 +23,18 @@
 """Python Library using boto3 module to perform Bucket and object Operations."""
 
 import os
-import sys
 import logging
-import threading
-import boto3
-import boto3.s3
-from boto3.s3.transfer import TransferConfig
-from botocore.config import Config
 from typing import Union
-from commons import commands
-from commons.utils.system_utils import run_local_cmd, create_file
+from botocore.config import Config
+
+import boto3
 from config.s3 import S3_CFG
+
 
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint:disable=too-few-public-methods
 class S3Rest:
     """Basic Class for Creating Boto3 REST API Objects."""
 
@@ -97,9 +94,9 @@ class S3Rest:
                                               config=config)
             else:
                 LOGGER.info("Skipped: create s3 client, resource object with boto3.")
-        except Exception as Err:
-            if "unreachable network" not in str(Err):
-                LOGGER.critical(Err)
+        except Exception as error:
+            if "unreachable network" not in str(error):
+                LOGGER.critical(error)
 
     def __del__(self):
         """Destroy all core objects."""
