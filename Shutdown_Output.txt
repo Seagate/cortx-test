@@ -1,0 +1,88 @@
+
+---------------------------- live log sessionstart -----------------------------
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [conftest.py: 470]: Skipping placeholder to reset logging level
+============================= test session starts ==============================
+platform linux -- Python 3.7.9, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /root/lc_dev/cortx-test/virenv/bin/python3.7
+cachedir: .pytest_cache
+metadata: {'Python': '3.7.9', 'Platform': 'Linux-3.10.0-1160.6.1.el7.x86_64-x86_64-with-centos-7.9.2009-Core', 'Packages': {'pytest': '6.2.5', 'py': '1.11.0', 'pluggy': '1.0.0'}, 'Plugins': {'html': '3.1.1', 'metadata': '1.11.0', 'xdist': '2.3.0', 'cov': '2.11.1', 'ordering': '0.6', 'parallel': '0.1.0', 'forked': '1.3.0'}}
+rootdir: /root/dev_forked/cortx-test, configfile: pytest.ini
+plugins: html-3.1.1, metadata-1.11.0, xdist-2.3.0, cov-2.11.1, ordering-0.6, parallel-0.1.0, forked-1.3.0
+collected 1 item
+
+comptests/prov/test_prov_k8s_cortx.py::TestProvK8Cortx::test_32940 
+-------------------------------- live log setup --------------------------------
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 48]: STARTED: Setup Module operations
+[2021-12-21 09:10:28] [MainThread] [ERROR ] [config_utils.py: 71]: Specified file doesn't exist: config\common_config.yaml
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 66]: Done: Setup operations finished.
+[2021-12-21 09:10:28] [MainThread] [WARNING] [conftest.py: 620]: Exception 'Function' object has no attribute 'call_duration' occurred
+-------------------------------- live log call ---------------------------------
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 261]: Test Started.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 262]: Step 1: Check whether all pods are online
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 451]: Checking if all Pods are online.
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 177]: Executing kubectl get pods
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 265]: Executing cortx cluster shutdown command.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 266]: Step 2: Check whether cluster shutdown command ran successfully.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 402]: Stop the cluster
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 177]: Executing cd /root/deploy-scripts/k8_cortx_cloud/; sh shutdown-cortx-cloud.sh
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 405]: Cluster stop response: ['########################################################\n', '# Shutdown CORTX Control                                \n', '########################################################\n', 'deployment.apps/cortx-control-pod scaled\n', '\n', 'Wait for CORTX Control to be shutdown.....................................\n', '\n', 'All CORTX Control pods have been shutdown\n', '\n', '########################################################\n', '# Shutdown CORTX Data                                   \n', '########################################################\n', 'deployment.apps/cortx-data-pod-ssc-vm-g2-rhev4-2617 scaled\n', '\n', 'Wait for CORTX Data to be shutdown...................................\n', '\n', 'All CORTX Data pods have been shutdown\n', '\n']
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 269]: Step 3: Check whether data and control pods are not present
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 451]: Checking if all Pods are online.
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 177]: Executing kubectl get pods
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:11:52] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:11:52] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 273]: Test Completed.
+[2021-12-21 09:11:52] [MainThread] [INFO  ] [conftest.py: 618]: Setting attribute call_duration
+PASSED                                                                   [100%]
+------------------------------ live log teardown -------------------------------
+[2021-12-21 09:11:52] [MainThread] [INFO  ] [conftest.py: 618]: Setting attribute call_duration
+Successfully unmounted directory
+
+
+==================================== PASSES ====================================
+__________________________ TestProvK8Cortx.test_32940 __________________________
+------------------------------ Captured log setup ------------------------------
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 48]: STARTED: Setup Module operations
+[2021-12-21 09:10:28] [MainThread] [ERROR ] [config_utils.py: 71]: Specified file doesn't exist: config\common_config.yaml
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 66]: Done: Setup operations finished.
+------------------------------ Captured log call -------------------------------
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 261]: Test Started.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 262]: Step 1: Check whether all pods are online
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 451]: Checking if all Pods are online.
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 177]: Executing kubectl get pods
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 265]: Executing cortx cluster shutdown command.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 266]: Step 2: Check whether cluster shutdown command ran successfully.
+[2021-12-21 09:10:28] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 402]: Stop the cluster
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 177]: Executing cd /root/deploy-scripts/k8_cortx_cloud/; sh shutdown-cortx-cloud.sh
+[2021-12-21 09:10:28] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 405]: Cluster stop response: ['########################################################\n', '# Shutdown CORTX Control                                \n', '########################################################\n', 'deployment.apps/cortx-control-pod scaled\n', '\n', 'Wait for CORTX Control to be shutdown.....................................\n', '\n', 'All CORTX Control pods have been shutdown\n', '\n', '########################################################\n', '# Shutdown CORTX Data                                   \n', '########################################################\n', 'deployment.apps/cortx-data-pod-ssc-vm-g2-rhev4-2617 scaled\n', '\n', 'Wait for CORTX Data to be shutdown...................................\n', '\n', 'All CORTX Data pods have been shutdown\n', '\n']
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 269]: Step 3: Check whether data and control pods are not present
+[2021-12-21 09:11:51] [MainThread] [INFO  ] [ha_common_libs_k8s.py: 451]: Checking if all Pods are online.
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 177]: Executing kubectl get pods
+[2021-12-21 09:11:51] [MainThread] [DEBUG ] [host.py: 74]: Connecting to host: ssc-vm-g2-rhev4-2617.colo.seagate.com
+[2021-12-21 09:11:52] [MainThread] [DEBUG ] [host.py: 182]: 0
+[2021-12-21 09:11:52] [MainThread] [INFO  ] [test_prov_k8s_cortx.py: 273]: Test Completed.
+=========================== short test summary info ============================
+PASSED comptests/prov/test_prov_k8s_cortx.py::TestProvK8Cortx::test_32940
+=================== 1 passed, 3 warnings in 84.16s (0:01:24) ===================

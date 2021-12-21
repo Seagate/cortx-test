@@ -28,6 +28,9 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from config import CMN_CFG, HA_CFG
+from libs.ha.ha_common_libs_k8s import HAK8s
+from commons import constants as common_const 
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +48,8 @@ class TestProvK8Cortx:
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.ha_obj = HAK8s()
+        cls.dir_path = common_const.K8S_SCRIPTS_PATH
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -59,6 +64,8 @@ class TestProvK8Cortx:
             else:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
+        
+               
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -252,16 +259,20 @@ class TestProvK8Cortx:
         Verify cortx cluster shutdown command.
         """
         LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check whether all pods are online")
+        resp1 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        assert_utils.assert_true(resp1)
         LOGGER.info("Executing cortx cluster shutdown command.")
-        LOGGER.info("Step 1: Check whether cluster shutdown command ran successfully.")
-        resp = self.master_node_obj.execute_cmd(
-            cmd=commands.CLSTR_STOP_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
+        LOGGER.info("Step 2: Check whether cluster shutdown command ran successfully.")
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
         assert_utils.assert_true(resp)
-        LOGGER.info("Step 2: Checking whether all CORTX Data pods have been shutdown.")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_POD_STATUS)
-        assert_utils.assert_true(resp)
+        LOGGER.info("Step 3: Check whether data and control pods are not present")
+        resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        isSame  = resp1[1] == resp2[1]
+        assert_utils.assert_false(isSame)
         LOGGER.info("Test Completed.")
 
+     
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32939")
@@ -272,10 +283,13 @@ class TestProvK8Cortx:
         LOGGER.info("Test Started.")
         LOGGER.info("Executing cortx cluster restart command.")
         LOGGER.info("Step 1: Check whether cluster restart command ran successfully.")
-        resp = self.master_node_obj.execute_cmd(
-            cmd=commands.CLSTR_START_CMD.format('deploy-scripts/k8_cortx_cloud'), read_lines=True)
+        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
         assert_utils.assert_true(resp)
         LOGGER.info("Step 2: Checking whether all CORTX Data pods have been restarted.")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_POD_STATUS)
+        resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp)
         LOGGER.info("Test Completed.")
+
+
+
+    
