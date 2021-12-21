@@ -23,12 +23,11 @@ Test class that contains MOTR K8s tests.
 """
 
 import os
-import pytest
 import csv
-import random
 import logging
-from commons.utils import config_utils
 from random import SystemRandom
+import pytest
+from commons.utils import config_utils
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
@@ -42,11 +41,15 @@ with open(M0CRATE_TEST_CSV) as CSV_FH:
 
 @pytest.fixture(params=CSV_DATA)
 def param_loop(request):
+    """ 
+    This fixture helps to run over a row of csv data:
+    param: list of values to go over one by one
+    """
     return request.param
 
 class TestExecuteK8Sanity:
-    """Execute Motr K8s Test suite"""        
-    
+    """Execute Motr K8s Test suite"""
+
     @classmethod
     def setup_class(cls):
         """ Setup class for running Motr tests"""
@@ -56,7 +59,8 @@ class TestExecuteK8Sanity:
         logger.info("ENDED: Setup Operation")
    
     def teardown_class(self):
-        del self.motr_obj        
+        """Teardown of Node object"""
+        del self.motr_obj    
 
     def test_motr_k8s_lib(self):
         """
@@ -71,37 +75,37 @@ class TestExecuteK8Sanity:
         logger.info(self.motr_obj.get_cortx_node_endpoints())
 
     def test_m0trace_utility(self, param_loop):
+        """
+        This is to run the m0crate utility tests.
+        param: param_loop: Fixture which provides one set of values required to run the utility
+        """
         source_file = TEMP_PATH + 'source_file'
         remote_file = TEMP_PATH + M0CRATE_WORKLOAD_YML.split("/")[-1]
-        M0_CFG = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
-        node = random.choice(self.motr_obj.cortx_node_list)
+        m0cfg = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
+        node = self.system_random.choice(self.motr_obj.cortx_node_list)
         node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
-        MOTR_HA_ADDR = node_enpts['hax_ep']
-        PROF = self.motr_obj.profile_fid
-        PROCESS_FID = node_enpts['m0client'][0]['fid']
-        MOTR_LOCAL_ADDR = node_enpts['m0client'][0]['ep']
         for key, value in param_loop.items():
             if value.isdigit():
                 value = int(value)
             elif key == 'TEST_ID':
-                logger.info("Executing the test: {}".format(value))
+                logger.info("Executing the test: %s", value)
             elif key == 'SOURCE_FILE_SIZE':
                 file_size = value
-            elif key in M0_CFG['MOTR_CONFIG'].keys():
-                M0_CFG['MOTR_CONFIG'][key] = value
-            elif key in M0_CFG['WORKLOAD_SPEC'][0]['WORKLOAD'].keys():
-                M0_CFG['WORKLOAD_SPEC'][0]['WORKLOAD'][key] = value
-        M0_CFG['MOTR_CONFIG']['MOTR_HA_ADDR'] = MOTR_HA_ADDR
-        M0_CFG['MOTR_CONFIG']['PROF'] = PROF
-        M0_CFG['MOTR_CONFIG']['PROCESS_FID'] = PROCESS_FID
-        M0_CFG['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = MOTR_LOCAL_ADDR
-        M0_CFG['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE'] = source_file
-        logger.info(M0_CFG['MOTR_CONFIG'])
-        logger.info(M0_CFG['WORKLOAD_SPEC'][0]['WORKLOAD'])
-        b_size = M0_CFG['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
+            elif key in m0cfg['MOTR_CONFIG'].keys():
+                m0cfg['MOTR_CONFIG'][key] = value
+            elif key in m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'].keys():
+                m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'][key] = value
+        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
+        m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
+        m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE'] = source_file
+        logger.info(m0cfg['MOTR_CONFIG'])
+        logger.info(m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'])
+        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
         count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_yaml(M0CRATE_WORKLOAD_YML, M0_CFG, backup=False)
+        config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
 
     def test_m0cp_m0cat_workload(self):

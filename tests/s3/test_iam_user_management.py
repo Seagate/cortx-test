@@ -36,9 +36,10 @@ from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
 from commons.exceptions import CTException
 from config import CSM_CFG
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
-from libs.s3 import S3H_OBJ, s3_test_lib
+from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
 from libs.s3 import iam_test_lib
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -419,7 +420,7 @@ class TestIAMUserManagement:
     @pytest.mark.tags("TEST-23463")
     def test_23463_crud_with_another_access_key(self):
         """
-        Verify CRUD Operations with regenreated another access key
+        Verify CRUD Operations with re-generated another access key
 
         TEST IAM users should be able to access and perform CRUD operations on resources
         with another access key and s3 resources should be intact while S3 IO's are in progress.
@@ -696,9 +697,9 @@ class TestIAMUserManagement:
         for access_key in iam_access_keys :
             self.log.info("[START] Access Key : %s", access_key)
             iam_user = "iamuser-{}".format(perf_counter_ns())
-            secret = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+            secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_user(
-                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret)
+                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with Invalid AWS access key")
 
@@ -730,9 +731,9 @@ class TestIAMUserManagement:
         for secret_key in iam_secret_keys:
             self.log.info("[START] Access Key : %s", secret_key)
             iam_user = "iamuser-{}".format(perf_counter_ns())
-            access = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
             resp = self.auth_obj.create_custom_iam_user(
-                iam_user, self.iam_password, s3_access_key, s3_secret_key, access, secret_key)
+                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with Invalid AWS access key")
 
@@ -753,9 +754,9 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        secret = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user, self.iam_password, s3_access_key, s3_secret_key, IAM_secret_key=secret)
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, iam_secret_key=secret_key)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with missing AWS access key")
 
@@ -776,9 +777,9 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Try to create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        access = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user, self.iam_password, s3_access_key, s3_secret_key, IAM_access_key=access)
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, iam_access_key=access_key)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with missing AWS secret key")
 
@@ -799,17 +800,17 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
         iam_user1 = "iamuser-{}".format(perf_counter_ns())
-        secret1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
-        access1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user1, self.iam_password, s3_access_key, s3_secret_key, access1, secret1)
+            iam_user1, self.iam_password, s3_access_key, s3_secret_key, access_key1, secret_key1)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Try to create s3iamuser using direct REST API call")
         iam_user2 = "iamuser-{}".format(perf_counter_ns())
-        secret2 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        secret_key2 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user2, self.iam_password, s3_access_key, s3_secret_key, access1, secret2)
+            iam_user2, self.iam_password, s3_access_key, s3_secret_key, access_key1, secret_key2)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with duplicate AWS access key")
 
@@ -830,17 +831,17 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
         iam_user1 = "iamuser-{}".format(perf_counter_ns())
-        secret1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
-        access1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user1, self.iam_password, s3_access_key, s3_secret_key, access1, secret1)
+            iam_user1, self.iam_password, s3_access_key, s3_secret_key, access_key1, secret_key1)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Create s3iamuser using direct REST API call")
         iam_user2 = "iamuser-{}".format(perf_counter_ns())
-        access2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user2, self.iam_password, s3_access_key, s3_secret_key, access2, secret1)
+            iam_user2, self.iam_password, s3_access_key, s3_secret_key, access_key2, secret_key1)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Test create IAM User with duplicate AWS secret key")
@@ -863,9 +864,9 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        access = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user, self.iam_password, s3_access_key, s3_secret_key, access, s3_access_key)
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -889,9 +890,9 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        secret = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_user(
-            iam_user, self.iam_password, s3_access_key, s3_secret_key, s3_access_key, secret)
+            iam_user, self.iam_password, s3_access_key, s3_secret_key, s3_access_key, secret_key)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "ENDED: Test create IAM User with duplicate AWS access key of Parent S3 account")
@@ -921,10 +922,10 @@ class TestIAMUserManagement:
         s3_secret_key2 = resp[1]["secret_key"]
         self.log.info("Step 3: Create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        secret = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+        secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2,
-            s3_access_key1, secret)
+            s3_access_key1, secret_key)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "ENDED: Test create IAM User with duplicate AWS access key of different S3 accounts")
@@ -954,14 +955,166 @@ class TestIAMUserManagement:
         s3_secret_key2 = resp[1]["secret_key"]
         self.log.info("Step 3: Create s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
-        access = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
         resp = self.auth_obj.create_custom_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2,
-            access, s3_secret_key1)
+            access_key, s3_secret_key1)
         self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Test create IAM User with duplicate AWS secret key of different S3 accounts")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.tags("TEST-32398")
+    def test_32398(self):
+        """Update status of access for IAM user through REST"""
+        self.log.info(
+            "STARTED: Update status of access for IAM user through REST")
+        self.log.info("Step 1: Create s3 Account")
+        s3_acc_name = self.s3_user.format(perf_counter_ns())
+        email_id = "{}@seagate.com".format(s3_acc_name)
+        resp = self.rest_obj.create_s3_account(s3_acc_name, email_id, self.acc_password)
+        self.s3_iam_account_dict[s3_acc_name]=[]
+        assert_utils.assert_true(resp[0], resp[1])
+        s3_access_key = resp[1]["access_key"]
+        s3_secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Create s3iamuser using direct REST API call")
+        iam_user = "iamuser-{}".format(perf_counter_ns())
+        resp = self.auth_obj.create_iam_user(
+            iam_user, self.iam_password, s3_access_key, s3_secret_key)
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
+        iam_access_key = []
+        for _ in range(2):
+            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+            resp = self.auth_obj.create_custom_iam_accesskey(
+                iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
+            iam_access_key.append(resp[1]["AccessKeyId"])
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Now list 2 acceeskey/secret keys for s3iamuser using REST API call.")
+        resp = self.auth_obj.list_iam_accesskey(iam_user, s3_access_key, s3_secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Update accesskey for s3iamuser.")
+        resp = self.auth_obj.update_iam_accesskey(
+            iam_user, iam_access_key[0], s3_access_key, s3_secret_key, status="Inactive")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: Delete accesskey for s3iamuser.")
+        resp = self.auth_obj.update_iam_accesskey(
+            iam_user, iam_access_key[0], s3_access_key, s3_secret_key, status="Active")
+        assert_utils.assert_true(resp[0], resp[1])
+        for accesskeyid in iam_access_key:
+            resp = self.auth_obj.delete_iam_accesskey(
+                iam_user, accesskeyid, s3_access_key, s3_secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "ENDED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.tags("TEST-32278")
+    def test_32278(self):
+        """
+        Test create IAM User with different combination of the valid AWS secret key and run IO
+        using it.
+        """
+        self.log.info(
+            "STARTED: Test create IAM User with different combination of the valid AWS secret key "
+            "and run IO using it")
+        self.log.info("Step 1: Create s3 Account")
+        s3_acc_name = self.s3_user.format(perf_counter_ns())
+        email_id = "{}@seagate.com".format(s3_acc_name)
+        resp = self.rest_obj.create_s3_account(s3_acc_name, email_id, self.acc_password)
+        self.s3_iam_account_dict[s3_acc_name]=[]
+        assert_utils.assert_true(resp[0], resp[1])
+        s3_access_key = resp[1]["access_key"]
+        s3_secret_key = resp[1]["secret_key"]
+        iam_secret_keys = []
+        iam_secret_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL))
+        iam_secret_keys.append("a" * cons.Rest.IAM_SECRET_UL)
+        iam_secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
+                                                        length=cons.Rest.IAM_SECRET_LL))
+        iam_secret_keys.append(string.punctuation)
+        self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
+        for secret_key in iam_secret_keys:
+            self.log.info("Creating custom s3iamuser with secret key: %s.", secret_key)
+            iam_user = "iamuser-{}".format(perf_counter_ns())
+            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            resp = self.auth_obj.create_custom_iam_user(
+                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Perform io's")
+            bucket = f"bucket{s3_acc_name}"
+            obj = f"object{iam_user}.txt"
+            if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Created bucket: %s ", bucket)
+            else:
+                assert False, "Failed to create bucket."
+            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
+            else:
+                assert False, "Put object Failed."
+            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
+        self.log.info(
+            "ENDED: Test create IAM User with different combination of the valid AWS secret key "
+            "and run IO using it")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.tags("TEST-32279")
+    def test_32279(self):
+        """
+        Test create IAM User with different combination of the valid AWS access key and run IO
+        using it.
+        """
+        self.log.info(
+            "STARTED: Test create IAM User with different combination of the valid AWS access key "
+            "and run IO using it")
+        self.log.info("Step 1: Create s3 Account")
+        s3_acc_name = self.s3_user.format(perf_counter_ns())
+        email_id = "{}@seagate.com".format(s3_acc_name)
+        resp = self.rest_obj.create_s3_account(s3_acc_name, email_id, self.acc_password)
+        self.s3_iam_account_dict[s3_acc_name]=[]
+        assert_utils.assert_true(resp[0], resp[1])
+        s3_access_key = resp[1]["access_key"]
+        s3_secret_key = resp[1]["secret_key"]
+        iam_access_keys = []
+        iam_access_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_ACCESS_LL))
+        iam_access_keys.append("a" * cons.Rest.IAM_ACCESS_UL)
+        iam_access_keys.append(config_utils.gen_rand_string(chars=string.digits,
+                                                        length=cons.Rest.IAM_ACCESS_LL))
+        self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
+        for access_key in iam_access_keys:
+            self.log.info("Creating custom s3iamuser with access key %s.", access_key)
+            secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
+            iam_user = "iamuser-{}".format(perf_counter_ns())
+            resp = self.auth_obj.create_custom_iam_user(
+                iam_user, self.iam_password, s3_access_key, s3_secret_key, access_key, secret_key)
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Perform io's")
+            bucket = f"bucket{s3_acc_name}"
+            obj = f"object{iam_user}.txt"
+            if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Created bucket: %s ", bucket)
+            else:
+                assert False, "Failed to create bucket."
+            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
+                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
+            else:
+                assert False, "Put object Failed."
+            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
+        self.log.info(
+            "ENDED: Test create IAM User with different combination of the valid AWS access key "
+            "and run IO using it")
 
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
