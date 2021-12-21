@@ -286,7 +286,7 @@ class TestDIDurability:
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
             self.log.debug("csm: %s", csm[1])
-            bucket_name = self.bucket_name + str(file_size)
+            bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
                 self.s3_test_obj.create_bucket(bucket_name)
                 self.s3_test_obj.put_object(bucket_name=bucket_name,
@@ -312,6 +312,8 @@ class TestDIDurability:
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
+    @pytest.mark.skip("Boto3 put object issue not fixed, hence marked skip")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
@@ -331,21 +333,19 @@ class TestDIDurability:
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
-            self.log.debug("csm: %s", csm[1])
+            self.log.debug("csm: %s, location: %s", csm[1], location)
             self.log.info("Attempting to upload object with corrupted checksum from client")
             corrupted_csm = "DddddDdDdDddddddddddd=="
-            bucket_name = self.bucket_name + str(file_size)
+            bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
                 self.s3_test_obj.create_bucket(bucket_name)
-                bucket_name = self.bucket_name + str(file_size)
                 self.s3_test_obj.put_object(bucket_name=bucket_name, object_name=self.object_name,
                                             file_path=location, content_md5=corrupted_csm)
             except CTException as err:
                 self.log.info("Put object failed with %s", err)
                 err_str = str(err)
-                if "An error occurred (InvalidDigest) when calling the PutObject operation: " \
-                   "The Content-MD5 you specified is not valid" in err_str:
-                    self.log.info("Error string matched")
+                if "The Content-MD5 you specified is not valid" in err_str:
+                    self.log.info("Error strings matched")
                 else:
                     assert False
             try:
@@ -577,37 +577,31 @@ class TestDIDurability:
         """
         valid, skipmark = self.di_err_lib.validate_disabled_config()
         if not valid or skipmark:
-            self.log.info("Skipping test  checksum flag is not disabled" )
+            self.log.info("Skipping test  checksum flag is not disabled")
             pytest.skip()
-
-        self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
-                    "uploaded object should succeed ( 30 MB -100 MB).")
+        self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk uploaded "
+                      "object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
-
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-
         for size in NORMAL_UPLOAD_SIZES_IN_MB:
             self.log.info("Step 1: create a file of size %sMB", size)
-            file_path_upload = self.file_path + "TEST_22916_"+ str(size) +"MB_upload"
+            file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-
             system_utils.create_file(file_path_upload, size)
             self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
-
-            self.log.info("Step 1: Created a bucket and upload object of %s MB into a bucket.", size)
+            self.log.info("Step 1: Created bucket and upload object of %s MB into a bucket.", size)
             self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
-            file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
+            file_path_download = self.file_path + "TEST_22916_" + str(size) + "MB_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-
             res = self.s3_test_obj.object_download(
                 self.bucket_name, self.object_name, file_path_download)
             assert_utils.assert_true(res[0], res)
             self.log.info("Step 2: Download chunk uploaded object is successful.")
-        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
-                "succeed ( 30 MB -100 MB).")
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk uploaded object "
+                      "should succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -1042,4 +1036,3 @@ class TestDIDurability:
         assert_utils.assert_string(csm, file_checksum, 'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
-
