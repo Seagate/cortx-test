@@ -334,6 +334,7 @@ class TestPodRestart:
 
         LOGGER.info("ENDED: Test to verify WRITEs after data pod restart.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34077")
