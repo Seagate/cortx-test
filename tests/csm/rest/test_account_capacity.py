@@ -28,7 +28,7 @@ from multiprocessing import Pool
 
 import pytest
 
-from commons import cortxlogging
+from commons import cortxlogging, configmanager
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.utils import assert_utils
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
@@ -49,6 +49,8 @@ class TestAccountCapacity():
         cls.s3user = RestS3user()
         cls.buckets_created = []
         cls.account_created = []
+        cls.test_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_account_capacity.yaml")
 
     def teardown_method(self):
         """
@@ -120,8 +122,8 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        s3acct_cnt = 2
-        validate_data_usage = True
+        s3acct_cnt = self.test_conf["test_33369"]["s3acct_cnt"]
+        validate_data_usage = self.test_conf["test_33369"]["validate_data_usage"]
 
         data_all = []
         self.log.info("Creating  %s S3 account and buckets", s3acct_cnt)
@@ -161,8 +163,9 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        bucket_cnt = 2
-        validate_data_usage = False
+        bucket_cnt = self.test_conf["test_33370"]["bucket_cnt"]
+        validate_data_usage = self.test_conf["test_33370"]["validate_data_usage"]
+
         data_all = []
         self.log.info("Create S3 Account")
         resp = self.s3user.create_s3_account()
@@ -207,10 +210,10 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        parallel_io_cnt = 2
-        validate_data_usage = False
-        data_all = []
+        parallel_io_cnt = self.test_conf["test_33371"]["parallel_io_cnt"]
+        validate_data_usage = self.test_conf["test_33371"]["validate_data_usage"]
 
+        data_all = []
         self.log.info("Create S3 Account")
         resp = self.s3user.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."

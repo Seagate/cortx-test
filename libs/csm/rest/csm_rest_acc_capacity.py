@@ -107,28 +107,23 @@ class AccountCapacity(RestTestLib):
         bucket_name = user_data[3]
         s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
         total_cap = 0
-        try:
-            for sz in workload_in_mb:
-                test_file = f"file_io_{sz}"
-                file_path = os.path.join(TEST_DATA_FOLDER, test_file)
-                self.log.info("Creating a file with name %s", test_file)
-                system_utils.create_file(file_path, sz, "/dev/urandom")
+        for sz in workload_in_mb:
+            test_file = f"file_io_{sz}"
+            file_path = os.path.join(TEST_DATA_FOLDER, test_file)
+            self.log.info("Creating a file with name %s", test_file)
+            system_utils.create_file(file_path, sz, "/dev/urandom")
 
-                self.log.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
-                s3t_obj.put_object(bucket_name, test_file, file_path)
-                system_utils.remove_file(file_path)
-                total_cap = total_cap + sz
+            self.log.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
+            s3t_obj.put_object(bucket_name, test_file, file_path)
+            system_utils.remove_file(file_path)
+            total_cap = total_cap + sz
 
-                if validate_data_usage:
-                    self.log.info("Verify capacity of account after put operations")
-                    s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
-                    resp = self.verify_account_capacity(s3_account)
-                    if not resp[0]:
-                        self.log.error("Account capacity did not match for account : %s", resp[1])
-                        return False
-        except BaseException as error:
-            self.log.error("Error in %s: %s",
-                           AccountCapacity.perform_io_validate_data_usage.__name__,
-                           error)
-            return False
+            if validate_data_usage:
+                self.log.info("Verify capacity of account after put operations")
+                s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+                resp = self.verify_account_capacity(s3_account)
+                if not resp[0]:
+                    self.log.error("Account capacity did not match for account : %s", resp[1])
+                    return False
+
         return True
