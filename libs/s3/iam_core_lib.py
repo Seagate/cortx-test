@@ -67,18 +67,18 @@ class IAMRest:
 
         try:
             if init_iam_connection:
-                self.iam = boto3.client("iam", use_ssl=self.use_ssl,
+                self.iam = boto3.client("iam",
+                                        use_ssl=self.use_ssl,
                                         verify=self.iam_cert_path,
                                         aws_access_key_id=access_key,
                                         aws_secret_access_key=secret_key,
                                         endpoint_url=endpoint_url)
-                self.iam_resource = boto3.resource(
-                    "iam",
-                    use_ssl=self.use_ssl,
-                    verify=self.iam_cert_path,
-                    aws_access_key_id=access_key,
-                    aws_secret_access_key=secret_key,
-                    endpoint_url=endpoint_url)
+                self.iam_resource = boto3.resource("iam",
+                                                   use_ssl=self.use_ssl,
+                                                   verify=self.iam_cert_path,
+                                                   aws_access_key_id=access_key,
+                                                   aws_secret_access_key=secret_key,
+                                                   endpoint_url=endpoint_url)
             else:
                 LOGGER.info("Skipped: create iam client, resource object with boto3.")
         except Exception as err:

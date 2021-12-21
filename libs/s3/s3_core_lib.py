@@ -40,6 +40,7 @@ LOGGER = logging.getLogger(__name__)
 
 class S3Rest:
     """Basic Class for Creating Boto3 REST API Objects."""
+
     def __init__(self,
                  access_key: str = None,
                  secret_key: str = None,
@@ -76,17 +77,17 @@ class S3Rest:
             boto3.set_stream_logger(name="botocore")
         try:
             if init_s3_connection:
-                self.s3_resource = boto3.resource(
-                    "s3",
-                    use_ssl=self.use_ssl,
-                    verify=self.s3_cert_path,
-                    aws_access_key_id=access_key,
-                    aws_secret_access_key=secret_key,
-                    endpoint_url=endpoint_url,
-                    region_name=region,
-                    aws_session_token=aws_session_token,
-                    config=config)
-                self.s3_client = boto3.client("s3", use_ssl=self.use_ssl,
+                self.s3_resource = boto3.resource("s3",
+                                                  use_ssl=self.use_ssl,
+                                                  verify=self.s3_cert_path,
+                                                  aws_access_key_id=access_key,
+                                                  aws_secret_access_key=secret_key,
+                                                  endpoint_url=endpoint_url,
+                                                  region_name=region,
+                                                  aws_session_token=aws_session_token,
+                                                  config=config)
+                self.s3_client = boto3.client("s3",
+                                              use_ssl=self.use_ssl,
                                               verify=self.s3_cert_path,
                                               aws_access_key_id=access_key,
                                               aws_secret_access_key=secret_key,
@@ -353,7 +354,7 @@ class S3Lib(S3Rest):
                 "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
             self.object_list(bucket_name)
         response = bucket.delete()
-        LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name,response)
+        LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name, response)
 
         return response
 
