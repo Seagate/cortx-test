@@ -204,7 +204,8 @@ class TestPodRestart:
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipread=True,
-                                                    skipcleanup=True, large_workload=True)
+                                                    skipcleanup=True, large_workload=True,
+                                                    nsamples=5, nclients=2)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs with variable sizes objects.")
@@ -228,7 +229,8 @@ class TestPodRestart:
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, large_workload=True)
+                                                    skipcleanup=True, large_workload=True,
+                                                    nsamples=5, nclients=2)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
@@ -288,7 +290,7 @@ class TestPodRestart:
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=5, nclients=2)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs-READs-Verify with variable sizes objects.")
@@ -312,7 +314,7 @@ class TestPodRestart:
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=5, nclients=2)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
@@ -323,7 +325,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=5, nclients=2)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed WRITEs-READs-Verify with variable sizes objects.")
