@@ -626,7 +626,6 @@ class TestDIDurability:
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
 
             self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
-            
             file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
