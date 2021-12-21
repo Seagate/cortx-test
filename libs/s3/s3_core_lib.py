@@ -64,9 +64,9 @@ class S3Rest:
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
-        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        self.use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
-        s3_cert_path = s3_cert_path if val_cert else False
+        self.s3_cert_path = s3_cert_path if val_cert else False
         self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
                             f"{'' if val_cert else ' --no-verify-ssl'}"
         if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]):
@@ -78,16 +78,16 @@ class S3Rest:
             if init_s3_connection:
                 self.s3_resource = boto3.resource(
                     "s3",
-                    use_ssl=use_ssl,
-                    verify=s3_cert_path,
+                    use_ssl=self.use_ssl,
+                    verify=self.s3_cert_path,
                     aws_access_key_id=access_key,
                     aws_secret_access_key=secret_key,
                     endpoint_url=endpoint_url,
                     region_name=region,
                     aws_session_token=aws_session_token,
                     config=config)
-                self.s3_client = boto3.client("s3", use_ssl=use_ssl,
-                                              verify=s3_cert_path,
+                self.s3_client = boto3.client("s3", use_ssl=self.use_ssl,
+                                              verify=self.s3_cert_path,
                                               aws_access_key_id=access_key,
                                               aws_secret_access_key=secret_key,
                                               endpoint_url=endpoint_url,
