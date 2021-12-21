@@ -84,6 +84,7 @@ class TestPodFailure:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.restore_node = cls.node_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -150,6 +151,10 @@ class TestPodFailure:
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restored:
+            if self.restore_node:
+                LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
+                resp = self.ha_obj.host_power_on(host=self.node_name)
+                assert_utils.assert_true(resp, "Host is not powered on")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
@@ -1405,7 +1410,7 @@ class TestPodFailure:
 
         LOGGER.info(
             "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455')
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
@@ -1421,6 +1426,7 @@ class TestPodFailure:
         control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         control_pod_name = list(control_pods.keys())[0]
         node_fqdn = control_pods.get(control_pod_name)
+        self.node_name = node_fqdn
         LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
         for pod_name, node in data_pods.items():
@@ -1452,7 +1458,26 @@ class TestPodFailure:
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for control pod failed over node.")
-        
+        control_pods_new = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        if not control_pods_new:
+            assert_utils.assert_true(False, "Control pod has not failed over to any other node.")
+        control_pod_name_new = list(control_pods_new.keys())[0]
+        node_fqdn_new = control_pods.get(control_pod_name_new)
+        LOGGER.info("Step 6: %s pod has been failed over to %s node",
+                    control_pod_name_new, node_fqdn_new)
 
+        LOGGER.info(
+            "Step 7: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459-1')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        LOGGER.info("Step 7: IOs completed successfully.")
+        self.restore_node = True
 
-
+        LOGGER.info("COMPLETED: Verify IOs before and after control pod failure, "
+                    "pod shutdown by making worker node down.")
