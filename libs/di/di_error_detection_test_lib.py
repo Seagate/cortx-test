@@ -161,7 +161,7 @@ class DIErrorDetection:
 
     def validate_enabled_config(self):
         """
-        function will check for disabled configs
+        function will check for enabled configs
         and decide whether test should be skipped during execution or not
         will return false if configs are enabled
         """
