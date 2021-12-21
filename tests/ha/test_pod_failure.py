@@ -1391,3 +1391,68 @@ class TestPodFailure:
                     "with 5GB object")
         LOGGER.info(
             "COMPLETED: Test to verify degraded multipart upload after data pod unsafe shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-32459")
+    @CTFailOn(error_handler)
+    def test_control_pod_failover(self):
+        """
+        Verify IOs before and after control pod failure, pod shutdown by making worker node down.
+        """
+        LOGGER.info("STARTED: Verify IOs before and after control pod failure, "
+                    "pod shutdown by making worker node down.")
+
+        LOGGER.info(
+            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        LOGGER.info("Step 1: IOs completed successfully.")
+
+        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown"
+                    "the node.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        node_fqdn = control_pods.get(control_pod_name)
+        LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, node_fqdn)
+        data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        for pod_name, node in data_pods.items():
+            if node == node_fqdn:
+                data_pod_name = pod_name
+        LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
+        LOGGER.info("Shutdown the node: %s", node_fqdn)
+        resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
+        assert_utils.assert_true(resp, "Host is not powered off")
+        LOGGER.info("Step 2: Shutdown the node where control pod was running.")
+
+        LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
+                    "state", data_pod_name)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(data_pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+
+        LOGGER.info("Step 6: Check for control pod failed over node.")
+        
+
+
+
