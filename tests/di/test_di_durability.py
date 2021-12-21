@@ -28,13 +28,8 @@ import pytest
 import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
-from commons.constants import PROD_FAMILY_LC, NORMAL_UPLOAD_SIZES
-from commons.constants import PROD_FAMILY_LR
-from commons.constants import PROD_TYPE_K8S
-from commons.constants import PROD_TYPE_NODE
+from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
-from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
@@ -42,7 +37,6 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from config import di_cfg
 from config import CMN_CFG
 from libs.s3 import S3_CFG
 from commons.constants import const, MB
@@ -53,8 +47,6 @@ from libs.s3 import cortxcli_test_lib
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from libs.di import di_lib
-from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 
