@@ -370,7 +370,7 @@ class MotrCoreK8s():
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
-    @staticmethod                    
+    @staticmethod
     def byte_conversion(size):
         """ Convert file size of GB/MB/KB into bytes
         :param: size: size of the file in either G, M or K i.e 2G, 1m

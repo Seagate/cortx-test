@@ -44,7 +44,7 @@ with open(M0CRATE_TEST_CSV) as CSV_FH:
 
 @pytest.fixture(params=CSV_DATA)
 def param_loop(request):
-    """ 
+    """
     This fixture helps to run over a row of csv data:
     param: list of values to go over one by one
     """
