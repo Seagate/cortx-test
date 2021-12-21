@@ -27,9 +27,9 @@ from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
+from commons import constants as common_const 
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-from commons import constants as common_const 
 
 LOGGER = logging.getLogger(__name__)
 
@@ -265,8 +265,8 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp)
         LOGGER.info("Step 3: Check whether data and control pods are not present")
         resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
-        is_Same  = resp1[1] == resp2[1]
-        assert_utils.assert_false(is_Same)
+        is_same  = resp1[1] == resp2[1]
+        assert_utils.assert_false(is_same)
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
