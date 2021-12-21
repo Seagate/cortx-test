@@ -94,6 +94,7 @@ class TestCsmUser():
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting all csm users except predefined ones...")
         delete_failed = []
+        delete_success = []
         if self.created_users or self.created_s3_users:
            time.sleep(3)             #EOS-27030
         for usr in self.created_users:
@@ -102,13 +103,19 @@ class TestCsmUser():
                 response = self.csm_user.delete_csm_user(usr)
                 if response.status_code != HTTPStatus.OK:
                     delete_failed.append(usr)
+                else:
+                    delete_success.append(usr)
             except BaseException as err:
                 self.log.warning("Ignoring %s while deleting user: %s", err, usr)
-        self.log.info("delete failed list %s", delete_failed)
+        for usr in delete_success:
+            self.created_users.remove(usr)
+        self.log.info("csm delete success list %s", delete_success)
+        self.log.info("csm delete failed list %s", delete_failed)
         assert len(delete_failed) == 0, "Delete failed for users"
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("Deleting all s3 users except predefined ones...")
         s3_delete_failed = []
+        s3_delete_success = []
         for usr in self.created_s3_users:
             self.log.info("Sending request to delete s3 user %s", usr)
             try:
@@ -116,9 +123,14 @@ class TestCsmUser():
                 if response.status_code != HTTPStatus.OK:
                     self.log.error(response.status_code)
                     s3_delete_failed.append(usr)
+                else:
+                    s3_delete_success.append(usr)
             except BaseException as err:
                 self.log.warning("Ignoring %s while deleting user: %s", err, usr)
-        self.log.info("delete failed list %s", s3_delete_failed)
+        for usr in s3_delete_success:
+            self.created_s3_users.remove(usr)
+        self.log.info("s3 delete failed list %s", s3_delete_failed)
+        self.log.info("s3 delete success list %s", s3_delete_success)
         assert len(s3_delete_failed) == 0, "Delete failed for s3 users"
         self.log.info("s3 users except pre-defined ones deleted.")
         self.log.info("[COMPLETED] ######### Teardown #########")
@@ -3344,6 +3356,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        password = CSM_REST_CFG["csm_user_manage"]["password"]
         self.created_users.append(userid)
         self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
@@ -3387,12 +3400,20 @@ class TestCsmUser():
                                                                             username), "Message check failed."
         assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("Step 6: Verifying edit email functionality for self monitor user")
-        response = self.csm_user.edit_csm_user(login_as=username,
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = password
+        self.log.info("new user is", new_user)
+        response = self.csm_user.edit_csm_user(login_as=new_user,
                                                user=username,
                                                email=test_cfg["email_id"])
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("Step 7: Verifying edit email functionality for self manage user")
-        response = self.csm_user.edit_csm_user(login_as=user_name,
+        new_user = {}
+        new_user['username'] = user_name
+        new_user['password'] = password
+        self.log.info("new user is", new_user)
+        response = self.csm_user.edit_csm_user(login_as=new_user,
                                                user=user_name,
                                                email=test_cfg["email_id"])
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
@@ -3628,8 +3649,8 @@ class TestCsmUser():
                                                role="monitor")
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info(
-            "Sending request to delete csm user %s", user_id)
-        response = self.csm_user.delete_csm_user(user_id)
+            "Sending request to delete csm user %s", userid)
+        response = self.csm_user.delete_csm_user(userid)
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info("Removing user from list if delete is successful")
         self.created_users.remove(userid)
@@ -4628,7 +4649,7 @@ class TestCsmUser():
                 user=username,
                 return_actual_response=True)
             self.log.info("Verifying the status code returned")
-            assert cHTTPStatus.OK == response.status_code
+            assert HTTPStatus.OK == response.status_code
             assert response.json()['role'] == 'manage', "Role updated which is not expected"
             self.log.info("Verified that role is not changed ")
         self.log.info("Sending request to delete csm user %s", username)
