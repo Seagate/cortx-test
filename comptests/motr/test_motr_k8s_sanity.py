@@ -83,7 +83,7 @@ class TestExecuteK8Sanity:
         for key, value in param_loop.items():
             if value.isdigit():
                 value = int(value)
-            if key == 'TEST_ID':
+            elif key == 'TEST_ID':
                 logger.info("Executing the test: {}".format(value))
             elif key == 'SOURCE_FILE_SIZE':
                 file_size = value

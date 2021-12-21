@@ -176,7 +176,8 @@ class MotrCoreK8s():
         pod_node = self.get_node_pod_dict()[cortx_node]
         result = self.node_obj.copy_file_to_remote(local_file_path, remote_file_path)
         if not result[0]:
-            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path, remote_file_path, result[1]))
+            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
+               remote_file_path, result[1]))
         m0crate_run_cmd = f'm0crate -S {remote_file_path}'
         result = self.node_obj.copy_file_to_container(remote_file_path, pod_node, 
                     remote_file_path,common_const.HAX_CONTAINER_NAME)
