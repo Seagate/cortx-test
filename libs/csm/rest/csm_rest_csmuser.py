@@ -1040,3 +1040,13 @@ class RestCsmUser(RestTestLib):
                 error))
             raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
         return response
+
+    def edit_datetime_format(self, time_received):
+        """
+        Function to extract date and time from json response
+        """
+        self.log.info("Printing time %s", time_received)
+        created_time = time_received.split(":")
+        created_time = ":".join(created_time[:2]), ":".join(created_time[2:])
+        created_time = created_time[0]
+        return created_time
