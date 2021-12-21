@@ -427,7 +427,7 @@ class TestIAMUserManagement:
     @pytest.mark.tags("TEST-23463")
     def test_23463_crud_with_another_access_key(self):
         """
-        Verify CRUD Operations with regenreated another access key
+        Verify CRUD Operations with re-generated another access key
 
         TEST IAM users should be able to access and perform CRUD operations on resources
         with another access key and s3 resources should be intact while S3 IO's are in progress.
