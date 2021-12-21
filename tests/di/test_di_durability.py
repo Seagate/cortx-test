@@ -42,8 +42,8 @@ from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from config import di_cfg
 from config import CMN_CFG
-from libs.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
+from libs.s3 import S3_CFG
 from commons.constants import const, MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.s3.s3_test_lib import S3TestLib
@@ -624,14 +624,14 @@ class TestDIDurability:
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
-            
+
             self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
             
             file_path_download = self.file_path + "TEST_22916_"+ str(size) +"MB_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
             bucket_str = "{0}/{1} {1}".format(self.bucket_name, file_path_download)
-            command = self.create_cmd_format(bucket_str, "get",
+            command = self.jc_obj.create_cmd_format(bucket_str, "get",
                                         jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
                                         chunk=True)
             resp = system_utils.execute_cmd(command)
