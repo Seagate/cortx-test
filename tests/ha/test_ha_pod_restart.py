@@ -287,28 +287,24 @@ class TestPodRestart:
         LOGGER.info("Step 6: Successfully started pod again by creating deployment.")
 
         LOGGER.info("Step 7: Verify cluster status is in online state")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 7: Verified cluster is in online state")
-
-        LOGGER.info("Step 8: Verify all pods services are in online state.")
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Verified all pods services are in online state.")
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 7: Verified cluster is in online state. All services are up & running")
 
-        LOGGER.info("Step 9: Download the uploaded %s on %s & verify etags.", object2, bucket2)
+        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object2, bucket2)
         resp = s3_test_obj.get_object(bucket=bucket2, key=object2)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
                                                       f"for object {object2} of bucket {bucket2}.")
-        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.", object2, bucket2)
+        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object2, bucket2)
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.pop(bucket2)
         bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 10: Perform copy of %s from already created/uploaded %s to %s and verify "
+        LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
@@ -317,14 +313,14 @@ class TestPodRestart:
                                                   put_etag=put_etag,
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 10: Performed copy of %s from already created/uploaded %s to %s and "
+        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 11: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
         resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
                                                       f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 11: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
         LOGGER.info("COMPLETED: Test to verify copy object after data pod restart.")
