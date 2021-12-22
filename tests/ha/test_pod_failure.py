@@ -627,7 +627,7 @@ class TestPodFailure:
         This test tests degraded reads while pod is going down
         """
         LOGGER.info("STARTED: Test to verify degraded reads during pod is going down.")
-        event = threading.Event()
+        event = threading.Event()     # Event to be used to send intimation of pod deletion
 
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -868,7 +868,7 @@ class TestPodFailure:
         """
         LOGGER.info("STARTED: Test to verify continuous DELETEs during data pod down by "
                     "deleting deployment.")
-        event = threading.Event()
+        event = threading.Event()    # Event to be used to send intimation of pod deletion
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -906,9 +906,11 @@ class TestPodFailure:
         LOGGER.info("Step 3: Start Continuous DELETEs in background")
         get_random_buck = random.sample(bucket_list, (bucket_num - 10))
         remain_buck = list(set(bucket_list) - set(get_random_buck))
-        args = {'s3_test_obj': s3_test_obj, 's3bucklist': get_random_buck, 'output': output}
-        thread = threading.Thread(target=self.ha_obj.delete_s3_bucket_data,
-                                  args=(event,), kwargs=args)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.put_get_delete,
+                                  args=(event, s3_test_obj,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 3: Successfully started DELETEs in background")
@@ -950,13 +952,16 @@ class TestPodFailure:
         LOGGER.info("Step 7: Services status on remaining pod are in online state")
         event.clear()
         thread.join()
-        responses = output.get()
-        assert_utils.assert_false(len(responses['pass_buck_del']),
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = output.get()  # pylint: disable=C0321
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(fail_del_bkt),
                                   f"Bucket deletion failed when cluster was online"
-                                  f"{responses['pass_buck_del']}")
+                                  f"{fail_del_bkt}")
         LOGGER.info("Step 8: Verify status for In-flight DELETEs while pod is going down "
                     "and Download and verify checksum on remaining/FailedToDelete buckets.")
-        failed_buck = responses['fail_buck_del']
+        failed_buck = event_del_bkt
         LOGGER.info("Get the buckets from expected failed buckets list which FailedToDelete")
         remain_buck.extend(failed_buck)
         for bucket_name in remain_buck:
@@ -1001,7 +1006,7 @@ class TestPodFailure:
         """
         LOGGER.info("STARTED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
-        event = threading.Event()
+        event = threading.Event()      # Event to be used to send intimation of pod deletion
         LOGGER.info("Step 1: Perform Continuous WRITEs with variable object sizes. 0B + (1KB - "
                     "512MB) during data pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1153,6 +1158,443 @@ class TestPodFailure:
         LOGGER.info(
             "Completed: Verify IOs before and after data pod failure; pod shutdown "
             "by making replicas 0")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26442")
+    @CTFailOn(error_handler)
+    def test_continuous_reads_writes_during_pod_down(self):
+        """
+        This test tests Continuous READs and WRITEs during data pod down (delete deployment)
+        """
+        LOGGER.info("STARTED: Test to verify Continuous READs and WRITEs during data pod down by "
+                    "delete deployment.")
+        event = threading.Event()      # Event to be used to send intimation of pod deletion
+        LOGGER.info("Step 1: Perform Continuous READs and WRITEs with variable object sizes. 0B + ("
+                    "1KB - 512MB) during data pod down by delete deployment.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-26442'
+        self.s3_clean = users
+        output = Queue()
+
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 30, 'skipcleanup': True, 'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 1: Successfully started READs and WRITES in background")
+
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        event.set()
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
+                                           " (unsafe)")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services status on remaining pod are in online state")
+
+        event.clear()
+        thread.join()
+        responses = output.get()
+        LOGGER.info("Step 6: Verify status for In-flight READs and WRITEs while pod is going down "
+                    "should be failed/error.")
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+                                                f"failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
+                                 f"Logs which contain passed IOs: {resp[1]}")
+        LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
+                    "down is failed/error.")
+
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26442-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean.update(resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(resp[2].keys())[0])
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("ENDED: Test to verify Continuous READs and WRITEs during data pod down by "
+                    "delete deployment.")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26446")
+    @CTFailOn(error_handler)
+    def test_continuous_writes_deletes_during_pod_down(self):
+        """
+        This test tests Continuous WRITEs and DELETEs during data pod down (delete deployment)
+        """
+        LOGGER.info("STARTED: Test to verify Continuous WRITEs and DELETEs during data pod down by "
+                    "delete deployment.")
+        event = threading.Event()      # Event to be used to send intimation of pod deletion
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
+        wr_output = Queue()
+        del_output = Queue()
+
+        LOGGER.info("Creating s3 account")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        self.test_prefix = 'test-26446'
+        self.s3_clean = users
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        LOGGER.info("Step 1: Performing Continuous WRITEs and DELETEs with variable object sizes. "
+                    "0B + (1KB - 512MB) during data pod down by delete deployment.")
+
+        LOGGER.info("Starting WRITEs on %s buckets", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+        thread1 = threading.Thread(target=self.ha_obj.put_get_delete,
+                                   args=(event, s3_test_obj, ), kwargs=args)
+        thread1.daemon = True  # Daemonize thread
+        thread1.start()
+        LOGGER.info("Successfully started WRITEs in background")
+
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+
+        thread2 = threading.Thread(target=self.ha_obj.put_get_delete,
+                                   args=(event, s3_test_obj, ), kwargs=args)
+        thread2.daemon = True  # Daemonize thread
+        thread2.start()
+        LOGGER.info("Successfully started DELETEs in background")
+
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        event.set()
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
+                                           " (unsafe)")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services status on remaining pod are in online state")
+        event.clear()
+        thread1.join()
+        thread2.join()
+
+        LOGGER.info("Step 1: Verifying responses from WRITEs background process")
+        wr_resp = ()
+        while len(wr_resp) != 3: wr_resp = wr_output.get()       # pylint: disable=C0321
+        s3_data = wr_resp[0]                  # Contains s3 data for passed buckets
+        event_put_bkt = wr_resp[1]            # Contains buckets when event was set
+        fail_put_bkt = wr_resp[2]             # Contains buckets which failed when event was clear
+        assert_utils.assert_false(len(fail_put_bkt), "Expected pass, buckets which failed in "
+                                                     f"create/put operations {fail_put_bkt}.")
+
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_true(len(buckets), "No buckets found.")
+
+        LOGGER.info("Failed buckets while in-flight create/put operation : %s", event_put_bkt)
+
+        LOGGER.info("Step 1: Verifying responses from DELETEs background process")
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get()      # pylint: disable=C0321
+        event_del_bkt = del_resp[0]          # Contains buckets when event was set
+        fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
+        assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
+                                                     f"delete operations {fail_del_bkt}.")
+        LOGGER.info("Failed buckets while in-flight delete operation : %s", event_del_bkt)
+        LOGGER.info("Step 1: Verified responses from WRITEs and DELETEs background processes")
+
+        rd_output = Queue()
+        LOGGER.info("Step 6: Verify READs and DI check for remaining buckets: %s", buckets)
+
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 's3_data': s3_data, 'di_check': True,
+                'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()        # pylint: disable=C0321
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 6: Successfully verified READs and DI check for remaining buckets: %s",
+                    buckets)
+
+        LOGGER.info("Step 7: Deleting remaining buckets.")
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'output': del_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get()        # pylint: disable=C0321
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
+
+        LOGGER.info("Step 7: Successfully deleted remaining buckets.")
+
+        LOGGER.info("Step 8: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26446-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean.update(resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(resp[2].keys())[0])
+        LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify Continuous WRITEs and DELETEs during data pod down by "
+                    "delete deployment.")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26447")
+    @CTFailOn(error_handler)
+    def test_continuous_reads_deletes_during_pod_down(self):
+        """
+        This test tests Continuous READs and DELETEs during data pod down (delete deployment)
+        """
+        LOGGER.info("STARTED: Test to verify Continuous READs and DELETEs during data pod down by "
+                    "delete deployment.")
+        event = threading.Event()     # Event to be used to send intimation of pod deletion
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
+        wr_output = Queue()
+        rd_output = Queue()
+        del_output = Queue()
+
+        LOGGER.info("Creating s3 account")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        self.test_prefix = 'test-26447'
+        self.s3_clean = users
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        LOGGER.info("Step 1: Performing Continuous READs and DELETEs with variable object sizes. "
+                    "0B + (1KB - 512MB) during data pod down by delete deployment.")
+
+        LOGGER.info("Perform WRITEs on %s buckets", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = ()
+        while len(wr_resp) != 3: wr_resp = wr_output.get()      # pylint: disable=C0321
+        s3_data = wr_resp[0]           # Contains s3 data for passed buckets
+        event_put_bkt = wr_resp[1]     # Contains buckets when event was set
+        fail_put_bkt = wr_resp[2]      # Contains buckets which failed when event was clear
+        assert_utils.assert_false(len(fail_put_bkt) or len(event_put_bkt),
+                                  "Expected pass, buckets which failed in create/put operations "
+                                  f"{fail_put_bkt} and {event_put_bkt}.")
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_true(len(buckets), "No buckets found.")
+
+        LOGGER.info("Starting READs on %s buckets", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 's3_data': s3_data,
+                'di_check': True, 'output': rd_output}
+
+        thread1 = threading.Thread(target=self.ha_obj.put_get_delete,
+                                   args=(event, s3_test_obj, ), kwargs=args)
+        thread1.daemon = True  # Daemonize thread
+        thread1.start()
+        LOGGER.info("Successfully started READs in background")
+
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+
+        thread2 = threading.Thread(target=self.ha_obj.put_get_delete,
+                                   args=(event, s3_test_obj, ), kwargs=args)
+        thread2.daemon = True  # Daemonize thread
+        thread2.start()
+        LOGGER.info("Successfully started DELETEs in background")
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        event.set()
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
+                                           " (unsafe)")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services status on remaining pod are in online state")
+        event.clear()
+        thread1.join()
+        thread2.join()
+
+        LOGGER.info("Step 1: Verifying responses from READs background process")
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()         # pylint: disable=C0321
+        event_bkt_get = rd_resp[0]            # Contains buckets when event was set
+        fail_bkt_get = rd_resp[1]             # Contains buckets which failed when event was clear
+        event_di_bkt = rd_resp[2]             # Contains buckets when event was set
+        fail_di_bkt = rd_resp[3]              # Contains buckets which failed when event was clear
+
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt),
+                                  "Expected pass, buckets which failed in read are:"
+                                  f" {fail_bkt_get} and failed in di check are: {fail_di_bkt}")
+
+        LOGGER.info("Failed buckets while in-flight read operation : %s", event_bkt_get)
+        LOGGER.info("Failed buckets while in-flight di check operation : %s", event_di_bkt)
+
+        LOGGER.info("Step 1: Verifying responses from DELETEs background process")
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get()     # pylint: disable=C0321
+        event_del_bkt = del_resp[0]          # Contains buckets when event was set
+        fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
+        assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
+                                                     f"delete operations {fail_del_bkt}.")
+        LOGGER.info("Failed buckets while in-flight delete operation : %s", event_del_bkt)
+        LOGGER.info("Step 1: Verified responses from READs and DELETEs background processes")
+
+        LOGGER.info("Step 6: Verify READs and DI check for remaining buckets: %s", buckets)
+        remain_bkts = s3_test_obj.bucket_list()[1]
+        new_s3data = {}
+        for bkt in remain_bkts:
+            new_s3data[bkt] = s3_data[bkt]
+
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
+                'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get()      # pylint: disable=C0321
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 6: Successfully verified READs and DI check for remaining buckets: %s",
+                    buckets)
+
+        LOGGER.info("Step 7: Deleting remaining buckets.")
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'output': del_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get()       # pylint: disable=C0321
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
+
+        LOGGER.info("Step 7: Successfully deleted remaining buckets.")
+
+        LOGGER.info("Step 8: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26447-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean.update(resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(resp[2].keys())[0])
+        LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify Continuous READs and DELETEs during data pod down by "
+                    "delete deployment.")
 
     @pytest.mark.ha
     @pytest.mark.lc
