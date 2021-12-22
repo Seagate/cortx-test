@@ -925,7 +925,6 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29816')
@@ -934,34 +933,43 @@ class TestDIDurability:
         S3 Put through AWS CLI and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
         and verify read (Get).
         SZ <= Data Unit Sz
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
         """
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        if self.di_err_lib.validate_default_config():
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
+        self.log.debug("Executing test as flags are set to default")
+        self.log.debug("Step 1: Create a corrupted file.")
         location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
                                                          data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: enabling data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
+        self.log.info("Step 1: Created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
+        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
         if status:
-            self.log.info("Step 2: enabled data corruption")
+            self.log.info("Step 2: Enabled data corruption")
         else:
-            self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 3: upload a file")
-        self.s3_cmd_test_obj.object_upload_cli(bucket_name=self.bucket_name,
-                                               object_name=self.object_name,
-                                               obj_size=1024 * 1024 * 5,
-                                               file_path=location)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # resp = self.s3_test_obj.object_download(file_path=self.file_path,
-        #                                         bucket_name=self.bucket_name,
-        #                                         obj_name=self.object_name)
-        # to do verify object download failure
+        self.log.info("Step 3: Upload a file using aws cli")
+        self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                               object_name=self.object_name, file_path=location)
+        try:
+            self.log.info("Step 4: verify download object fails with 5xx error code")
+            self.s3_test_obj.object_download(file_path=self.file_path,
+                                             bucket_name=self.bucket_name,
+                                             obj_name=self.object_name)
+        except CTException as err:
+            self.log.info("Test failed with %s", err)
+            # search for internal error, if not found assert False
+        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
+        if status:
+            self.log.info("Step 2: Disabled data corruption")
+        else:
+            assert False
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
