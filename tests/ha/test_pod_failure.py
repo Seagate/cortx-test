@@ -59,6 +59,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
+# pylint: disable=R0904
 class TestPodFailure:
     """
     Test suite for Pod Failure
@@ -2015,7 +2016,7 @@ class TestPodFailure:
                                                            compare=False)[0]
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially")
+                    "partially for %s parts out of total %s", part_numbers, total_parts)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -2041,7 +2042,8 @@ class TestPodFailure:
         object_path = resp[2]
         parts_etag1 = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
-        LOGGER.info("Step 1: Successfully completed partial multipart upload")
+        LOGGER.info("Step 1: Successfully completed partial multipart upload for %s parts out of "
+                    "total %s", part_numbers, total_parts)
 
         LOGGER.info("Step 2: Listing parts of partial multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
