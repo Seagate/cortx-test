@@ -37,7 +37,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from config import PROV_CFG
+from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -94,7 +94,7 @@ class ProvDeployK8sCortxLib:
             return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
-        jen_parameter["TAINT"] = taint_master
+        jen_parameter["PODS_ON_PRIMARY"] = taint_master
 
         output = Provisioner.build_job(
             k8s_deploy_cfg["job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
@@ -1131,22 +1131,46 @@ class ProvDeployK8sCortxLib:
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
 
     @staticmethod
-    def check_s3_status(master_node_obj: LogicalNode,master_node_list: list):
+    def check_s3_status(master_node_obj: LogicalNode, **kwargs):
         """
         Function to check s3 server status
         """
         LOGGER.info("Step to Check s3 server status")
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
+        pod_prefix = kwargs.get('pod_prefix', 'cortx-data-pod')
         start_time = int(time.time())
         end_time = start_time + 1800  # 30 mins timeout
         while int(time.time()) < end_time:
-            data_pod_list = ProvDeployK8sCortxLib.get_data_pods(master_node_obj)
-            assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
-            resp = ProvDeployK8sCortxLib.get_hctl_status(master_node_list[0], data_pod_list[1][0])
+            pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
+            assert_utils.assert_true(pod_name[0], pod_name[1])
+            resp = ProvDeployK8sCortxLib.get_hctl_status(master_node_obj, pod_name[1])
             if resp[0]:
                 LOGGER.info("All the services are online. Time Taken : %s",
                             (int(time.time()) - start_time))
+                LOGGER.info("s3 Server status check completed.")
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
-            LOGGER.info("s3 Server Status Check Completed")
         return resp
+
+    @staticmethod
+    def upgrade_software(node_obj, upgrade_image_version: str, **kwargs) -> tuple:
+        """
+        Helper function to upgrade.
+        :param node_obj: Master node(Logical Node object)
+        :param upgrade_image_version: Version Image to Upgrade.
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image to version: {}.".format(upgrade_image_version))
+        exc = kwargs.get('exc', True)
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)
+        cmd = "cd {}; {}".format(prov_deploy_cfg["git_remote_path"],
+                                 upgrade_cmd)
+        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        LOGGER.debug("".join(resp).replace("\\n", "\n"))
+        resp = "".join(resp).replace("\\n", "\n")
+        if "Error" in resp or "Failed" in resp:
+            return False, resp
+        return True, resp
