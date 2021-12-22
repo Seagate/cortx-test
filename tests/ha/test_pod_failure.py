@@ -124,6 +124,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         self.restored = True
+        self.restore_node = False
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -1436,7 +1437,7 @@ class TestPodFailure:
         LOGGER.info("Shutdown the node: %s", node_fqdn)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
-        LOGGER.info("Step 2: Shutdown the node where control pod was running.")
+        LOGGER.info("Step 2: Node is shutdown where control pod was running.")
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -1459,16 +1460,99 @@ class TestPodFailure:
 
         LOGGER.info("Step 6: Check for control pod failed over node.")
         control_pods_new = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
-        if not control_pods_new:
-            assert_utils.assert_true(False, "Control pod has not failed over to any other node.")
+        assert_utils.assert_true(control_pods_new, "Control pod has not failed over to any other node.")
         control_pod_name_new = list(control_pods_new.keys())[0]
-        node_fqdn_new = control_pods.get(control_pod_name_new)
+        node_fqdn_new = control_pods_new.get(control_pod_name_new)
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
                     control_pod_name_new, node_fqdn_new)
 
         LOGGER.info(
             "Step 7: Start IOs (create s3 acc, buckets and upload objects).")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459-1')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        LOGGER.info("Step 7: IOs completed successfully.")
+        self.restore_node = True
+
+        LOGGER.info("COMPLETED: Verify IOs before and after control pod failure, "
+                    "pod shutdown by making worker node down.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-32460")
+    @CTFailOn(error_handler)
+    def test_ha_pod_failover(self):
+        """
+        Verify IOs before and after ha pod failure, pod shutdown by making worker node down.
+        """
+        LOGGER.info("STARTED: Verify IOs before and after ha pod failure, "
+                    "pod shutdown by making worker node down.")
+
+        LOGGER.info(
+            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        LOGGER.info("Step 1: IOs completed successfully.")
+
+        LOGGER.info("Step 2: Check the node which has the ha pod running and shutdown"
+                    "the node.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        ha_pods = self.node_master_list[0].get_pods_node_fqdn(const.HA_POD_NAME_PREFIX)
+        ha_pod_name = list(ha_pods.keys())[0]
+        node_fqdn = ha_pods.get(ha_pod_name)
+        self.node_name = node_fqdn
+        LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, node_fqdn)
+        data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        for pod_name, node in data_pods.items():
+            if node == node_fqdn:
+                data_pod_name = pod_name
+        LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
+        LOGGER.info("Shutdown the node: %s", node_fqdn)
+        resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
+        assert_utils.assert_true(resp, "Host is not powered off")
+        LOGGER.info("Step 2: Node is shutdown where HA pod was running.")
+
+        LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
+                    "state", data_pod_name)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(data_pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+
+        LOGGER.info("Step 6: Check for HA pod failed over node.")
+        ha_pods_new = self.node_master_list[0].get_pods_node_fqdn(const.HA_POD_NAME_PREFIX)
+        assert_utils.assert_true(ha_pods_new, "Control pod has not failed over to any other node.")
+        ha_pod_name_new = list(ha_pods_new.keys())[0]
+        node_fqdn_new = ha_pods_new.get(ha_pod_name_new)
+        LOGGER.info("Step 6: %s pod has been failed over to %s node",
+                    ha_pod_name_new, node_fqdn_new)
+
+        LOGGER.info(
+            "Step 7: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
