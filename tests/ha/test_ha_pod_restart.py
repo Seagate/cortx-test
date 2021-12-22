@@ -219,6 +219,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 7: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
@@ -304,6 +305,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 7: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
