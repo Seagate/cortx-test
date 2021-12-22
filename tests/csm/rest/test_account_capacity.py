@@ -32,7 +32,6 @@ from commons import cortxlogging, configmanager
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.constants import Rest as const
 from commons.utils import assert_utils
-from config import CSM_REST_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
@@ -285,7 +284,8 @@ class TestAccountCapacity():
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
             self.log.info("Step 3: Putting object of size zero and some specific size in bucket")
-            for i in [0, random.randint(10, 100)]:
+            ran_number = random.randint(10, 100)
+            for i in [0, ran_number]:
                 obj = f"object{s3_user}.txt"
                 object_size = i
                 self.log.info("Perform %s of %s MB write in the bucket: %s", obj, object_size,
