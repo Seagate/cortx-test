@@ -23,11 +23,11 @@
 import logging
 import pytest
 
+from commons import constants as common_const 
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
-from commons import constants as common_const 
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 
@@ -62,7 +62,7 @@ class TestProvK8Cortx:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        LOGGER.info("Done: Setup operations finished.")           
+        LOGGER.info("Done: Setup operations finished.") 
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -265,6 +265,15 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp)
         LOGGER.info("Step 3: Check whether data and control pods are not present")
         resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        data =[]
+        data1 =[]
+        for i in resp1[1]:
+            data.append(i.split(" ")[0])
+        for i in resp2[1]:
+            data1.append(i.split(" ")[0])
+        set_difference = set(data) - set(data1)
+        list_difference = list(set_difference)
+        LOGGER.info(list_difference)
         is_same  = resp1[1] == resp2[1]
         assert_utils.assert_false(is_same)
         LOGGER.info("Test Completed.")
