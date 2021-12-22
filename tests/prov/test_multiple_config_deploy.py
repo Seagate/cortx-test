@@ -64,22 +64,6 @@ class TestMultipleConfDeploy:
             else:
                 cls.worker_node_list.append(node_obj)
 
-    def setup_method(self):
-        """Revert the VM's before starting the deployment tests"""
-        self.log.info("Reverting all the VM before deployment")
-        with Pool(self.num_nodes) as proc_pool:
-            proc_pool.map(self.revert_vm_snapshot, self.host_list)
-
-    def revert_vm_snapshot(self, host):
-        """
-        Revert VM snapshot
-        param: host: VM name
-        """
-        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
-            self.vm_username, self.vm_password, host), read_lines=True)
-
-        assert_utils.assert_true(resp[0], resp[1])
-
     def teardown_method(self):
         """
         Teardown method
