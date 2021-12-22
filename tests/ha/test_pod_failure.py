@@ -1893,7 +1893,8 @@ class TestPodFailure:
         LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
                     "state", data_pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(data_pod_name))
+        LOGGER.info("Step 5: Check services status on remaining pods %s",
+                    pod_list.remove(data_pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -1901,8 +1902,10 @@ class TestPodFailure:
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for control pod failed over node.")
-        control_pods_new = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
-        assert_utils.assert_true(control_pods_new, "Control pod has not failed over to any other node.")
+        control_pods_new = \
+            self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(control_pods_new,
+                                 "Control pod has not failed over to any other node.")
         control_pod_name_new = list(control_pods_new.keys())[0]
         node_fqdn_new = control_pods_new.get(control_pod_name_new)
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
