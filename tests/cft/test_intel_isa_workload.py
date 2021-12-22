@@ -168,8 +168,7 @@ class TestIntelISAIO:
                 # TODO : restart s3 and motr services
                 self.log.info(
                     "Procedure yet to be defined for restarting services within containers")
-            self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name,
-                                                       s3t_obj=self.s3t_obj)
+        self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name, s3t_obj=self.s3t_obj)
 
     # Ordering maintained for LR2
     # Order - 1  TEST-23540
