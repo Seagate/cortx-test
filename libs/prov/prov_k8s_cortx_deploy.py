@@ -1160,7 +1160,7 @@ class ProvDeployK8sCortxLib:
         :param upgrade_image_version: Version Image to Upgrade.
         :return: True/False
         """
-        LOGGER.info("Upgrading CORTX image to version: {}.".format(upgrade_image_version))
+        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
         exc = kwargs.get('exc', True)
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)

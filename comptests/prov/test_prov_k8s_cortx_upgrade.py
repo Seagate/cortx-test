@@ -23,11 +23,11 @@
 import logging
 import os
 import time
+import queue
+from threading import Thread
 import yaml
 import pytest
-import queue
 
-from threading import Thread
 from commons import commands
 from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
@@ -39,6 +39,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProvK8CortxUpgrade:
+    """
+    This class contains Provisioner Component level test cases for K8s CORTX Software Upgrade.
+    """
 
     @classmethod
     def setup_class(cls):
@@ -99,6 +102,7 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Done: Setup operations finished.")
 
     def perform_upgrade(self, upgrade_image_version: str, exc: bool = True):
+        """Function calls upgrade and put return in queue object."""
         LOGGER.info("Calling upgrade.")
         resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
                                                    upgrade_image_version, exc=exc)
@@ -117,7 +121,7 @@ class TestProvK8CortxUpgrade:
             remote_path=self.remote_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_path, 'r')
-        data = yaml.load(stream)
+        data = yaml.safe_load(stream)
         installed_version = data['cortx']['common']['release']['version']
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
@@ -148,7 +152,7 @@ class TestProvK8CortxUpgrade:
             remote_path=self.remote_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_path, 'r')
-        data = yaml.load(stream)
+        data = yaml.safe_load(stream)
         new_installed_version = data['cortx']['common']['release']['version']
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert installing_version == new_installed_version, \
@@ -234,7 +238,7 @@ class TestProvK8CortxUpgrade:
             remote_path=self.remote_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_path, 'r')
-        data = yaml.load(stream)
+        data = yaml.safe_load(stream)
         installed_version = data['cortx']['common']['release']['version']
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
@@ -253,13 +257,14 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Step 3: Done.")
         LOGGER.info("Step 4: Start parallel upgrades.")
         parallel_upgrade_message = "Upgrade is already being performed on the cluster."
-        t1 = Thread(target=self.perform_upgrade, args=([self.upgrade_image]))
-        t2 = Thread(target=self.perform_upgrade, args=([self.parallel_upgrade_image], False))
-        t1.start()
+        upgrade_thread = Thread(target=self.perform_upgrade, args=([self.upgrade_image]))
+        parallel_upgrade_thread = Thread(target=self.perform_upgrade,
+                                         args=([self.parallel_upgrade_image], False))
+        upgrade_thread.start()
         time.sleep(10)  # Wait to start t1 thread
-        t2.start()
+        parallel_upgrade_thread.start()
         resp = self.que.get(1)
         assert_utils.assert_exact_string(resp[1], parallel_upgrade_message)
-        t1.join()
+        upgrade_thread.join()
         LOGGER.info("Step 4: Done.")
         LOGGER.info("Test Completed.")
