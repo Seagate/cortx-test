@@ -1980,7 +1980,8 @@ class TestPodFailure:
         LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
                     "state", data_pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(data_pod_name))
+        LOGGER.info("Step 5: Check services status on remaining pods %s",
+                    pod_list.remove(data_pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
