@@ -265,6 +265,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp)
         LOGGER.info("Step 3: Check whether data and control pods are not present")
         resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        LOGGER.info(resp2)
         data =[]
         data1 =[]
         for i in resp1[1]:
