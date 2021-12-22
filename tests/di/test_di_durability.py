@@ -961,39 +961,6 @@ class TestDIDurability:
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-29817')
-    def test_29817(self):
-        """
-        S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
-        and verify read (Get).
-        SZ <= Data Unit Sz
-
-        """
-        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
-                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        if self.di_err_lib.validate_default_config():
-            pytest.skip()
-        # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: upload a object")
-        # to do put object using s3cmd
-        self.log.info("Step 3: download a object")
-        # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
-        #                                                     my_key=self.object_name,
-        #                                                     start_byte=8888,
-        #                                                     stop_byte=9999)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
-        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
-                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability

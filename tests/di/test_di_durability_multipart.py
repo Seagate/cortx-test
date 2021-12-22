@@ -43,7 +43,6 @@ from config import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
 from commons.constants import MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.di.di_feature_control import DIFeatureControl
 from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
