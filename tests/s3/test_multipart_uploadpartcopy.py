@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Multipart Upload test module."""
+"""Multipart Upload Partcopy test module."""
 
 import logging
 import random
@@ -40,7 +40,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import S3_CFG
 
 
-class TestMultipartUploadGetPut:
+class TestMultipartUploadPartCopy:
     """Multipart Upload Test Suite."""
     # pylint: disable=attribute-defined-outside-init
     # pylint: disable-msg=too-many-statements
