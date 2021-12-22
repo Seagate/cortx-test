@@ -160,12 +160,8 @@ class TestMultipartUploadGetPut:
         """
         This initialises multipart and returns mpuID
         """
-        self.log.info("Initiating multipart upload")
         res = self.s3_mpu_test_obj.create_multipart_upload(bucket_name, object_name)
-        assert_utils.assert_true(res[0], res[1])
-        mpu_id = res[1]["UploadId"]
-        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        return mpu_id
+        return res[1]["UploadId"]
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32702')
