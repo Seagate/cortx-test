@@ -954,10 +954,11 @@ class TestDIDurability:
             self.log.info("Step 2: Enabled data corruption")
         else:
             assert False
-        self.log.info("Step 3: Upload a file using aws cli")
-        self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
-                                               object_name=self.object_name, file_path=location)
         try:
+            self.log.info("Step 3: Upload a file using aws cli")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                                   object_name=self.object_name, file_path=location)
             self.log.info("Step 4: verify download object fails with 5xx error code")
             self.s3_test_obj.object_download(file_path=self.file_path,
                                              bucket_name=self.bucket_name,
