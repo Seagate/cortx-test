@@ -21,16 +21,11 @@
 
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
-import os
-from multiprocessing import Pool
-
 import pytest
 
-from commons import pswdmanager, configmanager
+from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import system_utils, assert_utils
-from commons import commands as common_cmd
-from config import CMN_CFG, HA_CFG, PROV_CFG
+from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
