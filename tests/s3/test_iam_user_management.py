@@ -1292,7 +1292,6 @@ class TestIAMUserManagement:
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             iam_access_key_ids.append(resp[1]["AccessKeyId"])
             assert_utils.assert_true(resp[0], resp[1])
-            ## TODO END
         #  check error on 1001th IAM user
         self.log.info("Step 3: Try to create 1001th s3iamuser using direct REST API call")
         iam_user = "iamuser-{}".format(perf_counter_ns())
@@ -1308,7 +1307,7 @@ class TestIAMUserManagement:
         self.log.info("Listed user count : %s", len(user_list))
         err_msg = f"Number of users less than {cons.Rest.MAX_IAM_USERS}"
         assert len(user_list) == cons.Rest.MAX_IAM_USERS, err_msg
-        for i in range(len(iam_access_key_ids)):
+        for i, _ in enumerate(iam_access_key_ids):
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_users[i], iam_access_key_ids[i], s3_access_key, s3_secret_key)
             assert_utils.assert_true(resp[0], resp[1])
