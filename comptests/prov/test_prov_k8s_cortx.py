@@ -277,6 +277,16 @@ class TestProvK8Cortx:
         LOGGER.info(list_difference)
         is_same  = resp1[1] == resp2[1]
         assert_utils.assert_false(is_same)
+        LOGGER.info("Step 4: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
+            resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
+        LOGGER.info("Step 5: Cluster is back online.")
+
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -287,11 +297,16 @@ class TestProvK8Cortx:
         Verify cortx cluster restart command.
         """
         LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
         LOGGER.info("Executing cortx cluster restart command.")
-        LOGGER.info("Step 1: Check whether cluster restart command ran successfully.")
+        LOGGER.info("Step 2: Check whether cluster restart command ran successfully.")
         resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
         assert_utils.assert_true(resp)
-        LOGGER.info("Step 2: Checking whether all CORTX Data pods have been restarted.")
+        LOGGER.info("Step 3: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp)
         LOGGER.info("Test Completed.")
