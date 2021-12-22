@@ -251,7 +251,8 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
-
+ 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
