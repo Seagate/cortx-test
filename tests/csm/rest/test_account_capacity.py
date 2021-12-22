@@ -266,7 +266,7 @@ class TestAccountCapacity():
         self.log.info("Step 1: Create 1000 s3 accounts")
         total_cap = 0
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        for cnt in range(const.MAX_S3_USERS):
+        for _ in range(const.MAX_S3_USERS):
             resp = self.s3user.create_s3_account()
             self.log.info("s3 account response %s:", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -274,9 +274,6 @@ class TestAccountCapacity():
             access_key = resp.json()["access_key"]
             secret_key = resp.json()["secret_key"]
             s3_user = resp.json()["account_name"]
-            s3_acc_for_login = [{"username": s3_user,
-                       "password": CSM_REST_CFG["s3account_user"]["password"],
-                                 "email": resp.json()["account_email"]}]
             s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
             self.account_created.append(s3_user)
             self.log.info("Step 2: Creating bucket for each account")
@@ -291,7 +288,7 @@ class TestAccountCapacity():
             for i in [0, random.randint(10, 100)]:
                 obj = f"object{s3_user}.txt"
                 object_size = i
-                self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, object_size,
+                self.log.info("Perform %s of %s MB write in the bucket: %s", obj, object_size,
                               bucket)
                 resp = s3_misc.create_put_objects(
                     obj, bucket, access_key, secret_key, object_size=object_size)
@@ -304,7 +301,7 @@ class TestAccountCapacity():
             self.log.info("Step 5: Delete objects from bucket")
             resp = self.s3_test_obj.delete_object(bucket, obj)
             assert_utils.assert_true(resp[0], resp[1])
-            self.objects_created.remove(obj)
+            self.object_created.remove(obj)
         self.log.info("Step 6: Delete bucket")
         for buckets in self.buckets_created:
             resp = self.s3_test_obj.delete_bucket(buckets)
@@ -336,9 +333,6 @@ class TestAccountCapacity():
         secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
         total_cap = 0
-        s3_acc_for_login = [{"username": s3_user,
-                       "password": CSM_REST_CFG["s3account_user"]["password"],
-                                 "email": resp.json()["account_email"]}]
         s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
         self.account_created.append(s3_user)
         self.log.info("Step 1: Create 1000 buckets for s3 users")
@@ -383,8 +377,6 @@ class TestAccountCapacity():
         secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
         total_cap = 0
-        s3_acc_for_login = [{"username": s3_user, "password": CSM_REST_CFG["s3account_user"]["password"],
-                             "email": resp.json()["account_email"]}]
         s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
         self.account_created.append(s3_user)
         bucket1 = "bucket%s" % int(time.time())
@@ -411,7 +403,7 @@ class TestAccountCapacity():
         for objt in self.object_created:
             resp = self.s3_test_obj.delete_object(bucket1, objt)
             assert_utils.assert_true(resp[0], resp[1])
-            self.objects_created.remove(objt)
+            self.object_created.remove(objt)
         self.log.info("Step 5: Put 1000 objects of specific size in bucket")
         for _ in range(1000):
             obj = f"object{s3_user}.txt"
