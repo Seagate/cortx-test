@@ -286,7 +286,6 @@ class TestProvK8Cortx:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 5: Cluster is back online.")
-
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
