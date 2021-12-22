@@ -44,10 +44,6 @@ class TestMultipleConfDeploy:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.vm_username = os.getenv("QA_VM_POOL_ID",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
