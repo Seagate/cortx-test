@@ -80,7 +80,7 @@ class TestProvK8Cortx:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2: Done.")
         LOGGER.info("Step 3: Check s3 server status.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,self.master_node_list)
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")

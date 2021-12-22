@@ -981,6 +981,22 @@ class ProvDeployK8sCortxLib:
         return False, "Data PODS are not retrieved for cluster."
 
     @staticmethod
+    def get_pods(node_obj, pod_prefix: str) -> tuple:
+        """
+        Get list of pods in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of pods in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        pod_list = [pod.strip() for pod in output if pod_prefix in pod]
+        if pod_list is not None:
+            return True, pod_list
+        return False, "PODS are not retrieved for cluster."
+
+    @staticmethod
     def check_pods_status(node_obj) -> bool:
         """
         Helper function to check pods status.
@@ -1019,6 +1035,7 @@ class ProvDeployK8sCortxLib:
         keyword:run_basic_s3_io_flag: flag to run basic s3 io
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
         keyword:destroy_setup_flag:flag to destroy cortx cluster
+        keyword:s3_status_flag:flag to check hctl status
 
         """
         setup_k8s_cluster_flag = \
@@ -1038,6 +1055,7 @@ class ProvDeployK8sCortxLib:
                        PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
         destroy_setup_flag = kwargs.get("destroy_setup_flag",
                                         PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
+        s3_status_flag = kwargs.get("s3_status_flag", True)
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
@@ -1047,6 +1065,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("run_basic_s3_io_flag = %s", run_basic_s3_io_flag)
         LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
         LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
+        LOGGER.debug("s3_status_flag = %s", s3_status_flag)
         if setup_k8s_cluster_flag:
             LOGGER.info("Step to Perform k8s Cluster Deployment")
             resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
@@ -1085,19 +1104,22 @@ class ProvDeployK8sCortxLib:
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
             LOGGER.debug(pod_status)
+        if s3_status_flag:
             LOGGER.info("Step to Check s3 server status")
-            resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-            pod_name = resp[1]
-            start_time = int(time.time())
-            end_time = start_time + 1800  # 30 mins timeout
-            while int(time.time()) < end_time:
-                resp = self.get_hctl_status(master_node_list[0], pod_name)
-                if resp[0]:
-                    LOGGER.info("####All the services online. Time Taken : %s",
-                                (int(time.time()) - start_time))
-                    break
-                time.sleep(60)
-            assert_utils.assert_true(resp[0], resp[1])
+            s3_status = self.check_s3_status(master_node_list[0])
+            LOGGER.info("s3 resp is %s", s3_status)
+            # resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+            # pod_name = resp[1]
+            # start_time = int(time.time())
+            # end_time = start_time + 1800  # 30 mins timeout
+            # while int(time.time()) < end_time:
+            #     resp = self.get_hctl_status(master_node_list[0], pod_name)
+            #     if resp[0]:
+            #         LOGGER.info("####All the services online. Time Taken : %s",
+            #                     (int(time.time()) - start_time))
+            #         break
+            #     time.sleep(60)
+            # assert_utils.assert_true(resp[0], resp[1])
 
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
@@ -1130,19 +1152,19 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
 
-    @staticmethod
-    def check_s3_status(master_node_obj: LogicalNode,master_node_list: list):
+    def check_s3_status(self, master_node_obj: LogicalNode):
         """
         Function to check s3 server status
         """
+        resp = ""
         LOGGER.info("Step to Check s3 server status")
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
+        end_time = start_time + 900  # 30 mins timeout
         while int(time.time()) < end_time:
-            data_pod_list = ProvDeployK8sCortxLib.get_data_pods(master_node_obj)
+            data_pod_list = self.get_data_pods(master_node_obj)
             assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
-            resp = ProvDeployK8sCortxLib.get_hctl_status(master_node_list[0], data_pod_list[1][0])
+            resp = self.get_hctl_status(master_node_obj, data_pod_list[1][0])
             if resp[0]:
                 LOGGER.info("All the services are online. Time Taken : %s",
                             (int(time.time()) - start_time))

@@ -141,5 +141,6 @@ class TestContDeployment:
                                                run_s3bench_workload_flag=
                                                self.run_s3bench_workload_flag,
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                               destroy_setup_flag=self.destroy_setup_flag,)
+                                               destroy_setup_flag=self.destroy_setup_flag,
+                                               s3_status_flag=True)
             count = count - 1
