@@ -431,12 +431,11 @@ class IamTestLib(IamLib):
 
         return True, user_name
 
-    @staticmethod
-    def s3_ops_using_temp_auth_creds(
-            access_key: str = None,
-            secret_key: str = None,
-            session_token: str = None,
-            bucket_name: str = None) -> tuple:
+    def s3_ops_using_temp_auth_creds(self,
+                                     access_key: str = None,
+                                     secret_key: str = None,
+                                     session_token: str = None,
+                                     bucket_name: str = None) -> tuple:
         """
         Performing s3 operations using temp auth creds and session token.
 
@@ -448,7 +447,8 @@ class IamTestLib(IamLib):
         """
         LOGGER.info("Performing s3 operations using temp auth credentials.")
         s3_resource = boto3.resource("s3",
-                                     verify=S3_CFG["s3_cert_path"],
+                                     use_ssl=self.use_ssl,
+                                     verify=self.iam_cert_path,
                                      aws_access_key_id=access_key,
                                      aws_secret_access_key=secret_key,
                                      endpoint_url=S3_CFG["s3_url"],
@@ -496,9 +496,7 @@ class IamTestLib(IamLib):
                 account_name, email, LDAP_USERNAME, LDAP_PASSWD)
             acc_li.append(account_name)
             iam_obj = IamLib(access_key=access_key,
-                             secret_key=secret_key,
-                             endpoint_url=S3_CFG["iam_url"],
-                             iam_cert_path=S3_CFG["iam_cert_path"])
+                             secret_key=secret_key)
             for _ in range(int(user_count)):
                 user_name = "testusr{}".format(str(time.time()))
                 iam_obj.create_user(user_name)
