@@ -49,8 +49,8 @@ def create_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
     LOGGER.info("user list: %s", user_list)
     if user_name in user_list:
-            LOGGER.debug("IAM user %s found", user_name)
-            result = True
+        LOGGER.debug("IAM user %s found", user_name)
+        result = True
     del iam_test_obj
     LOGGER.debug("Verified created IAM user exits")
     return result
@@ -77,8 +77,8 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
     LOGGER.info("user list: %s", user_list)
     if user_name in user_list:
-            LOGGER.debug("IAM user %s found", user_name)
-            result = True
+        LOGGER.debug("IAM user %s found", user_name)
+        result = True
     del iam_test_obj
     LOGGER.debug("Verified deleted IAM user does not exits")
     return not result
@@ -105,8 +105,8 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
     result = False
     LOGGER.info("Bucket list: %s", bktlist)
     if bucket_name in bktlist:
-            LOGGER.debug("S3 bucket %s is listed", bucket_name)
-            result = True
+        LOGGER.debug("S3 bucket %s is listed", bucket_name)
+        result = True
     del s3_obj
     LOGGER.debug("Verified created bucket exists")
     return result
@@ -133,8 +133,8 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     result = False
     LOGGER.info("Bucket list: %s", bktlist)
     if bucket_name in bktlist:
-            LOGGER.debug("S3 bucket %s is listed", bucket_name)
-            result = True
+        LOGGER.debug("S3 bucket %s is listed", bucket_name)
+        result = True
     del s3_obj
     LOGGER.debug("Verified bucket is deleted.")
     return not result
@@ -168,10 +168,10 @@ def create_put_objects(object_name: str, bucket_name: str,
     data.close()
     _ , objlist = s3_obj.object_list(bucket_name)
     result = False
-    for my_bucket_object in objlist:
-        if my_bucket_object.key == object_name:
-            result = True
-            break
+    LOGGER.info("Object list: %s", objlist)
+    if object_name in objlist:
+        LOGGER.debug("Object %s is listed", object_name)
+        result = True
     del s3_obj
     system_utils.remove_file(file_path)
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
