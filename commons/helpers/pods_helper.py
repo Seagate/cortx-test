@@ -425,3 +425,19 @@ class LogicalNode(Host):
                                  command_suffix="cat /etc/machine-id",
                                  decode=True)
         return resp
+
+    def get_pods_node_fqdn(self, pod_prefix):
+        """
+        Helper function to get pods name with pod_prefix and their node fqdn
+        :param: pod_prefix: Prefix to define the pod category
+        :return: dict
+        """
+        pod_dict = {}
+        output = self.execute_cmd(cmd=commands.K8S_GET_MGNT, read_lines=True)
+        for line in output:
+            if pod_prefix in line:
+                data = line.strip()
+                pod_name = data.split()[0]
+                node_fqdn = data.split()[6]
+                pod_dict[pod_name.strip()] = node_fqdn.strip()
+        return pod_dict
