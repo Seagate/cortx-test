@@ -254,8 +254,7 @@ class HAK8s:
             nbuckets: int = 2,
             files_count: int = 10,
             di_data: tuple = None,
-            is_di: bool = False,
-            event=None):
+            is_di: bool = False):
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
@@ -266,12 +265,8 @@ class HAK8s:
         :param files_count: NUmber of files to be uploaded per bucket
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
-        :param event: Threading event object to stop the upload from test or
-        To use default from DI framework, set event Flag to stop further upload after some sleep
-        (i.e if set it will stop further upload & start Download & DI check for completed uploads)
         :return: (bool, response)
         """
-        io_data = None
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
@@ -279,15 +274,13 @@ class HAK8s:
                 io_data = self.mgnt_ops.create_buckets(nbuckets=nbuckets, users=users)
                 run_data_chk_obj = RunDataCheckManager(users=io_data)
                 pref_dir = {"prefix_dir": prefix_data}
-                event = event if event else None
                 star_res = run_data_chk_obj.start_io(users=io_data, buckets=None, prefs=pref_dir,
-                                                     files_count=files_count, event=event)
+                                                     files_count=files_count)
                 if not star_res:
                     return False, star_res
                 return True, run_data_chk_obj, io_data
             LOGGER.info("Checking DI for IOs run.")
-            event = event if event else False
-            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di, eventual_stop=event)
+            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
                 return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])

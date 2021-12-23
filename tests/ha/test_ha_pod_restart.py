@@ -72,7 +72,6 @@ class TestPodRestart:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.hlth_master_list = []
-        cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
@@ -97,9 +96,6 @@ class TestPodRestart:
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
-                cls.hlth_worker_list.append(Health(hostname=cls.host,
-                                                   username=cls.username[node],
-                                                   password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
@@ -129,8 +125,7 @@ class TestPodRestart:
         resp = self.ha_obj.perform_ios_ops(prefix_data=f'ha-pod-restart-{int(perf_counter_ns())}')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        time.sleep(60)
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True, event=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Ran IOs on healthy cluster & Verified DI on the same.")
         LOGGER.info("COMPLETED: Setup operations. ")
@@ -263,7 +258,7 @@ class TestPodRestart:
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         LOGGER.info("Step 5: Create and list buckets. Upload object to %s & copy object from the"
-                    " same to %s and verify copy object etags",
+                    " same bucket to %s and verify copy object etags",
                     self.bucket_name, bucket2)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
