@@ -76,7 +76,7 @@ class TestPodRestart:
         cls.node_worker_list = []
         cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.restored = cls.random_time = cls.s3_clean = None
+        cls.restored = cls.random_time = cls.s3_clean = cls.test_prefix = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.mgnt_ops = ManagementOPs()
@@ -155,6 +155,7 @@ class TestPodRestart:
                 system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -338,6 +339,7 @@ class TestPodRestart:
 
         LOGGER.info("ENDED: Test to verify WRITEs after data pod restart.")
 
+    # pylint: disable=C0321
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -411,7 +413,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get(timeout=60)  # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]           # Contains s3 data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
@@ -443,7 +446,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(timeout=60)  # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(remain_bkt), wr_bucket - del_bucket,
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -462,7 +466,8 @@ class TestPodRestart:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get(timeout=60)  # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -475,7 +480,7 @@ class TestPodRestart:
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Step 9: Successfully verified READs and DI check for remaining buckets: %s",
-                    buckets)
+                    remain_bkt)
 
         LOGGER.info("Step 10: Again create %s buckets and put variable size objects and perform "
                     "delete on %s buckets", wr_bucket, del_bucket)
@@ -484,7 +489,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get(timeout=60)  # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         new_bkts = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(new_bkts) - len(remain_bkt), wr_bucket,
@@ -497,7 +503,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(timeout=60)  # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         buckets1 = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets1), wr_bucket - del_bucket + len(remain_bkt),
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -517,7 +524,8 @@ class TestPodRestart:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get(timeout=60)  # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]

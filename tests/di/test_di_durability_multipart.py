@@ -35,19 +35,24 @@ from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import config_utils
 from commons.params import TEST_DATA_FOLDER, DATAGEN_HOME
 from config import di_cfg
 from config import CMN_CFG
+from config import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 from commons.constants import MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.s3 import s3_multipart
+from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.s3 import s3_multipart
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3 import s3_s3cmd
+from libs.s3.s3_blackbox_test_lib import MinIOClient
 
 
 @pytest.fixture(scope="class", autouse=False)
@@ -104,6 +109,30 @@ def setup_multipart_fixture(request):
     request.cls.log.info("ENDED: Teardown operations")
 
 
+@pytest.fixture(scope="function", autouse=False)
+def setup_minio(request):
+    """Setup minio client for a test."""
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("STARTED: Mino Setup started.")
+    request.cls.minio = MinIOClient()
+    resp = MinIOClient.configre_minio_cloud(minio_repo=S3_CFG["minio_repo"],
+                                            endpoint_url=S3_CFG["s3_url"],
+                                            s3_cert_path=S3_CFG["s3_cert_path"],
+                                            minio_cert_path_list=S3_CFG["minio_crt_path_list"],
+                                            access=ACCESS_KEY,
+                                            secret=SECRET_KEY)
+    assert_utils.assert_true(resp, "failed to setup minio: {}".format(resp))
+    resp = system_utils.path_exists(S3_CFG["minio_path"])
+    assert_utils.assert_true(resp, "minio config not exists: {}".format(S3_CFG["minio_path"]))
+    minio_dict = config_utils.read_content_json(S3_CFG["minio_path"], mode='rb')
+    if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
+            or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
+        resp = MinIOClient.configure_minio(ACCESS_KEY, SECRET_KEY)
+        assert_utils.assert_true(resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
+    request.cls.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
+    request.cls.log.info("ENDED: Min IO Setup ended.")
+
+
 # pylint: disable=no-member
 @pytest.mark.usefixtures("setup_multipart_fixture")
 class TestDICheckMultiPart:
@@ -114,6 +143,7 @@ class TestDICheckMultiPart:
         Test method level setup.
         """
         self.edtl = DIErrorDetection()
+        self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.log = logging.getLogger(__name__)
         self.test_dir_path = os.path.join(
             DATAGEN_HOME, TEST_DATA_FOLDER, "TestDataDurability")
@@ -200,7 +230,6 @@ class TestDICheckMultiPart:
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-
         self.log.info("Uploading parts into bucket")
         res = self.s3_mp_test_obj.upload_parts(mpu_id, bucket_name, object_name, file_size,
                                                total_parts=total_parts,
@@ -243,7 +272,7 @@ class TestDICheckMultiPart:
         """
         sz = 512 * MB
         total_parts = 512
-        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
         self.log.info("STARTED: Verify data integrity check during read with correct checksum.")
@@ -284,7 +313,7 @@ class TestDICheckMultiPart:
         parts = 5
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
-        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -357,7 +386,7 @@ class TestDICheckMultiPart:
         parts = 5
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
-        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -430,7 +459,7 @@ class TestDICheckMultiPart:
         size = 5 * MB
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -467,8 +496,56 @@ class TestDICheckMultiPart:
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
             s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
-                                              file_path=self.file_path + '.bak', **dodict)
+                                                       file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.error(fault)
         else:
             assert False, 'Download passed'
+
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29818")
+    def test_upload_big_obj_minio_corrupt_cheksum_29818(self, setup_minio):
+        """S3 Put through MinIO  and Corrupt checksum of an object 151 MB
+         and verify read (Get). ( SZ in range 100 MB -256 MB)."""
+        size = 151 * MB
+        self.log.info("STARTED: upload object of 151 MB using Minion Client")
+        upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
+                         + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                       + self.minio_obj.validate_cert
+
+        valid, skip_mark = self.edtl.validate_valid_config()
+        if not valid or skip_mark:
+            pytest.skip()
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Step 1: Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        self.edtl.create_file(size, first_byte='z', name=self.file_path)
+        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2: enabled data corruption")
+        self.log.info("Step 3: upload a file using s3cmd multipart upload")
+
+        self.log.info("Step 3: Uploading an object to a bucket %s", self.bucket_name)
+        resp = system_utils.run_local_cmd(upload_obj_cmd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Object is uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Step 4: Verifying that object is uploaded to a bucket")
+        resp = system_utils.run_local_cmd(list_obj_cmd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
+        self.log.info("Step 4: Verified that object is uploaded to a bucket")
+        self.log.info("Step 4: Download object using Minion Client")
