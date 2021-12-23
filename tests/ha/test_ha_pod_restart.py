@@ -76,7 +76,6 @@ class TestPodRestart:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.hlth_master_list = []
-        cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
@@ -101,9 +100,6 @@ class TestPodRestart:
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
-                cls.hlth_worker_list.append(Health(hostname=cls.host,
-                                                   username=cls.username[node],
-                                                   password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
@@ -154,8 +150,7 @@ class TestPodRestart:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
             if os.path.exists(self.test_dir_path):
-                resp = system_utils.remove_dirs(self.test_dir_path)
-                assert_utils.assert_true(resp, f"Failed to remove {self.test_dir_path}")
+                system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
@@ -463,10 +458,8 @@ class TestPodRestart:
         LOGGER.info("Step 8: Successfully downloaded the object %s & verified the checksum",
                     self.object_name)
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        resp = system_utils.remove_file(self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.remove_file(download_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        system_utils.remove_file(self.multipart_obj_path)
+        system_utils.remove_file(download_path)
 
         LOGGER.info("Step 9: Create and list buckets. Perform multipart upload for size %s MB in "
                     "total %s parts.", file_size, total_parts)
@@ -500,10 +493,8 @@ class TestPodRestart:
         LOGGER.info("Step 10: Successfully downloaded the object %s & verified the checksum",
                     test_object)
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        resp = system_utils.remove_file(self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.remove_file(download_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        system_utils.remove_file(self.multipart_obj_path)
+        system_utils.remove_file(download_path)
 
     # pylint: disable=too-many-locals
     @pytest.mark.ha
