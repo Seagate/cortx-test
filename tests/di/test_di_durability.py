@@ -273,21 +273,26 @@ class TestDIDurability:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
+        try:
+            self.s3_test_obj.create_bucket(self.bucket_name)
+        except CTException as err:
+            self.log.info("Create bucket failed with %s", err)
+            assert False
         for file_size in NORMAL_UPLOAD_SIZES:
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
             self.log.debug("csm: %s", csm[1])
-            bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
-                self.s3_test_obj.create_bucket(bucket_name)
-                self.s3_test_obj.put_object(bucket_name=bucket_name,
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=self.object_name, file_path=location,
                                             content_md5=csm[1])
             except CTException as err:
                 self.log.info("Put object failed with %s", err)
+                assert False
             try:
-                self.s3_test_obj.object_download(bucket_name=bucket_name, obj_name=self.object_name,
+                self.s3_test_obj.object_download(bucket_name=self.bucket_name,
+                                                 obj_name=self.object_name,
                                                  file_path=self.file_path)
                 if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
                     self.log.info("Checksum Validated")
@@ -296,11 +301,11 @@ class TestDIDurability:
             except CTException as err:
                 self.log.info("Download object failed with %s", err)
                 assert False
-            try:
-                self.s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
-            except CTException as err:
-                self.log.info("Delete bucket failed with error %s", err)
-                assert False
+        try:
+            self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        except CTException as err:
+            self.log.info("Delete bucket failed with error %s", err)
+            assert False
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
@@ -320,6 +325,11 @@ class TestDIDurability:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
+        try:
+            self.s3_test_obj.create_bucket(self.bucket_name)
+        except CTException as err:
+            self.log.info("Create bucket failed with %s", err)
+            assert False
         for file_size in NORMAL_UPLOAD_SIZES:
             s3_obj = S3TestLib()
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
@@ -329,10 +339,8 @@ class TestDIDurability:
             corrupted_csm = system_utils.random_string_generator(size=24)
             self.log.info("Attempting to upload object with corrupted checksum from client %s",
                           corrupted_csm)
-            bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
-                s3_obj.create_bucket(bucket_name)
-                s3_obj.put_object(bucket_name=bucket_name, object_name=self.object_name,
+                s3_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
                                   file_path=location, content_md5=corrupted_csm)
             except CTException as err:
                 self.log.info("Put object failed with %s", err)
@@ -341,11 +349,11 @@ class TestDIDurability:
                     self.log.info("Error strings matched")
                 else:
                     assert False
-            try:
-                s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
-            except CTException as err:
-                self.log.info("Delete bucket failed with error %s", err)
-                assert False
+        try:
+            self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        except CTException as err:
+            self.log.info("Delete bucket failed with error %s", err)
+            assert False
         self.log.info("ENDED: Test to verify object integrity during the upload with different "
                       "checksum.")
 
