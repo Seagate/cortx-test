@@ -256,9 +256,7 @@ class HAK8s:
             nbuckets: int = 2,
             files_count: int = 10,
             di_data: tuple = None,
-            is_di: bool = False,
-            async_io: bool = False,
-            stop_upload_time: int = 60):
+            is_di: bool = False):
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
@@ -269,38 +267,22 @@ class HAK8s:
         :param files_count: NUmber of files to be uploaded per bucket
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
-        :param async_io: To perform parallel IO operation
-        :param stop_upload_time: Approx time allowed for write operation to be finished
-        before starting stop_io_async
         :return: (bool, response)
         """
-        io_data = None
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
                 users = self.mgnt_ops.create_account_users(nusers=nusers)
-                io_data = self.mgnt_ops.create_buckets(
-                    nbuckets=nbuckets, users=users)
+                io_data = self.mgnt_ops.create_buckets(nbuckets=nbuckets, users=users)
                 run_data_chk_obj = RunDataCheckManager(users=io_data)
                 pref_dir = {"prefix_dir": prefix_data}
-                if async_io:
-                    run_data_chk_obj.start_io_async(
-                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
-                    run_data_chk_obj.event.set()
-                    time.sleep(stop_upload_time)
-                    run_data_chk_obj.event.is_set()
-                else:
-                    star_res = run_data_chk_obj.start_io(
-                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
-                    if not star_res:
-                        return False, star_res
+                star_res = run_data_chk_obj.start_io(users=io_data, buckets=None, prefs=pref_dir,
+                                                     files_count=files_count)
+                if not star_res:
+                    return False, star_res
                 return True, run_data_chk_obj, io_data
-
             LOGGER.info("Checking DI for IOs run.")
-            if async_io:
-                stop_res = di_data[0].stop_io_async(users=di_data[1], di_check=is_di)
-            else:
-                stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
+            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
                 return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])

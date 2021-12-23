@@ -618,6 +618,7 @@ class TestPodFailure:
         LOGGER.info(
             "COMPLETED: Test to verify degraded deletes before and after unsafe pod shutdown.")
 
+    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32444")
@@ -690,7 +691,9 @@ class TestPodFailure:
         event.clear()
 
         thread.join()
-        responses = output.get()
+        responses = ()
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -857,6 +860,7 @@ class TestPodFailure:
             "Completed: Verify IOs before and after data pod failure, "
             "pod shutdown by deleting pod using kubectl delete.")
 
+    # pylint: disable=C0321
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -953,7 +957,8 @@ class TestPodFailure:
         event.clear()
         thread.join()
         del_resp = ()
-        while len(del_resp) != 2: del_resp = output.get()  # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(fail_del_bkt),
@@ -996,6 +1001,7 @@ class TestPodFailure:
         LOGGER.info("ENDED: Test to verify Continuous DELETEs during data pod down by delete "
                     "deployment.")
 
+    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26441")
@@ -1061,7 +1067,9 @@ class TestPodFailure:
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
         event.clear()
         thread.join()
-        responses = output.get()
+        responses = ()
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight WRITEs while pod is going down "
                     "should be failed/error.")
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1159,6 +1167,7 @@ class TestPodFailure:
             "Completed: Verify IOs before and after data pod failure; pod shutdown "
             "by making replicas 0")
 
+    # pylint: disable=C0321
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -1225,7 +1234,9 @@ class TestPodFailure:
 
         event.clear()
         thread.join()
-        responses = output.get()
+        responses = ()
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight READs and WRITEs while pod is going down "
                     "should be failed/error.")
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1251,6 +1262,7 @@ class TestPodFailure:
         LOGGER.info("ENDED: Test to verify Continuous READs and WRITEs during data pod down by "
                     "delete deployment.")
 
+    # pylint: disable=C0321
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -1342,7 +1354,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from WRITEs background process")
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()       # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]                  # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]            # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]             # Contains buckets which failed when event was clear
@@ -1356,7 +1369,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()      # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]          # Contains buckets when event was set
         fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
@@ -1372,7 +1386,8 @@ class TestPodFailure:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()        # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1392,7 +1407,8 @@ class TestPodFailure:
                 'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()        # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
@@ -1449,7 +1465,8 @@ class TestPodFailure:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()      # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]           # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]     # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]      # Contains buckets which failed when event was clear
@@ -1521,7 +1538,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from READs background process")
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()         # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]            # Contains buckets when event was set
         fail_bkt_get = rd_resp[1]             # Contains buckets which failed when event was clear
         event_di_bkt = rd_resp[2]             # Contains buckets when event was set
@@ -1536,7 +1554,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()     # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]          # Contains buckets when event was set
         fail_del_bkt = del_resp[1]           # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
@@ -1555,7 +1574,8 @@ class TestPodFailure:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()      # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1575,7 +1595,8 @@ class TestPodFailure:
                 'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()       # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
@@ -2010,6 +2031,7 @@ class TestPodFailure:
         LOGGER.info("COMPLETED: Verify IOs before and after HA pod failure, "
                     "pod shutdown by making worker node down.")
 
+    # pylint: disable=C0321
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2088,9 +2110,8 @@ class TestPodFailure:
         LOGGER.info("Step 5: Services status on remaining pods %s are in online state",
                     pod_list.remove(pod_name))
         prc.join()
-        if output.empty():
-            assert_utils.assert_true(False, "Background process failed to do multipart upload")
-        res = output.get()
+        res = ()
+        while output.empty(): res = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         mpu_id = None
         if isinstance(res[0], dict):
             failed_parts = res[0]
