@@ -76,7 +76,7 @@ class TestPodRestart:
         cls.node_worker_list = []
         cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.restored = cls.random_time = cls.s3_clean = None
+        cls.restored = cls.random_time = cls.s3_clean = cls.test_prefix = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.mgnt_ops = ManagementOPs()
@@ -155,6 +155,7 @@ class TestPodRestart:
                 system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
