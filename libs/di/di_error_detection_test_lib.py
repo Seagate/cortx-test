@@ -86,10 +86,20 @@ class DIErrorDetection:
         """
         return self.validate_valid_config(default_cfg=True)
 
-    def validate_valid_config(self, default_cfg: bool = False):
+    def validate_enabled_config(self):
+        """
+        function will check for enabled configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are set with True for all
+        and will return false if configs are set otherwise
+        """
+        return self.validate_valid_config(enabled_cfg=True)
+
+    def validate_valid_config(self, default_cfg: bool = False, enabled_cfg: bool = False):
         """
         This function needs optimization.
         :param: default_cfg Boolean
+        :param: enabled_cfg Boolean
         :return:tuple
         # TODO Needs logic change.
         """
@@ -117,6 +127,9 @@ class DIErrorDetection:
             return False, resp[1]
         if default_cfg:
             if write_flag and not read_flag and integrity_flag:
+                skip_mark = False
+        if enabled_cfg:
+            if write_flag and read_flag and integrity_flag:
                 skip_mark = False
         else:
             if write_flag and integrity_flag:

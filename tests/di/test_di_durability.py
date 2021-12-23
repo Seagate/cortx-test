@@ -894,34 +894,56 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
     def test_29812(self):
         """
         Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
-        # to do read flag check
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_enabled_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         self.log.info("Step 1: create a file")
         buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
                                            seed=self.data_gen.get_random_seed())
         location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
                                                   data_folder_prefix=self.test_dir_path)
         self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
-        # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         obj_name=self.object_name,
-                                         bucket_name=self.bucket_name)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
+        self.log.info("Step 2: Enable data corruption")
+        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
+
+        if status:
+            self.log.info("Step 2: Enabled data corruption")
+        else:
+            assert False
+        try:
+            self.log.info("Step 3: Upload a file using aws cli")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                        file_path=location)
+            self.log.info("Step 4: verify download object fails with 5xx error code")
+            self.s3_test_obj.object_download(file_path=self.file_path, bucket_name=self.bucket_name,
+                                             obj_name=self.object_name)
+        except CTException as err:
+            self.log.info("Put object failed with %s", err)
+            err_str = str(err)
+            if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                self.log.info("Download failed with InternalError")
+            else:
+                assert False
+        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
+        if status:
+            self.log.info("Step 2: Disabled data corruption")
+        else:
+            assert False
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
 
@@ -964,8 +986,12 @@ class TestDIDurability:
                                              bucket_name=self.bucket_name,
                                              obj_name=self.object_name)
         except CTException as err:
-            self.log.info("Test failed with %s", err)
-            # search for internal error, if not found assert False
+            self.log.info("Put object failed with %s", err)
+            err_str = str(err)
+            if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                self.log.info("Download failed with InternalError")
+            else:
+                assert False
         status = self.di_err_lib.disable_data_corruption_set_fault_injection()
         if status:
             self.log.info("Step 2: Disabled data corruption")
@@ -983,7 +1009,6 @@ class TestDIDurability:
         S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
         and verify read (Get).
         SZ <= Data Unit Sz
-
         """
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
