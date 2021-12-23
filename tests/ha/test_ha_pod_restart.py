@@ -651,8 +651,9 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
         event.clear()
-
         thread.join()
+
+        LOGGER.info("Verifying responses from background process")
         responses = ()
         while len(responses) != 2: responses = output.get(timeout=60)  # pylint: disable=C0321
         pass_logs = list(x[1] for x in responses["pass_res"])
