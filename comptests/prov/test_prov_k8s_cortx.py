@@ -101,7 +101,7 @@ class TestProvK8Cortx:
         resp = ProvDeployK8sCortxLib.check_pods_status(self.master_node_obj)
         assert_utils.assert_true(resp)
         LOGGER.info("Test Completed.")
-
+    
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28387")
@@ -274,7 +274,8 @@ class TestProvK8Cortx:
             data1.append(i.split(" ")[0])
         set_difference = set(data) - set(data1)
         list_difference = list(set_difference)
-        LOGGER.info("Pods which are not present after shut_down command ran are" + str(list_difference))
+        LOGGER.info("Pods which are not present after shut_down command ran are" 
+                                                        + str(list_difference))
         is_same  = resp1[1] == resp2[1]
         assert_utils.assert_false(is_same)
         LOGGER.info("Step 4: Check the cluster status and start the cluster "
