@@ -304,7 +304,6 @@ class TestDIDurability:
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
                       "checksum.")
 
-    @pytest.mark.skip("Boto3 put object issue not fixed, hence marked skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
@@ -322,6 +321,7 @@ class TestDIDurability:
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
         for file_size in NORMAL_UPLOAD_SIZES:
+            s3_obj = self.s3_test_obj = S3TestLib()
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
@@ -331,9 +331,9 @@ class TestDIDurability:
                           corrupted_csm)
             bucket_name = self.bucket_name + "-size-" + str(file_size)
             try:
-                self.s3_test_obj.create_bucket(bucket_name)
-                self.s3_test_obj.put_object(bucket_name=bucket_name, object_name=self.object_name,
-                                            file_path=location, content_md5=corrupted_csm)
+                s3_obj.create_bucket(bucket_name)
+                s3_obj.put_object(bucket_name=bucket_name, object_name=self.object_name,
+                                  file_path=location, content_md5=corrupted_csm)
             except CTException as err:
                 self.log.info("Put object failed with %s", err)
                 err_str = str(err)
@@ -342,7 +342,7 @@ class TestDIDurability:
                 else:
                     assert False
             try:
-                self.s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
+                s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
             except CTException as err:
                 self.log.info("Delete bucket failed with error %s", err)
                 assert False
