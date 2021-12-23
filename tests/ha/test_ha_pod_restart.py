@@ -208,7 +208,8 @@ class TestPodRestart:
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipread=True,
-                                                    skipcleanup=True, large_workload=True)
+                                                    skipcleanup=True, large_workload=True,
+                                                    nsamples=1, nclients=1)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs with variable sizes objects.")
@@ -222,6 +223,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 7: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
@@ -232,7 +234,8 @@ class TestPodRestart:
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, large_workload=True)
+                                                    skipcleanup=True, large_workload=True,
+                                                    nsamples=1, nclients=1)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
@@ -292,7 +295,7 @@ class TestPodRestart:
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=1, nclients=1)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs-READs-Verify with variable sizes objects.")
@@ -306,6 +309,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 7: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
@@ -316,7 +320,7 @@ class TestPodRestart:
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=1, nclients=1)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
@@ -327,7 +331,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    large_workload=True)
+                                                    large_workload=True, nsamples=1, nclients=1)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed WRITEs-READs-Verify with variable sizes objects.")
@@ -394,19 +398,20 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-34077'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
 
-        LOGGER.info("Create 150 buckets and put variable size objects.")
+        LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()  # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(timeout=60)  # pylint: disable=C0321
         s3_data = wr_resp[0]           # Contains s3 data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
@@ -438,7 +443,7 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()  # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(timeout=60)  # pylint: disable=C0321
         remain_bkt = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(remain_bkt), wr_bucket - del_bucket,
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -457,7 +462,7 @@ class TestPodRestart:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()  # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(timeout=60)  # pylint: disable=C0321
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -472,14 +477,14 @@ class TestPodRestart:
         LOGGER.info("Step 9: Successfully verified READs and DI check for remaining buckets: %s",
                     buckets)
 
-        LOGGER.info("Step 10: Again create 150 buckets and put variable size objects and perform "
+        LOGGER.info("Step 10: Again create %s buckets and put variable size objects and perform "
                     "delete on %s buckets", wr_bucket, del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get()  # pylint: disable=C0321
+        while len(wr_resp) != 3: wr_resp = wr_output.get(timeout=60)  # pylint: disable=C0321
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         new_bkts = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(new_bkts) - len(remain_bkt), wr_bucket,
@@ -492,7 +497,7 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get()  # pylint: disable=C0321
+        while len(del_resp) != 2: del_resp = del_output.get(timeout=60)  # pylint: disable=C0321
         buckets1 = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets1), wr_bucket - del_bucket + len(remain_bkt),
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -503,16 +508,16 @@ class TestPodRestart:
                     "128MB) and DELETEs on %s buckets", del_bucket)
 
         LOGGER.info("Step 11: Perform READs and verify on remaining buckets")
-        new_s3data = {}
         for bkt in buckets1:
-            new_s3data[bkt] = s3_data[bkt]
+            if bkt in s3_data:
+                new_s3data[bkt] = s3_data[bkt]
 
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get()  # pylint: disable=C0321
+        while len(rd_resp) != 4: rd_resp = rd_output.get(timeout=60)  # pylint: disable=C0321
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
