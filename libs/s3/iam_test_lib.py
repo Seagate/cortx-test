@@ -120,7 +120,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating %s user access key.", user_name)
-            response = super().create_access_key(user_name)
+            response = poll(super().create_access_key, user_name)
             LOGGER.info(response)
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
@@ -364,12 +364,58 @@ class IamTestLib(IamLib):
         :param user_name: The name of the user whose password you want to delete.
         """
         try:
-            response = super().delete_user_login_profile(user_name)
+            response = poll(super().delete_user_login_profile, user_name)
         except ClientError as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_user_login_profile.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error)
+
+        return True, response
+
+    def create_iam_user(self, user_name, password, password_reset=True) -> tuple:
+        """
+        Creating new user with login profile and access key.
+
+        :param user_name: Name of the user.
+        :param password: password for the user login profile.
+        :param password_reset: with or without password reset value: True/False.
+        :return: (Boolean, response).
+        """
+        try:
+            user_dict = dict()
+            response = self.create_user(user_name=user_name)
+            user_dict.update(response[1])
+            response = self.create_user_login_profile(user_name, password, password_reset)
+            user_dict.update(response[1])
+            response = self.create_access_key(user_name)
+            user_dict.update(response[1])
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.create_iam_user.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, user_dict
+
+    def delete_iam_user(self, user_name):
+        """Delete iam user with login profile and access key."""
+        try:
+            response = self.list_access_keys(user_name)
+            access_keys = list()
+            for key in response[1].get("AccessKeyMetadata", []):
+                access_keys.append(key.get("AccessKeyId"))
+            LOGGER.info(access_keys)
+            for access_key in access_keys:
+                self.delete_access_key(user_name, access_key)
+            if self.get_user_login_profile(user_name)[0]:
+                self.delete_user_login_profile(user_name)
+            response = self.delete_user(user_name)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.delete_iam_user.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
