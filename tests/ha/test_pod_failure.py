@@ -2415,7 +2415,7 @@ class TestPodFailure:
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.pop(list(bkt_obj_dict.keys())[-1])
+        bkt_obj_dict.clear()
         bkt_obj_dict[bucket3] = object3
         LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
@@ -2535,7 +2535,7 @@ class TestPodFailure:
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.pop(list(bkt_obj_dict.keys())[-1])
+        bkt_obj_dict.clear()
         bkt_obj_dict[bucket3] = object3
         LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
