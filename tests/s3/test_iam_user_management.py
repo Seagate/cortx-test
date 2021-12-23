@@ -676,7 +676,7 @@ class TestIAMUserManagement:
         accesskeyid = resp[1]["AccessKeyId"]
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3 : Perform io's & Delete control pod")
-        bucket = f"bucket{s3_acc_name}"
+        bucket = "bucket{}".format(perf_counter_ns())
         obj = f"object{iam_user}.txt"
         if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
             self.log.info("Created bucket: %s ", bucket)
@@ -1178,7 +1178,7 @@ class TestIAMUserManagement:
             accesskeyid = resp[1]["AccessKeyId"]
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Perform io's")
-            bucket = f"bucket{s3_acc_name}"
+            bucket = "bucket{}".format(perf_counter_ns())
             obj = f"object{iam_user}.txt"
             if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
                 self.log.info("Created bucket: %s ", bucket)
@@ -1235,7 +1235,7 @@ class TestIAMUserManagement:
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             accesskeyid = resp[1]["AccessKeyId"]
             self.log.info("Perform io's")
-            bucket = f"bucket{s3_acc_name}"
+            bucket = "bucket{}".format(perf_counter_ns())
             obj = f"object{iam_user}.txt"
             if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
                 self.log.info("Created bucket: %s ", bucket)
