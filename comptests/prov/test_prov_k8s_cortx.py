@@ -23,7 +23,7 @@
 import logging
 import pytest
 
-from commons import constants as common_const 
+from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -62,7 +62,7 @@ class TestProvK8Cortx:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        LOGGER.info("Done: Setup operations finished.") 
+        LOGGER.info("Done: Setup operations finished.")
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -269,7 +269,7 @@ class TestProvK8Cortx:
         data =[]
         data1 =[]
         for i in resp1[1]:
-            data.append(i.split(" ")[0])    
+            data.append(i.split(" ")[0])
         for i in resp2[1]:
             data1.append(i.split(" ")[0])
         set_difference = set(data) - set(data1)
