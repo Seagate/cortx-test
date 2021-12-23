@@ -2359,9 +2359,7 @@ class TestPodFailure:
             "STARTED: Verify copy object during data pod shutdown "
             "(delete deployment) ")
 
-        bkt_obj_dict = {}
-        bkt_obj_dict[f"ha-bkt-{self.random_time}"] = \
-                    f"ha-obj-{self.random_time}"
+        bkt_obj_dict = {f"ha-bkt-{self.random_time}": f"ha-obj-{self.random_time}"}
         output = Queue()
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
@@ -2377,8 +2375,8 @@ class TestPodFailure:
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
-        LOGGER.info("Step 1: Create multiple buckets, upload an object to"
-                    " one of the buckets and start copying object to another buckets")
+        LOGGER.info("Step 1: Create bucket, upload an object to"
+                    " one of the bucket and start copying object to another bucket")
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -2386,11 +2384,11 @@ class TestPodFailure:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
-        LOGGER.info("Step 1: Successfully create multiple buckets, upload an object to "
-                    "one of the buckets and start copying object to another buckets")
+        LOGGER.info("Step 1: Successfully create bucket, upload an object to "
+                    "one of the bucket and start copying object to another bucket")
 
-        bkt_obj_dict1 = {}
-        bkt_obj_dict1[f"ha-bkt-{int((perf_counter_ns()))}"] = f"ha-obj-{int((perf_counter_ns()))}"
+        bkt_obj_dict1 = {f"ha-bkt-{int((perf_counter_ns()))}":
+                             f"ha-obj-{int((perf_counter_ns()))}"}
         bkt_obj_dict.update(bkt_obj_dict1)
         LOGGER.info("Step 2: Create multiple buckets and copy object from %s to other buckets in "
                     "background", self.bucket_name)
@@ -2410,10 +2408,10 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
-        LOGGER.info("Step 3: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           "deployment (unsafe)")
+        LOGGER.info("Step 3: Successfully shutdown/deleted pod %s by deleting "
+                    "deployment (unsafe)", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
         self.restore_pod = True
@@ -2453,20 +2451,21 @@ class TestPodFailure:
             res = output.get()
             put_etag = res[1]
 
-        LOGGER.info("Step 6: Download the uploaded objects & verify etags")
-        for key, val in bkt_obj_dict.items():
+        LOGGER.info("Step 7: Download the uploaded objects & verify etags")
+        for key, val in bkt_obj_dict1.items():
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          "object {key} of bucket {val}. "
+                                                          f"object {key} of bucket {val}. "
                                                           "Put and Get Etag mismatch")
-        LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
+        LOGGER.info("Step 7: Successfully download the uploaded objects & verify etags")
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.clear()
         bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
+        LOGGER.info("Step 8: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
@@ -2475,16 +2474,16 @@ class TestPodFailure:
                                                   put_etag=put_etag,
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+        LOGGER.info("Step 8: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        LOGGER.info("Step 9: Download the uploaded %s on %s & verify etags.", object3, bucket3)
         resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
                                                       f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info(
             "COMPLETED: Verify copy object during data pod shutdown (delete deployment)")
@@ -2501,28 +2500,27 @@ class TestPodFailure:
             "STARTED: Verify IOs before and after server pod failure; pod shutdown "
             "by making replicas=0")
 
-        LOGGER.info(
-            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean = None
         LOGGER.info("Step 1: IOs are completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the server pod safely by making replicas=0")
         LOGGER.info("Get server pod name to be shutdown")
-        server_pod_list = self.node_master_list[0].get_all_pods(pod_prefix= \
-                                             const.SERVER_POD_NAME_PREFIX)
+        server_pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.SERVER_POD_NAME_PREFIX)
         server_pod_name = random.sample(server_pod_list, 1)
         LOGGER.info("Shutdown pod %s", server_pod_name)
-        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=server_pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0,
+                                                            pod_name=server_pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to shutdown Server pod {server_pod_name} "
-                                            "by making replicas=0")
+                                           "by making replicas=0")
         LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", server_pod_name)
         self.deployment_name = resp[1]
         self.restore_pod = True
@@ -2538,28 +2536,27 @@ class TestPodFailure:
                                                            fail=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in offline state")
+        LOGGER.info("Step 4: Services of %s are in offline state", server_pod_name)
 
         LOGGER.info("Step 5: Check services status on remaining pods %s",
-        server_pod_list.remove(server_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(server_pod_list=server_pod_list.remove
-        (server_pod_name),fail=False)
+                    server_pod_list.remove(server_pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status \
+            (server_pod_list=server_pod_list.remove(server_pod_name), fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info(
-            "Step 6: Start IOs on degraded cluster.")
+        LOGGER.info("Step 6: Start IOs on degraded cluster.")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list[resp[2].keys()][0])
         LOGGER.info("Step 6: IOs are completed successfully.")
 
-        LOGGER.info(
-            "Completed: Verify IOs before and after server pod failure; pod shutdown "
-            "by making replicas 0")
+        LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
+                    "by making replicas 0")
+
