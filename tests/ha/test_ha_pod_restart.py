@@ -70,7 +70,6 @@ class TestPodRestart:
         cls.hlth_master_list = []
         cls.host_worker_list = []
         cls.node_worker_list = []
-        cls.hlth_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
@@ -95,9 +94,6 @@ class TestPodRestart:
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
-                cls.hlth_worker_list.append(Health(hostname=cls.host,
-                                                   username=cls.username[node],
-                                                   password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
