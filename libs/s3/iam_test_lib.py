@@ -357,6 +357,22 @@ class IamTestLib(IamLib):
 
         return True, user_dict
 
+    def delete_user_login_profile(self, user_name):
+        """
+        Deletes the password for the specified IAM user.
+
+        :param user_name: The name of the user whose password you want to delete.
+        """
+        try:
+            response = super().delete_user_login_profile(user_name)
+        except ClientError as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.delete_user_login_profile.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error)
+
+        return True, response
+
     def s3_user_operation(
             self,
             user_name: str = None,
