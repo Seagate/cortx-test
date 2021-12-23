@@ -25,24 +25,24 @@ HA test suite for Pod restart
 import logging
 import os
 import random
-import time
 import threading
-from time import perf_counter_ns
+import time
 from multiprocessing import Queue
+from time import perf_counter_ns
 
 import pytest
 
+from commons import constants as const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
-from commons import constants as const
+from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
-from config.s3 import S3_CFG
 from config import HA_CFG
+from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
