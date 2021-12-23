@@ -25,10 +25,16 @@ import logging
 from time import perf_counter_ns
 
 import pytest
+from config import CSM_CFG
+from config.s3 import IAM_POLICY_CFG
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
+from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.iam_policy_test_lib import IamPolicyTestLib
 
 
 class TestIamPolicy:
@@ -40,14 +46,23 @@ class TestIamPolicy:
         """Setup method is called before/after each test in this test suite."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
-        self.iam_acc_name = "iam-policy-usr{}".format(perf_counter_ns())
+        self.iam_user = "iam-policy-usr{}".format(perf_counter_ns())
+        self.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestIamPolicyOperations")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
+        self.iam_tobj = IamTestLib()
+        response = self.iam_tobj.create_iam_user(self.iam_user, self.iam_password)
+        assert_utils.assert_true(response[0], response[1])
+        iam_access_key = response[1]['User']['AccessKeyId']
+        iam_secret_key = response[1]['User']['SecretAccessKey']
+        self.iam_policy_obj = IamPolicyTestLib(access_key=iam_access_key, secret_key=iam_secret_key)
         self.log.info("ENDED: Setup operations")
         yield
         self.log.info("STARTED: Teardown operations")
+        response = self.iam_tobj.delete_iam_user(self.iam_user)
+        assert_utils.assert_true(response[0], response[1])
         if system_utils.path_exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
@@ -145,9 +160,18 @@ class TestIamPolicy:
     def test_32770(self):
         """Create Policy using minimum policy elements."""
         self.log.info("STARTED: Create Policy using minimum policy elements.")
+        test_32770_cfg = IAM_POLICY_CFG["test_32770"]
         self.log.info("Step 1: Create policy using Effect, Statement, Action & Resource.")
+        response = self.iam_policy_obj.create_policy(
+            test_32770_cfg["policy_name"], test_32770_cfg["policy_document"])
+        assert_utils.assert_true(response[0], response)
+        policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy and make sure it is getting listed.")
+        response = self.iam_policy_obj.list_policies()
+        assert_utils.assert_true(response[0], response)
         self.log.info("Step 3: Get policy using ARN in step 1.")
+        response = self.iam_policy_obj.get_policy(policy_arn)
+        assert_utils.assert_true(response[0], response)
         self.log.info("ENDED: Create Policy using minimum policy elements.")
 
     @pytest.mark.s3_ops
@@ -156,11 +180,42 @@ class TestIamPolicy:
     def test_32771(self):
         """Create Policy using required policy document elements missing."""
         self.log.info("STARTED: Create Policy using required policy document elements missing.")
+        test_32771_cfg = IAM_POLICY_CFG["test_32771"]
         self.log.info("Step 1: Create policy using only Version.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_version"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 2: Create policy using only Sid.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_sid"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 3: Create policy using only Effect.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_effect"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 4: Create policy using only Action.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_action"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 5: Create policy using only Resource.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_resource"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("ENDED: Create Policy using required policy document elements missing.")
 
     @pytest.mark.s3_ops
@@ -169,10 +224,19 @@ class TestIamPolicy:
     def test_32772(self):
         """Create Policy using tags values."""
         self.log.info("STARTED: Create Policy using tags values.")
+        test_32772_cfg = IAM_POLICY_CFG["test_32772"]
         self.log.info("Step 1: Create valid policy using Name, Tags, Policy Document with elements"
                       " Version, Effect, Action, Resource.")
+        response = self.iam_policy_obj.create_policy(
+            test_32772_cfg["policy_name"], test_32772_cfg["policy_document"])
+        assert_utils.assert_true(response[0], response)
+        policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy.")
+        response = self.iam_policy_obj.list_policies()
+        assert_utils.assert_true(response[0], response)
         self.log.info("Step 3: Get policy using ARN in step 1.")
+        response = self.iam_policy_obj.get_policy(policy_arn)
+        assert_utils.assert_true(response[0], response)
         self.log.info("ENDED: Create Policy using tags values.")
 
     @pytest.mark.s3_ops
@@ -182,6 +246,12 @@ class TestIamPolicy:
         """Get policy using invalid ARN."""
         self.log.info("STARTED: Get policy using invalid ARN.")
         self.log.info("Get IAM policy with invalid ARN.")
+        try:
+            response = self.iam_policy_obj.get_policy(IAM_POLICY_CFG["invalid_arn"]["arn"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
+        self.log.info("ENDED: Delete policy using invalid ARN.")
         self.log.info("ENDED: Get policy using invalid ARN.")
 
     @pytest.mark.s3_ops
@@ -191,6 +261,11 @@ class TestIamPolicy:
         """Delete policy using invalid ARN."""
         self.log.info("STARTED: Delete policy using invalid ARN.")
         self.log.info("Delete IAM policy with invalid ARN.")
+        try:
+            response = self.iam_policy_obj.delete_policy(IAM_POLICY_CFG["invalid_arn"]["arn"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("ENDED: Delete policy using invalid ARN.")
 
     @pytest.mark.s3_ops
