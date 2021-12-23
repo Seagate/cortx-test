@@ -495,6 +495,7 @@ class TestPodRestart:
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
         system_utils.remove_file(self.multipart_obj_path)
         system_utils.remove_file(download_path)
+        LOGGER.info("COMPLETED: Test to verify multipart upload after data pod restart.")
 
     # pylint: disable=too-many-locals
     @pytest.mark.ha
@@ -634,8 +635,8 @@ class TestPodRestart:
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 10: Listed parts of multipart upload: %s", res[1])
 
-        LOGGER.info("Step 11: Completing multipart upload Completing multipart upload and check "
-                    "upload size is %s", file_size * const.Sizes.MB)
+        LOGGER.info("Step 11: Completing multipart upload & check upload size is %s", file_size *
+                    const.Sizes.MB)
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
                                                        self.object_name)
         assert_utils.assert_true(res[0], res)
@@ -660,6 +661,9 @@ class TestPodRestart:
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 12: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
+        system_utils.remove_file(self.multipart_obj_path)
+        system_utils.remove_file(download_path)
         LOGGER.info("COMPLETED: Test to verify partial multipart upload after data pod restart.")
 
     @pytest.mark.ha
