@@ -661,7 +661,7 @@ class TestPodRestart:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain passed IOs: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 6: Successfully completed READs and verified DI on the written data in "
                     "background")
 
