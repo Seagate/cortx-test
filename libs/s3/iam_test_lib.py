@@ -100,7 +100,8 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("listing all users")
-            response = super().list_users()["Users"]
+            response = poll(super().list_users)
+            response = response["Users"]
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
@@ -187,7 +188,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("list access keys.")
-            response = super().list_access_keys(user_name)
+            response = poll(super().list_access_keys, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
@@ -264,8 +265,8 @@ class IamTestLib(IamLib):
                 user_name,
                 password_reset)
             user_dict = {}
-            login_profile = super().create_user_login_profile(
-                user_name, password, password_reset)
+            login_profile = poll(super().create_user_login_profile,
+                                 user_name, password, password_reset)
             user_dict['user_name'] = login_profile.user_name
             user_dict['create_date'] = login_profile.create_date.strftime(
                 "%Y-%m-%d %H:%M:%S")
@@ -369,7 +370,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating access key for the specified user")
-            response = super().create_access_key(user_name)
+            response = self.create_access_key(user_name)[1]
             LOGGER.info("user_acc_key: %s", str(response))
             acc_key = response["AccessKey"]["AccessKeyId"]
             sec_key = response["AccessKey"]["SecretAccessKey"]
@@ -387,7 +388,7 @@ class IamTestLib(IamLib):
             LOGGER.info(op_bl)
             op_db = s3obj.delete_bucket(bucket_name)
             LOGGER.info(op_db)
-            res = super().delete_access_key(user_name, acc_key)
+            res = self.delete_access_key(user_name, acc_key)
             LOGGER.info("Access Key deleted successfully: %s", str(res))
             LOGGER.info("Completed CRUD operations for s3 Data Path")
             response = {"AccountName": user_name, "BucketName": bucket_name}
@@ -410,7 +411,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating access key for the specified user")
-            user_acckey = super().create_access_key(user_name)
+            user_acckey = self.create_access_key(user_name)[1]
             response = user_acckey
             acc_key = response["AccessKey"]["AccessKeyId"]
             LOGGER.info("Updating the access key")
@@ -430,12 +431,11 @@ class IamTestLib(IamLib):
 
         return True, user_name
 
-    @staticmethod
-    def s3_ops_using_temp_auth_creds(
-            access_key: str = None,
-            secret_key: str = None,
-            session_token: str = None,
-            bucket_name: str = None) -> tuple:
+    def s3_ops_using_temp_auth_creds(self,
+                                     access_key: str = None,
+                                     secret_key: str = None,
+                                     session_token: str = None,
+                                     bucket_name: str = None) -> tuple:
         """
         Performing s3 operations using temp auth creds and session token.
 
@@ -447,7 +447,8 @@ class IamTestLib(IamLib):
         """
         LOGGER.info("Performing s3 operations using temp auth credentials.")
         s3_resource = boto3.resource("s3",
-                                     verify=S3_CFG["s3_cert_path"],
+                                     use_ssl=self.use_ssl,
+                                     verify=self.iam_cert_path,
                                      aws_access_key_id=access_key,
                                      aws_secret_access_key=secret_key,
                                      endpoint_url=S3_CFG["s3_url"],
@@ -495,9 +496,7 @@ class IamTestLib(IamLib):
                 account_name, email, LDAP_USERNAME, LDAP_PASSWD)
             acc_li.append(account_name)
             iam_obj = IamLib(access_key=access_key,
-                             secret_key=secret_key,
-                             endpoint_url=S3_CFG["iam_url"],
-                             iam_cert_path=S3_CFG["iam_cert_path"])
+                             secret_key=secret_key)
             for _ in range(int(user_count)):
                 user_name = "testusr{}".format(str(time.time()))
                 iam_obj.create_user(user_name)

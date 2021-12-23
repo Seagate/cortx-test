@@ -387,6 +387,17 @@ class LogicalNode(Host):
 
         return container_list
 
+    def get_recent_pod_name(self):
+        """
+        Helper function to get name of recently created pod
+        :return: str
+        """
+        log.info("Get most recently created pod name")
+        cmd = commands.KUBECTL_GET_RECENT_POD
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        pod_name = output[0].strip()
+        return pod_name
+
     def get_all_pods(self, pod_prefix=None) -> list:
         """
         Helper function to get all pods name with pod_prefix
@@ -404,3 +415,13 @@ class LogicalNode(Host):
             pods_list = pods
         log.debug("Pods list : %s", pods_list)
         return pods_list
+
+    def get_machine_id_for_pod(self, pod_name: str):
+        """
+        Getting machine id for given pod
+        """
+        log.info("Getting machine id for pod: %s", pod_name)
+        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                 command_suffix="cat /etc/machine-id",
+                                 decode=True)
+        return resp
