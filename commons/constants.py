@@ -31,7 +31,7 @@ NWORKERS = 32
 # run in parallel.
 NGREENLETS = 32
 
-#SB contansts
+# SB contansts
 MIN = 800000
 MAX = 1300000
 
@@ -46,6 +46,7 @@ POD_NAME_PREFIX = "cortx-data-pod"
 HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
+HA_POD_NAME_PREFIX = "cortx-ha-pod"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -63,7 +64,7 @@ RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
-                        "/storage_enclosure.sls"
+                         "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
@@ -93,7 +94,7 @@ SELINUX_FILE_PATH = "/etc/selinux/config"
 HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
                             "Accept": "text/plain"}
 URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
-                      "/api/public/v1/get_tripw"
+                       "/api/public/v1/get_tripw"
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
@@ -120,11 +121,11 @@ SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
-LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
-LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
+LOCAL_COPY_PATH = tempfile.gettempdir() + "/authserver.properties"
+LOCAL_CONF_PATH = tempfile.gettempdir() + "/cluster.conf"
 CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
-CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
+CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 
@@ -269,7 +270,6 @@ AWS_CLI_ERROR = ["ServiceUnavailable",
                  "Read timeout"
                  "Connection was closed"]
 
-
 # cortxcli constants
 S3BUCKET_HELP = [
     f'usage: cortxcli s3buckets [-h] {{show,create,delete}}',
@@ -298,12 +298,12 @@ S3BUCKET_DELETE_HELP = [
     "optional arguments:",
     "-h, --help   show this help message and exit"]
 S3ACCOUNT_HELP_CMDS = [
-        "s3iamusers",
-        "support_bundle",
-        "system",
-        "s3buckets",
-        "s3accounts",
-        "s3bucketpolicy"]
+    "s3iamusers",
+    "support_bundle",
+    "system",
+    "s3buckets",
+    "s3accounts",
+    "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
                   "{show,create,reset_password}",
                   "show                Displays S3 Accounts On the cli",
@@ -332,7 +332,7 @@ JSON_LIST_FORMAT = "json"
 TABLE_LIST_FORMAT = "table"
 XML_LIST_FORMAT = "xml"
 SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
-CSM_USER_HELP =[
+CSM_USER_HELP = [
     "support_bundle",
     "alerts",
     "s3accounts",
@@ -346,18 +346,19 @@ TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 PIP_CONFIG = "/etc/pip.conf"
 
-#Locking server
+# Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
 
+
 class SwAlerts:
     SVCS_3P = [
-#        "elasticsearch.service", # brings down the csm
-#        "hare-consul-agent.service", # Disabled on VM EOS-20861
-#        "slapd.service", # brings down the csm
+        # "elasticsearch.service", # brings down the csm
+        # "hare-consul-agent.service", # Disabled on VM EOS-20861
+        # "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-#        "lnet.service", brings down motr-io service
+        # "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
@@ -373,6 +374,7 @@ class SwAlerts:
     SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
 
     SVC_LOAD_TIMEOUT_SEC = 30
+
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
@@ -395,19 +397,24 @@ class Sizes:
 KB = 1024
 MB = KB * KB
 GB = MB * MB
-#Removing 0Byte File Size for now.
-NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB,
+
+# Removing 0Byte File Size for now.
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB, 1 * MB, 4 * MB, 8 * MB,
                        16 * MB, 32 * MB, 64 * MB, 128 * MB]
+
 MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
                           128 * MB, 256 * MB, 512 * MB, 1024 * MB]
 
+OFFSET = 1 * KB  # Offset for mis aligned sizes
+
 NORMAL_UPLOAD_SIZES_IN_MB = [1, 4, 8, 16, 32, 64, 128]
-MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256,512, 1024]
+
+MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
-                "manifest", "uds", "elasticsearch", "utils", "HA"]
+                                 "manifest", "uds", "elasticsearch", "utils", "HA"]
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
