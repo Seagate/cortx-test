@@ -308,6 +308,7 @@ class TestProvK8Cortx:
         LOGGER.info("Step 3: Check whether cluster restart command ran successfully.")
         resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
