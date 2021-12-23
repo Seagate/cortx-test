@@ -30,10 +30,8 @@ from time import perf_counter_ns
 
 import pytest
 
-from commons import constants as const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
 from commons import constants as const
@@ -75,7 +73,6 @@ class TestPodRestart:
         cls.hlth_master_list = []
         cls.host_worker_list = []
         cls.node_worker_list = []
-        cls.hlth_master_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
