@@ -146,6 +146,11 @@
     "password": ""
   }
 },
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
 "s3endpoints":
 {
     "s3_io": "fqdn:port",
