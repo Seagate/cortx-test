@@ -321,7 +321,7 @@ class TestDIDurability:
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
         for file_size in NORMAL_UPLOAD_SIZES:
-            s3_obj = self.s3_test_obj = S3TestLib()
+            s3_obj = S3TestLib()
             self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
