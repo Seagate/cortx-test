@@ -21,19 +21,34 @@
 """Tests Account capacity scenarios using REST API
 """
 import logging
+import os
 import random
 import time
 from http import HTTPStatus
-from multiprocessing import Pool
+from time import perf_counter_ns
+
+from multiprocessing import Pool, Process
 
 import pytest
 
 from commons import cortxlogging, configmanager
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.utils import assert_utils
+from commons.params import TEST_DATA_FOLDER
+from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import s3_misc
+from config.s3 import MPART_CFG
+from libs.s3.s3_common_test_lib import S3BackgroundIO
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from commons.utils.s3_utils import get_unaligned_parts
+from commons.utils.s3_utils import get_multipart_etag
+from commons.utils import system_utils
+from commons.utils.s3_utils import get_precalculated_parts
+from commons.utils.system_utils import create_file, remove_file, path_exists
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestAccountCapacity():
@@ -49,6 +64,19 @@ class TestAccountCapacity():
         cls.s3user = RestS3user()
         cls.buckets_created = []
         cls.account_created = []
+        cls.bucket_name = "s3-bkt-{}".format(perf_counter_ns())
+        cls.s3_test_obj = S3TestLib()
+        cls.s3_mp_test_obj = S3MultipartTestLib()
+        cls.s3_test_obj = S3TestLib()
+        cls.s3_background_io = S3BackgroundIO(s3_test_lib_obj=cls.s3_test_obj)
+        cls.s3_rest_obj = S3AccountOperationsRestAPI()
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "MultipartUploadDelete")
+        cls.object_name = "s3-upload-obj-{}".format(perf_counter_ns())
+        cls.s3_mp_test_obj = S3MultipartTestLib()
+        cls.s3_accounts = []
+        if not system_utils.path_exists(cls.test_dir_path):
+            system_utils.make_dirs(cls.test_dir_path)
+        cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.test_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_account_capacity.yaml")
 
@@ -246,3 +274,219 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33365')
+    def test_33365(self):
+        """
+        Test data usage per account while performing multipart uploads..
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Multipart upload - create few parts more than 5 GB size")
+        mp_config = MPART_CFG["test_33365"]
+        file_size = mp_config["file_size"]
+        total_parts = mp_config["total_parts"]
+        self.log.info("Creating a bucket with name : %s", self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Initiating multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("Uploading parts into bucket")
+        try:
+            res = self.s3_mp_test_obj.upload_parts(
+                mpu_id,
+                self.bucket_name,
+                self.object_name,
+                file_size,
+                total_parts=total_parts,
+                multipart_obj_path=self.mp_obj_path)
+            assert_utils.assert_false(res[0], res[1])
+            assert_utils.assert_not_equal(len(res[1]), total_parts, res[1])
+        except CTException as error:
+            self.log.error(error.message)
+            assert_utils.assert_in(
+                MPART_CFG["test_33365"]["err_msg"],
+                error.message,
+                error.message)
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33367')
+    def test_33367(self):
+        """
+        Testing copying a copied object uploaded using multipart.
+
+        Initiate a multipart upload, upload parts and complete it.
+        Create multiple copies of the uploaded object.
+        Verify copied objects
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("STARTED: Test copying a copied object uploaded using multipart")
+        mp_config = MPART_CFG["test_33367"]
+        self.log.info("Start background S3 IOs")
+        self.s3_background_io.start(log_prefix="TEST-33367_s3bench_ios", duration="0h2m")
+        self.log.info("Step 1: Initiating multipart upload")
+        resp = self.s3_mp_test_obj.create_multipart_upload(
+            self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        mpu_id = resp[1]["UploadId"]
+        self.log.info("Step 2: Upload unaligned parts")
+        res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_true(path_exists(self.mp_obj_path))
+        parts = get_precalculated_parts(
+            self.mp_obj_path, mp_config["part_sizes"], chunk_size=mp_config["chunk_size"])
+        source_etag = get_multipart_etag(parts)
+        status, uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
+            upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
+            parts=parts)
+        assert_utils.assert_true(status, uploaded_parts)
+        sorted_part_list = sorted(uploaded_parts, key=lambda x: x['PartNumber'])
+        self.log.info("Step 3: Complete multipart upload")
+        resp = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id=mpu_id, parts=sorted_part_list, bucket=self.bucket_name,
+            object_name=self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(source_etag, resp[1]["ETag"])
+        resp = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.object_name, resp[1], resp[1])
+        self.log.info("Step 4: Copy multipart object 10 times")
+        src_bkt = self.bucket_name
+        for _ in range(10):
+            dst_bkt = "mp-bkt-{}".format(perf_counter_ns())
+            self.log.info("Creating a bucket with name : %s", dst_bkt)
+            resp = self.s3_test_obj.create_bucket(dst_bkt)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_equal(resp[1], dst_bkt, resp[1])
+            self.log.info("Created a bucket with name : %s", dst_bkt)
+            self.log.info("Copy object from %s to %s", src_bkt, dst_bkt)
+            resp = self.s3_test_obj.copy_object(
+                source_bucket=src_bkt, source_object=self.object_name, dest_bucket=dst_bkt,
+                dest_object=self.object_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            copy_etag = resp[1]['CopyObjectResult']['ETag']
+            self.log.info("Verify copy and source etags match")
+            assert_utils.assert_equal(source_etag, copy_etag)
+            src_bkt = dst_bkt
+        self.log.info("Stop background S3 IOs")
+        self.s3_background_io.stop()
+        self.log.info("ENDED: Test copying a copied object uploaded using multipart")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33368')
+    def test_33368(self):
+        """
+        Multipart upload - create few parts more than 5 GB size.
+
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("STARTED: Multipart upload - create few parts more than 5 GB size")
+        mp_config = MPART_CFG["test_33368"]
+        file_size = mp_config["file_size"]
+        total_parts = mp_config["total_parts"]
+        self.log.info("Creating a bucket with name : %s", self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Initiating multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("Uploading parts into bucket")
+        try:
+            res = self.s3_mp_test_obj.upload_parts(
+                mpu_id,
+                self.bucket_name,
+                self.object_name,
+                file_size,
+                total_parts=total_parts,
+                multipart_obj_path=self.mp_obj_path)
+            assert_utils.assert_false(res[0], res[1])
+            assert_utils.assert_not_equal(len(res[1]), total_parts, res[1])
+        except CTException as error:
+            self.log.error(error.message)
+            assert_utils.assert_in(
+                MPART_CFG["test_33368"]["err_msg"],
+                error.message,
+                error.message)
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("ENDED: Multipart upload - create few parts more than 5 GB size")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33366')
+    def test_33366(self):
+        """
+        Abort multipart while upload part is in progress.
+        Initiate a multipart upload, upload parts.Abort it before upload part operations complete.
+        Verify with list multipart
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("STARTED: Test aborting multipart upload that is in progress")
+        mp_config = MPART_CFG["test_33366"]
+        self.log.info("Start background S3 IOs")
+        self.s3_background_io.start(log_prefix="TEST-33366_s3bench_ios", duration="0h2m")
+        self.log.info("Step 1: Initiate multipart upload")
+        resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        mpu_id = resp[1]["UploadId"]
+        self.log.info("Step 2: Upload unaligned parts")
+        res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_true(path_exists(self.mp_obj_path))
+        parts = get_unaligned_parts(
+            self.mp_obj_path, total_parts=mp_config["total_parts"],
+            chunk_size=mp_config["chunk_size"], random=True)
+        process = Process(
+            target=self.s3_mp_test_obj.upload_parts_parallel,
+            args=(mpu_id, self.bucket_name, self.object_name), kwargs={"parts": parts})
+        process.start()
+        self.log.info("Sleep for 5 seconds for multipart uploads to start")
+        time.sleep(5)
+        self.log.info("Step 3: Abort multipart upload")
+        resp = self.s3_mp_test_obj.abort_multipart_upload(
+            self.bucket_name, self.object_name, mpu_id)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Wait for upload parts to complete and check list multipart "
+                      "  uploads result")
+        while process.is_alive():
+            resp = self.s3_mp_test_obj.list_multipart_uploads(self.bucket_name)
+            if mpu_id not in resp[1]:
+                break
+        self.log.info("Step 4: Check list multipart uploads result does not contain "
+                      "upload id")
+        assert_utils.assert_not_in(mpu_id, resp[1], resp[1])
+        process.join()
+        self.log.info("Stop background S3 IOs")
+        self.s3_background_io.stop()
+        self.log.info("ENDED: Test aborting multipart upload that is in progress")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
