@@ -2371,7 +2371,6 @@ class TestPodFailure:
                     "object from %s bucket to other buckets, download objects "
                     "and verify etags", self.bucket_name)
 
-
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be shutdown")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -2391,20 +2390,34 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
-        LOGGER.info("Step 4: Download the uploaded objects & verify etags")
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod are in offline state")
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+        LOGGER.info("Step 6: Download the uploaded objects & verify etags")
         for key, val in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          "object {key} of bucket {val}. "
+                                                          f"object {key} of bucket {val}. "
                                                           "Put and Get Etag mismatch")
-        LOGGER.info("Step 4: Successfully download the uploaded objects & verify etags")
+        LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.pop(list(bkt_obj_dict.keys())[-1])
         bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 5: Perform copy of %s from already created/uploaded %s to %s and verify "
+        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
@@ -2413,16 +2426,16 @@ class TestPodFailure:
                                                   put_etag=put_etag,
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed copy of %s from already created/uploaded %s to %s and "
+        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 6: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
         resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
                                                       f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 6: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info(
             "COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
@@ -2474,7 +2487,6 @@ class TestPodFailure:
                     "object from %s bucket to other buckets, download objects "
                     "and verify etags", self.bucket_name)
 
-
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -2517,12 +2529,13 @@ class TestPodFailure:
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          "object {key} of bucket {val}. "
+                                                          f"object {key} of bucket {val}. "
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.pop(list(bkt_obj_dict.keys())[-1])
         bkt_obj_dict[bucket3] = object3
         LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
