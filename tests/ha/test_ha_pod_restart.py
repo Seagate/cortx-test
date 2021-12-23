@@ -663,7 +663,8 @@ class TestPodRestart:
 
         LOGGER.info("Verifying responses from background process")
         responses = ()
-        while len(responses) != 2: responses = output.get(timeout=60)  # pylint: disable=C0321
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
