@@ -24,6 +24,8 @@ import boto3
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
+from libs.s3 import s3_test_lib
+from libs.s3 import iam_test_lib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,26 +38,18 @@ def create_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
-
-    region = kwargs.get("region_name", S3_CFG["region"])
-    LOGGER.debug("Region : %s", region)
-
-    iam = boto3.client("iam",
-                       verify=False,
-                       endpoint_url=endpoint,
-                       aws_access_key_id=access_key,
-                       aws_secret_access_key=secret_key,
-                       region_name=region,
-                       **kwargs)
-    LOGGER.debug("IAM client created")
-    iam.create_user(UserName=user_name)
+    iam_test_obj = iam_test_lib.IamTestLib(access_key, secret_key, endpoint)
+    iam_test_obj.create_user(user_name)
     LOGGER.debug("Create IAM user command success")
     result = False
-    for iam_user in iam.list_users()["Users"]:
+    resp = iam_test_obj.list_users()
+    user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
+    # for iam_user in iam_test_obj.list_users()["Users"]:
+    for iam_user in user_list:
         if user_name == iam_user['UserName']:
             LOGGER.debug("IAM user %s found", iam_user)
             result = True
-    del iam
+    del iam_test_obj
     LOGGER.debug("Verified created IAM user exits")
     return result
 
@@ -68,27 +62,19 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
-
     region = kwargs.get("region_name", S3_CFG["region"])
     LOGGER.debug("Region : %s", region)
-
-    iam = boto3.client("iam",
-                       verify=False,
-                       endpoint_url=endpoint,
-                       aws_access_key_id=access_key,
-                       aws_secret_access_key=secret_key,
-                       region_name=region,
-                       **kwargs)
-    LOGGER.debug("IAM client created")
-
-    iam.delete_user(UserName=user_name)
+    iam_test_obj = iam_test_lib.IamTestLib(access_key, secret_key, endpoint)
+    iam_test_obj.delete_user(user_name)
     LOGGER.debug("Delete IAM user command success")
-
     result = False
-    for iam_user in iam.list_users()["Users"]:
+    resp = iam_test_obj.list_users()
+    user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
+    # for iam_user in iam_test_obj.list_users()["Users"]:
+    for iam_user in user_list:
         if user_name == iam_user['UserName']:
             result = True
-    del iam
+    del iam_test_obj
     LOGGER.debug("Verified deleted IAM user does not exits")
     return not result
 
@@ -101,28 +87,17 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
-    region = S3_CFG["region"]
-    LOGGER.debug("Region : %s", region)
-
-    s3_resource = boto3.resource('s3', verify=False,
-                        endpoint_url=endpoint,
-                        aws_access_key_id=access_key,
-                        aws_secret_access_key=secret_key,
-                        region_name=region,
-                        **kwargs)
-    LOGGER.debug("S3 boto resource created")
-
-    s3_resource.create_bucket(Bucket=bucket_name)
+    s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint)
+    s3_obj.create_bucket(Bucket=bucket_name)
     LOGGER.debug("S3 bucket created")
-
+    _ , bktlist = s3_obj.bucket_list()
     result = False
-    for bucket in s3_resource.buckets.all():
+    for bucket in bktlist:
         if bucket.name == bucket_name:
             LOGGER.debug("S3 bucket %s is listed", bucket)
             result = True
             break
-    del s3_resource
+    del s3_obj
     LOGGER.debug("Verified created bucket exists")
     return result
 
@@ -135,34 +110,19 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
-    region = S3_CFG["region"]
-    LOGGER.debug("Region : %s", region)
-
-    s3_resource = boto3.resource('s3', verify=False,
-                        endpoint_url=endpoint,
-                        aws_access_key_id=access_key,
-                        aws_secret_access_key=secret_key,
-                        region_name=region,
-                        **kwargs)
-    LOGGER.debug("S3 boto resource created")
-
-    bucket = s3_resource.Bucket(bucket_name)
-    LOGGER.debug("Delete all associated objects.")
-    bucket.objects.all().delete()
-
-    LOGGER.debug("Delete bucket : %s", bucket)
-    bucket.delete()
-
+    s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint)
+    LOGGER.debug("Delete all associated objects & bucket.")
+    s3_obj.delete_bucket(bucket_name, force=True)
+    _ , bktlist = s3_obj.bucket_list()
     result = False
-    for bucket in s3_resource.buckets.all():
+    for bucket in bktlist:
         if bucket.name == bucket_name:
+            LOGGER.debug("S3 bucket %s is listed", bucket)
             result = True
             break
-    del s3_resource
+    del s3_obj
     LOGGER.debug("Verified bucket is deleted.")
     return not result
-
 
 def create_put_objects(object_name: str, bucket_name: str,
                        access_key: str, secret_key: str, object_size:int=10, **kwargs):
@@ -170,21 +130,11 @@ def create_put_objects(object_name: str, bucket_name: str,
     PUT object in the given bucket with access key and secret key.
     :param object_size: size of the file in MB.
     """
-
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
-    region = S3_CFG["region"]
-    LOGGER.debug("Region : %s", region)
-
-    s3_resource = boto3.resource('s3', verify=False,
-                        endpoint_url=endpoint,
-                        aws_access_key_id=access_key,
-                        aws_secret_access_key=secret_key,
-                        region_name=region,
-                        **kwargs)
-    LOGGER.debug("S3 boto resource created")
-
+    s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint)
     LOGGER.debug("Created an object : %s", object_name)
     file_path = os.path.join(TEST_DATA_FOLDER, object_name)
     resp = system_utils.create_file(file_path, object_size)
@@ -193,16 +143,15 @@ def create_put_objects(object_name: str, bucket_name: str,
         return False
     data = open(file_path, 'rb')
     LOGGER.debug("Put object: %s in the bucket: %s", object_name, bucket_name)
-    s3_resource.Bucket(bucket_name).put_object(Key=object_name, Body=data)
+    resp = s3_obj.put_object(bucket_name, object_name, file_path)
     data.close()
-
+    _ , objlist = s3_obj.object_list(bucket_name)
     result = False
-    for my_bucket_object in s3_resource.Bucket(bucket_name).objects.all():
+    for my_bucket_object in objlist:
         if my_bucket_object.key == object_name:
             result = True
             break
-    del s3_resource
+    del s3_obj
     system_utils.remove_file(file_path)
-
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
     return result
