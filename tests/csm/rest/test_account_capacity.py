@@ -24,10 +24,12 @@ import logging
 import random
 import time
 from http import HTTPStatus
+from multiprocessing import Pool
 
 import pytest
 
-from commons import cortxlogging
+from commons import cortxlogging, configmanager
+from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.utils import assert_utils
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
@@ -47,6 +49,8 @@ class TestAccountCapacity():
         cls.s3user = RestS3user()
         cls.buckets_created = []
         cls.account_created = []
+        cls.test_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/test_rest_account_capacity.yaml")
 
     def teardown_method(self):
         """
@@ -106,3 +110,139 @@ class TestAccountCapacity():
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("verified capacity of account after put operations")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33369')
+    def test_33369(self):
+        """
+        Test data usage per account while performing concurrent IO operations on multiple accounts.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        s3acct_cnt = self.test_conf["test_33369"]["s3acct_cnt"]
+        validate_data_usage = self.test_conf["test_33369"]["validate_data_usage"]
+
+        data_all = []
+        self.log.info("Creating  %s S3 account and buckets", s3acct_cnt)
+        for cnt in range(0, s3acct_cnt):
+            self.log.info("Create S3 Account : %s", cnt)
+            resp = self.s3user.create_s3_account()
+            assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
+            access_key = resp.json()["access_key"]
+            secret_key = resp.json()["secret_key"]
+            s3_user = resp.json()["account_name"]
+            self.account_created.append(s3_user)
+            bucket = f"test-33371-s3user{cnt}-bucket"
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket, access_key, secret_key)
+            assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
+            self.log.info("bucket created successfully")
+            self.buckets_created.append([bucket, access_key, secret_key])
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
+
+        with Pool(len(data_all)) as pool:
+            resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
+        assert_utils.assert_true(all(resp),
+                                 "Failure in Performing IO operations on S3 accounts")
+
+        self.log.info("##### Test Ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33370')
+    def test_33370(self):
+        """
+        Test data usage per account while performing concurrent IO operations on multiple buckets
+        in same account.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        bucket_cnt = self.test_conf["test_33370"]["bucket_cnt"]
+        validate_data_usage = self.test_conf["test_33370"]["validate_data_usage"]
+
+        data_all = []
+        self.log.info("Create S3 Account")
+        resp = self.s3user.create_s3_account()
+        assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+
+        for cnt in range(0, bucket_cnt):
+            bucket = f"test-33370-bucket{cnt}"
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket, access_key, secret_key)
+            assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
+            self.log.info("bucket created successfully")
+            self.buckets_created.append([bucket, access_key, secret_key])
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
+
+        with Pool(len(data_all)) as pool:
+            resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
+        assert_utils.assert_true(all(resp),
+                                 "Failure in Performing IO operations on S3 accounts")
+
+        self.log.info("Verify capacity of account after put operations")
+        expected_data_usage = bucket_cnt * sum(NORMAL_UPLOAD_SIZES_IN_MB)
+        self.log.info("Expected data usage in MB : %s", expected_data_usage)
+        s3_account = [{"account_name": s3_user, "capacity": expected_data_usage, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("##### Test Ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33371')
+    def test_33371(self):
+        """
+        Test data usage per account while performing concurrent IO operations on same bucket.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        parallel_io_cnt = self.test_conf["test_33371"]["parallel_io_cnt"]
+        validate_data_usage = self.test_conf["test_33371"]["validate_data_usage"]
+
+        data_all = []
+        self.log.info("Create S3 Account")
+        resp = self.s3user.create_s3_account()
+        assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+
+        bucket = "test-33371-bucket"
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      bucket, access_key, secret_key)
+        assert s3_misc.create_bucket(bucket, access_key, secret_key), "Failed to create bucket"
+        self.log.info("bucket created successfully")
+        self.buckets_created.append([bucket, access_key, secret_key])
+
+        for _ in range(0, parallel_io_cnt):
+            data_all.append(([s3_user, access_key, secret_key, bucket], NORMAL_UPLOAD_SIZES_IN_MB,
+                             validate_data_usage))
+
+        with Pool(len(data_all)) as pool:
+            resp = pool.starmap(self.acc_capacity.perform_io_validate_data_usage, data_all)
+        assert_utils.assert_true(all(resp),
+                                 "Failure in Performing IO operations on S3 accounts")
+
+        self.log.info("Verify capacity of account after put operations")
+        expected_data_usage = parallel_io_cnt * sum(NORMAL_UPLOAD_SIZES_IN_MB)
+        self.log.info("Expected data usage in MB : %s", expected_data_usage)
+        s3_account = [{"account_name": s3_user, "capacity": expected_data_usage, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("##### Test Ended -  %s #####", test_case_name)
