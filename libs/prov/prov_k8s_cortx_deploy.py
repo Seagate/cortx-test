@@ -1150,3 +1150,87 @@ class ProvDeployK8sCortxLib:
             time.sleep(deploy_ff_cfg["per_step_delay"])
             LOGGER.info("s3 Server Status Check Completed")
         return resp
+
+    # pylint: disable=R0915
+    # pylint: disable=too-many-arguments,too-many-locals
+    def test_deployment_config(self, sns_data, sns_parity,
+                        sns_spare, dix_data,
+                        dix_parity, dix_spare,
+                        cvg_count, data_disk_per_cvg, master_node_list,
+                        worker_node_list, **kwargs):
+        """
+        This method is used for deployment with various config on One node
+        param: sns_data
+        param: sns_parity
+        param: sns_spare
+        param: dix_data
+        param: dix_parity
+        param: dix_spare
+        param: cvg_count
+        param: data disk per cvg
+        param: master node obj list
+        param: worker node obj list
+        keyword:setup_k8s_cluster_flag: flag to deploy k8s setup
+        keyword:cortx_cluster_deploy_flag: flag to deploy cortx cluster
+        """
+        setup_k8s_cluster_flag = \
+            kwargs.get("setup_k8s_cluster_flag",
+                       PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
+        cortx_cluster_deploy_flag = \
+            kwargs.get("cortx_cluster_deploy_flag",
+                       PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
+        setup_client_config_flag = \
+            kwargs.get("setup_client_config_flag",
+                       PROV_CFG['k8s_cortx_deploy']['setup_client_config_flag'])
+        run_basic_s3_io_flag = \
+            kwargs.get("run_basic_s3_io_flag",
+                       PROV_CFG['k8s_cortx_deploy']['run_basic_s3_io_flag'])
+        run_s3bench_workload_flag = \
+            kwargs.get("run_s3bench_workload_flag",
+                       PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
+        destroy_setup_flag = kwargs.get("destroy_setup_flag",
+                                        PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
+        LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
+                    "k8s based Cortx Deployment", len(worker_node_list),
+                    sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+        LOGGER.debug("deploy_cortx_k8s_re_job_flag = %s", setup_k8s_cluster_flag)
+        LOGGER.debug("cortx_cluster_deploy_flag = %s", cortx_cluster_deploy_flag)
+        LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
+        LOGGER.debug("run_basic_s3_io_flag = %s", run_basic_s3_io_flag)
+        LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
+        LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
+        LOGGER.info("Step to Taint master nodes if not already done.")
+        # for node in master_node_list:
+        #     resp = self.validate_master_tainted(node)
+        #     if not resp:
+        #         self.taint_master(node)
+        # if setup_k8s_cluster_flag:
+        #     LOGGER.info("Step to Perform k8s Cluster Deployment")
+        #     resp = self.deploy_cortx_k8s_re_job(master_node_list, worker_node_list)
+        #     assert_utils.assert_true(resp[0], resp[1])
+
+        if cortx_cluster_deploy_flag:
+            LOGGER.info("Step to Download solution file template")
+            path = self.checkout_solution_file(self.git_script_tag)
+            print(path)
+            LOGGER.info("Step to Update solution file template")
+            resp = self.update_sol_yaml(worker_obj=worker_node_list, filepath=path,
+                                        cortx_image=self.cortx_image,
+                                        sns_data=sns_data, sns_parity=sns_parity,
+                                        sns_spare=sns_spare, dix_data=dix_data,
+                                        dix_parity=dix_parity, dix_spare=dix_spare,
+                                        cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
+                                        size_data_disk="20Gi", size_metadata="20Gi",
+                                        glusterfs_size="20Gi")
+            assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+            with open(resp[1]) as file:
+                LOGGER.info("The solution yaml file is %s\n", file)
+            sol_file_path = resp[1]
+            system_disk_dict = resp[2]
+            LOGGER.info("Step to Perform Cortx Cluster Deployment")
+            resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
+                                             worker_node_list, system_disk_dict,
+                                             self.docker_username,
+                                             self.docker_password, self.git_script_tag)
+            assert_utils.assert_true(resp[0], resp[1])
+            

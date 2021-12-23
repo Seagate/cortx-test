@@ -23,11 +23,14 @@
 import logging
 import pytest
 
+from commons import pswdmanager, configmanager
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -243,3 +246,27 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32640")
+    def test_32640(self):
+        """
+        Deployment- 1node config_1
+        """
+        row_list = list()
+        row_list.append(['1N'])
+        config = DEPLOY_CFG['nodes_1']['config_1']
+        LOGGER.info("Running 1 N with config %s+%s+%s",
+                      config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.deploy_lc_obj.test_deployment_config(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
+        row_list.append(['config_1'])
