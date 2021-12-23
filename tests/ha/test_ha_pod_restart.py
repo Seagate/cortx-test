@@ -476,7 +476,7 @@ class TestPodRestart:
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Step 9: Successfully verified READs and DI check for remaining buckets: %s",
-                    buckets)
+                    remain_bkt)
 
         LOGGER.info("Step 10: Again create %s buckets and put variable size objects and perform "
                     "delete on %s buckets", wr_bucket, del_bucket)
