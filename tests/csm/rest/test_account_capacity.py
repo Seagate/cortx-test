@@ -105,6 +105,7 @@ class TestAccountCapacity():
         assert_utils.assert_true(len(self.account_created) == 0, "S3 account deletion failed")
         self.log.info("[ENDED] ######### Teardown #########")
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -149,6 +150,7 @@ class TestAccountCapacity():
             self.log.info("verified capacity of account after put operations")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -189,6 +191,7 @@ class TestAccountCapacity():
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -237,6 +240,7 @@ class TestAccountCapacity():
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -285,6 +289,7 @@ class TestAccountCapacity():
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -382,6 +387,7 @@ class TestAccountCapacity():
         self.log.info("verified capacity of account after put operations")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -437,6 +443,7 @@ class TestAccountCapacity():
         self.log.info("ENDED: ")
 
     # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -485,6 +492,7 @@ class TestAccountCapacity():
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
@@ -529,6 +537,7 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.account_capacity
