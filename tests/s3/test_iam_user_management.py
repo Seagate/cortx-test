@@ -980,7 +980,6 @@ class TestIAMUserManagement:
         resp = self.auth_obj.delete_iam_accesskey(
             iam_user, accesskeyid, s3_access_key, s3_secret_key)
         assert_utils.assert_true(resp[0], resp[1])
-
         self.log.info(
             "ENDED: Test create IAM User with duplicate AWS secret key of Parent S3 account")
 
@@ -1114,7 +1113,8 @@ class TestIAMUserManagement:
         self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
         iam_access_key = []
         for _ in range(2):
-            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = "key-iamuser-{}".format(perf_counter_ns())
+            access_key = access_key.ljust(cons.Rest.IAM_ACCESS_LL, "d")
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
