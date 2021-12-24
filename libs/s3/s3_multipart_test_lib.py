@@ -429,7 +429,7 @@ class S3MultipartTestLib(Multipart):
         return True, response
 
     def upload_part_copy(self,
-                         copy_source: str=None,
+                         copy_source: str = None,
                          bucket_name: str = None,
                          object_name: str = None,
                          **kwargs
@@ -445,22 +445,19 @@ class S3MultipartTestLib(Multipart):
        """
         try:
             content_md5 = kwargs.get("content_md5", None)
-            copy_source_range = kwargs.get("copy_source_range", None)
+            copy_source_range = kwargs.get("copy_source_range", "")
             part_number = kwargs.get("part_number", None)
             upload_id = kwargs.get("upload_id", None)
             LOGGER.info("uploading part copy")
             if content_md5:
-                response = super().upload_part_copy(bucket_name, object_name,
+                response = super().upload_part_copy(copy_source, bucket_name, object_name,
                                                     upload_id=upload_id, part_number=part_number,
-                                                    copy_source=copy_source,
                                                     copy_source_range=copy_source_range,
                                                     content_md5=content_md5)
             else:
-                response = super().upload_part_copy(bucket_name, object_name,
+                response = super().upload_part_copy(copy_source, bucket_name, object_name,
                                                     upload_id=upload_id, part_number=part_number,
-                                                    copy_source=copy_source,
-                                                    copy_source_range=copy_source_range
-                                               )
+                                                    copy_source_range=copy_source_range)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",

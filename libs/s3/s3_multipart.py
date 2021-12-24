@@ -223,7 +223,7 @@ class Multipart(S3Lib):
         :return:
         """
         content_md5 = kwargs.get("content_md5", None)
-        copy_source_range = kwargs.get("copy_source_range", None)
+        copy_source_range = kwargs.get("copy_source_range", "")
         upload_id  = kwargs.get("upload_id", None)
         part_number = kwargs.get("part_number", None)
         if content_md5:

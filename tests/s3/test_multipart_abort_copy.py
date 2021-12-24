@@ -243,7 +243,7 @@ class TestMultipartAbortCopy:
             resp = self.s3_mp_test_obj.list_multipart_uploads(self.bucket_name)
             if mpu_id not in resp[1]:
                 break
-        self.log.info("Step 4: Check list multipart uploads result does not contain "
+        self.log.info("Step 5: Check list multipart uploads result does not contain "
                       "upload id")
         assert_utils.assert_not_in(mpu_id, resp[1], resp[1])
         process.join()
