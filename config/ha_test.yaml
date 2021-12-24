@@ -8,7 +8,7 @@ common_params:
   power_off_time: 600
   10sec_delay: 10
   20sec_delay: 20
-
+  60sec_delay: 60
 
 s3_operation_data:
   no_csm_users: 10
