@@ -521,7 +521,6 @@ class TestMultipartUploadGetPut:
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28534_s3bench_ios", duration="0h1m")
-        # check timefor ios
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         parts = get_precalculated_parts(self.mp_obj_path, mp_config["part_sizes"],
@@ -543,16 +542,16 @@ class TestMultipartUploadGetPut:
                                   (mpu_id, all_parts, dict(list(parts.items())[13:15])),
                                   (mpu_id, all_parts, dict(list(parts.items())[15:]))])
         new_list = []
-        for k in all_parts:
-            for j in k:
-                part_list = [{'PartNumber': p['PartNumber'], 'ETag': p['ETag']} for p in j['Parts']]
-                new_list.extend(part_list)
+        part_list = []
+        for listed_parts in all_parts:
+            for partlst in listed_parts:
+                part_list.append([{'PartNumber': part_entry['PartNumber'],
+                                   'ETag': part_entry['ETag']} for part_entry in partlst['Parts']])
+        for lst_parts in part_list:
+            for prt_entry in lst_parts:
+                if prt_entry not in new_list:
+                    new_list.append(prt_entry)
         sorted_lst = sorted(new_list, key=lambda d: d['PartNumber'])
-        new_lst = []
-        for k in new_list:
-            for j in k:
-                new_lst.append(j)
-        sorted_lst = sorted(new_lst, key=lambda d: d['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
                                           parts_list=sorted_lst)
