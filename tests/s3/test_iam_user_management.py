@@ -122,6 +122,7 @@ class TestIAMUserManagement:
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.auth_file_change = False
         self.del_iam_user = False
+        self.s3_iam_account_dict = {}
 
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
@@ -139,14 +140,13 @@ class TestIAMUserManagement:
         self.log.info("STARTED : Teardown operations for test function")
         for key, value in self.s3_iam_account_dict.items():
             for iam_details in value:
-                self.log.info("Deleting IAM user")
+                self.log.info("deleting created S3 & IAM user")
                 resp = self.auth_obj.delete_iam_user(iam_details[0], iam_details[1], iam_details[2])
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Deleted iam : %s user successfully", iam_details[0])
             resp = self.rest_obj.delete_s3_account(acc_name=key)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted S3 : %s account successfully", key)
-        self.s3_iam_account_dict = {}
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
         if self.parallel_ios:
