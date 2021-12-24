@@ -186,11 +186,9 @@ def create_put_objects(object_name: str, bucket_name: str,
     LOGGER.debug("S3 boto resource created")
 
     LOGGER.debug("Created an object : %s", object_name)
-    if os.path.exists(TEST_DATA_FOLDER):
-        file_path = os.path.join(TEST_DATA_FOLDER, object_name)
-    else:
+    if not os.path.exists(TEST_DATA_FOLDER):
         os.mkdir(TEST_DATA_FOLDER)
-        file_path = os.path.join(TEST_DATA_FOLDER, object_name)
+    file_path = os.path.join(TEST_DATA_FOLDER, object_name)
     resp = system_utils.create_file(file_path, object_size)
     if not resp[0]:
         LOGGER.error("Unable to create object file: %s", file_path)
