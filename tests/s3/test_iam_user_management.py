@@ -689,10 +689,6 @@ class TestIAMUserManagement:
         s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=s3_access_key, secret_key=s3_secret_key)
         bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
-        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-            "Resource"].format(bucket)
-        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-            "Resource"].format(bucket)
         s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
@@ -1199,11 +1195,7 @@ class TestIAMUserManagement:
             self.log.info("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 access_key=s3_access_key, secret_key=s3_secret_key)
-            bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
-            bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-                "Resource"].format(bucket)
-            bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-                "Resource"].format(bucket)
+            bucket_policy = BKT_POLICY_CONF["test_32278"]["bucket_policy"]
             s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
@@ -1265,11 +1257,7 @@ class TestIAMUserManagement:
             self.log.info("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 access_key=s3_access_key, secret_key=s3_secret_key)
-            bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
-            bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
-                "Resource"].format(bucket)
-            bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
-                "Resource"].format(bucket)
+            bucket_policy = BKT_POLICY_CONF["test_32279"]["bucket_policy"]
             s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
