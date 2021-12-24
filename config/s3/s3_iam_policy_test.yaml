@@ -1,0 +1,80 @@
+invalid_arn:
+    arn: "arn:aws:iam::123456789012:policy/ManageCredentialsPermissions"
+
+test_32771:
+    policy_name: "IamPolicyInvalidDocument"
+    policy_document_version:
+    {
+        "Version": "2012-10-17",
+    }
+    policy_document_action:
+    {
+        "Statement": [
+          {
+            "Action": [
+                "iam:CreateRole",
+                "iam:TagRole",
+                "iam:AttachRolePolicy",
+                "iam:CreatePolicy"
+            ]
+          }
+            ]
+        }
+    }
+    policy_document_effect:
+        {
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                }
+            ]
+        }
+    policy_document_resource:
+      {
+        "Statement": [
+          {
+            "Resource": "*"
+          }
+        ]
+      }
+    policy_document_sid:
+      {
+        "Statement": [
+          {
+            "Sid": "AssumeTaggedRole",
+          }
+        ]
+      }
+
+test_32772:
+    policy_name: "IamPolicyValidDocument"
+    policy_document:
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": [
+                    "iam:CreateRole",
+                    "iam:TagRole",
+                    "iam:AttachRolePolicy",
+                    "iam:CreatePolicy"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+            }
+        ]
+    }
+
+test_32770:
+  policy_name: "IamPolicyValidDocument"
+  policy_document:
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": ["iam:*"],
+        "Effect": "Allow",
+        "Resource": "*"
+      }
+    ]
+  }
