@@ -103,10 +103,12 @@ class TestVersioningGetObject:
         res = self.s3_test_obj.put_object(
             bucket_name=self.bucket_name, object_name=self.object_name, file_path=self.file_path)
         assert_utils.assert_true(res[0], res[1])
-        self.log.debug("Step 1: response", res)
         versions[self.object_name].insert(0, ("null", "version", res[1]["ETag"]))
+        self.log.info("Step 1: response {0} : {1}".format(res[0], res[1]))
 
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
-        self.log.debug("Step 1: response", res)
-        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 2: response", res)
+        self.log.info("Step 2: response", res[0])
+        self.log.info("Step 2: response", res['ResponseMetadata']['HTTPStatusCode'])
+        assert_utils.assert_equal(res['ResponseMetadata']['HTTPStatusCode'], 200)
 
