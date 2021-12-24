@@ -3149,11 +3149,11 @@ test_32278:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:PutObject"
-        Resource: "arn:aws:s3:::*/*"
+        Resource: "arn:aws:s3:::{0}/*"
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::*"
+        Resource: "arn:aws:s3:::{0}"
 
 test_32279:
   bucket_policy:
@@ -3161,11 +3161,11 @@ test_32279:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:PutObject"
-        Resource: "arn:aws:s3:::*/*"
+        Resource: "arn:aws:s3:::{0}/*"
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::*"
+        Resource: "arn:aws:s3:::{0}"
 
 test_32695:
   bucket_policy:
@@ -3173,8 +3173,8 @@ test_32695:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:PutObject"
-        Resource: "arn:aws:s3:::*/*"
+        Resource: "arn:aws:s3:::{0}/*"
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:ListBucket"
-        Resource: "arn:aws:s3:::*"
+        Resource: "arn:aws:s3:::{0}}"
