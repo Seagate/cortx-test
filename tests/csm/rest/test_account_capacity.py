@@ -37,8 +37,6 @@ from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_misc
-from libs.s3 import s3_test_lib
-from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 
@@ -370,10 +368,10 @@ class TestAccountCapacity():
             grant_full_control="id={}".format(account2_info[2]),
             grant_write="id={}".format(account1_info[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 13: From Account2 check the applied ACL in above step.")
+        self.log.info("Step 13: From Account2 check the applied ACL in above step.")
         resp = account2_info[5].get_bucket_acl(user2_bucket1)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 14: From Account1 copy object from bucket1 to user2 bucket1.")
+        self.log.info("Step 14: From Account1 copy object from bucket1 to user2 bucket1.")
         status, response = account1_info[4].copy_object(
             user1_bucket1, object_name, user2_bucket1, object_name)
         assert_utils.assert_true(status, response)
