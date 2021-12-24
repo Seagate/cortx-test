@@ -95,20 +95,15 @@ class TestVersioningGetObject:
 
         Create bucket.
         Upload object
-        Perform GET Bucket Versioning on bucket1
+        Perform GET Bucket Versioning on created bucket
         """
         self.log.info("STARTED : Verify that HTTP status code 200 returned to bucket owner when versioning not Enabled.")
-        versions = defaultdict(list)
         self.log.info("Step 1: Upload object")
         res = self.s3_test_obj.put_object(
             bucket_name=self.bucket_name, object_name=self.object_name, file_path=self.file_path)
         assert_utils.assert_true(res[0], res[1])
-        versions[self.object_name].insert(0, ("null", "version", res[1]["ETag"]))
-        self.log.info("Step 1: response {0} : {1}".format(res[0], res[1]))
-
+        self.log.info("Step 2: Perform GET Bucket Versioning on created bucket")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
-        self.log.info("Step 2: response", res)
-        self.log.info("Step 2: response", res[0])
-        self.log.info("Step 2: response", res['ResponseMetadata']['HTTPStatusCode'])
-        assert_utils.assert_equal(res['ResponseMetadata']['HTTPStatusCode'], 200)
+        assert_utils.assert_equal(200, res[1]['ResponseMetadata']['HTTPStatusCode'])
+        assert_utils.assert_not_in('Status', res[1])
 
