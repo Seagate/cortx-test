@@ -5,7 +5,8 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from commons.constants import Rest as const
 from commons.utils import config_utils
-
+from commons import constants
+from config import CMN_CFG
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
@@ -24,9 +25,12 @@ class CSMConfigsCheck:
         result = False
         try:
             self._log.info("Creating S3 account for setup ")
-            response = self._s3account.create_s3_account(user_type="pre-define")
+            if CMN_CFG.get("product_family") == constants.PROD_FAMILY_LC:
+                result, response = self._s3account.create_verify_s3_custom(user_type="pre-define")
+            else:
+                response = self._s3account.create_s3_account(user_type="pre-define")
             result = response.status_code in (
-                const.CONFLICT, const.SUCCESS_STATUS)
+                const.CONFLICT, const.SUCCESS_STATUS_FOR_POST)
         except Exception as error:
             # CTP Exception handling not done here as this is being called in setup for every test suit
             # CTP Exception handling shall get complicated
@@ -115,7 +119,8 @@ class CSMConfigsCheck:
         """
         responses = self._s3account.list_all_created_s3account().json()["s3_accounts"]
         for resp in responses:
-            if resp["account_name"] != self._s3account.config["s3account_user"]["username"]:
+            if (resp["account_name"] != self._s3account.config["s3account_user"]["username"] and
+                "nightly_s3acc" not in resp["account_name"]):
                 self._s3account.delete_s3_account_user(resp["account_name"])
 
     def preboarding(self, username, old_password, new_password):

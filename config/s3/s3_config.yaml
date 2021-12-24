@@ -2,14 +2,20 @@
 region: "US"
 s3_url: "https://s3.seagate.com"
 iam_url: "https://iam.seagate.com:9443"
+https_iam_port: "9443"
+http_iam_port: "9080"
 head_urls: "/auth/health"
 s3_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
 iam_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
+validate_certs: True
+use_ssl: True
 debug: False
+retry: 1
 email_suffix: "@seagate.com"
 create_user_delay: 5
 list_account_delay: 5
 create_account_delay: 5
+access_key_delay: 5
 create_user_access_key_delay: 5
 delete_account_delay: 5
 reset_account_access_key_delay: 5
@@ -55,13 +61,16 @@ CliConfig:
     password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
 # s3autherver.
 s3auth_endpoint: "http://{}:9080"
-# Workaround for EOS-21382; delay for S3 operations in seconds.
+
+# Workaround for EOS-21382; delay for S3 operations in seconds
+sync_delay: 60
+sync_step: 10
 delay:
   put_bkt_acl: 15
   put_bkt_policy: 10
   del_bkt_policy: 10
   put_obj_acl: 10
   set_bkt_tag: 15
-  del_bkt_tag: 15
+  del_bkt_tag: 20
   set_obj_tag: 15
-  del_obj_tag: 15
+  del_obj_tag: 20

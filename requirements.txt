@@ -5,7 +5,6 @@ certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
 confluent_kafka
-dataclasses~=0.6
 defusedxml~=0.7.1
 docutils==0.14
 fastavro
@@ -30,6 +29,7 @@ munch==2.5.0
 mypy==0.782
 pandas==1.2.1
 paramiko==2.6.0
+prometheus-client
 pika==1.1.0
 pycryptodome==3.10.1
 PyHamcrest==2.0.2

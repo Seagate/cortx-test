@@ -27,8 +27,7 @@ import dash_html_components as html
 import dash_daq as daq
 
 from Performance.styles import style_sub_tab, style_sub_label,\
-    style_dropdown_small, style_dropdown_small_2, \
-    style_dropdown_medium, dict_button_style
+    style_dropdown_small_2, style_dropdown_medium, dict_button_style, style_dropdown_large
 
 # Variable declarations
 Xfilter = [
@@ -37,8 +36,16 @@ Xfilter = [
 ]
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LC-K8S-CentOS-7.9',
+        'value': 'LC_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': 'LR2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+
 ]
 
 benchmarks = [  # get from database
@@ -94,7 +101,8 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_small
+                style=style_dropdown_large,
+                clearable=False
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
@@ -117,18 +125,18 @@ graphs_input_options = [
                 style=style_dropdown_small_2
             ),
             Dropdown(
-                id='graphs_iteration_dropdown',
-                placeholder="Iterations",
-                style=style_dropdown_small_2
-            ),
-            Dropdown(
                 id='graphs_custom_dropdown',
                 placeholder="Select Tag",
                 style=style_dropdown_medium
             ),
             Dropdown(
+                id='graphs_iteration_dropdown',
+                placeholder="Iterations",
+                style=style_dropdown_small_2
+            ),
+            Dropdown(
                 id='graphs_sessions_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style=style_dropdown_medium
             ),
             Dropdown(
@@ -136,18 +144,18 @@ graphs_input_options = [
                 placeholder="Buckets",
                 style=style_dropdown_medium
             ),
-        ],
-        justify='center'
-    ),
-    Row(
-        [
             daq.ToggleSwitch(
                 id="compare_flag",
                 label="Compare",
                 labelPosition="bottom",
                 style={'color': '#FFFFFF', 'margin-top': '15px',
-                       'margin-right': '10px'}
+                       'margin-right': '10px', }
             ),
+        ],
+        justify='center'
+    ),
+    Row(
+        [
             Dropdown(
                 id="graphs_release_compare_dropdown",
                 options=release,
@@ -175,18 +183,18 @@ graphs_input_options = [
                 style={'display': 'none'}
             ),
             Dropdown(
-                id='graphs_iteration_compare_dropdown',
-                placeholder="Iterations",
-                style={'display': 'none'}
-            ),
-            Dropdown(
                 id='graphs_custom_compare_dropdown',
                 placeholder="Select Tag",
                 style={'display': 'none'}
             ),
             Dropdown(
+                id='graphs_iteration_compare_dropdown',
+                placeholder="Iterations",
+                style={'display': 'none'}
+            ),
+            Dropdown(
                 id='graphs_sessions_compare_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style={'display': 'none'}
             ),
             Dropdown(
@@ -207,13 +215,9 @@ graphs_perf_tabs = html.Div(
         Card(
             CardBody(
                 [
-                    html.P(html.U(
-                        "Graphical Representation of Performance Data",
-                        id="graphs_headings"),
-                        style={
-                        'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-                    html.P("Note: Each data point represents PER CLUSTER data. Data is displayed for the builds on which PerfPro has run.",  style={
-                        "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+                    html.P([ # html.I(className="fa fa-info-circle"),
+                            "Note: Each data point is PER CLUSTER."],
+                           style={'font-size': '20px', 'color': '#3131b0'}),
 
                     Graph(id='plot_Throughput'),
                     Graph(id='plot_Latency'),

@@ -97,17 +97,13 @@ class TestCliS3ACC:
         self.s3acc_obj.logout_cortx_cli()
         login = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
-        accounts = self.s3acc_obj.show_s3account_cortx_cli(output_format="json")[
-            1]
+        accounts = self.s3acc_obj.show_s3account_cortx_cli(output_format="json")[1]
         accounts = self.s3acc_obj.format_str_to_dict(
             input_str=accounts)["s3_accounts"]
         accounts = [acc["account_name"]
                     for acc in accounts if self.s3acc_prefix in acc["account_name"]]
-        self.s3acc_obj.logout_cortx_cli()
         for acc in accounts:
             try:
-                self.s3acc_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_password)
                 self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
             except Exception as error:
                 self.logger.error(error)
@@ -133,18 +129,13 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, login[0], login[1])
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -261,6 +252,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10873")
@@ -298,6 +290,7 @@ class TestCliS3ACC:
             "Verified that account is not deleted with 'no' on confirmation")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10874")
@@ -344,6 +337,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10875")
@@ -378,6 +372,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10881")
@@ -407,6 +402,7 @@ class TestCliS3ACC:
             "Successfully logged into CORTX CLI by passing username as parameter")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -481,12 +477,6 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, login[0], login[1])
         resp = self.s3acc_obj.reset_s3account_password(
             account_name=self.s3acc_name, new_password=new_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -508,6 +498,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
@@ -544,6 +535,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted bucket %s", bucket_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
+
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -682,12 +674,7 @@ class TestCliS3ACC:
             new_password=new_password,
             reset_password="n")
         assert_utils.assert_equals(False, resp[0], resp[1])
-        logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, login[0], login[1])
+        # TODO: s3 login check
         self.logger.info(
             "Verified s3account password not updated when user selects 'No' on confirmation")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
@@ -715,12 +702,6 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, login[0], login[1])
         for pwd in dummy_pwds:
             resp = self.s3acc_obj.reset_s3account_password(
                 account_name=self.s3acc_name, new_password=pwd)
@@ -752,10 +733,9 @@ class TestCliS3ACC:
             "Successfully verified that admin user can create S3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-11231")
     @CTFailOn(error_handler)
     def test_882_perform_iam_operations(self):
@@ -791,6 +771,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -826,6 +807,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted buckets %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11233")
@@ -853,6 +835,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, result, login[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11741")
@@ -883,6 +866,7 @@ class TestCliS3ACC:
         self.logger.info("Successfully verified help response for s3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11747")
@@ -933,6 +917,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11746")
@@ -965,6 +950,7 @@ class TestCliS3ACC:
             "Verified csm user option is not available in s3 account help")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12844")
@@ -1002,6 +988,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13136")
@@ -1050,6 +1037,7 @@ class TestCliS3ACC:
             "Creating s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13139")
@@ -1094,6 +1082,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
@@ -1123,6 +1112,7 @@ class TestCliS3ACC:
             "List alert with s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
@@ -1156,6 +1146,7 @@ class TestCliS3ACC:
             "Creating s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10879")
@@ -1230,11 +1221,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("New password is set to S3 account")
         self.logger.info("Login into cortxcli using new password")
-        resp = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        resp = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name, password=new_pwd)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        #  s3 login
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -1291,13 +1278,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info(
             "Verified reset password of S3 account using CSM manage user")
-        logout = self.csm_user_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        self.logger.info(
-            "Logging into CORTX CLI as S3 account with new password")
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name, password=new_pwd)
-        assert_utils.assert_equals(True, login[0], login[1])
+        # : login chk
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -1305,6 +1286,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI with new password")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18192")
@@ -1348,6 +1330,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18193")
@@ -1488,12 +1471,6 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        logout = self.s3acc_obj.logout_cortx_cli()
-        assert_utils.assert_equals(True, logout[0], logout[1])
-        login = self.s3acc_obj.login_cortx_cli(
-            username=self.s3acc_name,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info("Reset password with invalid account name")
         resp = self.s3acc_obj.reset_s3account_password(
             account_name="invalid-@name", new_password=self.s3acc_password)
@@ -1503,6 +1480,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18197")
@@ -1540,6 +1518,7 @@ class TestCliS3ACC:
             "Verified reset password of IAM user operation is perfomed successfully")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18198")
@@ -1597,6 +1576,7 @@ class TestCliS3ACC:
             "Verified reset password of IAM user operation is perfomed successfully")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18199")
@@ -1636,6 +1616,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18200")
@@ -1674,6 +1655,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18201")
@@ -1744,6 +1726,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI with new password")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18202")
@@ -1777,6 +1760,7 @@ class TestCliS3ACC:
             "Performed help command for reset password of S3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18203")
@@ -1880,6 +1864,7 @@ class TestCliS3ACC:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using CSM manage user")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22448")
@@ -1929,6 +1914,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22449")
@@ -2014,7 +2000,8 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_22451_delete_non_exist_s3_acc(self):
         """
-        Test that csm Admin user should not able to delete s3account user with user name not present in the list
+        Test that csm Admin user should not able to delete s3account user with user name not
+        present in the list
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         self.logger.info(
@@ -2132,6 +2119,7 @@ class TestCliS3ACC:
             "Verified delete option should be present in help option")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22455")
@@ -2198,6 +2186,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22457")
@@ -2233,6 +2222,7 @@ class TestCliS3ACC:
         self.logger.info(resp)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22757")

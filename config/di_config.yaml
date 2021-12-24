@@ -26,7 +26,11 @@ serviceinfo:
 
 ldap_username: "sgiamadmin"
 ldap_passwd: "ZpkWQD1Yo4edLImu4up9emhaHDFjAJlXKDl7qSABc60="
-
+DiUserConfig:
+  iam_user:
+    password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
+  s3_account:
+    password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="
 logs:
   consul:
     - "/var/log/hare/consul-watch-service.log"
@@ -79,3 +83,7 @@ logs:
 logging_Level: INFO
 retries: 3
 
+fault_injection_script: "scripts/server_scripts/enable_disable_fault_injection.sh"
+fi_k8s: "scripts/server_scripts/s3_fault_injection_k8s_cortx.sh"
+remote_fi_k8s: "s3_fault_injection_k8s_cortx.sh"
+s3_acc_passwd: "yqI7PYuCer0alJlTPJtaOJLejOIrg4ymC+Y8gUxMJAU="

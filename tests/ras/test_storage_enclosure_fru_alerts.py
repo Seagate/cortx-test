@@ -205,6 +205,7 @@ class TestStorageAlerts:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11762")
@@ -303,6 +304,7 @@ class TestStorageAlerts:
         LOGGER.info(
             "ENDED: Test Disabling a drive from disk group")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11763")
@@ -400,6 +402,7 @@ class TestStorageAlerts:
         LOGGER.info(
             "ENDED: Test Enabling a drive from disk group")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-22060")
@@ -511,6 +514,7 @@ class TestStorageAlerts:
                             "step.")
         LOGGER.info("ENDED: Test Disk group failure faults")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-22062")
@@ -661,6 +665,7 @@ class TestStorageAlerts:
         LOGGER.info("ENDED: Test persistent cache for Disk group faults "
                     "when SSPL is stopped and started")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-22063")

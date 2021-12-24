@@ -26,8 +26,10 @@ import argparse
 import logging
 from datetime import datetime, timedelta
 
+from commons.utils import assert_utils
 from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs, remove_dirs
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
 cfg_obj = read_yaml("scripts/s3_bench/config.yaml")[1]
@@ -116,6 +118,20 @@ def create_json_reps(list_resp):
         js_res.append(ds_dict)
 
     return js_res
+
+
+# pylint: disable-msg=too-many-arguments
+def s3bench_workload(end_point, bucket_name, log_prefix, object_size, client, sample,
+                     access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    """S3bench Workload worker can be used to run multiple workloads in parallel"""
+    LOGGER.info("Workload: %s objects of %s with %s parallel clients", sample, object_size, client)
+    resp = s3bench(access_key, secret_key, bucket=f"{bucket_name}", num_clients=client,
+                   num_sample=sample, obj_name_pref="loadgen_test_", obj_size=object_size,
+                   skip_cleanup=False, log_file_prefix=log_prefix, end_point=end_point)
+    LOGGER.info("Log Path %s", resp[1])
+    assert_utils.assert_false(check_log_file_error(resp[1]),
+                              f"S3bench workload on bucket {bucket_name} with {client} "
+                              f"client failed. Please read log file {resp[1]}")
 
 
 def check_log_file_error(file_path, errors=None):

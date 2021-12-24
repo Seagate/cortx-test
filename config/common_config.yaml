@@ -17,6 +17,12 @@ haproxy_service:
   - "haproxy-c"
 audit_service: "auditd.service"
 statsd_service: "statsd"
+prod_type: "k8s"
+prod_family: "LC"
+
+product_type: "k8s"
+product_family: "LC"
+
 
 
 

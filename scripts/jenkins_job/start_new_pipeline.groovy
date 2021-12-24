@@ -25,7 +25,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/cicd_dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -64,7 +64,7 @@ deactivate
 		}
 		stage('COPY_TP_TE') {
 			steps{
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
@@ -78,7 +78,7 @@ deactivate
 			        env.Sanity_Failed = true
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -128,7 +128,7 @@ deactivate
 			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -170,21 +170,33 @@ deactivate
             		  env.Current_TP = records[0][0]
         		  }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		  try {
         		      sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${HOSTNAME}"
-pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
+pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
 deactivate
 '''
+} catch (err) {
+    echo "Caught error in SB: ${err}"
+}
                       /* if ( "${CREATE_JIRA_ISSUE}" ) {
                         jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
                         echo "${jira_issue}"
                       } */
                   }
+             try {
+             sh label: '', script: '''source venv/bin/activate
+pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --health_check False --target ${Target_Node}
+deactivate
+'''
+} catch (err) {
+    echo "Caught error in crash files collection: ${err}"
+}
 		     }
 
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar', followSymlinks: false
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}

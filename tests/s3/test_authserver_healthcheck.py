@@ -35,7 +35,9 @@ from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import make_dirs
 from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
+from config import CMN_CFG as CM_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 
 
 class TestAuthServerHealthCheckAPI:
@@ -121,6 +123,7 @@ class TestAuthServerHealthCheckAPI:
         return resp
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_auth_health
     @pytest.mark.tags('TEST-7577')
     @CTFailOn(error_handler)
     def test_authserver_response_on_health_check_enabled_1161(self):
@@ -143,6 +146,7 @@ class TestAuthServerHealthCheckAPI:
             "Ended: Test authserver response when health check is enabled")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_auth_health
     @pytest.mark.tags('TEST-7578')
     @CTFailOn(error_handler)
     def test_authserver_response_on_health_check_disabled_1164(self):

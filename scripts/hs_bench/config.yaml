@@ -1,0 +1,4 @@
+log_dir: "log/latest/"
+
+log_format:
+    format: "%(asctime)s - %(message)s"

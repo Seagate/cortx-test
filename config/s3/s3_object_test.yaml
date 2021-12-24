@@ -10,6 +10,8 @@ s3_object:
     inval_req: "InvalidRequest"
     emailaddr: "emailaddress={}"
     mb_count: 5
+    mb_count_d: 50
+    mb_count_n: 70
     obj_name: "testobj"
     key: "testkey"
     key_err: "NoSuchKey"
@@ -17,6 +19,9 @@ s3_object:
     emailid_1: "my_account_one{}@seagate.com"
     account_name_2: "my_account_two{}"
     emailid_2: "my_account_two{}@seagate.com"
+    object_count: 3
+    obj_min_size: 2
+    obj_max_size: 2048
 
 # Tests from test_object_acl.py
 test_get_obj_acl_mp:
@@ -36,190 +41,184 @@ test_2879:
 test_9899:
   single_part_sz: 10
   total_parts: 10
-test_10208:
-  account_name: "my_account208{}"
-  emailid: "my_account208{}@seagate.com"
-test_10209:
-  account_name: "my_account209{}"
-  emailid: "my_account{}@seagate.com"
-test_10210:
+test_3212:
   invalid_can_id: "999FFFFHHHHH445F"
   assert_msg: "InvalidArgument"
-test_10211:
+test_3213:
   obj_acl_rd: "READ"
   account_name: "my_account211{}"
   emailid: "my_account211{}@seagate.com"
-test_10212:
+test_3214:
   obj_acl_wr: "WRITE"
   account_name: "my_account212{}"
   emailid: "my_account212{}@seagate.com"
-test_10213:
+test_3215:
   obj_acl_rdc: "READ_ACP"
   account_name: "my_account213{}"
   emailid: "my_account213{}@seagate.com"
-test_10214:
+test_3216:
   obj_acl_wrc: "WRITE_ACP"
   account_name: "my_account214{}"
   emailid: "my_account214{}@seagate.com"
-test_10215:
+test_3217:
   obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account215{}"
   emailid: "my_account215{}@seagate.com"
   error_msg: "InvalidACL"
-test_10216:
+test_3218:
   obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account216{}"
   emailid: "my_account216{}@seagate.com"
   Type: "CanonicalUser"
   DisplayName: "s3user"
   error_msg: "InvalidACL"
-test_10225:
+test_3227:
   account_name: "my_account225{}"
   emailid: "my_account225{}@seagate.com"
   Type: "CanonicalUser"
   DisplayName: "s3user"
-test_10227:
+test_3229:
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
-test_10228:
+test_3230:
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
   error_msg: "InvalidACL"
-test_10229:
+test_3231:
   modified_acl_id: "fqECr9d0gZDKJycxjTmiu"
   modified_acl_name: "s3acc123424123"
   error_msg: "InvalidArgument"
   Type: "CanonicalUser"
-test_10962:
+test_3682:
   acl_permission: "private"
-test_10963:
+test_3683:
   acl_permission: "private"
-test_10964:
+test_3684:
   acl_permission: "WRITE_ACP"
   private_acp : "private"
-test_10965:
+test_3685:
   auth_read: "authenticated-read"
-test_10966:
+test_3686:
   auth_read: "authenticated-read"
-test_10967:
+test_3687:
   auth_read: "authenticated-read"
   write_acp: "WRITE_ACP"
-test_10968:
+test_3688:
   private_acl: "private"
   read_acp: "READ_ACP"
-test_10969:
+test_3689:
   read_acp: "READ_ACP"
   auth_read: "authenticated-read"
-test_10972:
+test_3693:
   private_acl: "private"
   auth_read: "authenticated-read"
-test_10973:
+test_3692:
   private_acl: "private"
   auth_read: "authenticated-read"
-test_10974:
+test_3694:
   can_object_acl: "bucket-owner-read"
   write_acp: "WRITE"
   id_str: "id="
-test_10975:
+test_3695:
   can_object_acl: "bucket-owner-full-control"
   write_acp: "WRITE"
   id_str: "id="
-test_10781:
+test_3504:
   can_object_acl: "bucket-owner-full-control"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10782:
+test_3509:
   can_object_acl: "bucket-owner-read"
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10783:
+test_3543:
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10784:
+test_3544:
   private_acp : "private"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10786:
+test_3546:
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10787:
+test_3547:
   private_acp : "public_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10788:
+test_3548:
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10789:
+test_3549:
   private_acp : "public-read-write"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10790:
+test_3550:
   auth_read : "authenticate_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10791:
+test_3551:
   private_acp : "authenticate_read"
   account_name: "my_account{}"
   emailid: "my_account{}@seagate.com"
-test_10712:
+test_3496:
   bucket_permission: "bucket-owner-read"
-test_10714:
+test_3498:
   auth_read: "authenticated-read"
   bucket_read: "bucket-owner-read"
   private_assert: "private"
   write_assert: "WRITE"
   read_assert: "READ"
   id_str: "id="
-test_10715:
+test_3499:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   private_assert: "private"
   write_assert: "WRITE"
   read_assert: "READ"
   id_str: "id="
-test_10718:
+test_3502:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
   id_str: "id="
-test_10719:
+test_3503:
   auth_read: "authenticated-read"
   bucket_full_control: "bucket-owner-full-control"
   acl_bucket_read: "bucket-owner-read"
   private_assert: "private"
   id_str: "id="
-test_10720:
+test_3512:
   bucket_full_control: "bucket-owner-full-control"
-test_10721:
+test_3505:
   bucket_full_control: "bucket-owner-full-control"
-test_10722:
+test_3506:
   bucket_full_control: "bucket-owner-full-control"
-test_10723:
+test_3507:
   bucket_full_control: "bucket-owner-full-control"
-test_10724:
+test_3508:
   bucket_full_control: "bucket-owner-full-control"
-test_10726:
+test_3510:
   bucket_full_control: "bucket-owner-read"
-test_10727:
+test_3511:
   bucket_full_control: "bucket-owner-read"
-test_10729:
+test_3513:
   bucket_full_control: "bucket-owner-read"
-test_10792:
+test_3552:
   error_msg: "InvalidACL"
   permission: "private"
   acc_str: "AccountName = {}"
   account_name_1: "my_account_10792{}"
   emailid_1: "my_account_10792{}@seagate.com"
   can_str: "CanonicalUser"
-test_10793:
+test_3553:
   permission: "private"
   Type: "CanonicalUser"
   DisplayName: "testuser"
@@ -227,7 +226,7 @@ test_10793:
   account_name_1: "my_account_10793{}"
   emailid_1: "my_account_10793{}@seagate.com"
   can_str: "CanonicalUser"
-test_10794:
+test_3554:
   error_msg: "InvalidACL"
   permission_2: "private"
   account_name_1: "my_account_10794{}"
