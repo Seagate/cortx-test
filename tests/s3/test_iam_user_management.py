@@ -943,7 +943,7 @@ class TestIAMUserManagement:
         accesskeyid2 = resp[1]["AccessKeyId"]
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.auth_obj.delete_iam_accesskey(
-            iam_user2, accesskeyid1, s3_access_key, s3_secret_key)
+            iam_user1, accesskeyid1, s3_access_key, s3_secret_key)
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.auth_obj.delete_iam_accesskey(
             iam_user2, accesskeyid2, s3_access_key, s3_secret_key)
