@@ -30,10 +30,14 @@ from multiprocessing import Pool
 from commons import configmanager
 from commons import cortxlogging
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
+from commons.constants import Rest as const
 from commons.utils import assert_utils
+from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import s3_misc
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestAccountCapacity():
@@ -49,6 +53,8 @@ class TestAccountCapacity():
         cls.s3user = RestS3user()
         cls.buckets_created = []
         cls.account_created = []
+        cls.iam_users_created = []
+        cls.s3_obj = S3AccountOperations()
         cls.test_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_account_capacity.yaml")
 
@@ -426,3 +432,152 @@ class TestAccountCapacity():
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("verified capacity of account after put operations")
         self.log.info("ENDED: ")
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33372')
+    def test_33372(self):
+        """
+        Test data usage per account with max S3 accounts
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Create Max s3 accounts")
+        self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        for _ in range(const.MAX_S3_USERS):
+            total_cap = 0
+            resp = self.s3user.create_s3_account()
+            self.log.info("s3 account response %s:", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "Failed to create S3 account.")
+            access_key = resp.json()["access_key"]
+            secret_key = resp.json()["secret_key"]
+            s3_user = resp.json()["account_name"]
+            s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+            self.account_created.append(s3_user)
+            self.log.info("Step 2: Creating bucket for each account")
+            bucket = "bucket%s" % int(time.time())
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket, access_key, secret_key)
+            assert_utils.assert_true(s3_misc.create_bucket(bucket, access_key, secret_key),
+                                     "Failed to create bucket")
+            self.log.info("bucket created successfully")
+            self.buckets_created.append([bucket, access_key, secret_key])
+            self.log.info("Step 3: Putting object of size zero to some specific size in bucket")
+            ran_number = random.randint(10, 100)
+            for i in [0, ran_number]:
+                obj = f"object{i}{s3_user}.txt"
+                object_size = i
+                self.log.info("Perform %s of %s MB write in the bucket: %s", obj, object_size,
+                              bucket)
+                resp = s3_misc.create_put_objects(
+                    obj, bucket, access_key, secret_key, object_size=object_size)
+                assert_utils.assert_true(resp, "Put object Failed")
+                self.log.info("End: Put operations")
+                s3_account[0]["capacity"] += object_size
+                self.log.info("Step 4: Checking data usage")
+                resp = self.acc_capacity.verify_account_capacity(s3_account)
+                assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33373')
+    def test_33373(self):
+        """
+        Test data usage per account with max buckets in an account
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Creating s3 user")
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        total_cap = 0
+        s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+        self.account_created.append(s3_user)
+        self.log.info("Step 1: Create Max buckets for s3 users")
+        for _ in range(const.MAX_BUCKETS):
+            bucket = "bucket%s" % int(time.time())
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket, access_key, secret_key)
+            assert_utils.assert_true(s3_misc.create_bucket(bucket, access_key, secret_key),
+                                     "Failed to create bucket")
+            self.log.info("bucket created successfully")
+            self.buckets_created.append([bucket, access_key, secret_key])
+            self.log.info("Step 2: Put object of specific size in bucket")
+            obj = f"object{s3_user}.txt"
+            write_bytes_mb = random.randint(10, 100)
+            self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
+                          bucket)
+            resp = s3_misc.create_put_objects(
+                obj, bucket, access_key, secret_key, object_size=write_bytes_mb)
+            assert_utils.assert_true(resp, "Put object Failed")
+            self.log.info("Put operation completed")
+            s3_account[0]["capacity"] += write_bytes_mb
+        self.log.info("Step 3: Checking data usage")
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33374')
+    def test_33374(self):
+        """
+        Test data usage per S3 account with max objects in a bucket
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Creating s3 user")
+        self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        total_cap = 0
+        s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+        self.account_created.append(s3_user)
+        bucket1 = "bucket%s" % int(time.time())
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      bucket1, access_key, secret_key)
+        assert_utils.assert_true(s3_misc.create_bucket(bucket1, access_key, secret_key),
+                                 "Failed to create bucket")
+        self.log.info("bucket created successfully")
+        self.buckets_created.append([bucket1, access_key, secret_key])
+        self.log.info("Step 2: Put 1000 objects of size 0 in bucket")
+        for _ in range(1000):
+            obj = f"object{s3_user}.txt"
+            self.log.info("Verify Perform %s of write in the bucket: %s", obj,
+                          bucket1)
+            resp = s3_misc.create_put_objects(
+                obj, bucket1, access_key, secret_key, object_size=0)
+            assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("Put operation completed")
+        self.log.info("Step 3: Checking data usage")
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Put 1000 objects of specific size in bucket")
+        for _ in range(1000):
+            obj = f"object{s3_user}.txt"
+            write_bytes_mb = random.randint(10, 100)
+            self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
+                          bucket1)
+            resp = s3_misc.create_put_objects(
+                obj, bucket1, access_key, secret_key, object_size=write_bytes_mb)
+            assert_utils.assert_true(resp, "Put object Failed")
+            self.log.info("Put operation completed")
+            s3_account[0]["capacity"] += write_bytes_mb
+        self.log.info("Step 5: Checking data usage")
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
