@@ -390,6 +390,7 @@ class IamTestLib(IamLib):
             user_dict.update(response[1])
             response = self.create_access_key(user_name)
             user_dict.update(response[1])
+            LOGGER.debug(user_dict)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_iam_user.__name__,
@@ -408,8 +409,8 @@ class IamTestLib(IamLib):
             LOGGER.info(access_keys)
             for access_key in access_keys:
                 self.delete_access_key(user_name, access_key)
-            if self.get_user_login_profile(user_name)[0]:
-                self.delete_user_login_profile(user_name)
+            # if self.get_user_login_profile(user_name)[0]:
+            #     self.delete_user_login_profile(user_name)  # OperationNotSupported in cortx.
             response = self.delete_user(user_name)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
