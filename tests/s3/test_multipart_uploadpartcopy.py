@@ -537,8 +537,7 @@ class TestMultipartUploadPartCopy:
         uploaded_parts2 = get_precalculated_parts(self.mp_obj_path_partcopy,
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
-        keys = list(uploaded_parts2.keys())
-        uploaded_parts2.pop(2)  # removed part 2 as we are going to uplaod only one part here
+        uploaded_parts2.pop(2)  # removed part 2 as we are going to upload only one part here
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
                                                                          self.mpu_partcopy_bkt,
