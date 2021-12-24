@@ -573,11 +573,6 @@ class TestPodRestart:
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)
 
-        LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
-
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -595,13 +590,15 @@ class TestPodRestart:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 2: Verified cluster status is in degraded state")
 
-        LOGGER.info("Step 3: Check services status that were running on pod %s", pod_name)
+        LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
+                    pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Services of pod are in offline state")
+        LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
 
-        LOGGER.info("Step 4: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
+                    pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
