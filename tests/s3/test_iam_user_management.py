@@ -146,6 +146,7 @@ class TestIAMUserManagement:
             resp = self.rest_obj.delete_s3_account(acc_name=key)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted S3 : %s account successfully", key)
+        self.s3_iam_account_dict = {}
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
         if self.parallel_ios:
