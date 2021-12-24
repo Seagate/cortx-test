@@ -127,3 +127,24 @@ class AccountCapacity(RestTestLib):
                     return False
 
         return True
+
+    def create_s3_account(self, s3testlib=False, s3acl=False):
+        resp = RestS3user().create_s3_account()
+        if resp.status_code == HTTPStatus.CREATED:
+            access_key = resp.json()["access_key"]
+            secret_key = resp.json()["secret_key"]
+            canonical_id = resp.json()["canonical_id"]
+            s3_account = resp.json()["account_name"]
+            s3_obj = None
+            s3_acl_obj = None
+            if s3testlib:
+                s3_obj = s3_test_lib.S3TestLib(access_key, secret_key,
+                                               endpoint_url=S3_CFG["s3_url"],
+                                               s3_cert_path=S3_CFG["s3_cert_path"],
+                                               region=S3_CFG["region"])
+            if s3acl:
+                s3_acl_obj = S3AclTestLib(access_key=access_key, secret_key=secret_key)
+            return True, [access_key, secret_key, canonical_id, s3_account, s3_obj, s3_acl_obj]
+        else:
+            self.log.error("Failed to create S3 account.")
+            return False, "Failed to create S3 account"

@@ -21,14 +21,14 @@
 """Tests Account capacity scenarios using REST API
 """
 import logging
+import pytest
 import random
 import time
 from http import HTTPStatus
 from multiprocessing import Pool
 
-import pytest
-
-from commons import cortxlogging, configmanager
+from commons import configmanager
+from commons import cortxlogging
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.utils import assert_utils
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
@@ -246,3 +246,152 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33363')
+    def test_33363(self):
+        """
+        Test data usage per account for copy objects operation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        user1_bucket1 = "S3user1Bucket1"
+        user1_bucket2 = "S3user1Bucket2"
+        user2_bucket1 = "S3user2Bucket1"
+        object_name = "S3user1Bucket1_obj"
+        self.log.info("Step-1: Creating first S3 account")
+        resp = self.acc_capacity.create_s3_account(True, True)
+        assert_utils.assert_true(resp[0], resp[1])
+        account1_info = resp[1]  # [access_key, secret_key, canonical_id, s3_account,
+        # s3_obj, s3_acl_obj]
+        self.account_created.append(account1_info[3])
+        self.log.info("Step-2: Creating second S3 account")
+        resp = self.acc_capacity.create_s3_account(True, True)
+        assert_utils.assert_true(resp[0], resp[1])
+        account2_info = resp[1]
+        self.account_created.append(account2_info[3])
+        self.log.info("Step-3: create 2 buckets in account-1")
+        resp = account1_info[4].create_bucket(user1_bucket1)
+        assert_utils.assert_true(resp[0], resp)
+        self.buckets_created.append([user1_bucket1, account1_info[0], account1_info[1]])
+        resp = account1_info[4].create_bucket(user1_bucket2)
+        assert_utils.assert_true(resp[0], resp)
+        self.buckets_created.append([user1_bucket2, account1_info[0], account1_info[1]])
+        self.log.info("Step-4: create a bucket in account-2")
+        resp = account2_info[4].create_bucket(user2_bucket1)
+        assert_utils.assert_true(resp[0], resp)
+        self.buckets_created.append([user2_bucket1, account2_info[0], account2_info[1]])
+        self.log.info("Step-5: put object in first bucket of account-1")
+        obj = f"object{account1_info[3]}.txt"
+        write_bytes_mb = random.randint(10, 100)
+        total_cap = write_bytes_mb
+        self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
+                      bucket)
+        resp = s3_misc.create_put_objects(
+            obj, user1_bucket1, account1_info[0], account1_info[1], object_size=write_bytes_mb)
+        assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("End: Put operations")
+        self.log.info("Step-6: Verify capacity of account-1 after put operations")
+        s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("verified capacity of account after put operations")
+
+        self.log.info("Step-7: Copy object to another bucket of same account")
+        total_cap = total_cap * 2
+        status, response = account1_info[4].copy_object(
+            user1_bucket1, object_name, user1_bucket2, object_name)
+        assert_utils.assert_true(status, response)
+        self.log.info("Step-8: Verify capacity of account-1 after put operations")
+        s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("verified capacity of account after put operations")
+
+        self.log.info("Step-9: Copy object to same bucket of same account")
+        total_cap = total_cap * 3
+        status, response = account1_info[4].copy_object(
+            user1_bucket1, object_name, user1_bucket1, object_name + "_copy")
+        assert_utils.assert_true(status, response)
+        self.log.info("Step-10: Verify capacity of account-1 after put operations")
+        s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("verified capacity of account after put operations")
+
+        self.log.info("Step-11: Copy object to another bucket of another account")
+        total_cap = write_bytes_mb
+        self.log.info("Step 12: From Account2 on bucket2 grant Write ACL to Account1 and full "
+                      "control to account2.")
+        resp = account2_info[5].put_bucket_multiple_permission(
+            bucket_name=user2_bucket1,
+            grant_full_control="id={}".format(account2_info[2]),
+            grant_write="id={}".format(account1_info[2]))
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 13: From Account2 check the applied ACL in above step.")
+        resp = account2_info[5].get_bucket_acl(user2_bucket1)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 14: From Account1 copy object from bucket1 to user2 bucket1.")
+        status, response = account1_info[4].copy_object(
+            user1_bucket1, object_name, user2_bucket1, object_name)
+        assert_utils.assert_true(status, response)
+        self.log.info("Step 15: Verify capacity of account after put operations")
+        s3_account = [{"account_name": account2_info[3], "capacity": total_cap, "unit": 'MB'}]
+        resp = self.acc_capacity.verify_account_capacity(s3_account)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("verified capacity of account after put operations")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.account_capacity
+    @pytest.mark.tags('TEST-33364')
+    def test_33364(self):
+        """
+        Test data usage per account for Max IAM users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Create s3 Account")
+        resp = self.acc_capacity.create_s3_account(True, True)
+        assert_utils.assert_true(resp[0], resp[1])
+        account1_info = resp[1]
+        self.account_created.append(account1_info[3])
+        self.log.info("Step-2: create a bucket in account")
+        bucket = f"bucket{account1_info[3]}"
+        resp = account1_info[4].create_bucket(bucket)
+        assert_utils.assert_true(resp[0], resp)
+        self.buckets_created.append([bucket, account1_info[0], account1_info[1]])
+        total_cap = 0
+        self.log.info(f"creating {const.MAX_IAM_USERS} IAMs for {account1_info[3]} s3 user")
+        iam_users = []
+        for cnt in range(const.MAX_IAM_USERS):
+            iam_user = "iam_user_" + str(cnt) + "_" + str(int(time.time()))
+            self.log.info(f"Creating new iam user {iam_user}")
+            iam_obj = iam_test_lib.IamTestLib(
+                access_key=account1_info[0],
+                secret_key=account1_info[1])
+            resp = iam_obj.create_user(iam_user)
+            assert_true(resp[0], resp[1])
+            self.iam_users_created([iam_user, account1_info[0], account1_info[1]])
+            iam_access_key = resp[1]["access_key"]
+            iam_secret_key = resp[1]["secret_key"]
+            iam_users.append(iam_user)
+            self.log.info("Start: Put operations")
+            obj = f"object{s3_user}" + str(cnt) + ".txt"
+            write_bytes_mb = random.randint(10, 100)
+            total_cap = total_cap + write_bytes_mb
+            self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
+                          bucket)
+            resp = s3_misc.create_put_objects(
+                obj, bucket, iam_access_key, iam_secret_key, object_size=write_bytes_mb)
+            assert_utils.assert_true(resp, "Put object Failed")
+            self.log.info("End: Put operations")
+            self.log.info("verify capacity of account after put operations")
+            s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+            resp = self.acc_capacity.verify_account_capacity(s3_account)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("verified capacity of account after put operations")
+        self.log.info("ENDED: ")
