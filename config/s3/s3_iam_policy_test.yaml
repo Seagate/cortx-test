@@ -3,7 +3,7 @@ test_32763:
   path: "/"
   description: "This is the valid iam policy document."
   tags:
-    - 'Key': 'product',
+    - 'Key': 'product'
       'Value': 'cortx'
   policy_document:
     "Version": "2012-10-17"
@@ -21,11 +21,7 @@ test_32771:
         "Version": "2012-10-17"
     policy_document_action:
         "Statement":
-          - "Action":
-            "iam:CreateRole"
-            "iam:TagRole"
-            "iam:AttachRolePolicy"
-            "iam:CreatePolicy"
+          - "Action": "iam:CreateRole"
     policy_document_effect:
         "Statement":
           - "Effect": "Allow"
@@ -41,11 +37,7 @@ test_32772:
     policy_document:
         "Version": "2012-10-17"
         "Statement":
-          - "Action":
-            - "iam:CreateRole"
-              "iam:TagRole"
-              "iam:AttachRolePolicy"
-              "iam:CreatePolicy"
+          - "Action": "iam:TagRole"
             "Effect": "Allow"
             "Resource": "*"
 

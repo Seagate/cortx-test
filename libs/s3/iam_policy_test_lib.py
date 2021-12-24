@@ -41,7 +41,7 @@ class IamPolicyTestLib(IamPolicy):
             self,
             access_key: str = ACCESS_KEY,
             secret_key: str = SECRET_KEY,
-            endpoint_url: str = S3_CFG["s3_url"],
+            endpoint_url: str = S3_CFG["iam_url"],
             s3_cert_path: str = S3_CFG["s3_cert_path"],
             **kwargs) -> None:
         """

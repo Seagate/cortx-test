@@ -22,6 +22,7 @@
 
 import os
 import logging
+import json
 from time import perf_counter_ns
 
 import pytest
@@ -55,8 +56,8 @@ class TestIamPolicy:
         self.iam_tobj = IamTestLib()
         response = self.iam_tobj.create_iam_user(self.iam_user, self.iam_password)
         assert_utils.assert_true(response[0], response[1])
-        iam_access_key = response[1]['User']['AccessKeyId']
-        iam_secret_key = response[1]['User']['SecretAccessKey']
+        iam_access_key = response[1]['AccessKey']['AccessKeyId']
+        iam_secret_key = response[1]['AccessKey']['SecretAccessKey']
         self.iam_policy_obj = IamPolicyTestLib(access_key=iam_access_key, secret_key=iam_secret_key)
         self.policy_arn = None
         self.log.info("ENDED: Setup operations")
@@ -81,11 +82,13 @@ class TestIamPolicy:
         self.log.info("Steps 1: Create policy by giving only required parameters."
                       " e.g., Description, PolicyName, PolicyDocument, Path, Tags.")
         test_32763_cfg = IAM_POLICY_CFG["test_32763"]
+        self.log.info(test_32763_cfg)
         response = self.iam_policy_obj.create_policy(
-            PolicyName=test_32763_cfg["policy_name"], Path=IAM_POLICY_CFG["path"],
-            PolicyDocument=IAM_POLICY_CFG["policy_document"],
-            Description=IAM_POLICY_CFG["description"],
-            Tags=IAM_POLICY_CFG["tags"])
+            policy_name=test_32763_cfg["policy_name"],
+            policy_document=json.dumps(test_32763_cfg["policy_document"]),
+            Path=test_32763_cfg["path"],
+            Description=test_32763_cfg["description"],
+            Tags=test_32763_cfg["tags"])
         assert_utils.assert_true(response[0], response[1])
         self.policy_arn = response[1]['Policy']['Arn']
         self.log.info("Steps 2: List policy and make sure it is getting listed.")
@@ -143,7 +146,7 @@ class TestIamPolicy:
         self.log.info("Step 3: Create policy by giving only PolicyDocument.")
         try:
             response = self.iam_policy_obj.create_policy(
-                policy_document=test_32766_cfg["policy_document"])
+                policy_document=json.dumps(test_32766_cfg["policy_document"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             self.log.error(error.message)
@@ -158,7 +161,7 @@ class TestIamPolicy:
         self.log.info("Step 1: Create valid policy using PolicyName & PolicyDocument.")
         test_32767_cfg = IAM_POLICY_CFG["test_32772"]
         response = self.iam_policy_obj.create_policy(
-            test_32767_cfg["policy_name"], test_32767_cfg["policy_document"])
+            test_32767_cfg["policy_name"], json.dumps(test_32767_cfg["policy_document"]))
         assert_utils.assert_true(response[0], response)
         self.policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy and make sure it is getting listed.")
@@ -170,7 +173,7 @@ class TestIamPolicy:
         self.log.info("Step 4: Create again a new policy using same PolicyName & PolicyDocument.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32767_cfg["policy_name"], test_32767_cfg["policy_document"])
+                test_32767_cfg["policy_name"], json.dumps(test_32767_cfg["policy_document"]))
             assert_utils.assert_false(response[0], response)
         except CTException as error:
             assert_utils.assert_in("An error", error.message)
@@ -198,42 +201,48 @@ class TestIamPolicy:
         self.log.info("Step 1: Create policy using Version other than '2012 - 10 - 17'.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_version"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_invalid_version"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 2: Create policy using no Statement.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_no_statement"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_no_statement"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 3: Create policy using same Sid for 2 statements.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_same_sid"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_same_sid"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 4: Create policy using Effect other than Allow and Deny.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_effect"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_invalid_effect"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 5: Create policy using Action other than implemented actions.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_action"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_invalid_action"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 6: Create policy using Resource which is not present.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_resource"])
+                test_32769_cfg["policy_name"],
+                json.dumps(test_32769_cfg["policy_document_invalid_resource"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
@@ -248,7 +257,7 @@ class TestIamPolicy:
         test_32770_cfg = IAM_POLICY_CFG["test_32770"]
         self.log.info("Step 1: Create policy using Effect, Statement, Action & Resource.")
         response = self.iam_policy_obj.create_policy(
-            test_32770_cfg["policy_name"], test_32770_cfg["policy_document"])
+            test_32770_cfg["policy_name"], json.dumps(test_32770_cfg["policy_document"]))
         assert_utils.assert_true(response[0], response)
         self.policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy and make sure it is getting listed.")
@@ -269,35 +278,37 @@ class TestIamPolicy:
         self.log.info("Step 1: Create policy using only Version.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_version"])
+                test_32771_cfg["policy_name"],
+                json.dumps(test_32771_cfg["policy_document_version"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 2: Create policy using only Sid.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_sid"])
+                test_32771_cfg["policy_name"], json.dumps(test_32771_cfg["policy_document_sid"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 3: Create policy using only Effect.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_effect"])
+                test_32771_cfg["policy_name"], json.dumps(test_32771_cfg["policy_document_effect"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 4: Create policy using only Action.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_action"])
+                test_32771_cfg["policy_name"], json.dumps(test_32771_cfg["policy_document_action"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 5: Create policy using only Resource.")
         try:
             response = self.iam_policy_obj.create_policy(
-                test_32771_cfg["policy_name"], test_32771_cfg["policy_document_resource"])
+                test_32771_cfg["policy_name"],
+                json.dumps(test_32771_cfg["policy_document_resource"]))
             assert_utils.assert_false(response[0], response[1])
         except CTException as error:
             assert_utils.assert_in("InvalidPolicy", error.message)
@@ -313,7 +324,7 @@ class TestIamPolicy:
         self.log.info("Step 1: Create valid policy using Name, Tags, Policy Document with elements"
                       " Version, Effect, Action, Resource.")
         response = self.iam_policy_obj.create_policy(
-            test_32772_cfg["policy_name"], test_32772_cfg["policy_document"])
+            test_32772_cfg["policy_name"], json.dumps(test_32772_cfg["policy_document"]))
         assert_utils.assert_true(response[0], response)
         self.policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy.")
