@@ -42,7 +42,6 @@ from commons.helpers.node_helper import Node
 from config import CSM_CFG
 from config import CMN_CFG
 from config.s3 import S3_CFG
-from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
@@ -668,7 +667,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -689,8 +688,8 @@ class TestIAMUserManagement:
         self.log.info("Add bucket policy for IAM to perform I/O operations")
         s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=s3_access_key, secret_key=s3_secret_key)
-        BKT_POLICY_CONF = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
-        bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
+        bky_policy_cong = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+        bucket_policy = bky_policy_cong["test_32695"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(bucket)
         bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
@@ -733,7 +732,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -773,7 +772,7 @@ class TestIAMUserManagement:
         self.log.info("Step 2: Try to create s3iamuser using direct REST API call")
         for access_key in iam_access_keys :
             self.log.info("[START] Access Key : %s", access_key)
-            iam_user = "iamuser-{}".format(perf_counter_ns())
+            iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -811,7 +810,7 @@ class TestIAMUserManagement:
         self.log.info("Step 2: Try to create s3iamuser using direct REST API call")
         for secret_key in iam_secret_keys:
             self.log.info("[START] Access Key : %s", secret_key)
-            iam_user = "iamuser-{}".format(perf_counter_ns())
+            iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -838,7 +837,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -865,7 +864,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Try to create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -892,7 +891,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user1 = "iamuser-{}".format(perf_counter_ns())
+        iam_user1 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
@@ -904,7 +903,7 @@ class TestIAMUserManagement:
         accesskeyid1 = resp[1]["AccessKeyId"]
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Try to create s3iamuser using direct REST API call")
-        iam_user2 = "iamuser-{}".format(perf_counter_ns())
+        iam_user2 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
@@ -934,7 +933,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user1 = "iamuser-{}".format(perf_counter_ns())
+        iam_user1 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
@@ -946,7 +945,7 @@ class TestIAMUserManagement:
         accesskeyid1 = resp[1]["AccessKeyId"]
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Create s3iamuser using direct REST API call")
-        iam_user2 = "iamuser-{}".format(perf_counter_ns())
+        iam_user2 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
@@ -981,7 +980,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1014,7 +1013,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Trt Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1050,7 +1049,7 @@ class TestIAMUserManagement:
         s3_access_key2 = resp[1]["access_key"]
         s3_secret_key2 = resp[1]["secret_key"]
         self.log.info("Step 3: Try Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
         self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
@@ -1086,7 +1085,7 @@ class TestIAMUserManagement:
         s3_access_key2 = resp[1]["access_key"]
         s3_secret_key2 = resp[1]["secret_key"]
         self.log.info("Step 3: Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
         self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
@@ -1119,7 +1118,7 @@ class TestIAMUserManagement:
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
         self.log.info("Step 2: Create s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1127,7 +1126,7 @@ class TestIAMUserManagement:
         self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
         iam_access_key = []
         for _ in range(2):
-            access_key = "key-iamuser-{}".format(perf_counter_ns())
+            access_key = "key_iamuser_{}".format(perf_counter_ns())
             access_key = access_key.ljust(cons.Rest.IAM_ACCESS_LL, "d")
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1181,7 +1180,7 @@ class TestIAMUserManagement:
         self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
         for secret_key in iam_secret_keys:
             self.log.info("Creating custom s3iamuser with secret key: %s.", secret_key)
-            iam_user = "iamuser-{}".format(perf_counter_ns())
+            iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1201,8 +1200,8 @@ class TestIAMUserManagement:
             self.log.info("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 access_key=s3_access_key, secret_key=s3_secret_key)
-            BKT_POLICY_CONF = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
-            bucket_policy = BKT_POLICY_CONF["test_32278"]["bucket_policy"]
+            bky_policy_cong = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+            bucket_policy = bky_policy_cong["test_32278"]["bucket_policy"]
             bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
                 "Resource"].format(bucket)
             bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
@@ -1249,7 +1248,7 @@ class TestIAMUserManagement:
         self.log.info("Step 2: Create custom s3iamuser using direct REST API call")
         for access_key in iam_access_keys:
             self.log.info("Creating custom s3iamuser with access key %s.", access_key)
-            iam_user = "iamuser-{}".format(perf_counter_ns())
+            iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1268,8 +1267,8 @@ class TestIAMUserManagement:
             self.log.info("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 access_key=s3_access_key, secret_key=s3_secret_key)
-            BKT_POLICY_CONF = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
-            bucket_policy = BKT_POLICY_CONF["test_32279"]["bucket_policy"]
+            bky_policy_cong = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+            bucket_policy = bky_policy_cong["test_32279"]["bucket_policy"]
             bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
                 "Resource"].format(bucket)
             bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
@@ -1313,7 +1312,7 @@ class TestIAMUserManagement:
         iam_users = []
         for i in range(cons.Rest.MAX_IAM_USERS):
             self.log.info("[START] Create s3iamuser count : %s", i + 1)
-            iam_user = "iamuser-{}".format(perf_counter_ns())
+            iam_user = "iamuser_{}".format(perf_counter_ns())
             iam_users.append(iam_user)
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
@@ -1328,7 +1327,7 @@ class TestIAMUserManagement:
             assert_utils.assert_true(resp[0], resp[1])
         #  check error on 1001th IAM user
         self.log.info("Step 3: Try to create 1001th s3iamuser using direct REST API call")
-        iam_user = "iamuser-{}".format(perf_counter_ns())
+        iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         assert_utils.assert_false(resp[0], resp[1])
