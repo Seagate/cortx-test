@@ -138,6 +138,15 @@ class TestPodRestart:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.restore_pod:
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup})
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restored:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -430,6 +439,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 7: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
@@ -685,6 +695,7 @@ class TestPodRestart:
         LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
         LOGGER.info("COMPLETED: Test to verify copy object after data pod restart.")
 
+    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34073")
@@ -771,6 +782,7 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 7: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info("Step 8: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
