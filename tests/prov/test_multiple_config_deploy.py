@@ -21,16 +21,11 @@
 
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
-import os
-from multiprocessing import Pool
-
 import pytest
 
-from commons import pswdmanager, configmanager
+from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import system_utils, assert_utils
-from commons import commands as common_cmd
-from config import CMN_CFG, HA_CFG, PROV_CFG
+from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
@@ -44,10 +39,6 @@ class TestMultipleConfDeploy:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.vm_username = os.getenv("QA_VM_POOL_ID",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -63,22 +54,6 @@ class TestMultipleConfDeploy:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-
-    def setup_method(self):
-        """Revert the VM's before starting the deployment tests"""
-        self.log.info("Reverting all the VM before deployment")
-        with Pool(self.num_nodes) as proc_pool:
-            proc_pool.map(self.revert_vm_snapshot, self.host_list)
-
-    def revert_vm_snapshot(self, host):
-        """
-        Revert VM snapshot
-        param: host: VM name
-        """
-        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
-            self.vm_username, self.vm_password, host), read_lines=True)
-
-        assert_utils.assert_true(resp[0], resp[1])
 
     def teardown_method(self):
         """
