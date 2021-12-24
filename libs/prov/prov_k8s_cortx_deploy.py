@@ -179,18 +179,6 @@ class ProvDeployK8sCortxLib:
 
         return True, "Prerequisite VM check successful"
 
-    @staticmethod
-    def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
-        """
-        Perform Docker Login
-        param: node_obj: Node Object
-        param: docker_user : Docker username
-        param: docker_pswd : Docker password
-        """
-        LOGGER.info("Perform Docker Login")
-        resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
-        LOGGER.debug("resp: %s", resp)
-
     def prereq_git(self, node_obj: LogicalNode, git_tag: str):
         """
         Checkout cortx-k8s code on the  node. Delete is any previous exists.
@@ -309,14 +297,12 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
-            # self.docker_login(node, docker_username, docker_password)
             self.prereq_git(node, git_tag)
             self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
         self.pull_cortx_image(worker_node_list)
 
-        # self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
