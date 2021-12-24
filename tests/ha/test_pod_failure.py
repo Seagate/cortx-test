@@ -53,6 +53,7 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
+from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -89,6 +90,7 @@ class TestPodFailure:
         cls.restore_node = cls.node_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
+        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -107,8 +109,6 @@ class TestPodFailure:
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
-
-
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
@@ -1892,6 +1892,7 @@ class TestPodFailure:
         LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, node_fqdn)
         LOGGER.info("Get the data pod running on %s node", node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        data_pod_name = None
         for pod_name, node in data_pods.items():
             if node == node_fqdn:
                 data_pod_name = pod_name
@@ -1978,6 +1979,7 @@ class TestPodFailure:
         LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, node_fqdn)
         LOGGER.info("Get the data pod running on node %s", node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        data_pod_name = None
         for pod_name, node in data_pods.items():
             if node == node_fqdn:
                 data_pod_name = pod_name
@@ -2346,3 +2348,81 @@ class TestPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe "
             "shutdown by deleting deployment")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-33209")
+    @CTFailOn(error_handler)
+    def test_rc_pod_failover(self):
+        """
+        Verify IOs before and after pod failure by making RC node down
+        """
+        LOGGER.info("STARTED: Verify IOs before & after pod failure by making RC node down")
+
+        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean.update(resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(resp[2].keys())[0])
+        LOGGER.info("Step 1: Successfully completed IOs.")
+
+        LOGGER.info("Step 2: Get the RC node and shutdown the same.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1] + ".colo.seagate.com"
+        self.node_name = rc_node
+        LOGGER.info("RC Node is running on %s node", rc_node)
+        LOGGER.info("Get the data pod running on %s node", rc_node)
+        data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        rc_datapod = None
+        for pod_name, node in data_pods.items():
+            if node == rc_node:
+                rc_datapod = pod_name
+                break
+        LOGGER.info("RC node %s has data pod: %s", rc_node, rc_datapod)
+        LOGGER.info("Shutdown the RC node: %s", rc_node)
+        resp = self.ha_obj.host_safe_unsafe_power_off(host=rc_node)
+        assert_utils.assert_true(resp, f"{rc_node} is not powered off")
+        LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", rc_node)
+        self.restore_node = True
+
+        LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
+                    "are in offline state", rc_node, rc_datapod)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
+                    "are in offline state", rc_node, rc_datapod)
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
+                    pod_list.remove(rc_datapod))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(rc_datapod),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+
+        LOGGER.info("Step 6: Check for RC node failed over node.")
+        rc_node_new = self.motr_obj.get_primary_cortx_node()
+        assert_utils.assert_true(len(rc_node_new), "Couldn't fine new RC failover node")
+        rc_node_new = rc_node_new.split("svc-")[1] + ".colo.seagate.com"
+        LOGGER.info("Step 6: RC node has been failed over to %s node", rc_node_new)
+
+        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean.update(resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(resp[2].keys())[0])
+        LOGGER.info("Step 7: Successfully completed IOs.")
+
+        LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
