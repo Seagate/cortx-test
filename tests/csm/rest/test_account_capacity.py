@@ -58,13 +58,44 @@ class TestAccountCapacity():
         """
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting buckets %s & associated objects", self.buckets_created)
+        buckets_deleted = []
+        iam_deleted = []
+        s3_account_deleted = []
         for bucket in self.buckets_created:
             resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
-            assert_utils.assert_true(resp, "Failed to delete bucket.")
+            if resp:
+                buckets_deleted.append(bucket)
+            else:
+                self.log.error("Bucket deletion failed for %s ", bucket)
+        self.log.info("buckets deleted %s", buckets_deleted)
+        for bucket in buckets_deleted:
+            self.buckets_created.remove(bucket)
+
+        self.log.info("Deleting iam account %s created in test", self.iam_users_created)
+        for iam_user in self.iam_users_created:
+            resp = s3_misc.delete_iam_user(iam_user[0], iam_user[1], iam_user[2])
+            if resp:
+                iam_deleted.append(iam_user)
+            else:
+                self.log.error("IAM deletion failed for %s ", iam_user)
+        self.log.info("IAMs deleted %s", iam_deleted)
+        for iam in iam_deleted:
+            self.iam_users_created.remove(iam)
+
         self.log.info("Deleting S3 account %s created in test", self.account_created)
         for account in self.account_created:
             resp = self.s3user.delete_s3_account_user(account)
-            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "Failed to delete account")
+            if resp.status_code == HTTPStatus.OK:
+                s3_account_deleted.append(account)
+            else:
+                self.log.error("S3 account deletion failed for %s ", account)
+        self.log.info("S3 accounts deleted %s", s3_account_deleted)
+        for acc in s3_account_deleted:
+            self.account_created.remove(acc)
+
+        assert_utils.assert_true(len(self.buckets_created) == 0, "Bucket deletion failed")
+        assert_utils.assert_true(len(self.iam_users_created) == 0, "IAM deletion failed")
+        assert_utils.assert_true(len(self.account_created) == 0, "S3 account deletion failed")
         self.log.info("[ENDED] ######### Teardown #########")
 
     @pytest.mark.csmrest
