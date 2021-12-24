@@ -57,8 +57,6 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
-        # self.docker_username = os.getenv("DOCKER_USERNAME")
-        # self.docker_password = os.getenv("DOCKER_PASSWORD")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
