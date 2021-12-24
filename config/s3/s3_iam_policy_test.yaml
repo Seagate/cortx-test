@@ -4,7 +4,7 @@ invalid_arn:
 test_32771:
     policy_name: "IamPolicyInvalidDocument"
     policy_document_version:
-        "Version": "2012-10-17",
+        "Version": "2012-10-17"
     policy_document_action:
         "Statement":
           - "Action":
@@ -25,21 +25,65 @@ test_32771:
 test_32772:
     policy_name: "IamPolicyValidDocument"
     policy_document:
-        "Version": "2012-10-17",
+        "Version": "2012-10-17"
         "Statement":
           - "Action":
-            - "iam:CreateRole",
-              "iam:TagRole",
-              "iam:AttachRolePolicy",
+            - "iam:CreateRole"
+              "iam:TagRole"
+              "iam:AttachRolePolicy"
               "iam:CreatePolicy"
-          "Effect": "Allow",
-          "Resource": "*"
+            "Effect": "Allow"
+            "Resource": "*"
 
 test_32770:
   policy_name: "IamPolicyValidDocument"
   policy_document:
-    "Version": "2012-10-17",
+    "Version": "2012-10-17"
     "Statement":
       - "Action": "iam:*"
         "Effect": "Allow"
         "Resource": "*"
+
+test_32769:
+  policy_name: "IamPolicyInvalidDocument"
+  policy_document_invalid_version:
+    "Version": "2021-10-17"
+    "Statement":
+      - "Action": "iam:CreateRole"
+        "Effect": "Allow"
+        "Resource": "*"
+  policy_document_no_statement:
+    "Version": "2012-10-17"
+  policy_document_same_sid:
+    "Version": "2012-10-17"
+    "Statement":
+      - "Action": "iam:AttachRolePolicy"
+        "Effect": "Deny"
+        "Resource": "*"
+        "Sid": "AssumeTaggedRole"
+    "Statement":
+      - "Action": "iam:CreateRole"
+        "Effect": "Allow"
+        "Resource": "*"
+        "Sid": "AssumeTaggedRole"
+  policy_document_invalid_effect:
+    "Version": "2012-10-17"
+    "Statement":
+      - "Action": "iam:AttachRolePolicy"
+        "Effect": "AllowDeny"
+        "Resource": "*"
+        "Sid": "AssumeTaggedRole"
+  policy_document_invalid_action:
+    "Version": "2012-10-17"
+    "Statement":
+      - "Action": "iam:RolePolicy"
+        "Effect": "Deny"
+        "Resource": "*"
+        "Sid": "AssumeTaggedRole"
+  policy_document_invalid_resource:
+    "Version": "2012-10-17"
+    "Statement":
+      - "Action": "iam:RolePolicy"
+        "Effect": "Deny"
+        "Resource": "xyz"
+        "Sid": "AssumeTaggedRole"

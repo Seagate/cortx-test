@@ -112,8 +112,25 @@ class TestIamPolicy:
         """Create IAM Policy using invalid value for required parameters."""
         self.log.info("STARTED: Create IAM Policy using invalid value for required parameters.")
         self.log.info("Step 1: Create policy by giving no parameters.")
+        test_32766_cfg = IAM_POLICY_CFG["test_32772"]
+        try:
+            response = self.iam_policy_obj.create_policy()
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            self.log.error(error.message)
         self.log.info("Step 2: Create policy by giving only PolicyName.")
+        try:
+            response = self.iam_policy_obj.create_policy(test_32766_cfg["policy_name"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            self.log.error(error.message)
         self.log.info("Step 3: Create policy by giving only PolicyDocument.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                policy_document=test_32766_cfg["policy_document"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            self.log.error(error.message)
         self.log.info("ENDED: Create IAM Policy using invalid value for required parameters.")
 
     @pytest.mark.s3_ops
@@ -123,9 +140,24 @@ class TestIamPolicy:
         """Create a policy that already exists."""
         self.log.info("STARTED: Create a policy that already exists.")
         self.log.info("Step 1: Create valid policy using PolicyName & PolicyDocument.")
+        test_32767_cfg = IAM_POLICY_CFG["test_32772"]
+        response = self.iam_policy_obj.create_policy(
+            test_32767_cfg["policy_name"], test_32767_cfg["policy_document"])
+        assert_utils.assert_true(response[0], response)
+        policy_arn = response[1]['Policy']['Arn']
         self.log.info("Step 2: List policy and make sure it is getting listed.")
+        response = self.iam_policy_obj.list_policies()
+        assert_utils.assert_true(response[0], response)
         self.log.info("Step 3: Get policy using ARN in step 1.")
+        response = self.iam_policy_obj.get_policy(policy_arn)
+        assert_utils.assert_true(response[0], response)
         self.log.info("Step 4: Create again a new policy using same PolicyName & PolicyDocument.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32767_cfg["policy_name"], test_32767_cfg["policy_document"])
+            assert_utils.assert_false(response[0], response)
+        except CTException as error:
+            assert_utils.assert_in("An error", error.message)
         self.log.info("ENDED: Create a policy that already exists.")
 
     @pytest.mark.s3_ops
@@ -146,12 +178,49 @@ class TestIamPolicy:
         self.log.info("STARTED: Create Policy using invalid policy document elements.")
         self.log.info(
             "For all below steps, single value will be invalid, other will be valid values.")
+        test_32769_cfg = IAM_POLICY_CFG["test_32769"]
         self.log.info("Step 1: Create policy using Version other than '2012 - 10 - 17'.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_version"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 2: Create policy using no Statement.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_no_statement"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 3: Create policy using same Sid for 2 statements.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_same_sid"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 4: Create policy using Effect other than Allow and Deny.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_effect"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 5: Create policy using Action other than implemented actions.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_action"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("Step 6: Create policy using Resource which is not present.")
+        try:
+            response = self.iam_policy_obj.create_policy(
+                test_32769_cfg["policy_name"], test_32769_cfg["policy_document_invalid_resource"])
+            assert_utils.assert_false(response[0], response[1])
+        except CTException as error:
+            assert_utils.assert_in("InvalidPolicy", error.message)
         self.log.info("ENDED: Create Policy using invalid policy document elements.")
 
     @pytest.mark.s3_ops
