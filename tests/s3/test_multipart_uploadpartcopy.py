@@ -622,7 +622,7 @@ class TestMultipartUploadPartCopy:
                                                               self.mpu_partcopy_obj)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Abort multipart upload")
-        resp = self.s3_mp_test_obj.abort_multipart_upload(self.mpu_partcopy_bkt,
+        resp = self.s3_mpu_test_obj.abort_multipart_upload(self.mpu_partcopy_bkt,
                                                           self.mpu_partcopy_obj, mpu_id2)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop and validate parallel S3 IOs")
