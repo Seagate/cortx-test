@@ -35,7 +35,10 @@ from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.s3 import iam_test_lib
 from libs.s3 import s3_misc
+from libs.s3 import s3_test_lib
+from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 
@@ -325,7 +328,7 @@ class TestAccountCapacity():
         write_bytes_mb = random.randint(10, 100)
         total_cap = write_bytes_mb
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
-                      bucket)
+                      user1_bucket1)
         resp = s3_misc.create_put_objects(
             obj, user1_bucket1, account1_info[0], account1_info[1], object_size=write_bytes_mb)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -411,13 +414,15 @@ class TestAccountCapacity():
                 access_key=account1_info[0],
                 secret_key=account1_info[1])
             resp = iam_obj.create_user(iam_user)
-            assert_true(resp[0], resp[1])
-            self.iam_users_created([iam_user, account1_info[0], account1_info[1]])
-            iam_access_key = resp[1]["access_key"]
-            iam_secret_key = resp[1]["secret_key"]
+            assert_utils.assert_true(resp[0], resp[1])
+            self.iam_users_created.append([iam_user, account1_info[0], account1_info[1]])
+            response = iam_obj.create_access_key(iam_user)[1]
+            self.log.info("user_acc_key: %s", str(response))
+            iam_access_key = response["AccessKey"]["AccessKeyId"]
+            iam_secret_key = response["AccessKey"]["SecretAccessKey"]
             iam_users.append(iam_user)
             self.log.info("Start: Put operations")
-            obj = f"object{s3_user}" + str(cnt) + ".txt"
+            obj = f"object{iam_user}" + str(cnt) + ".txt"
             write_bytes_mb = random.randint(10, 100)
             total_cap = total_cap + write_bytes_mb
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
@@ -427,7 +432,7 @@ class TestAccountCapacity():
             assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("End: Put operations")
             self.log.info("verify capacity of account after put operations")
-            s3_account = [{"account_name": s3_user, "capacity": total_cap, "unit": 'MB'}]
+            s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
             resp = self.acc_capacity.verify_account_capacity(s3_account)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("verified capacity of account after put operations")
