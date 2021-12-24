@@ -5451,6 +5451,7 @@ class TestCsmUser():
         new_users = [[], [], []]
         self.log.info("Deleting all csm users except predefined ones...")
         self.config.delete_csm_users()
+        deleted_users = []
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("Step 1: Listing all csm users")
         response = self.csm_user.list_csm_users(
@@ -5478,6 +5479,8 @@ class TestCsmUser():
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5492,9 +5495,12 @@ class TestCsmUser():
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
         self.log.info("Deleting all csm admin users except predefined ones...")
+        deleted_users = []
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5508,10 +5514,13 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
+        deleted_users = []
         self.log.info("Deleting all csm manage users except predefined ones...")
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5525,11 +5534,14 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
+        deleted_users = []
         self.log.info("Deleting all csm monitor users except predefined ones...")
         for usr in self.created_users:
             self.log.info("Deleting user %s", usr)
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
