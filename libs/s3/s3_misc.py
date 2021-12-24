@@ -23,7 +23,7 @@ import logging
 import boto3
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import system_utils
+from commons.utils import system_utils, assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -208,3 +208,25 @@ def create_put_objects(object_name: str, bucket_name: str,
 
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
     return result
+
+
+def create_bucket_put_object(s3_test_lib, bucket_name: str, obj_name: str, file_path: str,
+                             mb_count: int) -> None:
+    """
+    This function creates a bucket and uploads an object to the bucket.
+
+    :param s3_test_lib: s3 test lib object
+    :param bucket_name: Name of bucket to be created
+    :param obj_name: Name of an object to be put to the bucket
+    :param file_path: Path of the file to be created and uploaded to bucket
+    :param mb_count: Size of file in MBs
+    """
+    LOGGER.info("Creating a bucket %s", bucket_name)
+    resp = s3_test_lib.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOGGER.info("Created a bucket %s", bucket_name)
+    system_utils.create_file(file_path, mb_count)
+    LOGGER.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
+    resp = s3_test_lib.put_object(bucket_name, obj_name, file_path)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOGGER.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)

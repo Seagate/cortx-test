@@ -42,6 +42,7 @@ S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(
     CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
+S3_IAM_POLICY_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
 S3CMD_TEST_CONFIG = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
 S3_LDAP_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "test_openldap.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
