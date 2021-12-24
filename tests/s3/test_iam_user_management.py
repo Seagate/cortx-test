@@ -20,6 +20,7 @@
 
 """S3 IAM user TestSuite"""
 
+import json
 import os
 import string
 import logging
@@ -40,9 +41,11 @@ from commons.helpers.node_helper import Node
 from config import CSM_CFG
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
+from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -682,6 +685,15 @@ class TestIAMUserManagement:
             self.log.info("Created bucket: %s ", bucket)
         else:
             assert False, "Failed to create bucket."
+        self.log.info("Add bucket policy for IAM to perform I/O operations")
+        s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+            access_key=s3_access_key, secret_key=s3_secret_key)
+        bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
+        bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+            "Resource"].format(bucket)
+        bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
+            "Resource"].format(bucket)
+        s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
@@ -1184,6 +1196,15 @@ class TestIAMUserManagement:
                 self.log.info("Created bucket: %s ", bucket)
             else:
                 assert False, "Failed to create bucket."
+            self.log.info("Add bucket policy for IAM to perform I/O operations")
+            s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+                access_key=s3_access_key, secret_key=s3_secret_key)
+            bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
+            bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+                "Resource"].format(bucket)
+            bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
+                "Resource"].format(bucket)
+            s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
@@ -1241,6 +1262,15 @@ class TestIAMUserManagement:
                 self.log.info("Created bucket: %s ", bucket)
             else:
                 assert False, "Failed to create bucket."
+            self.log.info("Add bucket policy for IAM to perform I/O operations")
+            s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+                access_key=s3_access_key, secret_key=s3_secret_key)
+            bucket_policy = BKT_POLICY_CONF["test_32695"]["bucket_policy"]
+            bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
+                "Resource"].format(bucket)
+            bucket_policy["Statement"][1]["Resource"] = bucket_policy["Statement"][1][
+                "Resource"].format(bucket)
+            s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(bucket_policy))
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
