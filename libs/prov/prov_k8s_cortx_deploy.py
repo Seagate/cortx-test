@@ -212,7 +212,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("\n %s", resp1)
         openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/", read_lines=True)
         LOGGER.info("\n %s", openldap_dir_residue)
-        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/", read_lines=True)
+        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
+                                                  read_lines=True)
         LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
