@@ -210,7 +210,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
         LOGGER.info("\n %s", resp1)
-        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/", read_lines=True)
+        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
+                                                    read_lines=True)
         LOGGER.info("\n %s", openldap_dir_residue)
         thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
                                                   read_lines=True)
