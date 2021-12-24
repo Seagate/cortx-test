@@ -97,9 +97,27 @@ class TestProvK8CortxUpgrade:
         resp = cls.master_node_obj.execute_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Wait for cluster services to start.")
+        time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
         resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix="storage-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
+
+    @classmethod
+    def teardown_class(cls):
+        """Test teardown class."""
+        LOGGER.info("Started: Teardown class operations.")
+        LOGGER.info("Destroy CORTX cluster.")
+        repo_name = "cortx-prvsnr"
+        cmd = "cd {}; {}".format(cls.prov_deploy_cfg["git_remote_path"],
+                                 cls.prov_deploy_cfg["destroy_cluster"])
+        resp = cls.master_node_obj.execute_cmd(cmd=cmd)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Delete prov k8s repo.")
+        repo_path = f"/{cls.repo_clone_path}/{repo_name}"
+        for node_obj in cls.host_list:
+            resp = node_obj.remove_dir(dpath=repo_path)
+            assert_utils.assert_true(resp)
+        LOGGER.info("Done: Teardown class operations completed.")
 
     def perform_upgrade(self, upgrade_image_version: str, exc: bool = True):
         """Function calls upgrade and put return in queue object."""
@@ -183,6 +201,7 @@ class TestProvK8CortxUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check Cluster health and services.")
+        time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
         resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="storage-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
@@ -255,13 +274,13 @@ class TestProvK8CortxUpgrade:
         resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="storage-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
-        LOGGER.info("Step 4: Start parallel upgrades.")
+        LOGGER.info("Step 4: Test parallel upgrades.")
         parallel_upgrade_message = "Upgrade is already being performed on the cluster."
         upgrade_thread = Thread(target=self.perform_upgrade, args=([self.upgrade_image]))
         parallel_upgrade_thread = Thread(target=self.perform_upgrade,
-                                         args=([self.parallel_upgrade_image], False))
+                                         args=(self.parallel_upgrade_image, False))
         upgrade_thread.start()
-        time.sleep(10)  # Wait to start t1 thread
+        time.sleep(10)  # Wait to start upgrade_thread thread
         parallel_upgrade_thread.start()
         resp = self.que.get(1)
         assert_utils.assert_exact_string(resp[1], parallel_upgrade_message)

@@ -4,3 +4,4 @@ k8s_prov_cortx_deploy:
   git_remote_path: "/root/cortx-prvsnr/test/deploy/kubernetes"
   deploy_services: "sh reimage.sh"
   upgrade_cluster: "sh upgrade.sh -i {}"
+  destroy_cluster: "sh destroy.sh"
