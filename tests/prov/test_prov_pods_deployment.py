@@ -20,13 +20,13 @@
 
 
 """Prov Deployment with Redefined Structure."""
+import random
 import logging
 import pytest
-import random
 from commons import configmanager, constants
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
-from config import CMN_CFG, PROV_CFG
+from config import CMN_CFG
 
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
@@ -70,12 +70,12 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-33218")
     def test_33218(self):
         """
-        Deployment- N node
+        Test to verify the CONTROL pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes-1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes-1),
+        self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -89,11 +89,12 @@ class TestProvPodsDeployment:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.worker_node_list,
                                            destroy_setup_flag=False)
-        resp = self.deploy_lc_obj.get_pods(self.master_node_list[0],
-                                           pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
-        assert_utils.assert_true(resp)
-        self.log.info("Pod list are %s", resp[1])
-        self.log.info("Pod count is %s", len(resp[1]))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), 1)
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -101,12 +102,12 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-33219")
     def test_33219(self):
         """
-        Deployment- N node
+        Test to verify the DATA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes-1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes-1),
+        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -120,11 +121,12 @@ class TestProvPodsDeployment:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.worker_node_list,
                                            destroy_setup_flag=False)
-        resp = self.deploy_lc_obj.get_pods(self.master_node_list[0],
-                                           pod_prefix=constants.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp)
-        self.log.info("Pod list are %s", resp[1])
-        self.log.info("Pod count is %s", len(resp[1]))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -132,12 +134,12 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-33220")
     def test_33220(self):
         """
-        Deployment- N node
+        Test to verify the SERVER pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes-1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes-1),
+        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -151,11 +153,12 @@ class TestProvPodsDeployment:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.worker_node_list,
                                            destroy_setup_flag=False)
-        resp = self.deploy_lc_obj.get_pods(self.master_node_list[0],
-                                           pod_prefix=constants.SERVER_POD_NAME_PREFIX)
-        assert_utils.assert_true(resp)
-        self.log.info("Pod list are %s", resp[1])
-        self.log.info("Pod count is %s", len(resp[1]))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.SERVER_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -163,12 +166,12 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-33221")
     def test_33221(self):
         """
-        Deployment- N node
+        Test to verify the HA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes-1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes-1),
+        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -182,9 +185,10 @@ class TestProvPodsDeployment:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.worker_node_list,
                                            destroy_setup_flag=False)
-        resp = self.deploy_lc_obj.get_pods(self.master_node_list[0],
-                                           pod_prefix=constants.HA_POD_NAME_PREFIX)
-        assert_utils.assert_true(resp)
-        self.log.info("Pod list are %s", resp[1])
-        self.log.info("Pod count is %s", len(resp[1]))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.HA_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), 1)
         self.log.info("===Test Completed===")

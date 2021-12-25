@@ -966,22 +966,6 @@ class ProvDeployK8sCortxLib:
         return False, "Data PODS are not retrieved for cluster."
 
     @staticmethod
-    def get_pods(node_obj, pod_prefix: str) -> tuple:
-        """
-        Get list of pods in cluster.
-        param: node_obj: Master node(Logical Node object)
-        return: True/False and pods list/failure message
-        """
-        LOGGER.info("Get list of pods in cluster.")
-        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
-                                      " -o=custom-columns=NAME:.metadata.name",
-                                      read_lines=True)
-        pod_list = [pod.strip() for pod in output if pod_prefix in pod]
-        if pod_list is not None:
-            return True, pod_list
-        return False, "PODS are not retrieved for cluster."
-
-    @staticmethod
     def check_pods_status(node_obj) -> bool:
         """
         Helper function to check pods status.
@@ -1141,38 +1125,3 @@ class ProvDeployK8sCortxLib:
             time.sleep(deploy_ff_cfg["per_step_delay"])
             LOGGER.info("s3 Server Status Check Completed")
         return resp
-
-    def get_durability_config(self, num_nodes) -> list:
-        """
-        Get 3 EC configs based on the number of nodes given as args..
-        EC config will be calculated considering CVG as 1,2,3.
-        param: num_nodes : Number of nodes
-        return : list of configs. (List of Dictionary)
-        """
-        config_list = []
-        LOGGER.debug("Configurations for %s Nodes", num_nodes)
-        for i in range(1, 4):
-            config = {}
-            cvg_count = i
-            sns_total = num_nodes * cvg_count
-            sns_data = math.ceil(sns_total / 2)
-            sns_data = sns_data + i
-            if sns_data >= sns_total:
-                sns_data = sns_data - 1
-            sns_parity = sns_total - sns_data
-            dix_parity = math.ceil((num_nodes + cvg_count) / 2) + i
-            if dix_parity > (num_nodes - 1):
-                dix_parity = num_nodes - 1
-
-            config["sns_data"] = sns_data
-            config["sns_parity"] = sns_parity
-            config["sns_spare"] = 0
-            config["dix_data"] = 1
-            config["dix_parity"] = dix_parity
-            config["dix_spare"] = 0
-            config["data_disk_per_cvg"] = 0  # To utilize max possible on the available system
-            config["cvg_count"] = i
-            config_list.append(config)
-            LOGGER.debug("Config %s : %s", i, config)
-
-        return config_list
