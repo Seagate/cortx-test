@@ -72,7 +72,7 @@ class TestProvPodsDeployment:
         """
         Test to verify the CONTROL pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
@@ -104,10 +104,10 @@ class TestProvPodsDeployment:
         """
         Test to verify the DATA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
+        self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -136,10 +136,10 @@ class TestProvPodsDeployment:
         """
         Test to verify the SERVER pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
+        self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
@@ -168,7 +168,7 @@ class TestProvPodsDeployment:
         """
         Test to verify the HA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=self.num_nodes - 1)
+        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = random.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
