@@ -675,7 +675,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
@@ -687,7 +687,7 @@ class TestIAMUserManagement:
             self.log.info("Created bucket: %s ", bucket)
         else:
             assert False, "Failed to create bucket."
-        self.log.info("Add bucket policy for IAM to perform I/O operations")
+        self.log.debug("Add bucket policy for IAM to perform I/O operations")
         s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             s3_access_key, s3_secret_key)
         modified_bucket_policy = copy.deepcopy(BKT_POLICY_CONF["test_32695"]["bucket_policy"])
@@ -696,6 +696,10 @@ class TestIAMUserManagement:
         modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
             "Statement"][1]["Resource"].format(bucket)
         s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+        self.log.debug("Retrieving policy of a bucket %s", bucket)
+        resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.debug(resp[1]["Policy"])
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
@@ -818,7 +822,8 @@ class TestIAMUserManagement:
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
-            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = iam_user.ljust(
+                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             assert_utils.assert_false(resp[0], resp[1])
@@ -872,7 +877,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, iam_access_key=access_key)
         assert_utils.assert_false(resp[0], resp[1])
@@ -899,7 +904,7 @@ class TestIAMUserManagement:
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user1, s3_access_key, s3_secret_key, access_key1, secret_key1)
@@ -941,7 +946,7 @@ class TestIAMUserManagement:
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user1, s3_access_key, s3_secret_key, access_key1, secret_key1)
@@ -953,7 +958,7 @@ class TestIAMUserManagement:
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user2, s3_access_key, s3_secret_key, access_key2, secret_key1)
         accesskeyid2 = resp[1]["AccessKeyId"]
@@ -988,7 +993,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, access_key, s3_secret_key)
         accesskeyid = resp[1]["AccessKeyId"]
@@ -1093,7 +1098,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
         self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key2, s3_secret_key2, access_key, s3_secret_key1)
         accesskeyid = resp[1]["AccessKeyId"]
@@ -1130,7 +1135,8 @@ class TestIAMUserManagement:
         iam_access_key = []
         for _ in range(2):
             access_key = "im_{}".format(perf_counter_ns())
-            access_key = access_key.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = access_key.ljust(
+                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
@@ -1188,7 +1194,8 @@ class TestIAMUserManagement:
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
-            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = iam_user.ljust(
+                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             accesskeyid = resp[1]["AccessKeyId"]
@@ -1200,7 +1207,7 @@ class TestIAMUserManagement:
                 self.log.info("Created bucket: %s ", bucket)
             else:
                 assert False, "Failed to create bucket."
-            self.log.info("Add bucket policy for IAM to perform I/O operations")
+            self.log.debug("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 s3_access_key, s3_secret_key)
             modified_bucket_policy = copy.deepcopy(BKT_POLICY_CONF["test_32278"]["bucket_policy"])
@@ -1209,6 +1216,10 @@ class TestIAMUserManagement:
             modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
                 "Statement"][1]["Resource"].format(bucket)
             s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+            self.log.debug("Retrieving policy of a bucket %s", bucket)
+            resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.debug(resp[1]["Policy"])
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
@@ -1266,7 +1277,7 @@ class TestIAMUserManagement:
                 self.log.info("Created bucket: %s ", bucket)
             else:
                 assert False, "Failed to create bucket."
-            self.log.info("Add bucket policy for IAM to perform I/O operations")
+            self.log.debug("Add bucket policy for IAM to perform I/O operations")
             s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
                 s3_access_key, s3_secret_key)
             modified_bucket_policy = copy.deepcopy(BKT_POLICY_CONF["test_32279"]["bucket_policy"])
@@ -1275,6 +1286,10 @@ class TestIAMUserManagement:
             modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
                 "Statement"][1]["Resource"].format(bucket)
             s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+            self.log.debug("Retrieving policy of a bucket %s", bucket)
+            resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.debug(resp[1]["Policy"])
             if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
                 self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
             else:
@@ -1319,7 +1334,8 @@ class TestIAMUserManagement:
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
-            access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, "d")
+            access_key = iam_user.ljust(
+                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
