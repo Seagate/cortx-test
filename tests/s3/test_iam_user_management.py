@@ -23,6 +23,7 @@
 import copy
 import json
 import os
+import random
 import string
 import logging
 from time import perf_counter_ns
@@ -765,7 +766,7 @@ class TestIAMUserManagement:
         iam_access_keys .append("")
         ak_len = cons.Rest.IAM_ACCESS_LL - 1
         self.log.info("Key 2: Access key less than %s", cons.Rest.IAM_ACCESS_LL)
-        iam_access_keys .append("a" * ak_len)
+        iam_access_keys .append(random.choice(string.ascii_letters) * ak_len)
         ak_len = cons.Rest.IAM_ACCESS_UL + 1
         self.log.info("Key 3: Access key greather than %s", cons.Rest.IAM_ACCESS_UL)
         iam_access_keys .append("x" * ak_len)
@@ -805,7 +806,7 @@ class TestIAMUserManagement:
         iam_secret_keys.append("")
         sk_len = cons.Rest.IAM_SECRET_LL - 1
         self.log.info("Key 2: Secret key less than %s", cons.Rest.IAM_SECRET_LL)
-        iam_secret_keys.append("a" * sk_len)
+        iam_secret_keys.append(random.choice(string.ascii_letters) * sk_len)
         sk_len = cons.Rest.IAM_SECRET_UL + 1
         self.log.info("Key 3: Secret key greather than %s", cons.Rest.IAM_SECRET_UL)
         iam_secret_keys.append("x" * sk_len)
@@ -1128,7 +1129,7 @@ class TestIAMUserManagement:
         self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
         iam_access_key = []
         for _ in range(2):
-            access_key = "key_iamuser_{}".format(perf_counter_ns())
+            access_key = "im_{}".format(perf_counter_ns())
             access_key = access_key.ljust(cons.Rest.IAM_ACCESS_LL, "d")
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1175,14 +1176,14 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         iam_secret_keys = []
         iam_secret_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL))
-        iam_secret_keys.append("a" * cons.Rest.IAM_SECRET_UL)
+        iam_secret_keys.append(random.choice(string.ascii_letters) * cons.Rest.IAM_SECRET_UL)
         iam_secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=cons.Rest.IAM_SECRET_LL))
         iam_secret_keys.append(string.punctuation)
         self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
         for secret_key in iam_secret_keys:
             self.log.info("Creating s3iamuser with secret key: %s.", secret_key)
-            iam_user = "iamuser_{}".format(perf_counter_ns())
+            iam_user = "im_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
@@ -1243,13 +1244,13 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         iam_access_keys = []
         iam_access_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_ACCESS_LL))
-        iam_access_keys.append("a" * cons.Rest.IAM_ACCESS_UL)
+        iam_access_keys.append(random.choice(string.ascii_letters) * cons.Rest.IAM_ACCESS_UL)
         iam_access_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=cons.Rest.IAM_ACCESS_LL))
         self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
         for access_key in iam_access_keys:
             self.log.info("Creating s3iamuser with access key %s.", access_key)
-            iam_user = "iamuser_{}".format(perf_counter_ns())
+            iam_user = "im_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
