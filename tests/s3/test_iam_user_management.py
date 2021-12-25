@@ -23,7 +23,7 @@
 import copy
 import json
 import os
-import random
+import secrets
 import string
 import logging
 from time import perf_counter_ns
@@ -675,7 +675,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
@@ -770,7 +770,7 @@ class TestIAMUserManagement:
         iam_access_keys .append("")
         ak_len = cons.Rest.IAM_ACCESS_LL - 1
         self.log.info("Key 2: Access key less than %s", cons.Rest.IAM_ACCESS_LL)
-        iam_access_keys .append(random.choice(string.ascii_letters) * ak_len)
+        iam_access_keys .append(secrets.choice(string.ascii_letters) * ak_len)
         ak_len = cons.Rest.IAM_ACCESS_UL + 1
         self.log.info("Key 3: Access key greather than %s", cons.Rest.IAM_ACCESS_UL)
         iam_access_keys .append("x" * ak_len)
@@ -810,7 +810,7 @@ class TestIAMUserManagement:
         iam_secret_keys.append("")
         sk_len = cons.Rest.IAM_SECRET_LL - 1
         self.log.info("Key 2: Secret key less than %s", cons.Rest.IAM_SECRET_LL)
-        iam_secret_keys.append(random.choice(string.ascii_letters) * sk_len)
+        iam_secret_keys.append(secrets.choice(string.ascii_letters) * sk_len)
         sk_len = cons.Rest.IAM_SECRET_UL + 1
         self.log.info("Key 3: Secret key greather than %s", cons.Rest.IAM_SECRET_UL)
         iam_secret_keys.append("x" * sk_len)
@@ -823,7 +823,7 @@ class TestIAMUserManagement:
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
-                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+                cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             assert_utils.assert_false(resp[0], resp[1])
@@ -877,7 +877,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, iam_access_key=access_key)
         assert_utils.assert_false(resp[0], resp[1])
@@ -904,7 +904,7 @@ class TestIAMUserManagement:
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user1, s3_access_key, s3_secret_key, access_key1, secret_key1)
@@ -946,7 +946,7 @@ class TestIAMUserManagement:
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user1, s3_access_key, s3_secret_key, access_key1, secret_key1)
@@ -958,7 +958,7 @@ class TestIAMUserManagement:
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user2, s3_access_key, s3_secret_key, access_key2, secret_key1)
         accesskeyid2 = resp[1]["AccessKeyId"]
@@ -993,7 +993,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
         self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key, s3_secret_key, access_key, s3_secret_key)
         accesskeyid = resp[1]["AccessKeyId"]
@@ -1098,7 +1098,7 @@ class TestIAMUserManagement:
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
         self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+        access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
             iam_user, s3_access_key2, s3_secret_key2, access_key, s3_secret_key1)
         accesskeyid = resp[1]["AccessKeyId"]
@@ -1136,7 +1136,7 @@ class TestIAMUserManagement:
         for _ in range(2):
             access_key = "im_{}".format(perf_counter_ns())
             access_key = access_key.ljust(
-                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+                cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
@@ -1182,7 +1182,7 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         iam_secret_keys = []
         iam_secret_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL))
-        iam_secret_keys.append(random.choice(string.ascii_letters) * cons.Rest.IAM_SECRET_UL)
+        iam_secret_keys.append(secrets.choice(string.ascii_letters) * cons.Rest.IAM_SECRET_UL)
         iam_secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=cons.Rest.IAM_SECRET_LL))
         iam_secret_keys.append(string.punctuation)
@@ -1195,7 +1195,7 @@ class TestIAMUserManagement:
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
-                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+                cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
             accesskeyid = resp[1]["AccessKeyId"]
@@ -1255,7 +1255,7 @@ class TestIAMUserManagement:
         s3_secret_key = resp[1]["secret_key"]
         iam_access_keys = []
         iam_access_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_ACCESS_LL))
-        iam_access_keys.append(random.choice(string.ascii_letters) * cons.Rest.IAM_ACCESS_UL)
+        iam_access_keys.append(secrets.choice(string.ascii_letters) * cons.Rest.IAM_ACCESS_UL)
         iam_access_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=cons.Rest.IAM_ACCESS_LL))
         self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
@@ -1335,7 +1335,7 @@ class TestIAMUserManagement:
             self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
-                cons.Rest.IAM_ACCESS_LL, random.choice(string.ascii_letters))
+                cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
                 iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
