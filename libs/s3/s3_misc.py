@@ -20,8 +20,6 @@
 """S3 utility Library."""
 import os
 import logging
-import boto3
-from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from libs.s3 import s3_test_lib
@@ -45,10 +43,10 @@ def create_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     iam_test_obj.create_user(user_name)
     LOGGER.debug("Create IAM user command success")
     result = False
-    resp = iam_test_obj.list_users()
-    user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
-    LOGGER.info("user list: %s", user_list)
-    if user_name in user_list:
+    usr_list = iam_test_obj.list_users()[1]
+    iam_users_list = [usr["UserName"] for usr in usr_list]
+    LOGGER.debug("user list: %s", usr_list)
+    if user_name in iam_users_list:
         LOGGER.debug("IAM user %s found", user_name)
         result = True
     del iam_test_obj
@@ -73,10 +71,10 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     iam_test_obj.delete_user(user_name)
     LOGGER.debug("Delete IAM user command success")
     result = False
-    resp = iam_test_obj.list_users()
-    user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
-    LOGGER.info("user list: %s", user_list)
-    if user_name in user_list:
+    usr_list = iam_test_obj.list_users()[1]
+    iam_users_list = [usr["UserName"] for usr in usr_list]
+    LOGGER.debug("user list: %s", usr_list)
+    if user_name in iam_users_list:
         LOGGER.debug("IAM user %s found", user_name)
         result = True
     del iam_test_obj
@@ -103,7 +101,7 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("S3 bucket created")
     _ , bktlist = s3_obj.bucket_list()
     result = False
-    LOGGER.info("Bucket list: %s", bktlist)
+    LOGGER.debug("Bucket list: %s", bktlist)
     if bucket_name in bktlist:
         LOGGER.debug("S3 bucket %s is listed", bucket_name)
         result = True
@@ -131,7 +129,7 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     s3_obj.delete_bucket(bucket_name, force=True)
     _ , bktlist = s3_obj.bucket_list()
     result = False
-    LOGGER.info("Bucket list: %s", bktlist)
+    LOGGER.debug("Bucket list: %s", bktlist)
     if bucket_name in bktlist:
         LOGGER.debug("S3 bucket %s is listed", bucket_name)
         result = True
@@ -168,7 +166,7 @@ def create_put_objects(object_name: str, bucket_name: str,
     data.close()
     _ , objlist = s3_obj.object_list(bucket_name)
     result = False
-    LOGGER.info("Object list: %s", objlist)
+    LOGGER.debug("Object list: %s", objlist)
     if object_name in objlist:
         LOGGER.debug("Object %s is listed", object_name)
         result = True

@@ -143,11 +143,12 @@ class TestIAMUserManagement:
         for key, value in self.s3_iam_account_dict.items():
             for iam_details in value:
                 self.log.info("deleting created S3 & IAM user")
-                resp = self.auth_obj.delete_iam_user(iam_details[0], iam_details[1], iam_details[2])
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deleted iam : %s user successfully", iam_details[0])
-            resp = self.rest_obj.delete_s3_account(acc_name=key)
-            assert_utils.assert_true(resp[0], resp[1])
+                iam_obj = iam_test_lib.IamTestLib(access_key=iam_details[1], secret_key=iam_details[2])
+                usr_list = iam_obj.list_users()[1]
+                iam_users_list = [usr["UserName"] for usr in usr_list]
+                if iam_users_list:
+                    iam_obj.delete_users_with_access_key(iam_users_list)
+            self.rest_obj.delete_s3_account(acc_name=key)
             self.log.info("Deleted S3 : %s account successfully", key)
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
@@ -1350,13 +1351,12 @@ class TestIAMUserManagement:
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 4: Verifying list all iam users")
         iam_test_obj = iam_test_lib.IamTestLib(access_key=s3_access_key, secret_key=s3_secret_key)
-        resp = iam_test_obj.list_users()
-        assert_utils.assert_true(resp[0], resp[1])
-        user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
-        self.log.info("Listed user count : %s", len(user_list))
-        assert_utils.assert_list_item(user_list, iam_user)
+        usr_list = iam_test_obj.list_users()[1]
+        iam_users_list = [usr["UserName"] for usr in usr_list]
+        self.log.debug("Listed user count : %s", len(iam_users_list))
+        assert_utils.assert_list_item(iam_users_list, iam_user)
         err_msg = f"Number of users less than {cons.Rest.MAX_IAM_USERS}"
-        assert len(user_list) == cons.Rest.MAX_IAM_USERS, err_msg
+        assert len(iam_users_list) == cons.Rest.MAX_IAM_USERS, err_msg
         for i, iam_access_key_id in enumerate(iam_access_key_ids):
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_users[i], iam_access_key_id, s3_access_key, s3_secret_key)
