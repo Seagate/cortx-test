@@ -143,7 +143,8 @@ class TestIAMUserManagement:
         for key, value in self.s3_iam_account_dict.items():
             for iam_details in value:
                 self.log.info("deleting created S3 & IAM user")
-                iam_obj = iam_test_lib.IamTestLib(access_key=iam_details[1], secret_key=iam_details[2])
+                iam_obj = iam_test_lib.IamTestLib(
+                    access_key=iam_details[1], secret_key=iam_details[2])
                 usr_list = iam_obj.list_users()[1]
                 iam_users_list = [usr["UserName"] for usr in usr_list]
                 if iam_users_list:
@@ -1343,7 +1344,7 @@ class TestIAMUserManagement:
             iam_access_key_ids.append(resp[1]["AccessKeyId"])
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("[END] Created s3iamuser : %s count : %s ", iam_user, i + 1)
-        #  check error on 1001th IAM user
+        #  check error on 1001th IAM user create
         self.log.info("Step 3: Try to create 1001th s3iamuser using direct REST API call")
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
@@ -1354,9 +1355,10 @@ class TestIAMUserManagement:
         usr_list = iam_test_obj.list_users()[1]
         iam_users_list = [usr["UserName"] for usr in usr_list]
         self.log.debug("Listed user count : %s", len(iam_users_list))
+        #  check error on 1001th IAM user in list
         assert_utils.assert_list_item(iam_users_list, iam_user)
-        err_msg = f"Number of users less than {cons.Rest.MAX_IAM_USERS}"
-        assert len(iam_users_list) == cons.Rest.MAX_IAM_USERS, err_msg
+        #  check error on 1000 count of IAM users
+        assert_utils.assert_equal(len(iam_users_list), cons.Rest.MAX_IAM_USERS)
         for i, iam_access_key_id in enumerate(iam_access_key_ids):
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_users[i], iam_access_key_id, s3_access_key, s3_secret_key)
