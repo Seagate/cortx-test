@@ -845,7 +845,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
-        self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
+        self.log.info("Step 2: Try to create s3iamuser with custom keys using direct REST API call")
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
