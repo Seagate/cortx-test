@@ -20,13 +20,15 @@
 
 
 """Continuous Deployment on N nodes config."""
+import distutils.util
 import logging
 import os
-import distutils.util
+
 import pytest
+
 from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from config import CMN_CFG
+from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
@@ -62,6 +64,8 @@ class TestContDeployment:
 
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
+        cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH",
+                                         PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -87,12 +91,12 @@ class TestContDeployment:
         """
         count = int(self.iterations)
         if self.sns[0] and self.dix[0]:
-            total_cvg = int(self.cvg_per_node*len(self.worker_node_list))
+            total_cvg = int(self.cvg_per_node * len(self.worker_node_list))
             self.log.debug("sum of sns is %s total value is %s", sum(self.sns), total_cvg)
             if sum(self.sns) > total_cvg:
                 self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
                 assert False, "The sns value are invalid"
-            if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list)-1):
+            if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list) - 1):
                 self.log.debug("The dix %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
                 assert False, "The dix values are invalid"
         if self.conf:
@@ -141,5 +145,6 @@ class TestContDeployment:
                                                run_s3bench_workload_flag=
                                                self.run_s3bench_workload_flag,
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                               destroy_setup_flag=self.destroy_setup_flag,)
+                                               destroy_setup_flag=self.destroy_setup_flag,
+                                               custom_repo_path=self.custom_repo_path)
             count = count - 1
