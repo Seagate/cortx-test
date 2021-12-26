@@ -18,16 +18,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-
 """Prov Deployment with Redefined Structure."""
-import random
 import logging
+import secrets
 import pytest
 from commons import configmanager, constants
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
-
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
@@ -73,7 +71,7 @@ class TestProvPodsDeployment:
         Test to verify the CONTROL pod being deployed
         """
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-        config = random.choice(config_list)
+        config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
                       config['sns_data'], config['sns_parity'],
@@ -105,7 +103,7 @@ class TestProvPodsDeployment:
         Test to verify the DATA pod being deployed
         """
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-        config = random.choice(config_list)
+        config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
@@ -137,7 +135,7 @@ class TestProvPodsDeployment:
         Test to verify the SERVER pod being deployed
         """
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-        config = random.choice(config_list)
+        config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
@@ -169,7 +167,7 @@ class TestProvPodsDeployment:
         Test to verify the HA pod being deployed
         """
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-        config = random.choice(config_list)
+        config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
