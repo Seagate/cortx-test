@@ -748,6 +748,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.regression
     @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
