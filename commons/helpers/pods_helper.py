@@ -425,3 +425,25 @@ class LogicalNode(Host):
                                  command_suffix="cat /etc/machine-id",
                                  decode=True)
         return resp
+
+    def exec_on_pod(self, pod_name:str, container:str, cmd:str, k8_args:str=None, **kwargs):
+        """
+        Execute command on give pod kubectl exec POD [-c CONTAINER] -- COMMAND [args...]
+        :param pod_name: pod where command needs to be executed.
+        :param cmd: command which needs to be executed.
+        """
+        cmm = commands.K8S_POD_EXEC
+        if pod_name is not None:
+            cmm = f"{cmm} {pod_name}"
+        if container is not None:
+            cmm = f"{cmm} -c {container}"
+        if cmd is not None:
+            cmm = f"{cmm} -- {cmd}"
+        if k8_args is not None:
+            cmm = f"{cmm} -- {k8_args}"
+        log.error(cmm)
+        output = self.execute_cmd(cmd=cmm, **kwargs)
+        log.info("Response: %s", output)
+        return output
+
+
