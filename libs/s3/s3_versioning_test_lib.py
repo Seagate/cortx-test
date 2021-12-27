@@ -108,10 +108,14 @@ class S3VersioningTestLib(Versioning):
 
         except ClientError as error:
             LOGGER.info("response returned : %s", error.response)
-            if error.response['Error']['Code'] == 'MalformedXML':
-                LOGGER.info("Bad request")
+            if error.response['ResponseMetadata']['HTTPStatusCode'] == 400:
+                LOGGER.info("Bad request, MalformedXML")
+                pass
             else:
-                LOGGER.error("Unexpected error: %s" % error)
+                LOGGER.error("Error in %s: %s",
+                             S3VersioningTestLib.put_bucket_versioning.__name__,
+                             error)
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
