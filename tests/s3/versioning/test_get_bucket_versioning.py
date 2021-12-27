@@ -162,7 +162,7 @@ class TestVersioningGetObject:
             self.log.info(res)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
-            self.log.debug(res)
+            self.log.debug(error.message)
             assert err_message in error.message, error.message
         self.log.info("ENDED : Delete newly added S3 Test account")
         resp = self.s3_obj.csm_user_delete_s3account(self.account_name)
