@@ -254,11 +254,11 @@ class TestVersioningPutBucket:
         self.s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
                                                        s3_cert_path=S3_CFG["s3_cert_path"],
                                                        region=S3_CFG["region"])
-        self.log.info("STARTED: PUT Enabled bucket versioning by non bucket owner.")
+        self.log.info("STARTED: PUT Disabled bucket versioning by non bucket owner.")
         res_code = self.s3_new_ver_test_obj.put_bucket_versioning_403(bucket_name=self.bucket_name, status="Disabled")
         self.log.info(res_code[1])
         assert_utils.assert_equal(res_code[1], 403)
-        self.log.info("STARTED: PUT Suspended bucket versioning by  bucket owner.")
+        self.log.info("STARTED: PUT Unversioned bucket versioning by  bucket owner.")
         res_code_new = self.s3_ver_test_obj.put_bucket_versioning_400(bucket_name=self.bucket_name,
                                                                       status="Unversioned")
         assert_utils.assert_equal(res_code_new[1], 400)
