@@ -107,8 +107,8 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info(res[1])
         httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        self.log.info(httpCode, status)
         assert_utils.assert_equal(httpCode, 200)
         assert_utils.assert_equal(status, "Enabled")
 
@@ -133,8 +133,8 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info(res[1])
         httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        self.log.info(httpCode, status)
         assert_utils.assert_equal(httpCode, 200)
         assert_utils.assert_equal(status, "Suspended")
 
@@ -196,30 +196,31 @@ class TestVersioningPutBucket:
         Test PUT Unversion/Disable bucket versioning when versioning not set.
 
         Create bucket.
-        Perform PUT API to Disable/Unversioning the bucket versioning by non bucket owner.
+        Perform PUT API to Disabled/Unversioning the bucket versioning by non bucket owner.
         Perform PUT API to Disable/Unversioning the bucket versioning by bucket owner.
         """
-        self.log.info("STARTED: PUT Unversion/Disable bucket versioning when versioning not set.")
+        self.log.info("STARTED: Creating new account.")
         versions = defaultdict(list)
-        self.log.info("Step 1: PUT API to Disable/Unversioning the bucket versioning by non bucket owner")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Unversioned")
-        assert_utils.assert_true(res[0], res[1])
-        # verify error code 403, Access Denied.
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Disabled")
-        assert_utils.assert_true(res[0], res[1])
-        # verify error code 403, Access Denied.
-
-        self.log.info("Step 2: PUT API to Disable/Unversioning the bucket versioning by bucket owner")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Unversioned")
-        assert_utils.assert_true(res[0], res[1])
-        # verify error code 404, Bad request.
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Disabled")
-        assert_utils.assert_true(res[0], res[1])
-        # verify error code 400, Bad request.
+        self.rest_obj = S3AccountOperations()
+        account_name = "s3acc301"
+        email_id = "s3acc301@gmail.com"
+        self.log.info("Step : Creating account with name %s and email_id %s", account_name, email_id)
+        create_account = self.rest_obj.create_s3_account(
+            account_name, email_id, "Cortxadmin@123")
+        assert_utils.assert_true(create_account[0], create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        self.log.info("Step Successfully created the account")
+        self.s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
+                                                       s3_cert_path=S3_CFG["s3_cert_path"],
+                                                       region=S3_CFG["region"])
+        self.log.info("STARTED: PUT Enabled bucket versioning by non bucket owner.")
+        res_code = self.s3_new_ver_test_obj.put_bucket_versioning_403(bucket_name=self.bucket_name, status="Disabled")
+        self.log.info(res_code[1])
+        assert_utils.assert_equal(res_code[1], 403)
+        self.log.info("STARTED: PUT Suspended bucket versioning by  bucket owner.")
+        res_code_new = self.s3_ver_test_obj.put_bucket_versioning_400(bucket_name=self.bucket_name, status="Unversioned")
+        assert_utils.assert_equal(res_code_new[1], 400)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32749')
@@ -238,17 +239,29 @@ class TestVersioningPutBucket:
         self.log.info("Step 1: Perform PUT Bucket Versioning API with status set to Enabled")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        #verify error code 403.
-        self.log.info("Step 2: PUT bucket versioning API with status set to 'Unversioned/Disable' by non bucket owner/user")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Unversioned")
-        assert_utils.assert_true(res[0], res[1])
-        #verify error code 403.
-        self.log.info("Step 3: PUT Bucket Versioning with status=Unversioned as bucket owner")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Unversioned")
-        assert_utils.assert_true(res[0], res[1])
-        # verify error code 404.
+        self.log.info("STARTED: Creating new account.")
+        versions = defaultdict(list)
+        self.rest_obj = S3AccountOperations()
+        account_name = "s3acc302"
+        email_id = "s3acc302@gmail.com"
+        self.log.info("Step : Creating account with name %s and email_id %s", account_name, email_id)
+        create_account = self.rest_obj.create_s3_account(
+            account_name, email_id, "Cortxadmin@123")
+        assert_utils.assert_true(create_account[0], create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        self.log.info("Step Successfully created the account")
+        self.s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
+                                                       s3_cert_path=S3_CFG["s3_cert_path"],
+                                                       region=S3_CFG["region"])
+        self.log.info("STARTED: PUT Enabled bucket versioning by non bucket owner.")
+        res_code = self.s3_new_ver_test_obj.put_bucket_versioning_403(bucket_name=self.bucket_name, status="Disabled")
+        self.log.info(res_code[1])
+        assert_utils.assert_equal(res_code[1], 403)
+        self.log.info("STARTED: PUT Suspended bucket versioning by  bucket owner.")
+        res_code_new = self.s3_ver_test_obj.put_bucket_versioning_400(bucket_name=self.bucket_name,
+                                                                      status="Unversioned")
+        assert_utils.assert_equal(res_code_new[1], 400)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-33514')
@@ -264,11 +277,23 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: PUT Enabled/Suspended bucket versioning when bucket is deleted.")
         versions = defaultdict(list)
         self.log.info("Step 1: Perform PUT Bucket Versioning API with status set to Enabled")
-        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
-        assert_utils.assert_true(res[0], res[1])
-        #verify error code 404.
+
+        self.log.info("Cleanup bucket test directory: %s", self.test_dir_path)
+        res = self.s3_test_obj.bucket_list()
+        pref_list = [
+            each_bucket for each_bucket in res[1] if each_bucket.startswith("ver-bkt")]
+        if pref_list:
+            res = self.s3_test_obj.delete_multiple_buckets(pref_list)
+            assert_utils.assert_true(res[0], res[1])
+
+        self.log.info("Step 2: Perform PUT Bucket Versioning API with status set to Enabled")
+        res_code = self.s3_ver_test_obj.put_bucket_versioning_404(bucket_name=self.bucket_name)
+        assert_utils.assert_equal(res_code[1], 404)
+
         self.log.info("Step 2: Perform PUT Bucket Versioning API with status set to Suspended")
+        res_code_new = self.s3_ver_test_obj.put_bucket_versioning_404(bucket_name=self.bucket_name, status="Suspended")
+        assert_utils.assert_equal(res_code_new[1], 404)
+
         res = self.s3_ver_test_obj.put_bucket_versioning(
             bucket_name=self.bucket_name, status="Suspended")
         assert_utils.assert_true(res[0], res[1])
-        #verify error code 404.
