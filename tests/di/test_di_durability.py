@@ -632,7 +632,7 @@ class TestDIDurability:
                             .format(perf_counter_ns(),str(size))
             file_path_download= os.path.join(self.test_dir_path, test_file_download)
             if os.path.exists(file_path_download):
-                 os.remove(file_path_download)
+                os.remove(file_path_download)
             bucket_str = "{0}/{1} {2}".format(self.bucket_name, test_file, test_file_download)
             command = self.jc_obj.create_cmd_format(bucket_str, "get",
                                         jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
@@ -646,7 +646,7 @@ class TestDIDurability:
             if not result:
                 assert_utils.assert_true(False, "Checksum validation failed")
             self.log.info("Step 4:Checksum and ETAG validation is successful")
-            self.s3obj.delete_bucket(self.bucket_name, force=True)
+            self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
         self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
                     "uploaded object should succeed ( 30 MB -100 MB).")
 
