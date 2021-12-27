@@ -276,7 +276,6 @@ class TestVersioningPutBucket:
         """
         self.log.info("STARTED: PUT Enabled/Suspended bucket versioning when bucket is deleted.")
         versions = defaultdict(list)
-        self.log.info("Step 1: Perform PUT Bucket Versioning API with status set to Enabled")
 
         self.log.info("Cleanup bucket test directory: %s", self.test_dir_path)
         res = self.s3_test_obj.bucket_list()
@@ -293,7 +292,3 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Perform PUT Bucket Versioning API with status set to Suspended")
         res_code_new = self.s3_ver_test_obj.put_bucket_versioning_404(bucket_name=self.bucket_name, status="Suspended")
         assert_utils.assert_equal(res_code_new[1], 404)
-
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Suspended")
-        assert_utils.assert_true(res[0], res[1])
