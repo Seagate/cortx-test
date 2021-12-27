@@ -23,6 +23,7 @@
 """
 import datetime
 import math
+from numpy import mean
 
 import dateutil.relativedelta
 from prometheus_client.parser import text_string_to_metric_families
@@ -293,3 +294,37 @@ class SystemStats(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    def perf_metric_name_value_compare(self, text, metric_name,
+                                       comparison=False, compare_value=None):
+        """Read the metric_name, compare/no_compare the value
+
+        :return True/False: (comparision=True) If metrics name value is 10 percent comparable to \
+                            provided value  OR
+                value : (comparision=False) Performace metric name average value 
+        """
+        try:
+            self.log.info("Reading the '%s' stats...", metric_name)
+            metric_value_list = []
+            for family in text_string_to_metric_families(text):
+                for sample in family.samples:
+                    res = f"Name={sample[0]}\nLabels={sample[1]}\n Value={sample[2]}"
+                    out = dict(item.split("=") for item in res.split("\n"))
+                    if out['Name'] == metric_name:
+                        metric_value_list.append(float(out[' Value']))
+            self.log.info("Metric value list for '%s' is : %s", metric_name, metric_value_list)
+            data_value = sum(metric_value_list)/len(metric_value_list)
+            self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
+            if comparison and compare_value is not None:
+                self.log.info("Comparing the values..")
+                return bool((compare_value + (compare_value * 0.1) >= data_value) or \
+                (compare_value - (compare_value * 0.1) <= data_value))
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           SystemStats.perf_metric_name_value_compare.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
+        return data_value

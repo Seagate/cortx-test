@@ -32,10 +32,13 @@ from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils.config_utils import read_yaml
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_stats import SystemStats
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from scripts.hs_bench import hsbench
 
 
 class TestSystemStats():
@@ -58,6 +61,8 @@ class TestSystemStats():
         cls.csm_cluster = RestCsmCluster()
         cls.username = cls.csm_user.config["csm_admin_user"]["username"]
         cls.user_pass = cls.csm_user.config["csm_admin_user"]["password"]
+        cls.cfg_obj = read_yaml("scripts/hs_bench/config.yaml")[1]
+        cls.LOG_DIR = cls.cfg_obj["log_dir"]
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -747,4 +752,574 @@ class TestSystemStats():
         resp = self.system_stats.check_prometheus_compatibility(text)
         assert_utils.assert_true(resp, "Metric data compatibility with prometheus failed")
         self.log.info("Step 3: Verified metric data compatibility with prometheus")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32663')
+    def test_32663(self):
+        """
+        Check the data integrity for metric "throughput_read"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32663"]["metric_name"]
+        mode_value = self.test_conf["test_32663"]["mode"]
+        operation_value = self.test_conf["test_32663"]["opertaion"]
+        workloads = self.test_conf["test_32663"]["workload"]
+        test_time = self.test_conf["test_32663"]["test_time"]
+        thread = self.test_conf["test_32663"]["threads"]
+        bucket = self.test_conf["test_32663"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32663"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32664')
+    def test_32664(self):
+        """
+        Check the data integrity for metric "throughput_write"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32664"]["metric_name"]
+        mode_value = self.test_conf["test_32664"]["mode"]
+        operation_value = self.test_conf["test_32664"]["opertaion"]
+        workloads = self.test_conf["test_32664"]["workload"]
+        test_time = self.test_conf["test_32664"]["test_time"]
+        thread = self.test_conf["test_32664"]["threads"]
+        bucket = self.test_conf["test_32664"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32664"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32665')
+    def test_32665(self):
+        """
+        Check the data integrity for metric "latency_create_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32665"]["metric_name"]
+        mode_value = self.test_conf["test_32665"]["mode"]
+        operation_value = self.test_conf["test_32665"]["opertaion"]
+        workloads = self.test_conf["test_32665"]["workload"]
+        test_time = self.test_conf["test_32665"]["test_time"]
+        thread = self.test_conf["test_32665"]["threads"]
+        bucket = self.test_conf["test_32665"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32665"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32666')
+    def test_32666(self):
+        """
+        Check the data integrity for metric "latency_delete_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32666"]["metric_name"]
+        mode_value = self.test_conf["test_32666"]["mode"]
+        operation_value = self.test_conf["test_32666"]["opertaion"]
+        workloads = self.test_conf["test_32666"]["workload"]
+        test_time = self.test_conf["test_32666"]["test_time"]
+        thread = self.test_conf["test_32666"]["threads"]
+        bucket = self.test_conf["test_32666"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32666"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32667')
+    def test_32667(self):
+        """
+        Check the data integrity for metric "latency_write_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32667"]["metric_name"]
+        mode_value = self.test_conf["test_32667"]["mode"]
+        operation_value = self.test_conf["test_32667"]["opertaion"]
+        workloads = self.test_conf["test_32667"]["workload"]
+        test_time = self.test_conf["test_32667"]["test_time"]
+        thread = self.test_conf["test_32667"]["threads"]
+        bucket = self.test_conf["test_32667"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32667"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32668')
+    def test_32668(self):
+        """
+        Check the data integrity for metric "latency_read_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32668"]["metric_name"]
+        mode_value = self.test_conf["test_32668"]["mode"]
+        operation_value = self.test_conf["test_32668"]["opertaion"]
+        workloads = self.test_conf["test_32668"]["workload"]
+        test_time = self.test_conf["test_32668"]["test_time"]
+        thread = self.test_conf["test_32668"]["threads"]
+        bucket = self.test_conf["test_32668"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32668"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32669')
+    def test_32669(self):
+        """
+        Check the data integrity for metric "iops_read_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32669"]["metric_name"]
+        mode_value = self.test_conf["test_32669"]["mode"]
+        operation_value = self.test_conf["test_32669"]["opertaion"]
+        workloads = self.test_conf["test_32669"]["workload"]
+        test_time = self.test_conf["test_32669"]["test_time"]
+        thread = self.test_conf["test_32669"]["threads"]
+        bucket = self.test_conf["test_32669"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32669"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32670')
+    def test_32670(self):
+        """
+        Check the data integrity for metric "iops_write_object"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32670"]["metric_name"]
+        mode_value = self.test_conf["test_32670"]["mode"]
+        operation_value = self.test_conf["test_32670"]["opertaion"]
+        workloads = self.test_conf["test_32670"]["workload"]
+        test_time = self.test_conf["test_32670"]["test_time"]
+        thread = self.test_conf["test_32670"]["threads"]
+        bucket = self.test_conf["test_32670"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32670"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32671')
+    def test_32671(self):
+        """
+        Check the data integrity for metric "iops_read_bucket"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32671"]["metric_name"]
+        mode_value = self.test_conf["test_32671"]["mode"]
+        operation_value = self.test_conf["test_32671"]["opertaion"]
+        workloads = self.test_conf["test_32671"]["workload"]
+        test_time = self.test_conf["test_32671"]["test_time"]
+        thread = self.test_conf["test_32671"]["threads"]
+        bucket = self.test_conf["test_32671"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32671"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_perf_stats
+    @pytest.mark.tags('TEST-32673')
+    def test_32673(self):
+        """
+        Check the data integrity for metric "iops_write_bucket"
+        """
+        test_case_name = cortxlogging.get_frame()
+        name_metric = self.test_conf["test_32673"]["metric_name"]
+        mode_value = self.test_conf["test_32673"]["mode"]
+        operation_value = self.test_conf["test_32673"]["opertaion"]
+        workloads = self.test_conf["test_32673"]["workload"]
+        test_time = self.test_conf["test_32673"]["test_time"]
+        thread = self.test_conf["test_32673"]["threads"]
+        bucket = self.test_conf["test_32673"]["bucket"]
+        json_path = self.LOG_DIR+self.test_conf["test_32673"]["json_path"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Get performance data of '%s' metric", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
+                                                                                     name_metric)
+        self.log.info("%s value before IO is : '%s'", name_metric, list_data_value_before_io)
+        self.log.info("Step-1: Get performance data of '%s' metric completed", name_metric)
+
+        self.log.info("Step-2: Running Hsbench tool and parsing data")
+        for workload in workloads:
+            resp = hsbench.hsbench(ACCESS_KEY, SECRET_KEY,
+                                   obj_size=workload,
+                                   test_duration=test_time,
+                                   threads=thread, bucket=bucket,json_path=json_path,
+                                   log_file_prefix="TEST-hsbench_run")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not hsbench.check_log_file_error(resp[1]), \
+                f"Hsbench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+        self.log.info(" Parse Hsbench tool result from file %s", resp[0])
+        data_dict = hsbench.parse_hsbench_output(resp[0])
+        self.log.info(" Parse Metric value of '%s' ", name_metric)
+        data_value_io = hsbench.parse_metrics_value(name_metric,
+                                                    mode_value,
+                                                    operation_value,
+                                                    data_dict)
+        self.log.info("Step-2: Running Hsbench tool and parsing data completed")
+
+        self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool", name_metric)
+        resp = self.system_stats.get_perf_stats()
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp,name_metric,
+                                                                    comparison=True,
+                                                                    compare_value=data_value_io[1])
+        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
+                                "data are not in 10 Percent comparable")
         self.log.info("##### Test ended -  %s #####", test_case_name)
