@@ -236,7 +236,7 @@ class TestVersioningPutBucket:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-33514')
     @CTFailOn(error_handler)
-    def test_put_bucket_versioning_enabled/suspended_deleted_bucket_33514(self):
+    def test_put_bucket_versioning_enabled_deleted_bucket_33514(self):
         """
         Test PUT Enabled/Suspended bucket versioning when bucket is deleted.
 
