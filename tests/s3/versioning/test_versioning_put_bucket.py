@@ -176,8 +176,9 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: PUT Disabled bucket versioning.")
         versions = defaultdict(list)
         self.log.info("Step 1: Disable bucket versioning")
-        self.s3_ver_test_obj.put_bucket_versioning_400(
+        res_code = self.s3_ver_test_obj.put_bucket_versioning_400(
             bucket_name=self.bucket_name, status="Disabled")
+        assert_utils.assert_equal(res_code[1], 400)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32747')
