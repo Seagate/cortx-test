@@ -89,6 +89,39 @@ class S3VersioningTestLib(Versioning):
 
         return True, response
 
+    def put_bucket_versioning_400(self,
+                              bucket_name: str = None,
+                              status: str = "Enabled") -> tuple:
+        """
+        Set/Update the versioning configuration of a bucket.
+
+        :param bucket_name: Target bucket for the PUT Bucket Versioning call.
+        :param status: Versioning status to be set, supported values - "Enabled" or "Suspended"
+            Default = "Enabled"
+        :return: response
+        """
+        LOGGER.info("Setting bucket versioning configuration")
+        try:
+            response = super().put_bucket_versioning(
+                bucket_name=bucket_name, status=status)
+            httpCode = response["ResponseMetadata"]["HTTPStatusCode"]
+            self.log.info(httpCode)
+            assert httpCode == 400, "Error code not matched"
+            LOGGER.info("Error code returned : %s", httpCode)
+
+        except (AssertionError, Exception) as error:
+            self.log.info("Error in HTTP status code expected %s: actual %s", 400, httpCode)
+            raise Exception(error.args[0])
+
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3VersioningTestLib.put_bucket_versioning.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+
     def get_bucket_versioning(self,
                               bucket_name: str = None) -> tuple:
         """
