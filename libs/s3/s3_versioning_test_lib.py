@@ -110,7 +110,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.info("Error code returned : %s", httpCode)
 
         except (AssertionError, Exception) as error:
-            LOGGER.error("Error in HTTP status code expected %s: actual %s", 400, httpCode)
+            LOGGER.error("Error in HTTP status code expected %s: actual %s", 400, error)
             raise Exception(error.args[0])
 
         except (ClientError, Exception) as error:
