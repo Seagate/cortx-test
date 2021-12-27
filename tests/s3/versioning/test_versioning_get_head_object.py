@@ -155,7 +155,7 @@ class TestVersioningGetHeadObject:
         except CTException as error:
             self.log.error(error.message)
             if not error_msg:
-                raise CTException(err.S3_CLIENT_ERROR, error.message)
+                raise CTException(err.CLI_ERROR, error.args[0]) from error
             assert_utils.assert_in(error_msg["head_obj_error"], error.message, error.message)
 
     def download_and_check(self,
