@@ -43,6 +43,8 @@ from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 class TestVersioningGetHeadObject:
     """Test GET and HEAD Object API with Object Versioning"""
 
+    # pylint:disable=attribute-defined-outside-init
+    # pylint:disable-msg=too-many-instance-attributes
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -133,7 +135,7 @@ class TestVersioningGetHeadObject:
         except CTException as error:
             self.log.error(error.message)
             if not error_msg:
-                raise CTException(err.S3_CLIENT_ERROR, error.message)
+                raise CTException(err.CLI_ERROR, error.args[0]) from error
             assert_utils.assert_in(error_msg["get_obj_error"], error.message, error.message)
         self.log.info("Verifying HEAD Object with VersionId response")
         try:
@@ -377,8 +379,8 @@ class TestVersioningGetHeadObject:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32727')
-    @pytest.mark.parametrize("versioning_status", [None, "Enabled", "Suspended"])
     @CTFailOn(error_handler)
+    @pytest.mark.parametrize("versioning_status", [None, "Enabled", "Suspended"])
     def test_get_head_versioned_object_invalid_32727(self, versioning_status):
         """
         Test invalid scenarios for GET/HEAD Object for versioned object.

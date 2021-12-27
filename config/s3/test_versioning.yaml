@@ -7,4 +7,4 @@ error_messages:
     head_obj_error: "Not Found"
   empty_version_id_error:
     get_obj_error: "Version id cannot be the empty string"
-      head_obj_error: "Bad Request"
+    head_obj_error: "Bad Request"
