@@ -104,7 +104,7 @@ class S3VersioningTestLib(Versioning):
         try:
             response = super().put_bucket_versioning(
                 bucket_name=bucket_name, status=status)
-            LOGGER.info("response returned : %s", response)
+            LOGGER.info("Successfully set bucket versioning configuration: %s", response)
 
         except ClientError as error:
             LOGGER.info("response returned : %s", error.response)
@@ -118,8 +118,7 @@ class S3VersioningTestLib(Versioning):
                              S3VersioningTestLib.put_bucket_versioning.__name__,
                              error)
                 raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
-        return True, response
+        #return True, response
 
 
     def get_bucket_versioning(self,
