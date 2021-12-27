@@ -23,7 +23,6 @@
 """
 import datetime
 import math
-from numpy import mean
 
 import dateutil.relativedelta
 from prometheus_client.parser import text_string_to_metric_families
@@ -301,7 +300,7 @@ class SystemStats(RestTestLib):
 
         :return True/False: (comparision=True) If metrics name value is 10 percent comparable to \
                             provided value  OR
-                value : (comparision=False) Performace metric name average value 
+                value : (comparision=False) Performace metric name average value
         """
         try:
             self.log.info("Reading the '%s' stats...", metric_name)
@@ -313,8 +312,9 @@ class SystemStats(RestTestLib):
                     if out['Name'] == metric_name:
                         metric_value_list.append(float(out[' Value']))
             self.log.info("Metric value list for '%s' is : %s", metric_name, metric_value_list)
-            data_value = sum(metric_value_list)/len(metric_value_list)
-            self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
+            if len(metric_value_list) != 0:
+                data_value = sum(metric_value_list)/len(metric_value_list)
+                self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
             if comparison and compare_value is not None:
                 self.log.info("Comparing the values..")
                 return bool((compare_value + (compare_value * 0.1) >= data_value) or \
