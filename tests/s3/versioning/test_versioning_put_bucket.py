@@ -33,8 +33,10 @@ from commons.utils.system_utils import create_file, path_exists, remove_file
 from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
+
 
 
 class TestVersioningPutBucket:
@@ -139,17 +141,26 @@ class TestVersioningPutBucket:
         Perform PUT API to Enable/Suspend the bucket versioning.
         Verify the response HTTP status 403 and error message: Access Denied.
         """
-        self.log.info("STARTED: PUT Enabled/Suspended bucket versioning by non bucket owner.")
+        self.log.info("STARTED: Creating new account.")
         versions = defaultdict(list)
-        self.log.info("Step 1: Enable bucket versioning")
-        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
-        assert_utils.assert_true(res[0], res[1])
-        #verify error code 403.
-        self.log.info("Step 1: Suspend the bucket versioning")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Suspended")
-        assert_utils.assert_true(res[0], res[1])
-        #verify error code 403.
+        self.rest_obj = S3AccountOperations()
+        account_name = "s3acc300"
+        email_id = "s3acc300@gmail.com"
+        self.log.info("Step : Creating account with name %s and email_id %s",account_name, email_id)
+        create_account = self.rest_obj.create_s3_account(
+            account_name, email_id, "Cortxadmin@123")
+        assert_utils.assert_true(create_account[0], create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        self.log.info("Step Successfully created the account")
+        self.s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"], s3_cert_path=S3_CFG["s3_cert_path"],
+            region=S3_CFG["region"])
+        self.log.info("STARTED: PUT Enabled bucket versioning by non bucket owner.")
+        res_code = self.s3_new_ver_test_obj.put_bucket_versioning_403(bucket_name=self.bucket_name, status="Enabled")
+        assert_utils.assert_equal(res_code[1], 403)
+        self.log.info("STARTED: PUT Suspended bucket versioning by non bucket owner.")
+        res_code = self.s3_new_ver_test_obj.put_bucket_versioning_403(bucket_name=self.bucket_name, status="Suspended")
+        assert_utils.assert_equal(res_code[1], 403)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32719')
