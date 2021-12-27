@@ -74,6 +74,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32763')
     @CTFailOn(error_handler)
     def test_32763(self):
@@ -100,6 +101,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create, List & Get IAM Policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32764')
     @CTFailOn(error_handler)
     def test_32764(self):
@@ -112,6 +114,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using parameter value within limit.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32765')
     @CTFailOn(error_handler)
     def test_32765(self):
@@ -125,6 +128,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using parameter value beyond limit.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32766')
     @CTFailOn(error_handler)
     def test_32766(self):
@@ -153,6 +157,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create IAM Policy using invalid value for required parameters.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32767')
     @CTFailOn(error_handler)
     def test_32767(self):
@@ -180,6 +185,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create a policy that already exists.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32768')
     @CTFailOn(error_handler)
     def test_32768(self):
@@ -190,6 +196,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create IAM Policy beyond limits.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32769')
     @CTFailOn(error_handler)
     def test_32769(self):
@@ -249,6 +256,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using invalid policy document elements.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32770')
     @CTFailOn(error_handler)
     def test_32770(self):
@@ -269,6 +277,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using minimum policy elements.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32771')
     @CTFailOn(error_handler)
     def test_32771(self):
@@ -315,6 +324,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using required policy document elements missing.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32772')
     @CTFailOn(error_handler)
     def test_32772(self):
@@ -336,6 +346,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Create Policy using tags values.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32773')
     @CTFailOn(error_handler)
     def test_32773(self):
@@ -351,6 +362,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Get policy using invalid ARN.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32774')
     @CTFailOn(error_handler)
     def test_32774(self):
@@ -365,6 +377,7 @@ class TestIamPolicy:
         self.log.info("ENDED: Delete policy using invalid ARN.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_policy
     @pytest.mark.tags('TEST-32775')
     @CTFailOn(error_handler)
     def test_32775(self):
