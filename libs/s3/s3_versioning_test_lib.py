@@ -98,7 +98,7 @@ class S3VersioningTestLib(Versioning):
         :param bucket_name: Target bucket for the PUT Bucket Versioning call.
         :param status: Versioning status to be set, supported values - "Enabled" or "Suspended"
             Default = "Enabled"
-        :return: response
+        :return: response error code 400
         """
         LOGGER.info("Setting bucket versioning configuration")
         try:
@@ -128,7 +128,7 @@ class S3VersioningTestLib(Versioning):
         :param bucket_name: Target bucket for the PUT Bucket Versioning call.
         :param status: Versioning status to be set, supported values - "Enabled" or "Suspended"
             Default = "Enabled"
-        :return: response
+        :return: response error code 403
         """
         LOGGER.info("Setting bucket versioning configuration")
         try:
