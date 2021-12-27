@@ -2346,3 +2346,238 @@ class TestPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe "
             "shutdown by deleting deployment")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-32450")
+    @CTFailOn(error_handler)
+    def test_degraded_copy_object_safe_pod_shutdown(self):
+        """
+        Verify degraded copy object after data pod down - pod shutdown (make replicas=0)
+        """
+        LOGGER.info(
+            "STARTED: Verify degraded copy object after data pod down - pod shutdown "
+            "(make replicas=0) ")
+
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_obj_dict = {}
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] =\
+            f"ha-obj{cnt}-{self.random_time}"
+
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        LOGGER.info("Step 1: Create and list buckets and perform upload and copy "
+                    "object from %s bucket to other buckets, download objects "
+                    "and verify etags", self.bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = resp[1]
+        LOGGER.info("Step 1: successfully create and list buckets and perform upload and copy"
+                    "object from %s bucket to other buckets, download objects "
+                    "and verify etags", self.bucket_name)
+
+        LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
+        LOGGER.info("Get pod name to be shutdown")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+        LOGGER.info("Shutdown pod %s", pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to shutdown pod {pod_name} by making "
+                                  "replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", pod_name)
+        self.deployment_name = resp[1]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod are in offline state")
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+        LOGGER.info("Step 6: Download the uploaded objects & verify etags")
+        for key, val in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=key, key=val)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
+                                                          f"object {key} of bucket {val}. "
+                                                          "Put and Get Etag mismatch")
+        LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
+
+        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.clear()
+        bkt_obj_dict[bucket3] = object3
+        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
+                    "copy object etags", self.object_name, self.bucket_name, bucket3)
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag,
+                                                  bkt_op=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+
+        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                      f"for object {object3} of bucket {bucket3}.")
+        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+
+        LOGGER.info(
+            "COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
+            "(make replicas=0) ")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-32451")
+    @CTFailOn(error_handler)
+    def test_degraded_copy_object_unsafe_pod_shutdown(self):
+        """
+        Verify degraded copy object after data pod down - pod unsafe
+        shutdown (by deleting deployment)
+        """
+        LOGGER.info(
+            "STARTED: Verify degraded copy object after data pod down - "
+            "pod unsafe shutdown (by deleting deployment) ")
+
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_obj_dict = {}
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] =\
+            f"ha-obj{cnt}-{self.random_time}"
+
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        LOGGER.info("Step 1: Create and list buckets and perform upload and copy "
+                    "object from %s bucket to other buckets, download objects "
+                    "and verify etags", self.bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = resp[1]
+        LOGGER.info("Step 1: successfully create and list buckets and perform upload and copy"
+                    "object from %s bucket to other buckets, download objects "
+                    "and verify etags", self.bucket_name)
+
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
+                                           " (unsafe)")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Verify services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Verified services of %s are in offline state", pod_name)
+
+        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list.remove(
+            pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Verified services on remaining pods are in online state")
+
+        LOGGER.info("Step 6: Download the uploaded objects & verify etags")
+        for key, val in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=key, key=val)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
+                                                          f"object {key} of bucket {val}. "
+                                                          "Put and Get Etag mismatch")
+        LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
+
+        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.clear()
+        bkt_obj_dict[bucket3] = object3
+        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
+                    "copy object etags", self.object_name, self.bucket_name, bucket3)
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag,
+                                                  bkt_op=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+
+        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                      f"for object {object3} of bucket {bucket3}.")
+        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+
+        LOGGER.info(
+            "COMPLETED: Verify degraded copy object after data pod down - "
+            "pod unsafe shutdown (by deleting deployment) ")
