@@ -108,7 +108,9 @@ class TestVersioningPutBucket:
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(res[1])
-        #assert_utils.assert_equal(res_code[1], 403)
+        httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        assert_utils.assert_equal(httpCode, 200)
+        assert_utils.assert_equal(status, "Enabled")
 
 
     @pytest.mark.s3_ops
@@ -131,7 +133,10 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        #assert_utils.assert_equal(res_code[1], "")
+        self.log.info(res[1])
+        httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        assert_utils.assert_equal(httpCode, 200)
+        assert_utils.assert_equal(status, "Suspended")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32718')
