@@ -1344,8 +1344,9 @@ class TestIAMUserManagement:
             iam_access_key_ids.append(resp[1]["AccessKeyId"])
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("[END] Created s3iamuser : %s count : %s ", iam_user, i + 1)
-        #  check error on 1001th IAM user create
-        self.log.info("Step 3: Try to create 1001th s3iamuser using direct REST API call")
+        #  check error on MAX_IAM_USERS+1 (1001th) IAM user create
+        self.log.info(
+            "Step 3: Try to create %d s3iamuser using direct REST API call", cons.Rest.MAX_IAM_USERS+1)
         iam_user = "iam_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
@@ -1355,11 +1356,12 @@ class TestIAMUserManagement:
         usr_list = iam_test_obj.list_users()[1]
         iam_users_list = [usr["UserName"] for usr in usr_list]
         self.log.debug("Listed user count : %s", len(iam_users_list))
-        #  check error on 1001th IAM user in list
+        #  check error on MAX_IAM_USERS+1 (1001th) IAM user in list
         assert_utils.assert_not_in(
-            iam_users_list, iam_user, f"Number of users not same as {cons.Rest.MAX_IAM_USERS}")
-        #  check error on 1000 count of IAM users
-        assert_utils.assert_equal(len(iam_users_list), cons.Rest.MAX_IAM_USERS)
+            iam_users_list, iam_user, f"More than {cons.Rest.MAX_IAM_USERS} iam user got created")
+        #  check error on MAX_IAM_USERS (1000) count of IAM users
+        assert_utils.assert_equal(len(iam_users_list), cons.Rest.MAX_IAM_USERS,
+                                  f"Number of users not same as {cons.Rest.MAX_IAM_USERS}")
         for i, iam_access_key_id in enumerate(iam_access_key_ids):
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_users[i], iam_access_key_id, s3_access_key, s3_secret_key)
