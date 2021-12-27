@@ -3607,14 +3607,15 @@ class TestCsmUser():
             self.log.info("Msg check successful!!!!")
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid", user_role="admin")
+        password = CSM_REST_CFG["csm_admin_user"]["password"]
+        response = self.csm_user.create_csm_user(user_type="valid",
+                                                 user_role="admin", user_password=password)
         self.log.info("Verifying if admin user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
         self.created_users.append(userid)
         self.log.info("users list is %s", self.created_users)
-        password = self.csm_user.config["csm_admin_user"]["password"]
         assert response.json()['role'] == 'admin', "User is not created with admin role"
         self.log.info("Verified User %s got created successfully", username)
         response = self.csm_user.custom_rest_login(username=username, password=password)
@@ -3628,14 +3629,14 @@ class TestCsmUser():
                                                role="manage")
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid", user_role="admin")
+        response = self.csm_user.create_csm_user(user_type="valid",
+                                                 user_role="admin", user_password=password)
         self.log.info("Verifying if admin user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
         self.created_users.append(user_id)
         self.log.info("users list is %s", self.created_users)
-        password = self.csm_user.config["csm_admin_user"]["password"]
         assert response.json()['role'] == 'admin', "User is not created with admin role"
         self.log.info("Verified User %s got created successfully", username)
         response = self.csm_user.custom_rest_login(username=username, password=password)
@@ -5451,6 +5452,7 @@ class TestCsmUser():
         new_users = [[], [], []]
         self.log.info("Deleting all csm users except predefined ones...")
         self.config.delete_csm_users()
+        deleted_users = []
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("Step 1: Listing all csm users")
         response = self.csm_user.list_csm_users(
@@ -5478,6 +5480,8 @@ class TestCsmUser():
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5492,9 +5496,12 @@ class TestCsmUser():
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
         self.log.info("Deleting all csm admin users except predefined ones...")
+        deleted_users = []
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5508,10 +5515,13 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
+        deleted_users = []
         self.log.info("Deleting all csm manage users except predefined ones...")
         for usr in self.created_users:
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")
@@ -5525,11 +5535,14 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
+        deleted_users = []
         self.log.info("Deleting all csm monitor users except predefined ones...")
         for usr in self.created_users:
             self.log.info("Deleting user %s", usr)
             response = self.csm_user.delete_csm_user(usr)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(usr)
         self.log.info("Users except pre-defined ones deleted.")

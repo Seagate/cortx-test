@@ -24,6 +24,7 @@ import logging
 import random
 import time
 import os
+import multiprocessing
 import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -121,6 +122,7 @@ class TestMultipartUploadPartCopy:
         """
         Initiates multipart, uploads parts, completes multipart upload,
         gets the uploaded object and compares ETags
+        :param mpu_cfg : configuration for the test
         """
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         uploaded_parts = get_precalculated_parts(self.mp_obj_path, mpu_cfg["part_sizes"],
@@ -135,17 +137,11 @@ class TestMultipartUploadPartCopy:
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
         sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         self.log.info("Complete the multipart ")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, sorted_part_list,
-                                                                  self.bucket_name,
-                                                                  self.object_name)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart with provided part details")
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, sorted_part_list,
+                                                              self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
         upload_etag = resp[1]["ETag"]
         self.log.info("Get the uploaded object")
         status, res = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
@@ -162,6 +158,27 @@ class TestMultipartUploadPartCopy:
         """
         res = self.s3_mpu_test_obj.create_multipart_upload(bucket_name, object_name)
         return res[1]["UploadId"]
+
+    def multiprocess_upload_parts(self, mpu_id, all_parts,
+                             parts: tuple = None):
+        """
+        process to upload parts for one session of client
+        """
+        self.log.info("Creating s3_client session")
+        client_instance = S3MultipartTestLib()
+        self.log.info("uploading parts in client session")
+        status, all_parts = client_instance.upload_parts_sequential(mpu_id,
+                                                                    self.mpu_partcopy_bkt,
+                                                                    self.mpu_partcopy_obj,
+                                                                    parts=parts)
+        assert_utils.assert_true(status, f"Failed to upload parts: {all_parts}")
+        response = client_instance.upload_part_copy(self.bucket_name + "/" + self.object_name,
+                                                    self.mpu_partcopy_bkt,
+                                                    self.mpu_partcopy_obj,
+                                                    part_number=2,
+                                                    upload_id=mpu_id)
+        all_parts.append({"PartNumber": 2, "ETag": response["ETag"]})
+        return all_parts
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32702')
@@ -195,7 +212,7 @@ class TestMultipartUploadPartCopy:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         keys = list(uploaded_parts2.keys())
-        uploaded_parts2['3'] = uploaded_parts2.pop('2')  # modified the part 2 as part 3
+        uploaded_parts2[3] = uploaded_parts2.pop(2)  # modified the part 2 as part 3
         random.shuffle(keys)
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
@@ -212,16 +229,11 @@ class TestMultipartUploadPartCopy:
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Complete the multipart")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
-                                                                  self.mpu_partcopy_bkt,
-                                                                  self.mpu_partcopy_obj)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart with provided part details ")
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
+                                                              self.mpu_partcopy_bkt,
+                                                              self.mpu_partcopy_obj)
+        assert_utils.assert_true(resp[0], resp[1])
         upload_etag2 = resp[1]["ETag"]
         self.log.info("Get the uploaded object (using uploadPartCopy)")
         status, res = self.s3_test_obj.get_object(self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
@@ -276,7 +288,7 @@ class TestMultipartUploadPartCopy:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         keys = list(uploaded_parts2.keys())
-        uploaded_parts2['3'] = uploaded_parts2.pop('2')  # modified the part 2 as part 3
+        uploaded_parts2[3] = uploaded_parts2.pop(2)  # modified the part 2 as part 3
         random.shuffle(keys)
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
@@ -284,30 +296,26 @@ class TestMultipartUploadPartCopy:
                                                                          self.mpu_partcopy_obj,
                                                                          parts=uploaded_parts2)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
+        response1 = self.s3_mpu_test_obj.upload_part_copy(
+            self.bucket_name + "/" + self.put_object_name,
+            self.mpu_partcopy_bkt, self.mpu_partcopy_obj, part_number=4, upload_id=mpu_id2)
+        self.log.info("copy part retult is %s", response1[1]["CopyPartResult"])
+        new_parts.append({"PartNumber": 4, "ETag": response1[1]["CopyPartResult"]["ETag"]})
         response = self.s3_mpu_test_obj.upload_part_copy(self.bucket_name+"/"+self.object_name,
                                                          self.mpu_partcopy_bkt,
                                                          self.mpu_partcopy_obj,
                                                          part_number=2,
                                                          upload_id=mpu_id2)
         new_parts.append({"PartNumber": 2, "ETag": response["ETag"]})
-        response1 = self.s3_mpu_test_obj.upload_part_copy(self.bucket_name+"/"+self.put_object_name,
-                                                          self.mpu_partcopy_bkt,
-                                                          self.mpu_partcopy_obj,
-                                                          part_number=4, upload_id=mpu_id2)
-        new_parts.append({"PartNumber": 4, "ETag": response1["ETag"]})
+
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Complete the multipart")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
-                                                                  self.mpu_partcopy_bkt,
-                                                                  self.mpu_partcopy_obj)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart with provided part details ")
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
+                                                              self.mpu_partcopy_bkt,
+                                                              self.mpu_partcopy_obj)
+        assert_utils.assert_true(resp[0], resp[1])
         upload_etag2 = resp[1]["ETag"]
         self.log.info("Get the uploaded object (using uploadPartCopy)")
         status, res = self.s3_test_obj.get_object(self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
@@ -379,8 +387,7 @@ class TestMultipartUploadPartCopy:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         keys = list(uploaded_parts2.keys())
-        uploaded_parts2.pop('2')  # removed part 2 as we are going to upload only one part here
-        random.shuffle(keys)
+        uploaded_parts2.pop(2)  # removed part 2 as we are going to upload only one part here
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
                                                                          self.mpu_partcopy_bkt,
@@ -396,16 +403,11 @@ class TestMultipartUploadPartCopy:
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Complete the multipart")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
-                                                                  self.mpu_partcopy_bkt,
-                                                                  self.mpu_partcopy_obj)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart with provided part details ")
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
+                                                              self.mpu_partcopy_bkt,
+                                                              self.mpu_partcopy_obj)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Creating a bucket with name : %s", self.mpu_partcopy_bkt)
         res = self.s3_test_obj.create_bucket(self.mpu_partcopy_bkt)
         assert_utils.assert_true(res[0], res[1])
@@ -423,9 +425,8 @@ class TestMultipartUploadPartCopy:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         keys = list(uploaded_parts2.keys())
-        uploaded_parts2.pop('2')  # removed part 2 as we are going to uplaod only one part here
+        uploaded_parts2.pop('2')  # removed part 2 as we are going to upload only one part here
         self.log.info("Uploading parts")
-        random.shuffle(keys)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id3,
                                                                          mpu_partcopy_bkt3,
                                                                          mpu_partcopy_obj3,
@@ -442,17 +443,190 @@ class TestMultipartUploadPartCopy:
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id3, mpu_partcopy_bkt3, mpu_partcopy_obj3)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Complete the multipart")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id3, new_parts[1],
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id3, new_parts[1],
                                                                   mpu_partcopy_bkt3,
                                                                   mpu_partcopy_obj3)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart with provided part details ")
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
         self.log.info("ENDED: Test Copy object created  recursively by MPU-UploadPartCopy")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-32712')
+    @CTFailOn(error_handler)
+    def test_mpu_upload_partcopy_32712(self):
+        """
+        This test is for aborting Copy object created recursively by MPU-UploadPartCopy from
+        one session while parts are getting uploaded via session 2
+        """
+        mp_config = MPART_CFG["test_32702_1"]
+        multipart_obj_path = self.mp_obj_path
+        if os.path.exists(multipart_obj_path):
+            os.remove(multipart_obj_path)
+        create_file(multipart_obj_path, mp_config["file_size"])
+        mp_config_2 = MPART_CFG["test_32702_2"]
+        if os.path.exists(self.mp_obj_path_partcopy):
+            os.remove(self.mp_obj_path_partcopy)
+        create_file(self.mp_obj_path_partcopy, mp_config_2["file_size"])
+        self.log.info("STARTED: Test Multipart upload with invalid json input")
+        s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
+        self.log.info("start s3 IO's")
+        s3_background_io.start(log_prefix="TEST-32710_s3bench_ios", duration="0h2m")
+        # create and complete MPU for Bucket1/object1
+        self.create_and_complete_mpu(mp_config)
+        self.log.info("Creating a bucket with name : %s", self.mpu_partcopy_bkt)
+        res = self.s3_test_obj.create_bucket(self.mpu_partcopy_bkt)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.mpu_partcopy_bkt, res[1])
+        self.log.info("Created a bucket with name : %s", self.mpu_partcopy_bkt)
+        mpu_id2 = self.initiate_multipart(self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        uploaded_parts2 = get_precalculated_parts(self.mp_obj_path_partcopy,
+                                                  mp_config_2["part_sizes"],
+                                                  chunk_size=mp_config_2["chunk_size"])
+        uploaded_parts2.pop('2')  # removed part 2 as we are going to upload only one part here
+        all_parts = []
+        proc = multiprocessing.Process(self.multiprocess_upload_parts,
+                                     args=(mpu_id2, all_parts,
+                                           dict(list(uploaded_parts2.items())[0:])))
+        proc.start()
+        while proc.is_alive():
+            self.log.info("Abort multipart upload")
+            resp = self.s3_mpu_test_obj.abort_multipart_upload(self.mpu_partcopy_bkt,
+                                                               self.mpu_partcopy_obj, mpu_id2)
+            assert_utils.assert_true(resp[0], resp[1])
+        proc.join()
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        assert_utils.assert_false(res[0], res[1])
+        self.log.info("Failed to upload parts of multipart upload")
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test Copy object created  recursively by MPU-UploadPartCopy")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-32714')
+    @CTFailOn(error_handler)
+    def test_mpu_upload_partcopy_32714(self):
+        """
+        This test is for aborting the MPU-UploadPartCopy
+        """
+        mp_config = MPART_CFG["test_32702_1"]
+        multipart_obj_path = self.mp_obj_path
+        if os.path.exists(multipart_obj_path):
+            os.remove(multipart_obj_path)
+        create_file(multipart_obj_path, mp_config["file_size"])
+        mp_config_2 = MPART_CFG["test_32702_2"]
+        if os.path.exists(self.mp_obj_path_partcopy):
+            os.remove(self.mp_obj_path_partcopy)
+        create_file(self.mp_obj_path_partcopy, mp_config_2["file_size"])
+        self.log.info("STARTED: Test Multipart upload with invalid json input")
+        s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
+        self.log.info("start s3 IO's")
+        s3_background_io.start(log_prefix="TEST-32710_s3bench_ios", duration="0h2m")
+        # create and complete MPU for Bucket1/object1
+        self.create_and_complete_mpu(mp_config)
+        self.log.info("Creating a bucket with name : %s", self.mpu_partcopy_bkt)
+        res = self.s3_test_obj.create_bucket(self.mpu_partcopy_bkt)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.mpu_partcopy_bkt, res[1])
+        self.log.info("Created a bucket with name : %s", self.mpu_partcopy_bkt)
+        mpu_id2 = self.initiate_multipart(self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        uploaded_parts2 = get_precalculated_parts(self.mp_obj_path_partcopy,
+                                                  mp_config_2["part_sizes"],
+                                                  chunk_size=mp_config_2["chunk_size"])
+        uploaded_parts2.pop(2)  # removed part 2 as we are going to upload only one part here
+        self.log.info("Uploading parts")
+        new_parts = []
+        self.multiprocess_upload_parts(mpu_id2, new_parts, uploaded_parts2)
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Abort multipart upload")
+        resp = self.s3_mpu_test_obj.abort_multipart_upload(self.mpu_partcopy_bkt,
+                                                           self.mpu_partcopy_obj, mpu_id2)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test abort copy object created by MPU-UploadPartCopy")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-32720')
+    @CTFailOn(error_handler)
+    def test_mpu_upload_partcopy_32720(self):
+        """
+        This test is for uploading parts using bytge range for MPU-UploadPartCopy
+        """
+        mp_config = MPART_CFG["test_32720"]
+        multipart_obj_path = self.mp_obj_path
+        if os.path.exists(multipart_obj_path):
+            os.remove(multipart_obj_path)
+        create_file(multipart_obj_path, mp_config["file_size"])
+        mp_config_2 = MPART_CFG["test_32702_2"]
+        if os.path.exists(self.mp_obj_path_partcopy):
+            os.remove(self.mp_obj_path_partcopy)
+        create_file(self.mp_obj_path_partcopy, mp_config_2["file_size"])
+        self.log.info("STARTED: Upload object UploadPartCopy having part sizes within "
+                      "aws part size limits limits using byte-range param")
+        s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
+        self.log.info("start s3 IO's")
+        s3_background_io.start(log_prefix="TEST-32710_s3bench_ios", duration="0h2m")
+        # create and complete MPU for Bucket1/object1
+        self.create_and_complete_mpu(mp_config)
+        self.log.info("Creating a bucket with name : %s", self.mpu_partcopy_bkt)
+        res = self.s3_test_obj.create_bucket(self.mpu_partcopy_bkt)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.mpu_partcopy_bkt, res[1])
+        self.log.info("Created a bucket with name : %s", self.mpu_partcopy_bkt)
+        mpu_id2 = self.initiate_multipart(self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        uploaded_parts2 = get_precalculated_parts(self.mp_obj_path_partcopy,
+                                                  mp_config_2["part_sizes"],
+                                                  chunk_size=mp_config_2["chunk_size"])
+        keys = list(uploaded_parts2.keys())
+        uploaded_parts2.pop('2')  # removed part 2 as we are going to uplaod only one part here
+        self.log.info("Uploading parts")
+        status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id2,
+                                                                         self.mpu_partcopy_bkt,
+                                                                         self.mpu_partcopy_obj,
+                                                                         parts=uploaded_parts2)
+        assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
+        response = self.s3_mpu_test_obj.upload_part_copy(self.bucket_name + "/" + self.object_name,
+                                                         self.mpu_partcopy_bkt,
+                                                         self.mpu_partcopy_obj,
+                                                         copy_source_range="0-6144",
+                                                         part_number=2,
+                                                         upload_id=mpu_id2)
+        new_parts.append({"PartNumber": 2, "ETag": response["ETag"]})
+        response = self.s3_mpu_test_obj.upload_part_copy(self.bucket_name + "/" + self.object_name,
+                                                         self.mpu_partcopy_bkt,
+                                                         self.mpu_partcopy_obj,
+                                                         part_number=1,
+                                                         upload_id=mpu_id2)
+        new_parts.append({"PartNumber": 3, "ETag": response["ETag"]})
+        response = self.s3_mpu_test_obj.upload_part_copy(self.bucket_name + "/" + self.object_name,
+                                                         self.mpu_partcopy_bkt,
+                                                         self.mpu_partcopy_obj,
+                                                         copy_source_range="0-4144",
+                                                         part_number=4,
+                                                         upload_id=mpu_id2)
+        new_parts.append({"PartNumber": 3, "ETag": response["ETag"]})
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mpu_test_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Complete the multipart")
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id2, new_parts[1],
+                                                              self.mpu_partcopy_bkt,
+                                                              self.mpu_partcopy_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Abort multipart upload")
+        resp = self.s3_mpu_test_obj.abort_multipart_upload(self.mpu_partcopy_bkt,
+                                                          self.mpu_partcopy_obj, mpu_id2)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Upload object UploadPartCopy having part sizes within "
+                      "aws part size limits limits using byte-range param")
