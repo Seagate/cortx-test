@@ -106,20 +106,12 @@ class S3VersioningTestLib(Versioning):
                 bucket_name=bucket_name, status=status)
             LOGGER.info("response returned : %s", response)
 
-            """httpCode = response["ResponseMetadata"]["HTTPStatusCode"]
-            self.log.info(httpCode)
-            assert httpCode == 400, "Error code not matched"
-            LOGGER.info("Error code returned : %s", httpCode)"""
-
-        except (AssertionError, Exception) as error:
-            LOGGER.error("Error in HTTP status code expected %s: actual %s", 400, error)
-            raise Exception(error.args[0])
-
-        except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3VersioningTestLib.put_bucket_versioning.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+        except ClientError as error:
+            LOGGER.info("response returned : %s", error.response)
+            if error.response['Error']['Code'] == 'MalformedXML':
+                LOGGER.info("Bad request")
+            else:
+                LOGGER.error("Unexpected error: %s" % error)
 
         return True, response
 
