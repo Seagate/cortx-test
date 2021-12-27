@@ -489,34 +489,48 @@ class TestDIDurability:
         """
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("STARTED: Data chunk checksum validation (Motr blocks data or metadata of "
+                      "data blocks) and validate checksum error detection by S3/Motr")
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
-            "and validate checksum error detection by S3/Motr")
-        self.log.info("Step 1: Create a bucket.")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
+        self.log.debug("Executing test as flags are set to default")
+        self.log.debug("Step 1: Create a corrupted file.")
         location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
                                                          data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.log.info("Step 3: enable data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
+        self.log.info("Step 1: Created a corrupted file at location %s", location)
+        self.log.info("Step 2: Enable data corruption")
+        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
         if status:
-            self.log.info("Step 3: enabled data corruption")
+            self.log.info("Step 2: Enabled data corruption")
         else:
-            self.log.info("Step 3: failed to enable data corruption")
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.log.info("Step 5: Verify get object.")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        self.log.info("Step 5: response %s", resp)
-        # get operation should fail
-        # to do verify with motr logs
+        try:
+            self.log.info("Step 3: Upload a file using aws cli")
+            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+            self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                                   object_name=self.object_name, file_path=location)
+            self.log.info("Step 4: verify download object fails with 5xx error code")
+            self.s3_test_obj.object_download(file_path=self.file_path,
+                                             bucket_name=self.bucket_name,
+                                             obj_name=self.object_name)
+        except CTException as err:
+            self.log.info("Put object failed with %s", err)
+            err_str = str(err)
+            if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                self.log.info("Download failed with InternalError")
+            else:
+                assert False
+        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
+        if status:
+            self.log.info("Step 2: Disabled data corruption")
+        else:
+            assert False
         self.log.info(
             "ENDED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
             "and validate checksum error detection by S3/Motr")
@@ -652,6 +666,7 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
@@ -660,12 +675,14 @@ class TestDIDurability:
         Disabling of Checksum feature should not do any checksum validation even if data
         corrupted.
         """
-        if self.di_err_lib.validate_disabled_config():
+        self.log.info("STARTED: Disabling of Checksum feature should not do any checksum "
+                      "validation even if data corrupted")
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_disabled_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
-        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.debug("Executing test as flags are set to default")
         location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
                                                          data_folder_prefix=self.test_dir_path)
         self.log.info("Step 3: created a corrupted file at location %s", location)
@@ -676,18 +693,16 @@ class TestDIDurability:
         else:
             self.log.info("Step 3: failed to enable data corruption")
             assert False
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         bucket_name=self.bucket_name,
-                                         obj_name=self.object_name)
-        # we should get same corrupted file (first byte f)
-        # we should get error (first byte z)
-        self.log.info(
-            "ENDED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
+        try:
+            self.s3_test_obj.create_bucket(self.bucket_name)
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                        file_path=location)
+            self.s3_test_obj.object_download(file_path=self.file_path, bucket_name=self.bucket_name,
+                                             obj_name=self.object_name)
+        except CTException as err:
+            self.log.debug("Test failed with error %s", err)
+        self.log.info("ENDED: Disabling of Checksum feature should not do any checksum validation "
+                      "even if data corrupted")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -911,21 +926,18 @@ class TestDIDurability:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a file at location %s", location)
+        self.log.debug("Step 1: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: Created a corrupted file at location %s", location)
         self.log.info("Step 2: Enable data corruption")
         status = self.di_err_lib.enable_data_corruption_set_fault_injection()
-
         if status:
             self.log.info("Step 2: Enabled data corruption")
         else:
             assert False
         try:
-            self.log.info("Step 3: Upload a file using aws cli")
+            self.log.info("Step 3: Upload a file")
             self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
             self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
                                         file_path=location)
