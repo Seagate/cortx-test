@@ -33,15 +33,16 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
-from commons.utils.assert_utils import assert_in, assert_true, assert_false
-from config.s3 import S3_IAM_POLICY_TST
+from commons.utils.assert_utils import assert_in, assert_false
+from config.s3 import IAM_POLICY_CFG
 from libs.s3 import s3_test_lib, iam_test_lib, iam_policy_test_lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
-from libs.s3.s3_misc import create_bucket_put_object
+from libs.s3.s3_common_test_lib import create_bucket_put_object
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestIAMPolicy:
     """IAM Policy Test suite."""
 
@@ -137,7 +138,7 @@ class TestIAMPolicy:
         :bucket: Bucket name
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
-        operation = "Put Bucket ACL. "
+        operation = "Put Bucket ACL:"
         acl_obj = S3AclTestLib(access_key=access, secret_key=secret)
         try:
             acl_obj.put_bucket_acl(bucket, acl="public-read-write")
@@ -147,9 +148,11 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
     def get_bucket_acl(self, access, secret, bucket, exception):
@@ -161,7 +164,7 @@ class TestIAMPolicy:
         :bucket: Bucket name
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
-        operation = "Get Bucket ACL. "
+        operation = "Get Bucket ACL:"
         acl_obj = S3AclTestLib(access_key=access, secret_key=secret)
         try:
             acl_obj.get_bucket_acl(bucket)
@@ -171,11 +174,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def put_object_acl(self, access, secret, bucket, object_name, exception):
         """
         Put object ACL with exception wrapper
@@ -186,7 +192,7 @@ class TestIAMPolicy:
         :object_name: Object Name
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
-        operation = "Put Object ACL. "
+        operation = "Put Object ACL:"
         acl_obj = S3AclTestLib(access_key=access, secret_key=secret)
         try:
             acl_obj.put_object_canned_acl(bucket, object_name, acl="public-read-write")
@@ -196,11 +202,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def get_object_acl(self, access, secret, bucket, object_name, exception):
         """
         Get object ACL with exception wrapper
@@ -211,7 +220,7 @@ class TestIAMPolicy:
         :object_name: Object Name
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
-        operation = "Get Object ACL. "
+        operation = "Get Object ACL:"
         acl_obj = S3AclTestLib(access_key=access, secret_key=secret)
         try:
             acl_obj.get_object_acl(bucket, object_name)
@@ -221,9 +230,11 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
     def list_bucket(self, access, secret, bucket, exception):
@@ -236,7 +247,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_tl = s3_test_lib.S3TestLib(access_key=access, secret_key=secret)
-        operation = "List Bucket. "
+        operation = "List Bucket:"
         try:
             s3_tl.object_list(bucket)
         except CTException as error:
@@ -245,9 +256,11 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
     def delete_bucket(self, access, secret, bucket, exception):
@@ -260,20 +273,23 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_tl = s3_test_lib.S3TestLib(access_key=access, secret_key=secret)
-        operation = "Delete Bucket. "
+        operation = "Delete Bucket:"
         try:
-            s3_tl.object_list(bucket)
+            s3_tl.delete_bucket(bucket)
         except CTException as error:
             self.log.info("%s Expected %s, got %s, %s", operation, exception, error.message,
                           error.message)
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def create_multipart(self, access, secret, bucket, object_name, exception):
         """
         Create Multipart with exception wrapper
@@ -285,7 +301,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_mp_test_obj = S3MultipartTestLib(access_key=access, secret_key=secret)
-        operation = "Create Multipart. "
+        operation = "Create Multipart: "
         try:
             res = s3_mp_test_obj.create_multipart_upload(bucket, object_name)
         except CTException as error:
@@ -294,7 +310,9 @@ class TestIAMPolicy:
             if exception:
                 assert exception in str(error.message), error.message
             else:
-                assert True, f"{operation}Expected no Exception. Instead caught {error.message}."
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
             return "None"
         else:
             assert not exception, f"{operation}Expected {exception}. Did not receive any exception."
@@ -310,7 +328,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_mp_test_obj = S3MultipartTestLib(access_key=access, secret_key=secret)
-        operation = "List Multipart. "
+        operation = "List Multipart:"
         try:
             s3_mp_test_obj.list_multipart_uploads(bucket)
         except CTException as error:
@@ -319,11 +337,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def abort_multipart(self, access, secret, bucket, object_name, upload_id, exception):
         """
         Abort multipart with exception wrapper
@@ -336,7 +357,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_mp_test_obj = S3MultipartTestLib(access_key=access, secret_key=secret)
-        operation = "Abort Multipart. "
+        operation = "Abort Multipart:"
         try:
             s3_mp_test_obj.abort_multipart_upload(bucket, object_name, upload_id)
         except CTException as error:
@@ -345,11 +366,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def put_object(self, access, secret, bucket, object_name, exception):
         """
         Put object with exception wrapper
@@ -361,7 +385,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_test_lib_obj = s3_test_lib.S3TestLib(access_key=access, secret_key=secret)
-        operation = "Put Object. "
+        operation = "Put Object:"
         system_utils.create_file(self.test_file, 0)
         try:
             s3_test_lib_obj.put_object(bucket, object_name, self.test_file)
@@ -371,11 +395,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def get_object(self, access, secret, bucket, object_name, exception):
         """
         Get object with exception wrapper
@@ -387,7 +414,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_test_lib_obj = s3_test_lib.S3TestLib(access_key=access, secret_key=secret)
-        operation = "Get Object. "
+        operation = "Get Object:"
         try:
             s3_test_lib_obj.get_object(bucket, object_name)
         except CTException as error:
@@ -396,11 +423,14 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def delete_object(self, access, secret, bucket, object_name, exception):
         """
         Delete object with exception wrapper
@@ -412,20 +442,23 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         s3_test_lib_obj = s3_test_lib.S3TestLib(access_key=access, secret_key=secret)
-        operation = "Delete Object. "
+        operation = "Delete Object:"
         try:
-            s3_test_lib_obj.get_object(bucket, object_name)
+            s3_test_lib_obj.delete_object(bucket, object_name)
         except CTException as error:
             self.log.info("%s Expected %s, got %s, %s", operation, exception, error.message,
                           error.message)
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-arguments
     def put_bucket_policy(self, access, secret, bucket, policy, exception):
         """
         Put bucket policy with exception wrapper
@@ -437,7 +470,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         bucket_policy_test_lib = S3BucketPolicyTestLib(access_key=access, secret_key=secret)
-        operation = "Put Bucket Policy. "
+        operation = "Put Bucket Policy:"
         try:
             bucket_policy_test_lib.put_bucket_policy(bucket, policy)
         except CTException as error:
@@ -446,9 +479,11 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
     def get_bucket_policy(self, access, secret, bucket, exception):
@@ -461,7 +496,7 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         bucket_policy_test_lib = S3BucketPolicyTestLib(access_key=access, secret_key=secret)
-        operation = "Get Bucket Policy."
+        operation = "Get Bucket Policy:"
         try:
             bucket_policy_test_lib.get_bucket_policy(bucket)
         except CTException as error:
@@ -470,9 +505,11 @@ class TestIAMPolicy:
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
     def delete_bucket_policy(self, access, secret, bucket, exception):
@@ -486,20 +523,23 @@ class TestIAMPolicy:
         :exception: Exception string e.g. AccessDenied, None meaning no exception expected
         """
         bucket_policy_test_lib = S3BucketPolicyTestLib(access_key=access, secret_key=secret)
-        operation = "Delete Bucket Policy. "
+        operation = "Delete Bucket Policy:"
         try:
-            bucket_policy_test_lib.get_bucket_policy(bucket)
+            bucket_policy_test_lib.delete_bucket_policy(bucket)
         except CTException as error:
             self.log.info("%s Expected %s, got %s, %s", operation, exception, error.message,
                           error.message)
             if exception:
                 assert_in(exception, str(error.message), error.message)
             else:
-                assert_true(f"{operation}Expected no Exception. Instead caught {error.message}.")
+                self.log.error("%s Expected no Exception. Instead caught %s.", operation,
+                               error.message)
+                raise error
         else:
-            assert_false(exception, f"{operation}Expected {exception}. "
+            assert_false(exception, f"{operation} Expected {exception}. "
                                     f"Did not receive any exception.")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.s3_iam_policy
     @pytest.mark.tags("TEST-33900")
     @CTFailOn(error_handler)
@@ -533,7 +573,7 @@ class TestIAMPolicy:
 
             if permission == "Allow":
                 # Put Bucket Policy using S3 account which gives access to iam user
-                bucket_policy = copy.deepcopy(S3_IAM_POLICY_TST["test_33900"]["bucket_policy"])
+                bucket_policy = copy.deepcopy(IAM_POLICY_CFG["test_33900"]["bucket_policy"])
                 for statement in bucket_policy["Statement"]:
                     statement["Principal"]["AWS"] = user_arn
                     statement["Resource"] = statement["Resource"].format(bucket)
@@ -592,7 +632,7 @@ class TestIAMPolicy:
 
             if permission == "Allow":
                 # Put Bucket Policy using S3 account which gives access to iam user
-                bucket_policy = copy.deepcopy(S3_IAM_POLICY_TST["test_3390_"]["bucket_policy"])
+                bucket_policy = copy.deepcopy(IAM_POLICY_CFG["test_3390_"]["bucket_policy"])
                 for statement in bucket_policy["Statement"]:
                     statement["Principal"]["AWS"] = user_arn
                     statement["Resource"] = statement["Resource"].format(bucket)
@@ -620,6 +660,7 @@ class TestIAMPolicy:
             self.log.info("Delete IAM account")
             self.iam_test_lib.delete_user(iam_user)
 
+    # pylint: disable=too-many-locals,too-many-statements
     @pytest.mark.s3_iam_policy
     @pytest.mark.tags("TEST-33902")
     @CTFailOn(error_handler)
@@ -658,7 +699,7 @@ class TestIAMPolicy:
 
             if permission == "Allow":
                 # Put Bucket Policy using S3 account which gives access to iam user
-                bucket_policy = copy.deepcopy(S3_IAM_POLICY_TST["test_33902"]["bucket_policy"])
+                bucket_policy = copy.deepcopy(IAM_POLICY_CFG["test_33902"]["bucket_policy"])
                 for statement in bucket_policy["Statement"]:
                     statement["Principal"]["AWS"] = user_arn
                     statement["Resource"] = statement["Resource"].format(bucket)
@@ -725,7 +766,7 @@ class TestIAMPolicy:
 
             if permission == "Allow":
                 # Put Bucket Policy using S3 account which gives access to iam user
-                bucket_policy = copy.deepcopy(S3_IAM_POLICY_TST["test_33903"]["bucket_policy"])
+                bucket_policy = copy.deepcopy(IAM_POLICY_CFG["test_33903"]["bucket_policy"])
                 for statement in bucket_policy["Statement"]:
                     statement["Principal"]["AWS"] = user_arn
                     statement["Resource"] = statement["Resource"].format(bucket)
@@ -783,7 +824,7 @@ class TestIAMPolicy:
             self.attach_list_iam_policy(policy_arn, iam_user)
 
             self.log.info("Create bucket policy")
-            bucket_policy = copy.deepcopy(S3_IAM_POLICY_TST["test_3390_"]["bucket_policy"])
+            bucket_policy = copy.deepcopy(IAM_POLICY_CFG["test_3390_"]["bucket_policy"])
             for statement in bucket_policy["Statement"]:
                 statement["Principal"]["AWS"] = user_arn
                 statement["Resource"] = statement["Resource"].format(bucket)

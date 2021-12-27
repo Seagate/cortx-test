@@ -22,7 +22,7 @@
 """S3 configs are initialized here."""
 
 from commons import configmanager
-from commons.params import S3_OBJ_TEST_CONFIG, S3_IAM_POLICY_TEST_CONFIG
+from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3CMD_TEST_CONFIG
 from commons.params import S3_BLACK_BOX_CONFIG_PATH
@@ -38,7 +38,6 @@ S3_CFG = s3_config
 DEL_CFG = configmanager.get_config_wrapper(fpath=DEL_CFG_PATH)
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
 S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
-S3_IAM_POLICY_TST = configmanager.get_config_wrapper(fpath=S3_IAM_POLICY_TEST_CONFIG)
 S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
 S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH)
 S3_BLKBOX_CFG = configmanager.get_config_wrapper(fpath=S3_BLACK_BOX_CONFIG_PATH)
