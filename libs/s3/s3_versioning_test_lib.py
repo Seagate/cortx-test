@@ -112,14 +112,42 @@ class S3VersioningTestLib(Versioning):
             LOGGER.info("HTTP status code returned : %s", httpCode)
             if httpCode == 400:
                 LOGGER.info("Bad request, MalformedXML")
-                pass
+                return True, httpCode
             else:
                 LOGGER.error("Error in %s: %s",
                              S3VersioningTestLib.put_bucket_versioning.__name__,
                              error)
                 raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-        #return True, response
 
+    def put_bucket_versioning_403(self,
+                              bucket_name: str = None,
+                              status: str = "Enabled") -> tuple:
+        """
+        Set/Update the versioning configuration of a bucket.
+
+        :param bucket_name: Target bucket for the PUT Bucket Versioning call.
+        :param status: Versioning status to be set, supported values - "Enabled" or "Suspended"
+            Default = "Enabled"
+        :return: response
+        """
+        LOGGER.info("Setting bucket versioning configuration")
+        try:
+            response = super().put_bucket_versioning(
+                bucket_name=bucket_name, status=status)
+            LOGGER.info("Successfully set bucket versioning configuration: %s", response)
+
+        except ClientError as error:
+            LOGGER.info("response returned : %s", error.response)
+            httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
+            LOGGER.info("HTTP status code returned : %s", httpCode)
+            if httpCode == 403:
+                LOGGER.info("Access Denied, InvalidAccessKey")
+                return True, httpCode
+            else:
+                LOGGER.error("Error in %s: %s",
+                             S3VersioningTestLib.put_bucket_versioning.__name__,
+                             error)
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def get_bucket_versioning(self,
                               bucket_name: str = None) -> tuple:
