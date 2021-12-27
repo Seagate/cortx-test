@@ -147,7 +147,7 @@ class TestVersioningGetObject:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: Perform GET Bucket Versioning API by non bucket owner/user")
         try:
-            res = self.s3_new_test_obj.get_bucket_versioning(bucket_name='bucket101')
+            res = self.s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
             assert err_message in error.message, error.message
