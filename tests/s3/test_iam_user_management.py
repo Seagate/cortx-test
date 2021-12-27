@@ -1356,7 +1356,8 @@ class TestIAMUserManagement:
         iam_users_list = [usr["UserName"] for usr in usr_list]
         self.log.debug("Listed user count : %s", len(iam_users_list))
         #  check error on 1001th IAM user in list
-        assert_utils.assert_list_item(iam_users_list, iam_user)
+        assert_utils.assert_not_in(
+            iam_users_list, iam_user, f"Number of users not same as {cons.Rest.MAX_IAM_USERS}")
         #  check error on 1000 count of IAM users
         assert_utils.assert_equal(len(iam_users_list), cons.Rest.MAX_IAM_USERS)
         for i, iam_access_key_id in enumerate(iam_access_key_ids):
