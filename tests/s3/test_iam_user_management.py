@@ -1346,7 +1346,8 @@ class TestIAMUserManagement:
             self.log.info("[END] Created s3iamuser : %s count : %s ", iam_user, i + 1)
         #  check error on MAX_IAM_USERS+1 (1001th) IAM user create
         self.log.info(
-            "Step 3: Try to create %d s3iamuser using direct REST API call", cons.Rest.MAX_IAM_USERS+1)
+            "Step 3: Try to create %d s3iamuser using direct REST API call",
+            cons.Rest.MAX_IAM_USERS+1)
         iam_user = "iam_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
