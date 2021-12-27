@@ -108,7 +108,9 @@ class S3VersioningTestLib(Versioning):
 
         except ClientError as error:
             LOGGER.info("response returned : %s", error.response)
-            if error.response['ResponseMetadata']['HTTPStatusCode'] == 400:
+            httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
+            LOGGER.info("HTTP status code returned : %s", httpCode)
+            if httpCode == 400:
                 LOGGER.info("Bad request, MalformedXML")
                 pass
             else:
