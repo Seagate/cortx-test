@@ -150,6 +150,7 @@ class TestVersioningGetObject:
             res = self.s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
+            assert_utils.assert_equal(403, error[1]['ResponseMetadata']['HTTPStatusCode'])
             assert err_message in error.message, error.message
         self.log.info("Step 3: PUT Bucket Versioning with status=Suspended")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
@@ -159,8 +160,8 @@ class TestVersioningGetObject:
             res = self.s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
+            assert_utils.assert_equal(403, error[1]['ResponseMetadata']['HTTPStatusCode'])
             assert err_message in error.message, error.message
-        self.log.info("ENDED : Delete newly added S3 test account")
-        self.log.info("ENDED : Delete newly added S3 test account")
+        self.log.info("ENDED : Delete newly added S3 Test account")
         resp = self.s3_obj.csm_user_delete_s3account(self.account_name)
         assert resp[0], resp[1]
