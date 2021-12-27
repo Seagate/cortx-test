@@ -41,16 +41,16 @@ from commons.constants import const
 from commons.constants import MB, KB
 from config import CMN_CFG
 from libs.s3 import S3_CFG
-from libs.di.di_error_detection_test_lib import DIErrorDetection
+from libs.s3 import cortxcli_test_lib
+from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3 import s3_s3cmd
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3 import cortxcli_test_lib
+from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from libs.s3.s3_cmd_test_lib import S3CmdTestLib
-from libs.s3 import SECRET_KEY, ACCESS_KEY
-from libs.s3 import s3_s3cmd
 
 
 class TestDIDurability:
@@ -271,8 +271,8 @@ class TestDIDurability:
         self.log.info("STARTED: Test to verify object integrity during the the upload with "
                       "correct checksum.")
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
-        failed_file_sizes = []
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        failed_file_sizes = {}
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -283,19 +283,23 @@ class TestDIDurability:
             location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
                                                               data_folder_prefix=self.test_dir_path)
             self.log.debug("csm: %s", csm[1])
-            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                        object_name=self.object_name, file_path=location,
-                                        content_md5=csm[1])
-            self.s3_test_obj.object_download(bucket_name=self.bucket_name,
-                                             obj_name=self.object_name, file_path=self.file_path)
-            if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
-                self.log.info("Checksum Validated")
-            else:
-                failed_file_sizes.append(file_size)
+            try:
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=self.object_name, file_path=location,
+                                            content_md5=csm[1])
+                self.s3_test_obj.object_download(bucket_name=self.bucket_name,
+                                                 obj_name=self.object_name,
+                                                 file_path=self.file_path)
+                if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
+                    self.log.info("Checksum Validated")
+                else:
+                    self.log.info("Checksum Validation failed")
+                    failed_file_sizes[file_size] = "checksum validation failed"
+            except CTException as err:
+                self.log.info("Test failed with %s", err)
+                failed_file_sizes[file_size] = err
         self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
-        if not failed_file_sizes:
-            pass
-        else:
+        if failed_file_sizes:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
         self.log.info("ENDED: Test to verify object integrity during the upload with correct "
@@ -313,7 +317,7 @@ class TestDIDurability:
         self.log.info("STARTED: Test to verify object integrity during the upload with different "
                       "checksum.")
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -339,9 +343,7 @@ class TestDIDurability:
                 else:
                     failed_file_sizes.append(file_size)
         self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
-        if not failed_file_sizes:
-            pass
-        else:
+        if failed_file_sizes:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
         self.log.info("ENDED: Test to verify object integrity during the upload with different "
