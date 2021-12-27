@@ -134,7 +134,7 @@ class TestVersioningPutBucket:
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         http_code, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
-        self.log.info(http_code, status)
+        self.log.info("HTTP status code: %s bucket versioning status: %s", http_code, status)
         assert_utils.assert_equal(http_code, 200)
         assert_utils.assert_equal(status, "Suspended")
 
@@ -152,8 +152,8 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: Creating new account.")
         versions = defaultdict(list)
         self.rest_obj = S3AccountOperations()
-        account_name = "s3acc300"
-        email_id = "s3acc300@gmail.com"
+        account_name = "s3acc300-{}".format(time.perf_counter_ns())
+        email_id = "s3acc300{}@gmail.com".format(time.perf_counter_ns())
         self.log.info("Step : Creating account with name %s and email_id %s",account_name, email_id)
         create_account = self.rest_obj.create_s3_account(
             account_name, email_id, "Cortxadmin@123")
@@ -202,8 +202,8 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: Creating new account.")
         versions = defaultdict(list)
         self.rest_obj = S3AccountOperations()
-        account_name = "s3acc301"
-        email_id = "s3acc301@gmail.com"
+        account_name = "s3acc300-{}".format(time.perf_counter_ns())
+        email_id = "s3acc300{}@gmail.com".format(time.perf_counter_ns())
         self.log.info("Step : Creating account with name %s and email_id %s", account_name, email_id)
         create_account = self.rest_obj.create_s3_account(
             account_name, email_id, "Cortxadmin@123")
@@ -242,8 +242,8 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: Creating new account.")
         versions = defaultdict(list)
         self.rest_obj = S3AccountOperations()
-        account_name = "s3acc302"
-        email_id = "s3acc302@gmail.com"
+        account_name = "s3acc300-{}".format(time.perf_counter_ns())
+        email_id = "s3acc300{}@gmail.com".format(time.perf_counter_ns())
         self.log.info("Step : Creating account with name %s and email_id %s", account_name, email_id)
         create_account = self.rest_obj.create_s3_account(
             account_name, email_id, "Cortxadmin@123")
