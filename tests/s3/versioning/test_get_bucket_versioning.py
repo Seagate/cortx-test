@@ -23,11 +23,11 @@
 import logging
 import os
 import time
-from collections import defaultdict
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, path_exists, remove_file
 from commons.utils.system_utils import make_dirs, remove_dirs
@@ -35,6 +35,7 @@ from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
+from libs.s3.cortxcli_test_lib import CSMAccountOperations
 
 
 class TestVersioningGetObject:
@@ -50,6 +51,16 @@ class TestVersioningGetObject:
         self.log.info("STARTED: Setup operations")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_ver_test_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_obj = CSMAccountOperations()
+        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.account_name = "s3getbucketversioning_user"
+        self.email_id = f"{self.account_name}_email@seagate.com"
+
+        self.log.info("Prerequisite: Crete a new S3 user account to perform non bucket owner/user actions")
+        access_key, secret_key = self.create_s3account()
+        self.s3_new_test_obj = S3VersioningTestLib(access_key=access_key, secret_key=secret_key,
+                                                   endpoint_url=S3_CFG["s3_url"])
+
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestVersioningPutObject")
         if not path_exists(self.test_dir_path):
             make_dirs(self.test_dir_path)
@@ -85,9 +96,20 @@ class TestVersioningGetObject:
         if pref_list:
             res = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(res[0], res[1])
+        self.log.info("Delete newly added s3 test account")
+        resp = self.s3_obj.csm_user_delete_s3account(self.account_name)
+        assert resp[0], resp[1]
+
+    def create_s3account(self):
+        """Create s3 account"""
+        resp = self.s3_obj.csm_user_create_s3account(self.account_name, self.email_id, self.s3acc_password)
+        assert resp[0], resp[1]
+        access_key = resp[1]['access_key']
+        secret_key = resp[1]['secret_key']
+        return access_key, secret_key
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-32713')
+    @pytest.mark.tags('TEST-32715')
     @CTFailOn(error_handler)
     def test_get_object_unversioned_32715(self):
         """
@@ -97,7 +119,8 @@ class TestVersioningGetObject:
         Upload object
         Perform GET Bucket Versioning on created bucket
         """
-        self.log.info("STARTED : Verify that HTTP status code 200 returned to bucket owner when versioning not Enabled.")
+        self.log.info(
+            "STARTED : Verify that HTTP status code 200 returned to bucket owner when versioning not Enabled.")
         self.log.info("Step 1: Upload object")
         res = self.s3_test_obj.put_object(
             bucket_name=self.bucket_name, object_name=self.object_name, file_path=self.file_path)
@@ -107,3 +130,39 @@ class TestVersioningGetObject:
         assert_utils.assert_equal(200, res[1]['ResponseMetadata']['HTTPStatusCode'])
         assert_utils.assert_not_in('Status', res[1])
 
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-32716')
+    @CTFailOn(error_handler)
+    def test_get_object_unversioned_32715(self):
+        """
+        Verify that bucket versioning status Enabled/Suspended is not returned in response to user who is not bucket owner.
+
+        Create bucket.
+        PUT Bucket Versioning with status=Enabled
+        Perform GET Bucket Versioning API by non bucket owner/user.
+        PUT Bucket Versioning with status=Suspended
+        Perform GET Bucket Versioning API by non bucket owner/user.
+        """
+
+        err_message = "An error occurred (AccessDenied) when calling the GetBucketVersioning operation: Access Denied."
+
+        self.log.info(
+            "STARTED : Verify that bucket versioning status Enabled/Suspended is not returned to bucket owner/user.")
+        self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 2: Perform GET Bucket Versioning API by non bucket owner/user")
+        try:
+            res = self.s3_new_test_obj.get_bucket_versioning(bucket_name='bucket101')
+            assert_utils.assert_not_in('Status', res[1])
+        except CTException as error:
+            assert err_message in error.message, error.message
+        self.log.info("Step 3: PUT Bucket Versioning with status=Suspended")
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 4: Perform GET Bucket Versioning API by non bucket owner/user")
+        try:
+            res = self.s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
+            assert_utils.assert_not_in('Status', res[1])
+        except CTException as error:
+            assert err_message in error.message, error.message
