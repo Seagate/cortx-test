@@ -182,7 +182,7 @@ class TestDIWithChangingS3Params:
             assert False
         self.log.info("ENDED:Normal File upload with DI flag enable for read and write")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
@@ -191,7 +191,7 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI disabled
         """
-        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        valid, skipmark = self.di_err_lib.validate_valid_config()
         if not valid or skipmark:
             self.log.info("Skipping test as DI flags are not disabled" )
             pytest.skip()
@@ -248,7 +248,7 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI enabled
         """
-        valid, skipmark = self.di_err_lib.validate_enabled_config()
+        valid, skipmark = self.di_err_lib.validate_valid_config()
         if not valid or skipmark:
             self.log.info("Skipping test as DI flags are not enabled" )
             pytest.skip()
