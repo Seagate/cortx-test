@@ -107,9 +107,9 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
-        self.log.info(httpCode, status)
-        assert_utils.assert_equal(httpCode, 200)
+        http_code, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        self.log.info("HTTP status code: %s bucket versioning status: %s", http_code, status)
+        assert_utils.assert_equal(http_code, 200)
         assert_utils.assert_equal(status, "Enabled")
 
 
@@ -133,9 +133,9 @@ class TestVersioningPutBucket:
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        httpCode, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
-        self.log.info(httpCode, status)
-        assert_utils.assert_equal(httpCode, 200)
+        http_code, status = res[1]['ResponseMetadata']['HTTPStatusCode'], res[1]['Status']
+        self.log.info(http_code, status)
+        assert_utils.assert_equal(http_code, 200)
         assert_utils.assert_equal(status, "Suspended")
 
     @pytest.mark.s3_ops
