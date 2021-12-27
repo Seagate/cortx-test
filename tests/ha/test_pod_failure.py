@@ -89,6 +89,7 @@ class TestPodFailure:
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = None
+        cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -158,6 +159,14 @@ class TestPodFailure:
                 LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
                 resp = self.ha_obj.host_power_on(host=self.node_name)
                 assert_utils.assert_true(resp, "Host is not powered on")
+            if self.restore_ip:
+                LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
+                self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
+                                                read_lines=True)
+                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
+                                            read_lines=True, exc=False)
+                assert_utils.assert_not_in("Name or service not known", resp[1][0],
+                                           "Node interface still down.")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
@@ -2388,9 +2397,8 @@ class TestPodFailure:
                 data_pod_name1 = pod_name
             if node == ha_node_fqdn:
                 data_pod_name2 = pod_name
-        data_pod_name = random.sample(data_pod_list, 1)
-        while data_pod_name == data_pod_name1 or data_pod_name == data_pod_name2:
-            data_pod_name = random.sample(data_pod_list, 1)
+        new_list = [pod_name for pod_name in data_pod_list if pod_name != data_pod_name1 and pod_name != data_pod_name2]
+        data_pod_name = random.sample(new_list, 1)
         LOGGER.info("Step 2: %s data pod is not hosted either on control or ha node", data_pod_name)
 
         LOGGER.info("Step 3: Shutdown data pod by shutting node node on which its hosted.")
@@ -2471,9 +2479,8 @@ class TestPodFailure:
                 data_pod_name1 = pod_name
             if node == ha_node_fqdn:
                 data_pod_name2 = pod_name
-        data_pod_name = random.sample(data_pod_list, 1)
-        while data_pod_name == data_pod_name1 or data_pod_name == data_pod_name2:
-            data_pod_name = random.sample(data_pod_list, 1)
+        new_list = [pod_name for pod_name in data_pod_list if pod_name != data_pod_name1 and pod_name != data_pod_name2]
+        data_pod_name = random.sample(new_list, 1)
         LOGGER.info("Step 2: %s data pod is not hosted either on control or ha node", data_pod_name)
 
         LOGGER.info("Step 3: Shutdown data pod by making network down of node "
@@ -2482,19 +2489,19 @@ class TestPodFailure:
         LOGGER.info("Get the ip of from the node fqdn")
         for count, host in enumerate(self.host_worker_list):
             if host == data_node_fqdn:
-                node_ip = CMN_CFG["nodes"][count]["ip"]
-                resp = self.node_worker_list[count].execute_cmd(cmd=cmd.CMD_IFACE_IP.format(node_ip),
+                self.node_ip = CMN_CFG["nodes"][count]["ip"]
+                resp = self.node_worker_list[count].execute_cmd(cmd=cmd.CMD_IFACE_IP.format(self.node_ip),
                                                                 read_lines=True)
-                node_iface = resp[1].strip(":\n")
+                self.node_iface = resp[1].strip(":\n")
                 resp = self.node_worker_list[count].execute_cmd(cmd=cmd.CMD_GET_IP_IFACE.format("eth1"),
                                                                 read_lines=True)
                 new_ip = resp[1].strip("'\\n'b'")
-                new_worker_obj = LogicalNode(hostname=new_ip, username=CMN_CFG["nodes"][count]["username"],
+                self.new_worker_obj = LogicalNode(hostname=new_ip, username=CMN_CFG["nodes"][count]["username"],
                                              password=CMN_CFG["nodes"][count]["password"])
-                LOGGER.info("Make %s interface down for %s node", node_iface, host)
-                new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(node_iface, "down"),
+                LOGGER.info("Make %s interface down for %s node", self.node_iface, host)
+                self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "down"),
                                                                 read_lines=True)
-                resp = sysutils.execute_cmd(cmd.CMD_PING.format(node_ip), read_lines=True, exc=False)
+                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip), read_lines=True, exc=False)
                 assert_utils.assert_in(b"100% packet loss", resp,
                                        f"Node interface still up. {resp}")
 
