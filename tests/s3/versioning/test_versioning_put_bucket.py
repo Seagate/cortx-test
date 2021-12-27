@@ -165,11 +165,15 @@ class TestVersioningPutBucket:
         self.log.info("STARTED: PUT Disabled bucket versioning.")
         versions = defaultdict(list)
         self.log.info("Step 1: Disable bucket versioning")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name, status="Disabled")
-        assert_utils.assert_true(res[0], res[1])
-        #verify error code 400, bad request
-
+        try:
+            res = self.s3_ver_test_obj.put_bucket_versioning(
+                bucket_name=self.bucket_name, status="Disabled")
+            httpCode = res[1]["ResponseMetadata"]["HTTPStatusCode"]
+            self.log.info(httpCode)
+            assert httpCode == 400, "Error code node matched"
+        except (AssertionError, Exception) as error:
+            self.log.info("Error in HTTP status code expected %s: actual %s", 400, httpCode)
+            raise Exception(error.args[0])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32747')
