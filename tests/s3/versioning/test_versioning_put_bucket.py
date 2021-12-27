@@ -106,7 +106,9 @@ class TestVersioningPutBucket:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
-        assert_utils.assert_true(res[0], res[1]) #status
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info(res[1])
+        #assert_utils.assert_equal(res_code[1], 403)
 
 
     @pytest.mark.s3_ops
@@ -128,7 +130,8 @@ class TestVersioningPutBucket:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: Get bucket versioning status")
         res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
-        assert_utils.assert_true(res[0], res[1]) #status
+        assert_utils.assert_true(res[0], res[1])
+        #assert_utils.assert_equal(res_code[1], "")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32718')
