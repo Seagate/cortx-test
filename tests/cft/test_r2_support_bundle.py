@@ -521,7 +521,7 @@ class TestR2SupportBundle:
                     if "trace" in log_path_m0d:
                         if "No such file" in resp:
                             assert_utils.assert_true(False, f"Log path {log_path_m0d} "
-                                                            f"does not exist on pod: {pod} resp: {resp}")
+                                                    f"does not exist on pod: {pod} resp: {resp}")
                         self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
                     elif "addb" in log_path_m0d:
                         for counter in range(1, len(lines_m0d)):
@@ -532,7 +532,8 @@ class TestR2SupportBundle:
                             if "No such file" in resp:
                                 assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
                                                     f"does not exist on pod: {pod} resp:{resp}")
-                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
                     else:
                         assert_utils.assert_true(False, f"No addb or trace directory found "
                                                         f"on path: {log_path_m0d}")
@@ -625,10 +626,11 @@ class TestR2SupportBundle:
                     if "trace" in log_path_m0d:
                         if "No such file" in resp:
                             assert_utils.assert_true(False, f"Log path {log_path_m0d} "
-                                                            f"does not exist on pod: {pod} resp: {resp}")
-                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s",
+                                         log_path_m0d, resp)
                         if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(lines_m0d) - 1):
-                            assert_utils.assert_true(False, f"Max rotating trace log files supported "
+                            assert_utils.assert_true(False, f"Max rotating trace log files "
                                     f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
                                     f"and actual no of files are: {len(lines_m0d) - 1}")
                     elif "addb" in log_path_m0d:
@@ -640,9 +642,10 @@ class TestR2SupportBundle:
                             if "No such file" in resp:
                                 assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
                                                     f"does not exist on pod: {pod} resp:{resp}")
-                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
-                            if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(act_files) - 1):
-                                assert_utils.assert_true(False, f"Max rotating addb log files supported "
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
+                            if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(act_files)-1):
+                                assert_utils.assert_true(False, f"Max rotating addb log files "
                                         f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
                                         f"and actual no of files are: {len(lines_m0d) - 1}")
                     else:
