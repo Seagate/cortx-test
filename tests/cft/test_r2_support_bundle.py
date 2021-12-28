@@ -463,8 +463,8 @@ class TestR2SupportBundle:
                 self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
                 if constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils'] < (len(lines) - 1):
                     assert_utils.assert_true(False, f"Max rotating Utils log files "
-                                                    f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']} "
-                                                    f"and actual no of files are: {len(lines) - 1}")
+                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']} "
+                                            f"and actual no of files are: {len(lines) - 1}")
         self.LOGGER.info("Successfully validated Utils rotating log files are as per "
                          "frequency configured for all pods")
 
