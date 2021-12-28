@@ -303,10 +303,10 @@ class SystemStats(RestTestLib):
         :param str text: metrics text format output of rest call
         :param str metric_name: Name of metric
         :param boolean comparison: True when need to compare value
-        :param float compare_value: Value for comparision
-        :return True/False: (comparision=True) If metrics name value is 10 percent comparable to \
+        :param float compare_value: Value for comparison
+        :return True/False: (comparison=True) If metrics name value is 10 percent comparable to \
                             provided value  OR
-                value : (comparision=False) Performace metric name average value
+                value : (comparison=False) Performance metric name average value
         """
         try:
             self.log.info("Reading the '%s' stats...", metric_name)
@@ -318,14 +318,15 @@ class SystemStats(RestTestLib):
                     if out['Name'] == metric_name:
                         metric_value_list.append(float(out[' Value']))
             self.log.info("Metric value list for '%s' is : %s", metric_name, metric_value_list)
+            data_value = None
             if len(metric_value_list) != 0:
-                data_value = sum(metric_value_list)/len(metric_value_list)
+                data_value = sum(metric_value_list) / len(metric_value_list)
                 self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
             if comparison and compare_value is not None:
                 self.log.info("Comparing the values..")
-                percent_near_compare = self.config["percentage_compare"]
-                return bool((compare_value + (compare_value * percent_near_compare) >= data_value)\
-                or (compare_value - (compare_value * percent_near_compare) <= data_value))
+                near_compare = self.config["percentage_compare"]
+                return bool((compare_value + (compare_value * (near_compare / 100)) >= data_value)
+                or (compare_value - (compare_value * (near_compare / 100)) <= data_value))
 
         except BaseException as error:
             self.log.error("%s %s: %s",
@@ -346,14 +347,13 @@ class SystemStats(RestTestLib):
         cfg_obj = read_yaml("scripts/hs_bench/config.yaml")[1]
         log_path_dir = cfg_obj["log_dir"]
         self.log.info("Fetching the test details for : %s", test_id)
-        test_dict = {}
-        test_dict['name_metric'] = test_conf[test_id]["metric_name"]
-        test_dict['mode_value'] = test_conf[test_id]["mode"]
-        test_dict['operation_value'] = test_conf[test_id]["opertaion"]
-        test_dict['workloads'] = test_conf[test_id]["workload"]
-        test_dict['test_time'] = test_conf[test_id]["test_time"]
-        test_dict['thread'] = test_conf[test_id]["threads"]
-        test_dict['bucket'] = test_conf[test_id]["bucket"]
-        test_dict['json_path'] = log_path_dir+test_conf[test_id]["json_path"]
+        test_dict = {'name_metric': test_conf[test_id]["metric_name"],
+                     'mode_value': test_conf[test_id]["mode"],
+                     'operation_value': test_conf[test_id]["operation"],
+                     'workloads': test_conf[test_id]["workload"],
+                     'test_time': test_conf[test_id]["test_time"],
+                     'thread': test_conf[test_id]["threads"],
+                     'bucket': test_conf[test_id]["bucket"],
+                     'json_path': log_path_dir + test_conf[test_id]["json_path"]}
 
         return test_dict

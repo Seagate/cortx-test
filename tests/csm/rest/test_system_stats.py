@@ -767,11 +767,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -796,14 +798,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -822,11 +824,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -851,14 +855,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -877,11 +881,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -906,14 +912,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -932,11 +938,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -961,14 +969,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -987,11 +995,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1016,14 +1026,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -1042,11 +1052,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1071,14 +1083,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -1097,11 +1109,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1126,14 +1140,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -1152,11 +1166,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1181,14 +1197,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -1207,11 +1223,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1236,14 +1254,14 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -1262,11 +1280,13 @@ class TestSystemStats():
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
         list_data_value_before_io = self.system_stats.perf_metric_name_value_compare(resp,
-        test_dict['name_metric'])
+                                                                                     test_dict
+                                                                                     ['name_metric']
+                                                                                     )
         self.log.info("%s value before IO is : '%s'", test_dict['name_metric'],
-                                                      list_data_value_before_io)
+                      list_data_value_before_io)
         self.log.info("Step-1: Get performance data of '%s' metric completed",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
 
         self.log.info("Step-2: Running Hsbench tool and parsing data")
         for workload in test_dict['workloads']:
@@ -1291,12 +1311,12 @@ class TestSystemStats():
         self.log.info("Step-2: Running Hsbench tool and parsing data completed")
 
         self.log.info("Step-3: Get Performance data of '%s' metric after Hsbench tool",
-                                                            test_dict['name_metric'])
+                      test_dict['name_metric'])
         resp = self.system_stats.get_perf_stats()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status code check failed")
-        resp_val = self.system_stats.perf_metric_name_value_compare(resp,test_dict['name_metric'],
+        resp_val = self.system_stats.perf_metric_name_value_compare(resp, test_dict['name_metric'],
                                                                     comparison=True,
                                                                     compare_value=data_value_io[1])
-        assert_utils.assert_true(resp_val, "Performance Data and Hsbench Tool "
-                                "data are not comparable")
+        assert_utils.assert_true(resp_val, f"{test_dict['name_metric']} value from rest is not"
+                                           " within provided Percentage range of hsbench output")
         self.log.info("##### Test ended -  %s #####", test_case_name)
