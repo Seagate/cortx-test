@@ -28,7 +28,7 @@ import pytest
 import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
-from commons.constants import PROD_FAMILY_LC
+from commons.constants import PROD_FAMILY_LC, NORMAL_UPLOAD_SIZES
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
@@ -505,9 +505,9 @@ class TestDIDurability:
                                                          data_folder_prefix=self.test_dir_path)
         self.log.info("Step 1: Created a corrupted file at location %s", location)
         self.log.info("Step 2: Enable data corruption")
-        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
+        status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 2: Enabled data corruption")
+            self.log.info("Step 1: Enabled data corruption")
         else:
             assert False
         try:
@@ -526,11 +526,6 @@ class TestDIDurability:
                 self.log.info("Download failed with InternalError")
             else:
                 assert False
-        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
-        if status:
-            self.log.info("Step 2: Disabled data corruption")
-        else:
-            assert False
         self.log.info(
             "ENDED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
             "and validate checksum error detection by S3/Motr")
@@ -918,46 +913,47 @@ class TestDIDurability:
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
         """
-        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
-                      "(at s3 checksum) and verify read (Get).")
+        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify read (Get).")
+        failed_file_sizes = []
         self.log.debug("Checking setup status")
         valid, skip_mark = self.di_err_lib.validate_enabled_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
-        self.log.debug("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: Created a corrupted file at location %s", location)
-        self.log.info("Step 2: Enable data corruption")
-        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
+        status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 2: Enabled data corruption")
+            self.log.info("Step 1: Enabled data corruption")
         else:
             assert False
-        try:
-            self.log.info("Step 3: Upload a file")
-            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
-            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
-                                        file_path=location)
-            self.log.info("Step 4: verify download object fails with 5xx error code")
-            self.s3_test_obj.object_download(file_path=self.file_path, bucket_name=self.bucket_name,
-                                             obj_name=self.object_name)
-        except CTException as err:
-            self.log.info("Put object failed with %s", err)
-            err_str = str(err)
-            if "error occurred (InternalError) when calling the GetObject operation" in err_str:
-                self.log.info("Download failed with InternalError")
-            else:
-                assert False
-        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
-        if status:
-            self.log.info("Step 2: Disabled data corruption")
-        else:
+        self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name = self.object_name + "_size_" + file_size
+            self.log.info("Step 2: Creating file of size %s", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: Created a corrupted file at location %s", location)
+            try:
+                self.log.info("Step 3: Upload a file")
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=obj_name, file_path=location)
+                self.log.info("Step 4: verify download object fails with 5xx error code")
+                self.s3_test_obj.object_download(file_path=self.file_path,
+                                                 bucket_name=self.bucket_name, obj_name=obj_name)
+            except CTException as err:
+                self.log.info("Test failed with ", err)
+                err_str = str(err)
+                if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
-        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
-                      "(at s3 checksum) and verify read (Get).")
+        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify read (Get).")
 
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -978,37 +974,33 @@ class TestDIDurability:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
         self.log.debug("Executing test as flags are set to default")
-        self.log.debug("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: Created a corrupted file at location %s", location)
-        self.log.info("Step 2: Enable data corruption")
-        status = self.di_err_lib.enable_data_corruption_set_fault_injection()
+        status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 2: Enabled data corruption")
+            self.log.info("Step 1: Enabled data corruption")
         else:
             assert False
-        try:
-            self.log.info("Step 3: Upload a file using aws cli")
-            self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
-            self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
-                                                   object_name=self.object_name, file_path=location)
-            self.log.info("Step 4: verify download object fails with 5xx error code")
-            self.s3_test_obj.object_download(file_path=self.file_path,
-                                             bucket_name=self.bucket_name,
-                                             obj_name=self.object_name)
-        except CTException as err:
-            self.log.info("Put object failed with %s", err)
-            err_str = str(err)
-            if "error occurred (InternalError) when calling the GetObject operation" in err_str:
-                self.log.info("Download failed with InternalError")
-            else:
-                assert False
-        status = self.di_err_lib.disable_data_corruption_set_fault_injection()
-        if status:
-            self.log.info("Step 2: Disabled data corruption")
-        else:
-            assert False
+        self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 1: Created a corrupted file at location %s", location)
+            try:
+                self.log.info("Step 3: Upload a file using aws cli")
+                self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                                       object_name=self.object_name,
+                                                       file_path=location)
+                self.log.info("Step 4: verify download object fails with 5xx error code")
+                self.s3_test_obj.object_download(file_path=self.file_path,
+                                                 bucket_name=self.bucket_name,
+                                                 obj_name=self.object_name)
+            except CTException as err:
+                self.log.info("Put object failed with %s", err)
+                err_str = str(err)
+                if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    assert False
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
