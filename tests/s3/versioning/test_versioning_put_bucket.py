@@ -192,10 +192,10 @@ class TestVersioningPutBucket:
                 bucket_name=self.bucket_name, status="Disabled")
             #assert_utils.assert_equal(res_code[1], 400)
         except (ClientError, Exception) as error:
-            self.log.info("Exception catch with error : %s", error)
-            self.log.info("Exception catch with error : %s", error.args[0])
+            self.log.info("Exception catch with error1 : %s", error.code)
+            self.log.info("Exception catch with error2 : %s", error.message)
+            self.log.info("Exception catch with error3 : %s", error.desc)
             assert_utils.assert_in("MalformedXML", error.args[0], error)
-
             #httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
             #self.log.info("HTTP status code returned : %s", httpCode)
             if 400 == 400:

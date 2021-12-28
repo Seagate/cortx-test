@@ -88,14 +88,14 @@ class S3VersioningTestLib(Versioning):
             LOGGER.info("response returned : %s", error.response)
             httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
             LOGGER.info("response returned : %s", httpCode)
-            #self.log.info("Http error raisedMessage01:::::: %s", error.error_code)
+            # #self.log.info("Http error raisedMessage01:::::: %s", error.error_code)
             # if httpCode == 400:
-            #     raise CTException(err.S3_CLIENT_ERROR, error.args[0])#, httpCode=400)
+            #       raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=400)
             # elif httpCode == 403:
-            #     raise CTException(err.S3_CLIENT_ERROR, error.args[0])#, httpCode=403)
+            #     raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=403)
             # elif httpCode == 404:
-            #     raise CTException(err.S3_CLIENT_ERROR, error.args[0])#, httpCode=404)
-            # else:
+            #     raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=404)
+            # # else:
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
