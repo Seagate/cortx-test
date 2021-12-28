@@ -85,7 +85,9 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.put_bucket_versioning.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.info("response returned : %s", error.response)
+            httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode)
 
         return True, response
 
