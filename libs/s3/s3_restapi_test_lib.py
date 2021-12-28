@@ -290,7 +290,7 @@ class S3AuthServerRestAPI(RestS3user):
 
     def create_iam_user(self, user_name, password, access_key, secret_key) -> tuple:
         """
-        Reset s3/iam account using s3authserver rest api.
+        Create s3/iam account using s3authserver rest api.
 
         :param user_name: Name of iam user.
         :param password: Password of iam user.
@@ -384,6 +384,35 @@ class S3AuthServerRestAPI(RestS3user):
         if user_name:
             payload["UserName"] = user_name
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            response = response["CreateAccessKeyResponse"]["CreateAccessKeyResult"]["AccessKey"]
+        LOGGER.debug("Create acesskey response: %s", response)
+
+        return status, response
+
+    # pylint: disable=too-many-arguments
+    def create_custom_iam_accesskey(
+        self, user_name, s3_access_key, s3_secret_key , iam_access_key=None,
+        iam_secret_key=None ) -> tuple:
+        """
+        Create s3/iam account user custom access & secret keys using s3authserver rest api.
+
+        :param user_name: Name of s3 iam user.
+        :param s3_access_key: access_key of s3 user.
+        :param s3_secret_key: secret_key of s3 user.
+        :param iam_access_key: access_key of IAM user.
+        :param iam_secret_key: secret_key of IAM user.
+        :return: bool, response of create accesskey of iam user.
+        """
+        payload = {"Action": "CreateAccessKey"}
+        if user_name:
+            payload["UserName"] = user_name
+        if iam_access_key:
+            payload["AccessKey"] = iam_access_key
+        if iam_secret_key:
+            payload["SecretKey"] = iam_secret_key
+        status, response = self.execute_restapi_on_s3authserver(
+            payload, s3_access_key, s3_secret_key)
         if status:
             response = response["CreateAccessKeyResponse"]["CreateAccessKeyResult"]["AccessKey"]
         LOGGER.debug("Create acesskey response: %s", response)

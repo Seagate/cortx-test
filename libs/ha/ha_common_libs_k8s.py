@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python  # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -26,6 +26,8 @@ import os
 import time
 from multiprocessing import Process
 import sys
+import random
+from time import perf_counter_ns
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -57,11 +59,8 @@ class HAK8s:
         self.system_health = SystemHealth()
         self.setup_type = CMN_CFG["setup_type"]
         self.vm_username = os.getenv(
-            "QA_VM_POOL_ID", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["uname"]))
-        self.vm_password = os.getenv(
-            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["passwd"]))
+            "QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
+        self.vm_password = os.getenv("QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
         self.bmc_user = CMN_CFG["bmc"]["username"]
         self.bmc_pwd = CMN_CFG["bmc"]["password"]
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]
@@ -257,9 +256,7 @@ class HAK8s:
             nbuckets: int = 2,
             files_count: int = 10,
             di_data: tuple = None,
-            is_di: bool = False,
-            async_io: bool = False,
-            stop_upload_time: int = 60):
+            is_di: bool = False):
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
@@ -270,38 +267,22 @@ class HAK8s:
         :param files_count: NUmber of files to be uploaded per bucket
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
-        :param async_io: To perform parallel IO operation
-        :param stop_upload_time: Approx time allowed for write operation to be finished
-        before starting stop_io_async
         :return: (bool, response)
         """
-        io_data = None
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
                 users = self.mgnt_ops.create_account_users(nusers=nusers)
-                io_data = self.mgnt_ops.create_buckets(
-                    nbuckets=nbuckets, users=users)
+                io_data = self.mgnt_ops.create_buckets(nbuckets=nbuckets, users=users)
                 run_data_chk_obj = RunDataCheckManager(users=io_data)
                 pref_dir = {"prefix_dir": prefix_data}
-                if async_io:
-                    run_data_chk_obj.start_io_async(
-                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
-                    run_data_chk_obj.event.set()
-                    time.sleep(stop_upload_time)
-                    run_data_chk_obj.event.is_set()
-                else:
-                    star_res = run_data_chk_obj.start_io(
-                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
-                    if not star_res:
-                        return False, star_res
+                star_res = run_data_chk_obj.start_io(users=io_data, buckets=None, prefs=pref_dir,
+                                                     files_count=files_count)
+                if not star_res:
+                    return False, star_res
                 return True, run_data_chk_obj, io_data
-
             LOGGER.info("Checking DI for IOs run.")
-            if async_io:
-                stop_res = di_data[0].stop_io_async(users=di_data[1], di_check=is_di)
-            else:
-                stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
+            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
                 return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
@@ -349,7 +330,8 @@ class HAK8s:
             skipwrite: bool = False,
             skipcleanup: bool = False,
             nsamples: int = 20,
-            nclients: int = 10):
+            nclients: int = 10,
+            large_workload: bool = False):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW.
@@ -360,27 +342,27 @@ class HAK8s:
         :param skipcleanup: Skip deleting objects created in this run if True
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
+        :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
-        workloads = [
-            "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
-            "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
-        if self.setup_type == "HW":
-            workloads.extend(["1GB", "2GB", "3GB", "4GB", "5GB"])
+        workloads = HA_CFG["s3_bench_workloads"]
+        if self.setup_type == "HW" or large_workload:
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
             return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
-                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket-{log_prefix}",
+                s3userinfo['accesskey'], s3userinfo['secretkey'],
+                bucket=f"bucket-{workload.lower()}-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3b_url"])
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
-                return resp, f"s3bench operation failed with {resp[1]}"
+                return resp, f"s3bench operation failed with {resp}"
         return True, "Sucessfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
@@ -822,3 +804,185 @@ class HAK8s:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
         return resp
+
+    def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
+                           skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                           output=None):
+        """
+        This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
+        :param event: Thread event to be sent in case of parallel IOs
+        :param log_prefix: Test number prefix for log file
+        :param s3userinfo: S3 user info
+        :param skipread: Skip reading objects created in this run if True
+        :param skipwrite: Skip writing objects created in this run if True
+        :param skipcleanup: Skip deleting objects created in this run if True
+        :param nsamples: Number of samples of object
+        :param nclients: Number of clients/workers
+        :param output: Queue to fill results
+        :return: None
+        """
+        pass_res = []
+        fail_res = []
+        results = dict()
+        workloads = HA_CFG["s3_bench_workloads"]
+        if self.setup_type == "HW":
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
+
+        resp = s3bench.setup_s3bench()
+        if not resp:
+            status = (resp, "Couldn't setup s3bench on client machine.")
+            output.put(status)
+            sys.exit(1)
+        for workload in workloads:
+            resp = s3bench.s3bench(
+                s3userinfo['accesskey'], s3userinfo['secretkey'],
+                bucket=f"bucket-{workload.lower()}-{log_prefix}", num_clients=nclients,
+                num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
+                skip_write=skipwrite, skip_read=skipread, obj_size=workload,
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
+                end_point=S3_CFG["s3b_url"])
+            if event.is_set():
+                fail_res.append(resp)
+            else:
+                pass_res.append(resp)
+
+        results["pass_res"] = pass_res
+        results["fail_res"] = fail_res
+
+        output.put(results)
+
+    @staticmethod
+    def check_s3bench_log(file_paths: list, pass_logs=True):
+        """
+        Function to find out error is reported in given file or not
+        :param str file_paths: log file paths to be parsed
+        :param pass_logs: if True check for passed logs else check for failed logs
+        :return: False (if error is seen) else True
+        :rtype: Boolean, list
+        """
+        log_list = []
+        for log in file_paths:
+            LOGGER.info("Parsing log file %s", log)
+            resp = s3bench.check_log_file_error(file_path=log)
+            log_list.append(log) if (pass_logs and resp) or (not pass_logs and not resp) else log
+
+        return not resp, log_list
+
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
+    def put_get_delete(self, event, s3_test_obj, **kwargs):
+        """
+        Helper function to put, get and delete objects.
+        :param event: Thread event to be sent for parallel IOs
+        :param s3_test_obj: s3 test object for the buckets to be deleted
+        :param kwargs:
+        test_prefix: Mandatory param,
+        test_dir_path: Mandatory param,
+        output: Mandatory param,
+        skipput: True if put is expected to be skipped,
+        skipget: True if get is expected to be skipped,
+        skipdel: True if delete is expected to be skipped,
+        bkt_list: List of buckets on which operations to be performed (optional),
+        s3_data: Dict to store bucket, object and checksum related info (Mandatory for get),
+        bkts_to_wr: Mandatory param for put,
+        di_check: Flag to enable/disable di check (optional),
+        bkts_to_del: Required in case of counted delete operation (optional)
+        :return: None
+        """
+        workload = HA_CFG["s3_bucket_data"]["workload_sizes_mbs"]
+        test_prefix = kwargs.get("test_prefix")
+        test_dir_path = kwargs.get("test_dir_path")
+        output = kwargs.get("output")
+        skipput = kwargs.get("skipput", False)
+        skipget = kwargs.get("skipget", False)
+        skipdel = kwargs.get("skipdel", False)
+        bkt_list = kwargs.get("bkt_list", list())
+        s3_data = kwargs.get("s3_data", dict())
+        if not skipput:
+            bkts_to_wr = kwargs.get("bkts_to_wr")
+            event_bkt_put = []
+            fail_bkt_put = []
+            i = 0
+            while i < bkts_to_wr:
+                size_mb = random.sample(workload, 1)[0]
+                bucket_name = f"{test_prefix}-{i}-{size_mb}-{perf_counter_ns()}"
+                object_name = f"obj_{bucket_name}"
+                file_path = os.path.join(test_dir_path, f"{bucket_name}.txt")
+                try:
+                    s3_test_obj.create_bucket_put_object(bucket_name, object_name, file_path,
+                                                         size_mb)
+                    upload_chm = self.cal_compare_checksum(file_list=[file_path], compare=False)[0]
+                    s3_data.update({bucket_name: (object_name, upload_chm)})
+                except CTException as error:
+                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    if event.is_set():
+                        event_bkt_put.append(bucket_name)
+                    else:
+                        fail_bkt_put.append(bucket_name)
+
+                i += 1
+
+            res = (s3_data, event_bkt_put, fail_bkt_put)
+            output.put(res)
+
+        if not skipget:
+            di_check = kwargs.get("di_check", False)
+            bkt_list = bkt_list if bkt_list else s3_test_obj.bucket_list()[1]
+            event_bkt_get = []
+            fail_bkt_get = []
+            event_di_bkt = []
+            fail_di_bkt = []
+            for bkt in bkt_list:
+                download_file = "Download_" + str(bkt)
+                download_path = os.path.join(test_dir_path, download_file)
+                try:
+                    resp = s3_test_obj.object_download(bkt, s3_data[bkt][0], download_path)
+                    LOGGER.info("Download object response: %s", resp)
+                except CTException as error:
+                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    if event.is_set():
+                        event_bkt_get.append(bkt)
+                    else:
+                        fail_bkt_get.append(bkt)
+
+                if di_check:
+                    download_checksum = self.cal_compare_checksum(file_list=[download_path],
+                                                                  compare=False)[0]
+                    if event.is_set():
+                        event_di_bkt.append(bkt)
+                    elif not event.is_set() and s3_data[bkt][1] != download_checksum:
+                        fail_di_bkt.append(bkt)
+
+            res = (event_bkt_get, fail_bkt_get, event_di_bkt, fail_di_bkt)
+            output.put(res)
+
+        if not skipdel:
+            bkts_to_del = kwargs.get("bkts_to_del", None)
+            bucket_list = bkt_list if bkt_list else s3_test_obj.bucket_list()[1]
+            bkts_to_del = bkts_to_del if bkts_to_del is not None else len(bucket_list)
+            LOGGER.info("Count of bucket to be deleted : %s", bkts_to_del)
+            event_del_bkt = []
+            fail_del_bkt = []
+            count = 0
+            while count < bkts_to_del:
+                for _ in range(len(bucket_list)):
+                    try:
+                        s3_test_obj.delete_bucket(bucket_name=bucket_list[0], force=True)
+                    except CTException as error:
+                        LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                        if event.is_set():
+                            event_del_bkt.append(bucket_list[0])
+                        else:
+                            fail_del_bkt.append(bucket_list[0])
+                    bucket_list.remove(bucket_list[0])
+                    count += 1
+                    if count >= bkts_to_del:
+                        break
+                    elif not bkt_list and not bucket_list:
+                        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                        bucket_list = s3_test_obj.bucket_list()[1]
+
+            LOGGER.info("Deleted %s number of buckets.", count)
+
+            res = (event_del_bkt, fail_del_bkt)
+            output.put(res)

@@ -33,10 +33,12 @@ from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from config import CMN_CFG
+from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_PATH
+from commons.utils import assert_utils
 from commons.utils import system_utils as sys_util
 
 
@@ -119,7 +121,7 @@ class TestDIWithChangingS3Params:
         cls.log.info("Deleted a backup file and directory")
         cls.log.info("ENDED: Teardown class operations.")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
@@ -128,33 +130,59 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        # to do verify configs
-        self.log.info("Step 1::: Setting up params and restarting server")
+        valid,skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or not skipmark:
+            self.log.info("Skipping test DI flags are not enabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: Normal File upload with DI flag enable for read and write")
+
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
-        file_size = [1, 2, 3, 4, 5]
         result = True
-        for size in file_size:
-            self.log.info("creating a file of size %s MB", size)
-            sys_util.create_file(fpath=self.F_PATH, count=size)
+        for size in NORMAL_UPLOAD_SIZES:
+            self.log.info("Step 1: create a file of size %s MB", size)
+
+            file_path_upload = self.F_PATH + "TEST_29173_"+ str(size) +"_upload"
+            if os.path.exists(file_path_upload):
+                os.remove(file_path_upload)
+
+            buff, csm = self.data_gen.generate(size=size,
+                                               seed=self.data_gen.get_random_seed())
+            location = self.data_gen.create_file_from_buf(fbuf=buff,
+                                                          name=file_path_upload,
+                                                          size=size)
             self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name,
-                                  file_path=self.F_PATH)
-            self.s3obj.object_download(bucket_name=bucket_name,
-                                       obj_name=obj_name, file_path=self.F_PATH_COPY)
+                                  file_path=location)
+            self.log.debug("Step 1: Checksum of uploaded file is %s",csm)
+            self.log.info("Step 1: Created a bucket and upload object of %s.", size)
+            self.log.info("Step 2: Download chunk uploaded object of size %s.",size)
+
+            file_path_download = self.F_PATH + "TEST_29173_"+ str(size) +"_download"
+            if os.path.exists(file_path_download):
+                os.remove(file_path_download)
+            res = self.s3obj.object_download(bucket_name, obj_name, file_path_download)
+            assert_utils.assert_true(res[0], res)
+
+            self.log.info("Step 2: Download chunk uploaded object is successful.")
+            self.log.info("Step 3: Validate checksum of both uploaded and downloaded file.")
             self.s3obj.delete_object(bucket_name=bucket_name, obj_name=obj_name)
-            result = sys_util.validate_checksum(file_path_1=self.F_PATH,
-                                                file_path_2=self.F_PATH_COPY)
+            result = sys_util.validate_checksum(file_path_1=file_path_upload,
+                                                file_path_2=file_path_download)
             if not result:
+                self.log.info("Step 3: Checksum validation failed.")
                 break
+            self.log.info("Step 3: Checksum validation is successful.")
+
         self.s3obj.delete_bucket(bucket_name, force=True)
-        self.log.info("Step 2::: Calculating checksum")
         if result:
             assert True
         else:
             assert False
+        self.log.info("ENDED:Normal File upload with DI flag enable for read and write")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
@@ -163,30 +191,55 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI disabled
         """
-        # to do verify configs
-        self.log.info("Step 1::: Setting up params and restarting server")
-        self.log.info("Step 2::: Creating file and bucket")
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test as DI flags are not disabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: With DI flag  Disabled, copy object to the same"
+                    "bucket with different name")
+        self.log.info("Step 1:: Creating  bucket and upload object")
         bucket_name = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
-        obj_name_2 = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name_1,
                                      file_path=self.F_PATH)
         self.log.info(resp)
+        self.log.info("Step 1:: Created bucket with  %s and uploading object %s",
+                    bucket_name,obj_name_1)
+        self.log.info("Step 2:: List object in bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_1 not in res[1]:
+            assert_utils.assert_true(False, "object not listed in bucket")
+        self.log.info("Step 2:: Object listed in bucket")
+        obj_name_2 = self.get_object_name()
+        self.log.info("Step 3:: Copy object=%s to  same bucket in "
+                    "destination object=%s", obj_name_1, obj_name_2)
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name,
                                          source_object=obj_name_1,
                                          dest_bucket=bucket_name,
                                          dest_object=obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_bucket(bucket_name, force=True)
-        self.log.info("Step 3::: Comparing ETags")
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert True
-        else:
-            assert False
+        self.log.info("Step 3:: Successfully Copied object to same bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_2 not in res[1]:
+            assert_utils.assert_true(False, "object not listed in bucket")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+        self.s3obj.object_download(bucket_name=bucket_name,
+                                   obj_name=obj_name_2, file_path=self.F_PATH_COPY)
+        self.log.info("Step 4:: Validate ETAG and checksum")
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+        if result:
+            assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                    "ETAG validation failed:")
+        else:
+            assert_utils.assert_true(False, "Checksum validation failed")
+        self.log.info("Step 4:Checksum and ETAG validation is successful")
+        self.s3obj.delete_bucket(bucket_name, force=True)
+        self.log.info("ENDED: With DI flag  Disabled, copy object to the same"
+                    "bucket with different name")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29277')
     @CTFailOn(error_handler)
@@ -195,29 +248,55 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI enabled
         """
-        # to do verify configs
-        self.log.info("Step 2::: Creating file and bucket")
+        valid, skipmark = self.di_err_lib.validate_enabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test as DI flags are not enabled" )
+            pytest.skip()
+
+        self.log.info("STARTED: With DI flag  Enabled, copy object to the same"
+                    "bucket with different name")
+        self.log.info("Step 1:: Creating  bucket and upload object")
         bucket_name = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
-        obj_name_2 = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name_1,
                                      file_path=self.F_PATH)
         self.log.info(resp)
+        self.log.info("Step 1:: Created bucket with  %s and uploading object %s",
+                    bucket_name,obj_name_1)
+        self.log.info("Step 2:: List object in bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_1 not in res[1]:
+            assert_utils.assert_true(False, "object not listed in bucket")
+        self.log.info("Step 2:: Object listed in bucket")
+        obj_name_2 = self.get_object_name()
+        self.log.info("Step 3:: Copy object=%s to  same bucket in "
+                    "destination object=%s", obj_name_1, obj_name_2)
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name,
                                          source_object=obj_name_1,
                                          dest_bucket=bucket_name,
                                          dest_object=obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_bucket(bucket_name, force=True)
-        self.log.info("Step 3::: Comparing ETags")
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert False
-        else:
-            assert True
+        self.log.info("Step 3:: Successfully Copied object to same bucket")
+        res = self.s3obj.object_list(bucket_name)
+        if obj_name_2 not in res[1]:
+            assert_utils.assert_true(False, "object not listed in bucket")
 
-    @pytest.mark.skip(reason="not tested hence marking skip")
+        self.s3obj.object_download(bucket_name=bucket_name,
+                                   obj_name=obj_name_2, file_path=self.F_PATH_COPY)
+        self.log.info("Step 4:: Validate ETAG and checksum")
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+        if result:
+            assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                    "ETAG validation failed:")
+        else:
+            assert_utils.assert_true(False, "Checksum validation failed")
+        self.log.info("Step 4:: Checksum and ETAG validation is successful")
+        self.s3obj.delete_bucket(bucket_name, force=True)
+        self.log.info("ENDED: With DI flag Enabled, copy object to the same"
+                    "bucket with different name")
+
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
@@ -226,27 +305,59 @@ class TestDIWithChangingS3Params:
         Test to verify copy object to different bucket with same
         object name with Data Integrity disabled.
         """
+        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test when DI flags are not set to disabled config" )
+            pytest.skip()
+        self.log.info("STARTED: Test to verify copy object to different bucket with same"
+            "object name with Data Integrity disabled.")
+
         # to do verify configs
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         obj_name = self.get_object_name()
+        self.log.info("Step 1: Create a 2 different bucket1 = %s and"
+                    "bucket2 = %s.",bucket_name_1, bucket_name_2)
         self.s3obj.create_bucket(bucket_name=bucket_name_1)
         self.s3obj.create_bucket(bucket_name=bucket_name_2)
+
+        self.log.info("Step 1: create a file ")
+        if os.path.exists(self.F_PATH):
+            os.remove(self.F_PATH)
+
         sys_util.create_file(fpath=self.F_PATH, count=1)
+
+        self.log.info("Step 2: Upload file to a bucket = %s",bucket_name_1)
         resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name,
                                      file_path=self.F_PATH)
+        self.log.info("Step 2: Upload file to a bucket = %s",bucket_name_1)
         self.log.info(resp)
+        res = self.s3obj.object_list(bucket_name_1)
+        if obj_name not in res[1]:
+            return res, "object not listed in bucket {bucket_name_1}"
+
+        self.log.info("Step 3: Copy object to different bucket = {bucket_name_2}")
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1,
                                          source_object=obj_name,
                                          dest_bucket=bucket_name_2,
                                          dest_object=obj_name)
         self.log.info(resp_cp)
+        assert_utils.assert_true(resp_cp[0], resp_cp)
+
+        self.log.info("Step 3: Copy object to different bucket is successful.")
+        res = self.s3obj.object_list(bucket_name_2)
+        if obj_name not in res[1]:
+            return res, "object not listed in bucket"
         self.s3obj.delete_bucket(bucket_name_1, force=True)
         self.s3obj.delete_bucket(bucket_name_2, force=True)
-        if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
-            assert True
-        else:
-            assert False
+
+        self.log.info("Step 4: Validate Etag of source and copied object.")
+
+        assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
+                                       "ETAG validation failed:")
+        self.log.info("Step 4: Etag validation is successful.")
+        self.log.info("ENDED: Test to verify copy object to different bucket with same"
+                "object name with Data Integrity disabled.")
 
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
