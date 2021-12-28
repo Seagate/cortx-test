@@ -29,6 +29,7 @@ import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
+from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
@@ -50,7 +51,6 @@ from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3 import s3_s3cmd
-
 
 
 class TestDIDurability:
@@ -369,97 +369,114 @@ class TestDIDurability:
         self.log.info("ENDED: Test to verify object integrity during the upload with "
                       "different checksum.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22909')
     def test_corrupt_data_blocks_obj_motr_verify_read_22909(self):
         """
         Corrupt data blocks of an object at Motr level and verify read (Get).
         """
-        self.log.info(
-            "STARTED: Corrupt data blocks of an object at Motr level and "
+        self.log.info("STARTED: Corrupt data blocks of an object at Motr level and "
             "verify read (Get).")
-        if self.di_err_lib.validate_default_config():
+        valid,skip_mask = self.di_err_lib.validate_default_config()
+        if not valid or skip_mask:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info("Step 1: Create a bucket.")
+
+        failed_file_sizes = []
+        self.log.info("Step 1: Creating a buckert name %s", self.bucket_name)
         self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.log.info("Step 3: enable data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if status:
-            self.log.info("Step 3: enabled data corruption")
-        else:
-            self.log.info("Step 3: failed to enable data corruption")
+         
+        for file_size in NORMAL_UPLOAD_SIZES:
+            self.log.info("Step 2: Create a corrupted file.")
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                            data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: created a corrupted file at location %s", location)
+            self.log.info("Step 3:Enable Fault Injection")
+
+            self.log.info("Step 3: Enable data corruption")
+            status = self.fi_adapter.enable_data_block_corruption()
+            if status:
+                self.log.info("Enabled data corruption: di_data_corrupted_on_write")
+            else:
+                self.log.info("Failed to enable data corruption: di_data_corrupted_on_write")
+                assert False
+            self.log.info("Step 4: Put object in a bucket.")
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                        object_name=self.object_name,
+                                        file_path=location)
+            try:
+                self.log.info("Step 5: Verify get object.")
+                resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Get Object failed with error %s", err_str)
+                if "An error occurred (InternalError) when calling the GetObject \
+                    operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+            self.log.info("Step 5: Verified read (Get) of an object whose data is corrupted.")
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.log.info("Step 5: Verify get object.")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_false(resp[0], resp)
-        self.log.info(
-            "Step 5: Verified read (Get) of an object whose metadata is "
-            "corrupted.")
-        self.log.info(
-            "Step 6: Check for expected errors in logs or notification.")
-        # resp = get_motr_s3_logs()
-        # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
-        self.log.info(
-            "Step 6: Checked expected errors in logs or notification.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and verify "
+        self.log.info("ENDED: Corrupt data blocks of an object at Motr/S3 level and verify "
             "read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22910')
     def test_corrupt_data_blocks_obj_motr_verify_range_read_22910(self):
         """
         Corrupt data blocks of an object at Motr level and verify range read.
         """
-        self.log.info(
-            "STARTED: Corrupt data blocks of an object at Motr level and "
+        self.log.info("STARTED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
-        if self.di_err_lib.validate_default_config():
+        valid,skip_mask = self.di_err_lib.validate_default_config()
+        if not valid or skip_mask:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info("Step 1: Create a bucket.")
+
+        failed_file_sizes = []
+        self.log.info("Step 1: Creating a buckert name %s", self.bucket_name)
         self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.log.info("Step 3: enable data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if status:
-            self.log.info("Step 3: enabled data corruption")
-        else:
-            self.log.info("Step 3: failed to enable data corruption")
+         
+        for file_size in NORMAL_UPLOAD_SIZES:
+            self.log.info("Step 2: Create a corrupted file.")
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                            data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: created a corrupted file at location %s", location)
+            self.log.info("Step 3: Enable data corruption")
+            status = self.fi_adapter.enable_data_block_corruption()
+            if status:
+                self.log.info("Enabled data corruption: di_data_corrupted_on_write")
+            else:
+                self.log.info("Failed to enable data corruption: di_data_corrupted_on_write")
+                assert False
+            self.log.info("Step 4: Put object in a bucket.")
+            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                        object_name=self.object_name,
+                                        file_path=location)
+            try:
+                self.log.info("Step 5: Verify get object.")
+                #start_byte =
+                #stop_byte = 
+                #res = self.s3_mp_test_obj.get_byte_range_of_object(self.bucket_name,
+                #                                       self.object_name, start_byte, stop_byte)
+                #assert_utils.assert_false(res[0], res)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Get Object failed with error %s", err_str)
+                if "An error occurred (InternalError) when calling the GetObject \
+                    operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+            self.log.info("Step 5: Verified read (Get) of an object whose data is corrupted.")
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.log.info(
-            "Step 5: Verify range read (Get) of an object whose metadata"
-            " is corrupted.")
-        res = self.s3_mp_test_obj.get_byte_range_of_object(
-            self.bucket_name, self.object_name, 2025, 9216)
-        assert_utils.assert_false(res[0], res)
-        self.log.info(
-            "Step 5: Verified read (Get) of an object whose data is "
-            "corrupted.")
-        self.log.info(
-            "Step 6: Check for expected errors in logs or notification.")
-        # resp = get_motr_s3_logs()
-        # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
-        self.log.info(
-            "Step 6: Checked expected errors in logs or notification.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and verify "
+        self.log.info("ENDED: Corrupt data blocks of an object at Motr level and verify "
             "range read (Get).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
