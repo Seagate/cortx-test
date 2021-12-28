@@ -91,7 +91,7 @@ class TestR2SupportBundle:
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
         return True
-     
+
     def size_verify(self,component_dir_name):
         """
         This function which is used to verify component directory has specific size limit logs
@@ -496,6 +496,36 @@ class TestR2SupportBundle:
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31254")
+    def test_31254(self):
+        """
+        Validate HARE rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking HARE rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
+                self.LOGGER.info(f"max files: {constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} and actual: {len(lines) - 1}")
+                if constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare'] < (len(lines) - 1):
+                    assert_utils.assert_true(False, f"Max rotating HARE log files "
+                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} "
+                                            f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated HARE rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31250")
     def test_31250(self):
         """
@@ -567,8 +597,9 @@ class TestR2SupportBundle:
                     if "trace" in log_path_m0d:
                         if "No such file" in resp:
                             assert_utils.assert_true(False, f"Log path {log_path_m0d} "
-                                                            f"does not exist on pod: {pod} resp: {resp}")
-                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                                                f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s",
+                                         log_path_m0d, resp)
                         for counter in range(1, len(lines_m0d)):
                             line = lines_m0d[counter].split()
                             file_size = int(line[4][:-2])
@@ -585,7 +616,8 @@ class TestR2SupportBundle:
                             if "No such file" in resp:
                                 assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
                                                     f"does not exist on pod: {pod} resp:{resp}")
-                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
                             for ctr in range(1, len(act_files)):
                                 line = act_files[ctr].split()
                                 file_size = int(line[4][:-2])
