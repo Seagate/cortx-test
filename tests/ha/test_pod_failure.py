@@ -2913,7 +2913,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32461")
     @CTFailOn(error_handler)
-    def test_io_operation_server_pod_shutdown_scale_replicas(self):
+    def test_server_pod_failure(self):
         """
         Verify IOs before and after server pod failure (pod shutdown by making replicas=0)
         """
