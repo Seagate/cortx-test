@@ -23,11 +23,13 @@
 import logging
 import pytest
 
+from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.ha.ha_common_libs_k8s import HAK8s
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +47,8 @@ class TestProvK8Cortx:
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.ha_obj = HAK8s()
+        cls.dir_path = common_const.K8S_SCRIPTS_PATH
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -67,11 +71,11 @@ class TestProvK8Cortx:
         """
         Verify N-Node Cortx Stack Deployment in K8s environment.
         """
-        LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
-        LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
-                                                          self.worker_node_list)
-        assert_utils.assert_true(resp[0], resp[1])
+        # LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
+        # LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
+        # resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
+        #                                                   self.worker_node_list)
+        # assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
         LOGGER.info("Step 2: Check Pods Status.")
         path = self.deploy_cfg["k8s_dir"]
@@ -242,4 +246,72 @@ class TestProvK8Cortx:
             cluster_id_conf = cluster_id_conf[0].split("\n")[0].strip().split(":")[1].strip()
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32940")
+    def test_32940(self):
+        """
+        Verify cortx cluster shutdown command.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check whether all pods are online")
+        resp1 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        assert_utils.assert_true(resp1[0], resp1[1])
+        LOGGER.info("Executing cortx cluster shutdown command.")
+        LOGGER.info("Step 2: Check whether cluster shutdown command ran successfully.")
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Check whether data and control pods are not present")
+        resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        LOGGER.info(resp2)
+        data = []
+        data1 = []
+        for i in resp1[1]:
+            data.append(i.split(" ")[0])
+        for i in resp2[1]:
+            data1.append(i.split(" ")[0])
+        set_difference = set(data) - set(data1)
+        list_difference = list(set_difference)
+        # LOGGER.info("Pods which are not present after shut_down command ran are"
+        # + str(list_difference))
+        LOGGER.info(list_difference)
+        is_same = resp1[1] == resp2[1]
+        assert_utils.assert_false(is_same)
+        LOGGER.info("Step 4: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
+            resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
+        LOGGER.info("Step 5: Cluster is back online.")
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32939")
+    def test_32939(self):
+        """
+        Verify cortx cluster restart command.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check whether cluster shutdown command ran successfully.")
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
+        LOGGER.info("Executing cortx cluster restart command.")
+        LOGGER.info("Step 3: Check whether cluster restart command ran successfully.")
+        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
+        LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
+        resp = self.ha_obj.check_pod_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Test Completed.")

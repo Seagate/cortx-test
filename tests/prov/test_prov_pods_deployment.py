@@ -43,13 +43,13 @@ class TestProvPodsDeployment:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
-        for node in range(cls.num_nodes):
-            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+        for node in CMN_CFG["nodes"]:
+            vm_name = node["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
-            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
+            if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
