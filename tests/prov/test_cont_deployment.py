@@ -125,8 +125,9 @@ class TestContDeployment:
         self.log.debug("DIX %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
         self.log.debug("CVG per node are %s \n Data disk per cvg are %s",
                        self.cvg_per_node, self.data_disk_per_cvg)
-        while count > 0:
-            self.log.info("The iteration no is %s", count)
+        iteration = 0
+        while iteration < count:
+            self.log.info("The iteration no is %s", (iteration+1))
             self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
                                                sns_parity=self.sns[1],
                                                sns_spare=self.sns[2],
@@ -147,4 +148,4 @@ class TestContDeployment:
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                                                destroy_setup_flag=self.destroy_setup_flag,
                                                custom_repo_path=self.custom_repo_path)
-            count = count - 1
+            iteration = iteration + 1
