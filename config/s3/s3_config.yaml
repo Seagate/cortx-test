@@ -64,7 +64,7 @@ s3auth_endpoint: "http://{}:9080"
 
 # Workaround for EOS-21382; delay for S3 operations in seconds
 sync_delay: 60
-sync_step: 5
+sync_step: 10
 delay:
   put_bkt_acl: 15
   put_bkt_policy: 10
