@@ -22,10 +22,11 @@
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-
 import json
 import logging
+import math
 import os
+import signal
 import time
 from typing import List
 
@@ -301,6 +302,7 @@ class ProvDeployK8sCortxLib:
             self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
+
         self.pull_cortx_image(worker_node_list)
 
         self.prereq_git(master_node_list[0], git_tag)
@@ -621,7 +623,7 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def deploy_cortx_k8s_re_job(master_node_list: list, worker_node_list: list,
-                                 deploy_target: str = "CORTX-CLUSTER") -> tuple:
+                                deploy_target: str = "CORTX-CLUSTER") -> tuple:
         """
         Setup k8s cluster using RE jenkins job
         param: master_node_list : List of all master nodes(Logical Node object)
@@ -684,33 +686,27 @@ class ProvDeployK8sCortxLib:
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
 
-    def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list):
+    def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list,
+                      custom_repo_path: str = PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"]):
         """
         Method used to run destroy script
         param: master node obj list
         param: worker node obj list
         """
-        cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
-                                            self.deploy_cfg["destroy_cluster"])
-        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        cmd4 = "ls -lhR /etc/3rd-party/"
-        cmd5 = "ls -lhR /var/data/3rd-party/"
-        # cmd7 = "docker image prune -a"
+        destroy_cmd = "cd {} && {} --force".format(custom_repo_path,
+                                                   self.deploy_cfg["destroy_cluster"])
+        list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
+        list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
         try:
-            resp = master_node_obj.execute_cmd(cmd=cmd1)
+            if not master_node_obj.path_exists(custom_repo_path):
+                raise Exception(f"Repo path {custom_repo_path} does not exist")
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                # resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
+                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -936,7 +932,7 @@ class ProvDeployK8sCortxLib:
         returns: updated csv file with its path
         """
         fields = ['ITERATION', 'POD STATUS']
-        with open(csv_filepath, 'w')as fptr:
+        with open(csv_filepath, 'w') as fptr:
             # writing the fields
             write = csv.writer(fptr)
             write.writerow(fields)
@@ -1000,7 +996,7 @@ class ProvDeployK8sCortxLib:
         keyword:run_basic_s3_io_flag: flag to run basic s3 io
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
         keyword:destroy_setup_flag:flag to destroy cortx cluster
-
+        keyword:custom_repo_path: Custom repo path to be used for ONLY DESTROY cortx cluster
         """
         setup_k8s_cluster_flag = \
             kwargs.get("setup_k8s_cluster_flag",
@@ -1019,6 +1015,8 @@ class ProvDeployK8sCortxLib:
                        PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
         destroy_setup_flag = kwargs.get("destroy_setup_flag",
                                         PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
+        custom_repo_path = kwargs.get("custom_repo_path",
+                                      PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
@@ -1087,6 +1085,8 @@ class ProvDeployK8sCortxLib:
                                                     master_node_list[0].username,
                                                     master_node_list[0].password,
                                                     eth1_ip)
+            LOGGER.info("Kill residue haproxy -f process if any")
+            self.kill_all_process_instance("haproxy -f")
             LOGGER.info("Step to Create S3 account and configure credentials")
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
@@ -1104,7 +1104,7 @@ class ProvDeployK8sCortxLib:
 
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
-            resp = self.destroy_setup(master_node_list[0], worker_node_list)
+            resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
             assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
@@ -1131,6 +1131,67 @@ class ProvDeployK8sCortxLib:
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
         return resp
+
+    # pylint: disable=broad-except
+    @staticmethod
+    def kill_all_process_instance(name: str):
+        """
+        Kill all instances of specified process
+        :param name: Name of process
+        return : boolean
+        """
+        try:
+            command = f"ps ax | grep '{name}' | grep -v grep"
+            LOGGER.info("Command : %s", command)
+            for line in os.popen(command):
+                fields = line.split()
+                pid = fields[0]
+                # terminating process
+                LOGGER.debug("Killing PID : %s", pid)
+                os.kill(int(pid), signal.SIGKILL)
+            LOGGER.info("Process Successfully terminated")
+            return True
+        except OSError as error:
+            LOGGER.error("Error Encountered while killing %s: %s", name, error)
+            return False
+
+    @staticmethod
+    def get_durability_config(num_nodes) -> list:
+        """
+        Get 3 EC configs based on the number of nodes given as args.
+        EC config will be calculated considering CVG as 1,2,3.
+        NOTE: Minimum 7 disks per node are required for this method.
+        param: num_nodes : Number of nodes
+        return : list of configs. (List of Dictionary)
+        """
+        config_list = []
+        LOGGER.debug("Configurations for %s Nodes", num_nodes)
+        for i in range(1, 4):
+            config = {}
+            cvg_count = i
+            sns_total = num_nodes * cvg_count
+            sns_data = math.ceil(sns_total / 2)
+            sns_data = sns_data + i
+            if sns_data >= sns_total:
+                sns_data = sns_data - 1
+            sns_parity = sns_total - sns_data
+
+            dix_parity = math.ceil((num_nodes + cvg_count) / 2) + i
+            if dix_parity > (num_nodes - 1):
+                dix_parity = num_nodes - 1
+
+            config["sns_data"] = sns_data
+            config["sns_parity"] = sns_parity
+            config["sns_spare"] = 0
+            config["dix_data"] = 1
+            config["dix_parity"] = dix_parity
+            config["dix_spare"] = 0
+            config["data_disk_per_cvg"] = 0  # To utilize max possible on the available system
+            config["cvg_count"] = i
+            config_list.append(config)
+            LOGGER.debug("Config %s : %s", i, config)
+
+        return config_list
 
     @staticmethod
     def upgrade_software(node_obj, upgrade_image_version: str, **kwargs) -> tuple:
