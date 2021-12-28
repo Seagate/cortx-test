@@ -127,7 +127,7 @@ class TestContDeployment:
                        self.cvg_per_node, self.data_disk_per_cvg)
         iteration = 0
         while iteration < count:
-            self.log.info("The iteration no is %s", (iteration+1))
+            self.log.info("The iteration no is %s", (iteration + 1))
             self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
                                                sns_parity=self.sns[1],
                                                sns_spare=self.sns[2],
