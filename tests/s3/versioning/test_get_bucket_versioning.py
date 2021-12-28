@@ -87,7 +87,8 @@ class TestGetBucketVersioning:
 
     def create_s3account(self):
         """Create s3 account"""
-        resp = self.s3_obj.csm_user_create_s3account(self.account_name, self.email_id, self.s3acc_password)
+        resp = self.s3_obj.csm_user_create_s3account(
+            self.account_name, self.email_id, self.s3acc_password)
         assert resp[0], resp[1]
         access_key = resp[1]['access_key']
         secret_key = resp[1]['secret_key']
@@ -124,18 +125,15 @@ class TestGetBucketVersioning:
         self.log.info("STARTED : Verify bucket versioning status is not returned to non-owner user")
         self.log.info("Prerequisite: New S3 account creation for non-owner user actions")
         access_key, secret_key = self.create_s3account()
-        s3_new_test_obj = S3VersioningTestLib(access_key=access_key,
-                                              secret_key=secret_key,
-                                              endpoint_url=S3_CFG["s3_url"])
+        s3_new_test_obj = S3VersioningTestLib(
+            access_key=access_key, secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
         err_message = "AccessDenied"
         self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")
-        res = self.s3_ver_test_obj.put_bucket_versioning(
-            bucket_name=self.bucket_name)
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: GET Bucket Versioning by non bucket owner/user")
         try:
-            res = s3_new_test_obj.get_bucket_versioning(
-                bucket_name=self.bucket_name)
+            res = s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
             self.log.info(res)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
@@ -147,8 +145,7 @@ class TestGetBucketVersioning:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: GET Bucket Versioning by non bucket owner/user")
         try:
-            res = s3_new_test_obj.get_bucket_versioning(
-                bucket_name=self.bucket_name)
+            res = s3_new_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
             self.log.info(res)
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
