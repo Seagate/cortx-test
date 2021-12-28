@@ -1076,6 +1076,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Check s3 server status")
             s3_status = self.check_s3_status(master_node_list[0])
             LOGGER.info("s3 resp is %s", s3_status)
+            assert_utils.assert_true(s3_status[0], s3_status[1])
             row.append(s3_status[-1])
 
         if setup_client_config_flag:
