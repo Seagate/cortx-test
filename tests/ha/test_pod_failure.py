@@ -165,8 +165,8 @@ class TestPodFailure:
                                                 read_lines=True)
                 resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
                                             read_lines=True, exc=False)
-                assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                           "Node interface still down.")
+                assert_utils.assert_not_in(b"100% packet loss", resp[1][0],
+                                           f"Node interface still down. {resp}")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
@@ -2404,12 +2404,13 @@ class TestPodFailure:
         LOGGER.info("Step 2: %s data pod is not hosted either on control or ha node",
                     data_pod_name)
 
-        LOGGER.info("Step 3: Shutdown data pod by shutting node node on which its hosted.")
+        LOGGER.info("Step 3: Shutdown data pod %s by shutting node node on which its hosted.",
+                    data_pod_name)
         data_node_fqdn = data_pods.get(data_pod_name)
         LOGGER.info("Shutdown the node: %s", data_node_fqdn)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=data_node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
-        LOGGER.info("Step 3: %s Node is shutdown where control pod was running.", data_node_fqdn)
+        LOGGER.info("Step 3: %s Node is shutdown where data pod was running.", data_node_fqdn)
         self.restore_node = True
 
         LOGGER.info("Step 4: Check cluster status")
@@ -2477,7 +2478,8 @@ class TestPodFailure:
         ha_pod_name = list(ha_pods.keys())[0]
         ha_node_fqdn = ha_pods.get(ha_pod_name)
         LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, ha_node_fqdn)
-        LOGGER.info("Get the data pod running on %s node or %s node", control_node_fqdn, ha_node_fqdn)
+        LOGGER.info("Get the data pod running on %s node and %s node",
+                    control_node_fqdn, ha_node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
         for pod_name, node in data_pods.items():
             if node == control_node_fqdn:
@@ -2490,10 +2492,10 @@ class TestPodFailure:
         LOGGER.info("Step 2: %s data pod is not hosted either on control or ha node",
                     data_pod_name)
 
-        LOGGER.info("Step 3: Shutdown data pod by making network down of node "
-                    "on which its hosted.")
+        LOGGER.info("Step 3: Shutdown data pod %s by making network down of node "
+                    "on which its hosted.", data_pod_name)
         data_node_fqdn = data_pods.get(data_pod_name)
-        LOGGER.info("Get the ip of from the node fqdn")
+        LOGGER.info("Get the ip of the host from the node %s", data_node_fqdn)
         for count, host in enumerate(self.host_worker_list):
             if host == data_node_fqdn:
                 self.node_ip = CMN_CFG["nodes"][count]["ip"]
@@ -2507,12 +2509,13 @@ class TestPodFailure:
                                                   username=CMN_CFG["nodes"][count]["username"],
                                                   password=CMN_CFG["nodes"][count]["password"])
                 LOGGER.info("Make %s interface down for %s node", self.node_iface, host)
-                self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "down"),
-                                                                read_lines=True)
+                self.new_worker_obj.execute_cmd(
+                    cmd=cmd.IP_LINK_CMD.format(self.node_iface, "down"), read_lines=True)
                 resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
                                             read_lines=True, exc=False)
                 assert_utils.assert_in(b"100% packet loss", resp,
                                        f"Node interface still up. {resp}")
+                break
 
         LOGGER.info("Step 3: %s Node's network is down.", data_node_fqdn)
         self.restore_ip = True
@@ -2528,9 +2531,10 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod %s are in offline state", data_pod_name)
 
-        LOGGER.info("Step 6: Check services status on remaining pods %s", data_pod_list.remove(data_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=data_pod_list.remove(data_pod_name),
-                                                           fail=False)
+        LOGGER.info("Step 6: Check services status on remaining pods %s",
+                    data_pod_list.remove(data_pod_name))
+        resp = self.hlth_master_list[0].get_pod_svc_status(
+            pod_list=data_pod_list.remove(data_pod_name), fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services status on remaining pod are in online state")
