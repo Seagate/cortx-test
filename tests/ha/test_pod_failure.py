@@ -202,6 +202,7 @@ class TestPodFailure:
         LOGGER.info("Get the data pod running on %s node and %s node",
                     control_node_fqdn, ha_node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
+        data_pod_name2 = data_pod_name1 = None
         for pod_name, node in data_pods.items():
             if node == control_node_fqdn:
                 data_pod_name1 = pod_name
@@ -2674,8 +2675,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 5: Check services status on remaining pods %s",
                     data_pod_list.remove(data_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status\
-            (pod_list=data_pod_list.remove(data_pod_name), fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(
+            pod_list=data_pod_list.remove(data_pod_name), fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
@@ -2723,12 +2724,12 @@ class TestPodFailure:
         for count, host in enumerate(self.host_worker_list):
             if host == data_node_fqdn:
                 self.node_ip = CMN_CFG["nodes"][count]["ip"]
-                resp = self.node_worker_list[count].execute_cmd\
-                    (cmd=cmd.CMD_IFACE_IP.format(self.node_ip), read_lines=True)
+                resp = self.node_worker_list[count].execute_cmd(
+                    cmd=cmd.CMD_IFACE_IP.format(self.node_ip), read_lines=True)
                 self.node_iface = resp[1].strip(":\n")
-                resp = self.node_worker_list[count].execute_cmd\
-                    (cmd=cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-                #TODO: Check for HW configuration
+                resp = self.node_worker_list[count].execute_cmd(
+                    cmd=cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+                # TODO: Check for HW configuration
                 new_ip = resp[1].strip("'\\n'b'")
                 self.new_worker_obj = LogicalNode(hostname=new_ip,
                                                   username=CMN_CFG["nodes"][count]["username"],
@@ -2926,10 +2927,10 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 1: IOs are completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the server pod safely by making replicas=0")
@@ -2953,7 +2954,7 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(server_pod_list=[server_pod_name],
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
                                                            fail=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
@@ -2961,8 +2962,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 5: Check services status on remaining pods %s",
                     server_pod_list.remove(server_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status \
-            (server_pod_list=server_pod_list.remove(server_pod_name), fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(
+            pod_list=server_pod_list.remove(server_pod_name), fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
@@ -2974,7 +2975,7 @@ class TestPodFailure:
         self.s3_clean.update(resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list[resp[2].keys()][0])
+        self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 6: IOs are completed successfully.")
 
         LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
