@@ -187,7 +187,7 @@ class TestVersioningPutBucket:
                 bucket_name=self.bucket_name, status="Disabled")
         except CTException as error:
             self.log.info("Step 2: Verify MalformedXML error with Disabled bucket versioning")
-            assert_utils.assert_in("MalformedXML", error.message,
+            assert_utils.assert_in("Malformed2XML", error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be Disabled")
