@@ -2548,4 +2548,3 @@ class TestPodFailure:
 
         LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
                     "by making replicas 0")
-
