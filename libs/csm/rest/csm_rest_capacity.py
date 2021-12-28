@@ -38,6 +38,12 @@ class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
     operations"""
 
+    def __init__(self):
+        """
+        """
+        super(SystemCapacity, self).__init__()
+        self.row_temp = "N{} failure"
+
     @RestTestLib.authenticate_and_login
     def get_capacity_usage(self):
         """Get the system capacity usage
@@ -101,8 +107,17 @@ class SystemCapacity(RestTestLib):
         return response
 
     def verify_degraded_capacity(self, resp: dict, healthy=None, degraded=None,
-        critical=None, damaged=None, err_margin: int = 0, total: int = None):
+        critical=None, damaged=None, repaired=None, err_margin: int = 0, total: int = None):
         """
+        Verify the degraded capacity parameter are within the error margin specified.
+        :param resp: response of the csm/hctl/consul
+        :param healthy: expected healthy byte count
+        :param degraded: expected degraded byte count
+        :param critical: expected critical byte count
+        :param damaged: expected damaged byte count
+        :param repaired: expected repaired byte count
+        :param err_margin: margin of error for expected values.
+        :param total: expected total of all params healthy, degraded...
         TODO: Dummy function as degraded capacity csm specs is not defined yet.
         resp is dict
         """
@@ -155,28 +170,28 @@ class SystemCapacity(RestTestLib):
         data_pod = random.choice(list(data_pods.keys()))
         self.log.info("Reading the stats from data pod : %s , Container: %s", data_pod,
                       constants.HAX_CONTAINER_NAME)
-        resp = node_obj.exec_on_pod(
-            data_pod, constants.HAX_CONTAINER_NAME, commands.GET_STATS)
+        cmd_suffix = "-c {} -- {}".format(constants.HAX_CONTAINER_NAME, commands.GET_STATS)
+        resp = node_obj.send_k8s_cmd(operation="exec", pod=data_pod, namespace=const.NAMESPACE,
+                                 command_suffix=cmd_suffix,
+                                 decode=True)
         self.log.info("Response : %s", resp)
-        resp = resp.decode('utf-8')
         return json.loads(resp[resp.find("{"):resp.rfind("}")+1])
 
     def get_dataframe_all(self, num_nodes: int):
         """
         Creates dataframe for the storing degraded capacity for csm, hctl, consul
         """
-        row_temp = "N{} failure"
         col = ["consul_healthy", "consul_degraded", "consul_critical", "consul_damaged",
                "consul_repaired", "hctl_healthy", "hctl_degraded", "hctl_critical", "hctl_damaged",
                "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
                "csm_repaired"]
         row = ["No failure"]
         for node in range(1, num_nodes+1):
-            row.append(row_temp.format(node))
+            row.append(self.row_temp.format(node))
         cap_df = pd.DataFrame(columns=col, index=row)
         return cap_df
 
-    def verify_degraded_capacity_all(self, cap_df, data_written: int = 0):
+    def verify_degraded_capacity_all(self, cap_df, num_nodes: int, data_written: int = 0):
         """
         Verify the consistency of degraded, healthy.. bytes for csm, consul, hctl in data frame
         """
@@ -218,15 +233,22 @@ class SystemCapacity(RestTestLib):
 
         self.log.info(
             "Summation check of the healthy bytes from each node failure for csm")
-        data_written_hchk = data_written == cap_df.loc["N1 failure"]["csm_healthy"] + \
-            cap_df.loc["N2 failure"]["csm_healthy"] + \
-            cap_df.loc["N3 failure"]["csm_healthy"]
+        
+        actual_written = 0
+        for node in range(1, num_nodes+1):
+            node_name = self.row_temp.format(node)
+            actual_written = actual_written + cap_df.loc[node]["csm_healthy"]
+        
+        data_written_hchk = data_written == actual_written
+
+        actual_written = 0
+        for node in range(1, num_nodes+1):
+            node_name = self.row_temp.format(node)
+            actual_written = actual_written + cap_df.loc[node]["csm_damaged"]
 
         self.log.info(
             "Summation check of the damaged bytes from each node failure for csm")
-        data_written_dchk = data_written == cap_df.loc["N1 failure"]["csm_damaged"] + \
-            cap_df.loc["N2 failure"]["csm_damaged"] + \
-            cap_df.loc["N3 failure"]["csm_damaged"]
+        data_written_dchk = data_written == actual_written
 
         result = data_written_hchk and data_written_dchk
         return result

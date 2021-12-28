@@ -211,6 +211,8 @@ class TestSystemCapacity():
             self.log.info(
                 "[End] Power on node back from BMC/ssc-cloud and check node status")
 
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33899')
@@ -385,9 +387,11 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(cap_df), "Overall check failed."
+        assert self.system_capacity.verify_degraded_capacity_all(cap_df, self.num_nodes), "Overall check failed."
 
 
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33919')
@@ -566,10 +570,11 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(cap_df), "Overall check failed."
+        assert self.system_capacity.verify_degraded_capacity_all(cap_df, self.num_nodes), "Overall check failed."
 
 
-
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33920')
@@ -764,10 +769,11 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(cap_df), "Overall check failed."
+        assert self.system_capacity.verify_degraded_capacity_all(cap_df, self.num_nodes), "Overall check failed."
 
 
-
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33928')
@@ -942,9 +948,10 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(cap_df), "Overall check failed."
+        assert self.system_capacity.verify_degraded_capacity_all(cap_df, self.num_nodes), "Overall check failed."
 
-
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33929')
@@ -1123,5 +1130,5 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(cap_df), "Overall check failed."
+        assert self.system_capacity.verify_degraded_capacity_all(cap_df, self.num_nodes), "Overall check failed."
 
