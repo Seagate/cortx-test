@@ -21,6 +21,7 @@
 """Test library for System Stats related operations.
    Author: Divya Kachhwaha
 """
+from __future__ import division
 import datetime
 import math
 
@@ -30,6 +31,8 @@ from prometheus_client.parser import text_string_to_metric_families
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
+from commons.configmanager import get_config_wrapper
+from commons.utils.config_utils import read_yaml
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -293,3 +296,64 @@ class SystemStats(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    def perf_metric_name_value_compare(self, text, metric_name,
+                                       comparison=False, compare_value=None):
+        """Read the metric_name, compare/no_compare the value
+        :param str text: metrics text format output of rest call
+        :param str metric_name: Name of metric
+        :param boolean comparison: True when need to compare value
+        :param float compare_value: Value for comparison
+        :return True/False: (comparison=True) If metrics name value is 10 percent comparable to \
+                            provided value  OR
+                value : (comparison=False) Performance metric name average value
+        """
+        try:
+            self.log.info("Reading the '%s' stats...", metric_name)
+            metric_value_list = []
+            for family in text_string_to_metric_families(text):
+                for sample in family.samples:
+                    res = f"Name={sample[0]}\nLabels={sample[1]}\n Value={sample[2]}"
+                    out = dict(item.split("=") for item in res.split("\n"))
+                    if out['Name'] == metric_name:
+                        metric_value_list.append(float(out[' Value']))
+            self.log.info("Metric value list for '%s' is : %s", metric_name, metric_value_list)
+            data_value = None
+            if len(metric_value_list) != 0:
+                data_value = sum(metric_value_list) / len(metric_value_list)
+                self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
+            if comparison and compare_value is not None:
+                self.log.info("Comparing the values..")
+                near_compare = self.config["percentage_compare"]
+                return bool((compare_value + (compare_value * (near_compare / 100)) >= data_value)
+                or (compare_value - (compare_value * (near_compare / 100)) <= data_value))
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           SystemStats.perf_metric_name_value_compare.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_VERIFICATION_FAILED, error) from error
+        return data_value
+
+    def fetch_data(self, test_id):
+        """
+        Read the test_id details
+        :param str test_id: Test case id
+        :return [dict]: test details dict
+        """
+        test_conf = get_config_wrapper(fpath="config/csm/test_rest_system_stats.yaml")
+        cfg_obj = read_yaml("scripts/hs_bench/config.yaml")[1]
+        log_path_dir = cfg_obj["log_dir"]
+        self.log.info("Fetching the test details for : %s", test_id)
+        test_dict = {'name_metric': test_conf[test_id]["metric_name"],
+                     'mode_value': test_conf[test_id]["mode"],
+                     'operation_value': test_conf[test_id]["operation"],
+                     'workloads': test_conf[test_id]["workload"],
+                     'test_time': test_conf[test_id]["test_time"],
+                     'thread': test_conf[test_id]["threads"],
+                     'bucket': test_conf[test_id]["bucket"],
+                     'json_path': log_path_dir + test_conf[test_id]["json_path"]}
+
+        return test_dict

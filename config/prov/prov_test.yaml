@@ -94,7 +94,7 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
-  per_step_delay: 10
+  per_step_delay: 30
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"
   bmc_username: "admin"
@@ -120,7 +120,9 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
-  local_path_prov: "/mnt/fs-local-volume/"
+  local_path_prov: "/mnt/fs-local-volume"
+  log_path: "/etc/cortx/log"
+  custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 900
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
