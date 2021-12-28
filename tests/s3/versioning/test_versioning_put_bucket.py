@@ -191,24 +191,13 @@ class TestVersioningPutBucket:
             self.s3_ver_test_obj.put_bucket_versioning(
                 bucket_name=self.bucket_name, status="Disabled")
             #assert_utils.assert_equal(res_code[1], 400)
-        except (ClientError, Exception) as error:
-            self.log.info("Exception catch with error1 : %s", error.code)
-            self.log.info("Exception catch with error2 : %s", error.message)
-            self.log.info("Exception catch with error3 : %s", error.desc)
-            assert_utils.assert_in("MalformedXML", error.args[0], error)
-            #httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
-            #self.log.info("HTTP status code returned : %s", httpCode)
-            if 400 == 400:
-                self.log.info("Bad request, MalformedXML")
-                pass
-            else:
-                self.log.error("Error in %s: %s",
-                             S3VersioningTestLib.put_bucket_versioning.__name__,
-                             error)
-                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
-
-
+        except CTException as error:
+            self.log.info("err messg1: %s", error)
+            self.log.info("err messg2: %s", error.message)
+            assert_utils.assert_in("MalformedXML", error)
+            assert_utils.assert_in("MalformedXML", error.message)
+            assert_utils.assert_in("MalformedXML", error.code)
+            assert_utils.assert_in("MalformedXML", error.desc)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32747')
