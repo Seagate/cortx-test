@@ -426,7 +426,6 @@ class LogicalNode(Host):
                                  decode=True)
         return resp
 
-
     def get_pods_node_fqdn(self, pod_prefix):
         """
         Helper function to get pods name with pod_prefix and their node fqdn

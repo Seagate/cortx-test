@@ -41,7 +41,7 @@ class SystemCapacity(RestTestLib):
     def __init__(self):
         """
         """
-        super(SystemCapacity, self).__init__()
+        super().__init__()
         self.row_temp = "N{} failure"
 
     @RestTestLib.authenticate_and_login
@@ -106,8 +106,10 @@ class SystemCapacity(RestTestLib):
                                           headers=self.headers)
         return response
 
-    def verify_degraded_capacity(self, resp: dict, healthy=None, degraded=None,
-        critical=None, damaged=None, repaired=None, err_margin: int = 0, total: int = None):
+    # pylint: disable-msg=too-many-locals
+    def verify_degraded_capacity(
+            self, resp: dict, healthy=None, degraded=None, critical=None, damaged=None,
+            repaired=None, err_margin: int = 0, total: int = None):
         """
         Verify the degraded capacity parameter are within the error margin specified.
         :param resp: response of the csm/hctl/consul
@@ -130,7 +132,8 @@ class SystemCapacity(RestTestLib):
             checklist.append("critical")
         if damaged is not None:
             checklist.append("damaged")
-
+        if repaired is not None:
+            checklist.append("repaired")
         result_flag = True
         result_msg = ""
 
@@ -141,6 +144,7 @@ class SystemCapacity(RestTestLib):
             result_msg = "Summation check failed."
 
         for chk in checklist:
+            # pylint: disable=eval-used
             expected = eval(chk)
             actual = resp[chk]
             self.log.info("Expected %s byte count within error margin %s bytes of : %s"
@@ -170,10 +174,10 @@ class SystemCapacity(RestTestLib):
         data_pod = random.choice(list(data_pods.keys()))
         self.log.info("Reading the stats from data pod : %s , Container: %s", data_pod,
                       constants.HAX_CONTAINER_NAME)
-        cmd_suffix = "-c {} -- {}".format(constants.HAX_CONTAINER_NAME, commands.GET_STATS)
-        resp = node_obj.send_k8s_cmd(operation="exec", pod=data_pod, namespace=const.NAMESPACE,
-                                 command_suffix=cmd_suffix,
-                                 decode=True)
+        cmd_suffix = f"-c {constants.HAX_CONTAINER_NAME} -- {commands.GET_STATS}"
+        resp = node_obj.send_k8s_cmd(operation="exec", pod=data_pod, namespace=constants.NAMESPACE,
+                                     command_suffix=cmd_suffix,
+                                     decode=True)
         self.log.info("Response : %s", resp)
         return json.loads(resp[resp.find("{"):resp.rfind("}")+1])
 
@@ -197,32 +201,32 @@ class SystemCapacity(RestTestLib):
         """
         self.log.info(
             "Checking HCTL , CSM and Consul healthy byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_healthy'] == cap_df['hctl_healthy']) & 
-                 (cap_df['consul_healthy'] == cap_df['csm_healthy']))
+        cap_df['result'] = ((cap_df['consul_healthy'] == cap_df['hctl_healthy']) &
+                            (cap_df['consul_healthy'] == cap_df['csm_healthy']))
         healthy_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul degraded byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_degraded'] == cap_df['hctl_degraded']) & 
-                 (cap_df['consul_degraded'] == cap_df['csm_degraded']))
+        cap_df['result'] = ((cap_df['consul_degraded'] == cap_df['hctl_degraded']) &
+                            (cap_df['consul_degraded'] == cap_df['csm_degraded']))
         degraded_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul Critical byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_critical'] == cap_df['hctl_critical']) & 
-                 (cap_df['consul_critical'] == cap_df['csm_critical']))
+        cap_df['result'] = ((cap_df['consul_critical'] == cap_df['hctl_critical']) &
+                            (cap_df['consul_critical'] == cap_df['csm_critical']))
         critical_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul damaged byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_damaged'] == cap_df['hctl_damaged']) & 
-                 (cap_df['consul_damaged'] == cap_df['csm_damaged']))
+        cap_df['result'] = ((cap_df['consul_damaged'] == cap_df['hctl_damaged']) &
+                            (cap_df['consul_damaged'] == cap_df['csm_damaged']))
         damaged_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul repaired byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_repaired'] == cap_df['hctl_repaired']) & 
-                 (cap_df['consul_repaired'] == cap_df['csm_repaired']))
+        cap_df['result'] = ((cap_df['consul_repaired'] == cap_df['hctl_repaired']) &
+                            (cap_df['consul_repaired'] == cap_df['csm_repaired']))
         repaired_eq = cap_df["result"].all()
 
         self.log.info("Checking total bytes adds up to data written")
@@ -233,22 +237,23 @@ class SystemCapacity(RestTestLib):
         total_chk = cap_df["total_check"].all()
         self.log.info(
             "Summation check of the healthy bytes from each node failure for csm")
-        
+
         actual_written = 0
         for node in range(1, num_nodes+1):
             node_name = self.row_temp.format(node)
-            actual_written = actual_written + cap_df.loc[node]["csm_healthy"]
-        
+            actual_written = actual_written + cap_df.loc[node_name]["csm_healthy"]
+
         data_written_hchk = data_written == actual_written
 
         actual_written = 0
         for node in range(1, num_nodes+1):
             node_name = self.row_temp.format(node)
-            actual_written = actual_written + cap_df.loc[node]["csm_damaged"]
+            actual_written = actual_written + cap_df.loc[node_name]["csm_damaged"]
 
         self.log.info(
             "Summation check of the damaged bytes from each node failure for csm")
         data_written_dchk = data_written == actual_written
 
-        result = data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and critical_eq and damaged_eq and repaired_eq and total_chk
+        result = (data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and
+                  critical_eq and damaged_eq and repaired_eq and total_chk)
         return result
