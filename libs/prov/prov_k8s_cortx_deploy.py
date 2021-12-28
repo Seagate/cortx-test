@@ -57,8 +57,6 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
-        self.docker_username = os.getenv("DOCKER_USERNAME")
-        self.docker_password = os.getenv("DOCKER_PASSWORD")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -179,18 +177,6 @@ class ProvDeployK8sCortxLib:
 
         return True, "Prerequisite VM check successful"
 
-    @staticmethod
-    def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
-        """
-        Perform Docker Login
-        param: node_obj: Node Object
-        param: docker_user : Docker username
-        param: docker_pswd : Docker password
-        """
-        LOGGER.info("Perform Docker Login")
-        resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
-        LOGGER.debug("resp: %s", resp)
-
     def prereq_git(self, node_obj: LogicalNode, git_tag: str):
         """
         Checkout cortx-k8s code on the  node. Delete is any previous exists.
@@ -224,6 +210,12 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
         LOGGER.info("\n %s", resp1)
+        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
+                                                    read_lines=True)
+        LOGGER.info("\n %s", openldap_dir_residue)
+        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
+                                                  read_lines=True)
+        LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -272,25 +264,19 @@ class ProvDeployK8sCortxLib:
             return False, resp
         return True, resp
 
-    def pull_third_party_images(self, worker_obj_list: list):
+    def pull_cortx_image(self, worker_obj_list: list):
         """
-        This method pulls  cortx and 3rd party images
+        This method pulls  cortx image
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull Cortx and 3rd party images on all worker nodes.")
-        LOGGER.debug(self.deploy_cfg['third_party_images'])
-        data = self.deploy_cfg['third_party_images']
+        LOGGER.info("Pull Cortx image on all worker nodes.")
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
-            for key, value in data.items():
-                cmd = common_cmd.CMD_DOCKER_PULL.format(value)
-                obj.execute_cmd(cmd=cmd)
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
-                             docker_username: str, docker_password: str,
                              git_tag) -> tuple:
         """
         Perform cortx cluster deployment
@@ -311,14 +297,12 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
-            self.docker_login(node, docker_username, docker_password)
             self.prereq_git(node, git_tag)
             self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
-        self.pull_third_party_images(worker_node_list)
+        self.pull_cortx_image(worker_node_list)
 
-        self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
@@ -636,7 +620,7 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     @staticmethod
-    def deploy_cortx_k8s_cluster(master_node_list: list, worker_node_list: list,
+    def deploy_cortx_k8s_re_job(master_node_list: list, worker_node_list: list,
                                  deploy_target: str = "CORTX-CLUSTER") -> tuple:
         """
         Setup k8s cluster using RE jenkins job
@@ -663,8 +647,6 @@ class ProvDeployK8sCortxLib:
                             f'user={each.username},' \
                             f'pass={each.password}'
                 hosts_input_str.append(input_str)
-        else:
-            return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
         jen_parameter["DEPLOY_TARGET"] = deploy_target
@@ -714,7 +696,6 @@ class ProvDeployK8sCortxLib:
         # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
         cmd4 = "ls -lhR /etc/3rd-party/"
         cmd5 = "ls -lhR /var/data/3rd-party/"
-        cmd6 = "ls -lhR /mnt/fs-local-volume/"
         # cmd7 = "docker image prune -a"
         try:
             resp = master_node_obj.execute_cmd(cmd=cmd1)
@@ -727,8 +708,6 @@ class ProvDeployK8sCortxLib:
                 resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
                 resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd6, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
                 # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
                 # LOGGER.debug("resp : %s", resp)
@@ -1080,8 +1059,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
-                                             self.docker_username,
-                                             self.docker_password, self.git_script_tag)
+                                             self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
@@ -1131,3 +1109,24 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
+
+    @staticmethod
+    def check_s3_status(master_node_obj: LogicalNode,master_node_list: list):
+        """
+        Function to check s3 server status
+        """
+        LOGGER.info("Step to Check s3 server status")
+        deploy_ff_cfg = PROV_CFG["deploy_ff"]
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        while int(time.time()) < end_time:
+            data_pod_list = ProvDeployK8sCortxLib.get_data_pods(master_node_obj)
+            assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
+            resp = ProvDeployK8sCortxLib.get_hctl_status(master_node_list[0], data_pod_list[1][0])
+            if resp[0]:
+                LOGGER.info("All the services are online. Time Taken : %s",
+                            (int(time.time()) - start_time))
+                break
+            time.sleep(deploy_ff_cfg["per_step_delay"])
+            LOGGER.info("s3 Server Status Check Completed")
+        return resp

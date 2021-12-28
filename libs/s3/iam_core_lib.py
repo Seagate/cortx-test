@@ -56,9 +56,9 @@ class IAMRest:
         """
         init_iam_connection = kwargs.get("init_iam_connection", True)
         debug = kwargs.get("debug", S3_CFG["debug"])
-        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        self.use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
-        iam_cert_path = iam_cert_path if val_cert else False
+        self.iam_cert_path = iam_cert_path if val_cert else False
         if val_cert and not os.path.exists(S3_CFG['iam_cert_path']):
             raise IOError(f'Certificate path {S3_CFG["iam_cert_path"]} does not exists.')
         if debug:
@@ -67,23 +67,23 @@ class IAMRest:
 
         try:
             if init_iam_connection:
-                self.iam = boto3.client("iam", use_ssl=use_ssl,
-                                        verify=iam_cert_path,
+                self.iam = boto3.client("iam",
+                                        use_ssl=self.use_ssl,
+                                        verify=self.iam_cert_path,
                                         aws_access_key_id=access_key,
                                         aws_secret_access_key=secret_key,
                                         endpoint_url=endpoint_url)
-                self.iam_resource = boto3.resource(
-                    "iam",
-                    use_ssl=use_ssl,
-                    verify=iam_cert_path,
-                    aws_access_key_id=access_key,
-                    aws_secret_access_key=secret_key,
-                    endpoint_url=endpoint_url)
+                self.iam_resource = boto3.resource("iam",
+                                                   use_ssl=self.use_ssl,
+                                                   verify=self.iam_cert_path,
+                                                   aws_access_key_id=access_key,
+                                                   aws_secret_access_key=secret_key,
+                                                   endpoint_url=endpoint_url)
             else:
                 LOGGER.info("Skipped: create iam client, resource object with boto3.")
-        except Exception as err:
-            if "unreachable network" not in str(err):
-                LOGGER.critical(err)
+        except Exception as error:
+            if "unreachable network" not in str(error):
+                LOGGER.critical(error)
 
     def __del__(self):
         """Destroy all core objects."""
@@ -275,6 +275,17 @@ class IamLib(IAMRest):
 
         return response
 
+    def delete_user_login_profile(self, user_name):
+        """
+        Deletes the password for the specified IAM user.
+
+        :param user_name: The name of the user whose password you want to delete.
+        """
+        response = self.iam.delete_login_profile(UserName=user_name)
+        LOGGER.debug(response)
+
+        return response
+
     def change_password(self, old_password: str = None, new_password: str = None):
         """
         Change the password of the IAM user with the IAM user.
@@ -299,8 +310,8 @@ class IamPolicy(IAMRest):
         :param policy_name: The name of the policy to create.
         :param policy_document: The policy document.
         """
-        response = self.iam.create_policy(PolicyName=policy_name, PolicyDocument=policy_document,
-                                          **kwargs)
+        response = self.iam_resource.create_policy(PolicyName=policy_name,
+                                                   PolicyDocument=policy_document, **kwargs)
 
         return response
 
