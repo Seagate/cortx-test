@@ -206,12 +206,11 @@ def update_clients_first(
     options = None
     value = None
     disabled = False
-    if not all(
+    if not all( # pylint: disable=no-else-raise
         [xfilter, release_combined, branch, option1, nodes]
-    ):  # pylint: disable=no-else-raise
+    ):
         raise PreventUpdate
     else:
-        print("here")
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         clients = get_distinct_keys(
@@ -324,9 +323,7 @@ def update_custom_dropdown(
     options = None
     value = None
     disabled = False
-    if (
-        not all([xfilter, branch, option1, bench, nodes, clients]) and pfill is None
-    ):  # pylint: disable=no-else-raise
+    if ( not all([xfilter, branch, option1, bench, nodes, clients]) and pfill is None):  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
@@ -772,7 +769,6 @@ def update_clients_dropdown(
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
-        print("here")
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         clients = get_distinct_keys(

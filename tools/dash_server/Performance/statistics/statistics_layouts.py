@@ -37,7 +37,7 @@ release = [
         'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-CentOS',
         'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
-    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+    {'label': 'LR-R1-RHEL', 'value': 'LR1_RHEL'},
 
 ]
 

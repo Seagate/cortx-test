@@ -155,7 +155,6 @@ def update_clients_dropdown(nodes, release_combined, branch, build, current_valu
     if not all([release_combined, branch, build, nodes]):  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
-        print("here")
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         clients = get_distinct_keys(release, 'Count_of_Clients', {'OS': op_sys,
