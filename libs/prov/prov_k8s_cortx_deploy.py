@@ -21,8 +21,6 @@
 """
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
-from __future__ import division
-
 import csv
 import json
 import logging
@@ -695,29 +693,20 @@ class ProvDeployK8sCortxLib:
         param: master node obj list
         param: worker node obj list
         """
-        cmd1 = "cd {} && {} --force".format(custom_repo_path,
-                                            self.deploy_cfg["destroy_cluster"])
-        # cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        # cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        cmd4 = "ls -lhR /etc/3rd-party/"
-        cmd5 = "ls -lhR /var/data/3rd-party/"
-        # cmd7 = "docker image prune -a"
+        destroy_cmd = "cd {} && {} --force".format(custom_repo_path,
+                                                   self.deploy_cfg["destroy_cluster"])
+        list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
+        list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
-            resp = master_node_obj.execute_cmd(cmd=cmd1)
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                # resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd5, read_lines=True)
+                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
                 LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd7, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -1152,16 +1141,16 @@ class ProvDeployK8sCortxLib:
         """
         try:
             command = f"ps ax | grep '{name}' | grep -v grep"
-            LOGGER.info("Command : %s",command)
+            LOGGER.info("Command : %s", command)
             for line in os.popen(command):
                 fields = line.split()
                 pid = fields[0]
                 # terminating process
-                LOGGER.debug("Killing PID : %s",pid)
+                LOGGER.debug("Killing PID : %s", pid)
                 os.kill(int(pid), signal.SIGKILL)
             LOGGER.info("Process Successfully terminated")
             return True
-        except BaseException as error:
+        except OSError as error:
             LOGGER.error("Error Encountered while killing %s: %s", name, error)
             return False
 
