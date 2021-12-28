@@ -493,3 +493,107 @@ class TestR2SupportBundle:
                                 f"and actual file size is: {file_size}MB for file:{line[-1]}")
         self.LOGGER.info("Successfully validated HARE log files size, "
                              "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31250")
+    def test_31250(self):
+        """
+        Validate Motr log path exists
+        """
+        self.LOGGER.info("Checking Motr log file paths")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                            f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr log file paths for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31262")
+    def test_31262(self):
+        """
+        Validate Motr log path exists
+        """
+        self.LOGGER.info("Checking Motr log file size")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                            f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                        for counter in range(1, len(lines_m0d)):
+                            line = lines_m0d[counter].split()
+                            file_size = int(line[4][:-2])
+                            if file_size > constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]:
+                                assert_utils.assert_true(False, f"Motr trace max file size is: "
+                                    f"{constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]}MB "
+                                    f"and actual file size: {file_size}MB for file:{line[-1]}")
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+                            act_files = resp.splitlines()
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
+                            for ctr in range(1, len(act_files)):
+                                line = act_files[ctr].split()
+                                file_size = int(line[4][:-2])
+                                if file_size > constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]:
+                                    assert_utils.assert_true(False, f"Motr addb max file size is: "
+                                        f"{constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]}MB "
+                                        f"and actual file size: {file_size}MB for file:{line[-1]}")
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr log file size for all pods")
