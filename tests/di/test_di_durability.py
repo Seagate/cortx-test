@@ -321,7 +321,7 @@ class TestDIDurability:
                     failed_file_sizes[file_size] = "checksum validation failed"
             except CTException as err:
                 err_str = str(err)
-                self.log.info("Test failed with ", err_str)
+                self.log.info("Test failed with %s", err_str)
                 failed_file_sizes[file_size] = err_str
         self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
         if failed_file_sizes:
@@ -362,7 +362,7 @@ class TestDIDurability:
                                   file_path=location, content_md5=corrupted_csm)
             except CTException as err:
                 err_str = str(err)
-                self.log.info("Test failed with ", err_str)
+                self.log.info("Test failed with %s", err_str)
                 if "The Content-MD5 you specified is not valid" in err_str:
                     self.log.info("Error strings matched")
                 else:
@@ -546,7 +546,7 @@ class TestDIDurability:
                                                  bucket_name=self.bucket_name, obj_name=obj_name)
             except CTException as err:
                 err_str = str(err)
-                self.log.info("Test failed with ", err_str)
+                self.log.info("Test failed with %s", err_str)
                 if "error occurred (InternalError) when calling the GetObject operation" in err_str:
                     self.log.info("Download failed with InternalError")
                 else:
@@ -1004,7 +1004,7 @@ class TestDIDurability:
                                                  bucket_name=self.bucket_name, obj_name=obj_name)
             except CTException as err:
                 err_str = str(err)
-                self.log.info("Test failed with ", err_str)
+                self.log.info("Test failed with %s", err_str)
                 if "error occurred (InternalError) when calling the GetObject operation" in err_str:
                     self.log.info("Download failed with InternalError")
                 else:
@@ -1057,7 +1057,7 @@ class TestDIDurability:
                                                  bucket_name=self.bucket_name, obj_name=obj_name)
             except CTException as err:
                 err_str = str(err)
-                self.log.info("Test failed with ", err_str)
+                self.log.info("Test failed with %s", err_str)
                 if "error occurred (InternalError) when calling the GetObject operation" in err_str:
                     self.log.info("Download failed with InternalError")
                 else:
