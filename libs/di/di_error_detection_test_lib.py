@@ -29,7 +29,6 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
-from libs.di.fi_adapter import S3FailureInjection
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +42,6 @@ class DIErrorDetection:
     def __init__(self):
         self.data_gen = DataGenerator()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
-        self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.config_section = "S3_SERVER_CONFIG"
         self.write_param = const.S3_DI_WRITE_CHECK
         self.read_param = const.S3_DI_READ_CHECK
