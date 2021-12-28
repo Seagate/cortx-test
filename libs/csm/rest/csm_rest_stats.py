@@ -30,6 +30,8 @@ from prometheus_client.parser import text_string_to_metric_families
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
+from commons.configmanager import get_config_wrapper
+from commons.utils.config_utils import read_yaml
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -297,7 +299,10 @@ class SystemStats(RestTestLib):
     def perf_metric_name_value_compare(self, text, metric_name,
                                        comparison=False, compare_value=None):
         """Read the metric_name, compare/no_compare the value
-
+        :param str text: metrics text format output of rest call
+        :param str metric_name: Name of metric
+        :param boolean comparison: True when need to compare value
+        :param float compare_value: Value for comparision
         :return True/False: (comparision=True) If metrics name value is 10 percent comparable to \
                             provided value  OR
                 value : (comparision=False) Performace metric name average value
@@ -317,8 +322,9 @@ class SystemStats(RestTestLib):
                 self.log.info("Average Value for '%s' is : %s", metric_name, data_value)
             if comparison and compare_value is not None:
                 self.log.info("Comparing the values..")
-                return bool((compare_value + (compare_value * 0.1) >= data_value) or \
-                (compare_value - (compare_value * 0.1) <= data_value))
+                percent_near_compare = self.config["percentage_compare"]
+                return bool((compare_value + (compare_value * percent_near_compare) >= data_value)\
+                or (compare_value - (compare_value * percent_near_compare) <= data_value))
 
         except BaseException as error:
             self.log.error("%s %s: %s",
@@ -328,3 +334,25 @@ class SystemStats(RestTestLib):
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
         return data_value
+
+    def fetch_data(self, test_id):
+        """
+        Read the test_id details
+        :param str test_id: Test case id
+        :return [dict]: test details dict
+        """
+        test_conf = get_config_wrapper(fpath="config/csm/test_rest_system_stats.yaml")
+        cfg_obj = read_yaml("scripts/hs_bench/config.yaml")[1]
+        log_path_dir = cfg_obj["log_dir"]
+        self.log.info("Fetching the test details for : %s", test_id)
+        test_dict = {}
+        test_dict['name_metric'] = test_conf[test_id]["metric_name"]
+        test_dict['mode_value'] = test_conf[test_id]["mode"]
+        test_dict['operation_value'] = test_conf[test_id]["opertaion"]
+        test_dict['workloads'] = test_conf[test_id]["workload"]
+        test_dict['test_time'] = test_conf[test_id]["test_time"]
+        test_dict['thread'] = test_conf[test_id]["threads"]
+        test_dict['bucket'] = test_conf[test_id]["bucket"]
+        test_dict['json_path'] = log_path_dir+test_conf[test_id]["json_path"]
+
+        return test_dict
