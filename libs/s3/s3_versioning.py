@@ -73,3 +73,57 @@ class Versioning(S3Lib):
         LOGGER.debug(response)
 
         return response
+
+    def get_object_version(self,
+                    bucket: str = None,
+                    key: str = None,
+                    version_id: str = None) -> dict:
+        """
+        Get a version of an object.
+
+        :param bucket: Target bucket for GET Object with VersionId call.
+        :param key: Target key for GET Object with VersionId call.
+        :param version_id: Target version ID for GET Object with VersionId call.
+        :return: response
+        """
+        response = self.s3_client.get_object(
+            Bucket=bucket, Key=key, VersionId=version_id)
+        LOGGER.debug(response)
+
+        return response
+
+    def head_object_version(self,
+                    bucket: str = None,
+                    key: str = None,
+                    version_id: str = None) -> dict:
+        """
+        Get the metadata of an object's version.
+
+        :param bucket: Target bucket for HEAD Object with VersionId call.
+        :param key: Target key for HEAD Object with VersionId call.
+        :param version_id: Target version ID for HEAD Object with VersionId call.
+        :return: response
+        """
+        response = self.s3_client.head_object(
+            Bucket=bucket, Key=key, VersionId=version_id)
+        LOGGER.debug(response)
+
+        return response
+
+    def delete_object_version(self,
+                    bucket: str = None,
+                    key: str = None,
+                    version_id: str = None) -> dict:
+        """
+        Delete an object's version
+
+        :param bucket: Target bucket for DELETE Object with VersionId call.
+        :param key: Target key for DELETE Object with VersionId call.
+        :param version_id: Target version ID for DELETE Object with VersionId call.
+        :return: response
+        """
+        response = self.s3_client.delete_object(
+            Bucket=bucket, Key=key, VersionId=version_id)
+        LOGGER.debug(response)
+
+        return response

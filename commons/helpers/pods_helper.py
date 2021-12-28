@@ -354,7 +354,7 @@ class LogicalNode(Host):
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
 
-    def get_all_pods_and_ips(self, pod_prefix):
+    def get_all_pods_and_ips(self, pod_prefix) -> dict:
         """
         Helper function to get pods name with pod_prefix and their IPs
         :param: pod_prefix: Prefix to define the pod category
@@ -372,9 +372,9 @@ class LogicalNode(Host):
 
     def get_container_of_pod(self, pod_name, container_prefix):
         """
-        Helper function to get container with container_prefix from the specified pod_name
+        Gets containers with container_prefix (str) from the specified pod_name
         :param: pod_name : Pod name to query container of
-        :param: container_prefix: Prefix to define container catergory
+        :param: container_prefix: Prefix to define container category
         :return: list
         """
         cmd = commands.KUBECTL_GET_POD_CONTAINERS.format(pod_name)
@@ -444,3 +444,19 @@ class LogicalNode(Host):
                                  command_suffix="cat /etc/machine-id",
                                  decode=True)
         return resp
+
+    def get_pods_node_fqdn(self, pod_prefix):
+        """
+        Helper function to get pods name with pod_prefix and their node fqdn
+        :param: pod_prefix: Prefix to define the pod category
+        :return: dict
+        """
+        pod_dict = {}
+        output = self.execute_cmd(cmd=commands.K8S_GET_MGNT, read_lines=True)
+        for line in output:
+            if pod_prefix in line:
+                data = line.strip()
+                pod_name = data.split()[0]
+                node_fqdn = data.split()[6]
+                pod_dict[pod_name.strip()] = node_fqdn.strip()
+        return pod_dict
