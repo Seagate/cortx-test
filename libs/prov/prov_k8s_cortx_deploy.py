@@ -1168,8 +1168,9 @@ class ProvDeployK8sCortxLib:
     @staticmethod
     def get_durability_config(num_nodes) -> list:
         """
-        Get 3 EC configs based on the number of nodes given as args..
+        Get 3 EC configs based on the number of nodes given as args.
         EC config will be calculated considering CVG as 1,2,3.
+        NOTE: Minimum 7 disks per node are required for this method.
         param: num_nodes : Number of nodes
         return : list of configs. (List of Dictionary)
         """
