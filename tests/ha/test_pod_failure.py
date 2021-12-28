@@ -2606,21 +2606,22 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Get the RC node and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1] + ".colo.seagate.com"
-        self.node_name = rc_node
-        LOGGER.info("RC Node is running on %s node", rc_node)
-        LOGGER.info("Get the data pod running on %s node", rc_node)
+        rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1]
+        rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
+        self.node_name = list(rc_info.values())[0]
+        LOGGER.info("RC Node is running on %s node", self.node_name)
+        LOGGER.info("Get the data pod running on %s node", self.node_name)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
         rc_datapod = None
         for pod_name, node in data_pods.items():
-            if node == rc_node:
+            if node == self.node_name:
                 rc_datapod = pod_name
                 break
-        LOGGER.info("RC node %s has data pod: %s", rc_node, rc_datapod)
-        LOGGER.info("Shutdown the RC node: %s", rc_node)
-        resp = self.ha_obj.host_safe_unsafe_power_off(host=rc_node)
-        assert_utils.assert_true(resp, f"{rc_node} is not powered off")
-        LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", rc_node)
+        LOGGER.info("RC node %s has data pod: %s", self.node_name, rc_datapod)
+        LOGGER.info("Shutdown the RC node: %s", self.node_name)
+        resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_name)
+        assert_utils.assert_true(resp, f"{self.node_name} is not powered off")
+        LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", self.node_name)
         self.restore_node = True
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
@@ -2629,12 +2630,12 @@ class TestPodFailure:
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
-                    "are in offline state", rc_node, rc_datapod)
+                    "are in offline state", self.node_name, rc_datapod)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod], fail=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
-                    "are in offline state", rc_node, rc_datapod)
+                    "are in offline state", self.node_name, rc_datapod)
 
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     pod_list.remove(rc_datapod))
@@ -2645,10 +2646,10 @@ class TestPodFailure:
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for RC node failed over node.")
-        rc_node_new = self.motr_obj.get_primary_cortx_node()
-        assert_utils.assert_true(len(rc_node_new), "Couldn't fine new RC failover node")
-        rc_node_new = rc_node_new.split("svc-")[1] + ".colo.seagate.com"
-        LOGGER.info("Step 6: RC node has been failed over to %s node", rc_node_new)
+        rc_node = self.motr_obj.get_primary_cortx_node()
+        assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
+        rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
+        LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
 
         LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1')
