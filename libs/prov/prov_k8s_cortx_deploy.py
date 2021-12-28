@@ -934,13 +934,10 @@ class ProvDeployK8sCortxLib:
         param: csv_filepath: csv file path
         returns: updated csv file with its path
         """
-        fields = ['ITERATION', 'POD STATUS']
-        with open(csv_filepath, 'w') as fptr:
+        with open(csv_filepath, 'a+') as fptr:
             # writing the fields
             write = csv.writer(fptr)
-            write.writerow(fields)
-            for test in test_list:
-                write.writerows([test])
+            write.writerow(test_list)
             fptr.close()
         return csv_filepath
 
@@ -1022,9 +1019,16 @@ class ProvDeployK8sCortxLib:
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         custom_repo_path = kwargs.get("custom_repo_path",
                                       PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
+        report_path = kwargs.get("report_filepath")
+        row = list()
+        row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+        sns = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)
+        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)
+        row.append(sns)
+        row.append(dix)
         LOGGER.debug("setup_k8s_cluster_flag = %s", setup_k8s_cluster_flag)
         LOGGER.debug("cortx_cluster_deploy_flag = %s", cortx_cluster_deploy_flag)
         LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
@@ -1072,6 +1076,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Check s3 server status")
             s3_status = self.check_s3_status(master_node_list[0])
             LOGGER.info("s3 resp is %s", s3_status)
+            row.append(s3_status[-1])
 
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
@@ -1102,7 +1107,9 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
             assert_utils.assert_true(resp[0], resp[1])
-
+        row.append("PASS")
+        resp = self.dump_in_csv(row, report_path)
+        LOGGER.info("Report path is %s", resp)
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
 
@@ -1112,18 +1119,21 @@ class ProvDeployK8sCortxLib:
         """
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         start_time = int(time.time())
-        end_time = start_time + 900  # 15 mins timeout
+        end_time = start_time + 1200  # 20 mins timeout
+        response = list()
         while int(time.time()) < end_time:
             data_pod_list = self.get_data_pods(master_node_obj)
             assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
             resp = self.get_hctl_status(master_node_obj, data_pod_list[1][0])
             if resp[0]:
-                LOGGER.info("All the services are online. Time Taken : %s",
-                            (int(time.time()) - start_time))
+                time_taken = (int(time.time()) - start_time)
+                LOGGER.info("All the services are online. Time Taken : %s", time_taken)
+                response.append(resp)
+                response.append(time_taken)
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
             LOGGER.info("s3 Server Status Check Completed")
-        return resp
+        return response
 
     # pylint: disable=broad-except
     @staticmethod
