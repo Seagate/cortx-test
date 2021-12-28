@@ -216,7 +216,6 @@ class TestPodFailure:
 
         return data_pod_name, data_node_fqdn
 
-
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32443")
@@ -2630,7 +2629,6 @@ class TestPodFailure:
         LOGGER.info(
             "COMPLETED: Verify degraded copy object after data pod down - "
             "pod unsafe shutdown (by deleting deployment) ")
-
 
     @pytest.mark.ha
     @pytest.mark.lc
