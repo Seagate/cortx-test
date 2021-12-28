@@ -20,7 +20,7 @@
 #
 #
 """Python library contains methods for s3 tests."""
-
+import json
 import os
 import logging
 from multiprocessing import Process
@@ -41,6 +41,7 @@ from libs.s3 import s3_acl_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_tagging_test_lib
+from libs.s3.iam_policy_test_lib import IamPolicyTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
 
@@ -302,6 +303,24 @@ def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_p
     resp = s3_tst_lib.put_object(bucket_name, obj_name, file_path)
     assert_utils.assert_true(resp[0], resp[1])
     LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
+
+
+def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
+    """
+    Create IAM policy, Attach IAM Policy, List IAM Policy and make sure it is attached
+    """
+    iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
+    LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
+    _, policy = iam_policy_test_lib.create_policy(
+        policy_name=policy_name,
+        policy_document=json.dumps(iam_policy))
+
+    LOG.info("Attach Policy1 %s to %s user", policy.arn, iam_user)
+    iam_policy_test_lib.attach_user_policy(iam_user, policy.arn)
+
+    LOG.info("List Attached User Policies on %s", iam_user)
+    resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
+    assert_utils.assert_true(resp)
 
 
 class S3BackgroundIO:
