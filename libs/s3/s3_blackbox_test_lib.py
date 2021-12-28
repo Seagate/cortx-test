@@ -103,6 +103,7 @@ class JCloudClient:
 
         return resp
 
+    # pylint: disable=too-many-arguments
     @staticmethod
     def create_cmd_format(bucket, operation, jtool=None, chunk=None,
                           access_key=ACCESS_KEY, secret_key=SECRET_KEY):

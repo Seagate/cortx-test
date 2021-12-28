@@ -652,6 +652,7 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -677,7 +678,7 @@ class TestAccountCapacity():
         bucket_name = "test-33377-bucket" + str(int(time.time()))
         assert s3_misc.create_bucket(bucket_name, access_key, secret_key), "Failed to create bucket"
         self.buckets_created.append([bucket_name, access_key, secret_key])
-        assert_utils.assert_in("Step 2: Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("Step 2: Created bucket %s",bucket_name)
 
         self.log.info("Step 3: Perform IO operation on %s", bucket_name)
         resp = self.acc_capacity.perform_io_validate_data_usage(
@@ -829,6 +830,7 @@ class TestAccountCapacity():
         os.remove(file_path_upload)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

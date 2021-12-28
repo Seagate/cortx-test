@@ -308,6 +308,11 @@ def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_p
 def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
     """
     Create IAM policy, Attach IAM Policy, List IAM Policy and make sure it is attached
+    :param access: Access Key of S3 account
+    :param secret: Secret Key of S3 account
+    :param policy_name: IAM Policy name
+    :param iam_policy: IAM Policy content
+    :iam_user : IAM username
     """
     iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
     LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
