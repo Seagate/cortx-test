@@ -178,26 +178,19 @@ class TestVersioningPutBucket:
     @CTFailOn(error_handler)
     def test_put_invalid_bucket_versioning_32719(self):
         """
-        Test PUT Disable bucket versioning.
-
-        Create bucket.
-        Perform PUT API to Disabled the bucket versioning.
-        Verify the response HTTP status 400 and error message: Bad request.
+        Test PUT Disabled bucket versioning.
         """
         self.log.info("STARTED: PUT Disabled bucket versioning.")
-        versions = defaultdict(list)
         self.log.info("Step 1: Disable bucket versioning")
         try:
             self.s3_ver_test_obj.put_bucket_versioning(
                 bucket_name=self.bucket_name, status="Disabled")
-            #assert_utils.assert_equal(res_code[1], 400)
         except CTException as error:
-            self.log.info("err messg1: %s", error)
-            self.log.info("err messg2: %s", error.message)
-            assert_utils.assert_in("MalformedXML", error)
-            assert_utils.assert_in("MalformedXML", error.message)
-            assert_utils.assert_in("MalformedXML", error.code)
-            assert_utils.assert_in("MalformedXML", error.desc)
+            self.log.info("Step 2: Verify MalformedXML error with Disabled bucket versioning")
+            assert_utils.assert_in("MalformedXML", error.message,
+                                   f"Expected error: MalformedXML Actual error: {error}")
+            self.log.error("Error message: %s", error)
+            self.log.info("Verified that bucket versioning can not be Disabled")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32747')
