@@ -531,7 +531,7 @@ class TestDIDurability:
             assert False
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
-            obj_name = self.object_name + "_size_" + file_size
+            obj_name = self.object_name + "_size_" + str(file_size)
             self.log.info("Step 2: Creating file of size %s", file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
                                                              data_folder_prefix=self.test_dir_path)
@@ -740,7 +740,7 @@ class TestDIDurability:
             assert False
         self.s3_test_obj.create_bucket(self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
-            obj_name = self.object_name + "_size_" + file_size
+            obj_name = self.object_name + "_size_" + str(file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
                                                              data_folder_prefix=self.test_dir_path)
             self.log.info("Step 3: created a corrupted file at location %s", location)
@@ -989,7 +989,7 @@ class TestDIDurability:
             assert False
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
-            obj_name = self.object_name + "_size_" + file_size
+            obj_name = self.object_name + "_size_" + str(file_size)
             self.log.info("Step 2: Creating file of size %s", file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
                                                              data_folder_prefix=self.test_dir_path)
@@ -1042,7 +1042,7 @@ class TestDIDurability:
             assert False
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
-            obj_name = self.object_name + "_size_" + file_size
+            obj_name = self.object_name + "_size_" + str(file_size)
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
                                                              data_folder_prefix=self.test_dir_path)
