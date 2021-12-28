@@ -91,3 +91,4 @@ Restcall_LC:
   accounts_capacity_endpoint: "/api/v2/metrics/capacity/account"
   account_capacity_endpoint: "/api/v2/metrics/capacity/account/{}"
   percentage_compare: 10
+  
