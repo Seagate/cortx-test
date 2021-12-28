@@ -124,6 +124,11 @@ stats_input_options = [
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
+                id='perf_clients_dropdown',
+                placeholder="Select Clients",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
                 id='perf_pfull_dropdown',
                 placeholder="Select Cluster % Fill",
                 style=dict_Style_Stats_input_options
