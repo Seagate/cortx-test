@@ -310,8 +310,8 @@ class IamPolicy(IAMRest):
         :param policy_name: The name of the policy to create.
         :param policy_document: The policy document.
         """
-        response = self.iam.create_policy(PolicyName=policy_name, PolicyDocument=policy_document,
-                                          **kwargs)
+        response = self.iam_resource.create_policy(PolicyName=policy_name,
+                                                   PolicyDocument=policy_document, **kwargs)
 
         return response
 
