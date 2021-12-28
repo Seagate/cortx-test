@@ -28,7 +28,8 @@ import pytest
 
 from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from config import CMN_CFG, PROV_CFG
+from config import CMN_CFG
+from config import PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
