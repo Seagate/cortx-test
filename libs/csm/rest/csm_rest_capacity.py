@@ -197,40 +197,40 @@ class SystemCapacity(RestTestLib):
         """
         self.log.info(
             "Checking HCTL , CSM and Consul healthy byte response are consistent.")
-        cap_df["healthy_consul_hctl"] = cap_df["consul_healthy"] == cap_df["hctl_healthy"]
-        cap_df["healthy_check"] = cap_df["healthy_consul_hctl"] == cap_df["csm_healthy"]
-        cap_df.drop("healthy_consul_hctl", axis=1, inplace=True)
+        cap_df['result'] = ((cap_df['consul_healthy'] == cap_df['hctl_healthy']) & 
+                 (cap_df['consul_healthy'] == cap_df['csm_healthy']))
+        healthy_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul degraded byte response are consistent.")
-        cap_df["degraded_consul_hctl"] = cap_df["consul_degraded"] == cap_df["hctl_degraded"]
-        cap_df["degraded_check"] = cap_df["degraded_consul_hctl"] == cap_df["csm_degraded"]
-        cap_df.drop("degraded_consul_hctl", axis=1, inplace=True)
+        cap_df['result'] = ((cap_df['consul_degraded'] == cap_df['hctl_degraded']) & 
+                 (cap_df['consul_degraded'] == cap_df['csm_degraded']))
+        degraded_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul Critical byte response are consistent.")
-        cap_df["critical_consul_hctl"] = cap_df["consul_critical"] == cap_df["hctl_critical"]
-        cap_df["critical_check"] = cap_df["critical_consul_hctl"] == cap_df["csm_critical"]
-        cap_df.drop("critical_consul_hctl", axis=1, inplace=True)
+        cap_df['result'] = ((cap_df['consul_critical'] == cap_df['hctl_critical']) & 
+                 (cap_df['consul_critical'] == cap_df['csm_critical']))
+        critical_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul damaged byte response are consistent.")
-        cap_df["damaged_consul_hctl"] = cap_df["consul_damaged"] == cap_df["hctl_damaged"]
-        cap_df["damaged_check"] = cap_df["damaged_consul_hctl"] == cap_df["csm_damaged"]
-        cap_df.drop("damaged_consul_hctl", axis=1, inplace=True)
+        cap_df['result'] = ((cap_df['consul_damaged'] == cap_df['hctl_damaged']) & 
+                 (cap_df['consul_damaged'] == cap_df['csm_damaged']))
+        damaged_eq = cap_df["result"].all()
 
         self.log.info(
             "Checking HCTL , CSM and Consul repaired byte response are consistent.")
-        cap_df["repaired_consul_hctl"] = cap_df["consul_repaired"] == cap_df["hctl_repaired"]
-        cap_df["repaired_check"] = cap_df["repaired_consul_hctl"] == cap_df["csm_repaired"]
-        cap_df.drop("repaired_consul_hctl", axis=1, inplace=True)
+        cap_df['result'] = ((cap_df['consul_repaired'] == cap_df['hctl_repaired']) & 
+                 (cap_df['consul_repaired'] == cap_df['csm_repaired']))
+        repaired_eq = cap_df["result"].all()
 
         self.log.info("Checking total bytes adds up to data written")
         cap_df["csm_sum"] = cap_df["csm_healthy"] + cap_df["csm_degraded"] + \
             cap_df["csm_critical"] + \
             cap_df["csm_damaged"] + cap_df["csm_repaired"]
         cap_df["total_check"] = data_written == cap_df["csm_sum"]
-
+        total_chk = cap_df["total_check"].all()
         self.log.info(
             "Summation check of the healthy bytes from each node failure for csm")
         
@@ -250,5 +250,5 @@ class SystemCapacity(RestTestLib):
             "Summation check of the damaged bytes from each node failure for csm")
         data_written_dchk = data_written == actual_written
 
-        result = data_written_hchk and data_written_dchk
+        result = data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and critical_eq and damaged_eq and repaired_eq and total_chk
         return result

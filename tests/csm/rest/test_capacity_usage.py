@@ -66,6 +66,8 @@ class TestSystemCapacity():
         cls.password = []
         cls.num_nodes = len(CMN_CFG["nodes"])
         for node in range(cls.num_nodes):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                continue
             host = CMN_CFG["nodes"][node]["hostname"]
             cls.username.append(CMN_CFG["nodes"][node]["username"])
             cls.password.append(CMN_CFG["nodes"][node]["password"])
@@ -278,6 +280,9 @@ class TestSystemCapacity():
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         for node in range(self.num_nodes+1):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                self.log.debug("Skipping master node...")
+                continue
             self.log.info("[Start] Bringing down Node %s: %s",
                           node, self.node_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
@@ -417,6 +422,7 @@ class TestSystemCapacity():
             "[Start] Fetch degraded capacity on Consul with 0 Node failure")
         resp = self.system_capacity.get_capacity_consul()
         # TBD : Consul output doest have degraded capacity yet.
+        # TBD: Write Function for constructing df from values.
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
@@ -457,6 +463,9 @@ class TestSystemCapacity():
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         for node in range(self.num_nodes+1):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                self.log.debug("Skipping master node...")
+                continue
             self.log.info("[Start] Bringing down Node %s: %s",
                           node, self.node_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
@@ -640,6 +649,9 @@ class TestSystemCapacity():
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         for node in range(self.num_nodes+1):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                self.log.debug("Skipping master node...")
+                continue
             self.log.info("[Start] Bringing down Node %s: %s",
                           node, self.node_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
@@ -784,7 +796,6 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-
         test_cfg = self.csm_conf["test_33928"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
@@ -839,6 +850,9 @@ class TestSystemCapacity():
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         for node in range(self.num_nodes+1):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                self.log.debug("Skipping master node...")
+                continue
             self.log.info("[Start] Bringing down Node %s: %s",
                           node, self.node_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
@@ -1017,6 +1031,9 @@ class TestSystemCapacity():
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         for node in range(self.num_nodes+1):
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                self.log.debug("Skipping master node...")
+                continue
             self.log.info("[Start] Bringing down Node %s: %s",
                           node, self.node_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],

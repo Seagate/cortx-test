@@ -442,4 +442,3 @@ class LogicalNode(Host):
                 node_fqdn = data.split()[6]
                 pod_dict[pod_name.strip()] = node_fqdn.strip()
         return pod_dict
-
