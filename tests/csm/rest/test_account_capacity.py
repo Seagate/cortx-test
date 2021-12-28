@@ -105,7 +105,8 @@ class TestAccountCapacity():
                                                         password=node["password"]))
         cls.restore_pod = cls.restore_method = cls.deployment_name = None
         cls.deployment_backup = None
-
+        if not os.path.exists(TEST_DATA_FOLDER):
+            os.mkdir(TEST_DATA_FOLDER)
     def teardown_method(self):
         """
         Teardown for deleting any account and buckets created during tests
@@ -800,7 +801,7 @@ class TestAccountCapacity():
                                                 secret_key=secret_key)
         resp = system_utils.execute_cmd(command)
         self.buckets_created.append([bucket_name, access_key, secret_key])
-        assert_utils.assert_in("Step 2: Bucket created successfully", resp[1][:-1], resp[1])
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
 
         size = random.randint(10, 100)
         self.log.info("Step: 3 Create a file of size %sMB", size)
@@ -886,7 +887,7 @@ class TestAccountCapacity():
                     "Effect": "Allow",
                     "Action": actions,
                     "Resource": f"arn:aws:s3:::{user1_bucket1}/*",
-                    "Principle": {"AWS": user_arn}
+                    "Principal": {"AWS": user_arn}
                 }
             ]
         }
