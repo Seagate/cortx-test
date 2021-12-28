@@ -29,7 +29,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
-from commons.utils.system_utils import path_exists, remove_file
+from commons.utils.system_utils import path_exists
 from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
@@ -154,4 +154,3 @@ class TestGetBucketVersioning:
         self.log.info("ENDED : Delete newly added S3 Test account")
         resp = self.s3_obj.csm_user_delete_s3account(self.account_name)
         assert resp[0], resp[1]
-        
