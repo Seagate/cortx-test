@@ -748,10 +748,10 @@ class TestDIDurability:
             try:
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=obj_name, file_path=location)
-                self.s3_test_obj.object_download(file_path=self.file_path, bucket_name=self.bucket_name,
-                                                 obj_name=obj_name)
+                self.s3_test_obj.object_download(file_path=self.file_path,
+                                                 bucket_name=self.bucket_name, obj_name=obj_name)
             except CTException as err:
-                self.log.info("Test failed with ", str(err))
+                self.log.info("Test failed with %s", str(err))
                 failed_file_sizes.append(file_size)
         self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
         if failed_file_sizes:
