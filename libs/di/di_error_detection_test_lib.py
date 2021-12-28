@@ -85,12 +85,33 @@ class DIErrorDetection:
         """
         return self.validate_valid_config(default_cfg=True)
 
-    def validate_valid_config(self, default_cfg: bool = False):
+    def validate_enabled_config(self):
+        """
+        function will check for enabled configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are set with True for all
+        and will return false if configs are set otherwise
+        """
+        return self.validate_valid_config(enabled_cfg=True)
+    
+    def validate_disabled_config(self):
+        """
+        function will check for disabled configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are set with False for all
+        and will return False if configs are set otherwise
+        """
+        return self.validate_valid_config(disabled_cfg=True)
+
+
+    def validate_valid_config(self, default_cfg: bool = False, 
+                            enabled_cfg: bool = False,
+                            disabled_cfg: bool = False):
         """
         This function needs optimization.
         :param: default_cfg Boolean
+        :param: enabled_cfg Boolean
         :return:tuple
-        # TODO Needs logic change.
         """
         skip_mark = True
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
@@ -117,80 +138,13 @@ class DIErrorDetection:
         if default_cfg:
             if write_flag and not read_flag and integrity_flag:
                 skip_mark = False
+        elif enabled_cfg:
+            if write_flag and read_flag and integrity_flag:
+                    skip_mark = False
+        elif disabled_cfg:
+            if not write_flag and not read_flag and not integrity_flag:
+                    skip_mark = False
         else:
             if write_flag and integrity_flag:
-                skip_mark = False
-        return True, skip_mark
-
-    def validate_disabled_config(self):
-        """
-        function will check for disabled configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are enabled
-        will return false if configs are disabled
-        """
-        skip_mark = True
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.write_param)
-        LOGGER.debug("%s resp : %s", self.write_param, resp)
-        if resp[0]:
-            write_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.read_param)
-        LOGGER.debug("%s resp : %s", self.read_param, resp)
-        if resp[0]:
-            read_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.integrity_param)
-        LOGGER.debug("%s resp : %s", self.integrity_param, resp)
-        if resp[0]:
-            integrity_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        if not write_flag and not read_flag and not integrity_flag:
-            skip_mark = False
-
-        return True, skip_mark
-
-    def validate_enabled_config(self):
-        """
-        function will check for enabled configs
-        and decide whether test should be skipped during execution or not
-        will return false if configs are enabled
-        """
-        skip_mark = True
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.write_param)
-        LOGGER.debug("%s resp : %s", self.write_param, resp)
-        if resp[0]:
-            write_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.read_param)
-        LOGGER.debug("%s resp : %s", self.read_param, resp)
-        if resp[0]:
-            read_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
-                                                              flag=self.integrity_param)
-        LOGGER.debug("%s resp : %s", self.integrity_param, resp)
-        if resp[0]:
-            integrity_flag = resp[1]
-        else:
-            return False, resp[1]
-
-        if write_flag and read_flag and integrity_flag:
-            skip_mark = False
-
+                    skip_mark = False
         return True, skip_mark
