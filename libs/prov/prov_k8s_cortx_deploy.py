@@ -1169,13 +1169,13 @@ class ProvDeployK8sCortxLib:
             config = {}
             cvg_count = i
             sns_total = num_nodes * cvg_count
-            sns_data = math.ceil(sns_total // 2)
+            sns_data = math.ceil(sns_total / 2)
             sns_data = sns_data + i
             if sns_data >= sns_total:
                 sns_data = sns_data - 1
             sns_parity = sns_total - sns_data
 
-            dix_parity = math.ceil((num_nodes + cvg_count) // 2) + i
+            dix_parity = math.ceil((num_nodes + cvg_count) / 2) + i
             if dix_parity > (num_nodes - 1):
                 dix_parity = num_nodes - 1
 
