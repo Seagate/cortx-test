@@ -509,7 +509,7 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22914')
-    def test_corrupt_data_blocks_obj_motr_verify_range_read_22914(self):
+    def test_22914(self):
         """
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
@@ -965,6 +965,7 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
