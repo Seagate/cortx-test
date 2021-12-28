@@ -1108,8 +1108,9 @@ class ProvDeployK8sCortxLib:
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
             assert_utils.assert_true(resp[0], resp[1])
         row.append("PASS")
-        resp = self.dump_in_csv(row, report_path)
-        LOGGER.info("Report path is %s", resp)
+        if os.path.isfile(report_path):
+            resp = self.dump_in_csv(row, report_path)
+            LOGGER.info("Report path is %s", resp)
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
 
@@ -1128,7 +1129,7 @@ class ProvDeployK8sCortxLib:
             if resp[0]:
                 time_taken = (int(time.time()) - start_time)
                 LOGGER.info("All the services are online. Time Taken : %s", time_taken)
-                response.append(resp)
+                response.extend(resp)
                 response.append(time_taken)
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
