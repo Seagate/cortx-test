@@ -107,6 +107,7 @@ class TestAccountCapacity():
         cls.deployment_backup = None
         if not os.path.exists(TEST_DATA_FOLDER):
             os.mkdir(TEST_DATA_FOLDER)
+
     def teardown_method(self):
         """
         Teardown for deleting any account and buckets created during tests
@@ -679,7 +680,7 @@ class TestAccountCapacity():
         bucket_name = "test-33377-bucket" + str(int(time.time()))
         assert s3_misc.create_bucket(bucket_name, access_key, secret_key), "Failed to create bucket"
         self.buckets_created.append([bucket_name, access_key, secret_key])
-        self.log.info("Step 2: Created bucket %s",bucket_name)
+        self.log.info("Step 2: Created bucket %s", bucket_name)
 
         self.log.info("Step 3: Perform IO operation on %s", bucket_name)
         resp = self.acc_capacity.perform_io_validate_data_usage(
