@@ -89,28 +89,28 @@ class DIErrorDetection:
         """
         function will check for enabled configs
         and decide whether test should be skipped during execution or not
-        function will return True if configs are set with True for all
+        function will return True if configs are not set with True for all
         and will return false if configs are set otherwise
         """
         return self.validate_valid_config(enabled_cfg=True)
-    
+
     def validate_disabled_config(self):
         """
         function will check for disabled configs
         and decide whether test should be skipped during execution or not
-        function will return True if configs are set with False for all
+        function will return True if configs are not set with False for all
         and will return False if configs are set otherwise
         """
         return self.validate_valid_config(disabled_cfg=True)
 
-
-    def validate_valid_config(self, default_cfg: bool = False, 
-                            enabled_cfg: bool = False,
-                            disabled_cfg: bool = False):
+    # pylint: disable-msg=too-many-branches
+    def validate_valid_config(self, default_cfg: bool = False,
+                            enabled_cfg: bool = False, disabled_cfg: bool = False):
         """
         This function needs optimization.
         :param: default_cfg Boolean
         :param: enabled_cfg Boolean
+        :param: disabled_cfg Boolean
         :return:tuple
         """
         skip_mark = True
@@ -140,11 +140,11 @@ class DIErrorDetection:
                 skip_mark = False
         elif enabled_cfg:
             if write_flag and read_flag and integrity_flag:
-                    skip_mark = False
+                skip_mark = False
         elif disabled_cfg:
             if not write_flag and not read_flag and not integrity_flag:
-                    skip_mark = False
+                skip_mark = False
         else:
             if write_flag and integrity_flag:
-                    skip_mark = False
+                skip_mark = False
         return True, skip_mark
