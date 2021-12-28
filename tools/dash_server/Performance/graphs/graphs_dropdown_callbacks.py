@@ -764,7 +764,7 @@ def update_clients_dropdown(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if not all(
+    if not all( # pylint: disable=no-else-raise
         [xfilter, release_combined, branch, option1, nodes]
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
