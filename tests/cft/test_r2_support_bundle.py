@@ -441,6 +441,35 @@ class TestR2SupportBundle:
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31255")
+    def test_31255(self):
+        """
+        Validate Utils rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking Utils rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
+                if constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils'] < (len(lines) - 1):
+                    assert_utils.assert_true(False, f"Max rotating Utils log files "
+                                                    f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']} "
+                                                    f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated Utils rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31248")
     def test_31248(self):
         """
