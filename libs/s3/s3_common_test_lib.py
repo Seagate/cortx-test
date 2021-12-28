@@ -282,6 +282,28 @@ def s3_ios(bucket=None,
     LOG.info("ENDED: s3 io's operations.")
 
 
+def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_path: str,
+                             mb_count: int) -> None:
+    """
+    This function creates a bucket and uploads an object to the bucket.
+
+    :param s3_tst_lib: s3 test lib object
+    :param bucket_name: Name of bucket to be created
+    :param obj_name: Name of an object to be put to the bucket
+    :param file_path: Path of the file to be created and uploaded to bucket
+    :param mb_count: Size of file in MBs
+    """
+    LOG.info("Creating a bucket %s", bucket_name)
+    resp = s3_tst_lib.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Created a bucket %s", bucket_name)
+    system_utils.create_file(file_path, mb_count)
+    LOG.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
+    resp = s3_tst_lib.put_object(bucket_name, obj_name, file_path)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
+
+
 class S3BackgroundIO:
     """Class to perform/handle background S3 IOs for S3 tests using S3bench."""
 

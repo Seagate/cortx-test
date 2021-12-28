@@ -24,6 +24,7 @@
 import logging
 from botocore.exceptions import ClientError
 
+from commons.utils.s3_utils import poll
 from config.s3 import S3_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
@@ -52,6 +53,7 @@ class IamPolicyTestLib(IamPolicy):
         :param endpoint_url: endpoint url
         :param s3_cert_path: s3 certificate path
         """
+        self.sync_delay = S3_CFG["sync_delay"]
         super().__init__(
             access_key,
             secret_key,
@@ -299,3 +301,19 @@ class IamPolicyTestLib(IamPolicy):
             raise CTException(err.S3_CLIENT_ERROR, error.args)
 
         return True, response
+
+    def check_policy_in_attached_policies(self, user: str, policy_arn: str, delay: int = None):
+        """
+        Check if policy with given Policy ARN is attached to a user
+
+        :param user: User name
+        :param policy_arn: Policy ARN
+        :param delay: Time for list attached policy polling
+        """
+        if not delay:
+            delay = self.sync_delay
+        listed_policies = poll(super().list_attached_user_policies, user, timeout=delay)
+        for policy in listed_policies["AttachedPolicies"]:
+            if policy["PolicyArn"] == policy_arn:
+                return True
+        return False
