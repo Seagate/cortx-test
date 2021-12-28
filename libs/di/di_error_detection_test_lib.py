@@ -25,6 +25,7 @@ These are top level functions and classes used by test classes.
 import logging
 
 from commons.constants import const
+from commons.utils import system_utils
 from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
@@ -148,3 +149,16 @@ class DIErrorDetection:
             if write_flag and integrity_flag:
                 skip_mark = False
         return True, skip_mark
+
+    def get_file_and_csum(self, size, data_folder_prefix):
+        """
+        this function will create a corrupted file
+        :param size: size of file
+        :param data_folder_prefix: data folder prefix
+        :return location of file
+        """
+        buff, csum = self.data_gen.generate(size=size, seed=self.data_gen.get_random_seed())
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csum, size=size,
+                                                  data_folder_prefix=data_folder_prefix)
+        csm = system_utils.calculate_checksum(file_path=location, filter_resp=True)
+        return location, csm

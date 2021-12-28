@@ -49,6 +49,7 @@ HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
 HA_POD_NAME_PREFIX = "cortx-ha-pod"
+SERVER_POD_NAME_PREFIX = "cortx-server-pod"
 
 # RAS Paths
 BYTES_TO_READ = 8000
