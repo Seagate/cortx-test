@@ -516,7 +516,6 @@ class TestR2SupportBundle:
                                                     f"does not exist on pod: {pod} resp: {resp}")
                 lines = resp.splitlines()
                 self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
-                self.LOGGER.info(f"max files: {constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} and actual: {len(lines) - 1}")
                 if constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare'] < (len(lines) - 1):
                     assert_utils.assert_true(False, f"Max rotating HARE log files "
                                             f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} "
