@@ -194,11 +194,11 @@ class TestVersioningPutBucket:
         except (ClientError, Exception) as error:
             self.log.info("Http error raised:::::: %s", error)
             httpCode = error.args[3][['httpCode']]
-            self.log.info("Http code2::::%s", error.args[3][['httpCode']])
+            #self.log.info("Http code2::::%s", error.args[3][['httpCode']])
             self.log.info("Http error raisedMessage:::::: %s", error["Error Message"])
             self.log.info("Http code raised:::::: %s", error["Other info"]['httpCode'])
             self.log.info("Http code1::::%s", error.args[0])
-            self.log.info("Http code2::::%s", error.args[3][['httpCode']])
+            #self.log.info("Http code2::::%s", error.args[3][['httpCode']])
             self.log.info("Http error raised:::::: %s", error["Error Message"])
             self.log.info("response returned : %s", error.response)
             httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
