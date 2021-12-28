@@ -106,8 +106,8 @@ class DIErrorDetection:
         return self.validate_valid_config(disabled_cfg=True)
 
     # pylint: disable-msg=too-many-branches
-    def validate_valid_config(self, default_cfg: bool = False,
-                            enabled_cfg: bool = False, disabled_cfg: bool = False):
+    def validate_valid_config(self, default_cfg: bool = False, enabled_cfg: bool = False,
+                              disabled_cfg: bool = False):
         """
         This function needs optimization.
         :param: default_cfg Boolean
