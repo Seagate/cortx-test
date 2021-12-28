@@ -331,6 +331,30 @@ class TestR2SupportBundle:
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31252")
+    def test_31252(self):
+        """
+        Validate CSM rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking CSM rotating log files are as per frequency configured")
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
+            if "No such file" in resp:
+                assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
+                                                f"does not exist on pod: {pod} resp: {resp}")
+            lines = resp.splitlines()
+            self.LOGGER.info("CSM log files on path %s: %s", constants.LOG_PATH_CSM, resp)
+            if constants.MAX_NO_OF_ROTATED_LOG_FILES['CSM'] < (len(lines) - 1):
+                assert_utils.assert_true(False, f"Max rotating CSM log files "
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['CSM']} "
+                                        f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated CSM rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31247")
     def test_31247(self):
         """
