@@ -87,7 +87,14 @@ class S3VersioningTestLib(Versioning):
                          error)
             LOGGER.info("response returned : %s", error.response)
             httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode)
+            if httpCode == 400:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=400)
+            elif httpCode == 403:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=403)
+            elif httpCode == 404:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0], httpCode=404)
+            else:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -173,7 +180,7 @@ class S3VersioningTestLib(Versioning):
             httpCode = error.response['ResponseMetadata']['HTTPStatusCode']
             LOGGER.info("HTTP status code returned : %s", httpCode)
             if httpCode == 404:
-                LOGGER.info("Not Found, Bucket not Found")
+                LOGGER.info("Not Found, resource not Found")
                 return True, httpCode
             else:
                 LOGGER.error("Error in %s: %s",
