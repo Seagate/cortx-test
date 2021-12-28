@@ -260,7 +260,7 @@ def update_percentfill_dropdown(
     options = None
     value = None
     disabled = False
-    if not all(
+    if not all( # pylint: disable=no-else-raise
         [xfilter, branch, option1, bench, nodes, clients]
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
@@ -387,7 +387,7 @@ def update_iterations_dropdown(
     options = None
     value = None
     disabled = False
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -458,7 +458,7 @@ def update_sessions_dropdown(
     options = None
     value = None
     disabled = False
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, itrns, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -532,7 +532,7 @@ def update_buckets_dropdown(
     options = None
     value = None
     disabled = False
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, itrns, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -620,7 +620,7 @@ def update_branches_dropdown_2(release_combined, flag, current_value):
     options = None
     value = None
     disabled = False
-    if not flag:
+    if not flag: # pylint: disable=no-else-raise
         raise PreventUpdate
     if release_combined is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
@@ -829,7 +829,7 @@ def update_percentfill_dropdown_2(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if not all(
+    if not all( # pylint: disable=no-else-raise
         [xfilter, branch, option1, bench, nodes, clients]
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
@@ -896,7 +896,7 @@ def update_custom_dropdown_2(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients]) and pfill is None
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
@@ -966,7 +966,7 @@ def update_iterations_dropdown_2(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -1043,7 +1043,7 @@ def update_sessions_dropdown_2(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, itrns, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -1122,7 +1122,7 @@ def update_buckets_dropdown_2(
     disabled = False
     if not flag:
         raise PreventUpdate
-    if (
+    if ( # pylint: disable=no-else-raise
         not all([xfilter, branch, option1, bench, nodes, clients, itrns, custom])
         and pfill is None
     ):  # pylint: disable=no-else-raise
@@ -1181,7 +1181,7 @@ def update_object_size_dropdown(
     value = None
     disabled = False
 
-    if not all(
+    if not all( # pylint: disable=no-else-raise
         [xfilter, release_combined, branch, build, bench, sessions]
     ):  # pylint: disable=no-else-raise
         raise PreventUpdate
