@@ -544,7 +544,7 @@ class TestR2SupportBundle:
     @pytest.mark.tags("TEST-31262")
     def test_31262(self):
         """
-        Validate Motr log path exists
+        Validate Motr log file size
         """
         self.LOGGER.info("Checking Motr log file size")
 
@@ -597,3 +597,57 @@ class TestR2SupportBundle:
                                                         f"on path: {log_path_m0d}")
 
         self.LOGGER.info("Successfully validated Motr log file size for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31256")
+    def test_31256(self):
+        """
+        Validate Motr rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Motr rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                            f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                        if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(lines_m0d) - 1):
+                            assert_utils.assert_true(False, f"Max rotating trace log files supported "
+                                    f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
+                                    f"and actual no of files are: {len(lines_m0d) - 1}")
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+                            act_files = resp.splitlines()
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s", log_path_addb_stobs, resp)
+                            if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(act_files) - 1):
+                                assert_utils.assert_true(False, f"Max rotating addb log files supported "
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
+                                        f"and actual no of files are: {len(lines_m0d) - 1}")
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr rotating log files are as per "
+                         "frequency configured for all pods")
