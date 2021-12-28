@@ -569,6 +569,7 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("Successfully validated Motr log file paths for all pods")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31262")
@@ -630,6 +631,7 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("Successfully validated Motr log file size for all pods")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31256")
