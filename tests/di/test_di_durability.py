@@ -28,34 +28,29 @@ import pytest
 import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
-from commons.constants import PROD_FAMILY_LC
-from commons.constants import PROD_FAMILY_LR
-from commons.constants import PROD_TYPE_K8S
-from commons.constants import PROD_TYPE_NODE
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
-from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from config import di_cfg
+from commons.constants import const
+from commons.constants import MB, KB
 from config import CMN_CFG
 from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import S3_CFG
-from commons.constants import const, MB
 from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3 import cortxcli_test_lib
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from libs.di import di_lib
-from libs.di.di_mgmt_ops import ManagementOPs
+from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
+from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3 import s3_s3cmd
+
 
 
 class TestDIDurability:
@@ -595,11 +590,11 @@ class TestDIDurability:
         """
         valid, skipmark = self.di_err_lib.validate_valid_config()
         if not valid or skipmark:
-            self.log.info("Skipping test  checksum flag is not disabled" )
+            self.log.info("Skipping test  checksum flag is not disabled")
             pytest.skip()
 
         self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
-                    "uploaded object should succeed ( 30 MB -100 MB).")
+                      "uploaded object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
         command = self.jc_obj.create_cmd_format(self.bucket_name, "mb",
                                         jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
@@ -612,6 +607,9 @@ class TestDIDurability:
             test_file= "data_durability{}_TEST_22916_{}_MB_upload.txt" \
                             .format(perf_counter_ns(),str(size))
             file_path_upload = os.path.join(self.test_dir_path, test_file)
+            self.log.info("Step 1: create a file of size %sMB", size)
+            file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
+
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
 
@@ -626,7 +624,6 @@ class TestDIDurability:
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
-
             self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
             test_file_download= "data_durability{}_TEST_22916_{}_MB_download.txt" \
                             .format(perf_counter_ns(),str(size))
@@ -1012,39 +1009,6 @@ class TestDIDurability:
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-29817')
-    def test_29817(self):
-        """
-        S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
-        and verify read (Get).
-        SZ <= Data Unit Sz
-
-        """
-        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
-                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        if self.di_err_lib.validate_default_config():
-            pytest.skip()
-        # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: upload a object")
-        # to do put object using s3cmd
-        self.log.info("Step 3: download a object")
-        # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
-        #                                                     my_key=self.object_name,
-        #                                                     start_byte=8888,
-        #                                                     stop_byte=9999)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
-        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
-                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -1084,3 +1048,59 @@ class TestDIDurability:
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
 
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29817')
+    def test_29817(self):
+        """
+        S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
+        and verify read (Get).
+        SZ <= Data Unit Sz
+
+        """
+        size = 512 * KB
+        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
+                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        if not valid or skip_mark:
+            pytest.skip()
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Step 1: Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        self.di_err_lib.create_file(size, first_byte='z', name=self.file_path)
+        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2: enabled data corruption")
+        self.log.info("Step 3: upload a file using s3cmd multipart upload")
+
+        odict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
+                     ssl=True, no_check_certificate=False,
+                     host_port=CMN_CFG['host_port'], host_bucket='host-bucket',
+                     disable_multipart=True)
+
+        s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
+                                                 file_path=self.file_path, **odict)
+
+        object_uri = 's3://' + self.bucket_name + os.path.split(self.file_path)[-1]
+        dodict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
+                      ssl=True, no_check_certificate=False,
+                      host_port=CMN_CFG['host_port'], object_uri=object_uri)
+        try:
+            s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
+                                                       file_path=self.file_path + '.bak', **dodict)
+        except Exception as fault:
+            self.log.error(fault)
+        else:
+            assert False, 'Download passed'
