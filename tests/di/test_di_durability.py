@@ -37,6 +37,7 @@ from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from commons.constants import const
 from commons.constants import MB, KB
 from config import CMN_CFG
+from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import S3_CFG
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
@@ -46,12 +47,36 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3 import s3_s3cmd
 
 
+
 class TestDIDurability:
     """DI Durability Test suite."""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.jc_obj = JCloudClient()
+        cls.log.info("setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = cls.jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            cls.log.info(res)
+            assert_utils.assert_true(
+                res, "Error: jcloudclient.jar or jclient.jar file does not exists")
+        resp = cls.jc_obj.update_jclient_jcloud_properties()
+        assert_utils.assert_true(resp, resp)
 
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
@@ -563,7 +588,7 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
-        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        valid, skipmark = self.di_err_lib.validate_valid_config()
         if not valid or skipmark:
             self.log.info("Skipping test  checksum flag is not disabled")
             pytest.skip()
@@ -571,33 +596,56 @@ class TestDIDurability:
         self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
                       "uploaded object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
-
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-
+        command = self.jc_obj.create_cmd_format(self.bucket_name, "mb",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+        resp = system_utils.execute_cmd(command)
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
         for size in NORMAL_UPLOAD_SIZES_IN_MB:
+            self.log.info("Create a file of size %sMB", size)
+            test_file= "data_durability{}_TEST_22916_{}_MB_upload.txt" \
+                            .format(perf_counter_ns(),str(size))
+            file_path_upload = os.path.join(self.test_dir_path, test_file)
             self.log.info("Step 1: create a file of size %sMB", size)
             file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
+
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
 
             system_utils.create_file(file_path_upload, size)
-            self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
-
-            self.log.info("Step 1: Created a bucket and upload object of %s MB into a bucket.",
-                          size)
-            self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
-            file_path_download = self.file_path + "TEST_22916_" + str(size) + "MB_download"
+            self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
+                        "bucket.", size)
+            put_cmd_str = "{} {}".format("put", file_path_upload)
+            command = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
+                                            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                            chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
+            self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
+            self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
+            test_file_download= "data_durability{}_TEST_22916_{}_MB_download.txt" \
+                            .format(perf_counter_ns(),str(size))
+            file_path_download= os.path.join(self.test_dir_path, test_file_download)
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-
-            res = self.s3_test_obj.object_download(
-                self.bucket_name, self.object_name, file_path_download)
-            assert_utils.assert_true(res[0], res)
-            self.log.info("Step 2: Download chunk uploaded object is successful.")
-        self.log.info(
-            "ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
-            "succeed ( 30 MB -100 MB).")
+            bucket_str = "{0}/{1} {2}".format(self.bucket_name, test_file, test_file_download)
+            command = self.jc_obj.create_cmd_format(bucket_str, "get",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
+            self.log.info("Step 3: Object was downloaded successfully")
+            self.log.info("Step 4:Validate checksum of uploaded and downloded files")
+            result = system_utils.validate_checksum(file_path_upload,file_path_download)
+            if not result:
+                assert_utils.assert_true(False, "Checksum validation failed")
+            self.log.info("Step 4:Checksum and ETAG validation is successful")
+            self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
+                    "uploaded object should succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
