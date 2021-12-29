@@ -160,7 +160,7 @@ class TestCsmUser():
             remote_path=self.csm_copy_path, local_path=self.local_csm_path)
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream)
+        data = yaml.load(stream, Loader=yaml.Loader)
         s3_endpoint = data['S3']['iam']['endpoints']
         s3_host = data['S3']['iam']['host']
         data['S3']['iam']['endpoints'] = "https://cortx-io-svc1:9443"
@@ -204,7 +204,7 @@ class TestCsmUser():
         pod_name = self.csm_cluster.get_pod_name(resp_node)
         self.log.info("Step 5: Edit csm.conf file for correct s3 data endpoint")
         stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream)
+        data = yaml.load(stream, Loader=yaml.Loader)
         data['S3']['iam']['endpoints'] = s3_endpoint
         data['S3']['iam']['host'] = s3_host
         with open(self.local_csm_path, 'w') as yaml_file:
