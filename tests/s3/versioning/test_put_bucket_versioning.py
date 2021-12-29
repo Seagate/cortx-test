@@ -224,7 +224,8 @@ class TestPutBucketVersioning:
         self.log.info("Step 1: Perform PUT Bucket Versioning API with status set to Enabled")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(res[1]['Status'], "Enabled")
+        status = res[1]['Status']
+        assert_utils.assert_equal(status, "Enabled")
         self.log.info("Creating new account.")
         access_key, secret_key = self.create_account()
         s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
