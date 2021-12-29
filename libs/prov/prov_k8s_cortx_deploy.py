@@ -1019,7 +1019,7 @@ class ProvDeployK8sCortxLib:
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         custom_repo_path = kwargs.get("custom_repo_path",
                                       PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
-        report_path = kwargs.get("report_filepath")
+        report_path = kwargs.get("report_filepath", PROV_CFG["k8s_cortx_deploy"]["report_file"])
         row = list()
         row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
