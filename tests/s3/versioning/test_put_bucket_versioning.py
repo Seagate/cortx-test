@@ -196,9 +196,9 @@ class TestPutBucketVersioning:
             res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
-            self.log.info("Verify InvalidAccessKeyId error with Suspended bucket versioning")
-            assert_utils.assert_in("InvalidAccessKeyId", error.message,
-                                   f"Expected error: InvalidAccessKeyId Actual error: {error}")
+            self.log.info("Verify Access Denied error with Suspended bucket versioning")
+            assert_utils.assert_in("Access Denied", error.message,
+                                   f"Expected error: Access Denied Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be Disabled")
         try:
