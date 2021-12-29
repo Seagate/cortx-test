@@ -145,7 +145,8 @@ class TestPutBucketVersioning:
                                                   endpoint_url=S3_CFG["s3_url"])
         try:
             self.log.info("Step 1: PUT Enabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Enabled")
+            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                            status="Enabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Enabled bucket versioning")
@@ -155,7 +156,8 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Enabled")
         try:
             self.log.info("Step 2: PUT Suspended bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                            status="Suspended")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Suspended bucket versioning")
@@ -177,7 +179,8 @@ class TestPutBucketVersioning:
                 bucket_name=self.bucket_name, status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
-            self.log.info("Step 2: Verify MalformedXML error with Disabled bucket versioning")
+            self.log.info("Step 2: Verify MalformedXML error with "
+                          "Disabled bucket versioning")
             assert_utils.assert_in("MalformedXML", error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
@@ -245,7 +248,8 @@ class TestPutBucketVersioning:
             assert_utils.assert_in("Access Denied", error.message,
                                    f"Expected error: Access Denied Actual error: {error}")
             self.log.error("Error message: %s", error)
-            self.log.info("Verified that bucket versioning can not be Disabled by non bucket owner")
+            self.log.info("Verified that bucket versioning can not be "
+                          "Disabled by non bucket owner")
         try:
             self.log.info("Step 3: PUT Unversioned bucket versioning by  bucket owner.")
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
@@ -256,7 +260,8 @@ class TestPutBucketVersioning:
             assert_utils.assert_in("MalformedXML", error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
-            self.log.info("Verified that bucket versioning can not be Unversioned by bucket owner")
+            self.log.info("Verified that bucket versioning can not be "
+                          "Unversioned by bucket owner")
         self.log.info("Ended: PUT Unversioned/Disabled bucket versioning "
                       "when versioning set Enabed/Suspended.")
 
@@ -280,7 +285,8 @@ class TestPutBucketVersioning:
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be Enabled for deleted bucket")
         try:
-            self.log.info("Step 3: Perform PUT Bucket Versioning API with status set to Suspended")
+            self.log.info("Step 3: Perform PUT Bucket Versioning API with "
+                          "status set to Suspended")
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status="Suspended")
             self.log.info("response: %s", res)
@@ -289,5 +295,6 @@ class TestPutBucketVersioning:
             assert_utils.assert_in("NoSuchBucket", error.message,
                                    f"Expected error: NoSuchBucket Actual error: {error}")
             self.log.error("Error message: %s", error)
-            self.log.info("Verified that bucket versioning can not be Suspended for deleted bucket")
+            self.log.info("Verified that bucket versioning can not be "
+                          "Suspended for deleted bucket")
         self.log.info("ENDED: PUT Enabled/Suspended bucket versioning when bucket is deleted.")
