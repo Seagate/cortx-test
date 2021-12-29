@@ -3,22 +3,27 @@ test_dummy:
     start_range: 10
     stop_range: 100
 test_33899:
+  err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
 test_33919:
+  err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
 test_33920:
+  err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
 test_33928:
+  err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
 test_33929:
+  err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
