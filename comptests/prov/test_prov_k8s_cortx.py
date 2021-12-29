@@ -73,7 +73,7 @@ class TestProvK8Cortx:
                         sns_parity,sns_spare, dix_data,
                         dix_parity, dix_spare,
                         cvg_count, data_disk_per_cvg, master_node_list,
-                        worker_node_list, **kwargs):
+                        worker_node_list):
         """
         This method is used for deployment with various config on One node
         param: sns_data
@@ -111,7 +111,7 @@ class TestProvK8Cortx:
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, master_node_list,
                                             master_node_list, system_disk_dict,
                                             self.deploy_lc_obj.docker_username,
-                                            self.deploy_lc_obj.docker_password, 
+                                            self.deploy_lc_obj.docker_password,
                                             self.deploy_lc_obj.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cortx Cluster Deployed Successfully")
