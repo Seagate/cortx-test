@@ -42,6 +42,8 @@ from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 class TestPutBucketVersioning:
     """ Test PUT bucket versioning for Enabled/Suspended state."""
 
+    # pylint:disable=attribute-defined-outside-init
+    # pylint:disable-msg=too-many-instance-attributes
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -139,8 +141,8 @@ class TestPutBucketVersioning:
         """ Test PUT Enabled/Suspended bucket versioning by non bucket owner. """
         self.log.info("STARTED: PUT Enabled/Suspended bucket versioning by non bucket owner")
         access_key, secret_key = self.create_account()
-        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
-                                                  s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
+        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key,
+                                                  endpoint_url=S3_CFG["s3_url"])
         try:
             self.log.info("Step 1: PUT Enabled bucket versioning by non bucket owner.")
             res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Enabled")
@@ -189,11 +191,12 @@ class TestPutBucketVersioning:
         """ Test PUT Unversioned/Disable bucket versioning when versioning not set. """
         self.log.info("STARTED: PUT Disabled bucket versioning by non bucket owner.")
         access_key, secret_key = self.create_account()
-        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
-                                                       s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
+        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key,
+                                                  endpoint_url=S3_CFG["s3_url"])
         try:
             self.log.info("Step 1: PUT Disabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Disabled")
+            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                            status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Suspended bucket versioning")
@@ -203,14 +206,16 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Disabled")
         try:
             self.log.info("Step 2: PUT Unversioned bucket versioning by bucket owner.")
-            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Unversioned")
+            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                             status="Unversioned")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify MalformedXML error with Unversioned bucket versioning")
             assert_utils.assert_in("MalformedXML", error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
-            self.log.info("Verified that bucket versioning can not be Unversioned by bucket owner")
+            self.log.info("Verified that bucket versioning can not be "
+                          "Unversioned by bucket owner")
         self.log.info("ENDED: PUT Disabled bucket versioning by non bucket owner.")
 
     @pytest.mark.s3_ops
@@ -220,18 +225,20 @@ class TestPutBucketVersioning:
         """
         Test PUT Unversioned/Disable bucket versioning when versioning set Enabed/Suspended.
         """
-        self.log.info("STARTED: PUT Unversioned/Disabled bucket versioning when versioning set Enabed/Suspended.")
+        self.log.info("STARTED: PUT Unversioned/Disabled bucket versioning "
+                      "when versioning set Enabed/Suspended.")
         self.log.info("Step 1: Perform PUT Bucket Versioning API with status set to Enabled")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("response: %s", res)
         self.log.info("Creating new account.")
         access_key, secret_key = self.create_account()
-        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
-                                                       s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
+        s3_new_ver_test_obj = S3VersioningTestLib(access_key, secret_key,
+                                                  endpoint_url=S3_CFG["s3_url"])
         try:
             self.log.info("Step 2: PUT Disabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Disabled")
+            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                            status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Disabled bucket versioning")
@@ -241,7 +248,8 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Disabled by non bucket owner")
         try:
             self.log.info("Step 3: PUT Unversioned bucket versioning by  bucket owner.")
-            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Unversioned")
+            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                             status="Unversioned")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify MalformedXML error with Unversioned bucket versioning")
@@ -249,7 +257,8 @@ class TestPutBucketVersioning:
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be Unversioned by bucket owner")
-        self.log.info("Ended: PUT Unversioned/Disabled bucket versioning when versioning set Enabed/Suspended.")
+        self.log.info("Ended: PUT Unversioned/Disabled bucket versioning "
+                      "when versioning set Enabed/Suspended.")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-33514')
@@ -272,7 +281,8 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Enabled for deleted bucket")
         try:
             self.log.info("Step 3: Perform PUT Bucket Versioning API with status set to Suspended")
-            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                             status="Suspended")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify NoSuchBucket error with Suspended bucket versioning")
