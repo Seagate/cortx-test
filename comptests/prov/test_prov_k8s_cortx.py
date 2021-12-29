@@ -67,8 +67,10 @@ class TestProvK8Cortx:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
-    def test_deployment_config(self, sns_data, sns_parity,
-                        sns_spare, dix_data,
+    # pylint: disable=R0915
+    # pylint: disable=too-many-arguments,too-many-locals
+    def test_deployment_config(self, sns_data,
+                        sns_parity,sns_spare, dix_data,
                         dix_parity, dix_spare,
                         cvg_count, data_disk_per_cvg, master_node_list,
                         worker_node_list, **kwargs):
@@ -109,7 +111,8 @@ class TestProvK8Cortx:
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, master_node_list,
                                             master_node_list, system_disk_dict,
                                             self.deploy_lc_obj.docker_username,
-                                            self.deploy_lc_obj.docker_password, self.deploy_lc_obj.git_script_tag)
+                                            self.deploy_lc_obj.docker_password, 
+                                            self.deploy_lc_obj.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cortx Cluster Deployed Successfully")
 
@@ -412,4 +415,3 @@ class TestProvK8Cortx:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.master_node_list)
         row_list.append(['config_2'])
-        
