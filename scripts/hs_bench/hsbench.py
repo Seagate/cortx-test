@@ -69,13 +69,13 @@ def check_log_file_error(file_path, errors=None):
         errors = ["failed ", "panic", "status code",
                   "does not exist", "InternalError", "send request failed"]
     error_found = False
-    LOGGER.info("Debug: Log File Path %d",file_path)
+    LOGGER.info("Debug: Log File Path %s",file_path)
     with open(file_path, "r", encoding="utf-8") as hs_log_file:
         for line in hs_log_file:
             for error in errors:
                 if error.lower() in line.lower():
                     error_found = True
-                    LOGGER.error("%d Found in HSBench Run : %d",error, line)
+                    LOGGER.error("%s Found in HSBench Run : %s",error, line)
                     return error_found
     return error_found
 
@@ -130,7 +130,7 @@ def hsbench(
     result = []
     # Creating log file
     log_path = create_log(result, log_file_prefix, obj_size)
-    LOGGER.info("Running hs bench tool")
+    LOGGER.info("Running hsbench tool")
     # GO command formatter
     cmd = f"./hsbench -a={access_key} -s={secret_key} " \
           f"-u={end_point} -d={test_duration} -z={obj_size} " \

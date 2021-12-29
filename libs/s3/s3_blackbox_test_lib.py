@@ -103,8 +103,10 @@ class JCloudClient:
 
         return resp
 
+    # pylint: disable=too-many-arguments
     @staticmethod
-    def create_cmd_format(bucket, operation, jtool=None, chunk=None):
+    def create_cmd_format(bucket, operation, jtool=None, chunk=None,
+                          access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Function forms a command to perform specified operation.
 
@@ -113,19 +115,21 @@ class JCloudClient:
         :param str operation: type of operation to be performed on s3
         :param str jtool: Name of the java jar tool
         :param bool chunk: Its accepts chunk upload, if True
+        :param access_key: Access Key for S3 operation
+        :param secret_key: Secret Key for S3 operation
         :return: str command: cli command to be executed
         """
         if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
-                ACCESS_KEY, SECRET_KEY)
+                access_key, secret_key)
             bucket_url = "s3://{}".format(bucket)
             cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
                                           aws_keys_str, "-p")
         else:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
-                ACCESS_KEY, SECRET_KEY)
+                access_key, secret_key)
             bucket_url = "s3://{}".format(bucket)
             if chunk:
                 cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
