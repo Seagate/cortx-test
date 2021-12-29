@@ -129,6 +129,81 @@ class S3VersioningTestLib(Versioning):
 
         return True, response
 
+    def get_object_version(self,
+                           bucket: str = None,
+                           key: str = None,
+                           version_id: str = None) -> tuple:
+        """
+        Get a version of an object.
+
+        :param bucket: Target bucket for GET Object with VersionId call.
+        :param key: Target key for GET Object with VersionId call.
+        :param version_id: Target version ID for GET Object with VersionId call.
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Getting the version of the object")
+        try:
+            response = super().get_object_version(
+                bucket=bucket, key=key, version_id=version_id)
+            LOGGER.info("Successfully retrieved the version of the object: %s", response)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3VersioningTestLib.get_object_version.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+    def head_object_version(self,
+                            bucket: str = None,
+                            key: str = None,
+                            version_id: str = None) -> tuple:
+        """
+        Get the metadata of an object's version.
+
+        :param bucket: Target bucket for HEAD Object with VersionId call.
+        :param key: Target key for HEAD Object with VersionId call.
+        :param version_id: Target version ID for HEAD Object with VersionId call.
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Getting the metadata of the object's version")
+        try:
+            response = super().head_object_version(
+                bucket=bucket, key=key, version_id=version_id)
+            LOGGER.info("Successfully retrieved object version's metadata: %s", response)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3VersioningTestLib.head_object_version.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+    def delete_object_version(self,
+                              bucket: str = None,
+                              key: str = None,
+                              version_id: str = None) -> tuple:
+        """
+        Delete an object's version
+
+        :param bucket: Target bucket for DELETE Object with VersionId call.
+        :param key: Target key for DELETE Object with VersionId call.
+        :param version_id: Target version ID for DELETE Object with VersionId call.
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Deleting the object's version")
+        try:
+            response = super().delete_object_version(
+                bucket=bucket, key=key, version_id=version_id)
+            LOGGER.info("Successfully deleted the object's version: %s", response)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3VersioningTestLib.delete_object_version.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     def check_list_object_versions(self,
                                    bucket_name: str = None,
                                    expected_versions: dict = None) -> None:
