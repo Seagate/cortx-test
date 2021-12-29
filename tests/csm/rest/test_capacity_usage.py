@@ -24,6 +24,7 @@ from http import HTTPStatus
 import logging
 import time
 import random
+from random import SystemRandom
 import pytest
 from libs.csm.rest.csm_rest_capacity import SystemCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
@@ -47,6 +48,7 @@ class TestSystemCapacity():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.system_capacity = SystemCapacity()
+        cls.cryptogen = SystemRandom()
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_capacity.yaml")
@@ -192,7 +194,7 @@ class TestSystemCapacity():
             # Capacity checks
             self.log.info("[Start] Start some IOs on %s", node)
             obj = f"object{self.s3_user}.txt"
-            write_bytes_mb = random.randint(
+            write_bytes_mb = self.cryptogen.randrange(
                 test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
@@ -497,7 +499,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Start some IOs on %s", node)
             obj = f"object{self.s3_user}.txt"
-            write_bytes_mb = random.randint(
+            write_bytes_mb = self.cryptogen.randrange(
                 test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
@@ -618,6 +620,7 @@ class TestSystemCapacity():
         assert self.system_capacity.verify_degraded_capacity_all(
             cap_df, self.num_nodes), "Overall check failed."
 
+    # pylint: disable-msg=too-many-locals
     # pylint: disable-msg=too-many-statements
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
@@ -723,7 +726,7 @@ class TestSystemCapacity():
             assert s3_misc.create_bucket(
                 bucket, akey, skey), "Failed to create bucket."
 
-            write_bytes_mb = random.randint(
+            write_bytes_mb = self.cryptogen.randrange(
                 test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
@@ -1126,7 +1129,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Start some IOs on %s", node)
             obj = f"object{self.s3_user}.txt"
-            write_bytes_mb = random.randint(
+            write_bytes_mb = self.cryptogen.randrange(
                 test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,

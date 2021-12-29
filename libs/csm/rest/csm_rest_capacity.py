@@ -106,6 +106,7 @@ class SystemCapacity(RestTestLib):
                                           headers=self.headers)
         return response
 
+    # pylint: disable=too-many-arguments
     # pylint: disable-msg=too-many-locals
     def verify_degraded_capacity(
             self, resp: dict, healthy=None, degraded=None, critical=None, damaged=None,
