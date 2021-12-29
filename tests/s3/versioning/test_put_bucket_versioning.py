@@ -279,5 +279,5 @@ class TestPutBucketVersioning:
             assert_utils.assert_in("NoSuchBucket", error.message,
                                    f"Expected error: NoSuchBucket Actual error: {error}")
             self.log.error("Error message: %s", error)
-            self.log.info("Verified that bucket versioning can not be EnSuspendedabled for deleted bucket")
+            self.log.info("Verified that bucket versioning can not be Suspended for deleted bucket")
         self.log.info("ENDED: PUT Enabled/Suspended bucket versioning when bucket is deleted.")
