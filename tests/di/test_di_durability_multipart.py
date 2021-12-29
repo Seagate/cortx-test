@@ -134,7 +134,7 @@ def setup_minio(request):
 
 
 # pylint: disable=no-member
-@pytest.mark.usefixtures("setup_multipart_fixture")
+@pytest.mark.usefixtures("restart_s3server_with_fault_injection", "setup_multipart_fixture")
 class TestDICheckMultiPart:
     """DI Test suite for F23B Multipart files."""
 

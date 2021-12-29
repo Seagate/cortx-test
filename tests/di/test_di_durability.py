@@ -43,6 +43,7 @@ from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
+from libs.di.fi_adapter import restart_s3server_with_fault_injection
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
@@ -52,7 +53,7 @@ from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3 import s3_s3cmd
 
 
-
+@pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDIDurability:
     """DI Durability Test suite."""
 

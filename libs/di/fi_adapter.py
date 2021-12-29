@@ -25,6 +25,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 
+import pytest
 from fabric import Config
 from fabric import Connection
 from fabric import ThreadingGroup
@@ -307,3 +308,20 @@ class MotrFailureInjectionAdapter(EnableFailureInjection):
 
     def enable_s3_meta_data_failure(self):
         raise NotImplementedError('Not Implemented')
+
+
+@pytest.fixture(scope="class", autouse=False)
+def restart_s3server_with_fault_injection(request):
+    """Fixture to restart s3 server with fault injection."""
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("Restart S3 Server with Fault Injection option")
+    request.cls.log.info("Enable Fault Injection")
+    fi_adapter = S3FailureInjection()
+    resp = fi_adapter.set_fault_injection(flag=True)
+    request.cls.fault_injection = True
+    assert resp[0], resp[1]
+    yield
+    resp = fi_adapter.set_fault_injection(flag=False)
+    request.cls.fault_injection = False
+    assert resp[0], resp[1]
+
