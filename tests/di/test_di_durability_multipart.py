@@ -253,7 +253,6 @@ class TestDICheckMultiPart:
                       " list parts and complete multipart upload")
         return mpu_id, parts
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22501')
