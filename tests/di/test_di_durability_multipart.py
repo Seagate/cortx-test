@@ -70,8 +70,8 @@ def setup_multipart_fixture(request):
     request.cls.hostnames = list()
     request.cls.connections = list()
     request.cls.nodes = CMN_CFG["nodes"]
-    if request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
-            request.cls.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+    if CMN_CFG["product_family"] == PROD_FAMILY_LR and \
+            CMN_CFG["product_type"] == PROD_TYPE_NODE:
         for node in request.cls.nodes:
             node_obj = Node(hostname=node["hostname"],
                             username=node["username"],
@@ -79,8 +79,8 @@ def setup_multipart_fixture(request):
             node_obj.connect()
             request.cls.connections.append(node_obj)
             request.cls.hostnames.append(node["hostname"])
-    elif request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
-            request.cls.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+    elif CMN_CFG["product_family"] == PROD_FAMILY_LC and \
+            CMN_CFG["product_type"] == PROD_TYPE_K8S:
         request.cls.log.error("Product family: LC")
         # Add k8s masters
         for node in request.cls.nodes:
