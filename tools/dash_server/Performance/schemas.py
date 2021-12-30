@@ -36,6 +36,7 @@ def get_common_schema(data):
         'OS': data['OS'],
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
+        'Count_of_Clients': data['clients'],
         'Percentage_full': data['pfull'],
         'Iteration': data['itrns'],
         'Custom': data['custom'],
@@ -117,7 +118,6 @@ def get_complete_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = {"$exists": False}
-    # entry['Count_of_Clients'] = data['clients'],
 
     return entry
 
@@ -137,7 +137,6 @@ def get_degraded_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = data['cluster_state']
-    # entry['Count_of_Clients'] = data['clients'],
 
     return entry
 
@@ -169,6 +168,7 @@ def get_dropdown_labels(dropdown_type):
         'branch': ' Branch',
         'build': ' Build',
         'nodes': ' Nodes',
+        'clients': ' Clients',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
