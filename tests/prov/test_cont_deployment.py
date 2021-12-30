@@ -20,6 +20,7 @@
 
 
 """Continuous Deployment on N nodes config."""
+import csv
 import distutils.util
 import logging
 import os
@@ -28,6 +29,7 @@ import pytest
 
 from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import CMN_CFG
 from config import PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -57,7 +59,6 @@ class TestContDeployment:
         cls.sns = (os.getenv("SNS", "")).split("+")
         cls.dix = (os.getenv("DIX", "")).split("+")
         if cls.sns[0] and cls.dix[0]:
-            logging.info("IN IF LOOP")
             cls.sns = [int(sns_item) for sns_item in cls.sns]
             cls.dix = [int(dix_item) for dix_item in cls.dix]
             cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
@@ -73,16 +74,29 @@ class TestContDeployment:
         cls.master_node_list = []
         cls.host_list = []
 
-        for node in range(cls.num_nodes):
-            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+        for node in CMN_CFG["nodes"]:
+            vm_name = node["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
-            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
+            if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+        cls.report_file = os.path.join(cls.report_filepath,
+                                       PROV_CFG["k8s_cortx_deploy"]["report_file"])
+        logging.info("Report path is %s", cls.report_file)
+        if not os.path.isfile(cls.report_file):
+            logging.debug("File not exists")
+            fields = ['NODES', 'SNS', 'DIX', 'TIME', 'STATUS']
+            with open(cls.report_file, 'a')as fptr:
+                # writing the fields
+                write = csv.writer(fptr)
+                write.writerow(fields)
+                fptr.close()
+            logging.info("File is created %s", cls.report_file)
 
     @pytest.mark.tags("TEST-N-NODE")
     @pytest.mark.lc
@@ -148,5 +162,6 @@ class TestContDeployment:
                                                self.run_s3bench_workload_flag,
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                                                destroy_setup_flag=self.destroy_setup_flag,
-                                               custom_repo_path=self.custom_repo_path)
+                                               custom_repo_path=self.custom_repo_path,
+                                               report_filepath=self.report_file)
             iteration = iteration + 1
