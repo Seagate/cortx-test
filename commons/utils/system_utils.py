@@ -34,6 +34,7 @@ import string
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
+from pathlib import Path
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
@@ -324,6 +325,31 @@ def calculate_checksum(
     if kwargs.get("filter_resp", None) and binary_bz64:
         result = (result[0], filter_bin_md5(result[1]))
     return result
+
+
+def calc_checksum(object_path: object, hash_algo: str = 'md5'):
+    """
+
+    :param object_path: Object/File Path or byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    read_sz = 8192
+    csum = None
+    if os.path.exists(object_path):
+        sz = Path(object_path).stat().st_size
+
+        with open(object_path, 'rb') as fp:
+            file_hash = md5()
+            if sz < read_sz:
+                buf = fp.read(sz)
+            else:
+                buf = fp.read(read_sz)
+            while buf:
+                file_hash.update(buf)
+                buf = fp.read(read_sz)
+            csum = file_hash.hexdigest()
+    return csum
 
 
 def cal_percent(num1: float, num2: float) -> float:

@@ -201,7 +201,7 @@ def get_random_bucket_name():
     Function will return a random bucket name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-bkt-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_object_name():
@@ -209,7 +209,7 @@ def get_random_object_name():
     Function will return a random object name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-obj-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_account_name():
