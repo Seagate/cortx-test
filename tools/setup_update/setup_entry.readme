@@ -26,7 +26,9 @@ Steps to create DB Entry:
 
 1. Create a Setup json file from setup_entry_lc.sample.json or setup_entry_lc.json. Rename the
 file to setup_entry.json.
-2. cd ${Project_Root}  i.e. cd cortx-test and run following command to create an MongoDB entry.
+2. cd ${Project_Root}  i.e. cd cortx-test, set virtual env
+[root@ssc-vm-3563 cortx-test]#. ./virenv/bin/activate
+3a. Run following command to create an MongoDB entry.
 python3.7 tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123
 
 ```
@@ -40,3 +42,6 @@ setup_entry.json  setup_entry_lc.json  setup_entry_lc.json.ori  setup_entry.py
 tools/setup_update/setup_entry.py:79: DeprecationWarning: count is deprecated. Use Collection.count_documents instead.
   entry_exist = collection_obj.find(setup_query).count()
 Record entry 61cdb760456c4e8dc53c3c94 is inserted successfully
+
+3b. If you want to update the old entry because of any reason then use following command;
+(virenv) [root@ssc-vm-3563 cortx-test]# python3.7 tools/setup_update/setup_entry.py --new_entry False --dbuser datawrite --dbpassword seagate@123

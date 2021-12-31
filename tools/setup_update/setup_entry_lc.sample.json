@@ -181,11 +181,11 @@
 
 "csm":
 {
-  "mgmt_vip": "fqdn",
+  "mgmt_vip": "ssc-vm-g3-rhev4-2590.colo.seagate.com",
   "port": "31169",
   "csm_admin_user":{
-    "username": "",
-    "password": ""
+    "username": "cortxadmin",
+    "password": "Cortxadmin@123"
   }
 },
 "bmc":

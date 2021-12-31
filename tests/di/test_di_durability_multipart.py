@@ -93,6 +93,7 @@ def setup_multipart_fixture(request):
 
     request.cls.account_name = di_lib.get_random_account_name()
     s3_acc_passwd = di_cfg.s3_acc_passwd
+    request.cls.log.info("Create an S3 user")
     request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(request.cls.account_name,
                                                                    s3_acc_passwd)
     request.cls.bucket_name = di_lib.get_random_bucket_name()
