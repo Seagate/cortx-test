@@ -460,3 +460,14 @@ class LogicalNode(Host):
                 node_fqdn = data.split()[6]
                 pod_dict[pod_name.strip()] = node_fqdn.strip()
         return pod_dict
+
+    def get_recent_pod_name_by_deployment(self, deployment_name):
+        """
+        Helper function to get pod name created by particular deployment
+        :param deployment_name: Name of the deployment
+        :return: str (pod_name)
+        """
+        cmd = commands.KUBECTL_GET_RECENT_POD_DEPLOY.format(deployment_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        pod_name = output[0].strip()
+        return pod_name
