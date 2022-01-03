@@ -100,14 +100,14 @@ def setup_multipart_fixture(request):
     # create bucket
 
     request.cls.acc_del = False
-    request.cls.log.info("ENDED: setup test operations.")
+    request.cls.log.info("ENDED: Setup test suite operations.")
     yield
-    request.cls.log.info("STARTED: Teardown operations")
+    request.cls.log.info("STARTED: Test suite Teardown operations")
     if request.cls.s3_account:
         request.cls.log.debug(f"Deleting the s3 account {request.cls.s3_account}")
         ManagementOPs.delete_s3_user_csm_rest(request.cls.account_name)
     request.cls.log.info("Deleted the s3 accounts and users")
-    request.cls.log.info("ENDED: Teardown operations")
+    request.cls.log.info("ENDED: Test suite Teardown operations")
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -153,7 +153,7 @@ class TestDICheckMultiPart:
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
 
-        self.log.info("ENDED: setup test data.")
+        self.log.info("ENDED: Method Level setup test data.")
 
     def teardown_method(self):
         """
@@ -173,7 +173,7 @@ class TestDICheckMultiPart:
             system_utils.remove_dirs(self.test_dir_path)
             self.log.info("Local file was deleted")
 
-        self.log.info("ENDED: Teardown method")
+        self.log.info("ENDED: Method Level Teardown test data.")
 
     @pytest.fixture(scope="function", autouse=False)
     def create_testdir_cleanup(self):
