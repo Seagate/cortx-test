@@ -22,10 +22,10 @@
 
 import logging
 import os
-import pytest
 import shutil
 import time
 from http import HTTPStatus
+import pytest
 
 from commons import constants as cons
 from commons import cortxlogging
