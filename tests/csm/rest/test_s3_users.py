@@ -109,47 +109,6 @@ class TestS3user():
         assert_utils.assert_true(len(self.buckets_created) == 0, "Bucket deletion failed")
         assert_utils.assert_true(len(self.iam_users_created) == 0, "IAM deletion failed")
         assert_utils.assert_true(len(self.account_created) == 0, "S3 account deletion failed")
-        '''
-        self.log.info("Deleting all S3 users except predefined ones...")
-        for created_user in self.created_users:
-            akey = created_user["access_key"]
-            skey = created_user["secret_key"]
-            usr = created_user["account_name"]
-            iam_users = created_user['iam_users']
-            buckets = created_user['buckets']
-            self.log.info("Iam users and buckets are: %s and %s", iam_users, buckets)
-            for i in range(iam_users):
-                iam_user = f"{usr}iam{i}"
-                self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
-                              iam_user, akey, skey)
-                try:
-                    s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
-                except BaseException as err:
-                    self.log.warning("Ignoring %s while deleting IAM user: %s", err, iam_user)
-
-            for i in range(buckets):
-                self.log.info("[START] Delete Bucket count : %s", i + 1)
-                bucket = f"{usr}bucket{i}"
-                self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
-                              "secret key: %s", bucket, akey, skey)
-                try:
-                    s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
-                except BaseException as err:
-                    self.log.warning("Ignoring %s while deleting bucket: %s", err, bucket)
-                self.log.info("[END] Delete Bucket count : %s", i + 1)
-            for account in self.account_created:
-                resp = self.s3user.delete_s3_account_user(usr)
-                if resp.status_code == HTTPStatus.OK:
-                    s3_account_deleted.append(account)
-                else:
-                    self.log.error("S3 account deletion failed for %s ", account)
-            self.log.info("S3 accounts deleted %s", s3_account_deleted)
-            for acc in s3_account_deleted:
-                self.account_created.remove(acc)
-                
-        self.config.delete_s3_users()
-        self.log.info("Users except pre-defined ones deleted.")
-        '''
         self.log.info("[COMPLETED] ######### Teardown #########")
 
     @pytest.mark.lc
