@@ -11,7 +11,7 @@
 "nodes":[
     {
         "host": "srv-node-0",
-        "hostname": "ssc-vm-g3-rhev4-2587.colo.seagate.come",
+        "hostname": "ssc-vm-g3-rhev4-2587.colo.seagate.com",
         "ip": "192.168.60.166",
         "fqdn": "ssc-vm-g3-rhev4-2587.colo.seagate.com",
         "username": "root",
