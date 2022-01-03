@@ -977,35 +977,6 @@ class TestS3user():
                 if not s3_misc.create_put_objects(obj, bucket, akey, skey):
                     assert False, "Put object Failed"
                 self.log.info("[END] Create Bucket count : %s", i + 1)
-        '''
-        # cleanup loop
-        for created_user in self.created_users:
-            self.log.info("-" * 50)
-            akey = created_user["access_key"]
-            skey = created_user["secret_key"]
-            usr = created_user["account_name"]
-            self.log.info("Deleting IAM users for %s user", usr)
-            for i in range(const.MAX_IAM_USERS):
-                iam_user = f"{usr}iam{i}"
-                self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
-                              iam_user, akey, skey)
-                assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
-            self.log.info("Deleting buckets for %s user", usr)
-            for i in range(const.MAX_BUCKETS):
-                self.log.info("[START] Delete Bucket count : %s", i + 1)
-                bucket = f"{usr}bucket{i}"
-                self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
-                              "secret key: %s", bucket, akey, skey)
-                assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
-                self.log.info("[END] Delete Bucket count : %s", i + 1)
-
-        for created_user in self.created_users:
-            s3_user = created_user["account_name"]
-            self.log.info("Verify Delete S3 user: %s", s3_user)
-            resp = self.s3user.delete_s3_account_user(s3_user)
-            assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
-            self.created_users.remove(created_user)
-        '''
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.sanity
