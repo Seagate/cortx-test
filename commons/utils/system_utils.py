@@ -336,6 +336,8 @@ def calc_checksum(object_path: object, hash_algo: str = 'md5'):
     """
     read_sz = 8192
     csum = None
+    if hash_algo != 'md5':
+        raise NotImplementedError('Only md5 supported')
     if os.path.exists(object_path):
         sz = Path(object_path).stat().st_size
 

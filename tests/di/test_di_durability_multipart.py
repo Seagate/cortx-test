@@ -270,8 +270,8 @@ class TestDICheckMultiPart:
         ** Check CRC/checksum passed header. or s3 logs, Motr logs
         Verify checksum at client side
         """
-        sz = 512 * MB
-        total_parts = 512
+        sz = 64 * MB
+        total_parts = 64
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
@@ -284,7 +284,8 @@ class TestDICheckMultiPart:
         self.log.info("Step 2: Put and object with checksum algo or ETAG.")
 
         self.edtl.create_file(sz, '', self.file_path)
-        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calc_checksum(self.file_path)
+        self.log.info("Step 2: md5 checksum calculated is .")
         self.log.info("Step 2: Put an object with md5 checksum.")
         object_name = os.path.split(self.file_path)[-1]
         dwn_pth = os.path.split(self.file_path)[0]
@@ -294,7 +295,7 @@ class TestDICheckMultiPart:
         mpd = s3_multipart.MultipartUsingBoto()
         kdict = dict(bucket=self.bucket_name, key=object_name, file_path=download_path)
         mpd.multipart_download(kdict)
-        download_checksum = system_utils.calculate_checksum(download_path, binary_bz64=False)[1]
+        download_checksum = system_utils.calc_checksum(download_path)
         assert_utils.assert_exact_string(file_checksum, download_checksum,
                                          'Checksum mismatch found in downloaded file')
         self.log.info("ENDED TEST-22501: Test to verify object integrity during an "
