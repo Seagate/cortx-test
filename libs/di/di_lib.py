@@ -233,5 +233,6 @@ def get_random_file_name():
     Function will return a random filename name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "data_durability{}.{}".format(perf_counter_ns(), random.sample(all_extensions, 1))
+    ext = random.sample(all_extensions, 1)[0]
+    return "data_durability{}{}".format(perf_counter_ns(), ext)
 
