@@ -1020,7 +1020,7 @@ def restart_s3server_with_fault_injection(request):
     request.cls.log = logging.getLogger(__name__)
     request.cls.log.info("Restart S3 Server with Fault Injection option")
     request.cls.log.info("Enable Fault Injection")
-    fi_adapter = S3FailureInjection()
+    fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
     resp = fi_adapter.set_fault_injection(flag=True)
     request.cls.fault_injection = True
     assert resp[0], resp[1]
