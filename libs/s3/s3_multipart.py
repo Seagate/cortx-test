@@ -284,9 +284,9 @@ class MultipartUsingBoto(S3Lib):
         file_path = kwargs.get('file_path')
         s3_prefix = kwargs.get('s3prefix')  # s3prefix should not start with /
         config = self.get_transfer_config()
-        assert not bucket_name
-        assert not file_path
-        assert not config
+        assert bucket_name
+        assert file_path
+        assert config
         key = os.path.split(file_path)[-1]
         if s3_prefix is not None:
             key = '/'.join([s3_prefix, key])
@@ -304,7 +304,7 @@ class MultipartUsingBoto(S3Lib):
         file_path = kwargs.get('file_path')  # Local download file path
         config = self.get_transfer_config()
         key = kwargs.get('key')  # key is s3 server side name with prefix.
-        assert not key
+        assert key
         try:
             self.s3_resource.Object(bucket_name, key). \
                 download_file(file_path,

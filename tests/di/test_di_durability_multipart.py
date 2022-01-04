@@ -293,8 +293,7 @@ class TestDICheckMultiPart:
         mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
                                                  self.file_path, sz, total_parts)
         mpd = s3_multipart.MultipartUsingBoto()
-        kdict = dict(bucket=self.bucket_name, key=object_name, file_path=download_path)
-        mpd.multipart_download(kdict)
+        mpd.multipart_download(bucket=self.bucket_name, key=object_name, file_path=download_path)
         download_checksum = system_utils.calc_checksum(download_path)
         assert_utils.assert_exact_string(file_checksum, download_checksum,
                                          'Checksum mismatch found in downloaded file')
