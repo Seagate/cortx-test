@@ -212,6 +212,8 @@ class S3FailureInjection(EnableFailureInjection):
                           f'{fault_op},always,{fault_type},0,0" {pod_ip}:{s3_port}'
                     resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
                     LOGGER.debug("resp : %s", resp)
+                    if "error" in str(resp).lower():
+                        return False
             return True
         except IOError as ex:
             LOGGER.error("Exception: %s", ex)
@@ -262,6 +264,10 @@ class S3FailureInjection(EnableFailureInjection):
         return status
 
     def disable_data_block_corruption(self) -> bool:
+        """
+        disable data block corruption
+        output: Bool
+        """
         fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
         status = False
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
