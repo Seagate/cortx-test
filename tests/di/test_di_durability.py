@@ -542,8 +542,11 @@ class TestDIDurability:
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=obj_name, file_path=location)
                 self.log.info("Step 4: verify download object fails with 5xx error code")
-                self.s3_test_obj.object_download(file_path=self.file_path,
-                                                 bucket_name=self.bucket_name, obj_name=obj_name)
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
             except CTException as err:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
@@ -1001,8 +1004,11 @@ class TestDIDurability:
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=obj_name, file_path=location)
                 self.log.info("Step 4: verify download object fails with 5xx error code")
-                self.s3_test_obj.object_download(file_path=self.file_path,
-                                                 bucket_name=self.bucket_name, obj_name=obj_name)
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
             except CTException as err:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
@@ -1054,8 +1060,11 @@ class TestDIDurability:
                 self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
                                                        object_name=obj_name, file_path=location)
                 self.log.info("Step 4: verify download object fails with 5xx error code")
-                self.s3_test_obj.object_download(file_path=self.file_path,
-                                                 bucket_name=self.bucket_name, obj_name=obj_name)
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
             except CTException as err:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
