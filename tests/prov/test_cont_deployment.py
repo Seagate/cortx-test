@@ -20,13 +20,18 @@
 
 
 """Continuous Deployment on N nodes config."""
+import csv
+import distutils.util
 import logging
 import os
-import distutils.util
+
 import pytest
+
 from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import CMN_CFG
+from config import PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
@@ -54,7 +59,6 @@ class TestContDeployment:
         cls.sns = (os.getenv("SNS", "")).split("+")
         cls.dix = (os.getenv("DIX", "")).split("+")
         if cls.sns[0] and cls.dix[0]:
-            logging.info("IN IF LOOP")
             cls.sns = [int(sns_item) for sns_item in cls.sns]
             cls.dix = [int(dix_item) for dix_item in cls.dix]
             cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
@@ -62,22 +66,37 @@ class TestContDeployment:
 
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
+        cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH",
+                                         PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
 
-        for node in range(cls.num_nodes):
-            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+        for node in CMN_CFG["nodes"]:
+            vm_name = node["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
-            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
+            if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+        cls.report_file = os.path.join(cls.report_filepath,
+                                       PROV_CFG["k8s_cortx_deploy"]["report_file"])
+        logging.info("Report path is %s", cls.report_file)
+        if not os.path.isfile(cls.report_file):
+            logging.debug("File not exists")
+            fields = ['NODES', 'SNS', 'DIX', 'TIME', 'STATUS']
+            with open(cls.report_file, 'a')as fptr:
+                # writing the fields
+                write = csv.writer(fptr)
+                write.writerow(fields)
+                fptr.close()
+            logging.info("File is created %s", cls.report_file)
 
     @pytest.mark.tags("TEST-N-NODE")
     @pytest.mark.lc
@@ -87,12 +106,12 @@ class TestContDeployment:
         """
         count = int(self.iterations)
         if self.sns[0] and self.dix[0]:
-            total_cvg = int(self.cvg_per_node*len(self.worker_node_list))
+            total_cvg = int(self.cvg_per_node * len(self.worker_node_list))
             self.log.debug("sum of sns is %s total value is %s", sum(self.sns), total_cvg)
             if sum(self.sns) > total_cvg:
                 self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
                 assert False, "The sns value are invalid"
-            if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list)-1):
+            if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list) - 1):
                 self.log.debug("The dix %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
                 assert False, "The dix values are invalid"
         if self.conf:
@@ -121,8 +140,9 @@ class TestContDeployment:
         self.log.debug("DIX %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
         self.log.debug("CVG per node are %s \n Data disk per cvg are %s",
                        self.cvg_per_node, self.data_disk_per_cvg)
-        while count > 0:
-            self.log.info("The iteration no is %s", count)
+        iteration = 0
+        while iteration < count:
+            self.log.info("The iteration no is %s", (iteration + 1))
             self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
                                                sns_parity=self.sns[1],
                                                sns_spare=self.sns[2],
@@ -141,5 +161,7 @@ class TestContDeployment:
                                                run_s3bench_workload_flag=
                                                self.run_s3bench_workload_flag,
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                               destroy_setup_flag=self.destroy_setup_flag,)
-            count = count - 1
+                                               destroy_setup_flag=self.destroy_setup_flag,
+                                               custom_repo_path=self.custom_repo_path,
+                                               report_filepath=self.report_file)
+            iteration = iteration + 1

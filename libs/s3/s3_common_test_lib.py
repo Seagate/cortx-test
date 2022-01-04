@@ -20,7 +20,7 @@
 #
 #
 """Python library contains methods for s3 tests."""
-
+import json
 import os
 import logging
 from multiprocessing import Process
@@ -41,6 +41,7 @@ from libs.s3 import s3_acl_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_tagging_test_lib
+from libs.s3.iam_policy_test_lib import IamPolicyTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
 
@@ -280,6 +281,51 @@ def s3_ios(bucket=None,
             resp[1]),
         f"failed to generate log: {resp[1]}")
     LOG.info("ENDED: s3 io's operations.")
+
+
+def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_path: str,
+                             mb_count: int) -> None:
+    """
+    This function creates a bucket and uploads an object to the bucket.
+
+    :param s3_tst_lib: s3 test lib object
+    :param bucket_name: Name of bucket to be created
+    :param obj_name: Name of an object to be put to the bucket
+    :param file_path: Path of the file to be created and uploaded to bucket
+    :param mb_count: Size of file in MBs
+    """
+    LOG.info("Creating a bucket %s", bucket_name)
+    resp = s3_tst_lib.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Created a bucket %s", bucket_name)
+    system_utils.create_file(file_path, mb_count)
+    LOG.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
+    resp = s3_tst_lib.put_object(bucket_name, obj_name, file_path)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
+
+
+def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
+    """
+    Create IAM policy, Attach IAM Policy, List IAM Policy and make sure it is attached
+    :param access: Access Key of S3 account
+    :param secret: Secret Key of S3 account
+    :param policy_name: IAM Policy name
+    :param iam_policy: IAM Policy content
+    :iam_user : IAM username
+    """
+    iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
+    LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
+    _, policy = iam_policy_test_lib.create_policy(
+        policy_name=policy_name,
+        policy_document=json.dumps(iam_policy))
+
+    LOG.info("Attach Policy1 %s to %s user", policy.arn, iam_user)
+    iam_policy_test_lib.attach_user_policy(iam_user, policy.arn)
+
+    LOG.info("List Attached User Policies on %s", iam_user)
+    resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
+    assert_utils.assert_true(resp)
 
 
 class S3BackgroundIO:

@@ -92,15 +92,6 @@ class TestVersioningPutObject:
     def test_put_object_preexisting_32724(self):
         """
         Test PUT Object for pre-existing object in versioned bucket.
-
-        Upload an object to an unversioned bucket.
-        Enable versioning and verify List Object Versions.
-        Perform PUT Object and verify List Object Versions.
-        Suspend versioning.
-        Perform PUT Object and verify List Object Versions.
-        Enable versioning.
-        Perform PUT Object and verify List Object Versions.
-        Perform List Objects and verify results.
         """
         self.log.info("STARTED: Test PUT Object for preexisting objects with versioning")
         versions = defaultdict(list)
@@ -160,14 +151,6 @@ class TestVersioningPutObject:
     def test_put_object_versioning_enabled_32728(self):
         """
         Test PUT Object for object uploaded to a versioned bucket.
-
-        Create bucket.
-        Enable versioning and upload object, verify List Object Versions output.
-        Suspend versioning.
-        Perform PUT Object and verify List Object Versions output.
-        Enable versioning again.
-        Perform PUT Object and verify List Object Versions output.
-        Perform List Objects and verify results.
         """
         self.log.info("STARTED: Test PUT Object object uploaded to a versioned bucket")
         versions = defaultdict(list)
@@ -218,12 +201,6 @@ class TestVersioningPutObject:
     def test_put_object_versioning_suspended_32733(self):
         """
         Test PUT Object for object uploaded to a versioning suspended bucket.
-
-        Create bucket.
-        Suspend versioning and upload object, verify List Object Versions output.
-        Enable versioning.
-        Perform PUT Object and verify List Object Versions output.
-        Perform List Objects and verify results.
         """
         self.log.info("STARTED: Test PUT Object object uploaded to a versioning suspended bucket")
         versions = defaultdict(list)
