@@ -247,8 +247,8 @@ class TestDICheckMultiPart:
         self.log.info("Completing multipart upload")
         res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
         assert_utils.assert_true(res[0], res[1])
-        res = self.s3_test_obj.object_list(self.bucket_name)
-        assert_utils.assert_in(self.object_name, res[1], res[1])
+        res = self.s3_test_obj.object_list(bucket_name)
+        assert_utils.assert_in(object_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Initiate multipart upload, upload parts,"
                       " list parts and complete multipart upload")
