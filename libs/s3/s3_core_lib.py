@@ -341,8 +341,8 @@ class S3Lib(S3Rest):
         :return: response.
         """
         bucket = self.s3_resource.Bucket(bucket_name)
-        self.object_list(bucket_name)
         if force:
+            self.object_list(bucket_name)
             LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
                 "objects in it")
