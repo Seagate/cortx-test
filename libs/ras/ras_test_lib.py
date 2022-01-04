@@ -29,6 +29,8 @@ import re
 import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
+
+from commons.helpers.node_helper import Node
 from libs.ras.ras_core_lib import RASCoreLib
 from commons.utils.config_utils import get_config, update_cfg_based_on_separator
 from commons.utils import system_utils as sys_utils
@@ -183,13 +185,10 @@ class RASTestLib(RASCoreLib):
         """
         path = RAS_VAL["ras_sspl_alert"]["file"]["sspl_conf_filename"]
         backup_path = filename
-
+        node = Node(hostname=self.host, username=self.username, password=self.pwd)
         if restore:
-            res = self.s3obj.is_s3_server_path_exists(path=backup_path,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
-            if res[0]:
+            res = node.path_exists(path=backup_path)
+            if res:
                 LOGGER.info("Restoring the sspl.conf file")
                 self.node_utils.rename_file(old_filename=backup_path,
                                             new_filename=path)
@@ -199,11 +198,8 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Removing sspl.conf file")
                 self.node_utils.remove_file(filename=path)
         else:
-            res = self.s3obj.is_s3_server_path_exists(path=path,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
-            if res[0]:
+            res = node.path_exists(path=path)
+            if res:
                 LOGGER.info("Retaining the %s file", path)
                 self.cp_file(path, backup_path)
 

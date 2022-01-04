@@ -32,6 +32,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
@@ -446,13 +447,15 @@ class ProvDeployFFLib:
         return True, "field_deployment_node Successful!!"
 
     @staticmethod
-    def cluster_definition(nd1_obj: Node, hostnames: str, build_url: str, timeout: int = 1800):
+    def cluster_definition(nd1_obj: Node, hostnames: str, build_url: str, timeout: int = 1800,
+                           field_user: bool = False):
         """
         Cluster Definition
         param: nd1_obj : Object of node class for primary node
         param: hostnames: Space seperated String of hostnames for all nodes
         param: build_url: Build URL used for deployment
         param: timeout: timeout for command completion
+        param: field_user: Flag to get field user command
         """
         try:
             LOGGER.info("Hostname : %s", hostnames)
@@ -461,9 +464,24 @@ class ProvDeployFFLib:
             output = ""
             current_output = ""
             start_time = time.time()
-            cmd = "".join(
-                [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
-                 "\n"])
+            if len(CMN_CFG["nodes"]) > 1:
+                if field_user:
+                    cmd = "".join(
+                        [common_cmd.FIELD_CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
+                         "\n"])
+                else:
+                    cmd = "".join(
+                        [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
+                         "\n"])
+            else:
+                if field_user:
+                    cmd = "".join(
+                        [common_cmd.FIELD_CLUSTER_CREATE_SINGLE_NODE.format(hostnames, build_url),
+                         "\n"])
+                else:
+                    cmd = "".join(
+                        [common_cmd.CLUSTER_CREATE_SINGLE_NODE.format(hostnames, build_url),
+                         "\n"])
             LOGGER.info("Command : %s", cmd)
             LOGGER.info("no of nodes: %s", len(CMN_CFG["nodes"]))
             channel.send(cmd)
@@ -479,7 +497,15 @@ class ProvDeployFFLib:
                     pswd = "".join([CMN_CFG["nodes"][passwd_counter]["password"], "\n"])
                     channel.send(pswd)
                     passwd_counter += 1
-                elif "cortx_setup command Failed" in output:
+                elif "Enter nodeadmin user password for srvnode" in current_output \
+                        and passwd_counter < len(CMN_CFG["nodes"]):
+                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
+                    channel.send(pswd)
+                    passwd_counter += 1
+                elif "Enter nodeadmin user password for current node:" in current_output:
+                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
+                    channel.send(pswd)
+                elif "command Failed" in output:
                     LOGGER.error(current_output)
                     break
                 elif "Environment set up!" in output:
@@ -555,6 +581,27 @@ class ProvDeployFFLib:
             return False, error
 
         return True, "define_storage_set Successful!!"
+
+    @staticmethod
+    def prepare_cluster(nd_obj: Node) -> tuple:
+        """
+        Prepare Cluster
+        :param nd_obj: Host object of the primary node
+        :return: True/False and command status
+        """
+        try:
+            nd_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.prepare_cluster.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True, "Prepare Cluster Completed"
 
     @staticmethod
     def config_cluster(nd_obj1: Node) -> tuple:
@@ -676,6 +723,136 @@ class ProvDeployFFLib:
 
         return True, "post_deploy_check Successful!!"
 
+    @staticmethod
+    def check_start_command(nd1_obj: Node):
+        """
+        Deployment new start command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_START_CLSTR_NEW,
+                read_lines=True)
+            LOGGER.info("START COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_start_command.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+
+    @staticmethod
+    def check_status(nd1_obj: Node):
+        """
+        Deployment status command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
+            LOGGER.info("STATUS COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_status.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+    @staticmethod
+    def reset_deployment_check(nd1_obj: Node):
+        """
+        Deployment reset command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_deployment_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def reset_h_check(nd1_obj: Node):
+        """
+        Deployment reset_h command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset_H COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_h_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def cluster_show(nd1_obj: Node):
+        """
+        Deployment cluster show command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
+            LOGGER.info("Cluster Show COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.cluster_show.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def prov_cluster_json(nd1_obj: Node):
+        """
+        Deployment prov_cluster json command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.PROV_CLUSTER, read_lines=True)
+            LOGGER.info("Cluster Json COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.prov_cluster_json.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
     def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
         """
         Perform Deployment Using factory and field method
@@ -772,3 +949,41 @@ class ProvDeployFFLib:
             return False, error
 
         return True, "Post Deloyment Steps Successful!!"
+
+    @staticmethod
+    def execute_cmd_using_field_user_prompt(node_obj, cmd: str, timeout: int = 120) -> tuple:
+        """
+        Execute field deployment command on field user prompt.
+        :param: node_obj: node object for command execution.
+        :param: cmd: Command to execute.
+        :param: timeout: timeout for command completion
+        :return: True/False and output
+        """
+        try:
+            node_obj.connect(shell=True)
+            channel = node_obj.shell_obj
+            LOGGER.debug(f"Executing command: {cmd}")
+            cmd = "".join([cmd, "\n"])
+            channel.send(cmd)
+            output = ""
+            start_time = time.time()
+            while (time.time() - start_time) < timeout:
+                time.sleep(10)
+                if channel.recv_ready():
+                    output = channel.recv(9999).decode("utf-8")
+                    output += output
+                    LOGGER.info(output)
+                if "command failed" in output:
+                    LOGGER.error(output)
+                    break
+                elif "Error" in output:
+                    LOGGER.error(output)
+                    break
+            if "command failed" in output or "Error" in output:
+                return False, output
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.execute_cmd_using_field_user_prompt.__name__)
+            return False, error
+        return True, output

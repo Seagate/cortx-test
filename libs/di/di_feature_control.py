@@ -23,19 +23,18 @@ Python library which will perform the operations to enable/disable DI feature
 """
 import logging
 import os
-import traceback
-from commons import errorcodes, const
-from commons.exceptions import CTException
-from commons.helpers.node_helper import Node
-from commons.utils import config_utils
-from commons.utils.system_utils import run_remote_cmd_wo_decision
+
+from commons import commands
+from commons import const
+from commons.constants import POD_NAME_PREFIX
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
+from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOCAL_S3_CONFIG
-from libs.s3 import S3H_OBJ
-
+from commons.utils import config_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +52,7 @@ class DIFeatureControl:
         """This method initializes members of DIFeatureControl
         :param cmn_cfg: common config injected object
         """
+        self.cmn_cfg = cmn_cfg
         self.nodes = cmn_cfg["nodes"]
         self.connections = list()
         hostnames = list()
@@ -67,8 +67,15 @@ class DIFeatureControl:
                 hostnames.append(node["hostname"])
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
-            LOGGER.critical("Product family: LC")
-            # TODO: Add LC related calls. Check for k8s master.
+            LOGGER.info("Product family: LC")
+            for node in self.nodes:
+                if node["node_type"].lower() == "master":
+                    node_obj = LogicalNode(hostname=node["hostname"],
+                                           username=node["username"],
+                                           password=node["password"])
+                    node_obj.connect()
+                    self.connections.append(node_obj)
+                    hostnames.append(node["hostname"])
 
     def set_flag_in_s3server_config(self, section, flag, value, **kwargs):
         """
@@ -107,25 +114,51 @@ class DIFeatureControl:
             return status, (flag, value, old_value)
         except Exception as error:
             LOGGER.exception("Error in %s: %s",
-                         DIFeatureControl.set_flag_in_s3server_config.__name__,
-                         error)
+                             DIFeatureControl.set_flag_in_s3server_config.__name__,
+                             error)
 
     @staticmethod
-    def verify_flag_enable(section, flag, host, username, password):
+    def get_s3server_config_file(master_node: LogicalNode, pod: str):
         """
-        Verify if flags are set on the given node
+        Retrieve S3 server config file. (Supports LC)
+        :param: master_node: Master node object to access specified pods
+        :param: pod: Pod name to retrieve s3 config file
+        return: tuple
+        """
+        LOGGER.info("Copying Config file from pod %s", pod)
+        node_path = "/root/s3config.yaml"
+        cmd = commands.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(pod, const.S3_CONFIG_K8s, node_path)
+        resp = master_node.execute_cmd(cmd=cmd, read_lines=True)
+        LOGGER.debug("Resp : %s", resp)
+
+        resp = master_node.copy_file_to_local(node_path, LOCAL_S3_CONFIG)
+        if not resp:
+            raise Exception("Error during copying file to client")
+
+        status, resp = config_utils.read_yaml(LOCAL_S3_CONFIG)
+        if not status:
+            raise Exception(f"Unable to read {LOCAL_S3_CONFIG} on client: {resp}")
+
+        LOGGER.debug("Remove local file")
+        if os.path.exists(LOCAL_S3_CONFIG):
+            os.remove(LOCAL_S3_CONFIG)
+
+        return resp
+
+    @staticmethod
+    def verify_flag_enable(section: str, flag: str, node_obj: Node):
+        """
+        Verify if flags are set on the given node (Supports LR)
         :param section: s3config section.
         :param flag: flag to be updated.
-        :param host: IP of the host.
-        :param username: user name of the host.
-        :param password: password for the user.
+        :param node_obj: Node object to check the flag
         :return Boolean: True if given flag is enabled
                           False if given flag is disabled
         """
         backup_path = LOCAL_S3_CONFIG
-        LOGGER.info(f"Verify DI flags on {host}")
-        node = Node(hostname=host, username=username, password=password)
-        status, resp = node.copy_file_to_local(const.S3_CONFIG, backup_path)
+        LOGGER.info("Verify DI flags on %s",node_obj.hostname)
+
+        status, resp = node_obj.copy_file_to_local(const.S3_CONFIG, backup_path)
         if not status:
             return status, f"Unable to copy {const.S3_CONFIG} on client: {resp}"
         status, resp = config_utils.read_yaml(backup_path)
@@ -133,29 +166,46 @@ class DIFeatureControl:
             return status, f"Unable to read {backup_path} on client: {resp}"
         LOGGER.info(resp)
         if resp[section][flag]:
-            return True, f"{flag} flag is set on {host}"
-        else:
-            return False, f"{flag} flag is not set on {host}"
+            return True, f"{flag} flag is set on {node_obj.hostname}"
+        return False, f"{flag} flag is not set on {node_obj.hostname}"
 
-    def verify_s3config_flag_enable_all_nodes(self, section, flag):
+    def verify_s3config_flag_all_nodes(self, section: str, flag: str):
         """
-        Verify if flags are set on the given node
+        Verify if flags are set on the all nodes. (Supports both LC/LR)
         :param section: s3config section.
-        :param flag: flag to be updated.
-        :return Boolean: True, Message if given flag is enabled
-                          False, Message if given flag is disabled
+        :param flag: flag to be verified.
+        :return Tuple[Boolean,Boolean]: Boolean - True if operation successful else False
+                                 Boolean - flag_value
         """
-        backup_path = LOCAL_S3_CONFIG
-        for node in self.connections:
-            LOGGER.info(f"Verify DI flags on {node.hostname}")
-            status, resp = node.copy_file_to_local(const.S3_CONFIG, backup_path)
-            if not status:
-                return status, f"Unable to copy {const.S3_CONFIG} on client: {resp}"
-            status, resp = config_utils.read_yaml(backup_path)
-            if not status:
-                return status, f"Unable to read {backup_path} on client: {resp}"
-            LOGGER.info(resp)
-            if resp[section][flag]:
-                return True, f"{flag} flag is set on {node.hostname}"
-            else:
-                return False, f"{flag} flag is not set on {node.hostname}"
+        if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+            flag_value = []
+            try:
+                for node in self.connections:
+                    resp = self.verify_flag_enable(section=section, flag=flag, node_obj=node)
+                    flag_value.append(resp[0])
+                    LOGGER.info("Node: %s flag: %s flag_value: %s", node.hostname, flag, resp[0])
+                if len(set(flag_value)) == 1:
+                    return True, flag_value[0]
+                else:
+                    return False, f"S3 config values for {flag} are not equal in all pods."
+            except Exception as ex:
+                LOGGER.error(f"Exception Occurred while reading {flag}: %s", ex)
+                return False, ex
+        elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+            flag_value = []
+            try:
+                master_node = self.connections[0]
+                pods_list = master_node.get_all_pods(pod_prefix=POD_NAME_PREFIX)
+                for pod in pods_list:
+                    resp = self.get_s3server_config_file(master_node, pod)
+                    flag_value.append(resp[section][flag])
+                    LOGGER.info("Pods: %s flag: %s flag_value: %s", pod, flag, resp[section][flag])
+                if len(set(flag_value)) == 1:
+                    return True, flag_value[0]
+                else:
+                    return False, f"S3 config values for {flag} are not equal in all pods."
+            except Exception as ex:
+                LOGGER.error(f"Exception Occurred while reading {flag}: %s", ex)
+                return False, ex

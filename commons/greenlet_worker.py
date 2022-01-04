@@ -85,7 +85,7 @@ class GreenletThread(Greenlet):
         """
         LOGGER.debug(args)
         LOGGER.debug(kwargs)
-        LOGGER.DEBUG(self.responses)
+        LOGGER.debug(self.responses)
 
     def feed(self) -> None:
         """
@@ -162,25 +162,32 @@ class GeventPool:
         self.group = Group()
         self.responses = dict()
 
-    def add_handler(self, func: Any, args: Any) -> None:
+    def __del__(self):
+        """cleanup all resources"""
+        del self.pool
+        del self.group
+
+    def add_handler(self, func: Any, *args: Any, **kwargs: Any) -> None:
         """
         method to check pool capability and spawn/group threads
         :param func: function need to be spawned
-        :param args: function arguments needs to be passed to work on
+        :param args: positional arguments to be passed to func
+        :param kwargs: keyword arguments to be passed to func
         :return: None
         """
         if not self.pool.full():
-            self.spawn(func, args)
+            self.spawn(func, *args, **kwargs)
         else:
             raise Exception("At maximum pool size")
 
-    def spawn(self, func: Any, args: Any) -> None:
+    def spawn(self, func: Any, *args: Any, **kwargs: Any) -> None:
         """
         :param func: method need to be operated with threads
-        :param args: function arguments
+        :param args: positional arguments to be passed to func
+        :param kwargs: keyword arguments to be passed to func
         :return: None
         """
-        g_obj = self.pool.spawn(func, args)
+        g_obj = self.pool.spawn(func, *args, **kwargs)
         THREADS.append(g_obj)
         self._group(g_obj)
 
@@ -201,6 +208,13 @@ class GeventPool:
         LOGGER.debug("All Threads execution is completed")
         self.responses = {g.name: g.value for g in THREADS}
 
+    def wait_available(self, timeout: int = None) -> None:
+        """
+        Wait until it is possible to spawn a new greenlet
+        :param timeout: if given, only wait for specified seconds
+        """
+        self.pool.wait_available(timeout)
+
     def pool_map(self, func: object, args: Any) -> None:
         """
         :param func: method need to be operated in thread
@@ -215,6 +229,9 @@ class GeventPool:
         :return: None
         """
         self.pool.kill()
+        gevent.killall(self.group)
+        THREADS.clear()
+        self.responses.clear()
 
     def result(self) -> dict:
         """

@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+
 def get_common_schema(data):
     """
     function for getting common performance schema wrt database
@@ -35,6 +36,7 @@ def get_common_schema(data):
         'OS': data['OS'],
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
+        'Count_of_Clients': data['clients'],
         'Percentage_full': data['pfull'],
         'Iteration': data['itrns'],
         'Custom': data['custom'],
@@ -115,8 +117,7 @@ def get_complete_schema(data):
     entry['Object_Size'] = data['objsize']
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
-    entry['Cluster_State'] = {"$exists": False }
-    # entry['Count_of_Clients'] = data['clients'],
+    entry['Cluster_State'] = {"$exists": False}
 
     return entry
 
@@ -136,18 +137,17 @@ def get_degraded_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = data['cluster_state']
-    # entry['Count_of_Clients'] = data['clients'],
 
     return entry
 
 
 statistics_column_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
+    'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 bucketops_headings = [
     'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
@@ -165,11 +165,14 @@ def get_dropdown_labels(dropdown_type):
         string: corresponding mapping for the input string
     """
     mapping = {
+        'branch': ' Branch',
+        'build': ' Build',
         'nodes': ' Nodes',
+        'clients': ' Clients',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
-        'sessions': ' Session(s)'
+        'sessions': ' Concurrency'
     }
 
     return mapping[dropdown_type]

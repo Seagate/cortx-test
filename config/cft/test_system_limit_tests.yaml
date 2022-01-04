@@ -28,13 +28,13 @@ test_16909:
   bucket_count: 100
 
 test_16910:
-  csm_count: 1000
+  csm_count: 99
   s3_count: 0
   iam_count: 0
   bucket_count: 0
 
 test_16911:
-  csm_count: 100
+  csm_count: 99
   s3_count: 0
   iam_count: 0
   bucket_count: 0

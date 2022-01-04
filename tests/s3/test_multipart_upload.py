@@ -33,11 +33,10 @@ from commons.utils.system_utils import create_file, remove_file, run_local_cmd, 
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
+from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-
-MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]
 
 
 class TestMultipartUpload:
@@ -168,6 +167,8 @@ class TestMultipartUpload:
         return mpu_id, parts
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-5588')
     @CTFailOn(error_handler)
     def test_multipart_upload_for_file_2061_2065_2066_2069(self):
@@ -210,6 +211,7 @@ class TestMultipartUpload:
             "Initiate multipart upload, upload parts, list parts and complete multipart upload")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5583')
     @CTFailOn(error_handler)
     def test_abort_multipart_upload_2070(self):
@@ -237,6 +239,7 @@ class TestMultipartUpload:
         self.log.info("Abort Multipart upload")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5589')
     @CTFailOn(error_handler)
     def test_multipart_upload_file_1gb_to_10gb_2062(self):
@@ -276,6 +279,7 @@ class TestMultipartUpload:
             "Initiate Multipart upload for file of size of 1GB to 10GB having varying part size")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5590')
     @CTFailOn(error_handler)
     def test_multipart_upliad_large_file_with_metadata_2063(self):
@@ -304,7 +308,8 @@ class TestMultipartUpload:
             "Initiate Multipart upload for large file with meta data")
 
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_multipart_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-5599')
     @CTFailOn(error_handler)
     def test_verify_max_no_parts_listed_using_part_command_2067(self):
@@ -333,6 +338,7 @@ class TestMultipartUpload:
             "Verify max no. of parts being listed by using List part command")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5591')
     @CTFailOn(error_handler)
     def test_list_multipart_upload_2068(self):
@@ -363,6 +369,8 @@ class TestMultipartUpload:
         self.log.info("List Multipart uploads")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-5597')
     @CTFailOn(error_handler)
     def test_multipart_upload_through_configuration_file_2071(self):
@@ -421,6 +429,7 @@ class TestMultipartUpload:
             "Multipart upload through configuration file.(Automatic multipart upload)")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5584')
     @CTFailOn(error_handler)
     def test_abort_multipart_upload_from_client2_started_from_client1_2073(
@@ -451,6 +460,7 @@ class TestMultipartUpload:
             "Abort multipart upload from client 2 if upload has started from client 1")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5598')
     @CTFailOn(error_handler)
     def test_large_object_multipart_upload_2075(self):
@@ -486,6 +496,7 @@ class TestMultipartUpload:
             " seen from other client and if they can be accessed")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5586')
     @CTFailOn(error_handler)
     def test_multiprt_upload_having_more_than_10000_parts_2294(self):
@@ -529,6 +540,7 @@ class TestMultipartUpload:
         self.log.info("Create multipart upload having more than 10,000 parts")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5594')
     @CTFailOn(error_handler)
     def test_multipart_upload_all_parts_less_than_5mb_2296(self):
@@ -574,6 +586,7 @@ class TestMultipartUpload:
             "Multipart upload - create all parts less than 5 MB size, last part can be > 5 MB")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5596')
     @CTFailOn(error_handler)
     def test_multipart_upload_part_number_should_be_in_range_1_to_10k_2295(
@@ -608,50 +621,51 @@ class TestMultipartUpload:
                 f"Below listed part is outside of range 1 to {max_part_number}\n {part}")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5595')
     @CTFailOn(error_handler)
     def test_multipart_upload_few_part_more_than_5gb_2297(self):
         """Multipart upload - create few parts more than 5 GB size."""
-        self.log.info(
-            "Multipart upload - create few parts more than 5 GB size")
-        mp_config = MPART_CFG["test_8925"]
-        res = self.create_bucket_to_upload_parts(
-            self.bucket_name,
-            self.object_name,
-            mp_config["file_size"],
-            mp_config["total_parts"])
-        mpu_id, parts = res
-        self.log.info("Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(
-            mpu_id,
-            self.bucket_name,
-            self.object_name)
+        self.log.info("Multipart upload - create few parts more than 5 GB size")
+        mp_config = MPART_CFG["test_2297"]
+        file_size = mp_config["file_size"]
+        total_parts = mp_config["total_parts"]
+        self.log.info("Creating a bucket with name : %s", self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(len(res[1]["Parts"]),
-                                  mp_config["total_parts"],
-                                  res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
-        self.log.info("Completing multipart upload")
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Initiating multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("Uploading parts into bucket")
         try:
-            resp = self.s3_mp_test_obj.complete_multipart_upload(
+            res = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
-                parts,
                 self.bucket_name,
-                self.object_name)
-            assert_utils.assert_false(resp[0], resp[1])
+                self.object_name,
+                file_size,
+                total_parts=total_parts,
+                multipart_obj_path=self.mp_obj_path)
+            assert_utils.assert_false(res[0], res[1])
+            assert_utils.assert_not_equal(len(res[1]), total_parts, res[1])
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                MPART_CFG["test_8925"]["err_msg"],
+                MPART_CFG["test_2297"]["err_msg"],
                 error.message,
                 error.message)
-        res = self.s3_test_obj.object_list(self.bucket_name)
-        assert_utils.assert_not_in(self.object_name, res[1], res[1])
-        self.log.info("Cannot complete multipart upload")
-        self.log.info(
-            "Multipart upload - create few parts more than 5 GB size")
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Multipart upload - create few parts more than 5 GB size")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5587')
     @CTFailOn(error_handler)
     def test_create_upto_1k_multipart_uploads_2298(self):
@@ -715,6 +729,8 @@ class TestMultipartUpload:
         self.log.info("Create up to 1000 Multipart uploads")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-5585')
     @CTFailOn(error_handler)
     def test_create_more_than_1k_multipart_uploads_2299(self):
@@ -776,6 +792,7 @@ class TestMultipartUpload:
         self.log.info("Create more than 1000 Multipart uploads")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5593')
     @CTFailOn(error_handler)
     def test_multipart_upload_varying_request_numbers_max_concurrent_requests_2300(
@@ -842,6 +859,7 @@ class TestMultipartUpload:
             "Multipart upload - by varying request numbers max_concurrent_requests")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-5592')
     @CTFailOn(error_handler)
     def test_multipart_upload_varying_multipart_threshold_2301(self):
@@ -905,6 +923,7 @@ class TestMultipartUpload:
         self.log.info("Multipart upload - by varying multipart_threshold")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_multipart_ops
     @pytest.mark.tags('TEST-8723')
     @CTFailOn(error_handler)
     def test_multipart_upload_with_invalid_json_input_631(self):

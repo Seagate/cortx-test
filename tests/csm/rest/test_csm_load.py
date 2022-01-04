@@ -22,22 +22,29 @@
 
 import logging
 import os
+import shutil
 import time
+from http import HTTPStatus
 import pytest
-from commons import cortxlogging
-from commons.utils import config_utils
-from commons.constants import SwAlerts as const
+
 from commons import constants as cons
+from commons import cortxlogging
+from commons.constants import Rest as rest_const
+from commons.constants import SwAlerts as const
+from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
-from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_stats import SystemStats
+from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ras.sw_alerts import SoftwareAlert
 
 
 class TestCsmLoad():
     """Test cases for performing CSM REST API load testing using jmeter"""
+
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
@@ -52,7 +59,6 @@ class TestCsmLoad():
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
         cls.config_chk.delete_csm_users()
-        cls.config_chk.delete_s3_users()
         user_already_present = cls.config_chk.check_predefined_csm_user_present()
         if not user_already_present:
             user_already_present = cls.config_chk.setup_csm_users()
@@ -63,6 +69,13 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
+        cls.s3user = RestS3user()
+        cls.csm_user = RestCsmUser()
+
+    def setup_method(self):
+        self.log.info("Deleting older jmeter logs : %s", self.jmx_obj.jtl_log_path)
+        if os.path.exists(self.jmx_obj.jtl_log_path):
+            shutil.rmtree(self.jmx_obj.jtl_log_path)
 
     def teardown_method(self):
         """Teardown method
@@ -90,6 +103,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -128,6 +142,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -141,14 +156,40 @@ class TestCsmLoad():
         test_cfg = self.test_cfgs["test_22204"]
         jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
+
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
+        user_data = resp.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['s3_accounts'])
+        self.log.info("Existing S3 users count: %s", existing_user)
+        self.log.info("Max S3 users : %s", rest_const.MAX_S3_USERS)
+        new_s3_users = rest_const.MAX_S3_USERS - existing_user
+        self.log.info("New users to create: %s", new_s3_users)
+
+        self.log.info("Step 1: Listing all csm users")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=rest_const.SUCCESS_STATUS,
+            return_actual_response=True)
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == rest_const.SUCCESS_STATUS
+        user_data = response.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing CSM users count: %s", existing_user)
+        self.log.info("Max csm users : %s", rest_const.MAX_CSM_USERS)
+        new_csm_users = rest_const.MAX_CSM_USERS - existing_user
+        self.log.info("New users to create: %s", new_csm_users)
+        loops = min(new_s3_users, new_csm_users)
         resp = self.jmx_obj.run_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
-            loop=test_cfg["loop"])
+            loop=loops)
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -179,6 +220,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -244,4 +286,41 @@ class TestCsmLoad():
         assert resp[0], resp[1]
         self.log.info("\nStep 3: Successfully verified CPU usage fault alert on CSM REST API. \n")
 
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32547')
+    def test_32547(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_32547"]
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        os.remove(fpath)
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "s3",
+                        fieldnames[1]: CSM_REST_CFG["s3account_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["s3account_user"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Same_User_Login_lc.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        err_cnt, total_cnt = self.jmx_obj.get_err_cnt(os.path.join(self.jmx_obj.jtl_log_path,
+                                                                   "statistics.json"))
+        assert err_cnt == 0, f"{err_cnt} of {total_cnt} requests have failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
