@@ -1119,3 +1119,190 @@ class TestPodRestart:
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify continuous READs during data pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34091")
+    @CTFailOn(error_handler)
+    def test_different_data_pods_restart_loop(self):
+        """
+        This test tests IOs in degraded mode and after data pod restart in loop
+        (different data pod down every time)
+        """
+        LOGGER.info("STARTED: Test to verify IOs in degraded mode and after data pod restart in "
+                    "loop (different data pod down every time)")
+
+        LOGGER.info("Get data pod list to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+
+        for pod in pod_list:
+            LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
+            LOGGER.info("Deleting pod %s", pod)
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod} by deleting deployment"
+                                               " (unsafe)")
+            LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment "
+                        "(unsafe)", pod)
+            self.deployment_backup = resp[1]
+            self.deployment_name = resp[2]
+            self.restore_pod = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+            LOGGER.info("Step 2: Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], resp)
+            LOGGER.info("Step 2: Cluster is in degraded state")
+
+            LOGGER.info("Step 3: Check services status that were running on pod %s", pod)
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod], fail=True)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 3: Services of pod are in offline state")
+
+            LOGGER.info("Step 4: Check services status on remaining pods %s",
+                        pod_list.remove(pod))
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod),
+                                                               fail=False)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 4: Services of pod are in online state")
+
+            LOGGER.info("Step 5: Create s3 account, create multiple buckets and run IOs")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34091', nusers=1, nbuckets=10)
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean.update(resp[2])
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(resp[2].keys())[0])
+            LOGGER.info("Step 5: Successfully created s3 account and multiple buckets and ran IOs")
+
+            LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup})
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Step 6: Successfully started the pod")
+            self.restore_pod = False
+
+            LOGGER.info("Step 7: Check cluster status")
+            resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
+
+            LOGGER.info("Step 8: Create s3 account, create multiple buckets and run IOs")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34091-1', nusers=1, nbuckets=10)
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean.update(resp[2])
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(resp[2].keys())[0])
+            LOGGER.info("Step 8: Successfully created s3 account and multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify IOs in degraded mode and after data pod restart in "
+                    "loop (different data pod down every time)")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34090")
+    @CTFailOn(error_handler)
+    def test_same_data_pod_restart_loop(self):
+        """
+        This test tests IOs in degraded mode and after data pod restart in loop
+        (same pod down every time)
+        """
+        LOGGER.info("STARTED: Test to verify IOs in degraded mode and after data pod restart in "
+                    "loop (same pod down every time)")
+
+        LOGGER.info("Get data pod list to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod = pod_list[0]
+
+        loop_count = HA_CFG["common_params"]["loop_count"]
+        for loop in range(1, loop_count):
+            LOGGER.info("Running loop %s", loop)
+
+            LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
+            LOGGER.info("Deleting pod %s", pod)
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod} by deleting deployment"
+                                               " (unsafe)")
+            LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment "
+                        "(unsafe)", pod)
+            self.deployment_backup = resp[1]
+            self.deployment_name = resp[2]
+            self.restore_pod = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+            LOGGER.info("Step 2: Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], resp)
+            LOGGER.info("Step 2: Cluster is in degraded state")
+
+            LOGGER.info("Step 3: Check services status that were running on pod %s", pod)
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod], fail=True)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 3: Services of pod are in offline state")
+
+            LOGGER.info("Step 4: Check services status on remaining pods %s",
+                        pod_list.remove(pod))
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod),
+                                                               fail=False)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 4: Services of pod are in online state")
+
+            LOGGER.info("Step 5: Create s3 account, create multiple buckets and run IOs")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34090', nusers=1, nbuckets=10)
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean.update(resp[2])
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(resp[2].keys())[0])
+            LOGGER.info("Step 5: Successfully created s3 account and multiple buckets and ran IOs")
+
+            LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup})
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Step 6: Successfully started the pod")
+            self.restore_pod = False
+
+            LOGGER.info("Step 7: Check cluster status")
+            resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
+
+            LOGGER.info("Step 8: Create s3 account, create multiple buckets and run IOs")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34090-1', nusers=1, nbuckets=10)
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean.update(resp[2])
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(resp[2].keys())[0])
+            LOGGER.info("Step 8: Successfully created s3 account and multiple buckets and ran IOs")
+
+            LOGGER.info("Get recently created data pod name using deployment %s",
+                        self.deployment_name)
+            pod = self.node_master_list[0].get_recent_pod_name_by_deployment(
+                deployment_name=self.deployment_name)
+
+        LOGGER.info("ENDED: Test to verify IOs in degraded mode and after data pod restart in "
+                    "loop (same pod down every time)")
