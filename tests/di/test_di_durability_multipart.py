@@ -271,7 +271,7 @@ class TestDICheckMultiPart:
         Verify checksum at client side
         """
         sz = 64 * MB
-        total_parts = 64
+        total_parts = 8
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
