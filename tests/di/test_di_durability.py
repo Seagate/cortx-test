@@ -107,6 +107,7 @@ class TestDIDurability:
         self.write_param = const.S3_DI_WRITE_CHECK
         self.read_param = const.S3_DI_READ_CHECK
         self.integrity_param = const.S3_METADATA_CHECK
+        self.data_corruption_status = False
         self.sleep_time = 10
         self.file_size = 5
         self.host_ip = CMN_CFG["nodes"][0]["host"]
@@ -132,6 +133,9 @@ class TestDIDurability:
         if system_utils.path_exists(self.file_path):
             system_utils.remove_dirs(self.test_dir_path)
         self.log.info("Local file was deleted")
+        if self.data_corruption_status:
+            self.log.info("Disabling data corruption")
+            self.fi_adapter.disable_data_block_corruption()
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
@@ -527,6 +531,7 @@ class TestDIDurability:
         self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
+            self.data_corruption_status = True
             self.log.info("Step 1: Enabled data corruption")
         else:
             assert False
@@ -738,6 +743,7 @@ class TestDIDurability:
         self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
+            self.data_corruption_status = True
             self.log.info("Step 3: enabled data corruption")
         else:
             self.log.info("Step 3: failed to enable data corruption")
@@ -989,6 +995,7 @@ class TestDIDurability:
         self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
+            self.data_corruption_status = True
             self.log.info("Step 1: Enabled data corruption")
         else:
             assert False
@@ -1045,6 +1052,7 @@ class TestDIDurability:
         self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
+            self.data_corruption_status = True
             self.log.info("Step 1: Enabled data corruption")
         else:
             assert False

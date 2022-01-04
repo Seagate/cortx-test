@@ -261,6 +261,19 @@ class S3FailureInjection(EnableFailureInjection):
             status = self._set_fault_k8s(fault_type=fault_type, fault_operation=True)
         return status
 
+    def disable_data_block_corruption(self) -> bool:
+        fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
+        status = False
+        if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+            status, stout = self._set_fault(fault_type=fault_type, fault_operation=False,
+                                            use_script=False)
+            all(status)
+        elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+            status = self._set_fault_k8s(fault_type=fault_type, fault_operation=False)
+        return status
+
     def enable_data_block_corruption_using_node_script(self):
         fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
         status = False
