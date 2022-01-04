@@ -165,7 +165,7 @@ class S3MultipartTestLib(Multipart):
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
-                    data = file_pointer.read(1048576 * single_part_size)
+                    data = file_pointer.read(single_part_size)
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break
@@ -188,9 +188,9 @@ class S3MultipartTestLib(Multipart):
 
             return True, parts
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts.__name__,
-                         error)
+            LOGGER.exception("Error in %s: %s",
+                             S3MultipartTestLib.upload_parts.__name__,
+                             error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def upload_precalculated_parts(self,
