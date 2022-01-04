@@ -371,7 +371,7 @@ class S3Lib(S3Rest):
 
     def get_object(self, bucket: str = None, key: str = None, ranges: str = None) -> dict:
         """
-        Getting byte range of the object.
+        Getting object or byte range of the object.
 
         :param bucket: Name of the bucket.
         :param key: Key of object.

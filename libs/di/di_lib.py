@@ -32,6 +32,7 @@ from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
+from hashlib import md5
 from paramiko.ssh_exception import SSHException
 from commons.exceptions import CortxTestException
 from commons import params
@@ -236,3 +237,14 @@ def get_random_file_name():
     ext = random.sample(all_extensions, 1)[0]
     return "data_durability{}{}".format(perf_counter_ns(), ext)
 
+
+def calc_checksum(buf: object):
+    """
+    calc checksum from buffer / bytes.
+    :param buf: byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    file_hash = md5()
+    file_hash.update(buf)
+    return file_hash.hexdigest()
