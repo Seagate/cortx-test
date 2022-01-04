@@ -294,7 +294,7 @@ class TestDICheckMultiPart:
                                                  self.file_path, sz, total_parts)
         resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
         try:
-            content = resp[1]["Body"].read().decode('utf-8')
+            content = resp[1]["Body"].read()
             self.log.info(f'size of downloaded object {object_name} is: {len(content)} bytes')
         except Exception as error:
             self.log.info(f'downloaded object is not complete: {error}')

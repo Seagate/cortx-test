@@ -35,6 +35,7 @@ from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
 from pathlib import Path
+from botocore.response import StreamingBody
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
@@ -327,22 +328,28 @@ def calculate_checksum(
     return result
 
 
-def calc_checksum(object_path: object, hash_algo: str = 'md5'):
+def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
     """
-
-    :param object_path: Object/File Path or byte/buffer stream
+    Calculate checksum of file or stream.
+    :param object_ref: Object/File Path or byte/buffer stream
     :param hash_algo: md5 or sha1
     :return:
     """
     read_sz = 8192
     csum = None
+    file_hash = md5()
     if hash_algo != 'md5':
         raise NotImplementedError('Only md5 supported')
-    if os.path.exists(object_path):
-        sz = Path(object_path).stat().st_size
+    if isinstance(object_ref, StreamingBody):
+        chunk = object_ref.read(amt=read_sz)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = object_ref.read(amt=read_sz)
+        return file_hash.hexdigest()
+    if os.path.exists(object_ref):
+        sz = Path(object_ref).stat().st_size
 
-        with open(object_path, 'rb') as fp:
-            file_hash = md5()
+        with open(object_ref, 'rb') as fp:
             if sz < read_sz:
                 buf = fp.read(sz)
             else:
@@ -351,6 +358,7 @@ def calc_checksum(object_path: object, hash_algo: str = 'md5'):
                 file_hash.update(buf)
                 buf = fp.read(read_sz)
             csum = file_hash.hexdigest()
+
     return csum
 
 
