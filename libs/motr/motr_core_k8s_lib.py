@@ -385,8 +385,11 @@ class MotrCoreK8s():
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')                                       
+                                       f'"{cmd}" Failed, Please check the log')
+                                       
             
+            # Below support verbs for HW is removed from libfabrc code as of now. Commenting the same 
+            '''
             log.info('Checking libfabric verbs protocol presence')
             if CMN_CFG["setup_type"] == "HW":
                 cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], common_cmd.LIBFAB_VERBS)                                       
@@ -398,4 +401,4 @@ class MotrCoreK8s():
                     log.error('"%s" failed, please check the log', cmd)
                     assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
-
+            '''
