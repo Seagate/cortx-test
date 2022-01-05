@@ -55,6 +55,7 @@ from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 
 
+# pylint: disable=no-member
 class TestDIDurability:
     """DI Durability Test suite."""
 

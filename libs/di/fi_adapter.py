@@ -274,6 +274,7 @@ class S3FailureInjection(EnableFailureInjection):
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
             status, stout = self._set_fault(fault_type=fault_type, fault_operation=False,
                                             use_script=False)
+            LOGGER.debug("status: %s  stout: %s", status, stout)
             all(status)
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
