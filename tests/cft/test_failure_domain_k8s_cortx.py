@@ -20,18 +20,13 @@
 
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
-import os
-from multiprocessing import Pool
 
 import pytest
 
-from commons import commands as common_cmd
 from commons import configmanager
-from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 
@@ -42,10 +37,6 @@ class TestFailureDomainK8Cortx:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.vm_username = os.getenv("QA_VM_POOL_ID",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -65,21 +56,9 @@ class TestFailureDomainK8Cortx:
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
 
     def setup_method(self):
-        """Revert the VM's before starting the deployment tests"""
-        if self.test_config["revert_vm"]:
-            self.log.info("Reverting all the VM before deployment")
-            with Pool(self.num_nodes) as proc_pool:
-                proc_pool.map(self.revert_vm_snapshot, self.host_list)
+        """Destroy the cortx cluster before starting the deployment tests"""
         self.log.info("Destroy the cluster from master node")
-        resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],self.worker_node_list)
-        assert_utils.assert_true(resp[0],resp[1])
-
-    def revert_vm_snapshot(self, host):
-        """Revert VM snapshot
-           host: VM name """
-        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
-            self.vm_username, self.vm_password, host), read_lines=True)
-
+        resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0], self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
 
     # pylint: disable=too-many-arguments
