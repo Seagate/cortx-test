@@ -705,9 +705,9 @@ class TestIAMUserManagement:
         self.log.debug(resp[1]["Policy"])
         s3_test_obj = s3_test_lib.S3TestLib(access_key=access_key, secret_key=secret_key)
         self.log.info("Setting up S3 background IO")
-        self.s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj, io_bucket_name=bucket)
+        s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj, io_bucket_name=bucket)
         self.log.info("Start parallel S3 IO for 5 minutes duration.")
-        self.s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h5m")
+        s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h5m")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
@@ -717,7 +717,7 @@ class TestIAMUserManagement:
             read_lines=False,
             exc=False)
         self.log.info("Stop parallel S3.")
-        self.s3ios.stop()
+        s3ios.stop()
         if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
             self.log.info("Delete Object: %s and bucket: %s with S3 account",
                           f"object{iam_user}.txt", bucket)
