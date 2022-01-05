@@ -154,6 +154,18 @@ class TestPodRestart:
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restored:
+            if self.restore_node:
+                LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
+                resp = self.ha_obj.host_power_on(host=self.node_name)
+                assert_utils.assert_true(resp, "Host is not powered on")
+            if self.restore_ip:
+                LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
+                self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
+                                                read_lines=True)
+                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
+                                            read_lines=True, exc=False)
+                assert_utils.assert_not_in(b"100% packet loss", resp[1][0],
+                                           f"Node interface still down. {resp}")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
