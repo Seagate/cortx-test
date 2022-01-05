@@ -28,11 +28,11 @@ import logging
 import hashlib
 import random
 from time import perf_counter_ns
+from hashlib import md5
 from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
-from hashlib import md5
 from paramiko.ssh_exception import SSHException
 from commons.exceptions import CortxTestException
 from commons import params
@@ -245,6 +245,6 @@ def calc_checksum(buf: object):
     :param hash_algo: md5 or sha1
     :return:
     """
-    file_hash = md5()
+    file_hash = md5()  # nosec
     file_hash.update(buf)
     return file_hash.hexdigest()

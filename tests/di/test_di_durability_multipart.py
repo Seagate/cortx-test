@@ -175,52 +175,6 @@ class TestDICheckMultiPart:
 
         self.log.info("ENDED: Method Level Teardown test data.")
 
-    @pytest.fixture(scope="function", autouse=False)
-    def create_testdir_cleanup(self):
-        """
-        Yield fixture to setup pre requisites and teardown them.
-        Part before yield will be invoked prior to each test case and
-        part after yield will be invoked after test call i.e as teardown.
-        """
-        self.test_dir_path = os.path.join(
-            DATAGEN_HOME, TEST_DATA_FOLDER, "TestDataDurability")
-        self.file_path = os.path.join(self.test_dir_path, di_lib.get_random_file_name())
-        if not system_utils.path_exists(self.test_dir_path):
-            system_utils.make_dirs(self.test_dir_path)
-            self.log.info("Created path: %s", self.test_dir_path)
-
-        self.log.info("ENDED: setup test data.")
-        yield
-        self.log.info("STARTED: Teardown of test data")
-        self.log.info("Deleting the file created locally for object")
-        if system_utils.path_exists(self.file_path):
-            system_utils.remove_dirs(self.test_dir_path)
-        self.log.info("Local file was deleted")
-        self.log.info("Deleting all buckets/objects created during TC execution")
-
-        resp = self.s3_test_obj.bucket_list()
-        if self.bucket_name in resp[1]:
-            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting the IAM accounts and users")
-        self.log.debug(self.s3_account)
-        if self.s3_account:
-            for acc in self.s3_account:
-                self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-                resp = self.cli_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_passwd)
-                self.log.debug("Deleting %s account", acc)
-                self.cli_obj.delete_all_iam_users()
-                self.cli_obj.logout_cortx_cli()
-                self.cli_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.s3acc_passwd)
-                self.log.info("Deleted %s account successfully", acc)
-        self.log.info("Deleted the IAM accounts and users")
-        self.cli_obj.close_connection()
-        self.hobj.disconnect()
-        self.log.info("ENDED: Teardown operations")
-
     # pylint: disable=max-args
     def do_multipart_upload(self, bucket_name, object_name, object_path, file_size, total_parts):
         """Initiate multipart upload, upload parts and complete it.
@@ -254,6 +208,28 @@ class TestDICheckMultiPart:
                       " list parts and complete multipart upload")
         return mpu_id, parts
 
+    def mpart_upload_with_split_parts(self, object_name, sz):
+        self.log.info("Step 3: upload a file using multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, object_name)
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        parts = list()
+        res_sp_file = system_utils.split_file(filename=self.file_path, size=sz, split_count=parts,
+                                              random_part_size=False)
+        i = 0
+        while i < parts:
+            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
+                data = file_pointer.read()
+            resp = self.s3_mp_test_obj.upload_part(body=data,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=object_name,
+                                                   upload_id=mpu_id, part_number=i + 1)
+            parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
+            i += 1
+        self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
+                                                      bucket=self.bucket_name,
+                                                      object_name=object_name)
+
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22501')
@@ -270,7 +246,7 @@ class TestDICheckMultiPart:
         ** Check CRC/checksum passed header. or s3 logs, Motr logs
         Verify checksum at client side
         """
-        sz = 64 * MB
+        size = 64 * MB
         total_parts = 8
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
@@ -281,9 +257,9 @@ class TestDICheckMultiPart:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info("Step 1: Created a bucket with name : %s", self.bucket_name)
-        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
+        self.log.info("Step 2: Put an object with checksum algo or ETAG.")
 
-        self.edtl.create_file(sz, '', self.file_path)
+        self.edtl.create_file(size, '', self.file_path)
         file_checksum = system_utils.calc_checksum(self.file_path)
         self.log.info("Step 2: md5 checksum calculated is .")
         self.log.info("Step 2: Put an object with md5 checksum.")
@@ -291,21 +267,20 @@ class TestDICheckMultiPart:
         dwn_pth = os.path.split(self.file_path)[0]
         download_path = os.path.join(dwn_pth, object_name)
         mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
-                                                 self.file_path, sz, total_parts)
+                                                 self.file_path, size, total_parts)
         resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
         try:
             content = resp[1]["Body"].read()
             self.log.info(f'size of downloaded object {object_name} is: {len(content)} bytes')
         except Exception as error:
-            self.log.info(f'downloaded object is not complete: {error}')
-
+            self.log.info('downloaded object is not complete: %s', error)
         download_checksum = di_lib.calc_checksum(content)
         assert_utils.assert_exact_string(file_checksum, download_checksum,
                                          'Checksum mismatch found in downloaded file')
+        self.log.info(f"Step3 Download & Compare: {file_checksum} and {download_checksum} matches.")
         self.log.info("ENDED TEST-22501: Test to verify object integrity during an "
                       "upload with correct checksum.")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29814')
@@ -314,7 +289,7 @@ class TestDICheckMultiPart:
         Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
         and verify read (Get).
         """
-        sz = 5 * MB
+        sz = 32 * MB
         parts = 5
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
@@ -340,41 +315,23 @@ class TestDICheckMultiPart:
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 3: upload a file using multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, object_name)
-        mpu_id = res[1]["UploadId"]
-        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        parts = list()
-        res_sp_file = system_utils.split_file(filename=self.file_path, size=sz, split_count=parts,
-                                              random_part_size=False)
-        i = 0
-        while i < parts:
-            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
-                data = file_pointer.read()
-            resp = self.s3_mp_test_obj.upload_part(body=data,
-                                                   bucket_name=self.bucket_name,
-                                                   object_name=object_name,
-                                                   upload_id=mpu_id, part_number=i + 1)
-            parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
-            i += 1
-        self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
-                                                      bucket=self.bucket_name,
-                                                      object_name=object_name)
+        self.mpart_upload_with_split_parts(object_name, sz)
         self.log.info("Step 4: verify download object fails with 5xx error code")
-        dwn_pth = os.path.split(self.file_path)[0]
-        download_path = os.path.join(dwn_pth, object_name, 'dwn')
-        mpd = s3_multipart.MultipartUsingBoto()
-        kdict = dict(bucket=self.bucket_name, key=object_name, file_path=download_path)
+
         try:
-            mpd.multipart_download(kdict)
-        except Exception as fault:
-            self.log.error(fault)
+            resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
+            content = resp[1]["Body"].read()
+            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+        except Exception as error:
+            self.log.info(f'downloaded object is not complete: {error}')
         else:
             assert False, 'Download passed'
 
-        download_checksum = system_utils.calculate_checksum(download_path, binary_bz64=False)[1]
-        assert_utils.assert_exact_string(file_checksum, download_checksum,
-                                         'Checksum mismatch found in downloaded file')
+        download_checksum = di_lib.calc_checksum(content)
+        assert_utils.assert_not_equal(file_checksum, download_checksum,
+                                      'Checksum match found in downloaded file')
+        self.log.info(f"Step3: Download & Compare: {file_checksum} and"
+                      f" {download_checksum} don't match")
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
 
@@ -413,26 +370,7 @@ class TestDICheckMultiPart:
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 3: upload a file using multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, object_name)
-        mpu_id = res[1]["UploadId"]
-        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        parts = list()
-        res_sp_file = system_utils.split_file(filename=self.file_path, size=sz, split_count=parts,
-                                              random_part_size=False)
-        i = 0
-        while i < parts:
-            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
-                data = file_pointer.read()
-            resp = self.s3_mp_test_obj.upload_part(body=data,
-                                                   bucket_name=self.bucket_name,
-                                                   object_name=object_name,
-                                                   upload_id=mpu_id, part_number=i + 1)
-            parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
-            i += 1
-        self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
-                                                      bucket=self.bucket_name,
-                                                      object_name=object_name)
+        self.mpart_upload_with_split_parts(object_name, sz)
         self.log.info("Step 4: verify download object fails with 5xx error code")
         dwn_pth = os.path.split(self.file_path)[0]
         download_path = os.path.join(dwn_pth, object_name, 'dwn')

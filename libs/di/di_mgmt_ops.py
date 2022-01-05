@@ -276,7 +276,8 @@ class ManagementOPs:
         udict = dict()
         s3acc_obj = RestS3user()
         resp = s3acc_obj.create_an_account(user_name, passwd)
-        assert_utils.assert_equal(resp.status_code, HTTPStatus.CREATED, 'S3 account user not created.')
+        assert_utils.assert_equal(resp.status_code, HTTPStatus.CREATED,
+                                  'S3 account user not created.')
         acc_details = json.loads(resp.text)
         LOGGER.info("Created s3 account %s", user_name)
         udict.update({'accesskey': acc_details["access_key"]})

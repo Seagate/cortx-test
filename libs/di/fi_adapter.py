@@ -25,7 +25,6 @@ import logging
 import time
 from abc import ABC, abstractmethod
 
-import pytest
 from fabric import Config
 from fabric import Connection
 from fabric import ThreadingGroup

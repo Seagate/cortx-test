@@ -1028,4 +1028,3 @@ def restart_s3server_with_fault_injection(request):
     resp = fi_adapter.set_fault_injection(flag=False)
     request.cls.fault_injection = False
     assert resp[0], resp[1]
-

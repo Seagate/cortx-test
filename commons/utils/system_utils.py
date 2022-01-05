@@ -337,7 +337,7 @@ def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
     """
     read_sz = 8192
     csum = None
-    file_hash = md5()
+    file_hash = md5()  # nosec
     if hash_algo != 'md5':
         raise NotImplementedError('Only md5 supported')
     if isinstance(object_ref, StreamingBody):
@@ -347,16 +347,16 @@ def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
             chunk = object_ref.read(amt=read_sz)
         return file_hash.hexdigest()
     if os.path.exists(object_ref):
-        sz = Path(object_ref).stat().st_size
+        size = Path(object_ref).stat().st_size
 
-        with open(object_ref, 'rb') as fp:
-            if sz < read_sz:
-                buf = fp.read(sz)
+        with open(object_ref, 'rb') as file_ptr:
+            if size < read_sz:
+                buf = file_ptr.read(size)
             else:
-                buf = fp.read(read_sz)
+                buf = file_ptr.read(read_sz)
             while buf:
                 file_hash.update(buf)
-                buf = fp.read(read_sz)
+                buf = file_ptr.read(read_sz)
             csum = file_hash.hexdigest()
 
     return csum
