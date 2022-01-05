@@ -326,14 +326,19 @@ class TestDICheckMultiPart:
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
         except (BotoCoreError, Exception) as error:
             self.log.info(f'downloaded object is not complete: {error}')
+            if content:
+                if len(content) == size:
+                    assert_utils.assert_false(True, "uploaded and downloaded object size"
+                                                    " is same unexpectedly."
+                                              )
+                download_checksum = di_lib.calc_checksum(content)
+                assert_utils.assert_not_equal(file_checksum, download_checksum,
+                                              'Checksum match found in downloaded file')
+                self.log.info("Step3: Checksum: ori %s and downloaded %s don't match as expected, "
+                              "but partial file was downloaded", file_checksum, download_checksum)
+                assert False, 'Partial file downloaded'
         else:
             assert False, 'Download passed unexpected'
-
-        download_checksum = di_lib.calc_checksum(content)
-        assert_utils.assert_not_equal(file_checksum, download_checksum,
-                                      'Checksum match found in downloaded file')
-        self.log.info(f"Step3: Download & Compare: {file_checksum} and"
-                      f" {download_checksum} don't match")
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
 
