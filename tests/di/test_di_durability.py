@@ -518,7 +518,7 @@ class TestDIDurability:
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
         # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
+        # to do enabling checksum corruption feature
         """
         self.log.info("STARTED: Data chunk checksum validation (Motr blocks data or metadata of "
                       "data blocks) and validate checksum error detection by S3/Motr")
@@ -982,7 +982,7 @@ class TestDIDurability:
         """
         Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
         # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
+        # to do enabling checksum corruption feature
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify read (Get).")
@@ -1039,7 +1039,7 @@ class TestDIDurability:
         and verify read (Get).
         SZ <= Data Unit Sz
         # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
+        # to do enabling checksum corruption feature
         """
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
