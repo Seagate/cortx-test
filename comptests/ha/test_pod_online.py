@@ -42,7 +42,7 @@ class TestPodOnlineStatus:
     @classmethod
     def setup_class(cls):
         """
-        Setup operations for the test file
+        Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
