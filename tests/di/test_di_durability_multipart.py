@@ -26,6 +26,7 @@ import os.path
 import logging
 import secrets
 import pytest
+from botocore.exceptions import BotoCoreError
 
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
@@ -289,8 +290,8 @@ class TestDICheckMultiPart:
         Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
         and verify read (Get).
         """
-        sz = 32 * MB
-        parts = 5
+        sz = 33 * MB
+        parts = 3
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
@@ -322,10 +323,10 @@ class TestDICheckMultiPart:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
-        except Exception as error:
+        except (BotoCoreError, Exception) as error:
             self.log.info(f'downloaded object is not complete: {error}')
         else:
-            assert False, 'Download passed'
+            assert False, 'Download passed unexpected'
 
         download_checksum = di_lib.calc_checksum(content)
         assert_utils.assert_not_equal(file_checksum, download_checksum,
@@ -342,10 +343,10 @@ class TestDICheckMultiPart:
     def test_29815(self):
         """
         Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
-        and verify read (Get).
+        and verify range read (Get).
         """
-        sz = 5 * MB
-        parts = 5
+        sz = 21 * MB
+        parts = 3
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
@@ -372,21 +373,22 @@ class TestDICheckMultiPart:
             assert False
         self.mpart_upload_with_split_parts(object_name, sz)
         self.log.info("Step 4: verify download object fails with 5xx error code")
-        dwn_pth = os.path.split(self.file_path)[0]
-        download_path = os.path.join(dwn_pth, object_name, 'dwn')
-        mpd = s3_multipart.MultipartUsingBoto()
-        kdict = dict(bucket=self.bucket_name, key=object_name, file_path=download_path)
         try:
-            mpd.multipart_download(kdict)
-        except Exception as fault:
-            self.log.error(fault)
+            resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
+            content = resp[1]["Body"].read()
+            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+        except (BotoCoreError, Exception) as error:
+            self.log.info(f'downloaded object is not complete: {error}')
         else:
-            assert False, 'Download passed'
-        download_checksum = system_utils.calculate_checksum(download_path, binary_bz64=False)[1]
-        assert_utils.assert_exact_string(file_checksum, download_checksum,
-                                         'Checksum mismatch found in downloaded file')
+            assert False, 'Download passed unexpected'
+
+        download_checksum = di_lib.calc_checksum(content)
+        assert_utils.assert_not_equal(file_checksum, download_checksum,
+                                      'Checksum match found in downloaded file')
+        self.log.info(f"Step3: Download & Compare: {file_checksum} and"
+                      f" {download_checksum} don't match")
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
-                      "MB (at s3 checksum) and verify read (Get).")
+                      "MB (at s3 checksum) and verify range read (Get).")
 
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
