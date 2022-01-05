@@ -32,6 +32,7 @@ from commons.constants import PROD_FAMILY_LC
 from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
+from commons.exceptions import CTException
 from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -319,13 +320,14 @@ class TestDICheckMultiPart:
         mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
                                                  self.file_path, sz_mb, total_parts)
         self.log.info("Step 4: verify download object fails with 5xx error code")
-
+        content = ''
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
-        except (BotoCoreError, Exception) as error:
-            self.log.info(f'downloaded object is not complete: {error}')
+        except (BotoCoreError, CTException) as error:
+            self.log.error('downloaded object is not complete')
+            self.log.exception(error, exc_info=True)
             if content:
                 if len(content) == size:
                     assert_utils.assert_false(True, "uploaded and downloaded object size"
