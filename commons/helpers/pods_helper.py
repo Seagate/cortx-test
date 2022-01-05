@@ -467,3 +467,15 @@ class LogicalNode(Host):
                 node_fqdn = data.split()[6]
                 pod_dict[pod_name.strip()] = node_fqdn.strip()
         return pod_dict
+
+    def get_pod_hostname(self, pod_name):
+        """
+        Helper function to get pod hostname
+        :param pod_name: name of the pod
+        :return: str
+        """
+        log.info("Getting pod hostname for pod %s", pod_name)
+        cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        hostname = output[0].strip()
+        return hostname
