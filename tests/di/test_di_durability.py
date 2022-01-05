@@ -55,7 +55,6 @@ from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 
 
-# pylint: disable=no-member
 class TestDIDurability:
     """DI Durability Test suite."""
 
@@ -81,6 +80,7 @@ class TestDIDurability:
         resp = cls.jc_obj.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
         """
