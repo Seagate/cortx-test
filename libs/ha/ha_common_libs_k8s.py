@@ -986,3 +986,42 @@ class HAK8s:
 
             res = (event_del_bkt, fail_del_bkt)
             output.put(res)
+
+    @staticmethod
+    def get_data_pod_no_ha_control(data_pod_list: list, pod_obj):
+        """
+        Helper function to get the data pod name which is not hosted on same node
+        as that of HA or control pod.
+        :param data_pod_list: list for all data pods in cluster
+        :param pod_obj: object for master node for pods_helper
+        :return: data_pod_name, data_pod_fqdn
+        """
+        LOGGER.info("Check the node which has the control or HA pod running and"
+                    "select data pod which is not hosted on any of these nodes.")
+        control_pods = pod_obj.get_pods_node_fqdn(common_const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        control_node_fqdn = control_pods.get(control_pod_name)
+        LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, control_node_fqdn)
+        ha_pods = pod_obj.get_pods_node_fqdn(common_const.HA_POD_NAME_PREFIX)
+        ha_pod_name = list(ha_pods.keys())[0]
+        ha_node_fqdn = ha_pods.get(ha_pod_name)
+        LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, ha_node_fqdn)
+        LOGGER.info("Get the data pod running on %s node and %s node",
+                    control_node_fqdn, ha_node_fqdn)
+        data_pods = pod_obj.get_pods_node_fqdn(common_const.POD_NAME_PREFIX)
+        data_pod_name2 = data_pod_name1 = None
+        for pod_name, node in data_pods.items():
+            if node == control_node_fqdn:
+                data_pod_name1 = pod_name
+            if node == ha_node_fqdn:
+                data_pod_name2 = pod_name
+        new_list = [pod_name for pod_name in data_pod_list
+                    if pod_name not in (data_pod_name1, data_pod_name2)]
+        data_pod_name = random.sample(new_list, 1)
+        LOGGER.info("%s data pod is not hosted either on control or ha node",
+                    data_pod_name)
+        data_node_fqdn = data_pods.get(data_pod_name)
+        LOGGER.info("Node %s is hosting data pod %s", data_node_fqdn, data_pod_name)
+
+        return data_pod_name, data_node_fqdn
+
