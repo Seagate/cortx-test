@@ -165,7 +165,7 @@ class S3MultipartTestLib(Multipart):
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
-                    data = file_pointer.read(single_part_size)
+                    data = file_pointer.read(1048576 * single_part_size)
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break

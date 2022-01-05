@@ -248,6 +248,7 @@ class TestDICheckMultiPart:
         Verify checksum at client side
         """
         size = 64 * MB
+        sz_mb = 64
         total_parts = 8
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
@@ -265,10 +266,8 @@ class TestDICheckMultiPart:
         self.log.info("Step 2: md5 checksum calculated is .")
         self.log.info("Step 2: Put an object with md5 checksum.")
         object_name = os.path.split(self.file_path)[-1]
-        dwn_pth = os.path.split(self.file_path)[0]
-        download_path = os.path.join(dwn_pth, object_name)
         mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
-                                                 self.file_path, size, total_parts)
+                                                 self.file_path, sz_mb, total_parts)
         resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
         try:
             content = resp[1]["Body"].read()
@@ -290,8 +289,9 @@ class TestDICheckMultiPart:
         Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
         and verify read (Get).
         """
-        sz = 33 * MB
-        parts = 3
+        size = 33 * MB
+        sz_mb = 33
+        total_parts = 3
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
@@ -305,7 +305,7 @@ class TestDICheckMultiPart:
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
-        self.edtl.create_file(sz, first_byte='z', name=self.file_path)
+        self.edtl.create_file(size, first_byte='z', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         object_name = os.path.split(self.file_path)[-1]
         self.log.info("Step 1: created a corrupted file %s", self.file_path)
@@ -316,7 +316,8 @@ class TestDICheckMultiPart:
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.mpart_upload_with_split_parts(object_name, sz)
+        mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
+                                                 self.file_path, sz_mb, total_parts)
         self.log.info("Step 4: verify download object fails with 5xx error code")
 
         try:
