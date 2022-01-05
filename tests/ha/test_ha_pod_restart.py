@@ -1223,7 +1223,7 @@ class TestPodRestart:
 
         LOGGER.info("Get data pod list to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod = pod_list[0]
+        pod = random.sample(pod_list, 1)
 
         loop_count = HA_CFG["common_params"]["loop_count"]
         for loop in range(1, loop_count):
@@ -1301,8 +1301,7 @@ class TestPodRestart:
 
             LOGGER.info("Get recently created data pod name using deployment %s",
                         self.deployment_name)
-            pod = self.node_master_list[0].get_recent_pod_name_by_deployment(
-                deployment_name=self.deployment_name)
+            pod = self.node_master_list[0].get_recent_pod_name(deployment_name=self.deployment_name)
 
         LOGGER.info("ENDED: Test to verify IOs in degraded mode and after data pod restart in "
                     "loop (same pod down every time)")
