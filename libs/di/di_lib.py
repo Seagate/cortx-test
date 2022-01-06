@@ -28,6 +28,7 @@ import logging
 import hashlib
 import random
 from time import perf_counter_ns
+from hashlib import md5
 from pathlib import Path
 from fabric import Connection
 from fabric import Config
@@ -201,7 +202,7 @@ def get_random_bucket_name():
     Function will return a random bucket name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-bkt-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_object_name():
@@ -209,7 +210,7 @@ def get_random_object_name():
     Function will return a random object name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-obj-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_account_name():
@@ -233,5 +234,17 @@ def get_random_file_name():
     Function will return a random filename name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "data_durability{}.{}".format(perf_counter_ns(), random.sample(all_extensions, 1))
+    ext = random.sample(all_extensions, 1)[0]
+    return "data_durability{}{}".format(perf_counter_ns(), ext)
 
+
+def calc_checksum(buf: object):
+    """
+    calc checksum from buffer / bytes.
+    :param buf: byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    file_hash = md5()  # nosec
+    file_hash.update(buf)
+    return file_hash.hexdigest()
