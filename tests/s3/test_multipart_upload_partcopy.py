@@ -66,6 +66,8 @@ class TestMultipartUploadPartCopy:
         self.mp_obj_path = os.path.join(self.test_dir_path, self.test_file)
         self.mp_obj_path_partcopy = os.path.join(
             self.test_dir_path, "mpu_partcopy_obj{}".format(perf_counter_ns()))
+        self.mp_down_obj_pth = os.path.join(
+            self.test_dir_path, "mpu_down_obj{}".format(perf_counter_ns()))
         if not path_exists(self.test_dir_path):
             make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
@@ -679,10 +681,18 @@ class TestMultipartUploadPartCopy:
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id1, sorted_part_list, self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Download multipart object.")
+        resp = self.s3t_obj.object_download(
+            self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
+        assert_utils.assert_true(resp[0], resp[1])
         parts = resp2[1]["Parts"]
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id2, sorted_part_list, self.bucket_name1, self.object_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Download multipart object.")
+        resp = self.s3t_obj.object_download(
+            self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
@@ -765,6 +775,10 @@ class TestMultipartUploadPartCopy:
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id1, sorted_part_list, self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Download multipart object.")
+        resp = self.s3t_obj.object_download(
+            self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
@@ -855,6 +869,10 @@ class TestMultipartUploadPartCopy:
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id1, sorted_part_list, self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Download multipart object.")
+        resp = self.s3t_obj.object_download(
+            self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
@@ -951,6 +969,10 @@ class TestMultipartUploadPartCopy:
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         resp = response1[8].complete_multipart_upload(
             mpu_id1, sorted_part_list, self.bucket_name1, self.object_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Download multipart object.")
+        resp = self.s3t_obj.object_download(
+            self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
