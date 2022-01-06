@@ -3059,3 +3059,111 @@ class TestPodFailure:
         LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34827")
+    @CTFailOn(error_handler)
+    def test_background_IO_during_control_pod_restart(self):
+        """
+        Test control pod deletion should not affect existing user I/O
+        """
+        LOGGER.info(
+            "STARTED: Test control pod deletion should not affect existing user I/O")
+        bkt_obj_dict = {}
+        output = Queue()
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        LOGGER.info("Step 1: Create bucket, upload an object to one of the bucket ")
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = resp[1]
+        LOGGER.info("Step 1: Successfully create bucket, upload an object to one of the bucket")
+
+        bkt_obj_dict = {f"ha-bkt-{int((perf_counter_ns()))}": f"ha-obj-{int((perf_counter_ns()))}"}
+        LOGGER.info("Step 2: Create multiple buckets and copy object from %s to other buckets in "
+                    "background", self.bucket_name)
+        args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
+                'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
+                'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
+                'put_etag': put_etag}
+        prc = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
+        prc.start()
+        LOGGER.info("Step 2: Successfully started background process")
+
+        LOGGER.info("Step 3: Find & Delete the control pod")
+        control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        LOGGER.debug("Control pod %s", control_pod_name)
+        resp = self.node_master_list[0].delete_pod(pod_name=control_pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {control_pod_name}")
+        LOGGER.info(
+            "Step 3: Successfully shutdown/deleted pod %s by kubectl delete", control_pod_name)
+
+        prc.join()
+        if output.empty():
+            LOGGER.error("Failed in Copy Object process")
+            LOGGER.info("Retrying copy object to bucket %s", list(bkt_obj_dict.keys())[0])
+            resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict,
+                                                      file_path=self.multipart_obj_path,
+                                                      bkt_op=False, put_etag=put_etag)
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            res = output.get()
+            put_etag = res[1]
+
+        LOGGER.info("Step 4: Download the uploaded objects & verify etags")
+        for key, val in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=key, key=val)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
+                                                          f"object {key} of bucket {val}. "
+                                                          "Put and Get Etag mismatch")
+        LOGGER.info("Step 4: Successfully download the uploaded objects & verify etags")
+
+        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.clear()
+        bkt_obj_dict[bucket3] = object3
+        LOGGER.info("Step 5: Perform copy of %s from already created/uploaded %s to %s and verify "
+                    "copy object etags", self.object_name, self.bucket_name, bucket3)
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag,
+                                                  bkt_op=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Performed copy of %s from already created/uploaded %s to %s and "
+                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+
+        LOGGER.info("Step 6: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                      f"for object {object3} of bucket {bucket3}.")
+        LOGGER.info("Step 6: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+
+        LOGGER.info(
+            "COMPLETED: Test control pod deletion should not affect existing user I/O")

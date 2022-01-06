@@ -49,7 +49,6 @@ from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import iam_test_lib
-from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
@@ -195,6 +194,34 @@ class TestIAMUserManagement:
             self.log.info("Restarted s3 authserver successfully")
 
         self.log.info("ENDED : Teardown operations for test function")
+
+    # pylint: disable=too-many-arguments
+    def perform_basic_io(self,
+                         obj,
+                         bucket,
+                         io_access_key,
+                         io_secret_key,
+                         s3_access_key,
+                         s3_secret_key):
+        """
+        Perform create , put & delete objects.
+        :param obj: name of object.
+        :param bucket: name of bucket.
+        :param io_access_key: Access key of S3 or IAM user to perform put object.
+        :param io_secret_key: Secret key of S3 or IAM user to perform put object.
+        :param s3_access_key: Access key of S3 user.
+        :param s3_secret_key: Secret key of S3 user
+        """
+        if s3_misc.create_put_objects(obj, bucket, io_access_key, io_secret_key, object_size=500):
+            self.log.info("Put Object: %s in the bucket: %s with user",
+                          obj, bucket)
+        else:
+            assert_utils.assert_true(False, "Put object Failed.")
+        if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
+            self.log.info("Delete Object: %s and bucket: %s with S3 account",
+                          obj, bucket)
+        else:
+            assert_utils.assert_true(False, "Delete object and bucket Failed.")
 
     def s3_ios(self,
                bucket=None,
@@ -684,7 +711,6 @@ class TestIAMUserManagement:
             iam_user, s3_access_key, s3_secret_key, access_key, secret_key)
         accesskeyid = resp[1]["AccessKeyId"]
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3 : Perform io's & Delete control pod")
         bucket = "bucket{}".format(perf_counter_ns())
         if s3_misc.create_bucket(bucket, s3_access_key, s3_secret_key):
             self.log.info("Created bucket: %s ", bucket)
@@ -703,11 +729,11 @@ class TestIAMUserManagement:
         resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.debug(resp[1]["Policy"])
-        s3_test_obj = s3_test_lib.S3TestLib(access_key=access_key, secret_key=secret_key)
-        self.log.info("Setting up S3 background IO")
-        s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj, io_bucket_name=bucket)
-        self.log.info("Start parallel S3 IO for 5 minutes duration.")
-        s3ios.start(log_prefix="TEST-32695_s3bench_ios", duration="0h5m")
+        self.log.info("Step 3 : Perform io's & Delete control pod")
+        obj = f"object{iam_user}.txt"
+        process = Process(target=self.perform_basic_io,
+                          args=(obj, bucket, access_key, secret_key, s3_access_key, s3_secret_key))
+        process.start()
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
@@ -716,11 +742,8 @@ class TestIAMUserManagement:
             self.csm_cluster.get_pod_name(resp_node)),
             read_lines=False,
             exc=False)
-        self.log.info("Stop parallel S3.")
-        s3ios.stop()
-        if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
-            self.log.info("Delete Object: %s and bucket: %s with S3 account",
-                          f"object{iam_user}.txt", bucket)
+        self.log.info("wait for S3 I/O")
+        process.join()
         resp = self.auth_obj.delete_iam_accesskey(
             iam_user, accesskeyid, s3_access_key, s3_secret_key)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1225,12 +1248,8 @@ class TestIAMUserManagement:
             resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.debug(resp[1]["Policy"])
-            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
-                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
-            else:
-                assert False, "Put object Failed."
-            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
-                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
+            self.perform_basic_io(obj, bucket, access_key, secret_key,
+                                           s3_access_key, s3_secret_key)
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_user, accesskeyid, s3_access_key, s3_secret_key)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1295,12 +1314,8 @@ class TestIAMUserManagement:
             resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.debug(resp[1]["Policy"])
-            if s3_misc.create_put_objects(obj, bucket, access_key, secret_key):
-                self.log.info("Put Object: %s in the bucket: %s with IAM user", obj, bucket)
-            else:
-                assert False, "Put object Failed."
-            if s3_misc.delete_objects_bucket(bucket, s3_access_key, s3_secret_key):
-                self.log.info("Delete Object: %s and bucket: %s with S3 account", obj, bucket)
+            self.perform_basic_io(obj, bucket, access_key, secret_key,
+                                           s3_access_key, s3_secret_key)
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_user, accesskeyid, s3_access_key, s3_secret_key)
             assert_utils.assert_true(resp[0], resp[1])
