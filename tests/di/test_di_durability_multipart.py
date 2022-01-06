@@ -353,10 +353,11 @@ class TestDICheckMultiPart:
         Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
         and verify range read (Get).
         """
-        sz = 21 * MB
-        parts = 3
+        size = 21 * MB
+        sz_mb = 21
+        total_parts = 3
         self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
-                      "MB (at s3 checksum) and verify read (Get).")
+                      "MB (at s3 checksum) and verify range read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
@@ -368,8 +369,12 @@ class TestDICheckMultiPart:
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
-        self.edtl.create_file(sz, first_byte='z', name=self.file_path)
+        self.edtl.create_file(size, first_byte='f', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        with open(self.file_path, 'rb') as file_ptr:
+            buf = file_ptr.read()
+        good_read_range = buf[7340032:]
+        bad_read_range = buf[:7340032]
         object_name = os.path.split(self.file_path)[-1]
         self.log.info("Step 1: created a corrupted file %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
@@ -379,24 +384,63 @@ class TestDICheckMultiPart:
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.mpart_upload_with_split_parts(object_name, sz)
+        mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
+                                                 self.file_path, sz_mb, total_parts)
         self.log.info("Step 4: verify download object fails with 5xx error code")
+        content = ''
         try:
-            resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
+            resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
+                                               ranges='0-7340032')
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
-        except (BotoCoreError, Exception) as error:
-            self.log.info(f'downloaded object is not complete: {error}')
+        except (BotoCoreError, CTException) as error:
+            self.log.error('downloaded object is not complete')
+            self.log.exception(error, exc_info=True)
+            if content:
+                if len(content) == 7340032:
+                    assert_utils.assert_false(True, "uploaded and downloaded object size"
+                                                    " is same unexpectedly."
+                                              )
+                download_checksum = di_lib.calc_checksum(content)
+                bsum = di_lib.calc_checksum(bad_read_range)
+                assert_utils.assert_not_equal(bsum,
+                                              download_checksum,
+                                              'Checksum match found in downloaded file')
+                self.log.info("Step3: Checksum: ori %s and downloaded %s don't match as expected, "
+                              "but partial file was downloaded", bsum, download_checksum)
+                assert False, 'Partial file downloaded'
         else:
-            assert False, 'Download passed unexpected'
+            assert False, 'Download of bad range unexpected'
 
-        download_checksum = di_lib.calc_checksum(content)
-        assert_utils.assert_not_equal(file_checksum, download_checksum,
+        try:
+            content = ''
+            resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
+                                               ranges='7340032-22020095')
+            content = resp[1]["Body"].read()
+            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+        except (BotoCoreError, CTException) as error:
+            self.log.error('downloaded object is not complete')
+            self.log.exception(error, exc_info=True)
+            if content:
+                if len(content) == size:
+                    assert_utils.assert_false(True, "uploaded and downloaded object size"
+                                                    " is same unexpectedly."
+                                              )
+                download_checksum = di_lib.calc_checksum(content)
+                bsum = di_lib.calc_checksum(good_read_range)
+                assert_utils.assert_not_equal(bsum, download_checksum,
+                                              'Checksum match found in downloaded file')
+                self.log.info("Step3: Checksum: ori %s and downloaded %s don't match as expected, "
+                              "but partial file was downloaded", file_checksum, download_checksum)
+                assert False, 'Partial file downloaded'
+        else:
+            download_checksum = di_lib.calc_checksum(content)
+            bsum = di_lib.calc_checksum(good_read_range)
+            assert_utils.assert_equal(bsum, download_checksum,
                                       'Checksum match found in downloaded file')
-        self.log.info(f"Step3: Download & Compare: {file_checksum} and"
-                      f" {download_checksum} don't match")
+
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
-                      "MB (at s3 checksum) and verify range read (Get).")
+                      "MB (at s3 checksum) and verify read (Get).")
 
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
