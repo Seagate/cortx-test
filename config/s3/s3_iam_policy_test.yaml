@@ -93,3 +93,56 @@ test_32769:
         "Effect": "Deny"
         "Resource": "xyz"
         "Sid": "AssumeTaggedRole"
+
+test_33900:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action:
+          - "s3:GetObjectAcl"
+          - "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action:
+          - "s3:GetBucketAcl"
+          - "s3:PutBucketAcl"
+        Resource: "arn:aws:s3:::{}"
+
+test_3390_:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action: ""
+        Resource: "arn:aws:s3:::{}"
+
+test_33902:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action:
+          - "s3:PutObject"
+          - "s3:AbortMultipartUpload"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action:
+          - "s3:ListBucketMultipartUploads"
+        Resource: "arn:aws:s3:::{}"
+
+test_33903:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          AWS: ""
+        Action: ""
+        Resource: "arn:aws:s3:::{}/*"
