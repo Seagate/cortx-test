@@ -1245,7 +1245,7 @@ class TestPodRestart:
         LOGGER.info("STARTED: Test to verify IOs in degraded mode and after data pod restart in "
                     "loop (same pod down every time)")
 
-        LOGGER.info("Get data pod list to be deleted")
+        LOGGER.info("Get data pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod = random.sample(pod_list, 1)[0]
         pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod)
