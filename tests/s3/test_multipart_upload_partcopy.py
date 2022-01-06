@@ -620,13 +620,21 @@ class TestMultipartUploadPartCopy:
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         resp = self.s3mpu_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        parts = resp[1]["Parts"]
-        self.log.info("Parts: %s", parts)
         self.log.info("Step 5: Get the part details and perform CompleteMultipartUpload.")
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        self.log.info("sorted_part_list: %s", sorted_part_list)
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
+        upload_etag = resp[1]["ETag"]
+        self.log.info("Get the uploaded object")
+        status, res = self.s3t_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(status, res)
+        get_etag = res['ETag']
+        self.log.info("Compare ETags")
+        assert_utils.assert_equal(upload_etag, get_etag,
+                                  f"Failed to match ETag: {upload_etag}, {get_etag}")
+        self.log.info("Matched ETag: %s, %s", upload_etag, get_etag)
         self.log.info("Step 6: Create bucket2.")
         resp = self.s3t_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp)
@@ -704,7 +712,7 @@ class TestMultipartUploadPartCopy:
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
                       "parts can have sizes aligned and unaligned with motr unit sizes."
                       " Make sure the entire object is <= 5GB")
-        resp = create_file(self.test_file, count=9, b_size="533M")
+        resp = create_file(self.test_file, count=7, b_size="533M")
         assert_utils.assert_true(resp[0], resp[1])
         chunks = s3_utils.get_unaligned_parts(
             self.test_file, total_parts=10, random=True)
@@ -715,11 +723,20 @@ class TestMultipartUploadPartCopy:
         resp = self.s3mpu_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Get the part details and perform CompleteMultipartUpload.")
-        parts = resp[1]["Parts"]
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        self.log.info("sorted_part_list: %s", sorted_part_list)
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
+        upload_etag = resp[1]["ETag"]
+        self.log.info("Get the uploaded object")
+        status, res = self.s3t_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(status, res)
+        get_etag = res['ETag']
+        self.log.info("Compare ETags")
+        assert_utils.assert_equal(upload_etag, get_etag,
+                                  f"Failed to match ETag: {upload_etag}, {get_etag}")
+        self.log.info("Matched ETag: %s, %s", upload_etag, get_etag)
         self.log.info("Step 6: Create bucket2.")
         resp = self.s3t_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp)
@@ -762,7 +779,7 @@ class TestMultipartUploadPartCopy:
         """Overwrite the failed UploadCopyPart for byte range to successful uploadPartCopy."""
         self.log.info("STARTED: Overwrite the failed UploadCopyPart for byte range to successful.")
         self.log.info("Start S3 background IOs.")
-        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h2m")
+        self.s3bio_obj.start(log_prefix="TEST-32734_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Create bucket1.")
         resp = self.s3t_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp)
@@ -773,7 +790,7 @@ class TestMultipartUploadPartCopy:
         self.log.info("Step 3: Upload 10 parts of various sizes and in random order. The uploaded "
                       "parts can have sizes aligned and unaligned with motr unit sizes."
                       " Make sure the entire object is > 5GB.")
-        resp = create_file(self.test_file, count=11, b_size="1G")
+        resp = create_file(self.test_file, count=6, b_size="1G")
         assert_utils.assert_true(resp[0], resp[1])
         chunks = s3_utils.get_unaligned_parts(self.test_file, total_parts=10, random=True)
         status, parts = self.s3mpu_obj.upload_parts_sequential(
@@ -782,13 +799,21 @@ class TestMultipartUploadPartCopy:
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         resp = self.s3mpu_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        parts = resp[1]["Parts"]
-        self.log.info("Parts: %s", parts)
         self.log.info("Step 5: Get the part details and perform CompleteMultipartUpload.")
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        self.log.info("sorted_part_list: %s", sorted_part_list)
         resp = self.s3mpu_obj.complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
+        upload_etag = resp[1]["ETag"]
+        self.log.info("Get the uploaded object")
+        status, res = self.s3t_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(status, res)
+        get_etag = res['ETag']
+        self.log.info("Compare ETags")
+        assert_utils.assert_equal(upload_etag, get_etag,
+                                  f"Failed to match ETag: {upload_etag}, {get_etag}")
+        self.log.info("Matched ETag: %s, %s", upload_etag, get_etag)
         self.log.info("Step 6: Create bucket2.")
         resp = self.s3t_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp)
@@ -868,13 +893,21 @@ class TestMultipartUploadPartCopy:
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         resp = response[8].list_parts(mpu_id, self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        parts = resp[1]["Parts"]
-        self.log.info("Parts: %s", parts)
         self.log.info("Step 5: Get the part details and perform CompleteMultipartUpload.")
         sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        self.log.info(sorted_part_list)
         resp = response[8].complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
+        upload_etag = resp[1]["ETag"]
+        self.log.info("Get the uploaded object")
+        status, res = self.s3t_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(status, res)
+        get_etag = res['ETag']
+        self.log.info("Compare ETags")
+        assert_utils.assert_equal(upload_etag, get_etag,
+                                  f"Failed to match ETag: {upload_etag}, {get_etag}")
+        self.log.info("Matched ETag: %s, %s", upload_etag, get_etag)
         self.log.info("Step 6: Create bucket2 in account 2 and have the default settings. Meaning,"
                       " account account 2 does not have read permission on account1’s resources.")
         s3_account2 = self.acc_name_prefix.format(perf_counter_ns())
