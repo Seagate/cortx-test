@@ -707,7 +707,7 @@ class TestIAMUserManagement:
         self.log.info("Setting up S3 background IO")
         s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj, io_bucket_name=bucket)
         self.log.info("Start parallel S3 IO for 5 minutes duration.")
-        s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h5m")
+        s3ios.start(log_prefix="TEST-32695_s3bench_ios", duration="0h5m")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
