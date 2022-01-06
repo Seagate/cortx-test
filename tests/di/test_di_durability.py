@@ -42,6 +42,10 @@ from commons.constants import MB, KB
 from config import CMN_CFG
 from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import S3_CFG
+from libs.di.di_error_detection_test_lib import DIErrorDetection
+from libs.di.di_feature_control import DIFeatureControl
+from libs.di.data_generator import DataGenerator
+from libs.di.fi_adapter import S3FailureInjection
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
@@ -49,12 +53,9 @@ from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3 import s3_s3cmd
-from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.di.di_feature_control import DIFeatureControl
-from libs.di.data_generator import DataGenerator
-from libs.di.fi_adapter import S3FailureInjection
 
 
+@pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDIDurability:
     """DI Durability Test suite."""
 
