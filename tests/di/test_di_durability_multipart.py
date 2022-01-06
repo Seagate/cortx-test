@@ -211,6 +211,12 @@ class TestDICheckMultiPart:
         return mpu_id, parts
 
     def mpart_upload_with_split_parts(self, object_name, sz):
+        """
+        Using multipart upload with random part sizes.
+        :param object_name:
+        :param sz:
+        :return:
+        """
         self.log.info("Step 3: upload a file using multipart upload")
         res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, object_name)
         mpu_id = res[1]["UploadId"]
