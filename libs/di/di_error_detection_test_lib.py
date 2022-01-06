@@ -113,6 +113,7 @@ class DIErrorDetection:
         :param: enabled_cfg Boolean
         :param: disabled_cfg Boolean
         :return:tuple
+        # TODO Needs logic change.
         """
         skip_mark = True
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
