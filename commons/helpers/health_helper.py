@@ -976,13 +976,16 @@ class Health(Host):
             return True
         return False
 
-    def get_pod_svc_status(self, pod_list, fail=True):
+    def get_pod_svc_status(self, pod_list, fail=True, hostname=None):
         """
         Helper function to get pod wise service status
         :param pod_list: List pof pods
         :param fail: Flag to check failed/started status of services
+        :param hostname: Hostname of the pod
         :return: Bool, list
         """
+        pod_obj = LogicalNode(hostname=self.hostname, username=self.username,
+                              password=self.password)
         try:
             results = []
             if fail:
@@ -992,10 +995,8 @@ class Health(Host):
             LOG.info("Getting services status for all pods")
             hctl_output = self.hctl_status_json()
             for pod in pod_list:
-                LOG.info("Getting pod hostname for pod %s", pod)
-                cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod)
-                output = self.execute_cmd(cmd=cmd, read_lines=True)
-                hostname = output[0].strip()
+                if hostname is None:
+                    hostname = pod_obj.get_pod_hostname(pod_name=pod)
                 for node in hctl_output["nodes"]:
                     if hostname == node["name"]:
                         services = node["svcs"]
