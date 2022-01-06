@@ -269,16 +269,17 @@ class TestDICheckMultiPart:
         object_name = os.path.split(self.file_path)[-1]
         mpu_id, parts = self.do_multipart_upload(self.bucket_name, object_name,
                                                  self.file_path, sz_mb, total_parts)
-        resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
         try:
+            resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
             content = resp[1]["Body"].read()
             self.log.info(f'size of downloaded object {object_name} is: {len(content)} bytes')
-        except Exception as error:
-            self.log.info('downloaded object is not complete: %s', error)
+        except (CTException, Exception) as error:
+            self.log.error('downloaded object is not complete: %s', error)
         download_checksum = di_lib.calc_checksum(content)
         assert_utils.assert_exact_string(file_checksum, download_checksum,
                                          'Checksum mismatch found in downloaded file')
-        self.log.info(f"Step3 Download & Compare: {file_checksum} and {download_checksum} matches.")
+        self.log.info("Step3 Download & Compare: %s and %s matches.",
+                      file_checksum, download_checksum)
         self.log.info("ENDED TEST-22501: Test to verify object integrity during an "
                       "upload with correct checksum.")
 
