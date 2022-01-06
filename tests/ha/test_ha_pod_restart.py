@@ -162,10 +162,8 @@ class TestPodRestart:
                 LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
                 self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
                                                 read_lines=True)
-                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
-                                            read_lines=True, exc=False)
-                assert_utils.assert_not_in(b"100% packet loss", resp[1][0],
-                                           f"Node interface still down. {resp}")
+                resp = sysutils.check_ping(host=self.node_ip)
+                assert_utils.assert_true(resp, "Interface is still not up.")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
@@ -1174,6 +1172,7 @@ class TestPodRestart:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         data_pod_name, data_node_fqdn = \
             self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         self.node_name = data_node_fqdn
         LOGGER.info("Shutdown the node: %s", data_node_fqdn)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=data_node_fqdn)
@@ -1187,15 +1186,17 @@ class TestPodRestart:
         LOGGER.info("Step 2: Cluster is in degraded state")
 
         LOGGER.info("Step 3: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Services of pod %s are in offline state", data_pod_name)
 
+        remain_pod_list = list(filter(lambda x: x != data_pod_name, data_pod_list))
         LOGGER.info("Step 4: Check services status on remaining pods %s",
-                    data_pod_list.remove(data_pod_name))
+                    remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=data_pod_list.remove(data_pod_name), fail=False)
+            pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services status on remaining pod are in online state")
@@ -1254,6 +1255,7 @@ class TestPodRestart:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         data_pod_name, data_node_fqdn = \
             self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         LOGGER.info("Get the ip of the host from the node %s", data_node_fqdn)
         for count, host in enumerate(self.host_worker_list):
             if host == data_node_fqdn:
@@ -1271,10 +1273,8 @@ class TestPodRestart:
                 LOGGER.info("Make %s interface down for %s node", self.node_iface, host)
                 self.new_worker_obj.execute_cmd(
                     cmd=cmd.IP_LINK_CMD.format(self.node_iface, "down"), read_lines=True)
-                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
-                                            read_lines=True, exc=False)
-                assert_utils.assert_in(b"100% packet loss", resp,
-                                       f"Node interface still up. {resp}")
+                resp = sysutils.check_ping(host=self.node_ip)
+                assert_utils.assert_false(resp, "Interface is still up.")
                 break
 
         LOGGER.info("Step 1: %s Node's network is down.", data_node_fqdn)
@@ -1286,15 +1286,17 @@ class TestPodRestart:
         LOGGER.info("Step 2: Cluster is in degraded state")
 
         LOGGER.info("Step 3: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Services of pod %s are in offline state", data_pod_name)
 
+        remain_pod_list = list(filter(lambda x: x != data_pod_name, data_pod_list))
         LOGGER.info("Step 4: Check services status on remaining pods %s",
-                    data_pod_list.remove(data_pod_name))
+                    remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=data_pod_list.remove(data_pod_name), fail=False)
+            pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services status on remaining pod are in online state")
