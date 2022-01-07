@@ -723,9 +723,10 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 7: Services of pod are in offline state")
 
+        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
         self.log.info("Step 8: Check services status on remaining pods %s",
-                      pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                      remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list,
                                                            fail=False)
         self.log.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)

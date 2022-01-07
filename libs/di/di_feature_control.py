@@ -23,7 +23,6 @@ Python library which will perform the operations to enable/disable DI feature
 """
 import logging
 import os
-
 from commons import commands
 from commons import const
 from commons.constants import POD_NAME_PREFIX
