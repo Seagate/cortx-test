@@ -3070,100 +3070,61 @@ class TestPodFailure:
         """
         LOGGER.info(
             "STARTED: Test control pod deletion should not affect existing user I/O")
-        bkt_obj_dict = {}
+
+        LOGGER.info("Step 1: Perform Continuous READs and WRITEs during control pod down")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-34827'
+        self.s3_clean = users
+        event = threading.Event()
         output = Queue()
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 10, 'skipcleanup': False, 'output': output}
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 1: Successfully started READs and WRITES in background")
 
-        LOGGER.info("Step 1: Create bucket, upload an object to one of the bucket ")
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        put_etag = resp[1]
-        LOGGER.info("Step 1: Successfully create bucket, upload an object to one of the bucket")
-
-        bkt_obj_dict = {f"ha-bkt-{int((perf_counter_ns()))}": f"ha-obj-{int((perf_counter_ns()))}"}
-        LOGGER.info("Step 2: Create multiple buckets and copy object from %s to other buckets in "
-                    "background", self.bucket_name)
-        args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
-                'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
-                'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
-                'put_etag': put_etag}
-        prc = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
-        prc.start()
-        LOGGER.info("Step 2: Successfully started background process")
-
-        LOGGER.info("Step 3: Find & Delete the control pod")
+        LOGGER.info("Step 2: Find & Delete the control pod")
         control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         control_pod_name = list(control_pods.keys())[0]
         LOGGER.debug("Control pod %s", control_pod_name)
-        resp = self.node_master_list[0].delete_pod(pod_name=control_pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=control_pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to delete pod {control_pod_name}")
-        LOGGER.info(
-            "Step 3: Successfully shutdown/deleted pod %s by kubectl delete", control_pod_name)
+        assert_utils.assert_false(
+            resp[0], f"Failed to delete pod {control_pod_name} by deleting deployment (unsafe)")
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    control_pod_name)
 
-        prc.join()
-        if output.empty():
-            LOGGER.error("Failed in Copy Object process")
-            LOGGER.info("Retrying copy object to bucket %s", list(bkt_obj_dict.keys())[0])
-            resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
-                                                      bucket_name=self.bucket_name,
-                                                      object_name=self.object_name,
-                                                      bkt_obj_dict=bkt_obj_dict,
-                                                      file_path=self.multipart_obj_path,
-                                                      bkt_op=False, put_etag=put_etag)
-            assert_utils.assert_true(resp[0], resp[1])
-        else:
-            res = output.get()
-            put_etag = res[1]
+        LOGGER.info("Step 3: Verify status for In-flight READs and WRITEs while pod is down")
+        event.clear()
+        thread.join()
+        responses = ()
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+                                                f"failures: {resp[1]}")
+        assert_utils.assert_false(len(fail_logs),
+                                 f"Logs which contain failures IOs: {fail_logs}")
+        LOGGER.info("Step 3: Verified status for In-flight READs and WRITEs while pod is down")
 
-        LOGGER.info("Step 4: Download the uploaded objects & verify etags")
-        for key, val in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=key, key=val)
-            LOGGER.info("Get object response: %s", resp)
-            get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {key} of bucket {val}. "
-                                                          "Put and Get Etag mismatch")
-        LOGGER.info("Step 4: Successfully download the uploaded objects & verify etags")
-
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 5: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
-
-        LOGGER.info("Step 6: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 6: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        LOGGER.info("Step 4: Successfully started the pod")
+        self.restore_pod = False
 
         LOGGER.info(
             "COMPLETED: Test control pod deletion should not affect existing user I/O")
