@@ -499,7 +499,7 @@ class TestDICheckMultiPart:
         s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
                                                  file_path=self.file_path, **odict)
 
-        object_uri = 's3://' + self.bucket_name + os.path.split(self.file_path)[-1]
+        object_uri = 's3://' + self.bucket_name + '/' + os.path.split(self.file_path)[-1]
         dodict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                       ssl=True, no_check_certificate=False,
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)

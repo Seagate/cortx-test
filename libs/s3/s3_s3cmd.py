@@ -78,7 +78,7 @@ class S3CmdCommandBuilder:
 
         if self.user_opts.get('host_bucket'):
             self.current_options = self.current_options + [
-                "--host_bucket=" + str(self.user_opts.get('host-bucket'))]
+                "--host-bucket=" + str(self.user_opts.get('host_bucket'))]
 
         if self.user_opts.get('disable_multipart'):
             self.current_options = self.current_options + ["--disable-multipart"]
