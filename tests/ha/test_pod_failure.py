@@ -165,10 +165,8 @@ class TestPodFailure:
                 LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
                 self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
                                                 read_lines=True)
-                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
-                                            read_lines=True, exc=False)
-                assert_utils.assert_not_in(b"100% packet loss", resp[1][0],
-                                           f"Node interface still down. {resp}")
+                resp = sysutils.check_ping(host=self.node_ip)
+                assert_utils.assert_true(resp, "Interface is still not up.")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
@@ -2689,28 +2687,13 @@ class TestPodFailure:
         data_pod_name, data_node_fqdn = \
             self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
         LOGGER.info("Get the ip of the host from the node %s", data_node_fqdn)
-        for count, host in enumerate(self.host_worker_list):
-            if host == data_node_fqdn:
-                self.node_ip = CMN_CFG["nodes"][count]["ip"]
-                resp = self.node_worker_list[count].execute_cmd(
-                    cmd=cmd.CMD_IFACE_IP.format(self.node_ip), read_lines=True)
-                self.node_iface = resp[1].strip(":\n")
-                resp = self.node_worker_list[count].execute_cmd(
-                    cmd=cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-                # TODO: Check for HW configuration
-                new_ip = resp[1].strip("'\\n'b'")
-                self.new_worker_obj = LogicalNode(hostname=new_ip,
-                                                  username=CMN_CFG["nodes"][count]["username"],
-                                                  password=CMN_CFG["nodes"][count]["password"])
-                LOGGER.info("Make %s interface down for %s node", self.node_iface, host)
-                self.new_worker_obj.execute_cmd(
-                    cmd=cmd.IP_LINK_CMD.format(self.node_iface, "down"), read_lines=True)
-                resp = sysutils.execute_cmd(cmd.CMD_PING.format(self.node_ip),
-                                            read_lines=True, exc=False)
-                assert_utils.assert_in(b"100% packet loss", resp,
-                                       f"Node interface still up. {resp}")
-                break
-
+        resp = self.ha_obj.get_nw_iface_node_down(host_list=self.host_worker_list,
+                                                  node_list=self.node_worker_list,
+                                                  node_fqdn=data_node_fqdn)
+        self.node_ip = resp[1]
+        self.node_iface = resp[2]
+        self.new_worker_obj = resp[3]
+        assert_utils.assert_true(resp[0], "Node is still up")
         LOGGER.info("Step 2: %s Node's network is down.", data_node_fqdn)
         self.restore_ip = True
 

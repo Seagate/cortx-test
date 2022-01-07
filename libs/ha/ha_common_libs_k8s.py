@@ -32,11 +32,13 @@ from time import perf_counter_ns
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
+from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
+from commons.helpers.pods_helper import LogicalNode
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
@@ -1025,3 +1027,34 @@ class HAK8s:
 
         return data_pod_name, data_node_fqdn
 
+    @staticmethod
+    def get_nw_iface_node_down(host_list: list, node_list: list, node_fqdn: str):
+        """
+        Helper function to get the network interface of data node, put it down
+        and check if its not pinging.
+        :param host_list: list of worker nodes' hosts
+        :param node_list: node object list for all worker nodes
+        :param node_fqdn: fqdn of the data node
+        :return: boolean, response
+        """
+        for count, host in enumerate(host_list):
+            if host == node_fqdn:
+                node_ip = CMN_CFG["nodes"][count]["ip"]
+                resp = node_list[count].execute_cmd(
+                    cmd=common_cmd.CMD_IFACE_IP.format(node_ip), read_lines=True)
+                node_iface = resp[1].strip(":\n")
+                resp = node_list[count].execute_cmd(
+                    cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+                # TODO: Check for HW configuration
+                new_ip = resp[1].strip("'\\n'b'")
+                new_worker_obj = LogicalNode(hostname=new_ip,
+                                                  username=CMN_CFG["nodes"][count]["username"],
+                                                  password=CMN_CFG["nodes"][count]["password"])
+                LOGGER.info("Make %s interface down for %s node", node_iface, host)
+                new_worker_obj.execute_cmd(
+                    cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
+                resp = sysutils.check_ping(host=node_ip)
+                if not resp:
+                    return False, node_ip, node_iface, new_worker_obj
+                else:
+                    return True, node_ip, node_iface, new_worker_obj
