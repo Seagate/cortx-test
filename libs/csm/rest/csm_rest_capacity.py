@@ -94,6 +94,12 @@ class SystemCapacity(RestTestLib):
         return total_cap, avail_cap, used_cap, used_percent, cap_unit
 
     def validate_metrics(self, data, endpoint_param='bytecount'):
+        """
+        Validate the parameters in rest response
+        :param data: rest response data to check for parameters
+        :param endpoint_param: which endpoint to check for parameters
+        :return : True/False based of parameter match in data provided
+        """
         keys = self.config["degraded_cap_keys"]
         for key in keys[0]:
             try:
@@ -108,12 +114,12 @@ class SystemCapacity(RestTestLib):
                     return False
         return True
 
-
     @RestTestLib.authenticate_and_login
     def get_degraded_capacity(self, endpoint_param='bytecount'):
         """
         Get degraded capacity from CSM
-        TODO: Dummy function as degraded capacity csm specs is not defined yet.
+        :param endpoint_param: which endpoint to check for parameters
+        :return : Rest output response
         """
         self.log.info("Reading System Capacity...")
         endpoint = self.config["degraded_cap_complete_endpoint"]
@@ -128,7 +134,9 @@ class SystemCapacity(RestTestLib):
     def get_degraded_capacity_custom_login(self, header, endpoint_param='bytecount'):
         """
         Get degraded capacity from CSM
-        TODO: Dummy function as degraded capacity csm specs is not defined yet.
+        :param header: header for authentication
+        :param endpoint_param: which endpoint to check for parameters
+        :return : Rest output response
         """
         self.log.info("Reading System Capacity...")
         endpoint = self.config["degraded_cap_complete_endpoint"]

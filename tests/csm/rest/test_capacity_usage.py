@@ -21,10 +21,10 @@
 """Tests System capacity scenarios using REST API
 """
 import logging
-import pytest
 import random
 import time
 from http import HTTPStatus
+import pytest
 from random import SystemRandom
 
 from commons import configmanager
