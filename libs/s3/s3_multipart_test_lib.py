@@ -32,6 +32,7 @@ from commons.exceptions import CTException
 from commons.greenlet_worker import GeventPool
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import cal_percent
+from commons.utils import s3_utils
 
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -561,3 +562,63 @@ class S3MultipartTestLib(Multipart):
                          S3MultipartTestLib.simple_multipart_upload.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+    def complete_multipart_upload_with_di(
+            self,
+            bucket_name: str,
+            object_name: str,
+            file_path: str,
+            total_parts: int,
+            **kwargs):
+        """
+        Complete the Multipart upload and do DI check for uploaded object.
+
+        1. Initiate multipart upload.
+        2. Upload parts with aligned, unaligned part size.
+        3.
+        """
+        try:
+            random = kwargs.get("random", False)
+            file_size = kwargs.get("file_size", 10)  # should be multiple of 1MB
+            LOGGER.info("Create multipart upload.")
+            response = self.create_multipart_upload(bucket_name, object_name)
+            mpu_id = response[1]["UploadId"]
+            LOGGER.info("Upload the multipart.")
+            if random:
+                chunks = s3_utils.get_unaligned_parts(
+                    file_path, total_parts=total_parts, random=random)
+                status, parts = self.upload_parts_sequential(
+                    mpu_id, bucket_name, object_name, parts=chunks)
+                parts = sorted(parts, key=lambda x: x['PartNumber'])
+            else:
+                status, parts = self.upload_parts(mpu_id, bucket_name, object_name,
+                                                  file_size, total_parts=total_parts,
+                                                  multipart_obj_path=file_path)
+            uploaded_checksum = s3_utils.calc_checksum(file_path)
+            LOGGER.info("Do ListParts to see the parts uploaded.")
+            self.list_parts(mpu_id, bucket_name, object_name)
+            LOGGER.info("Get the part details and perform CompleteMultipartUpload.")
+            LOGGER.info("parts: %s", parts)
+            response = self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+            upload_etag = response[1]["ETag"]
+            LOGGER.info("Get the uploaded object")
+            status, resp = self.get_object(bucket_name, object_name)
+            get_etag = resp['ETag']
+            LOGGER.info("Compare ETags")
+            if upload_etag != get_etag:
+                raise Exception(f"Failed to match ETag: {upload_etag}, {get_etag}")
+            LOGGER.info("Matched ETag: %s, %s", upload_etag, get_etag)
+            LOGGER.info("Compare checksum by downloading object.")
+            download_path = f"{file_path}.1"
+            self.object_download(bucket_name, object_name, download_path)
+            downloaded_checksum = s3_utils.calc_checksum(download_path)
+            if uploaded_checksum != downloaded_checksum:
+                raise Exception(f"Failed to match checksum: "
+                                f"{uploaded_checksum}, {downloaded_checksum}")
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.simple_multipart_upload.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error)
+
+        return True, response
