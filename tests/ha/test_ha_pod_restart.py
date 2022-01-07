@@ -829,7 +829,8 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 8: Verified cluster is in online state. All services are up & running")
 
-        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts + 1)))
+        remaining_parts = list(filter(lambda i: i not in part_numbers,
+                                      list(range(1, total_parts + 1))))
         LOGGER.info("Step 9: Upload remaining %s parts out of %s", remaining_parts, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
@@ -1346,7 +1347,7 @@ class TestPodRestart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = range(1, total_parts)
+        part_numbers = list(range(1, total_parts))
         random.shuffle(part_numbers)
         output = Queue()
         parts_etag = list()
