@@ -427,7 +427,8 @@ class MotrCoreK8s():
             log.info('Checking libfabric verbs protocol presence')
             if CMN_CFG["setup_type"] == "HW":
                 cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], common_cmd.LIBFAB_VERBS)                                       
-                result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node, self.master_uname, self.master_passwd)                                                           
+                result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node, 
+                self.master_uname, self.master_passwd)                                                           
                 if ret:
                     log.info('"%s" Failed, Please check the log', cmd)
                     assert False
