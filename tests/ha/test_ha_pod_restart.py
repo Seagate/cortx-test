@@ -1374,15 +1374,13 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
-
+        pod_list.remove(pod_name)
         LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+                    pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
+        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state", pod_list)
 
         event = threading.Event()  # Event to be used to send when data pod restart start
         LOGGER.info("Step 5: Perform Continuous READs/WRITEs/DELETEs with variable object sizes. "
