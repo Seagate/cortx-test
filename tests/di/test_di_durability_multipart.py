@@ -513,28 +513,27 @@ class TestDICheckMultiPart:
             self.log.exception(fault, exc_info=True)
         else:
             if not cmd_status:
-                download_checksum = system_utils.calculate_checksum(self.file_path + '.bak',
-                                                                binary_bz64=False)[1]
-                assert_utils.assert_equal(file_checksum, download_checksum,
-                                          'Checksum mismatch found in downloaded file')
-                assert False, f'Download Command failed with error {output}'
+                if "InternalError" not in output:
+                    assert False, f'Download Command failed with error {output}'
             else:
                 assert False, 'Download of corrupted file passed'
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29818")
     def test_upload_big_obj_minio_corrupt_cheksum_29818(self, setup_minio):
         """S3 Put through MinIO  and Corrupt checksum of an object 151 MB
          and verify read (Get). ( SZ in range 100 MB -256 MB)."""
-        size = 151 * MB
+        size = 81 * MB
         self.log.info("STARTED: upload object of 151 MB using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
                          + self.minio_obj.validate_cert
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
                        + self.minio_obj.validate_cert
-
+        object_name = os.path.split(self.file_path)[-1]
+        download_obj_cmd = self.minio_cnf["download_obj_cmd"].\
+                               format(self.bucket_name, object_name, self.file_path)\
+                           + self.minio_obj.validate_cert  #nosec
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
@@ -547,7 +546,7 @@ class TestDICheckMultiPart:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -556,6 +555,7 @@ class TestDICheckMultiPart:
             assert False
         else:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
         self.log.info("Step 3: Uploading an object to a bucket %s", self.bucket_name)
@@ -568,3 +568,6 @@ class TestDICheckMultiPart:
         assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info("Step 4: Verified that object is uploaded to a bucket")
         self.log.info("Step 4: Download object using Minion Client")
+        cmd_status, output = system_utils.run_local_cmd(list_obj_cmd)
+        if not cmd_status and "InternalError" not in output:
+            assert False, f'Download Command failed with error {output}'
