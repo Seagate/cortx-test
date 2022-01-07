@@ -563,6 +563,7 @@ class S3MultipartTestLib(Multipart):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    # pylint: disable-msg=too-many-locals
     def complete_multipart_upload_with_di(
             self,
             bucket_name: str,
@@ -575,7 +576,14 @@ class S3MultipartTestLib(Multipart):
 
         1. Initiate multipart upload.
         2. Upload parts with aligned, unaligned part size.
-        3.
+        3. ListParts to see the parts uploaded.
+        4. complete multipart upload.
+        5. Compare the ETag.
+        6. Download object and validate it with checksum.
+        :param bucket_name: Name of the s3 bucket.
+        :param object_name: Name of the s3 object.
+        :param file_path: Absolute file path.
+        :param total_parts: Number of parts that get uploaded.
         """
         try:
             random = kwargs.get("random", False)
@@ -587,13 +595,13 @@ class S3MultipartTestLib(Multipart):
             if random:
                 chunks = s3_utils.get_unaligned_parts(
                     file_path, total_parts=total_parts, random=random)
-                status, parts = self.upload_parts_sequential(
+                _, parts = self.upload_parts_sequential(
                     mpu_id, bucket_name, object_name, parts=chunks)
                 parts = sorted(parts, key=lambda x: x['PartNumber'])
             else:
-                status, parts = self.upload_parts(mpu_id, bucket_name, object_name,
-                                                  file_size, total_parts=total_parts,
-                                                  multipart_obj_path=file_path)
+                _, parts = self.upload_parts(
+                    mpu_id, bucket_name, object_name, file_size, total_parts=total_parts,
+                    multipart_obj_path=file_path)
             uploaded_checksum = s3_utils.calc_checksum(file_path)
             LOGGER.info("Do ListParts to see the parts uploaded.")
             self.list_parts(mpu_id, bucket_name, object_name)
@@ -602,23 +610,25 @@ class S3MultipartTestLib(Multipart):
             response = self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
             upload_etag = response[1]["ETag"]
             LOGGER.info("Get the uploaded object")
-            status, resp = self.get_object(bucket_name, object_name)
+            resp = self.get_object(bucket_name, object_name, ranges="bytes=1-")
             get_etag = resp['ETag']
             LOGGER.info("Compare ETags")
             if upload_etag != get_etag:
                 raise Exception(f"Failed to match ETag: {upload_etag}, {get_etag}")
             LOGGER.info("Matched ETag: %s, %s", upload_etag, get_etag)
             LOGGER.info("Compare checksum by downloading object.")
-            download_path = f"{file_path}.1"
-            self.object_download(bucket_name, object_name, download_path)
+            download_path = os.path.join(os.path.split(file_path)[0], "mp-download.txt")
+            resp = self.object_download(bucket_name, object_name, download_path)
+            LOGGER.info(resp)
             downloaded_checksum = s3_utils.calc_checksum(download_path)
             if uploaded_checksum != downloaded_checksum:
                 raise Exception(f"Failed to match checksum: "
                                 f"{uploaded_checksum}, {downloaded_checksum}")
+            LOGGER.info("Matched checksum: %s, %s", uploaded_checksum, downloaded_checksum)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.simple_multipart_upload.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error)
 
-        return True, response
+        return response
