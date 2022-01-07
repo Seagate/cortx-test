@@ -494,22 +494,28 @@ class TestDICheckMultiPart:
         odict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                      ssl=True, no_check_certificate=False,
                      host_port=CMN_CFG['host_port'], host_bucket=self.bucket_name,
-                     multipart_chunk_size_mb='15MB')
+                     multipart_chunk_size_mb='15')
 
-        s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
-                                                 file_path=self.file_path, **odict)
-
+        cmd_status, output = s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
+                                                                      file_path=self.file_path,
+                                                                      **odict)
+        if not cmd_status:
+            assert False, f"s3cmd put failed with {cmd_status} and output {output}"
         object_uri = 's3://' + self.bucket_name + '/' + os.path.split(self.file_path)[-1]
         dodict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                       ssl=True, no_check_certificate=False,
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
-            s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
-                                                       file_path=self.file_path + '.bak', **dodict)
+            cmd_status, output = s3_s3cmd.S3CmdFacade.\
+                download_object_s3cmd(bucket_name=self.bucket_name,
+                                      file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.exception(fault, exc_info=True)
         else:
-            assert False, 'Download of corrupted file passed'
+            if not cmd_status:
+                assert False, f'Download Command failed with error {output}'
+            else:
+                assert False, 'Download of corrupted file passed'
 
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
