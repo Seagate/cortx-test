@@ -1654,17 +1654,17 @@ class TestPodRestart:
         LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
                     "are in offline state", self.node_name, rc_datapod)
 
+        pod_list.remove(rc_datapod)
         LOGGER.info("Step 4: Check services status on remaining pods %s are in online state",
-                    pod_list.remove(rc_datapod))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(rc_datapod),
-                                                           fail=False)
+                    pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 5: Check for RC node failed over node.")
         rc_node = self.motr_obj.get_primary_cortx_node()
-        assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
+        assert_utils.assert_true(len(rc_node), "Couldn't find new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         LOGGER.info("Step 5: RC node has been failed over to %s node", list(rc_info.values())[0])
 
@@ -1764,9 +1764,7 @@ class TestPodRestart:
         LOGGER.info("Step 6: Starting pod again by making replicas=1")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
-                                       restore_params={"deployment_name": self.deployment_name,
-                                                       "deployment_backup":
-                                                           self.deployment_backup})
+                                       restore_params={"deployment_name": self.deployment_name})
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 6: Successfully started the pod again by making replicas=1")
