@@ -145,6 +145,7 @@ class TestDICheckMultiPart:
         """
         Test method level setup.
         """
+        self.data_corruption_status = False
         self.edtl = DIErrorDetection()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.log = logging.getLogger(__name__)
@@ -174,7 +175,9 @@ class TestDICheckMultiPart:
             system_utils.remove_file(self.file_path)
             system_utils.remove_dirs(self.test_dir_path)
             self.log.info("Local file was deleted")
-
+        if self.data_corruption_status:
+            self.log.info("Disabling data corruption")
+            self.fi_adapter.disable_data_block_corruption()
         self.log.info("ENDED: Method Level Teardown test data.")
 
     # pylint: disable=max-args
@@ -321,6 +324,7 @@ class TestDICheckMultiPart:
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
@@ -387,6 +391,7 @@ class TestDICheckMultiPart:
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
@@ -448,7 +453,6 @@ class TestDICheckMultiPart:
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify range read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-33268')
@@ -459,7 +463,7 @@ class TestDICheckMultiPart:
         SZ >= Data Unit Sz
 
         """
-        size = 5 * MB
+        size = 71 * MB
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
@@ -474,7 +478,7 @@ class TestDICheckMultiPart:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -483,11 +487,13 @@ class TestDICheckMultiPart:
             assert False
         else:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
+
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
         odict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                      ssl=True, no_check_certificate=False,
-                     host_port=CMN_CFG['host_port'], host_bucket='host-bucket',
+                     host_port=CMN_CFG['host_port'], host_bucket=self.bucket_name,
                      multipart_chunk_size_mb='15MB')
 
         s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
@@ -501,9 +507,9 @@ class TestDICheckMultiPart:
             s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
                                                        file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
-            self.log.error(fault)
+            self.log.exception(fault, exc_info=True)
         else:
-            assert False, 'Download passed'
+            assert False, 'Download of corrupted file passed'
 
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
