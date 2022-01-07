@@ -100,7 +100,8 @@ class S3CmdCommandBuilder:
         self.parent_cmd += ['put']
         # Build Command
         bucket = bucket if bucket.startswith('s3://') else 's3://' + bucket
-        part = bucket + path
+        part = '/'.join(bucket, os.path.split(path)[-1])
+        self.parent_cmd += [path]
         self.parent_cmd += [part]
         return self.parent_cmd
 
