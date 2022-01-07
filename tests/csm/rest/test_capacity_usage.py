@@ -24,8 +24,8 @@ import logging
 import random
 import time
 from http import HTTPStatus
-import pytest
 from random import SystemRandom
+import pytest
 
 from commons import configmanager
 from commons import cortxlogging
