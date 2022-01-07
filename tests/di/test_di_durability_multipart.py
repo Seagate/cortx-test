@@ -513,6 +513,10 @@ class TestDICheckMultiPart:
             self.log.exception(fault, exc_info=True)
         else:
             if not cmd_status:
+                download_checksum = system_utils.calculate_checksum(self.file_path + '.bak',
+                                                                binary_bz64=False)[1]
+                assert_utils.assert_equal(file_checksum, download_checksum,
+                                          'Checksum mismatch found in downloaded file')
                 assert False, f'Download Command failed with error {output}'
             else:
                 assert False, 'Download of corrupted file passed'
