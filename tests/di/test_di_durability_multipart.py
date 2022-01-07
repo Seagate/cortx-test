@@ -569,6 +569,6 @@ class TestDICheckMultiPart:
         assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info("Step 4: Verified that object is uploaded to a bucket")
         self.log.info("Step 4: Download object using Minion Client")
-        cmd_status, output = system_utils.run_local_cmd(list_obj_cmd)
+        cmd_status, output = system_utils.run_local_cmd(download_obj_cmd)
         if not cmd_status and "InternalError" not in output:
             assert False, f'Download Command failed with error {output}'
