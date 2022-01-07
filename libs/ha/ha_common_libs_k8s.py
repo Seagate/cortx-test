@@ -1019,7 +1019,7 @@ class HAK8s:
                 data_pod_name2 = pod_name
         new_list = [pod_name for pod_name in data_pod_list
                     if pod_name not in (data_pod_name1, data_pod_name2)]
-        data_pod_name = random.sample(new_list, 1)
+        data_pod_name = random.sample(new_list, 1)[0]
         LOGGER.info("%s data pod is not hosted either on control or ha node",
                     data_pod_name)
         data_node_fqdn = data_pods.get(data_pod_name)
@@ -1046,10 +1046,11 @@ class HAK8s:
                 resp = node_list[count].execute_cmd(
                     cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
                 # TODO: Check for HW configuration
+                LOGGER.info("Getting another IP from same node %s", node_fqdn)
                 new_ip = resp[1].strip("'\\n'b'")
                 new_worker_obj = LogicalNode(hostname=new_ip,
-                                                  username=CMN_CFG["nodes"][count]["username"],
-                                                  password=CMN_CFG["nodes"][count]["password"])
+                                                  username=CMN_CFG["nodes"][count+1]["username"],
+                                                  password=CMN_CFG["nodes"][count+1]["password"])
                 LOGGER.info("Make %s interface down for %s node", node_iface, host)
                 new_worker_obj.execute_cmd(
                     cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)

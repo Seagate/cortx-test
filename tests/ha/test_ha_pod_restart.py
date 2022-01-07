@@ -1193,8 +1193,7 @@ class TestPodRestart:
         LOGGER.info("Step 3: Services of pod %s are in offline state", data_pod_name)
 
         remain_pod_list = list(filter(lambda x: x != data_pod_name, data_pod_list))
-        LOGGER.info("Step 4: Check services status on remaining pods %s",
-                    remain_pod_list)
+        LOGGER.info("Step 4: Check services status on remaining pods %s", remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
             pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -1280,8 +1279,7 @@ class TestPodRestart:
         LOGGER.info("Step 3: Services of pod %s are in offline state", data_pod_name)
 
         remain_pod_list = list(filter(lambda x: x != data_pod_name, data_pod_list))
-        LOGGER.info("Step 4: Check services status on remaining pods %s",
-                    remain_pod_list)
+        LOGGER.info("Step 4: Check services status on remaining pods %s", remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
             pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -1325,7 +1323,7 @@ class TestPodRestart:
         self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 8: IOs completed successfully.")
 
-        LOGGER.info("STARTED: Verify IOs before and after data pod restart, "
+        LOGGER.info("COMPLETE: Verify IOs before and after data pod restart, "
                     "pod shutdown by making mgmt ip of worker node down")
 
     @pytest.mark.ha
