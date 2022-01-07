@@ -275,6 +275,17 @@ class IamLib(IAMRest):
 
         return response
 
+    def delete_user_login_profile(self, user_name):
+        """
+        Deletes the password for the specified IAM user.
+
+        :param user_name: The name of the user whose password you want to delete.
+        """
+        response = self.iam.delete_login_profile(UserName=user_name)
+        LOGGER.debug(response)
+
+        return response
+
     def change_password(self, old_password: str = None, new_password: str = None):
         """
         Change the password of the IAM user with the IAM user.
@@ -299,8 +310,8 @@ class IamPolicy(IAMRest):
         :param policy_name: The name of the policy to create.
         :param policy_document: The policy document.
         """
-        response = self.iam.create_policy(PolicyName=policy_name, PolicyDocument=policy_document,
-                                          **kwargs)
+        response = self.iam_resource.create_policy(PolicyName=policy_name,
+                                                   PolicyDocument=policy_document, **kwargs)
 
         return response
 

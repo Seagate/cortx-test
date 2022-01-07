@@ -28,15 +28,19 @@ import pytest
 import secrets
 from time import perf_counter_ns
 from boto3.s3.transfer import TransferConfig
+from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from commons.constants import const
 from commons.constants import MB, KB
 from config import CMN_CFG
+from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import S3_CFG
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
@@ -46,13 +50,38 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3 import s3_s3cmd
 
 
+@pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDIDurability:
     """DI Durability Test suite."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.jc_obj = JCloudClient()
+        cls.log.info("setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = cls.jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            cls.log.info(res)
+            assert_utils.assert_true(
+                res, "Error: jcloudclient.jar or jclient.jar file does not exists")
+        resp = cls.jc_obj.update_jclient_jcloud_properties()
+        assert_utils.assert_true(resp, resp)
+
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
         """
@@ -80,6 +109,7 @@ class TestDIDurability:
         self.write_param = const.S3_DI_WRITE_CHECK
         self.read_param = const.S3_DI_READ_CHECK
         self.integrity_param = const.S3_METADATA_CHECK
+        self.data_corruption_status = False
         self.sleep_time = 10
         self.file_size = 5
         self.host_ip = CMN_CFG["nodes"][0]["host"]
@@ -105,6 +135,9 @@ class TestDIDurability:
         if system_utils.path_exists(self.file_path):
             system_utils.remove_dirs(self.test_dir_path)
         self.log.info("Local file was deleted")
+        if self.data_corruption_status:
+            self.log.info("Disabling data corruption")
+            self.fi_adapter.disable_data_block_corruption()
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
@@ -259,90 +292,93 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
+    @CTFailOn(error_handler)
     def test_object_data_integrity_while_upload_using_correct_checksum_22497(self):
         """
-        Test to verify object integrity during the the upload with correct
-        checksum.
+        Test to verify object integrity during the the upload with correct checksum.
+        file size == 64 KB - 32MB
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("STARTED: Test to verify object integrity during the the upload with "
+                      "correct checksum.")
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        failed_file_sizes = {}
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Test to verify object integrity during the the upload "
-            "with correct checksum.")
-        # TODO s3 di flag
-        self.log.info("Step 1: Create N objects of size 10 MB")
-        self.file_lst = []
-        for i in range(self.secure_range.randint(2, 8)):
-            file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
-            system_utils.create_file(file_path, 10)
-            self.file_lst.append(file_path)
-        self.log.info("Step 1: Created %s objects of size 10 MB", len(self.file_lst))
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum) for all obj")
-        checksum_dict = {}
-        for file in self.file_lst:
-            checksum_dict[file] = system_utils.calculate_checksum(file, filter_resp=True)
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for all obj")
-        self.log.info(
-            "Step 3: Put objects into a bucket with a calculated checksum"
-            " pass in content-md5 field")
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        for file, binary_checksum in checksum_dict.items():
-            bin_checksum = binary_checksum[1]
-            resp = self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=file, file_path=file,
-                content_md5=bin_checksum)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 3: Put objects into a bucket with calculated checksum pass"
-            " in content-md5 field")
-        self.log.info(
-            "ENDED: Test to verify object integrity during the upload "
-            "with correct checksum.")
+        self.log.debug("Executing test as flags are set to default")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
+            location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
+                                                              data_folder_prefix=self.test_dir_path)
+            self.log.debug("csm: %s", csm[1])
+            try:
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=self.object_name, file_path=location,
+                                            content_md5=csm[1])
+                self.s3_test_obj.object_download(bucket_name=self.bucket_name,
+                                                 obj_name=self.object_name,
+                                                 file_path=self.file_path)
+                if system_utils.validate_checksum(file_path_1=location, file_path_2=self.file_path):
+                    self.log.info("Checksum Validated")
+                else:
+                    self.log.info("Checksum Validation failed")
+                    failed_file_sizes[file_size] = "checksum validation failed"
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                failed_file_sizes[file_size] = err_str
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
+        self.log.info("ENDED: Test to verify object integrity during the upload with correct "
+                      "checksum.")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
         """
-        Test to verify object integrity during the upload with different
-        checksum.
+        Test to verify object integrity during the upload with different checksum.
+        file size == 64 KB - 32MB
         """
-        self.log.info("STARTED: Verify object integrity during the upload with different checksum.")
-        self.log.info("Step 1: Create N objects of size 10MB")
-        self.file_lst = []
-        for i in range(self.secure_range.randint(2, 4)):
-            file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
-            system_utils.create_file(file_path, 10)
-            self.file_lst.append(file_path)
-        self.log.info("Step 1: Created %s object of size 10MB", len(self.file_lst))
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
-                      "checksum ) for all obj")
-        checksum_dict = {}
-        for file in self.file_lst:
-            checksum_dict[file] = system_utils.calculate_checksum(file)
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum )"
-                      " for all obj")
-        self.log.info("Step 3: Put objects into bucket with different calculated "
-                      "checksum pass in content-md5 field")
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        try:
-            self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                        object_name=self.file_lst[-1],
-                                        file_path=self.file_lst[-1],
-                                        content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
-        except CTException as error:
-            self.log.debug("Failed to put %s with an incorrect checksum %s",
-                           self.file_lst[-1], error)
-            assert_utils.assert_in("The Content-MD5 you specified is not valid",
-                                   error.message, error.message)
-            self.log.info("Step 3: Failed to put objects into bucket with different "
-                          "calculated checksum")
-        for m_file in self.file_lst:
-            system_utils.remove_file(m_file)
-        self.log.info("ENDED: Test to verify object integrity during the upload with "
-                      "different checksum.")
+        failed_file_sizes = []
+        self.log.info("STARTED: Test to verify object integrity during the upload with different "
+                      "checksum.")
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            s3_obj = S3TestLib()
+            self.log.info("Step 1: Creating file and calculating checksum of size %s", file_size)
+            location, csm = self.di_err_lib.get_file_and_csum(size=file_size,
+                                                              data_folder_prefix=self.test_dir_path)
+            self.log.debug("csm: %s, location: %s", csm[1], location)
+            corrupted_csm = "'" + csm[1]
+            self.log.info("Attempting to upload object with corrupted checksum from client %s",
+                          corrupted_csm)
+            try:
+                s3_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+                                  file_path=location, content_md5=corrupted_csm)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if "The Content-MD5 you specified is not valid" in err_str:
+                    self.log.info("Error strings matched")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
+        self.log.info("ENDED: Test to verify object integrity during the upload with different "
+                      "checksum.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -479,38 +515,56 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22914')
-    def test_corrupt_data_blocks_obj_motr_verify_range_read_22914(self):
+    def test_22914(self):
         """
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum corruption feature
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.info("STARTED: Data chunk checksum validation (Motr blocks data or metadata of "
+                      "data blocks) and validate checksum error detection by S3/Motr")
+        failed_file_sizes = []
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
-            "and validate checksum error detection by S3/Motr")
-        self.log.info("Step 1: Create a bucket.")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 2: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.log.info("Step 3: enable data corruption")
+        self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 3: enabled data corruption")
+            self.data_corruption_status = True
+            self.log.info("Step 1: Enabled data corruption")
         else:
-            self.log.info("Step 3: failed to enable data corruption")
             assert False
-        self.log.info("Step 4: Put object in a bucket.")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.log.info("Step 5: Verify get object.")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        self.log.info("Step 5: response %s", resp)
-        # get operation should fail
-        # to do verify with motr logs
+        self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name = self.object_name + "_size_" + str(file_size)
+            self.log.info("Step 2: Creating file of size %s", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: Created a corrupted file at location %s", location)
+            try:
+                self.log.info("Step 3: Upload a file")
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=obj_name, file_path=location)
+                self.log.info("Step 4: verify download object fails with 5xx error code")
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
         self.log.info(
             "ENDED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
             "and validate checksum error detection by S3/Motr")
@@ -563,7 +617,7 @@ class TestDIDurability:
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
         """
-        valid, skipmark = self.di_err_lib.validate_disabled_config()
+        valid, skipmark = self.di_err_lib.validate_valid_config()
         if not valid or skipmark:
             self.log.info("Skipping test  checksum flag is not disabled")
             pytest.skip()
@@ -571,33 +625,56 @@ class TestDIDurability:
         self.log.info("STARTED: With Checksum flag  Disabled, download of the chunk"
                       "uploaded object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
-
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_equal(self.bucket_name, resp[1], resp)
-
+        command = self.jc_obj.create_cmd_format(self.bucket_name, "mb",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+        resp = system_utils.execute_cmd(command)
+        assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
+        self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
         for size in NORMAL_UPLOAD_SIZES_IN_MB:
+            self.log.info("Create a file of size %sMB", size)
+            test_file= "data_durability{}_TEST_22916_{}_MB_upload.txt" \
+                            .format(perf_counter_ns(),str(size))
+            file_path_upload = os.path.join(self.test_dir_path, test_file)
             self.log.info("Step 1: create a file of size %sMB", size)
             file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
+
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
 
             system_utils.create_file(file_path_upload, size)
-            self.s3_test_obj.put_object(self.bucket_name, self.object_name, file_path_upload)
-
-            self.log.info("Step 1: Created a bucket and upload object of %s MB into a bucket.",
-                          size)
-            self.log.info("Step 2: Download chunk uploaded object of size %s MB.", size)
-            file_path_download = self.file_path + "TEST_22916_" + str(size) + "MB_download"
+            self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
+                        "bucket.", size)
+            put_cmd_str = "{} {}".format("put", file_path_upload)
+            command = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
+                                            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                            chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
+            self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
+            self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
+            test_file_download= "data_durability{}_TEST_22916_{}_MB_download.txt" \
+                            .format(perf_counter_ns(),str(size))
+            file_path_download= os.path.join(self.test_dir_path, test_file_download)
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
-
-            res = self.s3_test_obj.object_download(
-                self.bucket_name, self.object_name, file_path_download)
-            assert_utils.assert_true(res[0], res)
-            self.log.info("Step 2: Download chunk uploaded object is successful.")
-        self.log.info(
-            "ENDED: With Checksum flag  Disabled, download of the chunk uploaded object should"
-            "succeed ( 30 MB -100 MB).")
+            bucket_str = "{0}/{1} {2}".format(self.bucket_name, test_file, test_file_download)
+            command = self.jc_obj.create_cmd_format(bucket_str, "get",
+                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                        chunk=True)
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
+            self.log.info("Step 3: Object was downloaded successfully")
+            self.log.info("Step 4:Validate checksum of uploaded and downloded files")
+            result = system_utils.validate_checksum(file_path_upload,file_path_download)
+            if not result:
+                assert_utils.assert_true(False, "Checksum validation failed")
+            self.log.info("Step 4:Checksum and ETAG validation is successful")
+            self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
+                    "uploaded object should succeed ( 30 MB -100 MB).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -648,42 +725,51 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
     def test_disable_checksum_should_not_validate_file_no_error_22930(self):
         """
         Disabling of Checksum feature should not do any checksum validation even if data
-        corrupted.
+        is corrupted.
         """
-        if self.di_err_lib.validate_disabled_config():
+        failed_file_sizes = []
+        self.log.info("STARTED: Disabling of Checksum feature should not do any checksum "
+                      "validation even if data is corrupted")
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_disabled_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info(
-            "STARTED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 3: created a corrupted file at location %s", location)
-        self.log.info("Step 4: enable data corruption")
+        self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
+            self.data_corruption_status = True
             self.log.info("Step 3: enabled data corruption")
         else:
             self.log.info("Step 3: failed to enable data corruption")
             assert False
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         bucket_name=self.bucket_name,
-                                         obj_name=self.object_name)
-        # we should get same corrupted file (first byte f)
-        # we should get error (first byte z)
-        self.log.info(
-            "ENDED: Disabling of Checksum feature should not do any checksum validation even "
-            "if data corrupted")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name = self.object_name + "_size_" + str(file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 3: created a corrupted file at location %s", location)
+            try:
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=obj_name, file_path=location)
+                self.s3_test_obj.object_download(file_path=self.file_path,
+                                                 bucket_name=self.bucket_name, obj_name=obj_name)
+            except CTException as err:
+                self.log.info("Test failed with %s", str(err))
+                failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
+        self.log.info("ENDED: Disabling of Checksum feature should not do any checksum validation "
+                      "even if data corrupted")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -890,38 +976,62 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
     def test_29812(self):
         """
         Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum corruption feature
         """
-        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
-                      "(at s3 checksum) and verify read (Get).")
-        # to do read flag check
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
-        # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.s3_test_obj.object_download(file_path=self.file_path,
-                                         obj_name=self.object_name,
-                                         bucket_name=self.bucket_name)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
-        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
-                      "(at s3 checksum) and verify read (Get).")
+        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify read (Get).")
+        failed_file_sizes = []
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_enabled_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
+            pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.data_corruption_status = True
+            self.log.info("Step 1: Enabled data corruption")
+        else:
+            assert False
+        self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name = self.object_name + "_size_" + str(file_size)
+            self.log.info("Step 2: Creating file of size %s", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: Created a corrupted file at location %s", location)
+            try:
+                self.log.info("Step 3: Upload a file")
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=obj_name, file_path=location)
+                self.log.info("Step 4: verify download object fails with 5xx error code")
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
+        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29816')
@@ -930,34 +1040,52 @@ class TestDIDurability:
         S3 Put through AWS CLI and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
         and verify read (Get).
         SZ <= Data Unit Sz
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum corruption feature
         """
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        if self.di_err_lib.validate_default_config():
+        failed_file_sizes = []
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        # simulating checksum corruption with data corruption
-        # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a corrupted file at location %s", location)
-        self.log.info("Step 2: enabling data corruption")
+        self.log.debug("Executing test as flags are set to default")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
+            self.log.info("Step 1: Enabled data corruption")
         else:
-            self.log.info("Step 2: failed to enable data corruption")
             assert False
-        self.log.info("Step 3: upload a file")
-        self.s3_cmd_test_obj.object_upload_cli(bucket_name=self.bucket_name,
-                                               object_name=self.object_name,
-                                               obj_size=1024 * 1024 * 5,
-                                               file_path=location)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # resp = self.s3_test_obj.object_download(file_path=self.file_path,
-        #                                         bucket_name=self.bucket_name,
-        #                                         obj_name=self.object_name)
-        # to do verify object download failure
+        self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name = self.object_name + "_size_" + str(file_size)
+            self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 1: Created a corrupted file at location %s", location)
+            try:
+                self.log.info("Step 3: Upload a file using aws cli")
+                self.s3_cmd_test_obj.upload_object_cli(bucket_name=self.bucket_name,
+                                                       object_name=obj_name, file_path=location)
+                self.log.info("Step 4: verify download object fails with 5xx error code")
+                resp_dw = self.s3_test_obj.object_download(file_path=self.file_path,
+                                                           bucket_name=self.bucket_name,
+                                                           obj_name=obj_name)
+                if resp_dw[0]:
+                    failed_file_sizes.append(file_size)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if "error occurred (InternalError) when calling the GetObject operation" in err_str:
+                    self.log.info("Download failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 

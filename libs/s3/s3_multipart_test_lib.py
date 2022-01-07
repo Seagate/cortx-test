@@ -188,9 +188,9 @@ class S3MultipartTestLib(Multipart):
 
             return True, parts
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts.__name__,
-                         error)
+            LOGGER.exception("Error in %s: %s",
+                             S3MultipartTestLib.upload_parts.__name__,
+                             error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def upload_precalculated_parts(self,
