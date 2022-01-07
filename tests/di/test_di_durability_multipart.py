@@ -518,6 +518,7 @@ class TestDICheckMultiPart:
             else:
                 assert False, 'Download of corrupted file passed'
 
+    @pytest.mark.usefixtures('setup_minio')
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29818")
@@ -527,13 +528,13 @@ class TestDICheckMultiPart:
         size = 81 * MB
         self.log.info("STARTED: upload object of 151 MB using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
-                         + self.minio_obj.validate_cert
+                         + self.minio.validate_cert
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
-                       + self.minio_obj.validate_cert
+                       + self.minio.validate_cert
         object_name = os.path.split(self.file_path)[-1]
         download_obj_cmd = self.minio_cnf["download_obj_cmd"].\
                                format(self.bucket_name, object_name, self.file_path)\
-                           + self.minio_obj.validate_cert  #nosec
+                           + self.minio.validate_cert  #nosec
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
