@@ -369,16 +369,19 @@ class S3Lib(S3Rest):
 
         return response
 
-    def get_object(self, bucket: str = None, key: str = None) -> dict:
+    def get_object(self, bucket: str = None, key: str = None, ranges: str = None) -> dict:
         """
-        Getting byte range of the object.
+        Getting object or byte range of the object.
 
         :param bucket: Name of the bucket.
         :param key: Key of object.
+        :param ranges: Byte range to be retrieved
         :return: response.
         """
-        response = self.s3_client.get_object(
-            Bucket=bucket, Key=key)
+        if ranges:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
+        else:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
         LOGGER.debug(response)
 
         return response
