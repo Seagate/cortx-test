@@ -30,8 +30,8 @@ from time import perf_counter_ns
 
 import pytest
 from commons.constants import MB
-from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -53,8 +53,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=no-member
-# pylint: disable=R0902
+# pylint: disable=R0902 disable=no-member
 @pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDICheckHA:
     """
@@ -112,6 +111,8 @@ class TestDICheckHA:
         This function will be invoked prior to each test case.
         """
         self.edtl = DIErrorDetection()
+        # pylint: disable=maybe-no-member
+        self.data_corruption_status = False
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         LOGGER.info("Check the overall status of the cluster.")
@@ -139,7 +140,9 @@ class TestDICheckHA:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
-
+        if self.data_corruption_status:
+            self.log.info("Disabling data corruption")
+            self.fi_adapter.disable_data_block_corruption()
         if os.path.exists(self.test_dir_path):
             self.log.debug("Deleting existing file: %s", str(self.file_path))
             remove_file(self.file_path)
@@ -186,8 +189,10 @@ class TestDICheckHA:
                                     object_name=self.object_name,
                                     file_path=self.file_path)
         LOGGER.info("Step 5: Verify get object.")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_false(resp[0], resp)
+        try:
+            resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        except CTException as error:
+            self.log.exception('get object failed', error)
 
         LOGGER.info("Step 5a: Verified read (Get) of an object whose metadata is corrupted.")
         LOGGER.info("Step 6: Send the cluster shutdown signal through CSM REST.")
@@ -200,8 +205,10 @@ class TestDICheckHA:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8a: Cluster restarted fine and all Pods online.")
         LOGGER.info("Step 9: Perform READs and verify DI on the written data")
-        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_false(resp[0], resp)
+        try:
+            resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        except CTException as error:
+            self.log.exception('get object failed', error)
         self.s3bench_cleanup = None
         LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
