@@ -143,7 +143,7 @@ def main():
             execute_cmd(cmd=cmd)
         print(f"Setup Entry Done with setup name : {setupname}")
         with open("cicd_setup_name.txt", 'w') as file:
-            file.write(setupname+"-"+te)
+            file.write(setupname+" "+te)
 
     except Exception as ex:
         print(f"Exception Occured : {ex}")
