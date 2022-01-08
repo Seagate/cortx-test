@@ -105,7 +105,7 @@ def main():
     Main Function.
     """
     try:
-        # hosts = os.getenv("HOSTS")
+        hosts = os.getenv("HOSTS")
         admin_user = os.getenv("ADMIN_USER")
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         te = os.getenv("TEST_EXECUTION_NUMBER")
