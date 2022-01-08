@@ -1114,7 +1114,7 @@ class TestDIDurability:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a good file.")
         self.di_err_lib.create_file(size, first_byte='a', name=self.file_path)
-        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calc_checksum(self.file_path)
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -1138,7 +1138,7 @@ class TestDIDurability:
         self.s3_test_obj.object_download(file_path=dwn_file_path,
                                          obj_name=self.object_name,
                                          bucket_name=self.bucket_name)
-        dwn_file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
+        dwn_file_checksum = file_checksum = system_utils.calc_checksum(dwn_file_path)
         assert_utils.assert_string(file_checksum, dwn_file_checksum, 'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
