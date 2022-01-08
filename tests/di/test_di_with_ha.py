@@ -53,6 +53,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=no-member
 # pylint: disable=R0902
 @pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDICheckHA:
@@ -149,7 +150,6 @@ class TestDICheckHA:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-22926")
-    @CTFailOn(error_handler)
     def test_reads_after_cluster_restart_22926(self):
         """
         Induce data corruption and verify READs before and after cluster restart .
@@ -189,7 +189,7 @@ class TestDICheckHA:
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_false(resp[0], resp)
 
-        LOGGER.info("Step 5: Verified read (Get) of an object whose metadata is corrupted.")
+        LOGGER.info("Step 5a: Verified read (Get) of an object whose metadata is corrupted.")
         LOGGER.info("Step 6: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
