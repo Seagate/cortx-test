@@ -208,7 +208,7 @@ class TestDICheckHA:
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         except CTException as error:
-            self.log.exception('get object failed', error)
+            self.log.error('get object failed %s', error)
         self.s3bench_cleanup = None
         LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
