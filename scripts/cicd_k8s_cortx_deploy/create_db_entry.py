@@ -106,11 +106,11 @@ def main():
     """
     try:
         hosts = os.getenv("HOSTS")
-        admin_user = os.getenv("ADMIN_USER")
-        admin_pswd = os.getenv("ADMIN_PASSWORD")
+        jira_id = os.environ['JIRA_ID']
+        jira_pswd = os.environ['JIRA_PASSWORD']
         te = os.getenv("TEST_EXECUTION_NUMBER")
         if te is not None:
-            jira_obj = jira_utils.JiraTask(admin_user, admin_pswd)
+            jira_obj = jira_utils.JiraTask(jira_id, jira_pswd)
             te_details = jira_obj.get_issue_details(te)
             test_env = te_details.fields.customfield_21006
             print("te details are:\n ", test_env)
