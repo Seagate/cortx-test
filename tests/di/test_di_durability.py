@@ -1139,7 +1139,8 @@ class TestDIDurability:
                                          obj_name=self.object_name,
                                          bucket_name=self.bucket_name)
         dwn_file_checksum = file_checksum = system_utils.calc_checksum(dwn_file_path)
-        assert_utils.assert_string(file_checksum, dwn_file_checksum, 'Checksum mismatch found')
+        assert_utils.assert_exact_string(file_checksum, dwn_file_checksum,
+                                         'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
 
