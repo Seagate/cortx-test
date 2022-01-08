@@ -1098,33 +1098,49 @@ class TestDIDurability:
         Test to verify object integrity during the the upload with correct checksum.
         Specify checksum and checksum algorithm or ETAG during
         PUT(MD5 with and without digest, CRC ( check multi-part))
+        This test works with R=T/F and W=True.
         """
-        sz = 128 * MB
+        size = 1 * MB
         self.log.info("STARTED TEST-22912: Test to verify object integrity "
                       "during the the upload with correct checksum.")
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if read_flag[0]:
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        if not valid or skip_mark:
             pytest.skip()
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.create_file_from_buf(fbuf=buff, name=self.file_path, size=sz)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Step 1: Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a good file.")
+        self.di_err_lib.create_file(size, first_byte='a', name=self.file_path)
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
+
+        self.log.info("Step 3: upload a file using s3cmd multipart upload")
         # to do enabling checksum feature
         self.log.info("Step 3: upload a file with incorrect checksum")
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                     object_name=self.object_name,
-                                    file_path=location)
+                                    file_path=self.file_path)
         dwn_file_name = os.path.split(self.file_path)[-1]
+        dwn_file_name = dwn_file_name + '.dwn'
         dwn_file_dir = os.path.split(self.file_path)[0]
-        dwn_file_path = os.path.join(dwn_file_dir, 'dwn' + dwn_file_name)
+        dwn_file_path = os.path.join(dwn_file_dir, dwn_file_name)
         self.s3_test_obj.object_download(file_path=dwn_file_path,
                                          obj_name=self.object_name,
                                          bucket_name=self.bucket_name)
-        file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
-        assert_utils.assert_string(csm, file_checksum, 'Checksum mismatch found')
+        dwn_file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
+        assert_utils.assert_string(file_checksum, dwn_file_checksum, 'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
 
