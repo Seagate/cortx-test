@@ -106,6 +106,8 @@ def main():
     """
     try:
         hosts = os.getenv("HOSTS")
+        admin_user = os.getenv("ADMIN_USER")
+        admin_pswd = os.getenv("ADMIN_PASSWORD")
         jira_id = os.environ['JIRA_ID']
         jira_pswd = os.environ['JIRA_PASSWORD']
         te = os.getenv("TEST_EXECUTION_NUMBER")
