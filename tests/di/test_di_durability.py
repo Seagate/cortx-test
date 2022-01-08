@@ -678,11 +678,12 @@ class TestDIDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22926')
-    def test_enable_validation_induce_corruption_detect_error_22926(self):
+    @pytest.mark.tags('TEST-229260')
+    def test_enable_validation_induce_corruption_detect_error_22926_dup(self):
         """
         With Flag enabled, when data or metadata corruption induced, download of
         corrupted data should flag error.
+        This test is duplicate and needs cleanup or associate with correct test.
         """
         self.log.info(
             "STARTED: With Flag enabled, when data or metadata corruption induced, download of"

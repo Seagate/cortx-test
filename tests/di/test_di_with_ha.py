@@ -54,6 +54,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
+@pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDICheckHA:
     """
     Test suite for DI with HA scenarios.
@@ -144,7 +145,6 @@ class TestDICheckHA:
             remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.lc
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -152,9 +152,9 @@ class TestDICheckHA:
     @CTFailOn(error_handler)
     def test_reads_after_cluster_restart(self):
         """
-        Induce data corruption and verify READs before and after after cluster restart .
+        Induce data corruption and verify READs before and after cluster restart .
         """
-        size = 10 * MB
+        size = 16 * MB
         LOGGER.info("Started: DI Flag(S3_READ_DI) enabled and corrupted file flags error during"
                     " read even after node/cluster reboots.")
         LOGGER.info("STEP 1: Perform WRITEs with 10 MB file")
@@ -164,17 +164,22 @@ class TestDICheckHA:
         self.test_prefix = 'TEST-22926'
 
         LOGGER.info("Step 1: Create a bucket.")
-        self.s3_test_obj.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Step 1a: Created a bucket with name : %s", self.bucket_name)
+        self.s3_clean = True
         LOGGER.info("Step 2: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
         # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
-        LOGGER.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
+        LOGGER.info("Step 2a: created a file with corrupted flag at location %s", self.file_path)
         LOGGER.info("Step 3: enable data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            LOGGER.info("Step 3: enabled data corruption")
+            LOGGER.info("Step 3a: enabled data corruption")
+            self.data_corruption_status = True
         else:
-            LOGGER.info("Step 3: failed to enable data corruption")
+            LOGGER.info("Step 3b: failed to enable data corruption")
             assert False
         LOGGER.info("Step 4: Put object in a bucket.")
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
@@ -185,20 +190,19 @@ class TestDICheckHA:
         assert_utils.assert_false(resp[0], resp)
 
         LOGGER.info("Step 5: Verified read (Get) of an object whose metadata is corrupted.")
-        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 6: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
-        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        LOGGER.info("Step 7: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 8: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
-        LOGGER.info("Step 4: Perform READs and verify DI on the written data")
+        LOGGER.info("Step 8a: Cluster restarted fine and all Pods online.")
+        LOGGER.info("Step 9: Perform READs and verify DI on the written data")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_false(resp[0], resp)
         self.s3bench_cleanup = None
-        LOGGER.info("Step 4: Performed READs and verified DI on the written data")
         LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
         assert_utils.assert_true(resp[0], resp[1])
