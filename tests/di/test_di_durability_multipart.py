@@ -23,6 +23,7 @@ F-23B : Data Durability/Integrity test module for Multipart Files.
 
 import os
 import os.path
+import re
 import logging
 import secrets
 import pytest
@@ -570,5 +571,10 @@ class TestDICheckMultiPart:
         self.log.info("Step 4: Verified that object is uploaded to a bucket")
         self.log.info("Step 4: Download object using Minion Client")
         cmd_status, output = system_utils.run_local_cmd(download_obj_cmd)
-        if not cmd_status and "InternalError" not in output:
+        pat = re.compile('(Failed to copy|internal\s+error)', re.I)
+        match = pat.search(output)
+        if not cmd_status and match and match.groups():
+            self.log.error("Match groups are %s and first match %s", match.groups(), match.group(0))
+            self.log.error(f'Download Command output is {output}')
+        else:
             assert False, f'Download Command failed with error {output}'
