@@ -1089,7 +1089,6 @@ class TestDIDurability:
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
