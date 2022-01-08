@@ -1154,7 +1154,7 @@ class TestDIDurability:
         size = 512 * KB
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
-        valid, skip_mark = self.edtl.validate_valid_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
         res = self.s3_test_obj.create_bucket(self.bucket_name)
@@ -1165,7 +1165,7 @@ class TestDIDurability:
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
-        self.edtl.create_file(size, first_byte='z', name=self.file_path)
+        self.di_err_lib.create_file(size, first_byte='z', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
