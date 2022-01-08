@@ -150,7 +150,7 @@ class TestDICheckHA:
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-22926")
     @CTFailOn(error_handler)
-    def test_reads_after_cluster_restart(self):
+    def test_reads_after_cluster_restart_22926(self):
         """
         Induce data corruption and verify READs before and after cluster restart .
         """
