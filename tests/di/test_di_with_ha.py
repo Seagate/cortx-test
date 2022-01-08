@@ -192,7 +192,7 @@ class TestDICheckHA:
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         except CTException as error:
-            self.log.exception('get object failed', error)
+            self.log.error('get object failed %s', error)
 
         LOGGER.info("Step 5a: Verified read (Get) of an object whose metadata is corrupted.")
         LOGGER.info("Step 6: Send the cluster shutdown signal through CSM REST.")
