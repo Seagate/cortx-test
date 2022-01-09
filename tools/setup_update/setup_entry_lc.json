@@ -155,5 +155,10 @@
 {
     "s3_io": "fqdn:port",
     "s3_auth": "fqdn:port"
+},
+"bmc":
+{
+    "username": "",
+    "password": ""
 }
 }
