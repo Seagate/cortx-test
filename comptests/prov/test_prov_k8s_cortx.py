@@ -69,7 +69,7 @@ class TestProvK8Cortx:
 
     # pylint: disable=R0915
     # pylint: disable=too-many-arguments,too-many-locals
-    def test_deployment_config(self, sns_data,
+    def single_node_deployment(self, sns_data,
                         sns_parity,sns_spare, dix_data,
                         dix_parity, dix_spare,
                         cvg_count, data_disk_per_cvg, master_node_list,
@@ -110,8 +110,6 @@ class TestProvK8Cortx:
         LOGGER.info("Step to Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, master_node_list,
                                             master_node_list, system_disk_dict,
-                                            self.deploy_lc_obj.docker_username,
-                                            self.deploy_lc_obj.docker_password,
                                             self.deploy_lc_obj.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cortx Cluster Deployed Successfully")
@@ -375,12 +373,10 @@ class TestProvK8Cortx:
         """
         Deployment- 1node config_1
         """
-        row_list = list()
-        row_list.append(['1N'])
         config = DEPLOY_CFG['nodes_1']['config_1']
         LOGGER.info("Running 1 N with config %s+%s+%s",
                 config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment_config(sns_data=config['sns_data'],
+        self.single_node_deployment(sns_data=config['sns_data'],
                                     sns_parity=config['sns_parity'],
                                     sns_spare=config['sns_spare'],
                                     dix_data=config['dix_data'],
@@ -390,7 +386,6 @@ class TestProvK8Cortx:
                                     data_disk_per_cvg=config['data_disk_per_cvg'],
                                     master_node_list=self.master_node_list,
                                     worker_node_list=self.master_node_list)
-        row_list.append(['config_1'])
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -399,12 +394,10 @@ class TestProvK8Cortx:
         """
         Deployment- 1node config_2
         """
-        row_list = list()
-        row_list.append(['1N'])
         config = DEPLOY_CFG['nodes_1']['config_2']
         LOGGER.info("Running 1 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment_config(sns_data=config['sns_data'],
+        self.single_node_deployment(sns_data=config['sns_data'],
                                            sns_parity=config['sns_parity'],
                                            sns_spare=config['sns_spare'],
                                            dix_data=config['dix_data'],
@@ -414,4 +407,3 @@ class TestProvK8Cortx:
                                            data_disk_per_cvg=config['data_disk_per_cvg'],
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.master_node_list)
-        row_list.append(['config_2'])
