@@ -1120,7 +1120,6 @@ class TestPodRestart:
 
         LOGGER.info("ENDED: Test to verify continuous READs during data pod restart.")
 
-    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34075")
@@ -1137,7 +1136,8 @@ class TestPodRestart:
         LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -1159,26 +1159,27 @@ class TestPodRestart:
 
         LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
                     pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
 
+        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
         LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
-
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+                    remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in online state")
+        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
+                    remain_pod_list)
 
         LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 5GB) in background")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34075'
         self.s3_clean = users
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'skipread': True, 'skipcleanup': True, 'nclients': 1, 'nsamples': 1}
+                'skipread': True, 'skipcleanup': True, 'nclients': 1, 'nsamples': 30}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -1213,9 +1214,8 @@ class TestPodRestart:
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8: Successfully completed Writes in background")
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
@@ -1230,7 +1230,6 @@ class TestPodRestart:
 
         LOGGER.info("ENDED: Test to verify continuous Writes during data pod restart.")
 
-    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34076")
@@ -1247,7 +1246,8 @@ class TestPodRestart:
         LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -1269,28 +1269,28 @@ class TestPodRestart:
 
         LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
                     pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
 
+        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
         LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
-
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+                    remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in online state")
+        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
+                    remain_pod_list)
 
         LOGGER.info("Step 5: Perform READ/WRITEs/VERIFY with variable object sizes in background")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34076'
         self.s3_clean = users
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'skipcleanup': True, 'nclients': 1, 'nsamples': 1}
-        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
-                                  args=(event,), kwargs=args)
+                'skipcleanup': True, 'nclients': 1, 'nsamples': 30}
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 5: Performed READ/WRITEs/VERIFY with variable sizes objects in "
@@ -1324,9 +1324,8 @@ class TestPodRestart:
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8: Successfully completed Read/Writes in background")
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
