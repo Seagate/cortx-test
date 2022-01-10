@@ -610,18 +610,20 @@ class S3TestLib(S3Lib):
             self,
             bucket: str = None,
             key: str = None,
+            ranges: str = None,
             raise_exec: bool = True) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
         :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
+        :param ranges: Byte range to be retrieved
         :param bucket: The bucket name containing the object.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = poll(super().get_object, bucket, key)
+            response = poll(super().get_object, bucket, key, ranges)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
