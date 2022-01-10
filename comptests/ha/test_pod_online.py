@@ -22,8 +22,9 @@
 HA component test suite for stop cluster.
 """
 import logging
-import time
+
 import pytest
+
 from commons.helpers.pods_helper import LogicalNode
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -51,15 +52,12 @@ class TestPodOnlineStatus:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.ha_obj = HAK8s()
-        cls.restored =  True
+        cls.restored = True
         cls.mgnt_ops = ManagementOPs()
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
                                    password=CMN_CFG["nodes"][node]["password"])
-            cls.host = CMN_CFG["nodes"][node]["hostname"]
-            cls.username.append(CMN_CFG["nodes"][node]["username"])
-            cls.password.append(CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
                 cls.master_node_list.append(node_obj)
@@ -71,7 +69,6 @@ class TestPodOnlineStatus:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.restored = True
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
@@ -99,17 +96,9 @@ class TestPodOnlineStatus:
         """
         Stop Cluster - All the nodes are online.
         """
-        LOGGER.info("STARTED: Test to verify cluster shutdown.")
+        LOGGER.info("STARTED: Test to verify pod online status")
         LOGGER.info("Step 1: Check the status of the pods running in cluster.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
-
-        LOGGER.info("Step 1: Shutdown down the node.")
-        resp = self.worker_node_list[0].shutdown_node()
-        assert resp, "Failed to shutdown node "
-
-
-
-
 
