@@ -1565,7 +1565,7 @@ class TestPodRestart:
                                     'user_name': self.s3acc_name}}
 
         LOGGER.info("Step 5: Create multiple buckets and upload object to %s and copy to other "
-                    "buckets", self.bucket_name)
+                    "bucket", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -1574,7 +1574,7 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
         LOGGER.info("Step 5: Successfully Created multiple buckets and uploaded object to %s "
-                    "and copied to other buckets", self.bucket_name)
+                    "and copied to other bucket", self.bucket_name)
 
         bkt_obj_dict1 = dict()
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
