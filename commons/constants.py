@@ -38,6 +38,7 @@ MAX = 1300000
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
+PROD_FAMILY_MGW = "MGW"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
