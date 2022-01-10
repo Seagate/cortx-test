@@ -142,7 +142,8 @@ k8s_cortx_deploy:
     zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
     rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
     busybox: 'ghcr.io/seagate/busybox:latest'
-  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata' ]
+  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata',
+                      'cortxserver', 'cortxha', 'cortxclient' ]
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
     kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
