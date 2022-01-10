@@ -1096,7 +1096,7 @@ class TestPodRestart:
         thread.join()
 
         LOGGER.info("Verifying responses from background process")
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1207,7 +1207,7 @@ class TestPodRestart:
         thread.join()
 
         LOGGER.info("Step 8: Verifying writes from background process")
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1317,7 +1317,7 @@ class TestPodRestart:
         thread.join()
 
         LOGGER.info("Step 8: Verifying read/writes from background process")
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
