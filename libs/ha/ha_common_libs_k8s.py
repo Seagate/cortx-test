@@ -36,9 +36,9 @@ from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
+from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
-from commons.helpers.pods_helper import LogicalNode
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
@@ -1023,9 +1023,14 @@ class HAK8s:
         LOGGER.info("%s data pod is not hosted either on control or ha node",
                     data_pod_name)
         data_node_fqdn = data_pods.get(data_pod_name)
-        LOGGER.info("Node %s is hosting data pod %s", data_node_fqdn, data_pod_name)
+        server_pods = pod_obj.get_pods_node_fqdn(common_const.SERVER_POD_NAME_PREFIX)
+        for pod_name, node in server_pods.items():
+            if node == data_node_fqdn:
+                server_pod_name = pod_name
+        LOGGER.info("Node %s is hosting data pod %s nd server pod %s",
+                    data_node_fqdn, data_pod_name, server_pod_name)
 
-        return data_pod_name, data_node_fqdn
+        return data_pod_name, server_pod_name, data_node_fqdn
 
     @staticmethod
     def get_nw_iface_node_down(host_list: list, node_list: list, node_fqdn: str):

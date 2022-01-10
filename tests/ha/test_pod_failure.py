@@ -2618,8 +2618,14 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Shutdown data pod by shutting node on which its hosted.")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        data_pod_name, data_node_fqdn = \
-            self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        server_pod_list = self.node_master_list[0].get_all_pods \
+            (pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        resp = self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        data_pod_name = resp[0]
+        server_pod_name = resp[1]
+        data_node_fqdn = resp[2]
+        srv_pod_host = self.node_master_list[0].get_pod_hostname(pod_name=server_pod_name)
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         self.node_name = data_node_fqdn
         LOGGER.info("Shutdown the node: %s", data_node_fqdn)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=data_node_fqdn)
@@ -2632,16 +2638,25 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
-        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.info("Step 4: Check services status that were running on data and server pod")
+        LOGGER.info("Check services on %s data pod", data_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod %s are in offline state", data_pod_name)
+        LOGGER.info("Check services on %s server pod", server_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=srv_pod_host)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of data and server pods are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s",
-                    data_pod_list.remove(data_pod_name))
+        remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
+        remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
+        remain_pod_list = remain_pod_list1 + remain_pod_list2
+        LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=data_pod_list.remove(data_pod_name), fail=False)
+            pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
@@ -2684,8 +2699,14 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown data pod by making network down of node "
                     "on which its hosted.")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        data_pod_name, data_node_fqdn = \
-            self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        server_pod_list = self.node_master_list[0].get_all_pods \
+            (pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        resp = self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
+        data_pod_name = resp[0]
+        server_pod_name = resp[1]
+        data_node_fqdn = resp[2]
+        srv_pod_host = self.node_master_list[0].get_pod_hostname(pod_name=server_pod_name)
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         LOGGER.info("Get the ip of the host from the node %s", data_node_fqdn)
         resp = self.ha_obj.get_nw_iface_node_down(host_list=self.host_worker_list,
                                                   node_list=self.node_worker_list,
@@ -2702,16 +2723,25 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
-        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.info("Step 4: Check services status that were running on data and server pod")
+        LOGGER.info("Check services on %s data pod", data_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod %s are in offline state", data_pod_name)
+        LOGGER.info("Check services on %s server pod", server_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
+                                                           hostname=srv_pod_host)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of data and server pods are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s",
-                    data_pod_list.remove(data_pod_name))
+        remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
+        remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
+        remain_pod_list = remain_pod_list1 + remain_pod_list2
+        LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=data_pod_list.remove(data_pod_name), fail=False)
+            pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
