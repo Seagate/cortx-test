@@ -75,6 +75,26 @@ test_2297:
     total_parts: 2
     err_msg: "EntityTooLarge"
 
+test_33365:
+    file_size: 11000
+    total_parts: 2
+    err_msg: "EntityTooLarge"
+
+test_33366:
+    file_size: 12000
+    total_parts: 2
+    err_msg: "EntityTooLarge"
+
+test_33367:
+    file_size: 11000
+    total_parts: 2
+    err_msg: "EntityTooLarge"
+
+test_33368:
+    file_size: 11000
+    total_parts: 2
+    err_msg: "EntityTooLarge"
+
 test_8926:
     file_size: 10
     total_parts: 2
