@@ -110,17 +110,16 @@ def main():
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         jira_id = os.environ['JIRA_ID']
         jira_pswd = os.environ['JIRA_PASSWORD']
-        te = os.getenv("TEST_EXECUTION_NUMBER")
+        te = os.getenv("TEST_EXECUTION_NUMBER", None)
         if te is not None:
             jira_obj = jira_utils.JiraTask(jira_id, jira_pswd)
             te_details = jira_obj.get_issue_details(te)
             test_env = te_details.fields.customfield_21006
-            print("te details are:\n ", test_env)
             nodes_cnt = w2n.word_to_num(test_env[-1].split("_")[0])
-            print("te details are:\n ", nodes_cnt)
+            print("WORKER NODE COUNT FOR ADDING DB ENTRY", nodes_cnt)
         else:
             nodes_cnt = os.getenv("NODES_COUNT")
-            print(nodes_cnt)
+            print("WORKER NODE COUNT FOR ADDING DB ENTRY ", nodes_cnt)
         cfg = ""
         with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
             cfg = yaml.safe_load(file)
