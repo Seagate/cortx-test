@@ -1355,7 +1355,7 @@ class TestSystemCapacity():
 
             index = row_temp.format(node)
             self.log.info(
-                "[Start] Fetch degraded capacity on Consul with 0 Node failure")
+                "[Start] Fetch degraded capacity on Consul with 1 Node failure")
             resp = self.system_capacity.get_capacity_consul()
             # TBD : Consul output doest have degraded capacity yet.
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
@@ -1368,10 +1368,10 @@ class TestSystemCapacity():
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
-                "[End] Fetch degraded capacity on Consul with 0 Node failure")
+                "[End] Fetch degraded capacity on Consul with 1 Node failure")
 
             self.log.info(
-                "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
+                "[Start] Fetch degraded capacity on HCTL with 1 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
             resp = self.health_helper.hctl_status_json()
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
@@ -1383,9 +1383,9 @@ class TestSystemCapacity():
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
-                "[End] Fetch degraded capacity on HCTL with 0 Node failure")
+                "[End] Fetch degraded capacity on HCTL with 1 Node failure")
 
-            self.log.info("[Start] Fetch degraded capacity on CSM")
+            self.log.info("[Start] Fetch degraded capacity on CSM with 1 Node failure")
             resp = self.system_capacity.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
             resp = resp.json()
@@ -1398,7 +1398,7 @@ class TestSystemCapacity():
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
-                "[End] Fetch degraded capacity on CSM with 0 Node failure")
+                "[End] Fetch degraded capacity on CSM with 1 Node failure")
 
             self.log.info(
                 "[Start] Power on node back from BMC/ssc-cloud and check node status")
@@ -1407,7 +1407,6 @@ class TestSystemCapacity():
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             # To get all the services up and running
-            time.sleep(40)
             self.log.info("Verified %s is powered on and pinging.",
                           self.host_list[node])
             self.log.info(

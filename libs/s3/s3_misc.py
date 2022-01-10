@@ -211,7 +211,7 @@ def create_put_objects(object_name: str, bucket_name: str,
 
 def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
     """
-    Delete bucket from give access key and secret key.
+    Delete object from give bucket, access key and secret key.
     """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
