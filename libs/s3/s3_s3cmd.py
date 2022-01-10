@@ -78,7 +78,7 @@ class S3CmdCommandBuilder:
 
         if self.user_opts.get('host_bucket'):
             self.current_options = self.current_options + [
-                "--host_bucket=" + str(self.user_opts.get('host-bucket'))]
+                "--host-bucket=" + str(self.user_opts.get('host_bucket'))]
 
         if self.user_opts.get('disable_multipart'):
             self.current_options = self.current_options + ["--disable-multipart"]
@@ -100,7 +100,8 @@ class S3CmdCommandBuilder:
         self.parent_cmd += ['put']
         # Build Command
         bucket = bucket if bucket.startswith('s3://') else 's3://' + bucket
-        part = bucket + path
+        part = '/'.join([bucket, os.path.split(path)[-1]])
+        self.parent_cmd += [path]
         self.parent_cmd += [part]
         return self.parent_cmd
 
