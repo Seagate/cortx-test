@@ -215,7 +215,7 @@ class RestCsmCluster(RestTestLib):
                 remote_path=cons.CSM_COPY_PATH, local_path=cons.CSM_COPY_PATH)
             assert_utils.assert_true(resp[0], resp[1])
             stream = open(cons.CSM_COPY_PATH, 'r')
-            data = yaml.load(stream, Loader=yaml.Loader)
+            data = yaml.safe_load(stream)
             for csm_dict in csm_list_key_value:
                 for csm_key, csm_val in csm_dict.items():
                     url_list = csm_key.split('/')
