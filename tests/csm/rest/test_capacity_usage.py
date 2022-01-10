@@ -249,7 +249,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Power on node back from BMC/ssc-cloud and check node status")
             resp = self.ha_obj.host_power_on(host=self.host_list[node])
-            assert resp, f"{self.host_list[node]} has not powered on yet.")
+            assert resp, f"{self.host_list[node]} has not powered on yet."
             # To get all the services up and running
             time.sleep(40)
             self.log.info("Verified %s is powered on and pinging.", self.host_list[node])
