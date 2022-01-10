@@ -1704,4 +1704,3 @@ class TestSystemCapacity():
         resp = self.system_capacity.validate_metrics(response.json(), 'full')
         assert_utils.assert_true(resp, "Rest data metrics check failed in full mode")
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
