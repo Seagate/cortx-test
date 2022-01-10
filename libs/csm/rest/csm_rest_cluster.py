@@ -215,7 +215,7 @@ class RestCsmCluster(RestTestLib):
                 remote_path=cons.CSM_COPY_PATH, local_path=cons.CSM_COPY_PATH)
             assert_utils.assert_true(resp[0], resp[1])
             stream = open(cons.CSM_COPY_PATH, 'r')
-            data = yaml.load(stream)
+            data = yaml.load(stream, Loader=yaml.Loader)
             for csm_dict in csm_list_key_value:
                 for csm_key, csm_val in csm_dict.items():
                     url_list = csm_key.split('/')
@@ -246,5 +246,4 @@ class RestCsmCluster(RestTestLib):
                 cons.CSM_COPY_PATH, pod_name, cons.CSM_CONF_PATH, cons.CORTX_CSM_POD),
                 read_lines=False, exc=False)
             return True, "Able to set telemetry auth "
-        else:
-            return False, "Not able to set telemetry auth using CSM REST"
+        return False, "Not able to set telemetry auth using CSM REST"
