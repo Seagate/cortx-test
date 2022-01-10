@@ -1340,7 +1340,7 @@ class TestPodRestart:
         LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
 
         LOGGER.info("Step 8: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34085')
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34085-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean.update(resp[2])

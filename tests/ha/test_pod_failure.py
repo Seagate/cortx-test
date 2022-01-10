@@ -2714,7 +2714,7 @@ class TestPodFailure:
         self.node_ip = resp[1]
         self.node_iface = resp[2]
         self.new_worker_obj = resp[3]
-        assert_utils.assert_true(resp[0], "Node is still up")
+        assert_utils.assert_true(resp[0], "Node network is still up")
         LOGGER.info("Step 2: %s Node's network is down.", data_node_fqdn)
         self.restore_ip = True
 
