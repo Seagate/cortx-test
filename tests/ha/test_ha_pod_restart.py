@@ -1407,7 +1407,7 @@ class TestPodRestart:
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in online state")
+        LOGGER.info("Step 4: Services of pods %s are in online state", remain_pod_list)
 
         LOGGER.info("Step 5: Start multipart upload of 5GB object in background")
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
@@ -1418,7 +1418,7 @@ class TestPodRestart:
         prc.start()
         LOGGER.info("Step 5: Started multipart upload of 5GB object in background")
 
-        time.sleep(5)
+        time.sleep(HA_CFG["common_params"]["5sec_delay"])
 
         LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -1548,7 +1548,7 @@ class TestPodRestart:
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in online state")
+        LOGGER.info("Step 4: Services of pods %s are in online state", remain_pod_list)
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -1591,7 +1591,7 @@ class TestPodRestart:
         prc.start()
         LOGGER.info("Step 6: Successfully started background process")
 
-        time.sleep(1)
+        time.sleep(HA_CFG["common_params"]["1sec_delay"])
 
         LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
