@@ -1621,18 +1621,27 @@ class TestPodRestart:
 
         LOGGER.info("Step 1: Get the RC node and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+
         rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1]
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
         LOGGER.info("RC Node is running on %s node", self.node_name)
         LOGGER.info("Get the data pod running on %s node", self.node_name)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        rc_datapod = None
+        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
+        rc_datapod = rc_serverpod = None
         for pod_name, node in data_pods.items():
             if node == self.node_name:
                 rc_datapod = pod_name
                 break
-        LOGGER.info("RC node %s has data pod: %s", self.node_name, rc_datapod)
+        for server_pod, node in server_pods.items():
+            if node == self.node_name:
+                rc_serverpod = server_pod
+                break
+
+        LOGGER.info("RC node %s has data pod: %s and server pod : %s", self.node_name,
+                    rc_datapod, rc_serverpod)
         pod_host = self.node_master_list[0].get_pod_hostname(pod_name=rc_datapod)
         LOGGER.info("Shutdown the RC node: %s", self.node_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_name)
@@ -1646,18 +1655,21 @@ class TestPodRestart:
         LOGGER.info("Step 2: Checked cluster is in degraded state")
 
         LOGGER.info("Step 3: Check services status that were running on RC node %s's data pod %s "
-                    "are in offline state", self.node_name, rc_datapod)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod], fail=True,
-                                                           hostname=pod_host)
+                    "and server pod %s are in offline state", self.node_name, rc_datapod,
+                    rc_serverpod)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
+                                                           fail=True, hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
                     "are in offline state", self.node_name, rc_datapod)
 
         pod_list.remove(rc_datapod)
+        server_list.remove(rc_serverpod)
+        online_pods = pod_list + server_list
         LOGGER.info("Step 4: Check services status on remaining pods %s are in online state",
-                    pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+                    online_pods)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
