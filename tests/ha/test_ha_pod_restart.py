@@ -2632,7 +2632,7 @@ class TestPodRestart:
         """
         Verify IOs after pod restart (kubectl delete)
         """
-        LOGGER.info("STARTED: Verify IOs after pod restart (kubectl delete)")
+        LOGGER.info("STARTED: Verify IOs after server pod restart (kubectl delete)")
 
         LOGGER.info("Step 1: Shutdown the server pod by kubectl delete.")
         LOGGER.info("Get pod name to be deleted")
@@ -2683,7 +2683,7 @@ class TestPodRestart:
 
         LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects) after "
                     "starting the pod ")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34261')
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34261-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean.update(resp[2])
@@ -2692,4 +2692,4 @@ class TestPodRestart:
         self.s3_clean.pop(list(resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully IOs completed after starting the pod")
 
-        LOGGER.info("COMPLETED: Verify IOs after pod restart (kubectl delete)")
+        LOGGER.info("COMPLETED: Verify IOs after server pod restart (kubectl delete)")
