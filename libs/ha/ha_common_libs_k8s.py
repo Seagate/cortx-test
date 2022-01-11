@@ -1044,7 +1044,7 @@ class HAK8s:
         """
         for count, host in enumerate(host_list):
             if host == node_fqdn:
-                node_ip = CMN_CFG["nodes"][count]["ip"]
+                node_ip = CMN_CFG["nodes"][count+1]["ip"]
                 resp = node_list[count].execute_cmd(
                     cmd=common_cmd.CMD_IFACE_IP.format(node_ip), read_lines=True)
                 node_iface = resp[1].strip(":\n")
