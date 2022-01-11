@@ -2297,7 +2297,8 @@ class TestPodFailure:
                     pod_list.remove(pod_name))
 
         LOGGER.info("Step 7: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts+1)))
+        remaining_parts = list(filter(lambda i: i not in part_numbers,
+                                      list(range(1, total_parts+1))))
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,

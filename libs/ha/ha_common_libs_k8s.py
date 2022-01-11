@@ -651,7 +651,7 @@ class HAK8s:
             else:
                 LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
                             object_name, bkt_name, obj_name)
-                return False, response if not background else sys.exit()
+                return False, response if not background else sys.exit(1)
 
         return True, put_etag if not background else output.put((True, put_etag))
 
