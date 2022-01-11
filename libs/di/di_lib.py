@@ -257,11 +257,14 @@ def calc_checksum(buf: object):
 def restart_s3_processes_k8s():
     """
     restart s3 processes for k8s based setup
-
+    res = node.send_k8s_cmd(operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
+                decode=True)
     """
     if cmn_cfg["product_family"] == PROD_FAMILY_LC and cmn_cfg["product_type"] == PROD_TYPE_K8S:
         nodes = cmn_cfg["nodes"]
         master_node_list = list()
+        namespace = const.NAMESPACE
         for node in nodes:
             if node["node_type"].lower() == "master":
                 node_obj = LogicalNode(hostname=node["hostname"], username=node["username"],
@@ -275,9 +278,10 @@ def restart_s3_processes_k8s():
             s3_containers = master_node.get_container_of_pod(pod_name=pod,
                                                              container_prefix="cortx-s3-0")
             for s3_container in s3_containers:
-                cmd = f"kubectl exec -it {pod} -c {s3_container} -- pkill -9 s3server"
+                cmd = "pkill -9 s3server"
                 LOGGER.info("cmd : %s", cmd)
-                master_node.execute_cmd(cmd=cmd, read_lines=True)
+                # master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                #                          command_suffix=f"-c {s3_container} -- {cmd}", decode=True)
         for pod in data_pods:
             s3_containers = master_node.get_container_of_pod(pod_name=pod,
                                                              container_prefix="cortx-s3-0")
@@ -285,9 +289,10 @@ def restart_s3_processes_k8s():
                 counter = 0
                 resp = None
                 while counter < 30:
-                    cmd = f"kubectl exec -it {pod} -c {s3_container} -- pgrep s3server 2> /dev/null"
-                    resp = master_node.execute_cmd(cmd=cmd, read_lines=True)
-                    LOGGER.info("cmd : %s", cmd)
+                    cmd = "pgrep s3server 2> /dev/null"
+                    resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                                                    command_suffix=f"-c {s3_container} -- {cmd}",
+                                                    decode=True)
                     LOGGER.info("resp : %s", resp)
                     LOGGER.info("counter is : %s", counter)
                     if resp:
