@@ -83,7 +83,7 @@ class TestPodRestart:
         cls.restored = cls.random_time = cls.s3_clean = cls.test_prefix = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = None
+        cls.restore_node = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
@@ -160,7 +160,7 @@ class TestPodRestart:
             if self.restore_node:
                 LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
                 resp = self.ha_obj.host_power_on(host=self.node_name)
-                assert_utils.assert_true(resp, "Host is not powered on")
+                assert_utils.assert_true(resp, f"Host {self.node_name} is not powered on")
             if self.restore_ip:
                 LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
                 self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
