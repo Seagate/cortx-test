@@ -212,7 +212,7 @@ class TestPodFailure:
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
@@ -280,7 +280,7 @@ class TestPodFailure:
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
