@@ -28,7 +28,6 @@ from http import HTTPStatus
 import pytest
 
 from commons import configmanager
-from commons import commands as comm
 from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons import cortxlogging
 from commons.constants import Rest as const
