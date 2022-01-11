@@ -280,8 +280,16 @@ def restart_s3_processes_k8s():
             for s3_container in s3_containers:
                 cmd = "pkill -9 s3server"
                 LOGGER.info("cmd : %s", cmd)
-                master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
-                                         command_suffix=f"-c {s3_container} -- {cmd}", decode=True)
+                retry_count = 2
+                while retry_count > 2:
+                    try:
+                        master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                                                 command_suffix=f"-c {s3_container} -- {cmd}",
+                                                 decode=True)
+                        break
+                    except IOError as err:
+                        LOGGER.info("err: %s ", err)
+                        retry_count -= 1
         for pod in data_pods:
             s3_containers = master_node.get_container_of_pod(pod_name=pod,
                                                              container_prefix="cortx-s3-0")
@@ -289,17 +297,21 @@ def restart_s3_processes_k8s():
                 counter = 0
                 resp = None
                 while counter < 30:
-                    cmd = "pgrep s3server 2> /dev/null"
-                    resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
-                                                    command_suffix=f"-c {s3_container} -- {cmd}",
-                                                    decode=True)
-                    LOGGER.info("resp : %s", resp)
-                    LOGGER.info("counter is : %s", counter)
-                    if resp:
-                        LOGGER.info("Breaking while loop for container %s of pod %s",
-                                    s3_container, pod)
-                        break
-                    counter = counter + 1
-                    time.sleep(1)
+                    try:
+                        cmd = "pgrep s3server 2> /dev/null"
+                        resp = master_node.send_k8s_cmd(operation="exec", pod=pod,
+                                                        namespace=namespace,
+                                                        command_suffix=f"-c {s3_container} -- "
+                                                                       f"{cmd}", decode=True)
+                        LOGGER.info("resp : %s", resp)
+                        LOGGER.info("counter is : %s", counter)
+                        if resp:
+                            LOGGER.info("Breaking while loop for container %s of pod %s",
+                                        s3_container, pod)
+                            break
+                    except IOError as err:
+                        LOGGER.info("err: %s ", err)
+                        counter = counter + 1
+                        time.sleep(1)
                 if not resp:
                     raise Exception
