@@ -523,8 +523,8 @@ class TestDIWithChangingS3Params:
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         parts = list()
-        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
-                                          split_count=5, random_part_size=False)
+        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25, split_count=5,
+                                          random_part_size=False)
         self.log.info(res_sp_file)
         self.s3obj.create_bucket(bucket_name=bucket_name)
         res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, obj_name)
@@ -539,7 +539,7 @@ class TestDIWithChangingS3Params:
                                                    object_name=obj_name, upload_id=mpu_id,
                                                    part_number=i+1)
             parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
-            di_lib.restart_s3_processes_k8s()
+            # di_lib.restart_s3_processes_k8s()
             i += 1
         resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
                                                                 bucket=bucket_name,
