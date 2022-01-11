@@ -280,8 +280,8 @@ def restart_s3_processes_k8s():
             for s3_container in s3_containers:
                 cmd = "pkill -9 s3server"
                 LOGGER.info("cmd : %s", cmd)
-                # master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
-                #                          command_suffix=f"-c {s3_container} -- {cmd}", decode=True)
+                master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                                         command_suffix=f"-c {s3_container} -- {cmd}", decode=True)
         for pod in data_pods:
             s3_containers = master_node.get_container_of_pod(pod_name=pod,
                                                              container_prefix="cortx-s3-0")
