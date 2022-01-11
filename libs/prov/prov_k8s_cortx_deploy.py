@@ -1082,7 +1082,7 @@ class ProvDeployK8sCortxLib:
         if cortx_cluster_deploy_flag:
             LOGGER.info("Step to update template file")
             temp_path = self.checkout_template_file(self.git_script_tag)
-            LOGGER.debug("TEMP FILE IS UPDATING %s", temp_path)
+            LOGGER.debug("TEMPLATE FILE IS UPDATING %s", temp_path)
             resp = self.update_template_file(temp_path, size=self.deploy_cfg['setup_size'])
             assert_utils.assert_true(resp[0], "Failure updating config_template.yaml")
             LOGGER.info("Step to Download solution file template")
@@ -1108,7 +1108,6 @@ class ProvDeployK8sCortxLib:
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
-            '''
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
@@ -1118,7 +1117,6 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("s3 resp is %s", s3_status)
             assert_utils.assert_true(s3_status[0], s3_status[1])
             row.append(s3_status[-1])
-            '''
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
