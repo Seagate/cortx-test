@@ -21,6 +21,7 @@
 """Test library for account capacity related operations.
 """
 import os
+import time
 from http import HTTPStatus
 
 import commons.errorcodes as err
@@ -113,7 +114,7 @@ class AccountCapacity(RestTestLib):
         s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
         total_cap = 0
         for sz in workload_in_mb:
-            test_file = f"file_io_{sz}"
+            test_file = f"file-io-{sz}-{int(time.time())}"
             file_path = os.path.join(TEST_DATA_FOLDER, test_file)
             self.log.info("Creating a file with name %s", test_file)
             system_utils.create_file(file_path, sz, "/dev/urandom")
