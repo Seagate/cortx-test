@@ -227,10 +227,12 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
         remote_path = remote_code_path + "solution.yaml"
+        temp_remote_path = remote_code_path + "config-template.yaml"
         LOGGER.debug("Remote path %s", remote_path)
         if system_utils.path_exists(local_sol_path):
             node_obj.copy_file_to_remote(local_sol_path, remote_path)
-            return True, f"File copied at {remote_path}"
+            node_obj.copy_file_to_remote(local_sol_path, temp_remote_path)
+            return True, f"Files copied at {remote_path} \n {temp_remote_path}"
         return False, f"{local_sol_path} not found"
 
     def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
@@ -307,6 +309,8 @@ class ProvDeployK8sCortxLib:
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
+        self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
+                           self.deploy_cfg["git_temp_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -324,6 +328,16 @@ class ProvDeployK8sCortxLib:
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
+
+    def checkout_template_file(self, git_tag):
+        """
+        Method to checkout solution.yaml file
+        param: git tag: tag of service repo
+        """
+        url = self.deploy_cfg["git_k8_temp_file"].format(git_tag)
+        cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["temp_file_path"], url)
+        system_utils.execute_cmd(cmd=cmd)
+        return self.deploy_cfg["temp_file_path"]
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -451,7 +465,6 @@ class ProvDeployK8sCortxLib:
         resp_node = self.update_nodes_sol_file(filepath, worker_obj)
         if not resp_node[0]:
             return False, "Failed to update nodes details in solution file"
-
         return True, filepath, sys_disk_pernode
 
     def update_nodes_sol_file(self, filepath, worker_obj):
@@ -622,6 +635,27 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
+        return True, filepath
+
+    def update_template_file(self, filepath, size):
+        """
+        This Method update the password in solution.yaml file
+        Param: filepath: filename with complete path
+        :returns the status, filepath
+        """
+        with open(filepath) as temp:
+            conf = yaml.safe_load(temp)
+            parent_key = conf['cortx']  # Parent key
+            common = parent_key['common']
+            LOGGER.info("SIZE is %s", size)
+            common['setup_size'] = size
+            temp.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(filepath, 'w') as temp:
+            yaml.dump(conf, temp, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            temp.close()
         return True, filepath
 
     @staticmethod
@@ -1046,6 +1080,11 @@ class ProvDeployK8sCortxLib:
                     self.taint_master(node)
 
         if cortx_cluster_deploy_flag:
+            LOGGER.info("Step to update template file")
+            temp_path = self.checkout_template_file(self.git_script_tag)
+            LOGGER.debug("TEMP FILE IS UPDATING %s", temp_path)
+            resp = self.update_template_file(temp_path, size=self.deploy_cfg['setup_size'])
+            assert_utils.assert_true(resp[0], "Failure updating config_template.yaml")
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
@@ -1069,6 +1108,7 @@ class ProvDeployK8sCortxLib:
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
+            '''
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
@@ -1078,7 +1118,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("s3 resp is %s", s3_status)
             assert_utils.assert_true(s3_status[0], s3_status[1])
             row.append(s3_status[-1])
-
+            '''
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
