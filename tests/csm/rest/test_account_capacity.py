@@ -1008,8 +1008,12 @@ class TestAccountCapacity():
         self.log.info("Step 5: Put 1 objects in bucket")
         for _ in range(total_parts):
             obj = f"object{mp_config}"
-            self.log.info("Verify Perform %s of write in the bucket: %s", obj,
+            write_bytes_mb = random.randint(10, 100)
+            total_cap = total_cap + write_bytes_mb
+            self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                           bucket)
+            resp = s3_misc.create_put_objects(
+                obj, bucket, access_key, secret_key, object_size=write_bytes_mb)            
             assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Put operation completed")
         self.log.info("verify capacity of account after put operations")
@@ -1017,7 +1021,7 @@ class TestAccountCapacity():
         resp = self.acc_capacity.verify_account_capacity(s3_account)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("verified capacity of account after put operations")
-        self.log.info("ENDED: ")
+        self.log.info("ENDED ")
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1080,7 +1084,7 @@ class TestAccountCapacity():
         resp = self.acc_capacity.verify_account_capacity(s3_account)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("verified capacity of account after put operations")
-        self.log.info("ENDED: ")
+        self.log.info("ENDED ")
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1115,8 +1119,9 @@ class TestAccountCapacity():
         self.log.info("Step-5: Uploading parts into bucket")
         try:
             res = self.s3_mp_test_obj.upload_parts(
+                 = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
-                self.bucket_name,
+                bucket,
                 self.object_name,
                 file_size,
                 total_parts=total_parts,
@@ -1148,14 +1153,12 @@ class TestAccountCapacity():
             self.log.info("Verify copy and source etags match")
             assert_utils.assert_equal(source_etag, copy_etag)
             src_bkt = dst_bkt
-        self.log.info("Stop background S3 IOs")
-        self.s3_background_io.stop()
         self.log.info("Step-9: verify capacity of account after put operations")
         s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
         resp = self.acc_capacity.verify_account_capacity(s3_account)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("verified capacity of account after put operations")
-        self.log.info("ENDED: ")
+        self.log.info("ENDED ")
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1225,4 +1228,4 @@ class TestAccountCapacity():
         resp = self.acc_capacity.verify_account_capacity(s3_account)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("verified capacity of account after put operations")
-        self.log.info("ENDED: ")
+        self.log.info("ENDED ")
