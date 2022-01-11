@@ -66,13 +66,12 @@ class TestProvK8CortxUpgrade:
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
                                    password=CMN_CFG["nodes"][node]["password"])
+            cls.host_list.append(node_obj)
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
                 cls.master_node_list.append(node_obj)
-                cls.host_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-                cls.host_list.append(node_obj)
         LOGGER.info("Perform prerequisite.")
         LOGGER.info("Install k8s cluster.")
         resp = cls.deploy_lc_obj.setup_k8s_cluster(cls.master_node_list, cls.worker_node_list)
@@ -98,7 +97,7 @@ class TestProvK8CortxUpgrade:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Wait for cluster services to start.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix="storage-node1")
+        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix="data-node1") # storage-node1
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
 
@@ -122,10 +121,11 @@ class TestProvK8CortxUpgrade:
     def perform_upgrade(self, upgrade_image_version: str, exc: bool = True):
         """Function calls upgrade and put return in queue object."""
         LOGGER.info("Calling upgrade.")
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   upgrade_image_version, exc=exc)
+        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj, upgrade_image_version,
+                                                   self.prov_deploy_cfg["git_remote_path"], exc=exc)
         self.que.put(resp)
 
+    @pytest.mark.run(order=1)
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32442")
@@ -153,16 +153,16 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Step 2: Done.")
         # TODO : Use data-pod when cortx services framework is done.
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="storage-node1")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="data-node1")
         assert_utils.assert_true(resp[0], resp[1])
-        pod_name = self.master_node_obj.get_pod_name(pod_prefix="storage-node1")
+        pod_name = self.master_node_obj.get_pod_name(pod_prefix="data-node1")
         assert_utils.assert_true(pod_name[0], pod_name[1])
         resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("Step 4: Start upgrade.")
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.upgrade_image_version)
+        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj, self.upgrade_image_version,
+                                                   self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
         LOGGER.info("Step 5: Check if installed version is equals to installing version.")
@@ -173,9 +173,10 @@ class TestProvK8CortxUpgrade:
         data = yaml.safe_load(stream)
         new_installed_version = data['cortx']['common']['release']['version']
         LOGGER.info("New CORTX image version: %s", new_installed_version)
-        assert installing_version == new_installed_version, \
-            "Installing version is not equal to new installed version."
+        assert_utils.assert_equals(installing_version, new_installed_version,
+                                   "Installing version is not equal to new installed version.")
         LOGGER.info("Step 5: Done.")
+        # assert True
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -202,7 +203,7 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Test Started.")
         LOGGER.info("Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="storage-node1")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="data-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
         LOGGER.info("Test Completed.")
@@ -217,7 +218,7 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         # TODO : Get all data pods from cluster once cortx services framework is done.
-        pod_name = self.master_node_obj.get_pod_name(pod_prefix="storage-node1")
+        pod_name = self.master_node_obj.get_pod_name(pod_prefix="data-node1")
         assert_utils.assert_true(pod_name[0], pod_name[1])
         LOGGER.info("Step 1: Done.")
         cluster_yaml_cmd = "cat " + self.deploy_cfg["cluster_yaml_path"] + " | grep id"
@@ -271,7 +272,7 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Step 2: Done.")
         # TODO : Use data-pod when cortx services framework is done.
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="storage-node1")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="data-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("Step 4: Test parallel upgrades.")

@@ -435,7 +435,8 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 4: Cluster restarted successfully and all Pods are online.")
 
         LOGGER.info("Step 5: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts+1)))
+        remaining_parts = list(filter(lambda i: i not in part_numbers,
+                                      list(range(1, total_parts+1))))
 
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
@@ -588,7 +589,7 @@ class TestClusterShutdownStart:
         LOGGER.info("STARTED: Test to verify multipart upload and download during cluster restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = range(1, total_parts)
+        part_numbers = list(range(1, total_parts))
         random.shuffle(part_numbers)
         output = Queue()
         failed_parts = dict()
