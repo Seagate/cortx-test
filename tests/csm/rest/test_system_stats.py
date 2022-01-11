@@ -29,6 +29,7 @@ import pytest
 
 from commons import configmanager
 from commons import commands as comm
+from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.helpers.pods_helper import LogicalNode
@@ -565,10 +566,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -600,10 +599,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -636,10 +633,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -671,10 +666,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -704,10 +697,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -739,10 +730,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
@@ -774,10 +763,8 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
         csm_list_key_value = []
         csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
         csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
