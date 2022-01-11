@@ -2139,7 +2139,7 @@ class TestPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34088")
     @CTFailOn(error_handler)
-    def test_ios_bfter_rc_node_restart(self):
+    def test_ios_rc_node_restart(self):
         """
         This test tests IOs before and after pod restart by making RC node down
         """
@@ -2250,7 +2250,7 @@ class TestPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34087")
     @CTFailOn(error_handler)
-    def test_ios_bfter_safe_shutdown_pod_restart(self):
+    def test_ios_safe_shutdown_pod_restart(self):
         """
         This test tests IOs before and after data pod restart (pod shutdown by making replicas=0)
         """
