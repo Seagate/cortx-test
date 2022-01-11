@@ -25,23 +25,20 @@ import time
 from random import SystemRandom
 from http import HTTPStatus
 import pytest
-from libs.csm.rest.csm_rest_capacity import SystemCapacity
-from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3 import s3_misc
 from commons import configmanager
 from commons import cortxlogging
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.constants import POD_NAME_PREFIX
+from commons.constants import RESTORE_SCALE_REPLICAS
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_capacity import SystemCapacity
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.ha.ha_common_libs import HALibs
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
-
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -56,10 +53,15 @@ class TestSystemCapacity():
         cls.log.info("Initiating Rest Client ...")
         cls.csm_cluster = RestCsmCluster()
         cls.csm_user = RestCsmUser()
+        cls.s3user_obj = RestS3user()
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
+        cls.username = cls.csm_user.config["csm_admin_user"]["username"]
+        cls.user_pass = cls.csm_user.config["csm_admin_user"]["password"]
         cls.akey = ""
         cls.skey = ""
         cls.s3_user = ""
         cls.bucket = ""
+        cls.row_temp= "N{} failure"
         cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
                                    CMN_CFG["nodes"][0]["username"],
                                    CMN_CFG["nodes"][0]["password"])
@@ -81,6 +83,13 @@ class TestSystemCapacity():
                                           password=node["password"]))
                 host = node["hostname"]
                 cls.host_list.append(host)
+        cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                 username=CMN_CFG["nodes"][0]["username"],
+                                 password=CMN_CFG["nodes"][0]["password"])
+        cls.restore_pod = None
+        cls.restore_method = None
+        cls.deployment_name = None
+        cls.deployment_backup = None
 
     def setup_method(self):
         """
@@ -107,6 +116,16 @@ class TestSystemCapacity():
         self.log.info("Deleting S3 account %s created in setup", self.s3_user)
         resp = self.s3user_obj.delete_s3_account_user(self.s3_user)
         assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
+        if self.restore_pod:
+            self.log.info("Restore deleted pods.")
+            resp = self.ha_obj.restore_pod(pod_obj=self.master,
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                           self.deployment_backup})
+            self.log.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -258,7 +277,7 @@ class TestSystemCapacity():
             time.sleep(40)
             self.log.info("Verified %s is powered on and pinging.", self.host_list[node])
             self.log.info("[End] Power on node back from BMC/ssc-cloud and check node status")
-            
+
             index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
             resp = self.system_capacity.get_capacity_consul()
@@ -321,7 +340,7 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_33919"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
-        
+
         self.log.info("[Start] Checking cluster capacity")
         # TBD : Command is not updated on TDS yet.
         total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
@@ -514,7 +533,7 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_33920"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
-        
+
         self.log.info("[Start] Checking cluster capacity")
         # TBD : Command is not updated on TDS yet.
         total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
@@ -729,7 +748,7 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_33928"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
-        
+
         self.log.info("[Start] Checking cluster capacity")
         # TBD : Command is not updated on TDS yet.
         total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
@@ -793,8 +812,7 @@ class TestSystemCapacity():
             self.log.info("[End] Bringing down Node %s", self.host_list[node])
 
             index = self.row_temp.format(node)
-            self.log.info(
-                "[Start] Fetch degraded capacity on Consul with 0 Node failure")
+            self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
             resp = self.system_capacity.get_capacity_consul()
             # TBD : Consul output doest have degraded capacity yet.
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
@@ -914,7 +932,7 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_33929"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
-        
+
         self.log.info("[Start] Checking cluster capacity")
         # TBD : Command is not updated on TDS yet.
         total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
@@ -1180,20 +1198,12 @@ class TestSystemCapacity():
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-            if CMN_CFG["nodes"][node]["node_type"] == "master":
-                self.log.debug("Skipping master node...")
-                continue
-            self.log.info("[Start] Bringing down Node %s: %s",
-                          node, self.node_list[node])
-            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_list[node],
-                                                          bmc_obj=self.bmc_list[node],
-                                                          node_obj=self.node_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
+            self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
+            assert resp, f"{self.host_list[node]} has not shutdown yet."
 
-            self.log.info(
-                "Verified %s is powered off and not pinging.", self.host_list[node])
-            self.log.info("[End] Bringing down Node %s", node)
+            self.log.info("Verified %s is powered off and not pinging.", self.host_list[node])
+            self.log.info("[End] Bringing down Node %s", self.host_list[node])
 
             resp = s3_misc.delete_object(
                 obj, self.bucket, self.akey, self.skey, object_size=write_bytes_mb)
@@ -1246,20 +1256,15 @@ class TestSystemCapacity():
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 1 Node failure")
 
-            self.log.info(
-                "[Start] Power on node back from BMC/ssc-cloud and check node status")
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
+            self.log.info("[Start] Power on node back from BMC/ssc-cloud and check node status")
+            resp = self.ha_obj.host_power_on(host=self.host_list[node])
+            assert resp, f"{self.host_list[node]} has not powered on yet."
             # To get all the services up and running
-            self.log.info("Verified %s is powered on and pinging.",
-                          self.host_list[node])
-            self.log.info(
-                "[End] Power on node back from BMC/ssc-cloud and check node status")
+            time.sleep(40)
+            self.log.info("Verified %s is powered on and pinging.", self.host_list[node])
+            self.log.info("[End] Power on node back from BMC/ssc-cloud and check node status")
 
-            self.log.info(
-                "[Start] Fetch degraded capacity on Consul with 0 Node failure")
+            self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
             resp = self.system_capacity.get_capacity_consul()
             # TBD : Consul output doest have degraded capacity yet.
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
@@ -1371,33 +1376,35 @@ class TestSystemCapacity():
         self.log.info("[End] Fetch degraded capacity on CSM with 0 Pod failure")
 
         self.log.info("Get pod name to be deleted")
-        pod_list = self.master_node_list[0].get_all_pods(pod_prefix=POD_NAME_PREFIX)
+        pod_list = self.master.get_all_pods(pod_prefix=POD_NAME_PREFIX)
 
         for pod_name in pod_list:
             self.log.info("[Start] Shutdown the data pod safely by making replicas=0")
             self.log.info("Deleting pod %s", pod_name)
-            resp = self.master_node_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
-            self.log.info("[End] Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+            resp = self.master.create_pod_replicas(num_replica=0, pod_name=pod_name)
+            assert_utils.assert_false(resp[0],
+                f"Failed to delete pod {pod_name} by making replicas=0")
+            self.log.info("[End] Successfully shutdown/deleted pod %s by making replicas=0",
+                pod_name)
 
             self.deployment_name = resp[1]
             self.restore_pod = True
             self.restore_method = RESTORE_SCALE_REPLICAS
 
             self.log.info("[Start] Check cluster status")
-            resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+            resp = self.ha_obj.check_cluster_status(self.master)
             assert_utils.assert_false(resp[0], resp)
             self.log.info("[End] Cluster is in degraded state")
 
             self.log.info("[Start] Check services status that were running on pod %s", pod_name)
-            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+            resp = self.hlth_master.get_pod_svc_status(pod_list=[pod_name], fail=True)
             self.log.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
             self.log.info("[End] Services of pod are in offline state")
 
             self.log.info("Step 8: Check services status on remaining pods %s",
                         pod_list.remove(pod_name))
-            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+            resp = self.hlth_master.get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                             fail=False)
             self.log.debug("[Start] Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
@@ -1453,17 +1460,15 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on CSM with %s pod failure", pod_name)
 
             self.log.info("[Start]  Restore deleted pods : %s", pod_name)
-            resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
-                                        restore_method=self.restore_method,
-                                        restore_params={"deployment_name": self.deployment_name,
-                                                        "deployment_backup":
-                                                            self.deployment_backup})
+            resp = self.ha_obj.restore_pod(pod_obj=self.master, restore_method=self.restore_method,
+                        restore_params={"deployment_name": self.deployment_name,
+                        "deployment_backup": self.deployment_backup})
             self.log.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.restore_pod = False
             self.log.info("[End] Restore deleted pods : %s", pod_name)
-            
+
             index = pod_name + "online"
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 pod failure")
             resp = self.system_capacity.get_capacity_consul()
@@ -1526,7 +1531,7 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_33926"]
         cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
         total_written = 0
-        
+
         self.log.info("[Start] Checking cluster capacity")
         # TBD : Command is not updated on TDS yet.
         total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
@@ -1736,21 +1741,21 @@ class TestSystemCapacity():
         self.log.info("[End] Fetch degraded capacity on CSM before cluster restart")
 
         self.log.info("[Start] Stop Cluster")
-        resp = self.ha_obj.cortx_stop_cluster(self.master_obj)
+        resp = self.ha_obj.cortx_stop_cluster(self.master)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Check the cluster status and start the cluster in case its still down.")
-        resp = self.ha_obj.check_cluster_status(self.master_obj)
+        resp = self.ha_obj.check_cluster_status(self.master)
         assert resp[0], "Failed to stop the cluster."
         self.log.info("[End] Stop Cluster")
 
         index = "cluster_restart"
         self.log.info("[Start] Cluster restart.")
         self.log.info("Check whether cluster restart command ran successfully.")
-        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.master)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Cluster is up and running.")
         self.log.info("Checking whether all CORTX Data pods have been restarted.")
-        resp = self.ha_obj.check_pod_status(self.master_node_list[0])
+        resp = self.ha_obj.check_pod_status(self.master)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("[End] Cluster restart.")
 
@@ -1809,7 +1814,7 @@ class TestSystemCapacity():
         self.log.info("Step-1: Change csm config auth variable to True in csm config")
         # TODO : change variable in csm config file to true
         self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        resp = self.csm_cluster.restart_control_pod(self.master)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
