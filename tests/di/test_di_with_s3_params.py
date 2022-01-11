@@ -24,14 +24,6 @@ import os
 import logging
 from datetime import datetime
 import pytest
-from libs.di.di_error_detection_test_lib import DIErrorDetection
-from libs.s3 import S3H_OBJ
-from libs.s3 import S3_CFG
-from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.di.di_feature_control import DIFeatureControl
-from libs.di.data_generator import DataGenerator
-from libs.di.fi_adapter import S3FailureInjection
 from config import CMN_CFG
 from commons.constants import NORMAL_UPLOAD_SIZES
 from commons.constants import const
@@ -41,6 +33,14 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
 from commons.utils import assert_utils
 from commons.utils import system_utils as sys_util
+from libs.s3 import S3_CFG
+from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.di.di_feature_control import DIFeatureControl
+from libs.di.data_generator import DataGenerator
+from libs.di.fi_adapter import S3FailureInjection
+from libs.di.di_error_detection_test_lib import DIErrorDetection
+from libs.di import di_lib
 
 
 class TestDIWithChangingS3Params:
@@ -514,8 +514,12 @@ class TestDIWithChangingS3Params:
         Test to verify multipart upload with s3server restart after every upload
         with Data Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         parts = list()
@@ -523,8 +527,7 @@ class TestDIWithChangingS3Params:
                                           split_count=5, random_part_size=False)
         self.log.info(res_sp_file)
         self.s3obj.create_bucket(bucket_name=bucket_name)
-        res = self.s3_mp_test_obj.create_multipart_upload(bucket_name,
-                                                          obj_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, obj_name)
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
@@ -532,20 +535,18 @@ class TestDIWithChangingS3Params:
         while i < 5:
             with open(res_sp_file[i]["Output"], "rb") as file_pointer:
                 data = file_pointer.read()
-            resp = self.s3_mp_test_obj.upload_part(body=data,
-                                                   bucket_name=bucket_name,
-                                                   object_name=obj_name,
-                                                   upload_id=mpu_id, part_number=i+1)
+            resp = self.s3_mp_test_obj.upload_part(body=data, bucket_name=bucket_name,
+                                                   object_name=obj_name, upload_id=mpu_id,
+                                                   part_number=i+1)
             parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
-            S3H_OBJ.restart_s3server_processes()
+            di_lib.restart_s3_processes_k8s()
             i += 1
-        resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id,
-                                                                parts=parts,
+        resp_cu = self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
                                                                 bucket=bucket_name,
                                                                 object_name=obj_name)
         self.log.info(resp_cu)
-        self.s3obj.object_download(bucket_name=bucket_name,
-                                   obj_name=obj_name, file_path=self.F_PATH_COPY)
+        self.s3obj.object_download(bucket_name=bucket_name, obj_name=obj_name,
+                                   file_path=self.F_PATH_COPY)
         self.s3obj.delete_bucket(bucket_name, force=True)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
         if result:
