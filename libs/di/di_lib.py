@@ -34,11 +34,15 @@ from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
+
+from commons.constants import POD_NAME_PREFIX, PROD_FAMILY_LC, PROD_TYPE_K8S
 from commons.exceptions import CortxTestException
 from commons import params
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons import constants as const
 from commons.helpers.node_helper import Node
+from config import cmn_cfg
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_base import _init_s3_conn
 from libs.di.file_formats import all_extensions
@@ -248,3 +252,49 @@ def calc_checksum(buf: object):
     file_hash = md5()  # nosec
     file_hash.update(buf)
     return file_hash.hexdigest()
+
+
+def restart_s3_processes_k8s():
+    """
+    restart s3 processes for k8s based setup
+
+    """
+    if cmn_cfg["product_family"] == PROD_FAMILY_LC and cmn_cfg["product_type"] == PROD_TYPE_K8S:
+        nodes = cmn_cfg["nodes"]
+        master_node_list = list()
+        for node in nodes:
+            if node["node_type"].lower() == "master":
+                node_obj = LogicalNode(hostname=node["hostname"], username=node["username"],
+                                       password=node["password"])
+                master_node_list.append(node_obj)
+        master_node = master_node_list[0]
+        LOGGER.info(master_node)
+        data_pods = master_node.get_all_pods(POD_NAME_PREFIX)
+        LOGGER.info(data_pods)
+        for pod in data_pods:
+            s3_containers = master_node.get_container_of_pod(pod_name=pod,
+                                                             container_prefix="cortx-s3-0")
+            for s3_container in s3_containers:
+                cmd = f"kubectl exec -it {pod} -c {s3_container} -- pkill -9 s3server"
+                LOGGER.info("cmd : %s", cmd)
+                master_node.execute_cmd(cmd=cmd, read_lines=True)
+        for pod in data_pods:
+            s3_containers = master_node.get_container_of_pod(pod_name=pod,
+                                                             container_prefix="cortx-s3-0")
+            for s3_container in s3_containers:
+                counter = 0
+                resp = None
+                while counter < 30:
+                    cmd = f"kubectl exec -it {pod} -c {s3_container} -- pgrep s3server 2> /dev/null"
+                    resp = master_node.execute_cmd(cmd=cmd, read_lines=True)
+                    LOGGER.info("cmd : %s", cmd)
+                    LOGGER.info("resp : %s", resp)
+                    LOGGER.info("counter is : %s", counter)
+                    if resp:
+                        LOGGER.info("Breaking while loop for container %s of pod %s",
+                                    s3_container, pod)
+                        break
+                    counter = counter + 1
+                    time.sleep(1)
+                if not resp:
+                    raise Exception
