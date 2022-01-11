@@ -2435,9 +2435,9 @@ class TestPodRestart:
         """
         LOGGER.info("STARTED: Verify IOs after pod restart (kubectl delete)")
 
-        LOGGER.info("Step 1: Shutdown the data pod by kubectl delete.")
+        LOGGER.info("Step 1: Shutdown the server pod by kubectl delete.")
         LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting pod %s", pod_name)
@@ -2491,6 +2491,6 @@ class TestPodRestart:
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(resp[2].keys())[0])
-        LOGGER.info("Step 5: Successfully IOs completed after starting the pod")
+        LOGGER.info("Step 7: Successfully IOs completed after starting the pod")
 
         LOGGER.info("COMPLETED: Verify IOs after pod restart (kubectl delete)")
