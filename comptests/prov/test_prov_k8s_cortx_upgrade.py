@@ -97,7 +97,7 @@ class TestProvK8CortxUpgrade:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Wait for cluster services to start.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix="data-node1") # storage-node1
+        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix="data-node1")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
 
