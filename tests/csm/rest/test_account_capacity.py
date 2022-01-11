@@ -1190,26 +1190,9 @@ class TestAccountCapacity():
         self.buckets_created.append([bucket2, account1_info[0], account1_info[1]])
         total_cap = 0
         self.log.info("step-3: Initiating multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(bucket, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
-        self.log.info("Step-4: Multipart Upload initiated with mpu_id %s", mpu_id)
-        try:
-            res = self.s3_mp_test_obj.upload_parts(
-                mpu_id,
-                bucket,
-                self.object_name,
-                file_size,
-                total_parts=total_parts,
-                multipart_obj_path=self.mp_obj_path)
-            assert_utils.assert_false(res[0], res[1])
-            assert_utils.assert_not_equal(len(res[1]), total_parts, res[1])
-        except CTException as error:
-            self.log.error(error.message)
-            assert_utils.assert_in(
-                MPART_CFG["test_33368"]["err_msg"],
-                error.message,
-                error.message)
         process = Process(
             target=self.s3_mp_test_obj.upload_parts_parallel,
             args=(mpu_id, bucket, self.object_name), kwargs={"parts": total_parts})
