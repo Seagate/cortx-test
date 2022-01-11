@@ -79,7 +79,7 @@ class TestPodRestart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = cls.random_time = cls.s3_clean = cls.test_prefix = None
-        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = None
         cls.mgnt_ops = ManagementOPs()
@@ -1359,7 +1359,7 @@ class TestPodRestart:
         part_numbers = list(range(1, total_parts))
         random.shuffle(part_numbers)
         output = Queue()
-        parts_etag = list()
+        parts_etag = []
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
 
@@ -1514,7 +1514,7 @@ class TestPodRestart:
         """
         LOGGER.info("STARTED: Test to verify copy object during data pod restart")
 
-        bkt_obj_dict = dict()
+        bkt_obj_dict = {}
         bkt_obj_dict["ha-bkt-{}".format(self.random_time)] = "ha-obj-{}".format(self.random_time)
         output = Queue()
 
@@ -1584,7 +1584,7 @@ class TestPodRestart:
         LOGGER.info("Step 5: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other bucket", self.bucket_name)
 
-        bkt_obj_dict1 = dict()
+        bkt_obj_dict1 = {}
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         for cnt in range(bkt_cnt):
             bkt_obj_dict1[f"ha-bkt-{cnt}-{perf_counter_ns()}"] = f"ha-obj-{cnt}-{perf_counter_ns()}"
@@ -1736,7 +1736,7 @@ class TestPodRestart:
 
         LOGGER.info("Step 8: Verify status for In-flight READs/WRITEs/DELETEs while pod was"
                     "restarting are successful without any failures.")
-        responses = dict()
+        responses = {}
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -2189,7 +2189,8 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
-                    "are in offline state", self.node_name, rc_datapod)
+                    "and server pod %s are in offline state", self.node_name, rc_datapod,
+                    rc_serverpod)
 
         pod_list.remove(rc_datapod)
         server_list.remove(rc_serverpod)
