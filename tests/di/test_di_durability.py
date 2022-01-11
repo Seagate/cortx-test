@@ -678,11 +678,12 @@ class TestDIDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22926')
-    def test_enable_validation_induce_corruption_detect_error_22926(self):
+    @pytest.mark.tags('TEST-229260')
+    def test_enable_validation_induce_corruption_detect_error_22926_dup(self):
         """
         With Flag enabled, when data or metadata corruption induced, download of
         corrupted data should flag error.
+        This test is duplicate and needs cleanup or associate with correct test.
         """
         self.log.info(
             "STARTED: With Flag enabled, when data or metadata corruption induced, download of"
@@ -1088,7 +1089,6 @@ class TestDIDurability:
         self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
@@ -1097,44 +1097,57 @@ class TestDIDurability:
         Test to verify object integrity during the the upload with correct checksum.
         Specify checksum and checksum algorithm or ETAG during
         PUT(MD5 with and without digest, CRC ( check multi-part))
+        This test works with R=T/F and W=True.
         """
-        sz = 128 * MB
+        size = 1 * MB
         self.log.info("STARTED TEST-22912: Test to verify object integrity "
                       "during the the upload with correct checksum.")
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if read_flag[0]:
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
+        if not valid or skip_mark:
             pytest.skip()
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.create_file_from_buf(fbuf=buff, name=self.file_path, size=sz)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Step 1: Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
+        # simulating checksum corruption with data corruption
         # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
+        self.di_err_lib.create_file(size, first_byte='a', name=self.file_path)
+        file_checksum = system_utils.calc_checksum(self.file_path)
+        self.log.info("Step 1: created a good file at location %s", self.file_path)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
+
+        self.log.info("Step 3: Normal upload a file with correct checksum")
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                     object_name=self.object_name,
-                                    file_path=location)
+                                    file_path=self.file_path)
         dwn_file_name = os.path.split(self.file_path)[-1]
+        dwn_file_name = dwn_file_name + '.dwn'
         dwn_file_dir = os.path.split(self.file_path)[0]
-        dwn_file_path = os.path.join(dwn_file_dir, 'dwn' + dwn_file_name)
+        dwn_file_path = os.path.join(dwn_file_dir, dwn_file_name)
         self.s3_test_obj.object_download(file_path=dwn_file_path,
                                          obj_name=self.object_name,
                                          bucket_name=self.bucket_name)
-        file_checksum = system_utils.calculate_checksum(dwn_file_path, binary_bz64=False)[1]
-        assert_utils.assert_string(csm, file_checksum, 'Checksum mismatch found')
+        dwn_file_checksum = file_checksum = system_utils.calc_checksum(dwn_file_path)
+        assert_utils.assert_exact_string(file_checksum, dwn_file_checksum,
+                                         'Checksum mismatch found')
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29817')
     def test_29817(self):
         """
-        S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
-        and verify read (Get).
+        S3 Put through S3CMD  and Corrupt checksum of an object 256KB to 1 MB (at s3 checksum)
+        and verify read (Get). SZ <= Data Unit Sz
         SZ <= Data Unit Sz
 
         """
@@ -1153,7 +1166,7 @@ class TestDIDurability:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.di_err_lib.create_file(size, first_byte='z', name=self.file_path)
-        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -1162,24 +1175,33 @@ class TestDIDurability:
             assert False
         else:
             self.log.info("Step 2: enabled data corruption")
-        self.log.info("Step 3: upload a file using s3cmd multipart upload")
+            self.data_corruption_status = True
+
+        self.log.info("Step 3: upload a file using s3cmd upload")
 
         odict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                      ssl=True, no_check_certificate=False,
-                     host_port=CMN_CFG['host_port'], host_bucket='host-bucket',
+                     host_port=CMN_CFG['host_port'], host_bucket=self.bucket_name,
                      disable_multipart=True)
 
-        s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
-                                                 file_path=self.file_path, **odict)
-
-        object_uri = 's3://' + self.bucket_name + os.path.split(self.file_path)[-1]
+        cmd_status, output = s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
+                                                                      file_path=self.file_path,
+                                                                      **odict)
+        if not cmd_status:
+            assert False, f"s3cmd put failed with {cmd_status} and output {output}"
+        object_uri = 's3://' + self.bucket_name + '/' + os.path.split(self.file_path)[-1]
         dodict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                       ssl=True, no_check_certificate=False,
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
-            s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
-                                                       file_path=self.file_path + '.bak', **dodict)
+            cmd_status, output = s3_s3cmd.S3CmdFacade. \
+                download_object_s3cmd(bucket_name=self.bucket_name,
+                                      file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
-            self.log.error(fault)
+            self.log.exception(fault, exc_info=True)
         else:
-            assert False, 'Download passed'
+            if not cmd_status:
+                if "InternalError" not in output:
+                    assert False, f'Download Command failed with error {output}'
+            else:
+                assert False, 'Download of corrupted file passed'

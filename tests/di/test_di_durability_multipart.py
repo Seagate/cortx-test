@@ -23,6 +23,7 @@ F-23B : Data Durability/Integrity test module for Multipart Files.
 
 import os
 import os.path
+import re
 import logging
 import secrets
 import pytest
@@ -145,6 +146,7 @@ class TestDICheckMultiPart:
         """
         Test method level setup.
         """
+        self.data_corruption_status = False
         self.edtl = DIErrorDetection()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.log = logging.getLogger(__name__)
@@ -174,7 +176,9 @@ class TestDICheckMultiPart:
             system_utils.remove_file(self.file_path)
             system_utils.remove_dirs(self.test_dir_path)
             self.log.info("Local file was deleted")
-
+        if self.data_corruption_status:
+            self.log.info("Disabling data corruption")
+            self.fi_adapter.disable_data_block_corruption()
         self.log.info("ENDED: Method Level Teardown test data.")
 
     # pylint: disable=max-args
@@ -321,6 +325,7 @@ class TestDICheckMultiPart:
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
@@ -351,7 +356,6 @@ class TestDICheckMultiPart:
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
                       "MB (at s3 checksum) and verify read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29815')
@@ -380,7 +384,7 @@ class TestDICheckMultiPart:
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         with open(self.file_path, 'rb') as file_ptr:
             buf = file_ptr.read()
-        good_read_range = buf[7340032:]
+        good_read_range = buf[7340032:22020095]
         bad_read_range = buf[:7340032]
         object_name = os.path.split(self.file_path)[-1]
         self.log.info("Step 1: created a corrupted file %s", self.file_path)
@@ -388,6 +392,7 @@ class TestDICheckMultiPart:
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         else:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
@@ -422,34 +427,33 @@ class TestDICheckMultiPart:
         try:
             content = ''
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
-                                               ranges='7340032-22020095')
+                                               ranges='7340032-22020094')
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
             if content:
-                if len(content) == size:
-                    assert_utils.assert_false(True, "uploaded and downloaded object size"
-                                                    " is same unexpectedly."
+                if len(content) != len(good_read_range):
+                    assert_utils.assert_false(True, "Downloaded range size"
+                                                    " is different unexpectedly."
                                               )
                 download_checksum = di_lib.calc_checksum(content)
                 bsum = di_lib.calc_checksum(good_read_range)
                 assert_utils.assert_not_equal(bsum, download_checksum,
                                               'Checksum match found in downloaded file')
                 self.log.info("Step3: Checksum: ori %s and downloaded %s don't match as expected, "
-                              "but partial file was downloaded", file_checksum, download_checksum)
-                assert False, 'Partial file downloaded'
+                              "but partial file was downloaded", bsum, download_checksum)
+                assert False, 'Partial range of file downloaded rather than expected range'
         else:
             download_checksum = di_lib.calc_checksum(content)
             bsum = di_lib.calc_checksum(good_read_range)
             assert_utils.assert_equal(bsum, download_checksum,
-                                      'Checksum match found in downloaded file')
+                                      'Checksum mismatch found in downloaded file')
 
         self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
-                      "MB (at s3 checksum) and verify read (Get).")
+                      "MB (at s3 checksum) and verify range read (Get).")
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-33268')
@@ -460,7 +464,7 @@ class TestDICheckMultiPart:
         SZ >= Data Unit Sz
 
         """
-        size = 5 * MB
+        size = 71 * MB
         self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
         valid, skip_mark = self.edtl.validate_valid_config()
@@ -475,7 +479,7 @@ class TestDICheckMultiPart:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -484,42 +488,54 @@ class TestDICheckMultiPart:
             assert False
         else:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
+
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
         odict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                      ssl=True, no_check_certificate=False,
-                     host_port=CMN_CFG['host_port'], host_bucket='host-bucket',
-                     multipart_chunk_size_mb='15MB')
+                     host_port=CMN_CFG['host_port'], host_bucket=self.bucket_name,
+                     multipart_chunk_size_mb='15')
 
-        s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
-                                                 file_path=self.file_path, **odict)
-
-        object_uri = 's3://' + self.bucket_name + os.path.split(self.file_path)[-1]
+        cmd_status, output = s3_s3cmd.S3CmdFacade.upload_object_s3cmd(bucket_name=self.bucket_name,
+                                                                      file_path=self.file_path,
+                                                                      **odict)
+        if not cmd_status:
+            assert False, f"s3cmd put failed with {cmd_status} and output {output}"
+        object_uri = 's3://' + self.bucket_name + '/' + os.path.split(self.file_path)[-1]
         dodict = dict(access_key=ACCESS_KEY, secret_key=SECRET_KEY,
                       ssl=True, no_check_certificate=False,
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
-            s3_s3cmd.S3CmdFacade.download_object_s3cmd(bucket_name=self.bucket_name,
-                                                       file_path=self.file_path + '.bak', **dodict)
+            cmd_status, output = s3_s3cmd.S3CmdFacade.\
+                download_object_s3cmd(bucket_name=self.bucket_name,
+                                      file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
-            self.log.error(fault)
+            self.log.exception(fault, exc_info=True)
         else:
-            assert False, 'Download passed'
+            if not cmd_status:
+                if "InternalError" not in output:
+                    assert False, f'Download Command failed with error {output}'
+            else:
+                assert False, 'Download of corrupted file passed'
 
-    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.usefixtures('setup_minio')
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29818")
     def test_upload_big_obj_minio_corrupt_cheksum_29818(self, setup_minio):
         """S3 Put through MinIO  and Corrupt checksum of an object 151 MB
          and verify read (Get). ( SZ in range 100 MB -256 MB)."""
-        size = 151 * MB
+        size = 81 * MB
         self.log.info("STARTED: upload object of 151 MB using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
-                         + self.minio_obj.validate_cert
+                         + self.minio.validate_cert
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
-                       + self.minio_obj.validate_cert
-
+                       + self.minio.validate_cert
+        object_name = os.path.split(self.file_path)[-1]
+        download_obj_cmd = self.minio_cnf["download_obj_cmd"].\
+                               format(self.bucket_name, object_name, self.file_path)\
+                           + self.minio.validate_cert  #nosec
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
@@ -532,7 +548,7 @@ class TestDICheckMultiPart:
         # to do enabling checksum feature
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        # file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
         self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
         self.log.info("Step 2: enabling data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -541,6 +557,7 @@ class TestDICheckMultiPart:
             assert False
         else:
             self.log.info("Step 2: enabled data corruption")
+            self.data_corruption_status = True
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
         self.log.info("Step 3: Uploading an object to a bucket %s", self.bucket_name)
@@ -553,3 +570,11 @@ class TestDICheckMultiPart:
         assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info("Step 4: Verified that object is uploaded to a bucket")
         self.log.info("Step 4: Download object using Minion Client")
+        cmd_status, output = system_utils.run_local_cmd(download_obj_cmd)
+        pat = re.compile('(Failed to copy|internal\s+error)', re.I)
+        match = pat.search(output)
+        if not cmd_status and match and match.groups():
+            self.log.error("Match groups are %s and first match %s", match.groups(), match.group(0))
+            self.log.error(f'Download Command output is {output}')
+        else:
+            assert False, f'Download Command failed with error {output}'

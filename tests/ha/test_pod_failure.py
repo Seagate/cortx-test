@@ -2334,7 +2334,8 @@ class TestPodFailure:
                     pod_list.remove(pod_name))
 
         LOGGER.info("Step 7: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts+1)))
+        remaining_parts = list(filter(lambda i: i not in part_numbers,
+                                      list(range(1, total_parts+1))))
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
@@ -3059,3 +3060,72 @@ class TestPodFailure:
         LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34827")
+    @CTFailOn(error_handler)
+    def test_background_IO_during_control_pod_restart(self):
+        """
+        Test control pod deletion should not affect existing user I/O
+        """
+        LOGGER.info(
+            "STARTED: Test control pod deletion should not affect existing user I/O")
+
+        LOGGER.info("Step 1: Perform Continuous READs and WRITEs during control pod down")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-34827'
+        self.s3_clean = users
+        event = threading.Event()
+        output = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 10, 'skipcleanup': False, 'output': output}
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 1: Successfully started READs and WRITES in background")
+
+        LOGGER.info("Step 2: Find & Delete the control pod")
+        control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        LOGGER.debug("Control pod %s", control_pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=control_pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(
+            resp[0], f"Failed to delete pod {control_pod_name} by deleting deployment (unsafe)")
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    control_pod_name)
+
+        LOGGER.info("Step 3: Verify status for In-flight READs and WRITEs while pod is down")
+        event.clear()
+        thread.join()
+        responses = ()
+        while len(responses) != 2: responses = output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+                                                f"failures: {resp[1]}")
+        assert_utils.assert_false(len(fail_logs),
+                                 f"Logs which contain failures IOs: {fail_logs}")
+        LOGGER.info("Step 3: Verified status for In-flight READs and WRITEs while pod is down")
+
+        LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        LOGGER.info("Step 4: Successfully started the pod")
+        self.restore_pod = False
+
+        LOGGER.info(
+            "COMPLETED: Test control pod deletion should not affect existing user I/O")
