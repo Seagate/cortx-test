@@ -1194,11 +1194,10 @@ class TestAccountCapacity():
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info("Step-4: Multipart Upload initiated with mpu_id %s", mpu_id)
-        self.log.info("Step-5: Uploading parts into bucket")
         try:
             res = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
-                self.bucket_name,
+                bucket,
                 self.object_name,
                 file_size,
                 total_parts=total_parts,
@@ -1211,11 +1210,15 @@ class TestAccountCapacity():
                 MPART_CFG["test_33368"]["err_msg"],
                 error.message,
                 error.message)
-        self.log.info("Step 4: Listing parts of multipart upload")
+        process = Process(
+            target=self.s3_mp_test_obj.upload_parts_parallel,
+            args=(mpu_id, bucket, self.object_name), kwargs={"parts": total_parts})
+        process.start()
+        self.log.info("Step 5: Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
-        elf.log.info("Step 5: Put 1 objects in bucket")
+        elf.log.info("Step 6: Put 1 objects in bucket")
         for _ in range(total_parts):
             obj = f"object{mp_config}"
             self.log.info("Verify Perform %s of write in the bucket: %s", obj,
