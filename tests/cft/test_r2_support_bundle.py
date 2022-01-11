@@ -23,11 +23,13 @@ from __future__ import absolute_import
 
 import os
 import logging
+import shutil
 import time
 from multiprocessing import Process
 import pytest
 
 from commons import constants
+from commons import commands as comm
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -161,6 +163,19 @@ class TestR2SupportBundle:
                 "Verified logs are generated for each component for this node")
 
         self.LOGGER.debug("Verified logs are generated on each node")
+
+    def file_with_prefix_exists_on_path(self, path: str, file_prefix: str):
+        """
+        This function is used to verify file with prefix exists on given path
+        :param path: directory path
+        :param file_prefix: file prefix
+        :rtype bool
+        """
+        resp = os.listdir(path)
+        for file in resp:
+            if file_prefix in str(file):
+                return True
+        return False
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.lr
@@ -740,3 +755,97 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("Successfully validated Motr rotating log files are as per "
                          "frequency configured for all pods")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.lc
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-35001")
+    def test_35001(self):
+        """
+        Validate status of support bundle for LC
+        """
+        self.LOGGER.info("Step 1: Generating support bundle ")
+        comp_list = ["hare", "motr", "s3", "utils"]
+        dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
+        sb_identifier = system_utils.random_string_generator(10)
+        msg = "TEST-32111"
+        self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
+
+        resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0], msg)
+        self.LOGGER.info(f"resp: {resp}")
+        sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
+        if os.path.exists(sb_local_path):
+            self.LOGGER.info("Removing existing directory %s", sb_local_path)
+            shutil.rmtree(sb_local_path)
+        os.mkdir(sb_local_path)
+        self.LOGGER.info(f"sb copy path: {sb_local_path}")
+
+        copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
+        sb_copy_path = "/root/support_bundle/"
+        copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod_list[0], copy_sb_from_path,
+                                    sb_copy_path, constants.HAX_CONTAINER_NAME)
+        resp = self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
+        self.LOGGER.info(f"resp: {resp}")
+
+        sb_copy_full_path = sb_copy_path + sb_identifier + "_" + machine_id + ".tar.gz"
+        sb_local_full_path = sb_local_path + "/" + sb_identifier +".tar.gz"
+        self.node_obj.copy_file_to_local(sb_copy_full_path, sb_local_full_path)
+
+        tar_cmd = comm.CMD_TAR.format(sb_local_full_path, sb_local_path)
+        resp = system_utils.run_local_cmd(cmd=tar_cmd)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        resp = os.listdir(sb_local_path + "/" + sb_identifier)
+        self.LOGGER.info(f"check: {resp}")
+
+        for comp in comp_list:
+            if comp in resp:
+                comp_dir_path = sb_local_path + "/" + sb_identifier + "/" + comp
+                comp_tar_files = os.listdir(comp_dir_path)
+                self.LOGGER.info(f"comp_dir_path: {comp_dir_path} and comp_tar: {comp_tar_files[0]}")
+                tar_cmd = comm.CMD_TAR.format(comp_dir_path + "/" +
+                                              comp_tar_files[0], comp_dir_path)
+                tar_cmd_resp = system_utils.run_local_cmd(cmd=tar_cmd)
+                assert_utils.assert_true(tar_cmd_resp[0], tar_cmd_resp[1])
+                self.LOGGER.info(f"tar resp comp: {tar_cmd_resp}")
+
+                if comp == "hare":
+                    hare_dir = os.listdir(comp_dir_path)
+                    unzip_hare_dir = comp_dir_path + "/" + hare_dir[0]
+                    resp = self.file_with_prefix_exists_on_path(unzip_hare_dir +
+                                                "/etc/cortx/log/hare/log/" + machine_id, "hare")
+                    if resp:
+                        self.LOGGER.info(f"hare logs are present in support Bundle")
+                    else:
+                        assert_utils.assert_true(False, f"No hare log file "
+                                                        f"found in support bundle")
+                if comp == "motr":
+                    motr_dir = os.listdir(comp_dir_path)
+                    unzip_motr_dir = comp_dir_path + "/" + motr_dir[0]
+                    resp = self.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
+                    if resp:
+                        self.LOGGER.info(f"motr logs are present in support Bundle")
+                    else:
+                        assert_utils.assert_true(False, f"No motr log file "
+                                                        f"found in support bundle")
+                if comp == "s3":
+                    resp = self.file_with_prefix_exists_on_path(comp_dir_path +
+                                                "/etc/cortx/log/s3/" + machine_id, "s3server")
+                    if resp:
+                        self.LOGGER.info(f"s3server logs are present in support Bundle")
+                    else:
+                        assert_utils.assert_true(False, f"No s3server log file "
+                                                        f"found in support bundle")
+                if comp == "utils":
+                    resp = self.file_with_prefix_exists_on_path(comp_dir_path +
+                                                "/logs", "utils")
+                    if resp:
+                        self.LOGGER.info(f"utils logs are present in support Bundle")
+                    else:
+                        assert_utils.assert_true(False, f"No utils log file "
+                                                        f"found in support bundle")
+            else:
+                self.LOGGER.info(f"assert: {comp}")
+                assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
