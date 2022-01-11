@@ -226,13 +226,18 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
-        remote_path = remote_code_path + "solution.yaml"
-        temp_remote_path = remote_code_path + "config-template.yaml"
-        LOGGER.debug("Remote path %s", remote_path)
-        if system_utils.path_exists(local_sol_path):
-            node_obj.copy_file_to_remote(local_sol_path, remote_path)
-            node_obj.copy_file_to_remote(local_sol_path, temp_remote_path)
-            return True, f"Files copied at {remote_path} \n {temp_remote_path}"
+        if local_sol_path == "solution.yaml":
+            remote_path = remote_code_path + "solution.yaml"
+            LOGGER.debug("Remote path %s", remote_path)
+            if system_utils.path_exists(local_sol_path):
+                node_obj.copy_file_to_remote(local_sol_path, remote_path)
+                return True, f"Files copied at {remote_path}"
+        else:
+            template_code_path = PROV_CFG['k8s_cortx_deploy']['git_temp_remote_dir']
+            temp_remote_path = template_code_path + "config-template.yaml"
+            if system_utils.path_exists(local_sol_path):
+                node_obj.copy_file_to_remote(local_sol_path, temp_remote_path)
+                return True, f"Files copied at {temp_remote_path}"
         return False, f"{local_sol_path} not found"
 
     def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
@@ -309,8 +314,10 @@ class ProvDeployK8sCortxLib:
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
+        LOGGER.debug("COPY template file\n")
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
                            self.deploy_cfg["git_temp_remote_dir"])
+
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -639,7 +646,7 @@ class ProvDeployK8sCortxLib:
 
     def update_template_file(self, filepath, size):
         """
-        This Method update the password in solution.yaml file
+        This Method update the setup_size in template file
         Param: filepath: filename with complete path
         :returns the status, filepath
         """
