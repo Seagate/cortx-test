@@ -2341,7 +2341,7 @@ class TestPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34089")
     @CTFailOn(error_handler)
-    def test_io_before_after_server_pod_restart_replica(self):
+    def test_io_server_pod_restart(self):
         """
         Verify IOs before and after server pod restart (setting replica=0 and 1)
         """
@@ -2429,7 +2429,7 @@ class TestPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34261")
     @CTFailOn(error_handler)
-    def test_io_server_pod_restart_delete(self):
+    def test_server_pod_restart_kubectl_delete(self):
         """
         Verify IOs after pod restart (kubectl delete)
         """
