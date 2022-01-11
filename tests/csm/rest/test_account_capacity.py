@@ -1014,12 +1014,11 @@ class TestAccountCapacity():
                           bucket)
             resp = s3_misc.create_put_objects(
                 obj, bucket, access_key, secret_key, object_size=write_bytes_mb)            
-            assert_utils.assert_true(resp, "Put object Failed")
-        self.log.info("Put operation completed")
         self.log.info("verify capacity of account after put operations")
         s3_account = [{"account_name": account1_info[3], "capacity": total_cap, "unit": 'MB'}]
         resp = self.acc_capacity.verify_account_capacity(s3_account)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Put operation completed")
         self.log.info("verified capacity of account after put operations")
         self.log.info("ENDED ")
 
