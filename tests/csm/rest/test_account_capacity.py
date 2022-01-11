@@ -1118,7 +1118,6 @@ class TestAccountCapacity():
         self.log.info("Step-5: Uploading parts into bucket")
         try:
             res = self.s3_mp_test_obj.upload_parts(
-                 = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
                 bucket,
                 self.object_name,
