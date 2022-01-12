@@ -49,6 +49,7 @@ HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
 
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
@@ -432,9 +433,13 @@ RESTORE_DEPLOYMENT_HELM = "helm"
 
 # log rotation
 LOG_PATH_CSM = "/etc/cortx/log/csm"
-MAX_LOG_FILE_SIZE_CSM_MB = 16
+MAX_LOG_FILE_SIZE_CSM_MB = 17
 LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5,
                             "/etc/cortx/log/auth/{}/server/":20,
                             "/etc/cortx/log/s3/{}/haproxy/":5}
-LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/":5}
+LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/iem/":5,
+                               "/etc/cortx/log/utils/{}/message_bus/":5}
 LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
+LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
+                              "/etc/cortx/log/motr/{}/trace/":17}
+MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}

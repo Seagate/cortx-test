@@ -23,6 +23,7 @@
 import logging
 import pytest
 
+from commons import configmanager
 from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
@@ -30,6 +31,8 @@ from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +67,53 @@ class TestProvK8Cortx:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
+    # pylint: disable=R0915
+    # pylint: disable=too-many-arguments,too-many-locals
+    def single_node_deployment(self, sns_data,
+                        sns_parity,sns_spare, dix_data,
+                        dix_parity, dix_spare,
+                        cvg_count, data_disk_per_cvg, master_node_list,
+                        worker_node_list):
+        """
+        This method is used for deployment with various config on One node
+        param: sns_data
+        param: sns_parity
+        param: sns_spare
+        param: dix_data
+        param: dix_parity
+        param: dix_spare
+        param: cvg_count
+        param: data disk per cvg
+        param: master node obj list
+        """
+        LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
+                    "k8s based Cortx Deployment", len(worker_node_list),
+                    sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+
+        LOGGER.info("Step to Download solution file template")
+        path = self.deploy_lc_obj.checkout_solution_file(self.deploy_lc_obj.git_script_tag)
+        print(path)
+        LOGGER.info("Step to Update solution file template")
+        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=master_node_list, filepath=path,
+                                    cortx_image=self.deploy_lc_obj.cortx_image,
+                                    sns_data=sns_data, sns_parity=sns_parity,
+                                    sns_spare=sns_spare, dix_data=dix_data,
+                                    dix_parity=dix_parity, dix_spare=dix_spare,
+                                    cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
+                                    size_data_disk="20Gi", size_metadata="20Gi",
+                                    glusterfs_size="20Gi")
+        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+        with open(resp[1]) as file:
+            LOGGER.info("The solution yaml file is %s\n", file)
+        sol_file_path = resp[1]
+        system_disk_dict = resp[2]
+        LOGGER.info("Step to Perform Cortx Cluster Deployment")
+        resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, master_node_list,
+                                            master_node_list, system_disk_dict,
+                                            self.deploy_lc_obj.git_script_tag)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cortx Cluster Deployed Successfully")
+
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-30239")
@@ -71,11 +121,11 @@ class TestProvK8Cortx:
         """
         Verify N-Node Cortx Stack Deployment in K8s environment.
         """
-        # LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
-        # LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        # resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
-        #                                                   self.worker_node_list)
-        # assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
+        LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
+        resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
+                                                          self.worker_node_list)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
         LOGGER.info("Step 2: Check Pods Status.")
         path = self.deploy_cfg["k8s_dir"]
@@ -315,3 +365,45 @@ class TestProvK8Cortx:
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32640")
+    def test_32640(self):
+        """
+        Deployment- 1node config_1
+        """
+        config = DEPLOY_CFG['nodes_1']['config_1']
+        LOGGER.info("Running 1 N with config %s+%s+%s",
+                config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.single_node_deployment(sns_data=config['sns_data'],
+                                    sns_parity=config['sns_parity'],
+                                    sns_spare=config['sns_spare'],
+                                    dix_data=config['dix_data'],
+                                    dix_parity=config['dix_parity'],
+                                    dix_spare=config['dix_spare'],
+                                    cvg_count=config['cvg_per_node'],
+                                    data_disk_per_cvg=config['data_disk_per_cvg'],
+                                    master_node_list=self.master_node_list,
+                                    worker_node_list=self.master_node_list)
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32654")
+    def test_32654(self):
+        """
+        Deployment- 1node config_2
+        """
+        config = DEPLOY_CFG['nodes_1']['config_2']
+        LOGGER.info("Running 1 N with config %s+%s+%s",
+                      config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.single_node_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.master_node_list)
