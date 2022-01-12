@@ -1108,11 +1108,11 @@ class ProvDeployK8sCortxLib:
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
             LOGGER.debug(pod_status)
-            LOGGER.info("Step to Check s3 server status")
-            s3_status = self.check_s3_status(master_node_list[0])
-            LOGGER.info("s3 resp is %s", s3_status)
-            assert_utils.assert_true(s3_status[0], s3_status[1])
-            row.append(s3_status[-1])
+            LOGGER.info("Step to Check  ALl service status")
+            service_status = self.check_service_status(master_node_list[0])
+            LOGGER.info("service resp is %s", service_status)
+            assert_utils.assert_true(service_status[0], service_status[1])
+            row.append(service_status[-1])
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
@@ -1155,11 +1155,12 @@ class ProvDeployK8sCortxLib:
         """
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         start_time = int(time.time())
-        end_time = start_time + 1200  # 20 mins timeout
+        end_time = start_time + 3600  # 30 mins timeout
         response = list()
         while int(time.time()) < end_time:
-            data_pod_list = self.get_data_pods(master_node_obj)
-            assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
+            data_pod_list = LogicalNode.get_all_pods(master_node_obj, common_const.POD_NAME_PREFIX)
+            assert_utils.assert_true(data_pod_list)
+            LOGGER.debug("THE DATA POD LIST is %s", data_pod_list)
             resp = self.get_hctl_status(master_node_obj, data_pod_list[1][0])
             if resp[0]:
                 time_taken = (int(time.time()) - start_time)
@@ -1168,7 +1169,44 @@ class ProvDeployK8sCortxLib:
                 response.append(time_taken)
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
+            server_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                       common_const.SERVER_POD_NAME_PREFIX)
+            assert_utils.assert_true(server_pod_list)
+            LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
+        return response
+
+    def check_service_status(self, master_node_obj: LogicalNode):
+        """
+        Function to check all service status
+        param: nodeObj of Master node.
+        returns: dict of all pods with service status True/False and time taken
+        """
+        data_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                 common_const.POD_NAME_PREFIX)
+        server_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                   common_const.SERVER_POD_NAME_PREFIX)
+        LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
+                     data_pod_list, server_pod_list)
+        start_time = int(time.time())
+        end_time = start_time + 3600  # 30 mins timeout
+        response = list()
+        hctl_status = dict()
+        while int(time.time()) < end_time:
+            for pod_name in data_pod_list:
+                resp = self.get_hctl_status(master_node_obj, pod_name)
+                hctl_status.update({pod_name: resp[0]})
+            for server_pod_name in server_pod_list:
+                resp = self.get_hctl_status(master_node_obj, server_pod_name)
+                hctl_status.update({server_pod_name: resp[0]})
+            status = all(element == True for element in list(hctl_status.values()))
+            if status:
+                time_taken = time.time() - start_time
+                LOGGER.info("#### Services online. Time Taken : %s", time_taken)
+                response.append(status)
+                response.append(time_taken)
+                break
+        LOGGER.info("hctl_status = %s", hctl_status)
         return response
 
     # pylint: disable=broad-except

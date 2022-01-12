@@ -42,14 +42,12 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME_PREFIX = "cortx-data-pod"
-SERVER_POD_NAME_PREFIX = "cortx-server-pod"
-HA_POD_NAME_PREFIX = "cortx-ha-pod"
+POD_NAME_PREFIX = "cortx-data"
+SERVER_POD_NAME_PREFIX = "cortx-server"
+HA_POD_NAME_PREFIX = "cortx-ha"
 HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
-CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
-HA_POD_NAME_PREFIX = "cortx-ha-pod"
-SERVER_POD_NAME_PREFIX = "cortx-server-pod"
+CONTROL_POD_NAME_PREFIX = "cortx-control"
 
 # RAS Paths
 BYTES_TO_READ = 8000
