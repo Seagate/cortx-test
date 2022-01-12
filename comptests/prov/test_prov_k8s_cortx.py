@@ -23,18 +23,23 @@
 import logging
 import pytest
 
+from commons import configmanager
+from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.ha.ha_common_libs_k8s import HAK8s
+
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
 LOGGER = logging.getLogger(__name__)
 
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils"]
+PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils", "log"]
 
 
 class TestProvK8Cortx:
@@ -45,6 +50,8 @@ class TestProvK8Cortx:
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.ha_obj = HAK8s()
+        cls.dir_path = common_const.K8S_SCRIPTS_PATH
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -60,6 +67,53 @@ class TestProvK8Cortx:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
+    # pylint: disable=R0915
+    # pylint: disable=too-many-arguments,too-many-locals
+    def single_node_deployment(self, sns_data,
+                        sns_parity,sns_spare, dix_data,
+                        dix_parity, dix_spare,
+                        cvg_count, data_disk_per_cvg, master_node_list,
+                        worker_node_list):
+        """
+        This method is used for deployment with various config on One node
+        param: sns_data
+        param: sns_parity
+        param: sns_spare
+        param: dix_data
+        param: dix_parity
+        param: dix_spare
+        param: cvg_count
+        param: data disk per cvg
+        param: master node obj list
+        """
+        LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
+                    "k8s based Cortx Deployment", len(worker_node_list),
+                    sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+
+        LOGGER.info("Step to Download solution file template")
+        path = self.deploy_lc_obj.checkout_solution_file(self.deploy_lc_obj.git_script_tag)
+        print(path)
+        LOGGER.info("Step to Update solution file template")
+        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=master_node_list, filepath=path,
+                                    cortx_image=self.deploy_lc_obj.cortx_image,
+                                    sns_data=sns_data, sns_parity=sns_parity,
+                                    sns_spare=sns_spare, dix_data=dix_data,
+                                    dix_parity=dix_parity, dix_spare=dix_spare,
+                                    cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
+                                    size_data_disk="20Gi", size_metadata="20Gi",
+                                    glusterfs_size="20Gi")
+        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+        with open(resp[1]) as file:
+            LOGGER.info("The solution yaml file is %s\n", file)
+        sol_file_path = resp[1]
+        system_disk_dict = resp[2]
+        LOGGER.info("Step to Perform Cortx Cluster Deployment")
+        resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, master_node_list,
+                                            master_node_list, system_disk_dict,
+                                            self.deploy_lc_obj.git_script_tag)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cortx Cluster Deployed Successfully")
+
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-30239")
@@ -69,22 +123,18 @@ class TestProvK8Cortx:
         """
         LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
         LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        resp = self.deploy_lc_obj.deploy_cortx_k8s_cluster(self.master_node_list,
-                                                           self.worker_node_list)
+        resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
+                                                          self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
-
         LOGGER.info("Step 2: Check Pods Status.")
         path = self.deploy_cfg["k8s_dir"]
         for node in self.master_node_list:
             resp = self.deploy_lc_obj.validate_cluster_status(node, path)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Done.")
-
-        LOGGER.info("Step 3: Check hctl Status.")
-        pod_name = self.master_node_obj.get_pod_name()
-        assert_utils.assert_true(pod_name[0], pod_name[1])
-        resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
+            LOGGER.info("Step 2: Done.")
+        LOGGER.info("Step 3: Check s3 server status.")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
@@ -210,7 +260,7 @@ class TestProvK8Cortx:
         data_pod_count = (data_pod_list[1:])
         LOGGER.info("Step 2: Get all running data nodes from cluster.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE, read_lines=True)
-        node_list = resp[2:]
+        node_list = resp[1:]
         LOGGER.info("Identify pods and nodes are equal.")
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
         LOGGER.info("Test Completed.")
@@ -247,3 +297,113 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32940")
+    def test_32940(self):
+        """
+        Verify cortx cluster shutdown command.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check whether all pods are online")
+        resp1 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        assert_utils.assert_true(resp1[0], resp1[1])
+        LOGGER.info("Executing cortx cluster shutdown command.")
+        LOGGER.info("Step 2: Check whether cluster shutdown command ran successfully.")
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Check whether data and control pods are not present")
+        resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        LOGGER.info(resp2)
+        data = []
+        data1 = []
+        for i in resp1[1]:
+            data.append(i.split(" ")[0])
+        for i in resp2[1]:
+            data1.append(i.split(" ")[0])
+        set_difference = set(data) - set(data1)
+        list_difference = list(set_difference)
+        # LOGGER.info("Pods which are not present after shut_down command ran are"
+        # + str(list_difference))
+        LOGGER.info(list_difference)
+        is_same = resp1[1] == resp2[1]
+        assert_utils.assert_false(is_same)
+        LOGGER.info("Step 4: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
+            resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
+        LOGGER.info("Step 5: Cluster is back online.")
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32939")
+    def test_32939(self):
+        """
+        Verify cortx cluster restart command.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Check whether cluster shutdown command ran successfully.")
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Check the cluster status and start the cluster "
+                    "in case its still down.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            LOGGER.info("Cluster not in good state, trying to restart it.")
+        LOGGER.info("Executing cortx cluster restart command.")
+        LOGGER.info("Step 3: Check whether cluster restart command ran successfully.")
+        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster is up and running.")
+        LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
+        resp = self.ha_obj.check_pod_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32640")
+    def test_32640(self):
+        """
+        Deployment- 1node config_1
+        """
+        config = DEPLOY_CFG['nodes_1']['config_1']
+        LOGGER.info("Running 1 N with config %s+%s+%s",
+                config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.single_node_deployment(sns_data=config['sns_data'],
+                                    sns_parity=config['sns_parity'],
+                                    sns_spare=config['sns_spare'],
+                                    dix_data=config['dix_data'],
+                                    dix_parity=config['dix_parity'],
+                                    dix_spare=config['dix_spare'],
+                                    cvg_count=config['cvg_per_node'],
+                                    data_disk_per_cvg=config['data_disk_per_cvg'],
+                                    master_node_list=self.master_node_list,
+                                    worker_node_list=self.master_node_list)
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-32654")
+    def test_32654(self):
+        """
+        Deployment- 1node config_2
+        """
+        config = DEPLOY_CFG['nodes_1']['config_2']
+        LOGGER.info("Running 1 N with config %s+%s+%s",
+                      config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.single_node_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.master_node_list)

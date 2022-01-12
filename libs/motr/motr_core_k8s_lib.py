@@ -24,13 +24,12 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
-
+from config import CMN_CFG
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import assert_utils
-from commons.utils import system_utils
-from config import CMN_CFG
 
 log = logging.getLogger(__name__)
 
@@ -167,6 +166,39 @@ class MotrCoreK8s():
                            f"-- {cmd}",
             decode=True)
         return node_name
+
+    def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
+        """ To run the m0crate utility on specified cortx_node
+        param: local_file_path: Absolute workload file(yaml) path on the client
+        param: remote_file_path: Absolute workload file(yaml) path on the master node
+        param: cortx_node: Node where the m0crate utility will run
+        """
+        pod_node = self.get_node_pod_dict()[cortx_node]
+        result = self.node_obj.copy_file_to_remote(local_file_path, remote_file_path)
+        if not result[0]:
+            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
+               remote_file_path, result[1]))
+        m0crate_run_cmd = f'm0crate -S {remote_file_path}'
+        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node,\
+            remote_file_path, common_const.HAX_CONTAINER_NAME)
+        log.info(result)
+        if not result[0]:
+            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
+                 common_const.HAX_CONTAINER_NAME, result[1]))
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(pod_node, m0crate_run_cmd)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.master_node,
+                                                                      self.master_uname,
+                                                                      self.master_passwd)
+        log.info("%s , %s", result, error1)
+        if ret:
+            log.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            log.error('"%s" failed, please check the log', cmd)
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
 
     def dd_cmd(self, b_size, count, file, node):
         """
@@ -337,3 +369,21 @@ class MotrCoreK8s():
             log.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
+
+    @staticmethod
+    def byte_conversion(size):
+        """ Convert file size of GB/MB/KB into bytes
+        :param: size: size of the file in either G, M or K i.e 2G, 1m
+        :return: size in bytes
+        """
+        suffix = ['G', 'M', 'K']
+        if size[-1].upper() not in suffix:
+            assert_utils.assert_in(size[-1], suffix,
+                                    'invalid size')
+        if size[-1].upper() == 'G':
+            size = int(size[0: -1]) * 1024 * 1024 * 1024
+        elif size[-1].upper() == 'M':
+            size = int(size[0: -1]) * 1024 * 1024
+        elif  size[-1].upper() == 'K':
+            size = int(size[0: -1]) * 1024
+        return size

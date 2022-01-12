@@ -10,6 +10,7 @@ reviewers:
   - swapnil-khandare
   - sonalk0209
   - ravindrachoudhari
+  - pranav-sahasrabudhe
 
 # A list of keywords to be skipped the process that add reviewers if pull requests include it 
 skipKeywords:

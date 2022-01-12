@@ -13,6 +13,7 @@ jcloud_cfg:
 minio_cfg:
     create_bkt_cmd: "./mc mb s3/{0}"
     upload_obj_cmd: "./mc cp {0} s3/{1}"
+    download_obj_cmd: "./mc cp s3/{0}/{1} {2}"
     list_obj_cmd: "./mc ls s3/{0}"
     cr_two_bkt_cmd: "./mc mb s3/{0} s3/{1}"
     lst_bkt_cmd: "./mc ls s3"

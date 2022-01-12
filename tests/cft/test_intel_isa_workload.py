@@ -93,12 +93,6 @@ class TestIntelISAIO:
         """
         self.log.info("STARTED: Setup Operations")
         self.reset_s3config = False
-        # TODO Fix
-        self.log.info("Checking if all nodes are reachable and PCS clean.")
-        for hlt_obj in self.hlt_list:
-            res = hlt_obj.check_node_health()
-            assert_utils.assert_true(res[0], res[1])
-        self.log.info("All nodes are reachable and PCS looks clean.")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -174,8 +168,7 @@ class TestIntelISAIO:
                 # TODO : restart s3 and motr services
                 self.log.info(
                     "Procedure yet to be defined for restarting services within containers")
-            self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name,
-                                                       s3t_obj=self.s3t_obj)
+        self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name, s3t_obj=self.s3t_obj)
 
     # Ordering maintained for LR2
     # Order - 1  TEST-23540
