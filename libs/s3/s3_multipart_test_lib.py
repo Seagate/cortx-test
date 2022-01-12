@@ -449,7 +449,7 @@ class S3MultipartTestLib(Multipart):
         try:
             content_md5 = kwargs.get("content_md5", None)
             # CopySourceRange='bytes=1-100000'
-            copy_source_range = kwargs.get("copy_source_range", "")
+            copy_source_range = kwargs.get("copy_source_range", "bytes=0-")
             part_number = kwargs.get("part_number", None)
             upload_id = kwargs.get("upload_id", None)
             LOGGER.info("uploading part copy")
