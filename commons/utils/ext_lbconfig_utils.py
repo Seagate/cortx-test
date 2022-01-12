@@ -100,7 +100,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     resp = json.loads(resp)
     for item_data in resp["items"]:
         if item_data["spec"]["type"] == "LoadBalancer" and \
-                "cortx-data-pod" in item_data["spec"]["selector"]["app"]:
+                "cortx-server" in item_data["spec"]["selector"]["app"]:
             worker = item_data["spec"]["selector"]["app"].split("pod-")[1] + ".colo.seagate.com"
             for port_items in item_data["spec"]["ports"]:
                 worker_node[worker].update({f"{port_items['targetPort']}": port_items["nodePort"]})
