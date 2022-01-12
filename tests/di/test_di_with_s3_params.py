@@ -516,12 +516,11 @@ class TestDIWithChangingS3Params:
     @CTFailOn(error_handler)
     def test_29289(self):
         """
-        Test to verify Fault Injection with different modes using simple object upload with Data
-        Integrity flag ON for write and OFF for read
+        Test to verify copy object to different bucket of corrupted data
         """
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
