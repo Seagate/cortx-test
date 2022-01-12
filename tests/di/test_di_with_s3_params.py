@@ -65,6 +65,7 @@ class TestDIWithChangingS3Params:
         cls.config_section = "S3_SERVER_CONFIG"
         cls.write_param = const.S3_DI_WRITE_CHECK
         cls.read_param = const.S3_DI_READ_CHECK
+        cls.data_corruption_status = False
         cls.params = dict()
         cls.test_dir_path = os.path.join(TEST_DATA_PATH, "TestDI")
         if not sys_util.path_exists(cls.test_dir_path):
@@ -113,6 +114,9 @@ class TestDIWithChangingS3Params:
         """
         cls.log.info("STARTED: Teardown cls operations.")
         cls.log.info("Deleting a backup file and directory...")
+        if cls.data_corruption_status:
+            cls.log.info("Disabling data corruption")
+            cls.fi_adapter.disable_data_block_corruption()
         if sys_util.path_exists(cls.F_PATH):
             sys_util.remove_file(cls.F_PATH)
         if sys_util.path_exists(cls.F_PATH_COPY):
@@ -515,32 +519,50 @@ class TestDIWithChangingS3Params:
         Test to verify Fault Injection with different modes using simple object upload with Data
         Integrity flag ON for write and OFF for read
         """
-        if self.di_err_lib.validate_default_config():
+        failed_file_sizes = []
+        self.log.debug("Checking setup status")
+        valid, skip_mark = self.di_err_lib.validate_default_config()
+        if not valid or skip_mark:
+            self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
+        self.log.debug("Executing test as flags are set to default")
         bucket_name_1 = self.get_bucket_name()
-        bucket_name_2 = self.get_bucket_name()
-        obj_name_1 = self.get_object_name()
-        obj_name_2 = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name_1)
+        bucket_name_2 = self.get_bucket_name()
         self.s3obj.create_bucket(bucket_name=bucket_name_2)
         status = self.fi_adapter.enable_data_block_corruption()
         if status:
-            self.log.info("Step 1: enabled data corruption")
+            self.data_corruption_status = True
+            self.log.info("Step 1: Enabled data corruption")
         else:
-            self.log.info("Step 1: failed to enable data corruption")
             assert False
         self.log.info("Step 1: enable data corruption")
-        self.log.info("Step 2: Create a corrupted file.")
-        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
-                                                         data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 2: created a corrupted file at location %s", location)
-        self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                              file_path=location)
-        resp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
-                                      dest_bucket=bucket_name_2, dest_object=obj_name_2)
-        self.log.info(resp)
-        # need to check copy
-        resp = self.s3obj.object_download(bucket_name=bucket_name_1,
-                                          obj_name=obj_name_1, file_path=self.F_PATH)
-        self.log.info(resp)
-
+        for file_size in NORMAL_UPLOAD_SIZES:
+            obj_name_1 = self.get_object_name()
+            self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
+                                                             data_folder_prefix=self.test_dir_path)
+            self.log.info("Step 2: created a corrupted file at location %s", location)
+            try:
+                self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
+                                      file_path=location)
+                self.log.info("Verifying copy object")
+                resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1,
+                                                 source_object=obj_name_1,
+                                                 dest_bucket=bucket_name_2, dest_object=obj_name_1)
+                self.log.info(resp_cp)
+                if resp_cp[0]:
+                    failed_file_sizes.append(file_size)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if "error occurred (InternalError) when calling the CopyObject operation" \
+                        in err_str:
+                    self.log.info("Copy Object failed with InternalError")
+                else:
+                    failed_file_sizes.append(file_size)
+        self.s3obj.delete_bucket(bucket_name=bucket_name_1, force=True)
+        self.s3obj.delete_bucket(bucket_name=bucket_name_2, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
