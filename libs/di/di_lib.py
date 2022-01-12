@@ -314,4 +314,5 @@ def restart_s3_processes_k8s():
                         counter = counter + 1
                         time.sleep(1)
                 if not resp:
-                    raise Exception
+                    return False
+        return True
