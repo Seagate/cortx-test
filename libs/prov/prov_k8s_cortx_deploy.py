@@ -314,7 +314,7 @@ class ProvDeployK8sCortxLib:
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
-        LOGGER.debug("COPY template file\n")
+        LOGGER.debug("Copy template file to %s", self.deploy_cfg['git_temp_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
                            self.deploy_cfg["git_temp_remote_dir"])
 
@@ -650,19 +650,8 @@ class ProvDeployK8sCortxLib:
         Param: filepath: filename with complete path
         :returns the status, filepath
         """
-        with open(filepath) as temp:
-            conf = yaml.safe_load(temp)
-            parent_key = conf['cortx']  # Parent key
-            common = parent_key['common']
-            LOGGER.info("SIZE is %s", size)
-            common['setup_size'] = size
-            temp.close()
-        noalias_dumper = yaml.dumper.SafeDumper
-        noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(filepath, 'w') as temp:
-            yaml.dump(conf, temp, default_flow_style=False,
-                      sort_keys=False, Dumper=noalias_dumper)
-            temp.close()
+        cmd = "sed -i \"s/large/{}/g\" {}".format(size, filepath)
+        system_utils.execute_cmd(cmd)
         return True, filepath
 
     @staticmethod
