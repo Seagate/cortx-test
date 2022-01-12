@@ -3720,6 +3720,7 @@ class TestCsmUser():
         resp_msg_id = test_cfg["message_id"]
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         msg = resp_data[2]
+        msg1 = resp_data[3]
         self.log.info("Creating manage user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
         self.log.info("Verifying if user was created successfully")
@@ -3756,7 +3757,7 @@ class TestCsmUser():
         assert response.json()["error_code"] == str(resp_error_code), (
             "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert response.json()["message"] == msg.format("admin"), (
+            assert response.json()["message"] == msg1, (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
@@ -3769,7 +3770,7 @@ class TestCsmUser():
         assert response.json()["error_code"] == str(resp_error_code), (
             "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert response.json()["message"] == msg.format("admin"), (
+            assert response.json()["message"] == msg1, (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
