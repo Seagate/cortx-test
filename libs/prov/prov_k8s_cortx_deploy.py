@@ -232,6 +232,13 @@ class ProvDeployK8sCortxLib:
             if system_utils.path_exists(local_sol_path):
                 node_obj.copy_file_to_remote(local_sol_path, remote_path)
                 return True, f"Files copied at {remote_path}"
+        elif local_sol_path == "deploy-cortx-cloud.sh":
+            remote_path = remote_code_path + "deploy-cortx-cloud.sh"
+            LOGGER.debug("Remote path %s", remote_path)
+            if system_utils.path_exists(local_sol_path):
+                node_obj.copy_file_to_remote(local_sol_path, remote_path)
+                return True, f"Files copied at {remote_path}"
+
         else:
             template_code_path = PROV_CFG['k8s_cortx_deploy']['git_temp_remote_dir']
             temp_remote_path = template_code_path + "config-template.yaml"
@@ -314,6 +321,9 @@ class ProvDeployK8sCortxLib:
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
+        LOGGER.debug("Copy deploy script file to %s", self.deploy_cfg['git_remote_dir'])
+        self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
+                           self.deploy_cfg["git_remote_dir"])
         LOGGER.debug("Copy template file to %s", self.deploy_cfg['git_temp_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
                            self.deploy_cfg["git_temp_remote_dir"])
@@ -343,8 +353,11 @@ class ProvDeployK8sCortxLib:
         """
         url = self.deploy_cfg["git_k8_temp_file"].format(git_tag)
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["temp_file_path"], url)
+        url1 = self.deploy_cfg["git_k8_deploy_file"].format(git_tag)
+        cmd1 = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file_path"], url1)
         system_utils.execute_cmd(cmd=cmd)
-        return self.deploy_cfg["temp_file_path"]
+        system_utils.execute_cmd(cmd=cmd1)
+        return self.deploy_cfg["temp_file_path"], self.deploy_cfg['deploy_file_path']
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -651,6 +664,16 @@ class ProvDeployK8sCortxLib:
         :returns the status, filepath
         """
         cmd = "sed -i \"s/large/{}/g\" {}".format(size, filepath)
+        system_utils.execute_cmd(cmd)
+        return True, filepath
+
+    def update_deployscript(self, filepath):
+        """
+        This Method update the setup_size in template file
+        Param: filepath: filename with complete path
+        :returns the status, filepath
+        """
+        cmd = "sed -i \"s/Init:Error/Error/g\" {}".format(filepath)
         system_utils.execute_cmd(cmd)
         return True, filepath
 
@@ -1079,7 +1102,10 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to update template file")
             temp_path = self.checkout_template_file(self.git_script_tag)
             LOGGER.debug("TEMPLATE FILE IS UPDATING %s", temp_path)
-            resp = self.update_template_file(temp_path, size=self.deploy_cfg['setup_size'])
+            resp_dep = self.update_deployscript(temp_path[1])
+            LOGGER.debug("Updating deploy script  %s", resp_dep)
+            assert_utils.assert_true(resp_dep[0], resp_dep[1])
+            resp = self.update_template_file(temp_path[0], size=self.deploy_cfg['setup_size'])
             assert_utils.assert_true(resp[0], "Failure updating config_template.yaml")
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
