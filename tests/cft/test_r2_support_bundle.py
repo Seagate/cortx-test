@@ -762,54 +762,55 @@ class TestR2SupportBundle:
     @pytest.mark.tags("TEST-35001")
     def test_35001(self):
         """
-        Validate status of support bundle for LC
+        Validate support bundle contains component logs
         """
-        self.LOGGER.info("Step 1: Generating support bundle ")
+        self.LOGGER.info("STARTED: Test to validate support bundle contains component logs")
+
+        self.LOGGER.info("Step 1: Generating support bundle")
         comp_list = ["hare", "motr", "s3", "utils"]
         dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
         sb_identifier = system_utils.random_string_generator(10)
-        msg = "TEST-32111"
         self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
 
-        resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0], msg)
-        self.LOGGER.info(f"resp: {resp}")
+        resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0], "TEST-35001")
+        self.LOGGER.info(f"response of support bundle generation: {resp}")
         sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
+
+        self.LOGGER.info("Step 2: Creating local directory")
         if os.path.exists(sb_local_path):
             self.LOGGER.info("Removing existing directory %s", sb_local_path)
             shutil.rmtree(sb_local_path)
         os.mkdir(sb_local_path)
         self.LOGGER.info(f"sb copy path: {sb_local_path}")
 
+        self.LOGGER.info("Step 3: Copy support bundle to local directory")
         copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
         sb_copy_path = "/root/support_bundle/"
         copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod_list[0], copy_sb_from_path,
                                     sb_copy_path, constants.HAX_CONTAINER_NAME)
-        resp = self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
-        self.LOGGER.info(f"resp: {resp}")
+        self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
 
         sb_copy_full_path = sb_copy_path + sb_identifier + "_" + machine_id + ".tar.gz"
         sb_local_full_path = sb_local_path + "/" + sb_identifier +".tar.gz"
         self.node_obj.copy_file_to_local(sb_copy_full_path, sb_local_full_path)
 
+        self.LOGGER.info("Step 4: Extract support bundle tar file")
         tar_cmd = comm.CMD_TAR.format(sb_local_full_path, sb_local_path)
-        resp = system_utils.run_local_cmd(cmd=tar_cmd)
-        assert_utils.assert_true(resp[0], resp[1])
+        system_utils.run_local_cmd(cmd=tar_cmd)
+        comp_in_sb = os.listdir(sb_local_path + "/" + sb_identifier)
 
-        resp = os.listdir(sb_local_path + "/" + sb_identifier)
-        self.LOGGER.info(f"check: {resp}")
-
+        self.LOGGER.info("Step 5: Checking component log files in collected support bundle")
         for comp in comp_list:
-            if comp in resp:
+            if comp in comp_in_sb:
                 comp_dir_path = sb_local_path + "/" + sb_identifier + "/" + comp
                 comp_tar_files = os.listdir(comp_dir_path)
-                self.LOGGER.info(f"comp_dir_path: {comp_dir_path} and comp_tar: {comp_tar_files[0]}")
+                os.mkdir(comp_dir_path + "/" + comp)
                 tar_cmd = comm.CMD_TAR.format(comp_dir_path + "/" +
-                                              comp_tar_files[0], comp_dir_path)
-                tar_cmd_resp = system_utils.run_local_cmd(cmd=tar_cmd)
-                assert_utils.assert_true(tar_cmd_resp[0], tar_cmd_resp[1])
-                self.LOGGER.info(f"tar resp comp: {tar_cmd_resp}")
+                                              comp_tar_files[0], comp_dir_path + "/" + comp)
+                system_utils.run_local_cmd(cmd=tar_cmd)
+                comp_dir_path = comp_dir_path + "/" + comp
 
                 if comp == "hare":
                     hare_dir = os.listdir(comp_dir_path)
@@ -839,8 +840,7 @@ class TestR2SupportBundle:
                         assert_utils.assert_true(False, f"No s3server log file "
                                                         f"found in support bundle")
                 if comp == "utils":
-                    resp = self.file_with_prefix_exists_on_path(comp_dir_path +
-                                                "/logs", "utils")
+                    resp = self.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
                     if resp:
                         self.LOGGER.info(f"utils logs are present in support Bundle")
                     else:
@@ -849,3 +849,6 @@ class TestR2SupportBundle:
             else:
                 self.LOGGER.info(f"assert: {comp}")
                 assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
+
+        self.LOGGER.info("ENDED: Test to validate support bundle contains component logs")
+        
