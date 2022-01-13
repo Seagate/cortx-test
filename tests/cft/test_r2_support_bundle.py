@@ -802,7 +802,7 @@ class TestR2SupportBundle:
                 if comp == "hare":
                     hare_dir = os.listdir(comp_dir_path)
                     unzip_hare_dir = comp_dir_path + "/" + hare_dir[0]
-                    resp = self.file_with_prefix_exists_on_path(unzip_hare_dir +
+                    resp = sb.file_with_prefix_exists_on_path(unzip_hare_dir +
                                                 "/etc/cortx/log/hare/log/" + machine_id, "hare")
                     if resp:
                         self.LOGGER.info("hare logs are present in support Bundle")
@@ -812,14 +812,14 @@ class TestR2SupportBundle:
                 if comp == "motr":
                     motr_dir = os.listdir(comp_dir_path)
                     unzip_motr_dir = comp_dir_path + "/" + motr_dir[0]
-                    resp = self.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
+                    resp = sb.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
                     if resp:
                         self.LOGGER.info("motr logs are present in support Bundle")
                     else:
                         assert_utils.assert_true(False, "No motr log file "
                                                         "found in support bundle")
                 if comp == "s3":
-                    resp = self.file_with_prefix_exists_on_path(comp_dir_path +
+                    resp = sb.file_with_prefix_exists_on_path(comp_dir_path +
                                                 "/etc/cortx/log/s3/" + machine_id, "s3server")
                     if resp:
                         self.LOGGER.info("s3server logs are present in support Bundle")
@@ -827,7 +827,7 @@ class TestR2SupportBundle:
                         assert_utils.assert_true(False, f"No s3server log file "
                                                         f"found in support bundle")
                 if comp == "utils":
-                    resp = self.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
+                    resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
                     if resp:
                         self.LOGGER.info("utils logs are present in support Bundle")
                     else:
