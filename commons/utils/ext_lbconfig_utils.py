@@ -90,7 +90,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
-    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.SERVER_POD_NAME_PREFIX)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
@@ -100,8 +100,8 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     resp = json.loads(resp)
     for item_data in resp["items"]:
         if item_data["spec"]["type"] == "LoadBalancer" and \
-                "cortx-data-pod" in item_data["spec"]["selector"]["app"]:
-            worker = item_data["spec"]["selector"]["app"].split("pod-")[1] + ".colo.seagate.com"
+                "cortx-server" in item_data["spec"]["selector"]["app"]:
+            worker = item_data["spec"]["selector"]["app"].split("server-")[1] + ".colo.seagate.com"
             for port_items in item_data["spec"]["ports"]:
                 worker_node[worker].update({f"{port_items['targetPort']}": port_items["nodePort"]})
     LOGGER.info("Worker node IP PORTs info for haproxy: %s", worker_node)
