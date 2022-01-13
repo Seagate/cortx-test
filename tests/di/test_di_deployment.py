@@ -82,7 +82,7 @@ class TestDIDeployment:
         Test method level teardown.
         """
         if system_utils.path_exists(self.test_dir_path):
-            self.log.debug("Deleting test data dir: %s", str(self.test_33650))
+            self.log.debug("Deleting test data dir: %s",self.test_dir_path)
             system_utils.remove_dirs(self.test_dir_path)
 
     def basic_io_with_fi(self, bucket_name, s3t_obj, first_byte='f'):
