@@ -32,9 +32,11 @@ from time import perf_counter_ns
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
+from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
+from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -986,3 +988,79 @@ class HAK8s:
 
             res = (event_del_bkt, fail_del_bkt)
             output.put(res)
+
+    @staticmethod
+    def get_data_pod_no_ha_control(data_pod_list: list, pod_obj):
+        """
+        Helper function to get the data pod name which is not hosted on same node
+        as that of HA or control pod.
+        :param data_pod_list: list for all data pods in cluster
+        :param pod_obj: object for master node for pods_helper
+        :return: data_pod_name, data_pod_fqdn
+        """
+        LOGGER.info("Check the node which has the control or HA pod running and"
+                    "select data pod which is not hosted on any of these nodes.")
+        control_pods = pod_obj.get_pods_node_fqdn(common_const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        control_node_fqdn = control_pods.get(control_pod_name)
+        LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, control_node_fqdn)
+        ha_pods = pod_obj.get_pods_node_fqdn(common_const.HA_POD_NAME_PREFIX)
+        ha_pod_name = list(ha_pods.keys())[0]
+        ha_node_fqdn = ha_pods.get(ha_pod_name)
+        LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, ha_node_fqdn)
+        LOGGER.info("Get the data pod running on %s node and %s node",
+                    control_node_fqdn, ha_node_fqdn)
+        data_pods = pod_obj.get_pods_node_fqdn(common_const.POD_NAME_PREFIX)
+        data_pod_name2 = data_pod_name1 = None
+        for pod_name, node in data_pods.items():
+            if node == control_node_fqdn:
+                data_pod_name1 = pod_name
+            if node == ha_node_fqdn:
+                data_pod_name2 = pod_name
+        new_list = [pod_name for pod_name in data_pod_list
+                    if pod_name not in (data_pod_name1, data_pod_name2)]
+        data_pod_name = random.sample(new_list, 1)[0]
+        LOGGER.info("%s data pod is not hosted either on control or ha node",
+                    data_pod_name)
+        data_node_fqdn = data_pods.get(data_pod_name)
+        server_pods = pod_obj.get_pods_node_fqdn(common_const.SERVER_POD_NAME_PREFIX)
+        for pod_name, node in server_pods.items():
+            if node == data_node_fqdn:
+                server_pod_name = pod_name
+        LOGGER.info("Node %s is hosting data pod %s nd server pod %s",
+                    data_node_fqdn, data_pod_name, server_pod_name)
+
+        return data_pod_name, server_pod_name, data_node_fqdn
+
+    @staticmethod
+    def get_nw_iface_node_down(host_list: list, node_list: list, node_fqdn: str):
+        """
+        Helper function to get the network interface of data node, put it down
+        and check if its not pinging.
+        :param host_list: list of worker nodes' hosts
+        :param node_list: node object list for all worker nodes
+        :param node_fqdn: fqdn of the data node
+        :return: boolean, response
+        """
+        for count, host in enumerate(host_list):
+            if host == node_fqdn:
+                node_ip = CMN_CFG["nodes"][count+1]["ip"]
+                resp = node_list[count].execute_cmd(
+                    cmd=common_cmd.CMD_IFACE_IP.format(node_ip), read_lines=True)
+                node_iface = resp[0].strip(":\n")
+                resp = node_list[count].execute_cmd(
+                    cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+                # TODO: Check for HW configuration
+                LOGGER.info("Getting another IP from same node %s", node_fqdn)
+                new_ip = resp[0].strip("'\\\n'b'")
+                new_worker_obj = LogicalNode(hostname=new_ip,
+                                             username=CMN_CFG["nodes"][count+1]["username"],
+                                             password=CMN_CFG["nodes"][count+1]["password"])
+                LOGGER.info("Make %s interface down for %s node", node_iface, host)
+                new_worker_obj.execute_cmd(
+                    cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
+                resp = sysutils.check_ping(host=node_ip)
+                if not resp:
+                    return False, node_ip, node_iface, new_worker_obj
+                else:
+                    return True, node_ip, node_iface, new_worker_obj
