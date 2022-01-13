@@ -331,7 +331,7 @@ class ProvDeployK8sCortxLib:
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
                            self.deploy_cfg["git_remote_dir"])
         LOGGER.debug("Copy svc yaml file to %s", self.deploy_cfg['git_svc_remote_dir'])
-        self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
+        self.copy_sol_file(master_node_list[0], self.deploy_cfg['svc_file_path'],
                            self.deploy_cfg["git_svc_remote_dir"])
         LOGGER.debug("Copy template file to %s", self.deploy_cfg['git_temp_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
