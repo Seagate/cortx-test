@@ -184,9 +184,9 @@ class MotrCoreK8s():
                                                       common_const.HAX_CONTAINER_NAME)
         log.info(result)
         if not result[0]:
-            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
-                                                                              common_const.HAX_CONTAINER_NAME,
-                                                                              result[1]))
+            raise Exception("Copy from {} to {} failed with error: \
+                             {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
+                                        result[1]))
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(pod_node, m0crate_run_cmd)
         result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
                                                                       self.master_node,
@@ -344,7 +344,7 @@ class MotrCoreK8s():
                                                          f"-- {cmd}", decode=True)
         log.info("Resp: %s", resp)
         chksum = resp.split()
-        assert_utils.assert_equal(chksum[0], chksum[2], f'Failed, Checksum did not match')
+        assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
