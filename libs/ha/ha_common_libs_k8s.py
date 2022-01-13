@@ -1047,15 +1047,15 @@ class HAK8s:
                 node_ip = CMN_CFG["nodes"][count+1]["ip"]
                 resp = node_list[count].execute_cmd(
                     cmd=common_cmd.CMD_IFACE_IP.format(node_ip), read_lines=True)
-                node_iface = resp[1].strip(":\n")
+                node_iface = resp[0].strip(":\n")
                 resp = node_list[count].execute_cmd(
                     cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
                 # TODO: Check for HW configuration
                 LOGGER.info("Getting another IP from same node %s", node_fqdn)
-                new_ip = resp[1].strip("'\\n'b'")
+                new_ip = resp[0].strip("'\\\n'b'")
                 new_worker_obj = LogicalNode(hostname=new_ip,
-                                                  username=CMN_CFG["nodes"][count+1]["username"],
-                                                  password=CMN_CFG["nodes"][count+1]["password"])
+                                             username=CMN_CFG["nodes"][count+1]["username"],
+                                             password=CMN_CFG["nodes"][count+1]["password"])
                 LOGGER.info("Make %s interface down for %s node", node_iface, host)
                 new_worker_obj.execute_cmd(
                     cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
