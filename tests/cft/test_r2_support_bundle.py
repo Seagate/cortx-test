@@ -164,19 +164,6 @@ class TestR2SupportBundle:
 
         self.LOGGER.debug("Verified logs are generated on each node")
 
-    def file_with_prefix_exists_on_path(self, path: str, file_prefix: str):
-        """
-        This function is used to verify file with prefix exists on given path
-        :param path: directory path
-        :param file_prefix: file prefix
-        :rtype bool
-        """
-        resp = os.listdir(path)
-        for file in resp:
-            if file_prefix in str(file):
-                return True
-        return False
-
     @pytest.mark.cluster_user_ops
     @pytest.mark.lr
     @pytest.mark.support_bundle
@@ -770,12 +757,12 @@ class TestR2SupportBundle:
         comp_list = ["hare", "motr", "s3", "utils"]
         dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
         sb_identifier = system_utils.random_string_generator(10)
-        self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
+        self.LOGGER.info("Support Bundle identifier of : %s", sb_identifier)
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
         machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
 
         resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0], "TEST-35001")
-        self.LOGGER.info(f"response of support bundle generation: {resp}")
+        self.LOGGER.info("response of support bundle generation: %s", resp)
         sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
 
         self.LOGGER.info("Step 2: Creating local directory")
@@ -783,7 +770,7 @@ class TestR2SupportBundle:
             self.LOGGER.info("Removing existing directory %s", sb_local_path)
             shutil.rmtree(sb_local_path)
         os.mkdir(sb_local_path)
-        self.LOGGER.info(f"sb copy path: {sb_local_path}")
+        self.LOGGER.info("sb copy path: %s", sb_local_path)
 
         self.LOGGER.info("Step 3: Copy support bundle to local directory")
         copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
@@ -818,37 +805,36 @@ class TestR2SupportBundle:
                     resp = self.file_with_prefix_exists_on_path(unzip_hare_dir +
                                                 "/etc/cortx/log/hare/log/" + machine_id, "hare")
                     if resp:
-                        self.LOGGER.info(f"hare logs are present in support Bundle")
+                        self.LOGGER.info("hare logs are present in support Bundle")
                     else:
-                        assert_utils.assert_true(False, f"No hare log file "
-                                                        f"found in support bundle")
+                        assert_utils.assert_true(False, "No hare log file "
+                                                        "found in support bundle")
                 if comp == "motr":
                     motr_dir = os.listdir(comp_dir_path)
                     unzip_motr_dir = comp_dir_path + "/" + motr_dir[0]
                     resp = self.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
                     if resp:
-                        self.LOGGER.info(f"motr logs are present in support Bundle")
+                        self.LOGGER.info("motr logs are present in support Bundle")
                     else:
-                        assert_utils.assert_true(False, f"No motr log file "
-                                                        f"found in support bundle")
+                        assert_utils.assert_true(False, "No motr log file "
+                                                        "found in support bundle")
                 if comp == "s3":
                     resp = self.file_with_prefix_exists_on_path(comp_dir_path +
                                                 "/etc/cortx/log/s3/" + machine_id, "s3server")
                     if resp:
-                        self.LOGGER.info(f"s3server logs are present in support Bundle")
+                        self.LOGGER.info("s3server logs are present in support Bundle")
                     else:
                         assert_utils.assert_true(False, f"No s3server log file "
                                                         f"found in support bundle")
                 if comp == "utils":
                     resp = self.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
                     if resp:
-                        self.LOGGER.info(f"utils logs are present in support Bundle")
+                        self.LOGGER.info("utils logs are present in support Bundle")
                     else:
-                        assert_utils.assert_true(False, f"No utils log file "
-                                                        f"found in support bundle")
+                        assert_utils.assert_true(False, "No utils log file "
+                                                        "found in support bundle")
             else:
                 self.LOGGER.info(f"assert: {comp}")
                 assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
 
         self.LOGGER.info("ENDED: Test to validate support bundle contains component logs")
-        

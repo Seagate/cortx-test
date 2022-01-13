@@ -84,7 +84,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 
 # pylint: disable=max-args
-def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=None,services=None):
+def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None, size=None, services=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param local_dir: Local directory where support bundles will be copied
@@ -348,3 +348,17 @@ def log_file_size_on_path(pod_name: str, log_path: str):
                                    command_suffix=f"-- ls -l --block-size=MB {log_path}",
                                    decode=True)
     return resp
+
+
+def file_with_prefix_exists_on_path(path: str, file_prefix: str):
+    """
+    This function is used to verify file with prefix exists on given path
+    :param path: directory path
+    :param file_prefix: file prefix
+    :rtype bool
+    """
+    resp = os.listdir(path)
+    for file in resp:
+        if file_prefix in str(file):
+            return True
+    return False
