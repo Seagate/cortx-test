@@ -238,6 +238,12 @@ class ProvDeployK8sCortxLib:
             if system_utils.path_exists(local_sol_path):
                 node_obj.copy_file_to_remote(local_sol_path, remote_path)
                 return True, f"Files copied at {remote_path}"
+        elif local_sol_path == "cortx-io-svc.yaml":
+            remote_path = remote_code_path + "cortx-io-svc.yaml"
+            LOGGER.debug("Remote path %s", remote_path)
+            if system_utils.path_exists(local_sol_path):
+                node_obj.copy_file_to_remote(local_sol_path, remote_path)
+                return True, f"Files copied at {remote_path}"
 
         else:
             template_code_path = PROV_CFG['k8s_cortx_deploy']['git_temp_remote_dir']
@@ -324,6 +330,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Copy deploy script file to %s", self.deploy_cfg['git_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
                            self.deploy_cfg["git_remote_dir"])
+        LOGGER.debug("Copy svc yaml file to %s", self.deploy_cfg['git_svc_remote_dir'])
+        self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
+                           self.deploy_cfg["git_svc_remote_dir"])
         LOGGER.debug("Copy template file to %s", self.deploy_cfg['git_temp_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
                            self.deploy_cfg["git_temp_remote_dir"])
@@ -351,13 +360,20 @@ class ProvDeployK8sCortxLib:
         Method to checkout solution.yaml file
         param: git tag: tag of service repo
         """
+        resp = list()
         url = self.deploy_cfg["git_k8_temp_file"].format(git_tag)
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["temp_file_path"], url)
         url1 = self.deploy_cfg["git_k8_deploy_file"].format(git_tag)
         cmd1 = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file_path"], url1)
+        url2 = self.deploy_cfg["git_k8_svc_file"].format(git_tag)
+        cmd2 = common_cmd.CMD_CURL.format(self.deploy_cfg["svc_file_path"], url2)
         system_utils.execute_cmd(cmd=cmd)
         system_utils.execute_cmd(cmd=cmd1)
-        return self.deploy_cfg["temp_file_path"], self.deploy_cfg['deploy_file_path']
+        system_utils.execute_cmd(cmd=cmd2)
+        resp.append(self.deploy_cfg["temp_file_path"])
+        resp.append(self.deploy_cfg["deploy_file_path"])
+        resp.append(self.deploy_cfg["svc_file_path"])
+        return resp
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -667,9 +683,19 @@ class ProvDeployK8sCortxLib:
         system_utils.execute_cmd(cmd)
         return True, filepath
 
+    def update_svc_io_yaml(self, filepath):
+        """
+        This Method update the setup_size in svc io file
+        Param: filepath: filename with complete path
+        :returns the status, filepath
+        """
+        cmd = "sed -i \"s/cortx-data/cortx-server/g\" {}".format(filepath)
+        system_utils.execute_cmd(cmd)
+        return True, filepath
+
     def update_deployscript(self, filepath):
         """
-        This Method update the setup_size in template file
+        This Method update the setup_size in deploy file
         Param: filepath: filename with complete path
         :returns the status, filepath
         """
@@ -1104,7 +1130,10 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("TEMPLATE FILE IS UPDATING %s", temp_path)
             resp_dep = self.update_deployscript(temp_path[1])
             LOGGER.debug("Updating deploy script  %s", resp_dep)
-            assert_utils.assert_true(resp_dep[0], resp_dep[1])
+            assert_utils.assert_true(resp_dep[0], "Failure updating")
+            LOGGER.debug("Updating svc file %s", temp_path[2])
+            resp_svc = self.update_svc_io_yaml(temp_path[2])
+            assert_utils.assert_true(resp_svc[0], "Failure updating")
             resp = self.update_template_file(temp_path[0], size=self.deploy_cfg['setup_size'])
             assert_utils.assert_true(resp[0], "Failure updating config_template.yaml")
             LOGGER.info("Step to Download solution file template")
