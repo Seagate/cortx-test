@@ -238,19 +238,6 @@ class ProvDeployK8sCortxLib:
             if system_utils.path_exists(local_sol_path):
                 node_obj.copy_file_to_remote(local_sol_path, remote_path)
                 return True, f"Files copied at {remote_path}"
-        elif local_sol_path == "cortx-io-svc.yaml":
-            remote_path = remote_code_path + "cortx-io-svc.yaml"
-            LOGGER.debug("Remote path %s", remote_path)
-            if system_utils.path_exists(local_sol_path):
-                node_obj.copy_file_to_remote(local_sol_path, remote_path)
-                return True, f"Files copied at {remote_path}"
-
-        else:
-            template_code_path = PROV_CFG['k8s_cortx_deploy']['git_temp_remote_dir']
-            temp_remote_path = template_code_path + "config-template.yaml"
-            if system_utils.path_exists(local_sol_path):
-                node_obj.copy_file_to_remote(local_sol_path, temp_remote_path)
-                return True, f"Files copied at {temp_remote_path}"
         return False, f"{local_sol_path} not found"
 
     def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
@@ -330,13 +317,6 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Copy deploy script file to %s", self.deploy_cfg['git_remote_dir'])
         self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
                            self.deploy_cfg["git_remote_dir"])
-        LOGGER.debug("Copy svc yaml file to %s", self.deploy_cfg['git_svc_remote_dir'])
-        self.copy_sol_file(master_node_list[0], self.deploy_cfg['svc_file_path'],
-                           self.deploy_cfg["git_svc_remote_dir"])
-        LOGGER.debug("Copy template file to %s", self.deploy_cfg['git_temp_remote_dir'])
-        self.copy_sol_file(master_node_list[0], self.deploy_cfg['temp_file_path'],
-                           self.deploy_cfg["git_temp_remote_dir"])
-
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -361,18 +341,10 @@ class ProvDeployK8sCortxLib:
         param: git tag: tag of service repo
         """
         resp = list()
-        url = self.deploy_cfg["git_k8_temp_file"].format(git_tag)
-        cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["temp_file_path"], url)
         url1 = self.deploy_cfg["git_k8_deploy_file"].format(git_tag)
         cmd1 = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file_path"], url1)
-        url2 = self.deploy_cfg["git_k8_svc_file"].format(git_tag)
-        cmd2 = common_cmd.CMD_CURL.format(self.deploy_cfg["svc_file_path"], url2)
-        system_utils.execute_cmd(cmd=cmd)
         system_utils.execute_cmd(cmd=cmd1)
-        system_utils.execute_cmd(cmd=cmd2)
-        resp.append(self.deploy_cfg["temp_file_path"])
         resp.append(self.deploy_cfg["deploy_file_path"])
-        resp.append(self.deploy_cfg["svc_file_path"])
         return resp
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
@@ -396,6 +368,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: skip_disk_count_check: disk count check
         :Keyword: third_party_image: dict of third party image
         :Keyword: log_path: to provide custom log path
+        :Keyword: setup_size: to provide custom size large/small/medium
         returns the status, filepath and system reserved disk
         """
         cvg_count = kwargs.get("cvg_count", 2)
@@ -413,6 +386,7 @@ class ProvDeployK8sCortxLib:
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
+        size = kwargs.get("size", self.deploy_cfg['setup_size'])
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -471,9 +445,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
         # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath, log_path)
+        resp_passwd = self.update_password_sol_file(filepath, log_path, size)
         if not resp_passwd[0]:
-            return False, "Failed to update passwords in solution file"
+            return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
                                                         third_party_images_dict)
@@ -646,7 +620,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_password_sol_file(self, filepath, log_path):
+    def update_password_sol_file(self, filepath, log_path, size):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
@@ -659,6 +633,7 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             common['container_path']['log'] = log_path
+            common['setup_size'] = size
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
@@ -671,26 +646,6 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, filepath
-
-    def update_template_file(self, filepath, size):
-        """
-        This Method update the setup_size in template file
-        Param: filepath: filename with complete path
-        :returns the status, filepath
-        """
-        cmd = "sed -i \"s/large/{}/g\" {}".format(size, filepath)
-        system_utils.execute_cmd(cmd)
-        return True, filepath
-
-    def update_svc_io_yaml(self, filepath):
-        """
-        This Method update the setup_size in svc io file
-        Param: filepath: filename with complete path
-        :returns the status, filepath
-        """
-        cmd = "sed -i \"s/cortx-data/cortx-server/g\" {}".format(filepath)
-        system_utils.execute_cmd(cmd)
         return True, filepath
 
     def update_deployscript(self, filepath):
@@ -1125,17 +1080,10 @@ class ProvDeployK8sCortxLib:
                     self.taint_master(node)
 
         if cortx_cluster_deploy_flag:
-            LOGGER.info("Step to update template file")
             temp_path = self.checkout_template_file(self.git_script_tag)
-            LOGGER.debug("TEMPLATE FILE IS UPDATING %s", temp_path)
-            resp_dep = self.update_deployscript(temp_path[1])
+            resp_dep = self.update_deployscript(temp_path[0])
             LOGGER.debug("Updating deploy script  %s", resp_dep)
             assert_utils.assert_true(resp_dep[0], "Failure updating")
-            LOGGER.debug("Updating svc file %s", temp_path[2])
-            resp_svc = self.update_svc_io_yaml(temp_path[2])
-            assert_utils.assert_true(resp_svc[0], "Failure updating")
-            resp = self.update_template_file(temp_path[0], size=self.deploy_cfg['setup_size'])
-            assert_utils.assert_true(resp[0], "Failure updating config_template.yaml")
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
