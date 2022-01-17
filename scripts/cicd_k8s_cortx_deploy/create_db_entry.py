@@ -81,9 +81,9 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         raise Exception("Mismatch in Hosts and no of worker nodes given")
 
     setup_name = host_list[0]["hostname"]
-    setup_name = f"CICD_Deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
+    setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
-    json_data["setupname"] = setup_name.lower()
+    json_data["setupname"] = setup_name
     json_data["product_family"] = "LC"
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
