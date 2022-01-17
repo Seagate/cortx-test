@@ -38,7 +38,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from config import PROV_CFG
+from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -93,7 +93,7 @@ class ProvDeployK8sCortxLib:
             return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
-        jen_parameter["TAINT"] = taint_master
+        jen_parameter["PODS_ON_PRIMARY"] = taint_master
 
         output = Provisioner.build_job(
             k8s_deploy_cfg["job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
@@ -1152,7 +1152,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
 
-    def check_s3_status(self, master_node_obj: LogicalNode):
+    def check_s3_status(self, master_node_obj: LogicalNode,
+                        pod_prefix: str = common_const.POD_NAME_PREFIX):
         """
         Function to check s3 server status
         """
@@ -1161,10 +1162,9 @@ class ProvDeployK8sCortxLib:
         end_time = start_time + 3600  # 30 mins timeout
         response = list()
         while int(time.time()) < end_time:
-            data_pod_list = LogicalNode.get_all_pods(master_node_obj, common_const.POD_NAME_PREFIX)
-            assert_utils.assert_true(data_pod_list)
-            LOGGER.debug("THE DATA POD LIST is %s", data_pod_list)
-            resp = self.get_hctl_status(master_node_obj, data_pod_list[1][0])
+            pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
+            assert_utils.assert_true(pod_name[0], pod_name[1])
+            resp = self.get_hctl_status(master_node_obj, pod_name[1])
             if resp[0]:
                 time_taken = (int(time.time()) - start_time)
                 LOGGER.info("All the services are online. Time Taken : %s", time_taken)
@@ -1202,7 +1202,7 @@ class ProvDeployK8sCortxLib:
             for server_pod_name in server_pod_list:
                 resp = self.get_hctl_status(master_node_obj, server_pod_name)
                 hctl_status.update({server_pod_name: resp[0]})
-            status = all(element == True for element in list(hctl_status.values()))
+            status = all(element is True for element in list(hctl_status.values()))
             if status:
                 time_taken = time.time() - start_time
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
@@ -1272,3 +1272,28 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("Config %s : %s", i, config)
 
         return config_list
+
+    @staticmethod
+    def upgrade_software(node_obj, upgrade_image_version: str,
+                         git_remote_path: str, **kwargs) -> tuple:
+        """
+        Helper function to upgrade.
+        :param node_obj: Master node(Logical Node object)
+        :param upgrade_image_version: Version Image to Upgrade.
+        :param git_remote_path: Remote path of repo.
+        :param exc: Flag to disable/enable exception raising
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
+        exc = kwargs.get('exc', True)
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)
+        cmd = "cd {}; {}".format(git_remote_path, upgrade_cmd)
+        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        LOGGER.debug("".join(resp).replace("\\n", "\n"))
+        resp = "".join(resp).replace("\\n", "\n")
+        if "Error" in resp or "Failed" in resp:
+            return False, resp
+        return True, resp
