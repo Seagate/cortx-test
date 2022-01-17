@@ -106,3 +106,109 @@ test_4968:
   epoc_time_diff: 500
   default_interval: 10
   error_msg: "403: Forbidden"
+
+
+csm_telemetry_auth_url:
+  csm_key: ["S3/iam/endpoints","S3/iam/host"]
+  csm_value: ["https://cortx-io-svc1:9443","cortx-io-svc1"]
+
+test_32663:
+  metric_name: throughput_read
+  mode : ['GET']
+  opertaion : Mbps
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32663
+
+test_32664:
+  metric_name: throughput_write
+  mode : ['PUT']
+  opertaion : Mbps
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32664
+
+test_32665:
+  metric_name: latency_create_object
+  mode : ['PUT']
+  opertaion : AvgLat
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32665
+
+test_32666:
+  metric_name: latency_delete_object
+  mode : ['DEL']
+  opertaion : AvgLat
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32666
+
+test_32667:
+  metric_name: latency_write_object
+  mode : ['PUT']
+  opertaion : AvgLat
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32667
+
+test_32668:
+  metric_name: latency_read_object
+  mode : ['LIST', 'GET']
+  opertaion : AvgLat
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32668
+
+test_32669:
+  metric_name: iops_read_object
+  mode : ['LIST', 'GET']
+  opertaion : Iops
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32669
+
+test_32670:
+  metric_name: iops_write_object
+  mode : ['LIST', 'PUT']
+  opertaion : Iops
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32670
+
+test_32671:
+  metric_name: iops_read_bucket
+  mode : ['LIST']
+  opertaion : Ops
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32671
+
+test_32673:
+  metric_name: iops_write_bucket
+  mode : ['BINIT']
+  opertaion : Ops
+  workload : ['1MB']
+  test_time : 120
+  threads : 2
+  bucket : 1
+  json_path : file_test_32673
+
