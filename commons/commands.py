@@ -470,6 +470,10 @@ KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
 KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
+KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
+KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
+                                "--sort-by=.metadata.creationTimestamp -o " \
+                                "jsonpath='{{.items[-1:].metadata.name}}'"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -485,6 +489,8 @@ CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
+DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh"
+DESTROY_CLUSTER_CMD = "cd {}; sh destroy-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
