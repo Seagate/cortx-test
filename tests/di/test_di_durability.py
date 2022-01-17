@@ -46,6 +46,7 @@ from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
+from libs.di import di_lib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
@@ -1227,6 +1228,8 @@ class TestDIDurability:
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
         self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
+        bucket_name_2 = di_lib.get_random_bucket_name()
+        obj_name_2 = di_lib.get_random_object_name()
         for size in NORMAL_UPLOAD_SIZES_IN_MB:
             self.log.info("Create a file of size %sMB", size)
             test_file = "data_durability{}_TEST_29284_{}_MB_upload.txt" \
@@ -1249,39 +1252,4 @@ class TestDIDurability:
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
             # self.s3obj.copy_object(source_bucket=self.bucket_name, source_object=,
             #                        dest_bucket=bucket_name_2, dest_object=obj_name_2)
-            # self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
-            # test_file_download = "data_durability{}_TEST_22916_{}_MB_download.txt" \
-            #     .format(perf_counter_ns(), str(size))
-            # file_path_download = os.path.join(self.test_dir_path, test_file_download)
-            # if os.path.exists(file_path_download):
-            #     os.remove(file_path_download)
-            # bucket_str = "{0}/{1} {2}".format(self.bucket_name, test_file, test_file_download)
-            # cmd = self.jc_obj.create_cmd_format(bucket_str, "get",
-            #                                     jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-            #                                     chunk=True)
-            # resp = system_utils.execute_cmd(cmd)
-            # assert_utils.assert_true(resp[0], resp[1])
-            # assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
-            # self.log.info("Step 3: Object was downloaded successfully")
-            # self.log.info("Step 4:Validate checksum of uploaded and downloaded files")
-            # result = system_utils.validate_checksum(file_path_upload, file_path_download)
-            # if not result:
-            #     assert_utils.assert_true(False, "Checksum validation failed")
-            # self.log.info("Step 4:Checksum and ETAG validation is successful")
-            # self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
-            # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=bucket_name_2,
-            #                                                     my_key=obj_name_2,
-            #                                                     start_byte=8888, stop_byte=9999)
-            # resp_full = self.s3obj.object_download(bucket_name=bucket_name_2,
-            #                                        obj_name=obj_name_2,
-            #                                        file_path=self.F_PATH_COPY)
-            # self.log.info(resp)
-            # self.log.info(resp_full)
-            # result = system_utils.validate_checksum(file_path_1=self.F_PATH,
-            #                                         file_path_2=self.F_PATH_COPY)
-            # self.s3obj.delete_bucket(bucket_name_1, force=True)
-            # self.s3obj.delete_bucket(bucket_name_2, force=True)
-            # if result:
-            #     assert True
-            # else:
-            #     assert False
+            
