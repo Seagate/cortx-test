@@ -101,20 +101,23 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     get_port_data = dict()
     for item_data in resp["items"]:
         if item_data["spec"]["type"] == "LoadBalancer" and \
-                "cortx-server-ssc-vm" in item_data["spec"]["selector"]["app"]:
-            worker = item_data["spec"]["selector"]["app"].split("cortx-server-")[1] + ".colo.seagate.com"
+                "cortx-server" in item_data["spec"]["selector"]["app"]:
+            worker = item_data["spec"]["selector"]["app"].split("cortx-server-")[1] \
+                     + ".colo.seagate.com"
             get_port_data[worker] = dict()
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
-                    get_port_data[worker].update({f"{port_items['targetPort']}": port_items["nodePort"]})
+                    get_port_data[worker].update({f"{port_items['targetPort']}":
+                                                      port_items["nodePort"]})
             else:
-                LOGGER.info("Failed to get ports details from", get_port_data.get(worker))
+                LOGGER.info("Failed to get ports details from %s", get_port_data.get(worker))
     LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_port_data)
     for worker in worker_node.keys():
         if get_port_data.get(worker) is not None:
             worker_node[worker].update(get_port_data[worker])
         else:
-            assert_utils.assert_true(False, f"Can't find port details for {worker} from {get_port_data}")
+            assert_utils.assert_true(False, f"Can't find port details for {worker} "
+                                            f"from {get_port_data}")
     with open(cm_const.HAPROXY_DUMMY_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
     if not os.path.exists("/etc/haproxy"):
