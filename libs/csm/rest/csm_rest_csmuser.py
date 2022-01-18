@@ -370,7 +370,7 @@ class RestCsmUser(RestTestLib):
         """
         try:
             # Get the count of the number of csm users present
-            created_user_list = list()
+            created_user_list = []
             self.log.debug("Getting the initial list of csm users present")
             response = self.list_csm_users(
                 expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
@@ -392,7 +392,8 @@ class RestCsmUser(RestTestLib):
                 self.log.debug(
                     "response of the create csm user is  %s", response)
                 self.log.debug("Users created %s", num_users)
-                created_user_list.append(response.json()["username"])
+                if const.SUCCESS_STATUS == response.status_code:
+                    created_user_list.append(response.json()["username"])
 
             # List CSM users
             self.log.debug(
