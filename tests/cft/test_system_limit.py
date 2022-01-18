@@ -243,7 +243,7 @@ class TestS3IOSystemLimits:
         response = rep.json()
         created_csm_users = []
         for each in response['users']:
-            if each['username'].startswith("test"):
+            if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
         self.log.info(
             f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")
