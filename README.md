@@ -397,16 +397,15 @@ pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging
 
 ## Client Hardware Configuration
 While ordering client on ssc-cloud, make sure
-1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
-2. For more large number of parallel IO connections, good to have 8 CPUs.
-3. Default 1GB of swap space is provided, need to order 1 extra disk, and create swap space out of extra disk, and mount it. 
-   
-   Procedure to create swap space of 8 GB: [A gist from one of the articles](https://www.thegeekdiary.com/centos-rhel-how-to-add-new-swap-partition/)
-    * Create new partition using fdisk command
-        * `fdisk /dev/sdb` # sda will generally have OS installation
-        * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
-    * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number i.e. sdb1
-    * Mount swap using `swapon /dev/sdb1`
+    1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
+    2. For more large number of parallel IO connections, good to have 8 CPUs.
+    3. Default 1GB of swap space is provided, need to order 1 extra disk, and create swap space out of extra disk, and mount it.
+        Procedure to create swap space of 8 GB: [A gist from one of the articles](https://www.thegeekdiary.com/centos-rhel-how-to-add-new-swap-partition/)
+        * Create new partition using fdisk command
+            * `fdisk /dev/sdb` # sda will generally have OS installation
+            * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
+        * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number i.e. sdb1
+        * Mount swap using `swapon /dev/sdb1`
 
 ## Increase client root space size should be at least 50 GB using following commands
 Please utilize free disks from the output of lsblk
@@ -433,12 +432,12 @@ swapon /dev/mapper/vg_sysvol-lv_swap
 ```
 
 ## How to automate component level test cases
-Components level tests can be either pure component level tests which run 
-1. Tests run in the same process as code to be tested 
-2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)  
-3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used. 
+Components level tests can be either pure component level tests which run
+1. Tests run in the same process as code to be tested
+2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)
+3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used.
 
-Some setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests. 
+Some setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests.
 
 * In case 1) Component tests can be automated as a separate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
 * In case 2) Component tests can utilize cortx-test directly and build their own libraries to test components.
