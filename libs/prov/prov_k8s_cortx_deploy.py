@@ -1111,7 +1111,7 @@ class ProvDeployK8sCortxLib:
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
             LOGGER.debug(pod_status)
-            LOGGER.info("Step to Check  ALl service status")
+            LOGGER.info("Step to Check  ALL service status")
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])

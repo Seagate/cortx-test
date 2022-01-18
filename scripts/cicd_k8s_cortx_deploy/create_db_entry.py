@@ -144,7 +144,8 @@ def main():
         with open("cicd_setup_name.txt", 'w') as file:
             if test_exe_no is not None:
                 file.write(setupname+" "+test_exe_no)
-            file.write(setupname)
+            else:
+                file.write(setupname)
 
     except Exception as ex:
         print(f"Exception Occured : {ex}")
