@@ -34,7 +34,7 @@ git pull upstream dev
 ## Git Commands
 Learn generic Git commands to make yourself comfortable with git. 
 
-Engineers contributing to test framework should understand the review process. We are following the concept of upstreams and downstream where commits happen on your forked repository, and then you can raise a PR to merge it to Seagate Cortx-Test repository. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be checkin even when they have read access to Seagate Repositories.   
+Engineers contributing to test framework should understand the review process. We are following the concept of upstreams and downstream where commits happen on your forked repository, and then you can raise a PR to merge it to Seagate Cortx-Test repository. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to check in and raise PR to upstream checkin even when they have read access to Seagate Repositories.   
 
 ## Set up dev environment
 Following steps helps to set up client side env, where test framework runs. These steps assume that you have installed git client and cloned Cortx-test.  
@@ -382,7 +382,7 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
 pytest --local=True -d --tx 3*popen -rA unittests\Your_Test_Module.py
 ```
 ```properties
-#3 is multiple of worker processes to be spawned.
+3 is number of worker processes to be spawned.
 ```
 #### Running test plans in dev environment
 ##### With dist mode
@@ -405,7 +405,7 @@ While ordering client on ssc-cloud, make sure
     * Create new partition using fdisk command
         * `fdisk /dev/sdb` # sda will generally have OS installation
         * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
-    * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number for, me it was sdb1
+    * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number i.e. sdb1
     * Mount swap using `swapon /dev/sdb1`
 
 ## Increase client root space size should be at least 50 GB using following commands
