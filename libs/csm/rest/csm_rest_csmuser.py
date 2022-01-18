@@ -66,11 +66,11 @@ class RestCsmUser(RestTestLib):
 
             if user_type == "valid":
                 if self.random_user:
-                    user_name = "test{}{}".format(
+                    user_name = "csm{}{}".format(
                         int(self.random_num), int(time.time()))
                     user_role = user_defined_role
                 else:
-                    user_name = "test{}".format(int(time.time()))
+                    user_name = "csm{}".format(int(time.time()))
                     user_role = user_defined_role
 
             if user_type == "duplicate":
