@@ -835,8 +835,8 @@ class TestR2SupportBundle:
                         if resp:
                             self.LOGGER.info("s3server logs are present in support Bundle")
                         else:
-                            assert_utils.assert_true(False, f"No s3server log file "
-                                                            f"found in support bundle")
+                            assert_utils.assert_true(False, "No s3server log file "
+                                                            "found in support bundle")
                     if comp == "utils":
                         resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
                         if resp:
@@ -845,7 +845,7 @@ class TestR2SupportBundle:
                             assert_utils.assert_true(False, "No utils log file "
                                                             "found in support bundle")
                 else:
-                    self.LOGGER.info(f"assert: {comp}")
+                    self.LOGGER.info("assert: %s", comp)
                     assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
 
         self.LOGGER.info("ENDED: Test to validate support bundle contains component logs")
