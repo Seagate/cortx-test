@@ -133,6 +133,7 @@ class TestS3IOSystemLimits:
         csm_users = []
         for _ in range(count):
             self.log.info("Creating new CSM user...")
+            time.sleep(1)
             response = self.csm_user_obj.create_csm_user(user_type="valid", user_role="manage")
             self.log.info("Verifying if user was created successfully")
             assert response.status_code == Const.SUCCESS_STATUS_FOR_POST, \
