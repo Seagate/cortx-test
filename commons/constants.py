@@ -45,10 +45,9 @@ PROD_TYPE_NODE = "node"
 POD_NAME_PREFIX = "cortx-data"
 SERVER_POD_NAME_PREFIX = "cortx-server"
 HA_POD_NAME_PREFIX = "cortx-ha"
-HAX_CONTAINER_NAME = "cortx-motr-hax"
+HAX_CONTAINER_NAME = "cortx-hax"
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
-
 
 # RAS Paths
 BYTES_TO_READ = 8000
