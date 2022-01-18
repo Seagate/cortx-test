@@ -155,7 +155,7 @@ class RestCsmUser(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    def create_and_verify_csm_user_creation(self, user_type, user_role,
+    def create_verify_and_delete_csm_user_creation(self, user_type, user_role,
                                             expect_status_code):
         """
         This function will create and verify new CSM user.
@@ -209,15 +209,15 @@ class RestCsmUser(RestTestLib):
             expected_result = self.recently_created_csm_user.copy()
             expected_result.pop("password")
             expected_result.pop("alert_notification")
-            # # delete created CSM user
-            # self.delete_csm_user(self.recently_created_csm_user["username"])
+            # delete created CSM user
+            self.delete_csm_user(self.recently_created_csm_user["username"])
             return any(config_utils.verify_json_response(actual_result,
                                                          expected_result) for actual_result in
                        list_acc)
         except Exception as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
-                           RestCsmUser.create_and_verify_csm_user_creation.__name__,
+                           RestCsmUser.create_verify_and_delete_csm_user_creation.__name__,
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error

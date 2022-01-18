@@ -11,7 +11,7 @@ if __name__ == '__main__':
     create_user_resp=csm_user.create_csm_user()
     username = create_user_resp.json()["username"]
     userid = create_user_resp.json()["id"]
-    csm_user.create_and_verify_csm_user_creation(user_type="valid", user_role="manage", expect_status_code=201)
+    csm_user.create_verify_and_delete_csm_user_creation(user_type="valid", user_role="manage", expect_status_code=201)
     actual_resp = csm_user.list_csm_users(expect_status_code=200, return_actual_response=True,sort_dir="asc")
     csm_user.verify_list_csm_users(actual_resp.json(),sort_dir="asc")
     #csm_user.verify_list_csm_users(actual_resp.json(),limit=10)
