@@ -494,7 +494,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert (self.csm_user.create_and_verify_csm_user_creation(
+        assert (self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="valid",
             user_role="manage",
             expect_status_code=const.SUCCESS_STATUS_FOR_POST))
@@ -512,7 +512,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="invalid", user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
@@ -530,7 +530,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="missing",
             user_role="manage",
             expect_status_code=const.BAD_REQUEST)
@@ -565,7 +565,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
             expect_status_code=const.CONFLICT)
