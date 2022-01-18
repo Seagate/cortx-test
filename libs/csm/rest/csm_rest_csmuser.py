@@ -209,8 +209,8 @@ class RestCsmUser(RestTestLib):
             expected_result = self.recently_created_csm_user.copy()
             expected_result.pop("password")
             expected_result.pop("alert_notification")
-            # delete created CSM user
-            self.delete_csm_user(self.recently_created_csm_user["username"])
+            # # delete created CSM user
+            # self.delete_csm_user(self.recently_created_csm_user["username"])
             return any(config_utils.verify_json_response(actual_result,
                                                          expected_result) for actual_result in
                        list_acc)
