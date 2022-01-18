@@ -389,10 +389,10 @@ class MotrCoreK8s():
                                        f'"{cmd}" Failed, Please check the log')
             log.info('Checking libfabric version')
             cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_VERSION)            
+                                                            common_cmd.LIBFAB_VERSION)     
             result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                           self.master_uname,
-                                                                          self.master_passwd)            
+                                                                          self.master_passwd)         
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
@@ -401,11 +401,11 @@ class MotrCoreK8s():
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                            f'"{cmd}" Failed, Please check the log')
             log.info('Checking libfabric tcp protocol presence')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], 
-                                                            common_cmd.LIBFAB_TCP)                                       
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                            common_cmd.LIBFAB_TCP)                                    
             result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                           self.master_uname,
-                                                                          self.master_passwd)                                                   
+                                                                          self.master_passwd)                                                  
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
