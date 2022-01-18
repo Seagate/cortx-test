@@ -155,7 +155,7 @@ class TestCliCSMUser:
             "Verified CSM user is able to login cortxcli by passing username as paramter")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
         # delete created CSM user
-        self.csm_user_obj.delete_csm_user(self.user_name)
+        self.CSM_USER.delete_csm_user(self.user_name)
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
