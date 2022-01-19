@@ -225,19 +225,29 @@ class Multipart(S3Lib):
         copy_source_range = kwargs.get("copy_source_range", "")
         upload_id = kwargs.get("upload_id", None)
         part_number = kwargs.get("part_number", None)
-        if content_md5:
+        if copy_source_range:
+            if content_md5:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source,
+                    ContentMD5=content_md5)
+            else:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source)
+        elif content_md5:
             response = self.s3_client.upload_part_copy(
                 Bucket=bucket_name, Key=object_name,
                 UploadId=upload_id, PartNumber=part_number,
                 CopySource=copy_source,
-                CopySourceRange=copy_source_range,
                 ContentMD5=content_md5)
         else:
             response = self.s3_client.upload_part_copy(
                 Bucket=bucket_name, Key=object_name,
                 UploadId=upload_id, PartNumber=part_number,
-                CopySource=copy_source,
-                CopySourceRange=copy_source_range)
+                CopySource=copy_source)
         logging.debug(response)
 
         return response
