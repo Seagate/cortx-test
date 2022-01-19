@@ -483,12 +483,12 @@ class TestMultipartUploadPartCopy:
                                                          self.mpu_partcopy_obj, mpu_id2)
             assert_utils.assert_true(resp[0], resp[1])
         proc.join()
-        #res = self.s3mpu_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
         try:
             resp = self.s3mpu_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            self.log.info("Failed to list parts after the completion of the multipart upload")
+            self.log.error(error)
+            self.log.info("Failed to list parts after the abort of the multipart upload")
         self.log.info("Failed to upload parts of multipart upload")
         self.log.info("Stop and validate parallel S3 IOs")
         self.s3bio_obj.stop()
