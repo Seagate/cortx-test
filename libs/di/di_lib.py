@@ -326,14 +326,13 @@ def restart_s3_processes_k8s():
         LOGGER.info(master_node)
         data_pods = master_node.get_all_pods(POD_NAME_PREFIX)
         LOGGER.info(data_pods)
-        kill_status = kill_s3_process_in_k8s(master_node=master_node, data_pods=data_pods, namespace = const.NAMESPACE)
+        kill_status = kill_s3_process_in_k8s(master_node=master_node, data_pods=data_pods,
+                                             namespace=const.NAMESPACE)
         if kill_status:
-            status = check_s3_process_in_k8s(master_node=master_node, data_pods=data_pods, namespace = const.NAMESPACE)
+            status = check_s3_process_in_k8s(master_node=master_node, data_pods=data_pods,
+                                             namespace=const.NAMESPACE)
             return status
-        return False
-    else:
-        LOGGER.info("Not implemented for this platform")
-        return False
+    return False
 
 
 def get_random_ranges(size: int, greater_than_unit_size: bool = False):
