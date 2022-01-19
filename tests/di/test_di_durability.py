@@ -638,11 +638,8 @@ class TestDIDurability:
                             .format(perf_counter_ns(),str(size))
             file_path_upload = os.path.join(self.test_dir_path, test_file)
             self.log.info("Step 1: create a file of size %sMB", size)
-            # file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
-
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-
             system_utils.create_file(file_path_upload, size)
             self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
                         "bucket.", size)
