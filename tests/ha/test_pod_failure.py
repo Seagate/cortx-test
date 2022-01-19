@@ -839,7 +839,7 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete",
                     pod_name)
 
