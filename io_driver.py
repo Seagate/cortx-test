@@ -23,7 +23,7 @@ import os
 import shutil
 import logging
 
-from config import CMN_CFG
+from config.io import CMN_CFG
 from commons.helpers.health_helper import Health
 from commons.utils import support_bundle_utils as sb
 
