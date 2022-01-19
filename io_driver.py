@@ -19,10 +19,13 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+import os
+import shutil
 import logging
 
 from config import CMN_CFG
 from commons.helpers.health_helper import Health
+from commons.utils import support_bundle_utils as sb
 
 
 LOGGER = logging.getLogger(__name__)
@@ -76,3 +79,31 @@ def check_cluster_space():
     return CS_FLG
 
 
+def collect_support_bundle():
+    """Collect support bundles from various components using support bundle cmd."""
+    try:
+        bundle_dir = os.path.join(os.getcwd(), "support_bundle")
+        bundle_name = "sanity"
+        if os.path.exists(bundle_dir):
+            LOGGER.info("Removing existing directory %s", bundle_dir)
+            shutil.rmtree(bundle_dir)
+        os.mkdir(bundle_dir)
+        if CMN_CFG["product_family"] == "LC":
+            sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
+        else:
+            sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+    except Exception as error:
+        LOGGER.error("An error occurred in collect_support_bundle %s", error)
+
+
+def collect_crash_files():
+    """Collect crash files from existing locations."""
+    crash_dir = os.path.join(os.getcwd(), "crash_files")
+    if os.path.exists(crash_dir):
+        LOGGER.info("Removing existing directory %s", crash_dir)
+        shutil.rmtree(crash_dir)
+    os.mkdir(crash_dir)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_crash_files_k8s(local_dir_path=crash_dir)
+    else:
+        sb.collect_crash_files(crash_dir)
