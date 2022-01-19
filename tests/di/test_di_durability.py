@@ -976,10 +976,10 @@ class TestDIDurability:
             lower, upper = di_lib.get_random_ranges(size=file_size,
                                                     greater_than_unit_size=greater_than_unit_size)
             buff_range = buff_c[lower:upper]
-            self.log.info("Range read: ", buff_range)
+            self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
-            location = self.di_err_lib.create_file(size=file_size, name=self.test_dir_path,
-                                                   first_byte='f')
+            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
+                                                             data_folder_prefix=self.test_dir_path)
             self.log.info("Step 1: Created a corrupted file at location %s", location)
             try:
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
@@ -1294,7 +1294,7 @@ class TestDIDurability:
             buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
             lower, upper = di_lib.get_random_ranges(size=file_size)
             buff_range = buff[lower:upper]
-            self.log.info("Range read: %s", buff_range)
+            self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
             self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
