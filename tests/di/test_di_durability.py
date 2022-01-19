@@ -638,7 +638,7 @@ class TestDIDurability:
                             .format(perf_counter_ns(),str(size))
             file_path_upload = os.path.join(self.test_dir_path, test_file)
             self.log.info("Step 1: create a file of size %sMB", size)
-            file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
+            # file_path_upload = self.file_path + "TEST_22916_" + str(size) + "MB_upload"
 
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
@@ -961,19 +961,56 @@ class TestDIDurability:
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
-        self.log.info("Step 1: create a file")
+        self.log.debug("Executing test as flags are set to default")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.data_corruption_status = True
+            self.log.info("Step 1: Enabled data corruption")
+        else:
+            assert False
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
-            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
-                                                             data_folder_prefix=self.test_dir_path)
+            buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
+            buff_c = self.data_gen.add_first_byte_to_buffer(buffer=buff, first_byte='f')
+            greater_than_unit_size = False
+            if file_size > 1 * MB:
+                greater_than_unit_size = True
+            lower, upper = di_lib.get_random_ranges(size=file_size,
+                                                    greater_than_unit_size=greater_than_unit_size)
+            buff_range = buff_c[lower:upper]
+            self.log.info("Range read: ", buff_range)
+            buff_csm = di_lib.calc_checksum(buff_range)
+            location = self.di_err_lib.create_file(size=file_size, name=self.test_dir_path,
+                                                   first_byte='f')
             self.log.info("Step 1: Created a corrupted file at location %s", location)
-            self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
-                                        file_path=location)
-            self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name,
-                                        ranges=0-1*MB)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
+            try:
+                self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                            object_name=self.object_name, file_path=location)
+                lower, upper = di_lib.get_random_ranges(size=file_size)
+                resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
+                                                         key=self.object_name,
+                                                         ranges=f"{lower}-{upper}")
+                if file_size > 1 * MB:
+                    content = resp_dw_rr[1]["Body"].read()
+                    self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
+                                  len(content))
+                    dw_csum = di_lib.calc_checksum(content)
+                    assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
+                                                                     'downloaded file')
+                else:
+                    failed_file_sizes.append(file_size)
+            except CTException as err:
+                err_str = str(err)
+                self.log.info("Test failed with %s", err_str)
+                if file_size > 1 * MB:
+                    failed_file_sizes.append(file_size)
+                else:
+                    if "error occurred (InternalError) when calling the GetObject operation" \
+                            in err_str:
+                        self.log.info("Download failed with InternalError")
+                    else:
+                        failed_file_sizes.append(file_size)
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
@@ -1229,19 +1266,24 @@ class TestDIDurability:
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
         self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
         bucket_name_2 = di_lib.get_random_bucket_name()
+        self.s3_test_obj.create_bucket(bucket_name=bucket_name_2)
         obj_name_2 = di_lib.get_random_object_name()
-        for size in NORMAL_UPLOAD_SIZES_IN_MB:
-            self.log.info("Create a file of size %sMB", size)
-            test_file = "data_durability{}_TEST_29284_{}_MB_upload.txt" \
-                .format(perf_counter_ns(), str(size))
+        for file_size in NORMAL_UPLOAD_SIZES_IN_MB:
+            self.log.info("Create a file of size %s", file_size)
+            test_file = "data_durability{}_TEST_29284_{}_upload.txt" \
+                .format(perf_counter_ns(), str(file_size))
             file_path_upload = os.path.join(self.test_dir_path, test_file)
-            self.log.info("Step 1: create a file of size %sMB", size)
-            file_path_upload = self.file_path + "TEST_29284_" + str(size) + "MB_upload"
+            self.log.info("Step 1: create a file of size %s bytes", file_size)
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-            system_utils.create_file(file_path_upload, size)
-            self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
-                          "bucket.", size)
+            buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
+            lower, upper = di_lib.get_random_ranges(size=file_size)
+            buff_range = buff[lower:upper]
+            self.log.info("Range read: ", buff_range)
+            buff_csm = di_lib.calc_checksum(buff_range)
+            self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
+            self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
+                          file_size)
             put_cmd_str = "{} {}".format("put", file_path_upload)
             cmd = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
                                                 jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
@@ -1250,6 +1292,14 @@ class TestDIDurability:
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
-            # self.s3obj.copy_object(source_bucket=self.bucket_name, source_object=,
-            #                        dest_bucket=bucket_name_2, dest_object=obj_name_2)
-            
+            self.s3_test_obj.copy_object(source_bucket=self.bucket_name, source_object=test_file,
+                                         dest_bucket=bucket_name_2, dest_object=obj_name_2)
+            lower, upper = di_lib.get_random_ranges(size=file_size)
+            resp_dw_rr = self.s3_test_obj.get_object(bucket=bucket_name_2, key=obj_name_2,
+                                                     ranges=f"{lower}-{upper}")
+            content = resp_dw_rr[1]["Body"].read()
+            self.log.info('size of downloaded object %s is: %s bytes', obj_name_2, len(content))
+            dw_csum = di_lib.calc_checksum(content)
+            assert_utils.assert_not_equal(buff_csm, dw_csum,
+                                          'Checksum match found in downloaded file')
+        self.s3_test_obj.delete_bucket(bucket_name=bucket_name_2, force=True)

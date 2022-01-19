@@ -34,7 +34,7 @@ from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
-
+from commons.constants import MB
 from commons.constants import POD_NAME_PREFIX, PROD_FAMILY_LC, PROD_TYPE_K8S
 from commons.exceptions import CortxTestException
 from commons import params
@@ -316,3 +316,21 @@ def restart_s3_processes_k8s():
                 if not resp:
                     return False
         return True
+
+
+def get_random_ranges(size: int, greater_than_unit_size: bool = False):
+    """
+    will return random range
+    :param size: in bytes
+    :param greater_than_unit_size: true/false
+    if true, range will be returned between 1 MB and rest of size
+    """
+    start = 0
+    end = size
+    if greater_than_unit_size:
+        start = 1 * MB
+    first = random.randint(start, end)
+    second = random.randint(start, end)
+    if second < first:
+        return second, first
+    return first, second
