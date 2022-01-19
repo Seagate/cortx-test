@@ -12,7 +12,7 @@ Make sure you brush up your Git knowledge if you are coming from svn or other ve
 You may need a separate client vm with any Linux Flavour to install client side pre-requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as client as well.     
 
 ## Get the Sources
-Fork local repository from Seagate Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
+Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
 ```
 git clone https://github.com/Seagate/cortx-test.git
 cd cortx-test/
@@ -407,29 +407,32 @@ While ordering client on ssc-cloud, make sure
         * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number i.e. sdb1
         * Mount swap using `swapon /dev/sdb1`
 
-## Increase client root space size should be at least 50 GB using following commands
-Please utilize free disks from the output of lsblk
-Note: In case of multipart/Big object upload, disk space requirement may change/increase.
-```
-df -h
-lsblk 
-pvcreate /dev/sdb
-vgextend vg_sysvol /dev/sdb
-lvextend /dev/mapper/vg_sysvol-lv_root -L +50G
-resize2fs /dev/mapper/vg_sysvol-lv_root
-df -h
-```
+    ## Increase client root space size should be at least 50 GB using following commands
+    Please utilize free disks from the output of lsblk
+    Note: In case of multipart/Big object upload, disk space requirement may change/increase.
+    resize2fs is specific to ext2/3/4. In case /root is formatted with xfs we need to use the xfs_growfs tool 
+    e.g. "xfs_growfs /dev/mapper/vg_sysvol-lv_root"
+    We can run lvextend as "lvextend /dev/mapper/vg_sysvol-lv_root -l +100%FREE" to consume all the free PE
+    ```
+    df -h
+    lsblk 
+    pvcreate /dev/sdb
+    vgextend vg_sysvol /dev/sdb
+    lvextend /dev/mapper/vg_sysvol-lv_root -L +50G
+    resize2fs /dev/mapper/vg_sysvol-lv_root
+    df -h
+    ```
 
-## increase the swap space, Please utilize free disks from the output of lsblk
-```
-lsblk 
-pvcreate /dev/sdi
-vgextend vg_sysvol /dev/sdi
-lvextend /dev/mapper/vg_sysvol-lv_swap -l +100%FREE
-swapoff /dev/mapper/vg_sysvol-lv_swap
-mkswap /dev/mapper/vg_sysvol-lv_swap
-swapon /dev/mapper/vg_sysvol-lv_swap
-```
+    ## increase the swap space, Please utilize free disks from the output of lsblk
+    ```
+    lsblk 
+    pvcreate /dev/sdi
+    vgextend vg_sysvol /dev/sdi
+    lvextend /dev/mapper/vg_sysvol-lv_swap -l +100%FREE
+    swapoff /dev/mapper/vg_sysvol-lv_swap
+    mkswap /dev/mapper/vg_sysvol-lv_swap
+    swapon /dev/mapper/vg_sysvol-lv_swap
+    ```
 
 ## How to automate component level test cases
 Components level tests can be either pure component level tests which run
