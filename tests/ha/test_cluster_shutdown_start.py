@@ -173,10 +173,10 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -193,19 +193,19 @@ class TestClusterShutdownStart:
             "Step 4: Cluster restarted fine and all Pods online.")
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
         self.restored = False
 
