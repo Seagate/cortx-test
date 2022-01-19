@@ -125,6 +125,8 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 900
   setup_size: "small"
+  data_disk_size: "20Gi"
+  metadata_disk_size: "20Gi"
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"

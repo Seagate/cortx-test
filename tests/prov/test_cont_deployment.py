@@ -63,6 +63,10 @@ class TestContDeployment:
             cls.dix = [int(dix_item) for dix_item in cls.dix]
             cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
             cls.data_disk_per_cvg = int(os.getenv("DATA_DISK_PER_CVG"))
+            cls.data_disk_size = os.getenv("DATA_DISK_SIZE",
+                                           PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])
+            cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE",
+                                           PROV_CFG["k8s_cortx_deploy"]["metadata_disk_size"])
 
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
@@ -163,5 +167,7 @@ class TestContDeployment:
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                                                destroy_setup_flag=self.destroy_setup_flag,
                                                custom_repo_path=self.custom_repo_path,
-                                               report_filepath=self.report_file)
+                                               report_filepath=self.report_file,
+                                               data_disk_size=self.data_disk_size,
+                                               meta_disk_size=self.meta_disk_size)
             iteration = iteration + 1
