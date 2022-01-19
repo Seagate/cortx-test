@@ -244,7 +244,7 @@ class TestS3user():
         self.account_created.append(resp[1])
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test is not valid anymore")
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -436,7 +436,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test is not valid anymore")
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -495,7 +495,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test is not valid anymore")
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
