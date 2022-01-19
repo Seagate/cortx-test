@@ -1162,7 +1162,7 @@ class ProvDeployK8sCortxLib:
         """
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         start_time = int(time.time())
-        end_time = start_time + 3600  # 30 mins timeout
+        end_time = start_time + 1800  # 30 mins timeout
         response = list()
         while int(time.time()) < end_time:
             pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
