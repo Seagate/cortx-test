@@ -47,7 +47,7 @@ from libs.s3 import s3_common_test_lib as cmn_lib
 
 
 class TestMultipartUploadPartCopy:
-    """Multipart Upload Test Suite."""
+    """Multipart Upload Part Copy Test Suite."""
 
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=attribute-defined-outside-init
