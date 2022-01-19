@@ -950,6 +950,8 @@ class TestDIDurability:
         Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
         and verify range read (Get).
         """
+        import pdb
+        pdb.set_trace()
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
         failed_file_sizes = []
@@ -978,25 +980,27 @@ class TestDIDurability:
             buff_range = buff_c[lower:upper]
             self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
-            location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
-                                                             data_folder_prefix=self.test_dir_path)
+            location = self.data_gen.save_buf_to_file(fbuf=buff_c, csum=csm, size=file_size,
+                                                      data_folder_prefix=self.test_dir_path)
             self.log.info("Step 1: Created a corrupted file at location %s", location)
             try:
                 self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                             object_name=self.object_name, file_path=location)
-                lower, upper = di_lib.get_random_ranges(size=file_size)
                 resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                          key=self.object_name,
                                                          ranges=f"bytes={lower}-{upper}")
-                if file_size > 1 * MB:
-                    content = resp_dw_rr[1]["Body"].read()
-                    self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
-                                  len(content))
-                    dw_csum = di_lib.calc_checksum(content)
-                    assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
-                                                                     'downloaded file')
-                else:
-                    failed_file_sizes.append(file_size)
+                if resp_dw_rr[0]:
+                    if file_size > 1 * MB:
+                        content = resp_dw_rr[1]["Body"].read()
+                        self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
+                                      len(content))
+                        dw_csum = di_lib.calc_checksum(content)
+                        assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
+                                                                         'downloaded file')
+                    else:
+                        self.log.info("download of corrupted part is successful, adding to "
+                                      "failed size list")
+                        failed_file_sizes.append(file_size)
             except CTException as err:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
@@ -1010,8 +1014,6 @@ class TestDIDurability:
                         failed_file_sizes.append(file_size)
             if file_size > 1 * MB:
                 try:
-                    self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                                object_name=self.object_name, file_path=location)
                     lower, upper = di_lib.get_random_ranges(size=file_size)
                     lower = 0
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
@@ -1023,9 +1025,9 @@ class TestDIDurability:
                     self.log.info("Test failed with %s", err_str)
                     if file_size > 1 * MB:
                         failed_file_sizes.append(file_size)
-            if failed_file_sizes:
-                self.log.info("Test failed for sizes %s", str(failed_file_sizes))
-                assert False
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
