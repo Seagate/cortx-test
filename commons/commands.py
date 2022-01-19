@@ -202,6 +202,7 @@ CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
 CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"

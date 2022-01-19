@@ -27,7 +27,7 @@ import os
 
 import pytest
 
-from commons import configmanager
+from commons import configmanager, commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import CMN_CFG
@@ -67,7 +67,6 @@ class TestContDeployment:
                                        PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])
         cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE",
                                        PROV_CFG["k8s_cortx_deploy"]["metadata_disk_size"])
-
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH",
@@ -88,6 +87,20 @@ class TestContDeployment:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        for worker_obj in cls.worker_node_list:
+            size = worker_obj.execute_cmd(cmd=commands.CMD_LSBLK_SIZE, read_lines=True)
+            logging.debug("size of disk are %s", size)
+            disk_list = list()
+            for element in size[1:]:
+                disk_list.append(element.strip('G\n'))
+            for data_size in disk_list:
+                if data_size < cls.data_disk_size.strip('Gi') or \
+                        data_size < cls.meta_disk_size.strip('Gi'):
+                    cls.log.error("VM disk size is %sG and provided disk size are %s, %s",
+                                  data_size, cls.data_disk_size, cls.meta_disk_size)
+                    return False, f"VM disk size is {data_size}G and provided disk size are" \
+                                  f" {cls.data_disk_size},{cls.meta_disk_size}"
+
         cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
         cls.report_file = os.path.join(cls.report_filepath,
                                        PROV_CFG["k8s_cortx_deploy"]["report_file"])
