@@ -169,6 +169,7 @@ class TestProvK8Cortx:
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
+    @pytest.mark.one_node
     @pytest.mark.tags("TEST-28351")
     def test_28351(self):
         """
@@ -193,6 +194,7 @@ class TestProvK8Cortx:
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
+    @pytest.mark.one_node
     @pytest.mark.tags("TEST-29114")
     def test_29114(self):
         """
@@ -213,6 +215,7 @@ class TestProvK8Cortx:
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
+    @pytest.mark.one_node
     @pytest.mark.tags("TEST-28436")
     def test_28436(self):
         """
