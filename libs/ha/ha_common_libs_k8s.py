@@ -739,7 +739,7 @@ class HAK8s:
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
         for line in res.split("\n"):
-            if "failed" in line or "offline" in line:
+            if "failed" in line or "offline" in line or "unknown" in line:
                 LOGGER.info("Response for cortx cluster status: %s", res)
                 return False, res
 

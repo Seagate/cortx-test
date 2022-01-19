@@ -370,6 +370,81 @@ class MotrCoreK8s():
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
+    def verify_libfabric_version(self):
+        """TO check libfabric version and protocol status"""
+        for node in self.node_pod_dict:
+            log.info('Checking libfabric rpm')
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                            common_cmd.GETRPM.format("libfab"))
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                          self.master_uname,
+                                                                          self.master_passwd)
+            log.info("%s , %s", result, error1)
+            if ret:
+                log.info('"%s" Failed, Please check the log', cmd)
+                assert False
+            if (b"ERROR" or b"Error") in error1:
+                log.error('"%s" failed, please check the log', cmd)
+                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+            log.info('Checking libfabric version')
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                            common_cmd.LIBFAB_VERSION)     
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                          self.master_uname,
+                                                                          self.master_passwd)         
+            if ret:
+                log.info('"%s" Failed, Please check the log', cmd)
+                assert False
+            if (b"ERROR" or b"Error") in error1:
+                log.error('"%s" failed, please check the log', cmd)
+                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                           f'"{cmd}" Failed, Please check the log')
+            log.info('Checking libfabric tcp protocol presence')
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                            common_cmd.LIBFAB_TCP)                                    
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                          self.master_uname,
+                                                                          self.master_passwd)                                                  
+            if ret:
+                log.info('"%s" Failed, Please check the log', cmd)
+                assert False
+            if (b"ERROR" or b"Error") in error1:
+                log.error('"%s" failed, please check the log', cmd)
+                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                           f'"{cmd}" Failed, Please check the log')
+            log.info('Checking libfabric socket protocol presence')
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], 
+                                                            common_cmd.LIBFAB_SOCKET)                                       
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                          self.master_uname,
+                                                                          self.master_passwd)		
+            if ret:
+                log.info('"%s" Failed, Please check the log', cmd)
+                assert False
+            if (b"ERROR" or b"Error") in error1:
+                log.error('"%s" failed, please check the log', cmd)
+                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+            # Below support verbs for HW is removed from libfabrc code as of now.
+            # ...Commenting the same
+            """
+            log.info('Checking libfabric verbs protocol presence')
+            if CMN_CFG["setup_type"] == "HW":
+                cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                                common_cmd.LIBFAB_VERBS)                                       
+                result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
+                                                                              self.master_uname,
+                                                                              self.master_passwd)                                                           
+                if ret:
+                    log.info('"%s" Failed, Please check the log', cmd)
+                    assert False
+                if (b"ERROR" or b"Error") in error1:
+                    log.error('"%s" failed, please check the log', cmd)
+                    assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+            """
+
     @staticmethod
     def byte_conversion(size):
         """ Convert file size of GB/MB/KB into bytes
