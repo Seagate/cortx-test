@@ -987,7 +987,7 @@ class TestDIDurability:
                 lower, upper = di_lib.get_random_ranges(size=file_size)
                 resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                          key=self.object_name,
-                                                         ranges=f"{lower}-{upper}")
+                                                         ranges=f"bytes={lower}-{upper}")
                 if file_size > 1 * MB:
                     content = resp_dw_rr[1]["Body"].read()
                     self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
@@ -1008,6 +1008,24 @@ class TestDIDurability:
                         self.log.info("Download failed with InternalError")
                     else:
                         failed_file_sizes.append(file_size)
+            if file_size > 1 * MB:
+                try:
+                    self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                                object_name=self.object_name, file_path=location)
+                    lower, upper = di_lib.get_random_ranges(size=file_size)
+                    lower = 0
+                    resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
+                                                              key=self.object_name,
+                                                              ranges=f"bytes={lower}-{upper}")
+                    self.log.info(str(resp_rr_dwn))
+                except CTException as err:
+                    err_str = str(err)
+                    self.log.info("Test failed with %s", err_str)
+                    if file_size > 1 * MB:
+                        failed_file_sizes.append(file_size)
+            if failed_file_sizes:
+                self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+                assert False
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
@@ -1265,7 +1283,7 @@ class TestDIDurability:
         bucket_name_2 = di_lib.get_random_bucket_name()
         self.s3_test_obj.create_bucket(bucket_name=bucket_name_2)
         obj_name_2 = di_lib.get_random_object_name()
-        for file_size in NORMAL_UPLOAD_SIZES_IN_MB:
+        for file_size in NORMAL_UPLOAD_SIZES:
             self.log.info("Create a file of size %s", file_size)
             test_file = "data_durability{}_TEST_29284_{}_upload.txt" \
                 .format(perf_counter_ns(), str(file_size))
@@ -1276,7 +1294,7 @@ class TestDIDurability:
             buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
             lower, upper = di_lib.get_random_ranges(size=file_size)
             buff_range = buff[lower:upper]
-            self.log.info("Range read: ", buff_range)
+            self.log.info("Range read: %s", buff_range)
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
             self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
@@ -1293,7 +1311,7 @@ class TestDIDurability:
                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
             lower, upper = di_lib.get_random_ranges(size=file_size)
             resp_dw_rr = self.s3_test_obj.get_object(bucket=bucket_name_2, key=obj_name_2,
-                                                     ranges=f"{lower}-{upper}")
+                                                     ranges=f"bytes={lower}-{upper}")
             content = resp_dw_rr[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', obj_name_2, len(content))
             dw_csum = di_lib.calc_checksum(content)
