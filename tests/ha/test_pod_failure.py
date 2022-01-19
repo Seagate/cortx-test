@@ -132,7 +132,9 @@ class TestPodFailure:
         self.s3_clean = {}
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
@@ -169,9 +171,7 @@ class TestPodFailure:
                 assert_utils.assert_true(resp, "Interface is still not up.")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            if not resp[0]:
-                resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-                assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             if self.s3_clean:
                 LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
