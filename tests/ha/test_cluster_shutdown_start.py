@@ -79,7 +79,8 @@ class TestClusterShutdownStart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
-        cls.s3_clean = cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
+        cls.s3_clean = {}
+        cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
@@ -234,11 +235,10 @@ class TestClusterShutdownStart:
             LOGGER.info("Checking cluster restart for %s count", loop)
 
             LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
-                                               nbuckets=10)
-            assert_utils.assert_true(resp[0], resp[1])
-            di_check_data = (resp[1], resp[2])
-            self.s3_clean = resp[2]
+            io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1)
+            assert_utils.assert_true(io_resp[0], io_resp[1])
+            di_check_data = (io_resp[1], io_resp[2])
+            self.s3_clean.update(io_resp[2])
             LOGGER.info("Step 2: IOs are started successfully.")
 
             LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -255,15 +255,17 @@ class TestClusterShutdownStart:
             LOGGER.info("Step 5: Check DI for IOs run before restart.")
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(io_resp[2].keys())[0])
             LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
             LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-new')
-            assert_utils.assert_true(resp[0], resp[1])
-            di_check_data = (resp[1], resp[2])
-            self.s3_clean = resp[2]
+            io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-1', nusers=1)
+            assert_utils.assert_true(io_resp[0], io_resp[1])
+            di_check_data = (io_resp[1], io_resp[2])
+            self.s3_clean.update(io_resp[2])
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(io_resp[2].keys())[0])
             LOGGER.info("Step 6: IOs running successfully with new S3 account.")
             self.restored = False
             LOGGER.info("Cluster restart was successful for %s count", loop)
@@ -888,11 +890,10 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479', nusers=1,
-                                           nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info(
@@ -903,19 +904,19 @@ class TestClusterShutdownStart:
             "Step 3: Cluster restarted fine and all Pods online.")
 
         LOGGER.info("Step 4: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 4: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 5: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 5: IOs running successfully with new S3 account.")
         self.restored = False
 
@@ -943,11 +944,10 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1,
-                                           nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -979,19 +979,19 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Cluster is back online.")
 
         LOGGER.info("Step 6: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 7: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
         self.restored = False
 
