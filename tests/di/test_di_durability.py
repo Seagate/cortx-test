@@ -1259,6 +1259,7 @@ class TestDIDurability:
             else:
                 assert False, 'Download of corrupted file passed'
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
@@ -1294,7 +1295,7 @@ class TestDIDurability:
             buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
             lower, upper = di_lib.get_random_ranges(size=file_size)
             buff_range = buff[lower:upper]
-            self.log.info("Range read: %s", len(buff_range))
+            self.log.info("Range read: %s  CSM: %s", len(buff_range), csm)
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
             self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
@@ -1345,7 +1346,7 @@ class TestDIDurability:
             assert False
         self.log.info("Step 1: enable data corruption")
         for file_size in NORMAL_UPLOAD_SIZES:
-            obj_name_1 = self.get_object_name()
+            obj_name_1 = di_lib.get_random_object_name()
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='f',
                                                              data_folder_prefix=self.test_dir_path)
