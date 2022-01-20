@@ -1061,13 +1061,10 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         mp_config = MPART_CFG["test_33366"]
         file_size = mp_config["file_size"]
-        total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
         resp = self.s3user.create_s3_account()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
-        access_key = resp.json()["access_key"]
-        secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
         self.account_created.append(s3_user)
         total_cap = 0
