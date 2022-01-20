@@ -49,9 +49,7 @@ from libs.s3 import s3_misc
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
 from libs.s3.s3_common_test_lib import create_attach_list_iam_policy
-from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from commons.utils.s3_utils import get_unaligned_parts
-from commons.utils.s3_utils import get_multipart_etag
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -969,6 +967,14 @@ class TestAccountCapacity():
         file_size = mp_config["file_size"]
         total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+        total_cap = 0
         resp = self.acc_capacity.create_s3_account(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]
@@ -1037,6 +1043,14 @@ class TestAccountCapacity():
         file_size = mp_config["file_size"]
         total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+        total_cap = 0
         resp = self.acc_capacity.create_s3_account(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]
@@ -1100,6 +1114,14 @@ class TestAccountCapacity():
         file_size = mp_config["file_size"]
         total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+        total_cap = 0
         resp = self.acc_capacity.create_s3_account(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]
@@ -1173,6 +1195,14 @@ class TestAccountCapacity():
         file_size = mp_config["file_size"]
         total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
+        resp = self.s3user.create_s3_account()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "Failed to create S3 account.")
+        access_key = resp.json()["access_key"]
+        secret_key = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        self.account_created.append(s3_user)
+        total_cap = 0
         resp = self.acc_capacity.create_s3_account(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]
