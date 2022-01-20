@@ -666,8 +666,6 @@ class TestMultipartUploadPartCopy:
         resp = self.s3t_obj.object_download(
             self.bucket_name1, self.object_name1, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
-        download_checksum = calc_checksum(self.mp_down_obj_pth)
-        assert_utils.assert_equal(put_checksum, download_checksum, "Checksum match failed.")
         self.log.info("Step 9: Complete MPU for multipart2 and download it.")
         sorted_part_list = sorted(parts2, key=lambda x: x['PartNumber'])
         resp = self.s3mpu_obj.complete_multipart_upload(
@@ -676,8 +674,6 @@ class TestMultipartUploadPartCopy:
         resp = self.s3t_obj.object_download(
             self.bucket_name1, self.object_name2, self.mp_down_obj_pth)
         assert_utils.assert_true(resp[0], resp[1])
-        download_checksum = calc_checksum(self.mp_down_obj_pth)
-        assert_utils.assert_equal(put_checksum, download_checksum, "Checksum match failed.")
         self.log.info("Stop & validate S3 background IOs.")
         self.s3bio_obj.stop()
         self.s3bio_obj.validate()
