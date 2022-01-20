@@ -112,7 +112,7 @@ optional arguments:
     --VERIFY_SSL='True' This is used to whether https/ssl be used or not
     --VALIDATE_CERTS='True' This is used whether given certificate should be verified or not.
     
-```
+
 make help --makefile=scripts/s3_tools/Makefile
     all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case it's a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
     clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
