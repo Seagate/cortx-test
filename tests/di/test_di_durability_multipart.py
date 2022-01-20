@@ -402,7 +402,7 @@ class TestDICheckMultiPart:
         content = ''
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
-                                               ranges='0-7340032')
+                                               ranges='bytes=0-7340032')
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
         except (BotoCoreError, CTException) as error:
@@ -427,7 +427,7 @@ class TestDICheckMultiPart:
         try:
             content = ''
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
-                                               ranges='7340032-22020094')
+                                               ranges='bytes=7340032-22020094')
             content = resp[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
         except (BotoCoreError, CTException) as error:
