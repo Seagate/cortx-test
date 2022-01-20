@@ -71,6 +71,7 @@ class TestAccountCapacity():
         cls.iam_users_created = []
         cls.s3_test_obj = S3TestLib()
         cls.s3_mp_test_obj = S3MultipartTestLib()
+        cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.s3_obj = S3AccountOperations()
         cls.test_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_account_capacity.yaml")
@@ -1150,6 +1151,7 @@ class TestAccountCapacity():
         self.log.info("step-3: Initiating multipart upload")
         res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
+        source_etag = resp[1]['CreatemultipartResult']['ETag']
         mpu_id = res[1]["UploadId"]
         self.log.info("Step-4: Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Step-5: Uploading parts into bucket")
@@ -1169,7 +1171,6 @@ class TestAccountCapacity():
                 MPART_CFG["test_33367"]["err_msg"],
                 error.message,
                 error.message)
-        process.start()
         self.log.info("Step 6: Copy multipart object 10 times")
         src_bkt = self.bucket_name
         for _ in range(10):
