@@ -1134,8 +1134,6 @@ class TestAccountCapacity():
         resp = self.s3user.create_s3_account()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
-        access_key = resp.json()["access_key"]
-        secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
         self.account_created.append(s3_user)
         total_cap = 0
@@ -1236,12 +1234,12 @@ class TestAccountCapacity():
         self.buckets_created.append([bucket2, account1_info[0], account1_info[1]])
         total_cap = 0
         self.log.info("step-3: Initiating multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(bucket, self.object_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(bucket1, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         process = Process(
             target=self.s3_mp_test_obj.upload_parts_parallel,
-            args=(mpu_id, bucket, self.object_name), kwargs={"parts": total_parts})
+            args=(mpu_id, bucket2, self.object_name), kwargs={"parts": total_parts})
         process.start()
         self.log.info("Step 5: Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
