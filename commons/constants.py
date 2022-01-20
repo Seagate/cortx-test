@@ -42,12 +42,12 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME_PREFIX = "cortx-data-pod"
-SERVER_POD_NAME_PREFIX = "cortx-server-pod"
-HA_POD_NAME_PREFIX = "cortx-ha-pod"
-HAX_CONTAINER_NAME = "cortx-motr-hax"
+POD_NAME_PREFIX = "cortx-data"
+SERVER_POD_NAME_PREFIX = "cortx-server"
+HA_POD_NAME_PREFIX = "cortx-ha"
+HAX_CONTAINER_NAME = "cortx-hax"
 NAMESPACE = "default"
-CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
+CONTROL_POD_NAME_PREFIX = "cortx-control"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -416,6 +416,11 @@ MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
+SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["s3", "hare", "utils"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr", "utils"],
+                                    HA_POD_NAME_PREFIX: ["utils"]}
+SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
