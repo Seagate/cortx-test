@@ -1213,8 +1213,6 @@ class TestAccountCapacity():
         resp = self.s3user.create_s3_account()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
-        access_key = resp.json()["access_key"]
-        secret_key = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
         self.account_created.append(s3_user)
         total_cap = 0
@@ -1245,7 +1243,7 @@ class TestAccountCapacity():
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
-        elf.log.info("Step 6: Put 1 objects in bucket")
+        self.log.info("Step 6: Put 1 objects in bucket")
         for _ in range(total_parts):
             obj = f"object{mp_config}"
             self.log.info("Verify Perform %s of write in the bucket: %s", obj,
