@@ -1207,7 +1207,6 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         mp_config = MPART_CFG["test_33368"]
-        file_size = mp_config["file_size"]
         total_parts = mp_config["total_parts"]
         self.log.info("Step 1: Create s3 Account")
         resp = self.s3user.create_s3_account()
