@@ -113,6 +113,26 @@ class TestAccountCapacity():
         if not os.path.exists(TEST_DATA_FOLDER):
             os.mkdir(TEST_DATA_FOLDER)
 
+    def setup_method(self):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test steps if any.
+        """
+        self.log.info("STARTED: Setup operations")
+        self.random_time = int(time.time())
+        self.bucket_name = "mp-bkt-{}".format(self.random_time)
+        self.object_name = "mp-obj-{}".format(self.random_time)
+        self.log.info(
+            "Taking a backup of aws config file located at %s to %s...",
+            self.aws_config_path, self.config_backup_path)
+        resp = backup_or_restore_files(
+            self.actions[0], self.config_backup_path, self.aws_config_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Taken a backup of aws config file located at %s to %s",
+            self.aws_config_path, self.config_backup_path)
+
     def teardown_method(self):
         """
         Teardown for deleting any account and buckets created during tests
