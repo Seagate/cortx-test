@@ -20,7 +20,7 @@
 #
 #
 """Python library contains methods for s3 tests."""
-
+import json
 import os
 import logging
 from multiprocessing import Process
@@ -31,7 +31,6 @@ from config.s3 import S3_CFG
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
@@ -42,6 +41,7 @@ from libs.s3 import s3_acl_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_tagging_test_lib
+from libs.s3.iam_policy_test_lib import IamPolicyTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
 
@@ -172,6 +172,7 @@ def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, passwo
         access_key, secret_key, account_id, s3_bkt_tag_obj, s3_multipart_obj
 
 
+# pylint:disable=too-many-arguments
 def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_sample=3):
     """
     Perform s3 read, write, verify object operations on the s3_bucket.
@@ -233,7 +234,7 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
     objects = []
     for i in range(1, num_sample + 1):
         fpath = os.path.join(os.getcwd(), f"{obj_prefix}-{i}")
-        resp = system_utils.create_file(fpath, count=size*i)
+        resp = system_utils.create_file(fpath, count=size * i)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_true(system_utils.path_exists(fpath), f"Failed to create path: {fpath}")
         resp = s3_obj.put_object(s3_bucket, os.path.basename(fpath), fpath)
@@ -245,14 +246,14 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
     return objects
 
 
-def s3_ios(
-           bucket=None,
+def s3_ios(bucket=None,
            log_file_prefix="parallel_io",
            duration="0h1m",
            obj_size="24Kb",
            **kwargs):
     """
     Perform io's for specific durations.
+
     1. Create bucket.
     2. perform io's for specified durations.
     3. Check executions successful.
@@ -282,8 +283,53 @@ def s3_ios(
     LOG.info("ENDED: s3 io's operations.")
 
 
+def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_path: str,
+                             mb_count: int) -> None:
+    """
+    This function creates a bucket and uploads an object to the bucket.
+
+    :param s3_tst_lib: s3 test lib object
+    :param bucket_name: Name of bucket to be created
+    :param obj_name: Name of an object to be put to the bucket
+    :param file_path: Path of the file to be created and uploaded to bucket
+    :param mb_count: Size of file in MBs
+    """
+    LOG.info("Creating a bucket %s", bucket_name)
+    resp = s3_tst_lib.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Created a bucket %s", bucket_name)
+    system_utils.create_file(file_path, mb_count)
+    LOG.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
+    resp = s3_tst_lib.put_object(bucket_name, obj_name, file_path)
+    assert_utils.assert_true(resp[0], resp[1])
+    LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
+
+
+def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
+    """
+    Create IAM policy, Attach IAM Policy, List IAM Policy and make sure it is attached
+    :param access: Access Key of S3 account
+    :param secret: Secret Key of S3 account
+    :param policy_name: IAM Policy name
+    :param iam_policy: IAM Policy content
+    :iam_user : IAM username
+    """
+    iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
+    LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
+    _, policy = iam_policy_test_lib.create_policy(
+        policy_name=policy_name,
+        policy_document=json.dumps(iam_policy))
+
+    LOG.info("Attach Policy1 %s to %s user", policy.arn, iam_user)
+    iam_policy_test_lib.attach_user_policy(iam_user, policy.arn)
+
+    LOG.info("List Attached User Policies on %s", iam_user)
+    resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
+    assert_utils.assert_true(resp)
+
+
 class S3BackgroundIO:
-    """Class to handle background S3 IOs for S3 tests"""
+    """Class to perform/handle background S3 IOs for S3 tests using S3bench."""
 
     def __init__(self,
                  s3_test_lib_obj,
@@ -291,30 +337,21 @@ class S3BackgroundIO:
         """
         Initialize object and create IO bucket, if not present.
 
-        :param s3_test_lib_obj: Instance of S3TestLib
-        :param io_bucket_name: IO bucket name
+        :param s3_test_lib_obj: Instance of S3TestLib.
+        :param io_bucket_name: IO bucket name.
         """
-        if not io_bucket_name:
-            io_bucket_name = "iobkt1-{}".format(perf_counter_ns())
-
         self.s3_test_lib_obj = s3_test_lib_obj
-        self.io_bucket_name = io_bucket_name
-        self.log_prefix = None
+        self.io_bucket_name = io_bucket_name if io_bucket_name else "s3io-bkt-{}".format(
+            perf_counter_ns())
+        self.log_prefix = "parallel_io"
         self.parallel_ios = None
-
+        assert_utils.assert_true(path_exists(s3bench.S3_BENCH_PATH),
+                                 f"S3bench tool is not installed: {s3bench.S3_BENCH_PATH}")
         try:
-            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
-        except CTException:
-            bucket_exists = False
-        if not bucket_exists:
-            LOG.info("Creating IO bucket: %s", self.io_bucket_name)
-            resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOG.info("Created IO bucket: %s", self.io_bucket_name)
-        LOG.info("Check s3 bench tool installed.")
-        res = path_exists(s3bench.S3_BENCH_PATH)
-        assert_utils.assert_true(
-            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+            self.bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        except CTException as error:
+            LOG.warning(error.message)
+            self.bucket_exists = False
 
     @staticmethod
     def s3_ios(bucket: str = None,
@@ -324,6 +361,7 @@ class S3BackgroundIO:
                **kwargs) -> None:
         """
         Perform IOs for specific durations.
+
         1. Perform IOs for specified durations.
         2. Check executions are successful.
         """
@@ -353,9 +391,9 @@ class S3BackgroundIO:
 
     def is_alive(self) -> bool:
         """
-        Check if parallel IOs are running
+        Check if parallel IOs are running.
 
-        :return: False if IO process is not running or if not created else True
+        :return: False if IO process is not running or if not created else True.
         """
         if not self.parallel_ios:
             return False
@@ -366,13 +404,19 @@ class S3BackgroundIO:
               log_prefix: str = None,
               **kwargs) -> None:
         """
-        Start parallel IO process
+        Start parallel IO process.
 
-        :param duration: Duration of the test in the format NhMm for N hours and M minutes
-        :param log_prefix: Prefix for s3bench logs
+        :param duration: Duration of the test in the format NhMm for N hours and M minutes.
+        :param log_prefix: Prefix for s3bench logs.
         """
-        if log_prefix:
-            self.log_prefix = log_prefix
+        self.log_prefix = log_prefix if log_prefix else self.log_prefix
+        if not self.bucket_exists:
+            LOG.info("Creating IO bucket: %s", self.io_bucket_name)
+            resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("Created IO bucket: %s", self.io_bucket_name)
+            self.bucket_exists = True
+        LOG.info("Check s3 bench tool installed.")
         self.parallel_ios = Process(
             target=self.s3_ios,
             args=(self.io_bucket_name, self.log_prefix, duration),
@@ -382,13 +426,8 @@ class S3BackgroundIO:
         LOG.info("Parallel IOs started: %s for duration: %s",
                  self.parallel_ios.is_alive(), duration)
 
-    def stop(self,
-             log_prefix: str = None) -> None:
-        """
-        Stop the parallel IO process and validate logs if log prefix is specified
-
-        :param log_prefix: Prefix for s3bench logs
-        """
+    def stop(self) -> None:
+        """Stop the parallel IO's/Process and validate logs."""
         if self.parallel_ios.is_alive():
             resp = self.s3_test_lib_obj.object_list(self.io_bucket_name)
             LOG.info(resp)
@@ -398,24 +437,15 @@ class S3BackgroundIO:
             self.validate()
 
     def validate(self) -> None:
-        """
-        Validate s3bench execution logs
-        """
-        resp = system_utils.validate_s3bench_parallel_execution(
-            s3bench.LOG_DIR, self.log_prefix)
+        """Validate s3bench execution logs."""
+        resp = system_utils.validate_s3bench_parallel_execution(s3bench.LOG_DIR, self.log_prefix)
         assert_utils.assert_true(resp[0], resp[1])
 
     def cleanup(self) -> None:
-        """
-        Stop parallel IO process and cleanup IO bucket
-        """
+        """Stop parallel IO process and cleanup IO bucket."""
         if self.is_alive():
             self.parallel_ios.join()
-        try:
-            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
-        except CTException:
-            bucket_exists = False
-        if bucket_exists:
+        if self.bucket_exists:
             LOG.info("Deleting IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.delete_bucket(self.io_bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
