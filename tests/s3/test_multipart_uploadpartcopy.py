@@ -31,7 +31,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file, path_exists
+from commons.utils.system_utils import remove_file, path_exists
 from commons.utils.s3_utils import get_precalculated_parts, calc_checksum
 from commons.utils.system_utils import make_dirs, remove_dirs, create_file
 from commons.utils import assert_utils
@@ -184,7 +184,7 @@ class TestMultipartUploadPartCopy:
         if os.path.exists(multipart_obj_path):
             os.remove(multipart_obj_path)
         create_file(multipart_obj_path, mp_config["file_size"])
-        put_checksum = calc_checksum(self.multipart_obj_path)
+        put_checksum = calc_checksum(multipart_obj_path)
         mp_config_2 = MPART_CFG["test_32702_2"]
         if os.path.exists(self.mp_obj_path_partcopy):
             os.remove(self.mp_obj_path_partcopy)
@@ -510,7 +510,7 @@ class TestMultipartUploadPartCopy:
                                                   mp_config_2["part_sizes"],
                                                   chunk_size=mp_config_2["chunk_size"])
         uploaded_parts2.pop(2)  # removed part 2 as we are going to upload only one part here
-        event = multiprocessing.event()
+        event = multiprocessing.Event()
         self.log.info("Uploading parts")
         self.multiprocess_upload_parts(event, mpu_id2, uploaded_parts2)
         res = self.s3mpu_obj.list_parts(mpu_id2, self.mpu_partcopy_bkt, self.mpu_partcopy_obj)
