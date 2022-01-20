@@ -453,25 +453,10 @@ class S3MultipartTestLib(Multipart):
             part_number = kwargs.get("part_number", None)
             upload_id = kwargs.get("upload_id", None)
             LOGGER.info("uploading part copy")
-            if copy_source_range:
-                if content_md5:
-                    response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                        upload_id=upload_id,
-                                                        part_number=part_number,
-                                                        copy_source_range=copy_source_range,
-                                                        content_md5=content_md5)
-                else:
-                    response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                        upload_id=upload_id,
-                                                        part_number=part_number,
-                                                        copy_source_range=copy_source_range)
-            elif content_md5:
-                response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                    upload_id=upload_id, part_number=part_number,
-                                                    content_md5=content_md5)
-            else:
-                response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                    upload_id=upload_id, part_number=part_number)
+            response = super().upload_part_copy(copy_source, bucket_name, object_name,
+                                                upload_id=upload_id, part_number=part_number,
+                                                copy_source_range=copy_source_range,
+                                                content_md5=content_md5)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",

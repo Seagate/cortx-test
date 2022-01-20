@@ -231,12 +231,13 @@ class Multipart(S3Lib):
                     Bucket=bucket_name, Key=object_name,
                     UploadId=upload_id, PartNumber=part_number,
                     CopySource=copy_source,
-                    ContentMD5=content_md5)
+                    ContentMD5=content_md5,
+                    CopySourceRange=copy_source_range)
             else:
                 response = self.s3_client.upload_part_copy(
                     Bucket=bucket_name, Key=object_name,
                     UploadId=upload_id, PartNumber=part_number,
-                    CopySource=copy_source)
+                    CopySource=copy_source, CopySourceRange=copy_source_range)
         elif content_md5:
             response = self.s3_client.upload_part_copy(
                 Bucket=bucket_name, Key=object_name,
