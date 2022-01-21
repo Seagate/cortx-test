@@ -443,7 +443,7 @@ class TestDIWithChangingS3Params:
             self.log.debug("location: %s, csm: %s", location, csm)
             try:
                 self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                                      file_path=self.F_PATH)
+                                      file_path=location)
                 self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
                                        dest_bucket=bucket_name_2, dest_object=obj_name_1)
                 self.s3obj.copy_object(source_bucket=bucket_name_2, source_object=obj_name_1,
