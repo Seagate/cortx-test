@@ -221,9 +221,8 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        response = self.s3user.create_s3_account(
-            login_as="s3account_user")
-        assert response.status_code == const.FORBIDDEN
+        response = self.s3user.rest_login(login_as="s3account_user")
+        assert response.status_code == const.UNAUTHORIZED
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -245,6 +244,7 @@ class TestS3user():
         self.account_created.append(resp[1])
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -436,6 +436,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -481,8 +482,7 @@ class TestS3user():
 
         response = self.s3user.edit_s3_account_user_invalid_password(
             username=account_name,
-            payload=json.dumps(payload),
-            login_as="s3account_user")
+            payload=json.dumps(payload))
 
         self.log.info(
             "Verifying response returned for s3 account %s", account_name)
@@ -495,6 +495,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
