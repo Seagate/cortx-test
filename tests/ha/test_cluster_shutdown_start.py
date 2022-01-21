@@ -1087,20 +1087,20 @@ class TestClusterShutdownStart:
                                   f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
         LOGGER.info("Step 3: Sucessfully verified DI on objects & deleted %s buckets. Remaining "
                     "buckets are %s.", del_bucket, r_buck)
-        # LOGGER.info("Step 5: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(
-        #     operation="shutdown_signal", resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 5: Successfully sent the cluster shutdown signal through CSM REST.")
-        # LOGGER.info("Step 6: Restart the cluster & check cluster status.")
-        # resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 6: Cluster restarted fine & all Pods are online.")
-        LOGGER.info("Step 7: Verify %s has %s buckets are remaining", self.s3acc_name, r_buck)
+        LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
+        resp = self.rest_hlt_obj.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 5: Restart the cluster & check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Cluster restarted fine & all Pods are online.")
+        LOGGER.info("Step 6: Verify %s has %s buckets are remaining", self.s3acc_name, r_buck)
         resp = s3_test_obj.bucket_list()
         assert_utils.assert_equal(r_buck, len(resp[1]), resp)
-        LOGGER.info("Step 7: Verified %s has %s buckets are remaining",self.s3acc_name, r_buck)
-        LOGGER.info("Step 8: Delete %s's remaining %s buckets", self.s3acc_name, r_buck)
+        LOGGER.info("Step 6: Verified %s has %s buckets are remaining",self.s3acc_name, r_buck)
+        LOGGER.info("Step 7: Delete %s's remaining %s buckets", self.s3acc_name, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': r_buck, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
@@ -1109,17 +1109,17 @@ class TestClusterShutdownStart:
             timeout=HA_CFG["common_params"]["60sec_delay"])
         resp = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(resp), 0, f"Failed to delete remaining {r_buck} buckets")
-        LOGGER.info("Step 8: Sucessfully deleted %s's remaining %s buckets",
+        LOGGER.info("Step 7: Sucessfully deleted %s's remaining %s buckets",
                     self.s3acc_name, r_buck)
-        # LOGGER.info("Step 9: Create 50 buckets. Run IOs & verify DI. Delete created buckets.")
-        # io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455', nusers=1, nbuckets=50)
-        # assert_utils.assert_true(io_resp[0], io_resp[1])
-        # di_check_data = (io_resp[1], io_resp[2])
-        # self.s3_clean.update(io_resp[2])
-        # resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
-        # assert_utils.assert_true(resp[0], resp[1])
-        # self.s3_clean.pop(list(io_resp[2].keys())[0])
-        # LOGGER.info("Step 9: Created 50 buckets. Run IOs & verify DI. Delete created buckets.")
+        LOGGER.info("Step 8: Create 50 buckets. Run IOs & verify DI. Delete created buckets.")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455', nusers=1, nbuckets=50)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 8: Created 50 buckets. Run IOs & verify DI. Delete created buckets.")
         LOGGER.info("Completed: Test to check DELETEs after cluster restart.")
 
     @pytest.mark.ha
@@ -1191,7 +1191,6 @@ class TestClusterShutdownStart:
         This test verifies CSM REST API responses - negative scenario (REST API options validation)
         """
         LOGGER.info("Started: Test to check CSM REST API responses - REST API options validation.")
-        '''
         LOGGER.info("STEP 1: Start IOs (create s3 acc, buckets and upload objects).")
         io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29481', nusers=1)
         assert_utils.assert_true(io_resp[0], io_resp[1])
@@ -1206,7 +1205,6 @@ class TestClusterShutdownStart:
             operation="xyz_signal", resource="cluster", expected_response=HTTPStatus.BAD_REQUEST)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Verified REST API cluster shutdown signal with bad request body.")
-        '''
         LOGGER.info("Step 3: Verify REST API cluster shutdown signal with unauthorized request")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal",
@@ -1215,7 +1213,6 @@ class TestClusterShutdownStart:
             negative_resp="Bearer 1232sdfsdf34#232")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Verified REST API cluster shutdown signal with unauthorized request")
-        '''
         LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
@@ -1242,6 +1239,6 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
-        '''
+        
         LOGGER.info("Completed: Test to check CSM REST API responses - "
                     "REST API options validation.")
