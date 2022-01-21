@@ -676,7 +676,7 @@ class TestDIDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-229260')
+    @pytest.mark.tags('TEST-22926')
     def test_enable_validation_induce_corruption_detect_error_22926_dup(self):
         """
         With Flag enabled, when data or metadata corruption induced, download of
@@ -724,7 +724,6 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
-    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
@@ -818,6 +817,7 @@ class TestDIDurability:
             "ENDED: Combine checksum feature with HA, corrupt from a node and read with other"
             "nodes")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-23688')
     def test_23688(self):
@@ -882,6 +882,7 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity of large objects with multipart threshold"
             "to value just lower the object size.")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-23689')
     def test_23689(self):
@@ -975,6 +976,7 @@ class TestDIDurability:
                 greater_than_unit_size = True
             lower, upper = di_lib.get_random_ranges(size=file_size,
                                                     greater_than_unit_size=greater_than_unit_size)
+            self.log.debug("Lower: %s  Upper: %s", lower, upper)
             buff_range = buff_c[lower:upper]
             self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
@@ -993,8 +995,11 @@ class TestDIDurability:
                         self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
                                       len(content))
                         dw_csum = di_lib.calc_checksum(content)
-                        assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
-                                                                         'downloaded file')
+                        self.log.info("Comparing csm of uploaded and downloaded parts")
+                        if buff_csm == dw_csum:
+                            failed_file_sizes.append(file_size)
+                            self.log.info("csm comparison failed")
+                        self.log.info("Checksum matched")
                     else:
                         self.log.info("download of corrupted part is successful, adding to "
                                       "failed size list")
@@ -1014,14 +1019,20 @@ class TestDIDurability:
                 try:
                     lower, upper = di_lib.get_random_ranges(size=file_size)
                     lower = 0
+                    self.log.debug("Lower: %s  Upper: %s", lower, upper)
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                               key=self.object_name,
                                                               ranges=f"bytes={lower}-{upper}")
                     self.log.info(str(resp_rr_dwn))
+                    if resp_rr_dwn[0]:
+                        failed_file_sizes.append(file_size)
                 except CTException as err:
                     err_str = str(err)
                     self.log.info("Test failed with %s", err_str)
-                    if file_size > 1 * MB:
+                    if "error occurred (InternalError) when calling the GetObject operation" \
+                            in err_str:
+                        self.log.info("Download failed with InternalError")
+                    else:
                         failed_file_sizes.append(file_size)
         if failed_file_sizes:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
@@ -1029,7 +1040,6 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
-    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
@@ -1043,7 +1053,7 @@ class TestDIDurability:
                       "and verify read (Get).")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_enabled_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -1261,6 +1271,7 @@ class TestDIDurability:
 
     # pylint: disable-msg=too-many-locals
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
     def test_29284(self):
@@ -1321,6 +1332,7 @@ class TestDIDurability:
         self.s3_test_obj.delete_bucket(bucket_name=bucket_name_2, force=True)
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
     def test_29289(self):

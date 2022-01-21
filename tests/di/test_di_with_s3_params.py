@@ -123,6 +123,7 @@ class TestDIWithChangingS3Params:
         cls.log.info("ENDED: Teardown class operations.")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
     def test_29273(self):
@@ -183,6 +184,7 @@ class TestDIWithChangingS3Params:
         self.log.info("ENDED:Normal File upload with DI flag enable for read and write")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
     def test_29276(self):
@@ -237,6 +239,7 @@ class TestDIWithChangingS3Params:
                       "different name")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29277')
     @CTFailOn(error_handler)
     def test_29277(self):
@@ -292,6 +295,7 @@ class TestDIWithChangingS3Params:
                       "different name")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
     def test_29281(self):
@@ -352,6 +356,7 @@ class TestDIWithChangingS3Params:
                       "name with Data Integrity disabled.")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
     def test_29282(self):
@@ -410,6 +415,7 @@ class TestDIWithChangingS3Params:
                       "with Data Integrity flag ON for write and OFF for read")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
     def test_29286(self):
@@ -459,6 +465,7 @@ class TestDIWithChangingS3Params:
                       "Integrity flag ON for write and OFF for read")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
     def test_29288(self):
