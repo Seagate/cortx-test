@@ -307,9 +307,6 @@ class ProvDeployK8sCortxLib:
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
-        LOGGER.debug("Copy deploy script file to %s", self.deploy_cfg['git_remote_dir'])
-        self.copy_sol_file(master_node_list[0], self.deploy_cfg['deploy_file_path'],
-                           self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -1025,7 +1022,8 @@ class ProvDeployK8sCortxLib:
         custom_repo_path = kwargs.get("custom_repo_path",
                                       PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
         report_path = kwargs.get("report_filepath", PROV_CFG["k8s_cortx_deploy"]["report_file"])
-        data_disk_size = kwargs.get("data_disk_size", PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])
+        data_disk_size = kwargs.get("data_disk_size",
+                                    PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])
         metadata_disk_size = kwargs.get("meta_disk_size",
                                         PROV_CFG["k8s_cortx_deploy"]["metadata_disk_size"])
         row = list()
@@ -1063,7 +1061,8 @@ class ProvDeployK8sCortxLib:
                                         sns_spare=sns_spare, dix_data=dix_data,
                                         dix_parity=dix_parity, dix_spare=dix_spare,
                                         cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
-                                        size_data_disk=data_disk_size, size_metadata=metadata_disk_size,
+                                        size_data_disk=data_disk_size,
+                                        size_metadata=metadata_disk_size,
                                         log_path=log_path)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
