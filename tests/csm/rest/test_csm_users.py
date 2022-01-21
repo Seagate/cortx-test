@@ -640,6 +640,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -2744,6 +2745,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
