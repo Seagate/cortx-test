@@ -226,18 +226,11 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
-        if local_sol_path == "solution.yaml":
-            remote_path = remote_code_path + "solution.yaml"
-            LOGGER.debug("Remote path %s", remote_path)
-            if system_utils.path_exists(local_sol_path):
-                node_obj.copy_file_to_remote(local_sol_path, remote_path)
-                return True, f"Files copied at {remote_path}"
-        elif local_sol_path == "deploy-cortx-cloud.sh":
-            remote_path = remote_code_path + "deploy-cortx-cloud.sh"
-            LOGGER.debug("Remote path %s", remote_path)
-            if system_utils.path_exists(local_sol_path):
-                node_obj.copy_file_to_remote(local_sol_path, remote_path)
-                return True, f"Files copied at {remote_path}"
+        remote_path = remote_code_path + "solution.yaml"
+        LOGGER.debug("Remote path %s", remote_path)
+        if system_utils.path_exists(local_sol_path):
+            node_obj.copy_file_to_remote(local_sol_path, remote_path)
+            return True, f"Files copied at {remote_path}"
         return False, f"{local_sol_path} not found"
 
     def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
@@ -334,18 +327,6 @@ class ProvDeployK8sCortxLib:
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
-
-    def checkout_template_file(self, git_tag):
-        """
-        Method to checkout solution.yaml file
-        param: git tag: tag of service repo
-        """
-        resp = list()
-        url1 = self.deploy_cfg["git_k8_deploy_file"].format(git_tag)
-        cmd1 = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file_path"], url1)
-        system_utils.execute_cmd(cmd=cmd1)
-        resp.append(self.deploy_cfg["deploy_file_path"])
-        return resp
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -646,16 +627,6 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, filepath
-
-    def update_deployscript(self, filepath):
-        """
-        This Method update the setup_size in deploy file
-        Param: filepath: filename with complete path
-        :returns the status, filepath
-        """
-        cmd = "sed -i \"s/Init:Error/Error/g\" {}".format(filepath)
-        system_utils.execute_cmd(cmd)
         return True, filepath
 
     @staticmethod
@@ -1083,10 +1054,6 @@ class ProvDeployK8sCortxLib:
                     self.taint_master(node)
 
         if cortx_cluster_deploy_flag:
-            temp_path = self.checkout_template_file(self.git_script_tag)
-            resp_dep = self.update_deployscript(temp_path[0])
-            LOGGER.debug("Updating deploy script  %s", resp_dep)
-            assert_utils.assert_true(resp_dep[0], "Failure updating")
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
