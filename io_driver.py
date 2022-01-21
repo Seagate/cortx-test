@@ -19,14 +19,14 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+"""IO Driver module."""
+
 import os
 import shutil
 import logging
 
 from config.io import CMN_CFG
 from commons.helpers.health_helper import Health
-from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import support_bundle_utils as sb
 
 
@@ -49,37 +49,36 @@ def check_cluster_services():
             if not response[0]:
                 LOGGER.critical(
                     'Cluster Node {%s} failed in health check. Reason: {%s}', hostname, response)
-                raise Exception(response[1])
+                raise IOError(response[1])
         LOGGER.info("Cluster status is healthy.")
-    except Exception as error:
-        LOGGER.error("An error occurred in check_cluster_services", str(error))
+    except OSError as error:
+        LOGGER.error("An error occurred in check_cluster_services: %s", str(error))
         response = False, error
 
     return response
 
 
 def check_cluster_space():
-    """Checks nodes space and accepts till 98 % occupancy."""
+    """Check nodes space and accepts till 98 % occupancy."""
     LOGGER.info("Check cluster storage for all nodes.")
-    ha_used_percent = 0.0
     try:
+        ha_used_percent = 0.0
         for node in NODES:
             if node.get("node_type", None).lower() != "master":
                 continue
             hostname = node['hostname']
             health = Health(hostname=hostname, username=node['username'], password=node['password'])
             ha_total, ha_avail, ha_used = health.get_sys_capacity()
-            LOGGER.info("Total capacity: %s GB", ha_total/(1024**3))
-            LOGGER.info("Available capacity: %s GB", ha_total/(1024**3))
-            LOGGER.info("Used capacity: %s GB", ha_total/(1024**3))
+            LOGGER.info("Total capacity: %s GB", ha_total / (1024**3))
+            LOGGER.info("Available capacity: %s GB", ha_avail / (1024**3))
+            LOGGER.info("Used capacity: %s GB", ha_used / (1024**3))
             ha_used_percent = round((ha_used / ha_total) * 100, 1)
             health.disconnect()
             if ha_used_percent > 98.0:
-                raise Exception(
-                    'Cluster Node {%s} failed space {%s} check.', hostname, ha_used_percent)
+                raise IOError(f'Cluster Node {hostname} failed space {ha_used_percent} check.')
         response = True, ha_used_percent
-    except Exception as error:
-        LOGGER.error("An error occurred in check_cluster_space", str(error))
+    except OSError as error:
+        LOGGER.error("An error occurred in check_cluster_space: %s", str(error))
         response = False, error
 
     return response
@@ -89,7 +88,7 @@ def collect_support_bundle():
     """Collect support bundles from various components using support bundle cmd."""
     try:
         bundle_dir = os.path.join(os.getcwd(), "support_bundle")
-        bundle_name = "sanity"
+        bundle_name = "io-stability"
         if os.path.exists(bundle_dir):
             LOGGER.info("Removing existing directory %s", bundle_dir)
             shutil.rmtree(bundle_dir)
@@ -99,8 +98,8 @@ def collect_support_bundle():
         else:
             sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
         bundle_fpath = os.path.join(bundle_dir, os.listdir(bundle_dir)[-1])
-    except Exception as error:
-        LOGGER.error("An error occurred in collect_support_bundle %s", error)
+    except OSError as error:
+        LOGGER.error("An error occurred in collect_support_bundle: %s", error)
         return False, error
 
     return os.path.exists(bundle_fpath), bundle_fpath
@@ -119,8 +118,8 @@ def collect_crash_files():
         else:
             sb.collect_crash_files(crash_dir)
         crash_fpath = os.path.join(crash_dir, os.listdir(crash_dir)[-1])
-    except Exception as error:
-        LOGGER.error("An error occurred in collect_support_bundle %s", error)
+    except OSError as error:
+        LOGGER.error("An error occurred in collect_support_bundle: %s", error)
         return False, error
 
     return os.path.exists(crash_fpath), crash_fpath
