@@ -1147,20 +1147,15 @@ class TestClusterShutdownStart:
         This test verifies CSM REST API responses - negative scenario (REST API options validation)
         """
         LOGGER.info("Started: Test to check CSM REST API responses - REST API options validation.")
-        LOGGER.info("STEP 1: Perform IOs with variable object sizes")
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        LOGGER.info("STEP 1: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29481', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        self.test_prefix = 'test_29481'
-        resp = self.ha_obj.ha_s3_workload_operation(
-            s3userinfo=self.s3_clean, log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 1: IOs completed successfully.")
         LOGGER.info("Step 2: Verify REST API cluster shutdown signal with bad request body")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="xyz_signal", resource="cluster", expected_response=HTTPStatus.BAD_REQUEST)
@@ -1183,7 +1178,6 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Check the overall status of the cluster.")
-        # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Step 5: Sucessfully shutdown the cluster.")
@@ -1198,7 +1192,6 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Check the overall status of the cluster.")
-        # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
