@@ -591,7 +591,7 @@ class SystemHealth(RestTestLib):
             self,
             operation: str,
             resource: str,
-            negative_resp: None,
+            negative_resp=None,
             expected_response=HTTPStatus.OK):
         """
         Helper method to send the cluster operation signal before operation performed.
