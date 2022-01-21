@@ -999,6 +999,8 @@ class ProvDeployK8sCortxLib:
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
         keyword:destroy_setup_flag:flag to destroy cortx cluster
         keyword:log_path:log_path of cortx cluster
+        keyword:data_disk_size: data disk size
+        keyword:meta_disk_size: metadata disk size
         keyword:custom_repo_path: Custom repo path to be used for ONLY DESTROY cortx cluster
         """
         setup_k8s_cluster_flag = \
