@@ -79,7 +79,8 @@ class TestClusterShutdownStart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
-        cls.s3_clean = cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
+        cls.s3_clean = {}
+        cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
@@ -100,6 +101,7 @@ class TestClusterShutdownStart:
                                                         password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
+        cls.rest_hlt_obj = SystemHealth()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
@@ -172,14 +174,14 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
@@ -192,19 +194,19 @@ class TestClusterShutdownStart:
             "Step 4: Cluster restarted fine and all Pods online.")
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
         self.restored = False
 
@@ -233,15 +235,14 @@ class TestClusterShutdownStart:
             LOGGER.info("Checking cluster restart for %s count", loop)
 
             LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
-                                               nbuckets=10)
-            assert_utils.assert_true(resp[0], resp[1])
-            di_check_data = (resp[1], resp[2])
-            self.s3_clean = resp[2]
+            io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1)
+            assert_utils.assert_true(io_resp[0], io_resp[1])
+            di_check_data = (io_resp[1], io_resp[2])
+            self.s3_clean.update(io_resp[2])
             LOGGER.info("Step 2: IOs are started successfully.")
 
             LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-            resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+            resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                          resource="cluster")
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Cluster shutdown signal is successful.")
@@ -254,15 +255,17 @@ class TestClusterShutdownStart:
             LOGGER.info("Step 5: Check DI for IOs run before restart.")
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(io_resp[2].keys())[0])
             LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
             LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-new')
-            assert_utils.assert_true(resp[0], resp[1])
-            di_check_data = (resp[1], resp[2])
-            self.s3_clean = resp[2]
+            io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-1', nusers=1)
+            assert_utils.assert_true(io_resp[0], io_resp[1])
+            di_check_data = (io_resp[1], io_resp[2])
+            self.s3_clean.update(io_resp[2])
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
+            self.s3_clean.pop(list(io_resp[2].keys())[0])
             LOGGER.info("Step 6: IOs running successfully with new S3 account.")
             self.restored = False
             LOGGER.info("Cluster restart was successful for %s count", loop)
@@ -310,7 +313,7 @@ class TestClusterShutdownStart:
         upload_checksum = str(resp[2])
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
@@ -424,7 +427,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal sent successfully.")
@@ -512,7 +515,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
@@ -553,7 +556,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
@@ -620,7 +623,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
@@ -739,7 +742,7 @@ class TestClusterShutdownStart:
                     "and copied to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
@@ -810,7 +813,7 @@ class TestClusterShutdownStart:
                     "and copied to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
@@ -887,11 +890,10 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479', nusers=1,
-                                           nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info(
@@ -902,19 +904,19 @@ class TestClusterShutdownStart:
             "Step 3: Cluster restarted fine and all Pods online.")
 
         LOGGER.info("Step 4: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 4: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 5: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 5: IOs running successfully with new S3 account.")
         self.restored = False
 
@@ -942,15 +944,14 @@ class TestClusterShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1,
-                                           nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+        resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
@@ -978,19 +979,19 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Cluster is back online.")
 
         LOGGER.info("Step 6: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 7: Create new S3 account and perform IOs.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean = resp[2]
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
         self.restored = False
 
@@ -1043,7 +1044,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_equal(100, len(resp[1]), resp)
         LOGGER.info("Step 4: Verified %s has 100 buckets are remaining", self.s3_clean["user_name"])
         LOGGER.info("Step 5: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully sent the cluster shutdown signal through CSM REST.")
@@ -1101,7 +1102,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 1. Start parallel S3 IO for 3 minutes duration.")
         self.s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h3m")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
@@ -1161,12 +1162,12 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
         LOGGER.info("Step 2: Verify REST API cluster shutdown signal with bad request body")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="xyz_signal", resource="cluster", expected_response=HTTPStatus.BAD_REQUEST)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Verified REST API cluster shutdown signal with bad request body.")
         LOGGER.info("Step 3: Verify REST API cluster shutdown signal with unauthorized request")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal",
             resource="cluster",
             expected_response=HTTPStatus.UNAUTHORIZED,
@@ -1174,7 +1175,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Verified REST API cluster shutdown signal with unauthorized request")
         LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully sent the cluster shutdown signal through CSM REST.")
@@ -1187,7 +1188,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Step 5: Sucessfully shutdown the cluster.")
         LOGGER.info("Step 6: Verify REST API cluster shutdown signal to unavailable resource")
-        resp = SystemHealth.cluster_operation_signal(
+        resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal",
             resource="cluster",
             expected_response=HTTPStatus.INTERNAL_SERVER_ERROR)
