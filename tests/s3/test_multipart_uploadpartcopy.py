@@ -608,7 +608,6 @@ class TestMultipartUploadPartCopy:
                       "parts can have sizes aligned and unaligned with motr unit sizes. "
                       "Make sure the entire object is > 5GB.")
         resp = create_file(self.mp_obj_path, count=6, b_size="1G")
-        put_checksum = calc_checksum(self.mp_obj_path)
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.s3mpu_obj.complete_multipart_upload_with_di(
             self.bucket_name, self.object_name, self.mp_obj_path, total_parts=10, random=True)
