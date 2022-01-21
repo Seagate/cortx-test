@@ -509,7 +509,6 @@ class HAK8s:
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param part_numbers: List of parts to be uploaded
-        :param parts_etag: List containing uploaded part number with its ETag
         :return: response
         """
         try:
@@ -656,10 +655,11 @@ class HAK8s:
         return True, put_etag if not background else output.put((True, put_etag))
 
     # pylint: disable-msg=too-many-locals
-    def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
+    def start_random_mpu(self, event, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
         """
         Helper function to start mpu (To start mpu in background, this function needs to be used)
+        :param event: Thread event to be sent in case of parallel IOs
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -673,7 +673,8 @@ class HAK8s:
         """
         access_key = s3_data["s3_acc"]["accesskey"]
         secret_key = s3_data["s3_acc"]["secretkey"]
-        failed_parts = {}
+        failed_parts = []
+        exp_failed_parts = []
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
@@ -700,8 +701,7 @@ class HAK8s:
         parts = self.create_multiple_data_parts(multipart_obj_size=file_size,
                                                 multipart_obj_path=multipart_obj_path,
                                                 total_parts=total_parts)
-        LOGGER.debug("Created parts of data: %s", parts)
-        LOGGER.info("Uploading parts into bucket")
+        LOGGER.info("Uploading parts into bucket: %s", part_numbers)
         for i in part_numbers:
             try:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
@@ -711,12 +711,16 @@ class HAK8s:
                 p_tag = resp[1]
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
-                res = (parts_etag, mpu_id)
-            except (Exception, CTException) as error:
+                LOGGER.info("Uploaded part %s", i)
+            except BaseException as error:
                 LOGGER.error("Error: %s", error)
-                failed_parts[i] = parts[i]
-                res = (failed_parts, parts_etag, mpu_id)
+                if event.is_set():
+                    exp_failed_parts.append(i)
+                else:
+                    failed_parts.append(i)
+                LOGGER.info("Failed to upload part %s", i)
 
+        res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
     def check_cluster_status(self, pod_obj):

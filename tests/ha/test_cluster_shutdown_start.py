@@ -29,6 +29,7 @@ import time
 from http import HTTPStatus
 from multiprocessing import Process, Queue
 from time import perf_counter_ns
+import threading
 
 import pytest
 
@@ -135,6 +136,7 @@ class TestClusterShutdownStart:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             if not resp[0]:
+                LOGGER.debug("Cluster status: %s", resp)
                 resp = self.ha_obj.restart_cluster(self.node_master_list[0])
                 assert_utils.assert_true(resp[0], resp[1])
             if self.s3_clean:
@@ -428,7 +430,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal sent successfully.")
 
@@ -592,13 +594,13 @@ class TestClusterShutdownStart:
         LOGGER.info("STARTED: Test to verify multipart upload and download during cluster restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = list(range(1, total_parts))
+        part_numbers = list(range(1, total_parts+1))
         random.shuffle(part_numbers)
         output = Queue()
-        failed_parts = dict()
         parts_etag = list()
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
+        event = threading.Event()  # Event to be used to send intimation of cluster restart
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -609,6 +611,8 @@ class TestClusterShutdownStart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account")
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
@@ -618,44 +622,55 @@ class TestClusterShutdownStart:
                 'object_name': self.object_name, 'file_size': file_size, 'total_parts': total_parts,
                 'multipart_obj_path': self.multipart_obj_path, 'part_numbers': part_numbers,
                 'parts_etag': parts_etag, 'output': output}
-        prc = Process(target=self.ha_obj.start_random_mpu, kwargs=args)
-        prc.start()
+        thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
+        time.sleep(HA_CFG["common_params"]["90sec_delay"])
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        event.set()
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
-        prc.join()
-        if output.empty():
+        thread.join()
+        responses = tuple()
+        while len(responses) < 4:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        if not responses:
             assert_utils.assert_true(False, "Background process failed to do multipart upload")
 
-        res = output.get()
-        mpu_id = None
-        if isinstance(res[0], dict):
-            failed_parts = res[0]
-            parts_etag = res[1]
-            mpu_id = res[2]
-        elif isinstance(res[0], list):
+        exp_failed_parts = responses[0]
+        failed_parts = responses[1]
+        parts_etag = responses[2]
+        mpu_id = responses[3]
+        LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
+                     "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
+                     failed_parts, parts_etag, mpu_id)
+        if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             LOGGER.info("All the parts are uploaded successfully")
-            parts_etag = res[0]
-            mpu_id = res[1]
-
-        if bool(failed_parts):
+        elif failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in good "
+                                            f"state. Failed parts: {failed_parts}")
+        elif exp_failed_parts:
             LOGGER.info("Step 4: Upload remaining parts")
             resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                         bucket_name=self.bucket_name,
                                                         object_name=self.object_name,
-                                                        part_numbers=list(failed_parts.keys()),
-                                                        remaining_upload=True, parts=failed_parts,
-                                                        mpu_id=mpu_id, parts_etag=parts_etag)
+                                                        part_numbers=exp_failed_parts,
+                                                        remaining_upload=True,
+                                                        multipart_obj_size=file_size,
+                                                        total_parts=total_parts,
+                                                        multipart_obj_path=self.multipart_obj_path,
+                                                        mpu_id=mpu_id)
 
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
             LOGGER.info("Step 4: Successfully uploaded remaining parts")
@@ -664,14 +679,16 @@ class TestClusterShutdownStart:
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]
 
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
         LOGGER.info("Step 5: Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
-        if not res[0] or len(res[1]["Parts"]) != total_parts:
-            assert_utils.assert_true(False, res)
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 5: Listed parts of multipart upload: %s", res[1])
+
         LOGGER.info("Step 6: Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
-                                                            self.object_name)
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
+                                                       self.object_name)
         assert_utils.assert_true(res[0], res)
         res = s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, res[1], res)
@@ -690,11 +707,13 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29473', nusers=1, nbuckets=10)
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29473', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cleaning up accounts and buckets created in IO operations")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify multipart upload and download during cluster restart")
