@@ -1163,7 +1163,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
                      data_pod_list, server_pod_list)
         start_time = int(time.time())
-        end_time = start_time + 3600  # 30 mins timeout
+        end_time = start_time + 1800  # 30 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
