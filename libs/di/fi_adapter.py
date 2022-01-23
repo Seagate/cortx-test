@@ -215,7 +215,7 @@ class S3FailureInjection(EnableFailureInjection):
                         try:
                             resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
                             LOGGER.debug("http server resp : %s", resp)
-                            if "not allowed against this resource" in resp:
+                            if "not allowed against this resource" in str(resp):
                                 return False
                             if not resp:
                                 break
