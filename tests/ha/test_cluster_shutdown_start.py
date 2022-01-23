@@ -833,15 +833,19 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         bkt_obj_dict1 = dict()
-        bkt_obj_dict1["ha-bkt-{}".format(perf_counter_ns())] = "ha-obj-{}".format(perf_counter_ns())
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        for cnt in range(bkt_cnt):
+            rd_time = perf_counter_ns()
+            s3_test_obj.create_bucket(f"ha-bkt{cnt}-{rd_time}")
+            bkt_obj_dict1[f"ha-bkt{cnt}-{rd_time}"] = f"ha-obj{cnt}-{rd_time}"
+        LOGGER.debug("New bucket-object dict: %s", bkt_obj_dict1)
         bkt_obj_dict.update(bkt_obj_dict1)
-        LOGGER.info("Step 3: Create multiple buckets and copy object from %s to other buckets in "
-                    "background", self.bucket_name)
+        LOGGER.info("Step 3: Copy object from %s to other buckets in background", self.bucket_name)
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict1, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
@@ -858,7 +862,7 @@ class TestClusterShutdownStart:
         prc.join()
         if output.empty():
             LOGGER.error("Failed in Copy Object process")
-            LOGGER.info("Retrying copy object to bucket %s", list(bkt_obj_dict1.keys())[0])
+            LOGGER.info("Retrying copy object to buckets %s", list(bkt_obj_dict1.keys()))
             resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                       bucket_name=self.bucket_name,
                                                       object_name=self.object_name,
@@ -881,11 +885,13 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 6: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29476', nusers=1, nbuckets=10)
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29476-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cleaning up accounts and buckets created during IO operations")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
-        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify copy object to other buckets during cluster restart")
@@ -1130,17 +1136,17 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Sucessfully shutdown the cluster and verified all pods are offline.")
+        assert_utils.assert_false(resp[0], resp[1])
+        LOGGER.info("Step 3: Successfully shutdown the cluster and verified all pods are offline.")
         LOGGER.info("Step 4: Check the parallel s3 IO status while cluster restart in progress")
         # TODO: Need to debug s3bench log file once logs are available with failures
         LOGGER.info("Step 5: Start the cluster and verify all pods are running.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         # TODO: Need to check if any sleep needed before cluster status is checked.
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(pod_obj=self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Sucessfully started the cluster and verified all pods are running.")
+        LOGGER.info("Step 5: Successfully started the cluster and verified all pods are running.")
         LOGGER.info("Step 6. Stop parallel S3.")
         self.s3ios.stop()
         # TODO: Need to add check for s3bench log file once logs are available with failures

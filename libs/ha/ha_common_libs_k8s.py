@@ -630,9 +630,11 @@ class HAK8s:
             if not resp[0] or object_name not in resp[1]:
                 return resp if not background else sys.exit(1)
 
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Copy object to different bucket with different object name.")
         for bkt_name, obj_name in bkt_obj_dict.items():
             resp, bktlist = s3_test_obj.bucket_list()
+            LOGGER.info("Bucket list: %s", bktlist)
             if bkt_name not in bktlist:
                 resp = s3_test_obj.create_bucket(bkt_name)
                 LOGGER.info("Response: %s", resp)
