@@ -65,7 +65,12 @@ def s3bench_run(return_q, access, secret, endpoint, bucket, object_prefix, log_f
     logger.info("S3bench %s complete PID = %s", bucket, pid)
 
 
-def launch_process(process, process_states):
+def launch_process(process: Process, process_states: dict):
+    """
+    This method is intended to Start the process and add PID to dictionary.
+    :param process: Object of Process
+    :process_states : Dictionary of process as key and pid as value
+    """
     logger.info("Launching process")
     process.start()
     pid = process.pid
@@ -125,6 +130,10 @@ def main():
         for _, pid in completed_process.items():
             started_process = {k: v for k, v in started_process.items() if v != pid}
         if stop or not started_process:
+            if not started_process:
+                logger.info("No running process,exiting scheduler")
+            else:
+                logger.error("Process terminated without response. Exiting scheduler")
             break
     logger.info("IO Driver Complete")
 
