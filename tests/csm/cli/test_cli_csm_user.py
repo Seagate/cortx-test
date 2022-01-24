@@ -154,8 +154,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Verified CSM user is able to login cortxcli by passing username as paramter")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -191,8 +189,6 @@ class TestCliCSMUser:
         self.logger.info("Listed alerts using csm monitor role")
         self.CSM_ALERT.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -215,8 +211,6 @@ class TestCliCSMUser:
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", self.user_name)
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -239,8 +233,6 @@ class TestCliCSMUser:
             resp[0], True, resp)
         assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", self.user_name)
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -263,8 +255,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Creating csm user with invalid role is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -298,8 +288,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Creating csm user with duplicate name is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -315,8 +303,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.logger.info(resp[1])
         self.logger.info("Displayed help response for create csm user")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -382,8 +368,6 @@ class TestCliCSMUser:
         user_list = [each["username"] for each in resp[1]["users"]]
         assert_utils.assert_list_item(user_list, self.user_name)
         self.logger.info("Verified list csm user")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -418,8 +402,6 @@ class TestCliCSMUser:
         assert len(list_user[1]["users"]) == len(
             list_with_offset[1]["users"]) + offset
         self.logger.info("Verified list csm user with offset")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -448,8 +430,6 @@ class TestCliCSMUser:
         self.logger.info(
             "List csm user with no value for offset is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -477,8 +457,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         assert len(resp[1]["users"]) == limit
         self.logger.info("Verified list csm user with limit")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -510,8 +488,6 @@ class TestCliCSMUser:
         self.logger.info(
             "List csm user with invalid value for limit is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -540,8 +516,6 @@ class TestCliCSMUser:
         self.logger.info(
             "List csm user with no value for limit is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -838,8 +812,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Verified list csm user with valid value for param limit "
             "where users exists less than limit value")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -869,8 +841,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.logger.info(
             "Verified list csm user with valid value for param sort")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -940,8 +910,6 @@ class TestCliCSMUser:
         self.logger.info(resp)
         self.logger.info(
             "Verified list csm user with valid value for param direction")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -975,8 +943,6 @@ class TestCliCSMUser:
         self.logger.info("List of users in xml format %s", resp)
         self.logger.info(
             "Verified list csm user with valid value for param format")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1017,8 +983,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified help response with csm manage role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1068,7 +1032,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
 
         self.logger.info("Deleting csm users")
-        self.CSM_USER.delete_csm_user(self.user_name)
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
         assert_utils.assert_equals(resp[0], True, resp)
         self.CSM_USER.logout_cortx_cli()
@@ -1108,8 +1071,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(resp[0], True, resp)
         self.logger.info(
             "Verified csm monitor role can perform list operation on csm_users using")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1156,8 +1117,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Verified csm monitor role cannot "
             "perform update, delete, create operation on s3_accounts")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1195,8 +1154,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified csm manage role can create S3 account")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1231,8 +1188,6 @@ class TestCliCSMUser:
         assert len(resp[1]["users"]) == 1
         self.logger.info(
             "Verified list of csm users with valid values for all params")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1273,8 +1228,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified csm manage role can list, create S3 account")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1349,8 +1302,6 @@ class TestCliCSMUser:
 
         self.IAM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1390,8 +1341,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified help response with csm monitor role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1434,8 +1383,6 @@ class TestCliCSMUser:
         self.CSM_USER.logout_cortx_cli()
         self.logger.info("Verified password is updated for csm user")
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1487,8 +1434,6 @@ class TestCliCSMUser:
 
         self.IAM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1536,8 +1481,6 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], True, resp)
         self.logger.info("Verified user is able to login using new password")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1639,8 +1582,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified that csm user with monitor role cannot update alert")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1728,9 +1669,6 @@ class TestCliCSMUser:
             resp[1], "can not update")
         self.logger.info(
             "Verified monitor user can not change roles for other user")
-        # delete created CSM user
-        for each in zip(user_name_list, ["manage", "monitor"]):
-            self.CSM_USER.delete_csm_user(each[0])
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1780,8 +1718,6 @@ class TestCliCSMUser:
         self.logger.info(
             "Performing bucket operations with csm manage role is failed with error %s",
             resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1815,8 +1751,6 @@ class TestCliCSMUser:
         self.S3_ACC.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.logger.info("Listed csm user with monitor role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1860,9 +1794,6 @@ class TestCliCSMUser:
                 username=each_user, password=self.new_pwd)
             assert_utils.assert_equals(resp[0], True, err_msg)
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        for each in zip(user_name_list, ["manage", "monitor"]):
-            self.CSM_USER.delete_csm_user(each[0])
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1953,9 +1884,6 @@ class TestCliCSMUser:
         self.CSM_USER.logout_cortx_cli()
         self.logger.info("Login successful using new password")
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        for each in zip(user_name_list, ["manage", "monitor"]):
-            self.CSM_USER.delete_csm_user(each[0])
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1993,8 +1921,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Resetting password of admin by csm user is failed with error")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2050,9 +1976,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified csm user is not able to change roles for root user")
-        # delete created CSM user
-        for each in zip(user_name_list, ["manage", "monitor"]):
-            self.CSM_USER.delete_csm_user(each[0])
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2074,8 +1997,6 @@ class TestCliCSMUser:
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2115,8 +2036,6 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified manage user should NOT be able to create users with admin role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2198,8 +2117,6 @@ class TestCliCSMUser:
             username=self.user_name,
             password=self.csm_user_pwd)
         assert_utils.assert_true(resp[0], resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         resp = self.CSM_USER.delete_csm_user(user_name=username)
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(
@@ -2253,8 +2170,6 @@ class TestCliCSMUser:
             username=self.user_name,
             password=self.csm_user_pwd)
         assert_utils.assert_true(resp[0], resp[1])
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         resp = self.CSM_USER.delete_csm_user(user_name=username)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted csm user with manage role")
@@ -2299,8 +2214,6 @@ class TestCliCSMUser:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Password has been changed for CSM user with admin role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2356,9 +2269,6 @@ class TestCliCSMUser:
         assert_utils.assert_true(resp[0], resp[1])
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2414,9 +2324,6 @@ class TestCliCSMUser:
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2448,8 +2355,6 @@ class TestCliCSMUser:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Changed role of other admin user from admin role to manage role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2481,8 +2386,6 @@ class TestCliCSMUser:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Changed role of other admin user from admin role to monitor role")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2526,9 +2429,6 @@ class TestCliCSMUser:
             current_password=self.csm_user_pwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of manage user to admin")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2572,9 +2472,6 @@ class TestCliCSMUser:
             current_password=self.csm_user_pwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of monitor user to admin")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2618,9 +2515,6 @@ class TestCliCSMUser:
             current_password=self.csm_user_pwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of monitor user to manage")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2661,8 +2555,6 @@ class TestCliCSMUser:
             "Verified monitor user should NOT be able to change role of any user")
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2701,8 +2593,6 @@ class TestCliCSMUser:
             "Verified manage user should NOT be able to change role of self to any other role")
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2755,7 +2645,4 @@ class TestCliCSMUser:
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified manage user should NOT be able to change role of user with any role to admin")
-        # delete created CSM user
-        self.CSM_USER.delete_csm_user(self.user_name)
-        self.CSM_USER.delete_csm_user(user_name=username)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
