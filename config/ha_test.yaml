@@ -4,8 +4,10 @@ vm_params:
 
 common_params:
   loop_count: 11
-  power_on_time: 800
-  power_off_time: 800
+  power_on_time: 900
+  power_off_time: 900
+  pod_eviction_time: 360
+  pod_joinback_time: 180
   1sec_delay: 1
   5sec_delay: 5
   10sec_delay: 10

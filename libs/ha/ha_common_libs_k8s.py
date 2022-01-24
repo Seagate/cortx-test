@@ -93,6 +93,10 @@ class HAK8s:
             resp = system_utils.check_ping(host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
+                LOGGER.info("Rereshing %s", vm_name)
+                system_utils.execute_cmd(
+                    common_cmd.CMD_VM_REFRESH.format(
+                        self.vm_username, self.vm_password, vm_name))
                 vm_info = system_utils.execute_cmd(
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
@@ -719,9 +723,10 @@ class HAK8s:
 
         output.put(res)
 
-    def check_cluster_status(self, pod_obj):
+    def check_cluster_status(self, pod_obj, pod_name=None):
         """
         :param pod_obj: Object for master node
+        :param pod_name: Data pod name to get the hctl satatus
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
@@ -729,19 +734,19 @@ class HAK8s:
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
             if "FAILED" in line:
-                LOGGER.info("Response for K8s cluster status:")
-                LOGGER.debug(line)
-                return False, resp
-        resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        pod_name = resp[1]
+                LOGGER.error("Response for K8s cluster status: %s", resp)
+                return False, "K8S cluster status has Failures"
+        if pod_name is None:
+            resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+            pod_name = resp[1]
         res = pod_obj.send_k8s_cmd(
             operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
         for line in res.split("\n"):
             if "failed" in line or "offline" in line or "unknown" in line:
-                LOGGER.info("Response for cortx cluster status: %s", res)
-                return False, res
+                LOGGER.error("Response for cortx cluster status: %s", res)
+                return False, "Cortx HCTL status has Failures"
 
         return True, "K8s and cortx both cluster up."
 
