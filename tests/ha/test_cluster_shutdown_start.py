@@ -1105,8 +1105,8 @@ class TestClusterShutdownStart:
                 'skipput': True, 'skipget': True, 'bkts_to_del': r_buck, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         resp = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(resp), 0, f"Failed to delete remaining {r_buck} buckets")
         LOGGER.info("Step 7: Sucessfully deleted %s's remaining %s buckets",
