@@ -434,6 +434,9 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt data blocks of an object at Motr level and verify "
             "read (Get).")
 
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22910')
     def test_22910(self):
@@ -491,10 +494,10 @@ class TestDIDurability:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
                 if "error occurred (InternalError) when calling the GetObject operation" \
-                in err_str:
+                    in err_str:
                     self.log.info("Download failed with InternalError")
                 else:
-                        failed_file_sizes.append(file_size)
+                    failed_file_sizes.append(file_size)
 
             #Case 2: for file Size greater than motr Unit Size (1MB)
             if file_size > 1 * MB:
@@ -666,7 +669,7 @@ class TestDIDurability:
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22916')
-    def test_disable_checkum_validation_download_chunk_upload_22916(self):
+    def test_22916(self):
         """
         With Checksum flag  Disabled, download of the chunk uploaded object should
         succeed ( 30 MB -100 MB).
@@ -1021,16 +1024,16 @@ class TestDIDurability:
         else:
             assert False
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
-        for file_size in [4 * MB]:
+        for file_size in NORMAL_UPLOAD_SIZES:
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
-            buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
+            buff, csm = self.data_gen.generate(size=file_size, 
+                                        seed=self.data_gen.get_random_seed())
             buff_c = self.data_gen.add_first_byte_to_buffer(buffer=buff, first_byte='f')
             greater_than_unit_size = False
             if file_size > 1 * MB:
                 greater_than_unit_size = True
             lower, upper = di_lib.get_random_ranges(size=file_size,
                                                     greater_than_unit_size=greater_than_unit_size)
-            self.log.debug("Lower: %s  Upper: %s", lower, upper)
             buff_range = buff_c[lower:upper]
             self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
@@ -1046,15 +1049,11 @@ class TestDIDurability:
                 if resp_dw_rr[0]:
                     if file_size > 1 * MB:
                         content = resp_dw_rr[1]["Body"].read()
-                        self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
-                                      len(content))
+                        self.log.info('size of downloaded object %s is: %s bytes', 
+                                    self.object_name, len(content))
                         dw_csum = di_lib.calc_checksum(content)
-                        self.log.info("Comparing csm of uploaded and downloaded parts")
-
-                        if buff_csm == dw_csum:
-                            failed_file_sizes.append(file_size)
-                            self.log.info("csm comparison failed")
-                        self.log.info("Checksum matched")
+                        assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
+                                                                         'downloaded file')
                     else:
                         self.log.info("download of corrupted part is successful, adding to "
                                       "failed size list")
@@ -1074,114 +1073,20 @@ class TestDIDurability:
                 try:
                     lower, upper = di_lib.get_random_ranges(size=file_size)
                     lower = 0
-                    self.log.debug("Lower: %s  Upper: %s", lower, upper)
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                               key=self.object_name,
                                                               ranges=f"bytes={lower}-{upper}")
                     self.log.info(str(resp_rr_dwn))
-                    if resp_rr_dwn[0]:
-                        failed_file_sizes.append(file_size)
                 except CTException as err:
                     err_str = str(err)
                     self.log.info("Test failed with %s", err_str)
-                    if "error occurred (InternalError) when calling the GetObject operation" \
-                            in err_str:
-                        self.log.info("Download failed with InternalError")
-                    else:
+                    if file_size > 1 * MB:
                         failed_file_sizes.append(file_size)
         if failed_file_sizes:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
-
-    # @pytest.mark.data_integrity
-    # @pytest.mark.data_durability
-    # @pytest.mark.tags('TEST-29813')
-    # def test_29813(self):
-    #     """
-    #     Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
-    #     and verify range read (Get).
-    #     """
-    #     self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
-    #                   "and verify range read (Get).")
-    #     failed_file_sizes = []
-    #     self.log.debug("Checking setup status")
-    #     valid, skip_mark = self.di_err_lib.validate_valid_config()
-    #     if not valid or skip_mark:
-    #         self.log.debug("Skipping test as flags are not set to default")
-    #         pytest.skip()
-    #     self.log.debug("Executing test as flags are set to default")
-    #     status = self.fi_adapter.enable_data_block_corruption()
-    #     if status:
-    #         self.data_corruption_status = True
-    #         self.log.info("Step 1: Enabled data corruption")
-    #     else:
-    #         assert False
-    #     self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
-    #     for file_size in NORMAL_UPLOAD_SIZES:
-    #         self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
-    #         buff, csm = self.data_gen.generate(size=file_size, seed=self.data_gen.get_random_seed())
-    #         buff_c = self.data_gen.add_first_byte_to_buffer(buffer=buff, first_byte='f')
-    #         greater_than_unit_size = False
-    #         if file_size > 1 * MB:
-    #             greater_than_unit_size = True
-    #         lower, upper = di_lib.get_random_ranges(size=file_size,
-    #                                                 greater_than_unit_size=greater_than_unit_size)
-    #         buff_range = buff_c[lower:upper]
-    #         self.log.info("Range read: %s", len(buff_range))
-    #         buff_csm = di_lib.calc_checksum(buff_range)
-    #         location = self.data_gen.save_buf_to_file(fbuf=buff_c, csum=csm, size=file_size,
-    #                                                   data_folder_prefix=self.test_dir_path)
-    #         self.log.info("Step 1: Created a corrupted file at location %s", location)
-    #         try:
-    #             self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-    #                                         object_name=self.object_name, file_path=location)
-    #             resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
-    #                                                      key=self.object_name,
-    #                                                      ranges=f"bytes={lower}-{upper}")
-    #             if resp_dw_rr[0]:
-    #                 if file_size > 1 * MB:
-    #                     content = resp_dw_rr[1]["Body"].read()
-    #                     self.log.info('size of downloaded object %s is: %s bytes', self.object_name,
-    #                                   len(content))
-    #                     dw_csum = di_lib.calc_checksum(content)
-    #                     assert_utils.assert_equal(buff_csm, dw_csum, 'Checksum match found in '
-    #                                                                      'downloaded file')
-    #                 else:
-    #                     self.log.info("download of corrupted part is successful, adding to "
-    #                                   "failed size list")
-    #                     failed_file_sizes.append(file_size)
-    #         except CTException as err:
-    #             err_str = str(err)
-    #             self.log.info("Test failed with %s", err_str)
-    #             if file_size > 1 * MB:
-    #                 failed_file_sizes.append(file_size)
-    #             else:
-    #                 if "error occurred (InternalError) when calling the GetObject operation" \
-    #                         in err_str:
-    #                     self.log.info("Download failed with InternalError")
-    #                 else:
-    #                     failed_file_sizes.append(file_size)
-    #         if file_size > 1 * MB:
-    #             try:
-    #                 lower, upper = di_lib.get_random_ranges(size=file_size)
-    #                 lower = 0
-    #                 resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
-    #                                                           key=self.object_name,
-    #                                                           ranges=f"bytes={lower}-{upper}")
-    #                 self.log.info(str(resp_rr_dwn))
-    #             except CTException as err:
-    #                 err_str = str(err)
-    #                 self.log.info("Test failed with %s", err_str)
-    #                 if file_size > 1 * MB:
-    #                     failed_file_sizes.append(file_size)
-    #     if failed_file_sizes:
-    #         self.log.info("Test failed for sizes %s", str(failed_file_sizes))
-    #         assert False
-    #     self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
-    #                   "and verify range read (Get).")
-
 
     @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity

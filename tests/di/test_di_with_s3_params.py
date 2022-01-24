@@ -130,8 +130,8 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        valid, skipmark = self.di_err_lib.validate_disabled_config()
-        if not valid or not skipmark:
+        valid, skipmark = self.di_err_lib.validate_enabled_config()
+        if not valid or skipmark:
             self.log.info("Skipping test DI flags are not enabled")
             pytest.skip()
 
