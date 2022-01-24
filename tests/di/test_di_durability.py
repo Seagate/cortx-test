@@ -674,55 +674,6 @@ class TestDIDurability:
         self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
                     "uploaded object should succeed ( 30 MB -100 MB).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22926')
-    def test_enable_validation_induce_corruption_detect_error_22926_dup(self):
-        """
-        With Flag enabled, when data or metadata corruption induced, download of
-        corrupted data should flag error.
-        This test is duplicate and needs cleanup or associate with correct test.
-        """
-        self.log.info(
-            "STARTED: With Flag enabled, when data or metadata corruption induced, download of"
-            "corrupted data should flag error.")
-        self.log.info(
-            "Step 1: Enable checksum verification flag.")
-        # resp = eanble_checksum_flag(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Enabled checksum flag successfully.")
-        self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        for i in range(self.secure_range.randint(2, 8)):
-            file_name = f"{self.file_path}{i}"
-            system_utils.create_file(file_name, 20)
-            resp = self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=file_name, file_path=self.file_path)
-            self.file_lst.append(file_name)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info("Step 2: Induce metadata or data corruption.")
-        # resp = induce_metadata_corruption(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Induced metadata or data corruption.")
-        self.log.info(
-            "Step 3: Verify download corrupted object.")
-        for i in self.file_lst:
-            dest_name = f"{i}_download"
-            res = self.s3_mp_test_obj.object_download(
-                self.bucket_name, i, dest_name)
-            self.log.debug(res)
-            # assert_utils.assert_false(res[0], res)
-        self.log.info(
-            "Step 3: Download object failed with corruption error.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
 
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -1309,7 +1260,7 @@ class TestDIDurability:
             self.log.info("Range read: %s  CSM: %s", len(buff_range), csm)
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
-            self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
+            self.log.info("Step 2: Created a bucket and upload object of %s Bytes into a bucket.",
                           file_size)
             put_cmd_str = "{} {}".format("put", file_path_upload)
             cmd = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
