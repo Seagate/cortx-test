@@ -21,11 +21,11 @@ pipeline {
 			    echo "BUILD : ${params.BUILD}"
      			echo "Setup k8s cluster ${params.setup_k8s_cluster}"
      			echo "Setup Client Config ${params.setup_client_config}"
-    		  echo "Run Basic S3 IO ${params.run_basic_s3_io}"
-    		  echo "Run S3 bench workload ${params.run_s3bench_workload}"
-          echo "Destroy Cortx Setup ${params.destroy_setup}"
-          echo "Collect Support Bundle ${params.collect_support_bundle}"
-          echo "Raise EOS Jira on failure ${params.raise_jira}"
+    		    echo "Run Basic S3 IO ${params.run_basic_s3_io}"
+    		    echo "Run S3 bench workload ${params.run_s3bench_workload}"
+                echo "Destroy Cortx Setup ${params.destroy_setup}"
+                echo "Collect Support Bundle ${params.collect_support_bundle}"
+                echo "Raise EOS Jira on failure ${params.raise_jira}"
 			    sh label: '', script: '''
 
                     yum install -y nfs-utils
