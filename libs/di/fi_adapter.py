@@ -212,18 +212,13 @@ class S3FailureInjection(EnableFailureInjection):
                     cmd = f'curl -X PUT -H "x-seagate-faultinjection: ' \
                           f'{fault_op},always,{fault_type},0,0" {pod_ip}:{s3_port}'
                     while retries > 0:
-                        try:
-                            resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                            LOGGER.debug("http server resp : %s", resp)
-                            if "not allowed against this resource" in str(resp):
-                                return False
-                            if not resp:
-                                break
-                        except IOError as ex:
-                            LOGGER.error("Exception: %s", ex)
-                            ex_str = str(ex)
-                            if "Connection refused" in ex_str:
-                                retries -= 1
+                        resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
+                        LOGGER.debug("http server resp : %s", resp)
+                        if "not allowed against this resource" in str(resp):
+                            return False
+                        if not resp:
+                            break
+                        retries -= 1
             return True
         except IOError as ex:
             LOGGER.error("Exception: %s", ex)
