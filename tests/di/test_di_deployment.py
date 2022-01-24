@@ -313,7 +313,7 @@ class TestDIDeployment:
                                                data_disk_per_cvg=config["data_disk_per_cvg"],
                                                master_node_list=self.master_node_list,
                                                worker_node_list=self.worker_node_list,
-                                               setup_k8s_cluster_flag=False,
+                                               setup_k8s_cluster_flag=True,
                                                cortx_cluster_deploy_flag=True,
                                                setup_client_config_flag=True,
                                                run_basic_s3_io_flag=False,

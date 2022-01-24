@@ -221,6 +221,7 @@ class S3FailureInjection(EnableFailureInjection):
                                 break
                         except IOError as ex:
                             LOGGER.error("Exception: %s", ex)
+                            LOGGER.error("remaining retrying: %s", retries)
                             retries -= 1
                             time.sleep(2)
                     if retries == 0:
