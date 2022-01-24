@@ -434,7 +434,7 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt data blocks of an object at Motr level and verify "
             "read (Get).")
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
     @pytest.mark.data_durability
@@ -1026,7 +1026,7 @@ class TestDIDurability:
         self.s3_test_obj.create_bucket(bucket_name=self.bucket_name)
         for file_size in NORMAL_UPLOAD_SIZES:
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
-            buff, csm = self.data_gen.generate(size=file_size, 
+            buff, csm = self.data_gen.generate(size=file_size,
                                         seed=self.data_gen.get_random_seed())
             buff_c = self.data_gen.add_first_byte_to_buffer(buffer=buff, first_byte='f')
             greater_than_unit_size = False
@@ -1049,7 +1049,7 @@ class TestDIDurability:
                 if resp_dw_rr[0]:
                     if file_size > 1 * MB:
                         content = resp_dw_rr[1]["Body"].read()
-                        self.log.info('size of downloaded object %s is: %s bytes', 
+                        self.log.info('size of downloaded object %s is: %s bytes',
                                     self.object_name, len(content))
                         dw_csum = di_lib.calc_checksum(content)
                         assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
