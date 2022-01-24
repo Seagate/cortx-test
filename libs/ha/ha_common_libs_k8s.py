@@ -395,7 +395,7 @@ class HAK8s:
             return True, resp
         return False, resp
 
-    def restart_cluster(self, pod_obj, sync=True):
+    def restart_cluster(self, pod_obj, sync=False):
         """
         Restart the cluster and check all nodes health.
         :param pod_obj: pod object for stop/start cluster
@@ -403,7 +403,7 @@ class HAK8s:
         """
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command("cortx-data-pod")
+            resp = pod_obj.send_sync_command(common_const.POD_NAME_PREFIX)
             if not resp:
                 LOGGER.info("Cluster is restarting without sync")
         LOGGER.info("Stop the cluster")
@@ -424,7 +424,7 @@ class HAK8s:
             return False, "Cluster is not started"
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command("cortx-data-pod")
+            resp = pod_obj.send_sync_command(common_const.POD_NAME_PREFIX)
             if not resp:
                 LOGGER.info("Sync command is not executed")
         return True, resp
