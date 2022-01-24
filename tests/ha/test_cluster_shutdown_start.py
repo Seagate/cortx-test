@@ -1039,8 +1039,8 @@ class TestClusterShutdownStart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(wr_resp) != 3:
+            wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
@@ -1052,8 +1052,8 @@ class TestClusterShutdownStart:
                 'di_check': True, 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(rd_resp) != 4:
+            rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1072,15 +1072,15 @@ class TestClusterShutdownStart:
         assert_utils.assert_equal(wr_bucket, len(resp[1]), resp)
         LOGGER.info("Step 2: Verified %s has %s buckets created", self.s3acc_name,
                     wr_bucket)
-        r_buck = wr_bucket-del_bucket
+        r_buck = wr_bucket - del_bucket
         LOGGER.info("Step 3: Verify DI and DELETE %s buckets and verify remaining count is %s ",
                     del_bucket, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+                'skipput': True, 'bkts_to_del': del_bucket, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(remain_bkt), r_buck,
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -1239,6 +1239,6 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
-        
+
         LOGGER.info("Completed: Test to check CSM REST API responses - "
                     "REST API options validation.")
