@@ -2012,25 +2012,33 @@ class TestPodFailure:
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", node_fqdn)
         self.restore_node = True
 
+        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+            "pod_eviction_time"])
+        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
+        pod_list.remove(data_pod_name)
+        running_pod = random.sample(pod_list, 1)[0]
+        server_list.remove(serverpod_name)
+
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
                     "pod %s", data_pod_name, serverpod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
-                                                           fail=True, hostname=hostname)
+                                                           fail=True, hostname=hostname,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
                     "pod %s are in offline state", data_pod_name, serverpod_name)
-        pod_list.remove(data_pod_name)
-        server_list.remove(serverpod_name)
+
         online_pods = pod_list + server_list
         LOGGER.info("Step 5: Check services status on remaining pods %s", online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
@@ -2756,6 +2764,7 @@ class TestPodFailure:
         time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
         resp = self.node_master_list[0].execute_cmd(cmd=cmd.K8S_GET_PODS, read_lines=True)
         LOGGER.info(" resp = %s", resp)
+
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
         assert_utils.assert_false(resp[0], resp)
@@ -3130,34 +3139,45 @@ class TestPodFailure:
         assert_utils.assert_true(resp, f"{self.node_name} is not powered off")
         LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", self.node_name)
         self.restore_node = True
+        pod_list.remove(rc_datapod)
+        server_list.remove(rc_serverpod)
+        running_pod = random.sample(pod_list, 1)[0]
+        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+            "pod_eviction_time"])
+        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
-        LOGGER.info("Step 3: Check services status that were running on RC node %s's data pod %s "
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
             "and server pod %s are in offline state", self.node_name, rc_datapod, rc_serverpod)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
-                                                           fail=True, hostname=hostname)
+                                                           fail=True, hostname=hostname,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
+        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
                     "and server pod %s are in offline state", self.node_name, rc_datapod,
                     rc_serverpod)
 
-        pod_list.remove(rc_datapod)
-        server_list.remove(rc_serverpod)
         online_pods = pod_list + server_list
-        LOGGER.info("Step 4: Check services status on remaining pods %s are in online state",
+        LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
-        LOGGER.info("Step 5: Check for RC node failed over node.")
+        LOGGER.info("Step 6: Check for RC node failed over node.")
         rc_node = self.motr_obj.get_primary_cortx_node()
         assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
-        LOGGER.info("Step 5: RC node has been failed over to %s node", list(rc_info.values())[0])
+        LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
 
-        LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects).")
+        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
         io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1', nusers=1)
         assert_utils.assert_true(io_resp[0], io_resp[1])
         di_check_data = (io_resp[1], io_resp[2])
@@ -3165,7 +3185,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
-        LOGGER.info("Step 6: Successfully completed IOs.")
+        LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
 

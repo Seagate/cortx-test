@@ -726,7 +726,7 @@ class HAK8s:
     def check_cluster_status(self, pod_obj, pod_name=None):
         """
         :param pod_obj: Object for master node
-        :param pod_name: Data pod name to get the hctl satatus
+        :param pod_name: Data pod name to get the hctl status
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
