@@ -630,6 +630,7 @@ class HAK8s:
             if not resp[0] or object_name not in resp[1]:
                 return resp if not background else sys.exit(1)
 
+        # Delay added to sync this operation with main thread to achieve expected scenario
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Copy object to different bucket with different object name.")
         for bkt_name, obj_name in bkt_obj_dict.items():
