@@ -72,7 +72,12 @@ class ControllerLib:
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
 
-        self.copy = True
+        self.copy = False
+
+    def copy_telnet_operations_file(self):
+        """
+        Function to copy telnet operations file
+        """
         runner_path = cons.REMOTE_TELNET_PATH
         local_path = cons.TELNET_OP_PATH
         LOGGER.info("Copying file %s to %s", local_path, runner_path)
@@ -90,8 +95,8 @@ class ControllerLib:
         LOGGER.info("Copying file %s to %s", local_path, runner_path)
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                           remote_path=runner_path)
-        if not self.node_obj.path_exists(path=runner_path):
-            self.copy = False
+        if self.node_obj.path_exists(path=runner_path):
+            self.copy = True
 
     def get_mc_ver_sr(self) -> Tuple[str, str, str]:
         """
@@ -99,6 +104,7 @@ class ControllerLib:
 
         :return: version and serial number of the management controller
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SET_DEBUG_CMD
@@ -181,6 +187,7 @@ class ControllerLib:
         :return: Boolean, Response
         :rtype: Tuple of (bool, String)
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 ras_sspl_cfg = RAS_VAL["ras_sspl_alert"]
@@ -225,6 +232,7 @@ class ControllerLib:
         :return: Boolean, file path
         :rtype: Tuple of (bool, String)
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 LOGGER.info("Show disks for %s enclosure.", self.enclosure_ip)
@@ -268,6 +276,7 @@ class ControllerLib:
         :return: (Boolean, Number of drives)
         :rtype: Boolean, Integer
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -311,6 +320,7 @@ class ControllerLib:
         :return: (Boolean, status of the phy)
         :rtype: Boolean, String
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -362,6 +372,7 @@ class ControllerLib:
         :type: str
         :return: None
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
@@ -413,6 +424,7 @@ class ControllerLib:
         :return: (Boolean, disk volume dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_VOLUMES
@@ -510,6 +522,7 @@ class ControllerLib:
         :return: (Boolean, controller dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
@@ -612,6 +625,7 @@ class ControllerLib:
         :return: (Boolean, disk group dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_DISK_GROUP
@@ -696,6 +710,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SHOW_DISKS_CMD
@@ -769,6 +784,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_CLEAR_METADATA.format(drive_num)
@@ -821,6 +837,7 @@ class ControllerLib:
         :type: str
         :return: None
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 for drv in drive_number:
@@ -869,6 +886,7 @@ class ControllerLib:
         :return: status, message
         :rtype: bool, str
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 LOGGER.info("Adding available drives to disk group %s", disk_group)
