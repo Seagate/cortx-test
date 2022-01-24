@@ -25,6 +25,7 @@ HA test suite for Cluster Shutdown: Immediate.
 import logging
 import os
 import random
+import threading
 import time
 from http import HTTPStatus
 from multiprocessing import Process, Queue
@@ -1009,6 +1010,15 @@ class TestClusterShutdownStart:
         bucket objects Created before cluster restart.
         """
         LOGGER.info("Started: Test to check DELETEs after cluster restart.")
+
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        del_bucket = wr_bucket - 10
+        event = threading.Event()
+        wr_output = Queue()
+        del_output = Queue()
+        rd_output = Queue()
+
+        LOGGER.info("Step 1: Create %s buckets and run IOs on variable size objects.", wr_bucket)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -1016,66 +1026,100 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-29471'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        LOGGER.info("Step 1: Create 150 buckets and run IOs on variable size objects.")
-        buckets = [f"test-29471-bucket-{i}-{str(int(time.time()))}" for i in range(151)]
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipcleanup=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Sucessfully created 150 buckets & ran IOs on variable size objects.")
-        LOGGER.info("Step 2: Verify %s has 150 buckets created", self.s3_clean["user_name"])
+
+        LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = ()
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
+                                                           f"of buckets. Created {len(buckets)} "
+                                                           f"number of buckets")
+        LOGGER.info("Perform READs and Verify on %s buckets", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 's3_data': s3_data,
+                'di_check': True, 'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 1: Sucessfully created %s buckets & ran IOs on variable size objects.",
+                    wr_bucket)
+        LOGGER.info("Step 2: Verify %s has %s buckets created", self.s3acc_name,
+                    wr_bucket)
         resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(150, len(resp[1]), resp)
-        LOGGER.info("Step 2: Verified %s has 150 buckets created", self.s3_clean["user_name"])
-        LOGGER.info("Step 3: Verify DI on bucket objects and delete 50 buckets")
-        for _ in range(51):
-            del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=del_bucket, skipread=True, skipwrite=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Sucessfully verified DI on objects & deleted 50 buckets")
-        LOGGER.info("Step 4: Verify %s has 100 buckets are remaining", self.s3_clean["user_name"])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(100, len(resp[1]), resp)
-        LOGGER.info("Step 4: Verified %s has 100 buckets are remaining", self.s3_clean["user_name"])
-        LOGGER.info("Step 5: Send the cluster shutdown signal through CSM REST.")
+        assert_utils.assert_equal(wr_bucket, len(resp[1]), resp)
+        LOGGER.info("Step 2: Verified %s has %s buckets created", self.s3acc_name,
+                    wr_bucket)
+        r_buck = wr_bucket-del_bucket
+        LOGGER.info("Step 3: Verify DI and DELETE %s buckets and verify remaining count is %s ",
+                    del_bucket, r_buck)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        remain_bkt = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(remain_bkt), r_buck,
+                                  f"Failed to delete {del_bucket} number of buckets from "
+                                  f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
+        LOGGER.info("Step 3: Sucessfully verified DI on objects & deleted %s buckets. Remaining "
+                    "buckets are %s.", del_bucket, r_buck)
+        LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully sent the cluster shutdown signal through CSM REST.")
-        LOGGER.info("Step 6: Restart the cluster & check cluster status.")
+        LOGGER.info("Step 4: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 5: Restart the cluster & check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Cluster restarted fine & all Pods are online.")
-        LOGGER.info("Step 7: Verify %s has 100 buckets are remaining", self.s3_clean["user_name"])
+        LOGGER.info("Step 5: Cluster restarted fine & all Pods are online.")
+        LOGGER.info("Step 6: Verify %s has %s buckets are remaining", self.s3acc_name, r_buck)
         resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(100, len(resp[1]), resp)
-        LOGGER.info("Step 7: Verified %s has 100 buckets are remaining", self.s3_clean["user_name"])
-        LOGGER.info("Step 8: Delete %s's remaining 100 buckets", self.s3_clean["user_name"])
-        for rem_bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=rem_bucket, skipread=True, skipwrite=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(0, len(resp[1]), resp)
-        LOGGER.info("Step 8: Sucessfully deleted %s's remaining 100 buckets",
-                    self.s3_clean["user_name"])
-        LOGGER.info("Step 9: Create 50 buckets. Run IOs & verify DI. Delete created buckets.")
-        buckets = [f"test-29471-bucket-{i}-{str(int(time.time()))}" for i in range(51)]
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean, log_prefix=bucket)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 9: Sucessfully created 50 buckets. "
-                    "Ran IOs & verified DI. Deleted 50 buckets.")
-        LOGGER.info("Step 10: Verify %s has 0 buckets remaining", self.s3_clean["user_name"])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(0, len(resp[1]), resp)
-        LOGGER.info("Step 10: Verified %s has 0 buckets remaining", self.s3_clean["user_name"])
+        assert_utils.assert_equal(r_buck, len(resp[1]), resp)
+        LOGGER.info("Step 6: Verified %s has %s buckets are remaining",self.s3acc_name, r_buck)
+        LOGGER.info("Step 7: Delete %s's remaining %s buckets", self.s3acc_name, r_buck)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': r_buck, 'output': del_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        resp = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(resp), 0, f"Failed to delete remaining {r_buck} buckets")
+        LOGGER.info("Step 7: Sucessfully deleted %s's remaining %s buckets",
+                    self.s3acc_name, r_buck)
+        LOGGER.info("Step 8: Create 50 buckets. Run IOs & verify DI. Delete created buckets.")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455', nusers=1, nbuckets=50)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 8: Created 50 buckets. Run IOs & verify DI. Delete created buckets.")
         LOGGER.info("Completed: Test to check DELETEs after cluster restart.")
 
     @pytest.mark.ha
@@ -1166,7 +1210,7 @@ class TestClusterShutdownStart:
             operation="shutdown_signal",
             resource="cluster",
             expected_response=HTTPStatus.UNAUTHORIZED,
-            negative_resp="inva@lid!toke#n")
+            negative_resp="Bearer 1232sdfsdf34#232")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Verified REST API cluster shutdown signal with unauthorized request")
         LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
@@ -1195,5 +1239,6 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
+        
         LOGGER.info("Completed: Test to check CSM REST API responses - "
                     "REST API options validation.")
