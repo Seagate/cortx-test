@@ -27,6 +27,8 @@ import sys
 from subprocess import Popen, PIPE
 
 import yaml
+from word2number import w2n
+from commons.utils import jira_utils
 
 
 def execute_cmd(cmd) -> tuple:
@@ -42,6 +44,7 @@ def execute_cmd(cmd) -> tuple:
     if proc.returncode != 0:
         return False, str(error)
     return True, str(output)
+
 
 # pylint: disable-msg=too-many-locals
 def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
@@ -78,7 +81,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         raise Exception("Mismatch in Hosts and no of worker nodes given")
 
     setup_name = host_list[0]["hostname"]
-    setup_name = f"CICD_Deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
+    setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
     json_data["setupname"] = setup_name
     json_data["product_family"] = "LC"
@@ -95,6 +98,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         json.dump(json_data, file)
     return setup_name
 
+
 # pylint: disable=broad-except
 def main():
     """
@@ -104,7 +108,18 @@ def main():
         hosts = os.getenv("HOSTS")
         admin_user = os.getenv("ADMIN_USER")
         admin_pswd = os.getenv("ADMIN_PASSWORD")
-        nodes_cnt = os.getenv("NODES_COUNT")
+        test_exe_no = os.getenv("TEST_EXECUTION_NUMBER", None)
+        if test_exe_no is not None:
+            jira_id = os.environ['JIRA_ID']
+            jira_pswd = os.environ['JIRA_PASSWORD']
+            jira_obj = jira_utils.JiraTask(jira_id, jira_pswd)
+            te_details = jira_obj.get_issue_details(test_exe_no)
+            test_env = te_details.fields.customfield_21006
+            nodes_cnt = w2n.word_to_num(test_env[0].split("_")[0])
+            print("WORKER NODE COUNT FOR ADDING DB ENTRY", nodes_cnt)
+        else:
+            nodes_cnt = os.getenv("NODES_COUNT")
+            print("WORKER NODE COUNT FOR ADDING DB ENTRY ", nodes_cnt)
         cfg = ""
         with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
             cfg = yaml.safe_load(file)
@@ -117,7 +132,7 @@ def main():
         cmd = "python tools/setup_update/setup_entry.py --fpath {} --dbuser {} --dbpassword {}" \
             .format(cfg['new_json_file'], json_data['DB_USER'], json_data['DB_PASSWORD'])
         resp, output = execute_cmd(cmd=cmd)
-        print("resp :",resp)
+        print("resp :", resp)
         if not resp:
             raise Exception("Error during adding db entry")
 
@@ -127,7 +142,11 @@ def main():
             execute_cmd(cmd=cmd)
         print(f"Setup Entry Done with setup name : {setupname}")
         with open("cicd_setup_name.txt", 'w') as file:
-            file.write(setupname)
+            if test_exe_no is not None:
+                file.write(setupname+" "+test_exe_no)
+            else:
+                file.write(setupname)
+
     except Exception as ex:
         print(f"Exception Occured : {ex}")
         sys.exit(1)

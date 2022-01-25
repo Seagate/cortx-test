@@ -2176,10 +2176,13 @@ class TestPodFailure:
                                                         object_name=self.object_name,
                                                         part_numbers=list(failed_parts.keys()),
                                                         remaining_upload=True, parts=failed_parts,
-                                                        mpu_id=mpu_id, parts_etag=parts_etag)
-
+                                                        mpu_id=mpu_id)
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+            parts_etag1 = resp[3]
+            parts_etag = parts_etag + parts_etag1
             LOGGER.info("Step 6: Successfully uploaded remaining parts")
+
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
 
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
