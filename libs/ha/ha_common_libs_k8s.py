@@ -364,7 +364,7 @@ class HAK8s:
                 end_point=S3_CFG["s3b_url"])
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
-                return resp, f"s3bench operation failed with {resp}"
+                return False, f"s3bench operation failed with {resp}"
         return True, "Sucessfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):

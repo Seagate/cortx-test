@@ -403,8 +403,8 @@ class TestPodFailure:
         """
         This test tests degraded writes before and after unsafe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded writes before and after unsafe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded writes before and after unsafe"
+                    " pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. "
                     "0B + (1KB - 512MB)")
@@ -1908,7 +1908,7 @@ class TestPodFailure:
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
-        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown"
+        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown "
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
@@ -1931,13 +1931,13 @@ class TestPodFailure:
                 break
         LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
         LOGGER.info("Shutdown the node: %s", node_fqdn)
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", node_fqdn)
         self.restore_node = True
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
