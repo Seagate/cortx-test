@@ -1076,7 +1076,8 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Verify DI and DELETE %s buckets and verify remaining count is %s ",
                     del_bucket, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'bkts_to_del': del_bucket, 'output': del_output, 'di_check': True}
+                'skipput': True, 'bkts_to_del': del_bucket, 'output': del_output,
+                'di_check': True, 's3_data': s3_data}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         while del_output.qsize() != 2:
             LOGGER.info("Waiting for all items to get populated in queue")
