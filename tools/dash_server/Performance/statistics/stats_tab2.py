@@ -1,3 +1,4 @@
+""" Copy Object related tables and function calls"""
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +23,7 @@ import pandas as pd
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 from common import app
-from Performance.schemas import *
+from Performance.schemas import get_statistics_schema, get_copyobject_schema, copyobj_headings
 from Performance.backend import get_dash_table_from_dataframe
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
     get_db_details, round_off, check_empty_list
@@ -57,18 +58,18 @@ def get_copy_object_data(data):
             run_state_list.append(run_state)
             results[obj] = temp_data
 
-    df = pd.DataFrame(results)
-    df = df.T
-    df.reset_index(inplace=True)
-    df.columns = df.iloc[0]
-    df = df[1:]
+    data_frame = pd.DataFrame(results)
+    data_frame = data_frame.T
+    data_frame.reset_index(inplace=True)
+    data_frame.columns = data_frame.iloc[0]
+    dataframe = data_frame[1:]
 
-    return df, run_state_list
+    return dataframe, run_state_list
 
 
 def get_copy_object_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branches
     """
-    Granularized function to query data from database for perf metrics
+    Granularized function to query data from database for perf metrics of copy object
 
     Args:
         data: dictionary needed for the query
@@ -147,9 +148,10 @@ def get_copy_object_benchmark_data(data_needed_for_query):  # pylint: disable=to
     State('perf_sessions_dropdown', 'value'),
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
-)
+) # pylint: disable=too-many-arguments, disable-too-many-locals
 def update_copy_obj_table(n_clicks, release_combined, branch, build, nodes, clients, pfull, itrns,
                    custom, sessions, buckets):
+    """ function to update copy object tables"""
     table = None
     if not (all([
         release_combined, branch, build, nodes, clients, itrns, custom, n_clicks, sessions, buckets
