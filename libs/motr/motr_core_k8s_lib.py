@@ -89,7 +89,7 @@ class MotrCoreK8s():
         Returns all the node and data pod names in dict format
         """
         node_pod_dict = {}
-        cmd = "| awk '/cortx-data-pod/ {print $1}'"
+        cmd = "| awk '/cortx-data/ {print $1}'"
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
