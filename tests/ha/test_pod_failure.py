@@ -85,8 +85,7 @@ class TestPodFailure:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.restored = True
-        cls.s3_clean = cls.test_prefix = cls.random_time = None
+        cls.s3_clean = cls.test_prefix = cls.random_time = cls.restored = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = None
@@ -130,9 +129,12 @@ class TestPodFailure:
         self.restored = True
         self.restore_node = False
         self.restore_ip = False
+        self.s3_clean = {}
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
@@ -169,9 +171,7 @@ class TestPodFailure:
                 assert_utils.assert_true(resp, "Interface is still not up.")
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            if not resp[0]:
-                resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-                assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             if self.s3_clean:
                 LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
@@ -189,8 +189,7 @@ class TestPodFailure:
         """
         This test tests degraded reads before and after safe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded reads before and after safe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded reads before and after safe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -212,7 +211,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
@@ -228,14 +228,15 @@ class TestPodFailure:
         LOGGER.info("Step 4: Cluster is in degraded state")
 
         LOGGER.info("Step 5: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of pod are in online state")
@@ -246,8 +247,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
-        LOGGER.info(
-            "ENDED: Test to verify degraded reads before and after safe pod shutdown.")
+        LOGGER.info("ENDED: Test to verify degraded reads before and after safe pod shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -257,8 +257,7 @@ class TestPodFailure:
         """
         This test tests degraded reads before and after unsafe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded reads before and after unsafe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded reads before and after unsafe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -280,7 +279,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -300,14 +300,15 @@ class TestPodFailure:
         LOGGER.info("Step 4: Cluster is in degraded state")
 
         LOGGER.info("Step 5: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of pod are in online state")
@@ -318,8 +319,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
-        LOGGER.info(
-            "ENDED: Test to verify degraded reads before and after unsafe pod shutdown.")
+        LOGGER.info("ENDED: Test to verify degraded reads before and after unsafe pod shutdown.")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -330,8 +330,7 @@ class TestPodFailure:
         """
         This test tests degraded writes before and after safe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded writes before and after safe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded writes before and after safe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
                     "512MB)")
@@ -346,7 +345,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
@@ -362,14 +362,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in online state")
@@ -382,17 +383,16 @@ class TestPodFailure:
                     "data")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
-        LOGGER.info(
-            "ENDED: Test to verify degraded writes before and after safe pod shutdown.")
+        LOGGER.info("ENDED: Test to verify degraded writes before and after safe pod shutdown.")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -419,7 +419,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -439,14 +440,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in online state")
@@ -459,13 +461,13 @@ class TestPodFailure:
                     "data")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info(
@@ -509,7 +511,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown/Delete the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be Shutdown/Deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Shutdown/Delete pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
@@ -522,14 +525,15 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
                     "state", pod_name)
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
@@ -586,7 +590,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Delete Deployment for %s pod response: %s", pod_name, resp)
@@ -602,13 +607,14 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on %s are in offline "
                     "state", pod_name)
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
@@ -668,7 +674,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -688,21 +695,22 @@ class TestPodFailure:
         LOGGER.info("Step 4: Cluster is in degraded state")
 
         LOGGER.info("Step 5: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of pod are in online state")
         event.clear()
 
         thread.join()
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -717,13 +725,13 @@ class TestPodFailure:
                     "background")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")
@@ -740,22 +748,21 @@ class TestPodFailure:
             "STARTED: Verify IOs before and after data pod failure; pod shutdown "
             "by deleting deployment.")
 
-        LOGGER.info(
-            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455')
+        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment.")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
@@ -773,28 +780,27 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info(
-            "Step 6: Start IOs on degraded cluster.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455-1')
+        LOGGER.info("Step 6: Start IOs on degraded cluster.")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32455-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs completed Successfully.")
 
         LOGGER.info(
@@ -814,27 +820,26 @@ class TestPodFailure:
             "STARTED: Verify IOs before and after data pod failure, "
             "pod shutdown by deleting pod using kubectl delete.")
 
-        LOGGER.info(
-            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456')
+        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod by kubectl delete.")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete",
                     pod_name)
 
@@ -844,27 +849,27 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
         LOGGER.info("Step 6: Start IOs on degraded cluster.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456-1')
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32456-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs completed successfully.")
 
         LOGGER.info(
@@ -933,7 +938,8 @@ class TestPodFailure:
         LOGGER.info("Step 4: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -954,14 +960,15 @@ class TestPodFailure:
         LOGGER.info("Step 5: Cluster is in degraded state")
 
         LOGGER.info("Step 6: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of pod %s are in offline state", pod_name)
 
-        LOGGER.info("Step 7: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 7: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 7: Services status on remaining pod are in online state")
@@ -998,16 +1005,16 @@ class TestPodFailure:
         LOGGER.info("Cleaning up s3 user data")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop('s3_acc')
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26445', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26445', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
         LOGGER.info("ENDED: Test to verify Continuous DELETEs during data pod down by delete "
                     "deployment.")
@@ -1044,7 +1051,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -1065,20 +1073,21 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
         event.clear()
         thread.join()
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight WRITEs while pod is going down "
@@ -1095,13 +1104,13 @@ class TestPodFailure:
                     "failed/error.")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26441', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26441', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
         LOGGER.info("ENDED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
@@ -1118,22 +1127,21 @@ class TestPodFailure:
             "STARTED: Verify IOs before and after data pod failure; pod shutdown "
             "by making replicas=0")
 
-        LOGGER.info(
-            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32454')
+        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32454', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs are completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be shutdown")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Shutdown pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -1150,28 +1158,27 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info(
-            "Step 6: Start IOs on degraded cluster.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32454-1')
+        LOGGER.info("Step 6: Start IOs on degraded cluster.")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32454-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs are completed successfully.")
 
         LOGGER.info(
@@ -1210,7 +1217,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -1231,21 +1239,22 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
         event.clear()
         thread.join()
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight READs and WRITEs while pod is going down "
@@ -1262,13 +1271,13 @@ class TestPodFailure:
                     "down is failed/error.")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26442-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26442-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
         LOGGER.info("ENDED: Test to verify Continuous READs and WRITEs during data pod down by "
                     "delete deployment.")
@@ -1327,7 +1336,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -1348,14 +1358,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
@@ -1428,13 +1439,13 @@ class TestPodFailure:
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26446-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26446-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify Continuous WRITEs and DELETEs during data pod down by "
@@ -1511,7 +1522,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         event.set()
@@ -1532,14 +1544,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
@@ -1616,13 +1629,13 @@ class TestPodFailure:
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26447-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26447-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify Continuous READs and DELETEs during data pod down by "
@@ -1674,7 +1687,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
@@ -1689,15 +1703,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Verified cluster status is in degraded state")
 
         LOGGER.info("Step 4: Verify services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Verified services of %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list.remove(
-            pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Verified services on remaining pods are in online state")
@@ -1794,7 +1808,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -1814,15 +1829,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Verified cluster status is in degraded state")
 
         LOGGER.info("Step 4: Verify services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Verified services of %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list.remove(
-            pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Verified services on remaining pods are in online state")
@@ -1884,18 +1899,19 @@ class TestPodFailure:
                     "pod shutdown by making worker node down.")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Check the node which has the control pod running and shutdown"
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         control_pod_name = list(control_pods.keys())[0]
         node_fqdn = control_pods.get(control_pod_name)
@@ -1903,10 +1919,16 @@ class TestPodFailure:
         LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, node_fqdn)
         LOGGER.info("Get the data pod running on %s node", node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        data_pod_name = None
+        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
+        data_pod_name = serverpod_name = None
         for pod_name, node in data_pods.items():
             if node == node_fqdn:
                 data_pod_name = pod_name
+                break
+        for server_pod, node in server_pods.items():
+            if node == self.node_name:
+                serverpod_name = server_pod
+                break
         LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
         LOGGER.info("Shutdown the node: %s", node_fqdn)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
@@ -1915,28 +1937,31 @@ class TestPodFailure:
         self.restore_node = True
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
-        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
+                    "pod %s", data_pod_name, serverpod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
+                                                           fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
-                    "state", data_pod_name)
-
-        LOGGER.info("Step 5: Check services status on remaining pods %s",
-                    pod_list.remove(data_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
-                                                           fail=False)
+        LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
+                    "pod %s are in offline state", data_pod_name, serverpod_name)
+        pod_list.remove(data_pod_name)
+        server_list.remove(serverpod_name)
+        online_pods = pod_list + server_list
+        LOGGER.info("Step 5: Check services status on remaining pods %s", online_pods)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for control pod failed over node.")
-        control_pods_new = \
-            self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
+        control_pods_new = self.node_master_list[0].get_pods_node_fqdn(
+            const.CONTROL_POD_NAME_PREFIX)
         assert_utils.assert_true(control_pods_new,
                                  "Control pod has not failed over to any other node.")
         control_pod_name_new = list(control_pods_new.keys())[0]
@@ -1944,16 +1969,14 @@ class TestPodFailure:
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
                     control_pod_name_new, node_fqdn_new)
 
-        LOGGER.info(
-            "Step 7: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459-1')
+        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32459-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs completed successfully.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after control pod failure, "
@@ -1971,18 +1994,19 @@ class TestPodFailure:
                     "pod shutdown by making worker node down.")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Check the node which has the ha pod running and shutdown"
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         ha_pods = self.node_master_list[0].get_pods_node_fqdn(const.HA_POD_NAME_PREFIX)
         ha_pod_name = list(ha_pods.keys())[0]
         node_fqdn = ha_pods.get(ha_pod_name)
@@ -1990,12 +2014,20 @@ class TestPodFailure:
         LOGGER.info("HA pod %s is hosted on %s node", ha_pod_name, node_fqdn)
         LOGGER.info("Get the data pod running on node %s", node_fqdn)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        data_pod_name = None
+        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
+        data_pod_name = serverpod_name = None
         for pod_name, node in data_pods.items():
             if node == node_fqdn:
                 data_pod_name = pod_name
-        LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
+                break
+        for pod_name, node in server_pods.items():
+            if node == node_fqdn:
+                serverpod_name = pod_name
+                break
+        LOGGER.info("%s node has data pod: %s server pod: %s", node_fqdn, data_pod_name,
+                    serverpod_name)
         LOGGER.info("Shutdown the node: %s", node_fqdn)
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where HA pod was running.", node_fqdn)
@@ -2006,17 +2038,20 @@ class TestPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
-        LOGGER.info("Step 4: Check services status that were running on pod %s", data_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True)
+        LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
+                    "pod %s", data_pod_name, serverpod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
+                                                           fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status that were running on pod %s are in offline "
-                    "state", data_pod_name)
+        LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
+                    "pod %s", data_pod_name, serverpod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s",
-                    pod_list.remove(data_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(data_pod_name),
-                                                           fail=False)
+        pod_list.remove(data_pod_name)
+        server_list.remove(serverpod_name)
+        online_pods = pod_list + server_list
+        LOGGER.info("Step 5: Check services status on remaining pods %s", online_pods)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
@@ -2029,16 +2064,14 @@ class TestPodFailure:
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
                     ha_pod_name_new, node_fqdn_new)
 
-        LOGGER.info(
-            "Step 7: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460-1')
+        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32460-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
-        resp = self.ha_obj.perform_ios_ops(
-            di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs completed successfully.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after HA pod failure, "
@@ -2090,7 +2123,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -2109,19 +2143,19 @@ class TestPodFailure:
         LOGGER.info("Step 3: Verified cluster status is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services on %s are in offline state", pod_name)
 
+        pod_list.remove(pod_name)
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+                    pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
+        LOGGER.info("Step 5: Services status on remaining pods %s are in online state", pod_list)
         prc.join()
         res = ()
         while output.empty(): res = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -2184,13 +2218,13 @@ class TestPodFailure:
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 10: Create multiple buckets and run IOs and verify DI on the same")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32447', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32447', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 10: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown by delete "
@@ -2262,7 +2296,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -2282,19 +2317,19 @@ class TestPodFailure:
 
         LOGGER.info("Step 5: Check services status that were running on pod %s are in offline "
                     "state", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services on %s are in offline state", pod_name)
 
+        pod_list.remove(pod_name)
         LOGGER.info("Step 6: Check services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+                    pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 6: Services status on remaining pods %s are in online state",
-                    pod_list.remove(pod_name))
+        LOGGER.info("Step 6: Services status on remaining pods %s are in online state", pod_list)
 
         LOGGER.info("Step 7: Upload remaining parts")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
@@ -2349,13 +2384,13 @@ class TestPodFailure:
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 11: Create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32449', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32449', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 11: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe "
@@ -2409,7 +2444,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be shutdown")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Shutdown pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -2426,14 +2462,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
@@ -2525,7 +2562,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -2545,15 +2583,15 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Verify services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Verified services of %s are in offline state", pod_name)
 
-        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list.remove(
-            pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Verify services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Verified services on remaining pods are in online state")
@@ -2608,19 +2646,19 @@ class TestPodFailure:
                     "pod shutdown by making worker node down.")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32458')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32458', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
-        LOGGER.info("Step 1: IOs completed successfully.")
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 1: IOs are completed successfully.")
 
         LOGGER.info("Step 2: Shutdown data pod by shutting node on which its hosted.")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        server_pod_list = self.node_master_list[0].get_all_pods \
-            (pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.SERVER_POD_NAME_PREFIX)
         resp = self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
         data_pod_name = resp[0]
         server_pod_name = resp[1]
@@ -2656,20 +2694,19 @@ class TestPodFailure:
         remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
         remain_pod_list = remain_pod_list1 + remain_pod_list2
         LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=remain_pod_list, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
         LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32458-1')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32458-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs completed successfully.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
@@ -2688,20 +2725,20 @@ class TestPodFailure:
                     "pod shutdown by making worker node network down.")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32457')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32457', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown data pod by making network down of node "
                     "on which its hosted.")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        server_pod_list = self.node_master_list[0].get_all_pods \
-            (pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.SERVER_POD_NAME_PREFIX)
         resp = self.ha_obj.get_data_pod_no_ha_control(data_pod_list, self.node_master_list[0])
         data_pod_name = resp[0]
         server_pod_name = resp[1]
@@ -2741,20 +2778,19 @@ class TestPodFailure:
         remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
         remain_pod_list = remain_pod_list1 + remain_pod_list2
         LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=remain_pod_list, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
         LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32457-1')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32457-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs completed successfully.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
@@ -2810,7 +2846,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -2830,15 +2867,15 @@ class TestPodFailure:
         LOGGER.info("Step 4: Cluster is in degraded state")
 
         LOGGER.info("Step 5: Verify services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Verified services of %s are in offline state", pod_name)
 
-        LOGGER.info("Step 6: Verify services status on remaining pods %s", pod_list.remove(
-            pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                           fail=False)
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 6: Verify services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Verified services on remaining pods are in online state")
@@ -2906,20 +2943,21 @@ class TestPodFailure:
                     "making replicas=0")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
-        LOGGER.info("Step 1: IOs are completed successfully.")
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Shutdown the server pod safely by making replicas=0")
         LOGGER.info("Get server pod name to be shutdown")
         server_pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_pod_name = random.sample(server_pod_list, 1)
+        server_pod_name = random.sample(server_pod_list, 1)[0]
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=server_pod_name)
         LOGGER.info("Shutdown pod %s", server_pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=server_pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -2937,27 +2975,26 @@ class TestPodFailure:
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
-                                                           fail=True)
+                                                           fail=True, hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of %s are in offline state", server_pod_name)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s",
-                    server_pod_list.remove(server_pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(
-            pod_list=server_pod_list.remove(server_pod_name), fail=False)
+        server_pod_list.remove(server_pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", server_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
         LOGGER.info("Step 6: Start IOs on degraded cluster.")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461-1')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32461-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs are completed successfully.")
 
         LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
@@ -2974,71 +3011,78 @@ class TestPodFailure:
         LOGGER.info("STARTED: Verify IOs before & after pod failure by making RC node down")
 
         LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
-        LOGGER.info("Step 1: Successfully completed IOs.")
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 1: IOs completed successfully.")
 
         LOGGER.info("Step 2: Get the RC node and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1]
+        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        rc_node = self.motr_obj.get_primary_cortx_node()
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
         LOGGER.info("RC Node is running on %s node", self.node_name)
         LOGGER.info("Get the data pod running on %s node", self.node_name)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        rc_datapod = None
+        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
+        rc_datapod = rc_serverpod = None
         for pod_name, node in data_pods.items():
             if node == self.node_name:
                 rc_datapod = pod_name
                 break
-        LOGGER.info("RC node %s has data pod: %s", self.node_name, rc_datapod)
+        for server_pod, node in server_pods.items():
+            if node == self.node_name:
+                rc_serverpod = server_pod
+                break
+        LOGGER.info("RC node %s has data pod: %s and server pod : %s", self.node_name,
+                    rc_datapod, rc_serverpod)
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=rc_datapod)
         LOGGER.info("Shutdown the RC node: %s", self.node_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_name)
         assert_utils.assert_true(resp, f"{self.node_name} is not powered off")
         LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", self.node_name)
         self.restore_node = True
 
-        LOGGER.info("Step 3: Check cluster status is in degraded state.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Checked cluster is in degraded state")
-
-        LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
-                    "are in offline state", self.node_name, rc_datapod)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod], fail=True)
+        LOGGER.info("Step 3: Check services status that were running on RC node %s's data pod %s "
+            "and server pod %s are in offline state", self.node_name, rc_datapod, rc_serverpod)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
+                                                           fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
-                    "are in offline state", self.node_name, rc_datapod)
+        LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
+                    "and server pod %s are in offline state", self.node_name, rc_datapod,
+                    rc_serverpod)
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
-                    pod_list.remove(rc_datapod))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(rc_datapod),
-                                                           fail=False)
+        pod_list.remove(rc_datapod)
+        server_list.remove(rc_serverpod)
+        online_pods = pod_list + server_list
+        LOGGER.info("Step 4: Check services status on remaining pods %s are in online state",
+                    online_pods)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
 
-        LOGGER.info("Step 6: Check for RC node failed over node.")
+        LOGGER.info("Step 5: Check for RC node failed over node.")
         rc_node = self.motr_obj.get_primary_cortx_node()
         assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
-        LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
+        LOGGER.info("Step 5: RC node has been failed over to %s node", list(rc_info.values())[0])
 
-        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1')
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects).")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1', nusers=1)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
-        LOGGER.info("Step 7: Successfully completed IOs.")
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 6: Successfully completed IOs.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
 
@@ -3046,12 +3090,11 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34827")
     @CTFailOn(error_handler)
-    def test_background_IO_during_control_pod_restart(self):
+    def test_background_io_during_control_pod_restart(self):
         """
         Test control pod deletion should not affect existing user I/O
         """
-        LOGGER.info(
-            "STARTED: Test control pod deletion should not affect existing user I/O")
+        LOGGER.info("STARTED: Test control pod deletion should not affect existing user I/O")
 
         LOGGER.info("Step 1: Perform Continuous READs and WRITEs during control pod down")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -3085,7 +3128,7 @@ class TestPodFailure:
         LOGGER.info("Step 3: Verify status for In-flight READs and WRITEs while pod is down")
         event.clear()
         thread.join()
-        responses = ()
+        responses = {}
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -3108,5 +3151,4 @@ class TestPodFailure:
         LOGGER.info("Step 4: Successfully started the pod")
         self.restore_pod = False
 
-        LOGGER.info(
-            "COMPLETED: Test control pod deletion should not affect existing user I/O")
+        LOGGER.info("COMPLETED: Test control pod deletion should not affect existing user I/O")
