@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,17 +16,19 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+"""IO Configs are initialized here."""
 
-"""S3 package initializer."""
 
-from commons.helpers.s3_helper import S3Helper
+import yaml
+
+from commons.params import S3_IO_CFG_PATH
 from config import CMN_CFG
-from config.s3 import S3_CFG
 
-S3H_OBJ = S3Helper.get_instance(CMN_CFG, S3_CFG)
-# S3 default access_key, secret key.
-ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
-ldap = CMN_CFG.get("ldap", None)
-LDAP_USERNAME = ldap["username"] if ldap else None  # Ldap username.
-LDAP_PASSWD = ldap["password"] if ldap else None  # Ldap password.
+
+S3_IO_CFG = dict()
+with open(S3_IO_CFG_PATH) as fr_obj:
+    data = yaml.safe_load(fr_obj)
+    S3_IO_CFG.update(data)
+CMN_CFG.update(S3_IO_CFG)
