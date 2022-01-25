@@ -230,7 +230,7 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.check_pod_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
-        wr_bucket = random.randrange(5, 20, 5)
+        wr_bucket = self.system_random.randrange(5, 20, 5)
         event = threading.Event()
         wr_output = Queue()
         del_output = Queue()
