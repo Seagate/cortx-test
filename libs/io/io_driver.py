@@ -21,6 +21,9 @@
 #
 """
 IOdriver for scheduling and managing all tests.
+Consists of Schedular which parses yaml based inputs and schedules, monitor jobs accordingly.
+IO driver will also be responsible for performing health checks and
+support bundle collection on regular intervals.
 """
 
 import logging
