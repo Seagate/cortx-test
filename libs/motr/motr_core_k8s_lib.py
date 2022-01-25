@@ -464,7 +464,9 @@ class MotrCoreK8s():
         return size
 
     def get_node_ep(self):
-        """Obtain node endpoints from a cluster"""
+        """Obtain node endpoints from a cluster
+        :return: node endpoints dictionary
+        """
         node_ep = {}
         for node in self.node_pod_dict:
             log.info(node)
