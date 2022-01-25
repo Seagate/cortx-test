@@ -230,7 +230,7 @@ class TestDIWithChangingS3Params:
         self.log.info("ENDED: With DI flag  Disabled, copy object to the same bucket with "
                       "different name")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Not yet automated")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29277')
