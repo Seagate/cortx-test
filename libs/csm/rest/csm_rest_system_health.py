@@ -607,20 +607,19 @@ class SystemHealth(RestTestLib):
         headers = self.headers
         conf_headers = self.config["Login_headers"]
         headers.update(conf_headers)
-        self.log.info(
-            "Endpoint for cluster operation is %s", endpoint)
+        self.log.info("Endpoint for cluster operation is %s", endpoint)
         data_val = {"operation": operation, "arguments": {}}
         copy_auth_token = None
         if negative_resp:
             # Update the Authorization token to verify negative test scenario
             copy_auth_token = headers["Authorization"]
-            headers.update({"Authorization", negative_resp})
+            headers.update({"Authorization":negative_resp})
         # Fetching api response
         response = self.restapi.rest_call("post", endpoint=endpoint,
                                           data=json.dumps(data_val), headers=headers)
         if negative_resp:
             # Update the valid token value for rest logout call
-            headers.update({"Authorization", copy_auth_token})
+            headers.update({"Authorization":copy_auth_token})
         if response.status_code != expected_response:
             self.log.error("%s operation on %s POST REST API response : %s",
                            operation, resource, response)
