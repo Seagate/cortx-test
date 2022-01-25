@@ -732,57 +732,7 @@ class TestDIDurability:
         self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
                     "uploaded object should succeed ( 30 MB -100 MB).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-229260')
-    def test_enable_validation_induce_corruption_detect_error_22926_dup(self):
-        """
-        With Flag enabled, when data or metadata corruption induced, download of
-        corrupted data should flag error.
-        This test is duplicate and needs cleanup or associate with correct test.
-        """
-        self.log.info(
-            "STARTED: With Flag enabled, when data or metadata corruption induced, download of"
-            "corrupted data should flag error.")
-        self.log.info(
-            "Step 1: Enable checksum verification flag.")
-        # resp = eanble_checksum_flag(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Enabled checksum flag successfully.")
-        self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        for i in range(self.secure_range.randint(2, 8)):
-            file_name = f"{self.file_path}{i}"
-            system_utils.create_file(file_name, 20)
-            resp = self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=file_name, file_path=self.file_path)
-            self.file_lst.append(file_name)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info("Step 2: Induce metadata or data corruption.")
-        # resp = induce_metadata_corruption(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Induced metadata or data corruption.")
-        self.log.info(
-            "Step 3: Verify download corrupted object.")
-        for i in self.file_lst:
-            dest_name = f"{i}_download"
-            res = self.s3_mp_test_obj.object_download(
-                self.bucket_name, i, dest_name)
-            self.log.debug(res)
-            # assert_utils.assert_false(res[0], res)
-        self.log.info(
-            "Step 3: Download object failed with corruption error.")
-        self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
 
-    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
@@ -876,6 +826,7 @@ class TestDIDurability:
             "ENDED: Combine checksum feature with HA, corrupt from a node and read with other"
             "nodes")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-23688')
     def test_23688(self):
@@ -940,6 +891,7 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity of large objects with multipart threshold"
             "to value just lower the object size.")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-23689')
     def test_23689(self):
@@ -1034,6 +986,7 @@ class TestDIDurability:
                 greater_than_unit_size = True
             lower, upper = di_lib.get_random_ranges(size=file_size,
                                                     greater_than_unit_size=greater_than_unit_size)
+            self.log.debug("Lower: %s  Upper: %s", lower, upper)
             buff_range = buff_c[lower:upper]
             self.log.info("Range read: %s", len(buff_range))
             buff_csm = di_lib.calc_checksum(buff_range)
@@ -1045,15 +998,19 @@ class TestDIDurability:
                                             object_name=self.object_name, file_path=location)
                 resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                          key=self.object_name,
-                                                         ranges=f"bytes={lower}-{upper}")
+                                                         ranges=f"bytes={lower}-{upper-1}")
                 if resp_dw_rr[0]:
                     if file_size > 1 * MB:
                         content = resp_dw_rr[1]["Body"].read()
                         self.log.info('size of downloaded object %s is: %s bytes',
                                     self.object_name, len(content))
                         dw_csum = di_lib.calc_checksum(content)
-                        assert_utils.assert_not_equal(buff_csm, dw_csum, 'Checksum match found in '
-                                                                         'downloaded file')
+                        self.log.info("Comparing csm of uploaded and downloaded parts")
+                        if buff_csm != dw_csum:
+                            failed_file_sizes.append(file_size)
+                            self.log.info("csm comparison failed")
+                        else:
+                            self.log.info("Checksum matched")
                     else:
                         self.log.info("download of corrupted part is successful, adding to "
                                       "failed size list")
@@ -1073,14 +1030,20 @@ class TestDIDurability:
                 try:
                     lower, upper = di_lib.get_random_ranges(size=file_size)
                     lower = 0
+                    self.log.debug("Lower: %s  Upper: %s", lower, upper)
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                               key=self.object_name,
-                                                              ranges=f"bytes={lower}-{upper}")
+                                                              ranges=f"bytes={lower}-{upper-1}")
                     self.log.info(str(resp_rr_dwn))
+                    if resp_rr_dwn[0]:
+                        failed_file_sizes.append(file_size)
                 except CTException as err:
                     err_str = str(err)
                     self.log.info("Test failed with %s", err_str)
-                    if file_size > 1 * MB:
+                    if "error occurred (InternalError) when calling the GetObject operation" \
+                            in err_str:
+                        self.log.info("Download failed with InternalError")
+                    else:
                         failed_file_sizes.append(file_size)
         if failed_file_sizes:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
@@ -1088,7 +1051,6 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
-    @pytest.mark.skip("Not tested, hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29812')
@@ -1102,7 +1064,7 @@ class TestDIDurability:
                       "and verify read (Get).")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_enabled_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -1320,6 +1282,7 @@ class TestDIDurability:
 
     # pylint: disable-msg=too-many-locals
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
     def test_29284(self):
@@ -1327,6 +1290,7 @@ class TestDIDurability:
         Test to verify copy object with chunk upload and GET operation with range read with various
         file sizes with valid Data Integrity flag
         """
+        failed_file_sizes = []
         self.log.debug("Checking setup status")
         valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
@@ -1355,9 +1319,10 @@ class TestDIDurability:
             lower, upper = di_lib.get_random_ranges(size=file_size)
             buff_range = buff[lower:upper]
             self.log.info("Range read: %s  CSM: %s", len(buff_range), csm)
+            self.log.debug("lower: %s  upper: %s", lower, upper)
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
-            self.log.info("Step 2: Created a bucket and upload object of %s MB into a bucket.",
+            self.log.info("Step 2: Created a bucket and upload object of %s Bytes into a bucket.",
                           file_size)
             put_cmd_str = "{} {}".format("put", file_path_upload)
             cmd = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
@@ -1369,17 +1334,23 @@ class TestDIDurability:
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
             self.s3_test_obj.copy_object(source_bucket=self.bucket_name, source_object=test_file,
                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
-            lower, upper = di_lib.get_random_ranges(size=file_size)
             resp_dw_rr = self.s3_test_obj.get_object(bucket=bucket_name_2, key=obj_name_2,
-                                                     ranges=f"bytes={lower}-{upper}")
+                                                     ranges=f"bytes={lower}-{upper-1}")
             content = resp_dw_rr[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', obj_name_2, len(content))
             dw_csum = di_lib.calc_checksum(content)
-            assert_utils.assert_not_equal(buff_csm, dw_csum,
-                                          'Checksum match found in downloaded file')
+            if buff_csm != dw_csum:
+                failed_file_sizes.append(file_size)
+                self.log.info("csm comparison failed")
+            else:
+                self.log.info("Checksum matched")
         self.s3_test_obj.delete_bucket(bucket_name=bucket_name_2, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
     def test_29289(self):

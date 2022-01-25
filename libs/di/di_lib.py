@@ -289,7 +289,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
         for s3_container in s3_containers:
             counter = 0
             resp = None
-            while counter < 30:
+            while counter < 5:
                 try:
                     cmd = "pgrep s3server 2> /dev/null"
                     resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
@@ -304,7 +304,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
                 except IOError as err:
                     LOGGER.info("err: %s ", err)
                     counter = counter + 1
-                    time.sleep(1)
+                    time.sleep(30)
             if not resp:
                 return False
     return True
