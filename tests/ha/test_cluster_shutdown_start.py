@@ -1076,11 +1076,28 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Verify DI and DELETE %s buckets and verify remaining count is %s ",
                     del_bucket, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'bkts_to_del': del_bucket, 'output': del_output}
+                'skipput': True, 'bkts_to_del': del_bucket, 'output': del_output, 'di_check': True}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        del_resp = ()
-        while len(del_resp) != 2:
-            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        while del_output.qsize() != 2:
+            LOGGER.info("Waiting for all items to get populated in queue")
+            time.sleep(HA_CFG["common_params"]["60sec_delay"])
+
+        get_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        LOGGER.info("Verifying get operation response")
+        event_bkt_get = get_resp[0]  # Contains buckets when event was set
+        fail_bkt_get = get_resp[1]  # Contains buckets which failed when event was clear
+        event_di_bkt = get_resp[2]  # Contains buckets when event was set
+        fail_di_bkt = get_resp[3]  # Contains buckets which failed when event was clear
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Successfully verified READs and DI check")
+
+        LOGGER.info("Verifying delete operation response")
         remain_bkt = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(remain_bkt), r_buck,
                                   f"Failed to delete {del_bucket} number of buckets from "
