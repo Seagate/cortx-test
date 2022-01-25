@@ -939,7 +939,7 @@ class TestDIDurability:
                                             object_name=self.object_name, file_path=location)
                 resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                          key=self.object_name,
-                                                         ranges=f"bytes={lower}-{upper}")
+                                                         ranges=f"bytes={lower}-{upper-1}")
                 if resp_dw_rr[0]:
                     if file_size > 1 * MB:
                         content = resp_dw_rr[1]["Body"].read()
@@ -947,10 +947,11 @@ class TestDIDurability:
                                       len(content))
                         dw_csum = di_lib.calc_checksum(content)
                         self.log.info("Comparing csm of uploaded and downloaded parts")
-                        if buff_csm == dw_csum:
+                        if buff_csm != dw_csum:
                             failed_file_sizes.append(file_size)
                             self.log.info("csm comparison failed")
-                        self.log.info("Checksum matched")
+                        else:
+                            self.log.info("Checksum matched")
                     else:
                         self.log.info("download of corrupted part is successful, adding to "
                                       "failed size list")
@@ -973,7 +974,7 @@ class TestDIDurability:
                     self.log.debug("Lower: %s  Upper: %s", lower, upper)
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                               key=self.object_name,
-                                                              ranges=f"bytes={lower}-{upper}")
+                                                              ranges=f"bytes={lower}-{upper-1}")
                     self.log.info(str(resp_rr_dwn))
                     if resp_rr_dwn[0]:
                         failed_file_sizes.append(file_size)
@@ -1230,6 +1231,7 @@ class TestDIDurability:
         Test to verify copy object with chunk upload and GET operation with range read with various
         file sizes with valid Data Integrity flag
         """
+        failed_file_sizes = []
         self.log.debug("Checking setup status")
         valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
@@ -1258,6 +1260,7 @@ class TestDIDurability:
             lower, upper = di_lib.get_random_ranges(size=file_size)
             buff_range = buff[lower:upper]
             self.log.info("Range read: %s  CSM: %s", len(buff_range), csm)
+            self.log.debug("lower: %s  upper: %s", lower, upper)
             buff_csm = di_lib.calc_checksum(buff_range)
             self.data_gen.create_file_from_buf(fbuf=buff, size=file_size, name=file_path_upload)
             self.log.info("Step 2: Created a bucket and upload object of %s Bytes into a bucket.",
@@ -1272,15 +1275,20 @@ class TestDIDurability:
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
             self.s3_test_obj.copy_object(source_bucket=self.bucket_name, source_object=test_file,
                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
-            lower, upper = di_lib.get_random_ranges(size=file_size)
             resp_dw_rr = self.s3_test_obj.get_object(bucket=bucket_name_2, key=obj_name_2,
-                                                     ranges=f"bytes={lower}-{upper}")
+                                                     ranges=f"bytes={lower}-{upper-1}")
             content = resp_dw_rr[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', obj_name_2, len(content))
             dw_csum = di_lib.calc_checksum(content)
-            assert_utils.assert_not_equal(buff_csm, dw_csum,
-                                          'Checksum match found in downloaded file')
+            if buff_csm != dw_csum:
+                failed_file_sizes.append(file_size)
+                self.log.info("csm comparison failed")
+            else:
+                self.log.info("Checksum matched")
         self.s3_test_obj.delete_bucket(bucket_name=bucket_name_2, force=True)
+        if failed_file_sizes:
+            self.log.info("Test failed for sizes %s", str(failed_file_sizes))
+            assert False
 
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
