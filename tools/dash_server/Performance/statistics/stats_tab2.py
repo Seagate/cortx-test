@@ -148,7 +148,7 @@ def get_copy_object_benchmark_data(data_needed_for_query):  # pylint: disable=to
     State('perf_sessions_dropdown', 'value'),
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
-) # pylint: disable=too-many-arguments, disable-too-many-locals
+) # pylint: disable=too-many-arguments,too-many-locals
 def update_copy_obj_table(n_clicks, release_combined, branch, build, nodes, clients, pfull, itrns,
                    custom, sessions, buckets):
     """ function to update copy object tables"""
