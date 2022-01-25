@@ -462,3 +462,22 @@ class MotrCoreK8s():
         elif  size[-1].upper() == 'K':
             size = int(size[0: -1]) * 1024
         return size
+
+    def get_node_ep(self):
+        """Obtain node endpoints from a cluster"""
+        node_ep = {}
+        for node in self.node_pod_dict:
+            log.info(node)
+            cmd = "kubectl get ep | grep " + node + " | awk '{print $2}'"
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                     self.master_node, self.master_uname, self.master_passwd)
+            if ret:
+                log.info('"%s" Failed, Please check the log', cmd)
+                assert False
+            if (b"ERROR" or b"Error") in error1:
+                log.error('"%s" failed, please check the log', cmd)
+                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                             f'"{cmd}" Failed, Please check the log')
+            node_ep[node] = result
+        log.info("Node endpoints of all host is: %s", node_ep)
+        return node_ep
