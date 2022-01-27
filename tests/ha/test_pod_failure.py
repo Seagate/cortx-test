@@ -149,6 +149,10 @@ class TestPodFailure:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -175,11 +179,6 @@ class TestPodFailure:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
-            if self.s3_clean:
-                LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-                assert_utils.assert_true(resp[0], resp[1])
-
             if os.path.exists(self.test_dir_path):
                 remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
@@ -639,7 +638,6 @@ class TestPodFailure:
                     "perform WRITEs with variable size objects.", wr_bucket)
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
-        self.deploy = True
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
@@ -2762,8 +2760,6 @@ class TestPodFailure:
         LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
             "pod_eviction_time"])
         time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
-        resp = self.node_master_list[0].execute_cmd(cmd=cmd.K8S_GET_PODS, read_lines=True)
-        LOGGER.info(" resp = %s", resp)
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
