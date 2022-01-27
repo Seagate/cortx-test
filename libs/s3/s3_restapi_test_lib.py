@@ -63,12 +63,6 @@ class S3AccountOperationsRestAPI(RestS3user):
                     "account_email": email_id,
                     "password": passwd}
             LOGGER.debug("s3 account data %s", data)
-            # Fetching api response
-            #response = self.restapi.rest_call(
-            #    "post",
-            #    endpoint=self.endpoint,
-            #    data=data,
-            #    headers=self.headers)
             response = self.create_custom_s3_user(data)
             if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, response.json()["message"]
