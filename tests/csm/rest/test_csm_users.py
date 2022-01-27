@@ -150,6 +150,7 @@ class TestCsmUser():
                                             read_lines=False,
                                             exc=False)
         pod_name = self.csm_cluster.get_pod_name(resp_node)
+        self.log.info(pod_name)
         # cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
             cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
@@ -2668,38 +2669,6 @@ class TestCsmUser():
 
         self.log.info("Creating IAM user for test verification purpose")
         rest_iam_user = RestIamUser()
-        new_iam_user = "testiam" + str(int(time.time()))
-        response = rest_iam_user.create_iam_user(
-            user=new_iam_user, login_as="s3account_user")
-
-        self.log.info(
-            "Verifying IAM user %s creation was successful", new_iam_user)
-        assert_utils.assert_equals(response.status_code,
-                                   const.SUCCESS_STATUS)
-        self.log.info(
-            "Verified IAM user %s creation was successful", new_iam_user)
-
-        self.log.info(
-            "Step 1: Verifying CSM admin user cannot perform GET request on "
-            "IAM user")
-        response = rest_iam_user.list_iam_users(login_as="csm_admin_user")
-        assert_utils.assert_equals(response.status_code,
-                                   const.FORBIDDEN)
-        self.log.info(
-            "Step 1: Verified CSM admin user cannot perform GET request on "
-            "IAM user")
-
-        self.log.info(
-            "Step 2: Verifying CSM manage user cannot perform GET request on "
-            "IAM user")
-        response = rest_iam_user.list_iam_users(
-            login_as="csm_user_manage")
-        assert_utils.assert_equals(response.status_code,
-                                   const.FORBIDDEN)
-        self.log.info(
-            "Step 2: Verified CSM manage user cannot perform GET request on "
-            "IAM user")
-
         self.log.info(
             "Step 3: Verifying CSM admin user cannot perform POST request on "
             "IAM user")
@@ -2728,7 +2697,7 @@ class TestCsmUser():
             "Step 5: Verifying CSM admin user cannot perform DELETE request on "
             "IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_admin_user")
+            user=new_iam_user1, login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -2739,7 +2708,7 @@ class TestCsmUser():
             "Step 6: Verifying CSM manage user cannot perform DELETE request on"
             " IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_user_manage")
+            user=new_iam_user1, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -3378,6 +3347,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         user_name = response.json()["username"]
         user_id = response.json()["id"]
+        self.created_users.append(user_id)
         self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 3: Verifying edit email functionality for admin user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
