@@ -123,3 +123,26 @@ def collect_crash_files():
         return False, error
 
     return os.path.exists(crash_fpath), crash_fpath
+
+
+def rotate_sb_logs(sb_dpath: str, sb_max_count: int = CMN_CFG["max_sb"]) -> bool:
+    """
+    Remove old SB logs as per max SB count.
+
+    :param: sb_dpath: Directory path of support bundles.
+    :param: sb_max_count: Maximum count of support bundles to keep.
+    """
+    try:
+        if not os.path.exists(sb_dpath):
+            raise IOError("Directory '%s' path does not exists.", sb_dpath)
+        files = sorted([file for file in os.listdir(sb_dpath)], reverse=True)
+        if len(files) > sb_max_count:
+            for file in files[sb_max_count:]:
+                fpath = os.path.join(sb_dpath, file)
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+                    LOGGER.info("Old SB removed: %s", fpath)
+    except OSError as error:
+        LOGGER.error(error)
+
+    return len(os.listdir(sb_dpath)) == sb_max_count
