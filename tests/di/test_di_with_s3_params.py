@@ -230,7 +230,7 @@ class TestDIWithChangingS3Params:
         self.log.info("ENDED: With DI flag  Disabled, copy object to the same bucket with "
                       "different name")
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Not yet automated")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29277')
@@ -352,7 +352,7 @@ class TestDIWithChangingS3Params:
                       "with Data Integrity flag ON for write and OFF for read")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -411,7 +411,7 @@ class TestDIWithChangingS3Params:
                       "Integrity flag ON for write and OFF for read")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -458,7 +458,7 @@ class TestDIWithChangingS3Params:
         with Data Integrity flag ON for write and OFF for read
         """
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()

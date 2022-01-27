@@ -583,7 +583,7 @@ class TestDIDurability:
                       "data blocks) and validate checksum error detection by S3/Motr")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -729,9 +729,8 @@ class TestDIDurability:
                 assert_utils.assert_true(False, "Checksum validation failed")
             self.log.info("Step 4:Checksum and ETAG validation is successful")
         self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
-        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk "
-                    "uploaded object should succeed ( 30 MB -100 MB).")
-
+        self.log.info("ENDED: With Checksum flag  Disabled, download of the chunk uploaded "
+                      "object should succeed ( 30 MB -100 MB).")
 
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -1121,7 +1120,7 @@ class TestDIDurability:
                       "256KB to 31 MB (at s3 checksum) and verify read (Get).")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
