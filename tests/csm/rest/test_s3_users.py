@@ -479,7 +479,7 @@ class TestS3user():
         self.log.info(
             "Providing invalid password for s3 account %s in Patch request", account_name)
 
-        response = self.s3user.edit_s3_account_user_invalid_password(
+        response = self.s3user.edit_s3_account(
             username=account_name,
             payload=json.dumps(payload),
             login_as="s3account_user")
