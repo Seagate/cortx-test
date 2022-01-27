@@ -118,6 +118,7 @@ def get_complete_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = {"$exists": False}
+    entry['Additional_op'] = {"$exists": False}
 
     return entry
 
@@ -125,7 +126,7 @@ def get_complete_schema(data):
 def get_degraded_schema(data):
     """
     function for getting complete performance schema
-    wrt database and provided data
+    wrt database and provided data for degraded cluster
     Args:
         data: data needed for query
     Returns:
@@ -137,6 +138,28 @@ def get_degraded_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = data['cluster_state']
+
+    return entry
+
+
+def get_copyobject_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data for copy object
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
+    entry = get_common_schema(data)
+    entry['Build'] = data['build']
+    entry['Object_Size'] = data['objsize']
+    entry['Operation'] = data['operation']
+    entry['Name'] = data['name']
+    entry['Cluster_State'] = {"$exists": False}
+    entry['Additional_op'] = 'Copy_op'
 
     return entry
 
@@ -153,6 +176,10 @@ bucketops_headings = [
     'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
     'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
 
+copyobj_headings = [
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Copy Object Throughput (MBps)', 'Copy Object IOPS',
+    'Copy Object Latency (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 def get_dropdown_labels(dropdown_type):
     """
