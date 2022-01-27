@@ -53,14 +53,12 @@ class TestWorkloadS3Bench:
             total_obj = 1000
         loops = test_cfg["loops"]
         clients = test_cfg["clients"]
-        bucket_name = "test-bucket"
         workloads = [(size, int(total_obj * percent / 100)) for size, percent in
                      distribution.items()]
-        resp = s3bench.setup_s3bench()
-        assert resp, "Could not setup s3bench."
 
         for loop in range(loops):
             for size, samples in workloads:
+                bucket_name = f"test-19658-bucket-{loop}-{str(int(time.time()))}"
                 if samples == 0:
                     continue
                 if clients > samples:
