@@ -1076,6 +1076,32 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
     return True, log_path
 
 
+def mount_nfs_server(host_dir: str = None, mnt_dir: str = None) -> tuple:
+    """
+    Mount nfs server on mount directory.
+
+    :param: host_dir: Link of NFS server directory
+    :param: mnt_dir: Path of directory to be mounted
+    """
+    try:
+        if os.path.ismount(mnt_dir):
+            resp = run_local_cmd(cmd=commands.CMD_FORCE_UMOUNT.format(mnt_dir))
+            if not resp[0]:
+                raise IOError("Failed to unmount: %s", mnt_dir)
+        if not os.path.exists(mnt_dir):
+            os.makedirs(mnt_dir)
+            LOGGER.info("Created directory: %s", mnt_dir)
+        if not os.path.ismount(mnt_dir):
+            resp = run_local_cmd(cmd=commands.CMD_MOUNT.format(host_dir, mnt_dir))
+            if not resp[0]:
+                raise IOError("Failed to mount server: %s on %s", host_dir, mnt_dir)
+    except IOError as error:
+        LOGGER.info(error)
+        return False, error
+
+    return os.path.ismount(mnt_dir), mnt_dir
+
+
 def umount_dir(mnt_dir: str = None) -> tuple:
     """Function to unmount directory
     :param mnt_dir: Path of mounted directory
