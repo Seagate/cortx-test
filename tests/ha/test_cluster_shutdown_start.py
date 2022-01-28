@@ -30,7 +30,6 @@ import time
 from http import HTTPStatus
 from multiprocessing import Process, Queue
 from time import perf_counter_ns
-import threading
 
 import pytest
 
@@ -39,10 +38,10 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils.system_utils import create_file
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils.system_utils import remove_file
-from commons.utils.system_utils import create_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -211,7 +210,6 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
-        self.restored = False
 
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
@@ -336,7 +334,6 @@ class TestClusterShutdownStart:
             assert_utils.assert_true(resp[0], resp[1])
             self.s3_clean.pop(list(io_resp[2].keys())[0])
             LOGGER.info("Step 7: IOs running successfully with new S3 account.")
-            self.restored = False
             LOGGER.info("Cluster restart was successful for %s count", loop)
 
         LOGGER.info(
@@ -1055,8 +1052,9 @@ class TestClusterShutdownStart:
                                   args=(self.node_master_list[0],))
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Cluster Stop started and waiting for 30 seconds.")
-        time.sleep(30)
+        LOGGER.info("Cluster Stop started and waiting for %s seconds.",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Check the cluster status has failures after stop cluster")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], "Cluster has not started shutdown yet.")
@@ -1092,7 +1090,6 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
-        self.restored = False
 
         LOGGER.info("Completed: Test to check cluster stability when cluster start is initiated "
                     "before shutdown completes.")
@@ -1215,7 +1212,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 6: Verify %s has %s buckets are remaining", self.s3acc_name, r_buck)
         resp = s3_test_obj.bucket_list()
         assert_utils.assert_equal(r_buck, len(resp[1]), resp)
-        LOGGER.info("Step 6: Verified %s has %s buckets are remaining",self.s3acc_name, r_buck)
+        LOGGER.info("Step 6: Verified %s has %s buckets are remaining", self.s3acc_name, r_buck)
         LOGGER.info("Step 7: Delete %s's remaining %s buckets", self.s3acc_name, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': r_buck, 'output': del_output}
