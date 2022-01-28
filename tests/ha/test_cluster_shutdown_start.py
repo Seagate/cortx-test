@@ -82,6 +82,7 @@ class TestClusterShutdownStart:
         cls.s3_clean = {}
         cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
 
@@ -105,7 +106,6 @@ class TestClusterShutdownStart:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
