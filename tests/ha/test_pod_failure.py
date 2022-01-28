@@ -2019,7 +2019,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
@@ -2066,6 +2066,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not Available")
     @pytest.mark.tags("TEST-32460")
     @CTFailOn(error_handler)
     def test_ha_pod_failover(self):
@@ -2762,7 +2763,7 @@ class TestPodFailure:
         time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
         LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=remain_pod_list1)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
@@ -3143,7 +3144,7 @@ class TestPodFailure:
         time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
         LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_name=running_pod)
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 

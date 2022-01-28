@@ -723,10 +723,10 @@ class HAK8s:
 
         output.put(res)
 
-    def check_cluster_status(self, pod_obj, pod_name=None):
+    def check_cluster_status(self, pod_obj, pod_list=None):
         """
         :param pod_obj: Object for master node
-        :param pod_name: Data pod name to get the hctl status
+        :param pod_list: Data pod name list to get the hctl status
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
@@ -736,19 +736,18 @@ class HAK8s:
             if "FAILED" in line:
                 LOGGER.error("Response for K8s cluster status: %s", resp)
                 return False, "K8S cluster status has Failures"
-        if pod_name is None:
-            resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-            pod_name = resp[1]
-        res = pod_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
-            decode=True)
-        for line in res.split("\n"):
-            if "failed" in line or "offline" in line or "unknown" in line:
-                LOGGER.error("Response for cortx cluster status: %s", res)
-                return False, "Cortx HCTL status has Failures"
-
-        return True, "K8s and cortx both cluster up."
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        for pod_name in pod_list:
+            res = pod_obj.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
+                               f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
+            for line in res.split("\n"):
+                if "failed" in line or "offline" in line or "unknown" in line:
+                    LOGGER.error("Response for date pod %s's hctl status: %s", pod_name, res)
+                    return False, f"Cortx HCTL status has Failures in pod {pod_name}"
+        return True, "K8s and cortx both cluster up and clean."
 
     @staticmethod
     def cal_compare_checksum(file_list, compare=False):
