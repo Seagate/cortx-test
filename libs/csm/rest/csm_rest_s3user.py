@@ -452,7 +452,7 @@ class RestS3user(RestTestLib):
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
-    def edit_s3_account_user_invalid_password(self, username, payload):
+    def edit_s3_account(self, username, payload):
         """
         This function will provide invalid password in Patch request for the specified s3 account
         :param payload: payload for the type of user
@@ -481,7 +481,7 @@ class RestS3user(RestTestLib):
         except BaseException as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
-                           RestS3user.edit_s3_account_user_invalid_password.__name__,
+                           RestS3user.edit_s3_account.__name__,
                            error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
