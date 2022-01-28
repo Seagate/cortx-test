@@ -188,7 +188,7 @@ class TestCsmUser():
             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                                 read_lines=False,
                                                 exc=False)
-            if "cortx-control-pod" in resp_node.decode('UTF-8'):
+            if "cortx-control" in resp_node.decode('UTF-8'):
                 pod_up = True
                 break
             else:
@@ -230,7 +230,7 @@ class TestCsmUser():
             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                                 read_lines=False,
                                                 exc=False)
-            if "cortx-control-pod" in resp_node.decode('UTF-8'):
+            if "cortx-control" in resp_node.decode('UTF-8'):
                 pod_up = True
                 break
             else:
