@@ -1060,6 +1060,8 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
         else:
             shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
+        shutil.rmtree(local_path)
+
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")

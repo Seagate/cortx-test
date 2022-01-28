@@ -180,21 +180,22 @@ class ProvDeployK8sCortxLib:
 
     def prereq_git(self, node_obj: LogicalNode, git_tag: str):
         """
-        Checkout cortx-k8s code on the  node. Delete is any previous exists.
+        Checkout cortx-k8s code on the  node. Delete if any previous exists.
         param: node_obj : Node object to checkout code - node.
         param: git tag: tag of service repo
         """
         LOGGER.info("Delete cortx-k8s repo on node")
-        resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format("cortx-k8s"))
+        url = self.deploy_cfg["git_k8_repo"]
+        clone_dir = self.deploy_cfg['clone_dir']
+        resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format(clone_dir))
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git clone cortx-k8s repo")
-        url = self.deploy_cfg["git_k8_repo"]
-        resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
+        resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE_D.format(url, clone_dir))
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git checkout tag %s", git_tag)
-        cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(git_tag)
+        cmd = f"cd {clone_dir} && " + common_cmd.CMD_GIT_CHECKOUT.format(git_tag)
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
@@ -299,19 +300,19 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
             self.prereq_git(node, git_tag)
-            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
+            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["k8s_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
+            self.execute_prereq_cortx(node, self.deploy_cfg["k8s_dir"], system_disk)
 
         self.pull_cortx_image(worker_node_list)
 
         self.prereq_git(master_node_list[0], git_tag)
-        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
-        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
+        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
+        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
-                                                self.deploy_cfg["git_remote_dir"])
+                                                self.deploy_cfg["k8s_dir"])
             return resp
         return resp
 
@@ -692,7 +693,7 @@ class ProvDeployK8sCortxLib:
         return False, "Cluster status is not retrieved."
 
     def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list,
-                      custom_repo_path: str = PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"]):
+                      custom_repo_path: str = PROV_CFG["k8s_cortx_deploy"]["k8s_dir"]):
         """
         Method used to run destroy script
         param: master node obj list
@@ -1022,7 +1023,7 @@ class ProvDeployK8sCortxLib:
                                         PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         custom_repo_path = kwargs.get("custom_repo_path",
-                                      PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
+                                      PROV_CFG["k8s_cortx_deploy"]["k8s_dir"])
         report_path = kwargs.get("report_filepath", PROV_CFG["k8s_cortx_deploy"]["report_file"])
         data_disk_size = kwargs.get("data_disk_size",
                                     PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])

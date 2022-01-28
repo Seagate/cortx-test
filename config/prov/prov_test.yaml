@@ -120,6 +120,7 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
+  clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
