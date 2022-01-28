@@ -494,7 +494,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert (self.csm_user.create_and_verify_csm_user_creation(
+        assert (self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="valid",
             user_role="manage",
             expect_status_code=const.SUCCESS_STATUS_FOR_POST))
@@ -512,7 +512,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="invalid", user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
@@ -530,7 +530,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="missing",
             user_role="manage",
             expect_status_code=const.BAD_REQUEST)
@@ -565,7 +565,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
             expect_status_code=const.CONFLICT)
@@ -723,6 +723,8 @@ class TestCsmUser():
 
         self.log.info("Reading the username")
         username = response.json()["username"]
+        userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Sending the request to user %s", username)
@@ -789,6 +791,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and "
@@ -838,6 +841,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info(
@@ -958,6 +962,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Step 2: Verified User %s got created successfully", username)
 
@@ -1203,6 +1208,7 @@ class TestCsmUser():
 
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         actual_response = response.json()
         created_time = actual_response["created_time"]
         modified_time_format = self.csm_user.edit_datetime_format(created_time)
@@ -1386,6 +1392,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and change"
@@ -1488,6 +1495,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 3: Step 2: Login as csm root user and change "
@@ -2860,6 +2868,7 @@ class TestCsmUser():
         self.log.info(
             "Verified user was created successfully")
         userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Verifying that CSM user with monitor role cannot perform "
@@ -3163,6 +3172,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Verified User %s got created successfully", username)
 

@@ -66,11 +66,11 @@ class RestCsmUser(RestTestLib):
 
             if user_type == "valid":
                 if self.random_user:
-                    user_name = "test{}{}".format(
+                    user_name = "csm{}{}".format(
                         int(self.random_num), int(time.time()))
                     user_role = user_defined_role
                 else:
-                    user_name = "test{}".format(int(time.time()))
+                    user_name = "csm{}".format(int(time.time()))
                     user_role = user_defined_role
 
             if user_type == "duplicate":
@@ -155,7 +155,7 @@ class RestCsmUser(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    def create_and_verify_csm_user_creation(self, user_type, user_role,
+    def create_verify_and_delete_csm_user_creation(self, user_type, user_role,
                                             expect_status_code):
         """
         This function will create and verify new CSM user.
@@ -187,6 +187,9 @@ class RestCsmUser(RestTestLib):
                 self.log.debug("Expected status code %s and Actual status code %s",
                                expect_status_code,
                                response.status_code)
+                # delete created CSM user
+                if user_type == "duplicate":
+                    self.delete_csm_user(self.recently_created_csm_user["username"])
                 return expect_status_code == response.status_code
             # Checking status code
             self.log.debug("Response to be verified :%s",
@@ -206,13 +209,15 @@ class RestCsmUser(RestTestLib):
             expected_result = self.recently_created_csm_user.copy()
             expected_result.pop("password")
             expected_result.pop("alert_notification")
+            # delete created CSM user
+            self.delete_csm_user(self.recently_created_csm_user["username"])
             return any(config_utils.verify_json_response(actual_result,
                                                          expected_result) for actual_result in
                        list_acc)
         except Exception as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
-                           RestCsmUser.create_and_verify_csm_user_creation.__name__,
+                           RestCsmUser.create_verify_and_delete_csm_user_creation.__name__,
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
@@ -365,6 +370,7 @@ class RestCsmUser(RestTestLib):
         """
         try:
             # Get the count of the number of csm users present
+            created_user_list = list()
             self.log.debug("Getting the initial list of csm users present")
             response = self.list_csm_users(
                 expect_status_code=const.SUCCESS_STATUS, return_actual_response=True)
@@ -386,6 +392,8 @@ class RestCsmUser(RestTestLib):
                 self.log.debug(
                     "response of the create csm user is  %s", response)
                 self.log.debug("Users created %s", num_users)
+                if const.SUCCESS_STATUS == response.status_code:
+                    created_user_list.append(response.json()["username"])
 
             # List CSM users
             self.log.debug(
@@ -422,6 +430,10 @@ class RestCsmUser(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+        finally:
+            # delete created CSM user
+            for user_id in created_user_list:
+                self.delete_csm_user(user_id)
 
     def verify_csm_user_list_valid_params(self):
         """
@@ -432,6 +444,7 @@ class RestCsmUser(RestTestLib):
         """
         try:
             self.log.debug("Creating csm users with random count")
+            created_user_list = list()
             self.random_user = True
             for num_users in range(1, const.CSM_NUM_OF_USERS_TO_CREATE + 1):
                 self.random_num = random.randint(
@@ -442,6 +455,8 @@ class RestCsmUser(RestTestLib):
                     self.log.debug("Response is not as expected")
                     return False
                 self.log.debug("Users created %s", num_users)
+                if const.SUCCESS_STATUS == response.status_code:
+                    created_user_list.append(response.json()["username"])
 
             # Fetching all csm users
             self.log.debug(
@@ -498,6 +513,10 @@ class RestCsmUser(RestTestLib):
                            error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+        finally:
+            # delete created CSM user
+            for user_id in created_user_list:
+                self.delete_csm_user(user_id)
 
     @RestTestLib.authenticate_and_login
     def verify_list_csm_users_unauthorised_access_failure(self):
