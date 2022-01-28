@@ -322,6 +322,8 @@ CMD_VM_INFO = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REVERT = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
+                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"

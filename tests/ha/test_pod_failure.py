@@ -43,10 +43,6 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
-from commons.utils.system_utils import create_file
-from commons.utils.system_utils import make_dirs
-from commons.utils.system_utils import remove_dirs
-from commons.utils.system_utils import remove_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -116,9 +112,7 @@ class TestPodFailure:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        if not os.path.exists(cls.test_dir_path):
-            make_dirs(cls.test_dir_path)
-        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
+        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
@@ -142,6 +136,9 @@ class TestPodFailure:
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         self.restore_pod = self.restore_method = self.deployment_name = None
         self.deployment_backup = None
+        if not os.path.exists(self.test_dir_path):
+            sysutils.make_dirs(self.test_dir_path)
+        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -180,7 +177,7 @@ class TestPodFailure:
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
             if os.path.exists(self.test_dir_path):
-                remove_dirs(self.test_dir_path)
+                sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -475,6 +472,7 @@ class TestPodFailure:
         LOGGER.info(
             "ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26444")
@@ -1803,8 +1801,8 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        remove_file(self.multipart_obj_path)
-        remove_file(download_path)
+        sysutils.remove_file(self.multipart_obj_path)
+        sysutils.remove_file(download_path)
 
         LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
@@ -1929,8 +1927,8 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        remove_file(self.multipart_obj_path)
-        remove_file(download_path)
+        sysutils.remove_file(self.multipart_obj_path)
+        sysutils.remove_file(download_path)
 
         LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
@@ -2019,7 +2017,6 @@ class TestPodFailure:
         server_list.remove(serverpod_name)
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
@@ -2178,8 +2175,8 @@ class TestPodFailure:
         part_numbers = list(range(1, total_parts))
         random.shuffle(part_numbers)
         output = Queue()
-        failed_parts = dict()
-        parts_etag = list()
+        failed_parts = {}
+        parts_etag = []
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
@@ -2338,7 +2335,7 @@ class TestPodFailure:
         download_path = os.path.join(self.test_dir_path, download_file)
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
-        create_file(self.multipart_obj_path, file_size)
+        sysutils.create_file(self.multipart_obj_path, file_size)
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]

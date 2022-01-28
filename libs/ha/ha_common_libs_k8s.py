@@ -23,20 +23,20 @@ HA common utility methods
 """
 import logging
 import os
+import random
+import sys
 import time
 from multiprocessing import Process
-import sys
-import random
 from time import perf_counter_ns
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
-from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
-from commons.utils import system_utils
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import system_utils
+from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -46,7 +46,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from commons.utils.system_utils import run_local_cmd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,7 +92,7 @@ class HAK8s:
             resp = system_utils.check_ping(host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
-                LOGGER.info("Rereshing %s", vm_name)
+                LOGGER.info("Refreshing %s", vm_name)
                 system_utils.execute_cmd(
                     common_cmd.CMD_VM_REFRESH.format(
                         self.vm_username, self.vm_password, vm_name))
@@ -1070,7 +1069,7 @@ class HAK8s:
                 LOGGER.info("Make %s interface down for %s node", node_iface, host)
                 new_worker_obj.execute_cmd(
                     cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
-                resp = sysutils.check_ping(host=node_ip)
+                resp = system_utils.check_ping(host=node_ip)
                 if not resp:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
