@@ -26,7 +26,6 @@ import dash_table
 import dash_html_components as html
 import plotly.graph_objs as go
 
-from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 from Performance.schemas import *
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
     sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list, \
