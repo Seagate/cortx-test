@@ -1062,7 +1062,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Cluster start started.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         LOGGER.info("Response for cluster start: %s", resp)
-        thread.join(120.0)
+        thread.join(HA_CFG["common_params"]["thread_join_delay"])
         LOGGER.info("Step 4: Shutdown and restart completed.")
 
         LOGGER.info("Step 5: Check the cluster status and start the cluster "
