@@ -106,9 +106,7 @@ class TestClusterShutdownStart:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        if not os.path.exists(cls.test_dir_path):
-            make_dirs(cls.test_dir_path)
-        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
+        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
@@ -125,6 +123,9 @@ class TestClusterShutdownStart:
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
+        if not os.path.exists(self.test_dir_path):
+            make_dirs(self.test_dir_path)
+        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Done: Setup operations. ")
 
     def teardown_method(self):
@@ -573,7 +574,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Started: Test to check READs after cluster restart on WRITEs before shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test_29469'
+        self.test_prefix = 'test-29469'
         self.s3_clean = self.s3bench_cleanup = users
         resp = self.ha_obj.ha_s3_workload_operation(
             s3userinfo=list(users.values())[0],
@@ -617,7 +618,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Started: Test to check WRITEs after cluster restart.")
         LOGGER.info("STEP 1: Perform IOs with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test_29470'
+        self.test_prefix = 'test-29470'
         self.s3_clean = self.s3bench_cleanup = users
         resp = self.ha_obj.ha_s3_workload_operation(
             s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
