@@ -12,7 +12,9 @@ common_params:
   5sec_delay: 5
   10sec_delay: 10
   20sec_delay: 20
+  30sec_delay: 30
   60sec_delay: 60
+  90sec_delay: 90
 
 s3_operation_data:
   no_csm_users: 10

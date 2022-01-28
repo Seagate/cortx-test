@@ -405,8 +405,8 @@ class TestPodFailure:
         """
         This test tests degraded writes before and after unsafe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded writes before and after unsafe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded writes before and after unsafe"
+                    " pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. "
                     "0B + (1KB - 512MB)")
@@ -1982,7 +1982,7 @@ class TestPodFailure:
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
-        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown"
+        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown "
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
@@ -2005,6 +2005,7 @@ class TestPodFailure:
                 break
         LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
         LOGGER.info("Shutdown the node: %s", node_fqdn)
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", node_fqdn)
@@ -2259,10 +2260,13 @@ class TestPodFailure:
                                                         object_name=self.object_name,
                                                         part_numbers=list(failed_parts.keys()),
                                                         remaining_upload=True, parts=failed_parts,
-                                                        mpu_id=mpu_id, parts_etag=parts_etag)
-
+                                                        mpu_id=mpu_id)
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+            parts_etag1 = resp[3]
+            parts_etag = parts_etag + parts_etag1
             LOGGER.info("Step 6: Successfully uploaded remaining parts")
+
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
 
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
