@@ -374,7 +374,6 @@ class Health(Host):
         """
         This will Check Node status, Logs the output in debug.log file and
         returns the response in json format.
-        :param str node: Node on which status to be checked
         :param pod_name: Running data pod name to fetch the hctl status
         :return: Json response of stdout
         :rtype: dict
