@@ -744,8 +744,6 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     if log == 'csm_gui':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
-        if not support_logs:
-            os.rmdir(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
     if log == 's3bench':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     else:
