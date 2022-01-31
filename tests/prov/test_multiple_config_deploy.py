@@ -22,7 +22,6 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os.path
-import shutil
 
 import pytest
 
