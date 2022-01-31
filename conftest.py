@@ -748,7 +748,7 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     else:
         support_logs = glob.glob(f"{LOG_DIR}/latest/logs-cortx-cloud-*")
-        LOGGER.debug("support logs is %s", support_logs)
+    LOGGER.debug("support logs is %s", support_logs)
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
