@@ -744,7 +744,7 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     if log == 'csm_gui':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
-    if log == 's3bench':
+    elif log == 's3bench':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     else:
         support_logs = glob.glob(f"{LOG_DIR}/latest/logs-cortx-cloud-*")
@@ -756,6 +756,7 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
                                                    local_path=support_log)
         if resp[0]:
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+            shutil.rmtree(support_log)
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 

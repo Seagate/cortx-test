@@ -22,6 +22,7 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os.path
+import shutil
 
 import pytest
 
@@ -64,12 +65,11 @@ class TestMultipleConfDeploy:
         """
         Teardown method
         """
+        path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
         if self.collect_sb:
-            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-        # TODO move logs to NFS share
         resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
                                                 self.worker_node_list)
         assert_utils.assert_true(resp)
