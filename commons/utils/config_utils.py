@@ -44,7 +44,6 @@ from commons.exceptions import CTException
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
-
  
 def read_ordered_yaml(fpath: str) -> tuple:
     """
