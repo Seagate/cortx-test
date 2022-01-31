@@ -30,7 +30,6 @@ import time
 from http import HTTPStatus
 from multiprocessing import Process, Queue
 from time import perf_counter_ns
-import threading
 
 import pytest
 
@@ -39,17 +38,16 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils.system_utils import create_file
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils.system_utils import remove_file
-from commons.utils.system_utils import create_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
@@ -84,6 +82,7 @@ class TestClusterShutdownStart:
         cls.s3_clean = {}
         cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = random.SystemRandom()
 
@@ -107,9 +106,6 @@ class TestClusterShutdownStart:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        if not os.path.exists(cls.test_dir_path):
-            resp = make_dirs(cls.test_dir_path)
-        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def setup_method(self):
         """
@@ -126,6 +122,9 @@ class TestClusterShutdownStart:
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
+        if not os.path.exists(self.test_dir_path):
+            make_dirs(self.test_dir_path)
+        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Done: Setup operations. ")
 
     def teardown_method(self):
@@ -175,12 +174,14 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
 
-        LOGGER.info(
-            "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
+        LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-29301'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, nsamples=10)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -189,17 +190,15 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
-        LOGGER.info(
-            "Step 4: Restart the cluster and check cluster status.")
+        LOGGER.info("Step 4: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info(
-            "Step 4: Cluster restarted fine and all Pods online.")
+        LOGGER.info("Step 4: Cluster restarted fine and all Pods online.")
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 6: Create new S3 account and perform IOs.")
@@ -211,7 +210,6 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
-        self.restored = False
 
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
@@ -232,17 +230,49 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.check_pod_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
+        wr_bucket = self.system_random.randrange(5, 20, 5)
+        event = threading.Event()
+        wr_output = Queue()
+        del_output = Queue()
+        rd_output = Queue()
 
         loop_count = HA_CFG["common_params"]["loop_count"]
+        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"][
+                                                    "password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-29468'
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         for loop in range(1, loop_count):
             LOGGER.info("Checking cluster restart for %s count", loop)
 
-            LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-            io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1)
-            assert_utils.assert_true(io_resp[0], io_resp[1])
-            di_check_data = (io_resp[1], io_resp[2])
-            self.s3_clean.update(io_resp[2])
-            LOGGER.info("Step 2: IOs are started successfully.")
+            LOGGER.info("Step 2: Create %s buckets and perform WRITEs with variable size objects.",
+                        wr_bucket)
+
+            LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
+            args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                    'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+            self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+            wr_resp = ()
+            while len(wr_resp) != 3:
+                wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+            buckets = s3_test_obj.bucket_list()[1]
+            assert_utils.assert_equal(len(buckets), wr_bucket,
+                                      f"Failed to create {wr_bucket} number "
+                                      f"of buckets. Created {len(buckets)} "
+                                      f"number of buckets")
+            LOGGER.info("Step 2: Sucessfully created %s buckets & "
+                        "perform WRITEs with variable size objects.", wr_bucket)
 
             LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
             resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
@@ -255,13 +285,47 @@ class TestClusterShutdownStart:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 4: Cluster restarted fine and all Pods online.")
 
-            LOGGER.info("Step 5: Check DI for IOs run before restart.")
-            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.s3_clean.pop(list(io_resp[2].keys())[0])
-            LOGGER.info("Step 5: Verified DI for IOs run before restart.")
+            LOGGER.info("Step 5: Verify READs and DI check for buckets: %s", wr_bucket)
 
-            LOGGER.info("Step 6: Create new S3 account and perform IOs.")
+            args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                    'skipput': True, 'skipdel': True, 's3_data': s3_data, 'di_check': True,
+                    'output': rd_output}
+            self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+            rd_resp = ()
+            while len(rd_resp) != 4:
+                rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            event_bkt_get = rd_resp[0]
+            fail_bkt_get = rd_resp[1]
+            event_di_bkt = rd_resp[2]
+            fail_di_bkt = rd_resp[3]
+
+            # Above four lists are expected to be empty as all pass expected
+            assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                      len(event_di_bkt), "Expected pass in read and di check "
+                                                         "operations. Found failures in READ: "
+                                                         f"{fail_bkt_get} {event_bkt_get}"
+                                                         f"or DI_CHECK: {fail_di_bkt}"
+                                                         f" {event_di_bkt}")
+            LOGGER.info("Step 5: Performed READs and verified DI on the written data for %s "
+                        "buckets", wr_bucket)
+
+            LOGGER.info("Step 6: Deleting %s buckets.", wr_bucket)
+            args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                    'skipput': True, 'skipget': True, 'output': del_output}
+            self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+            del_resp = ()
+            while len(del_resp) != 2:
+                del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            event_del_bkt = del_resp[0]
+            fail_del_bkt = del_resp[1]
+            assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                      f"Failed to delete: {event_del_bkt} or {fail_del_bkt}")
+            LOGGER.info("Cleaning up s3 user data")
+            resp = s3_test_obj.bucket_list()[1]
+            assert_utils.assert_equal(len(resp), 0, f"Failed to delete {wr_bucket} buckets")
+            LOGGER.info("Step 6: Successfully deleted %s buckets.", wr_bucket)
+
+            LOGGER.info("Step 7: Create new S3 account and perform IOs.")
             io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-1', nusers=1)
             assert_utils.assert_true(io_resp[0], io_resp[1])
             di_check_data = (io_resp[1], io_resp[2])
@@ -269,8 +333,7 @@ class TestClusterShutdownStart:
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
             self.s3_clean.pop(list(io_resp[2].keys())[0])
-            LOGGER.info("Step 6: IOs running successfully with new S3 account.")
-            self.restored = False
+            LOGGER.info("Step 7: IOs running successfully with new S3 account.")
             LOGGER.info("Cluster restart was successful for %s count", loop)
 
         LOGGER.info(
@@ -508,7 +571,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Started: Test to check READs after cluster restart on WRITEs before shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test_29469'
+        self.test_prefix = 'test-29469'
         self.s3_clean = self.s3bench_cleanup = users
         resp = self.ha_obj.ha_s3_workload_operation(
             s3userinfo=list(users.values())[0],
@@ -552,7 +615,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Started: Test to check WRITEs after cluster restart.")
         LOGGER.info("STEP 1: Perform IOs with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test_29470'
+        self.test_prefix = 'test-29470'
         self.s3_clean = self.s3bench_cleanup = users
         resp = self.ha_obj.ha_s3_workload_operation(
             s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
@@ -968,12 +1031,14 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
 
-        LOGGER.info(
-            "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
+        LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-29480'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -983,15 +1048,21 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
         LOGGER.info("Step 4: Shutdown the cluster and start it back before shutdown completes.")
-        proc = Process(target=self.ha_obj.cortx_stop_cluster(self.node_master_list[0]))
-        proc.start()
-        # TODO: Need to check if any sleep needed before cluster status is checked.
+        thread = threading.Thread(target=self.ha_obj.cortx_stop_cluster,
+                                  args=(self.node_master_list[0],))
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Cluster Stop started and waiting for %s seconds.",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Check the cluster status has failures after stop cluster")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], "Cluster has not started shutdown yet.")
-        LOGGER.info("Cluster shutdown started.")
+        LOGGER.info("Checked the cluster status has failures after stop cluster")
+        LOGGER.info("Cluster start started.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         LOGGER.info("Response for cluster start: %s", resp)
-        proc.join()
+        thread.join(HA_CFG["common_params"]["thread_join_delay"])
         LOGGER.info("Step 4: Shutdown and restart completed.")
 
         LOGGER.info("Step 5: Check the cluster status and start the cluster "
@@ -1005,9 +1076,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Cluster is back online.")
 
         LOGGER.info("Step 6: Check DI for IOs run before restart.")
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 7: Create new S3 account and perform IOs.")
@@ -1019,7 +1090,6 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
-        self.restored = False
 
         LOGGER.info("Completed: Test to check cluster stability when cluster start is initiated "
                     "before shutdown completes.")
@@ -1142,7 +1212,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 6: Verify %s has %s buckets are remaining", self.s3acc_name, r_buck)
         resp = s3_test_obj.bucket_list()
         assert_utils.assert_equal(r_buck, len(resp[1]), resp)
-        LOGGER.info("Step 6: Verified %s has %s buckets are remaining",self.s3acc_name, r_buck)
+        LOGGER.info("Step 6: Verified %s has %s buckets are remaining", self.s3acc_name, r_buck)
         LOGGER.info("Step 7: Delete %s's remaining %s buckets", self.s3acc_name, r_buck)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': r_buck, 'output': del_output}
@@ -1174,20 +1244,22 @@ class TestClusterShutdownStart:
         This test verifies IOs during cluster restart
         """
         LOGGER.info("Started: Test to check IOs during cluster restart.")
-        LOGGER.info("Create new s3 account through CSM rest with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
-        LOGGER.info("Setting up S3 background IO")
-        self.s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj)
-        LOGGER.info("Step 1. Start parallel S3 IO for 3 minutes duration.")
-        self.s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h3m")
+        event = threading.Event()  # Event to be used to send when data pod restart start
+        LOGGER.info("Step 1. Start parallel S3 IOs during cluster restart.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-29478'
+        self.s3_clean = users
+        output = Queue()
+
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 8, 'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        event.set()
+        LOGGER.info("Step 1. Started parallel S3 IOs during cluster restart.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
@@ -1196,33 +1268,40 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Shutdown the cluster and check the cluster status.")
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp[1])
-        LOGGER.info("Step 3: Successfully shutdown the cluster and verified all pods are offline.")
-        LOGGER.info("Step 4: Check the parallel s3 IO status while cluster restart in progress")
-        # TODO: Need to debug s3bench log file once logs are available with failures
-        LOGGER.info("Step 5: Start the cluster and verify all pods are running.")
+        LOGGER.info("Step 3: Sucessfully shutdown the cluster and verified all pods are offline.")
+        LOGGER.info("Step 4: Start the cluster and verify all pods are running.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        # TODO: Need to check if any sleep needed before cluster status is checked.
-        resp = self.ha_obj.poll_cluster_status(pod_obj=self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=300)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Sucessfully started the cluster and verified all pods are running.")
+        LOGGER.info("Step 5. Stop parallel S3 and verify the log results.")
+        event.clear()
+        thread.join()
+        responses = {}
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Expected Pass, But Logs which contain failures:"
+                                                f" {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
+                                 f"Logs which contain passed IOs: {resp[1]}")
+        LOGGER.info("Step 5. Stopped parallel S3 and verified the log results.")
+        LOGGER.info("Step 6: Create 10 buckets and run S3 IOs on variable size objects.")
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29478-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
+        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully started the cluster and verified all pods are running.")
-        LOGGER.info("Step 6. Stop parallel S3.")
-        self.s3ios.stop()
-        # TODO: Need to add check for s3bench log file once logs are available with failures
-        LOGGER.info("Step 7: Create 10 buckets and run S3 IOs on variable size objects.")
-        buckets = [f"test-29478-bucket-{i}-{str(int(time.time()))}" for i in range(11)]
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipcleanup=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Created 10 buckets and ran S3 IOs on variable size objects.")
-        LOGGER.info("Step 8: Verify %s has 10 buckets created", self.s3_clean["user_name"])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(10, len(resp[1]), resp)
-        LOGGER.info("Step 8: Verified %s has 10 buckets created", self.s3_clean["user_name"])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
+        LOGGER.info("Step 6: Created 10 buckets and ran S3 IOs on variable size objects.")
         LOGGER.info("Completed: Test to check IOs during cluster restart.")
 
     @pytest.mark.ha
