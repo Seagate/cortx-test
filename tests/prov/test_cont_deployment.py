@@ -70,7 +70,7 @@ class TestContDeployment:
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH",
-                                         PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
+                                         PROV_CFG["k8s_cortx_deploy"]["k8s_dir"])
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
