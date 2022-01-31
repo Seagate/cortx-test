@@ -1055,9 +1055,12 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
+        LOGGER.info("local path and new path are %s\n%s", local_path, new_path)
         if os.path.isfile(local_path):
+            LOGGER.debug("Copy from %s to %s", local_path, new_path)
             shutil.copy(local_path, new_path)
         else:
+            LOGGER.debug("Copy in else")
             shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
 
