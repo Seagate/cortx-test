@@ -182,8 +182,6 @@ class TestPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
             if os.path.exists(self.test_dir_path):
                 sysutils.remove_dirs(self.test_dir_path)
-            if os.path.exists(self.test_dir_path):
-                remove_dirs(self.test_dir_path)
 
         if self.deploy:
             LOGGER.info("Cleanup: Destroying the cluster ")
@@ -609,7 +607,7 @@ class TestPodFailure:
                                   f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
         LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", del_bucket)
         LOGGER.info("Step 7: Perform READs on the remaining %s buckets and delete the same.",
-        remain_bkt)
+                    remain_bkt)
         rd_output = Queue()
         new_s3data = {}
         for bkt in remain_bkt:
@@ -3220,7 +3218,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
-            "and server pod %s are in offline state", self.node_name, rc_datapod, rc_serverpod)
+                    "and server pod %s are in offline state", self.node_name, rc_datapod,
+                    rc_serverpod)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
                                                            fail=True, hostname=hostname,
                                                            pod_name=running_pod)
