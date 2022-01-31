@@ -76,27 +76,28 @@ class TestExecuteK8Sanity:
         logger.info(self.motr_obj.get_primary_cortx_node())
         logger.info(self.motr_obj.get_cortx_node_endpoints())
 
-    def test_m0trace_utility(self, param_loop):
+    def test_m0crate_utility(self, param_loop):
         """
         This is to run the m0crate utility tests.
         param: param_loop: Fixture which provides one set of values required to run the utility
         """
         source_file = TEMP_PATH + 'source_file'
         remote_file = TEMP_PATH + M0CRATE_WORKLOAD_YML.split("/")[-1]
-        m0cfg = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
+        m0cfg = config_utils.read_ordered_yaml(M0CRATE_WORKLOAD_YML)[1]
         node = self.system_random.choice(self.motr_obj.cortx_node_list)
         node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
         for key, value in param_loop.items():
             if value.isdigit():
                 value = int(value)
-            elif key == 'TEST_ID':
-                logger.info("Executing the test: %s", value)
-            elif key == 'SOURCE_FILE_SIZE':
-                file_size = value
-            elif key in m0cfg['MOTR_CONFIG'].keys():
+            if key in m0cfg['MOTR_CONFIG'].keys():
                 m0cfg['MOTR_CONFIG'][key] = value
             elif key in m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'].keys():
                 m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'][key] = value
+            else:
+                if key == 'TEST_ID':
+                    logger.info("Executing the test: %s", value)
+                elif key == 'SOURCE_FILE_SIZE':
+                    file_size = value
         m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
         m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
         m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
@@ -107,7 +108,7 @@ class TestExecuteK8Sanity:
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
         count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
+        config_utils.write_ordered_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
 
     def test_m0cp_m0cat_workload(self):

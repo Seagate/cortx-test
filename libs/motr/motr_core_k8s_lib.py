@@ -192,12 +192,9 @@ class MotrCoreK8s():
                                                                       self.master_passwd)
         log.info("%s , %s", result, error1)
         if ret:
-            log.info('"%s" Failed, Please check the log', cmd)
-            assert False
-        if (b"ERROR" or b"Error") in error1:
-            log.error('"%s" failed, please check the log', cmd)
-            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
+            assert False, "Failed with return code {}, Please check the logs".format(ret) 
+        assert not any([error_str in error1.decode("utf-8") for error_str in ['error', 'ERROR', 'Error']]), \
+            "Errors found in output {}".format(error1)
 
 
     def dd_cmd(self, b_size, count, file, node):
