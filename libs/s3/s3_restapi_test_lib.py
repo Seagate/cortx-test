@@ -398,8 +398,8 @@ class S3AuthServerRestAPI(RestS3user):
 
     # pylint: disable=too-many-arguments
     def create_custom_iam_accesskey(
-        self, user_name, s3_access_key, s3_secret_key , iam_access_key=None,
-        iam_secret_key=None ) -> tuple:
+            self, user_name, s3_access_key, s3_secret_key, iam_access_key=None,
+            iam_secret_key=None) -> tuple:
         """
         Create s3/iam account user custom access & secret keys using s3authserver rest api.
 
