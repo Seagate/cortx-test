@@ -34,28 +34,24 @@ from time import perf_counter_ns
 
 import pytest
 
-from commons import constants as const
 from commons import commands as cmd
+from commons import constants as const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
-from commons.utils.system_utils import create_file
-from commons.utils.system_utils import make_dirs
-from commons.utils.system_utils import remove_dirs
-from commons.utils.system_utils import remove_file
 from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -116,9 +112,7 @@ class TestPodFailure:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        if not os.path.exists(cls.test_dir_path):
-            make_dirs(cls.test_dir_path)
-        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
+        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
@@ -142,6 +136,9 @@ class TestPodFailure:
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         self.restore_pod = self.restore_method = self.deployment_name = None
         self.deployment_backup = None
+        if not os.path.exists(self.test_dir_path):
+            sysutils.make_dirs(self.test_dir_path)
+        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -149,6 +146,10 @@ class TestPodFailure:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -163,6 +164,9 @@ class TestPodFailure:
                 LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
                 resp = self.ha_obj.host_power_on(host=self.node_name)
                 assert_utils.assert_true(resp, "Host is not powered on")
+                LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
+                            " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
+                time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
             if self.restore_ip:
                 LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
                 self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
@@ -172,13 +176,8 @@ class TestPodFailure:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
-            if self.s3_clean:
-                LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-                assert_utils.assert_true(resp[0], resp[1])
-
             if os.path.exists(self.test_dir_path):
-                remove_dirs(self.test_dir_path)
+                sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -403,8 +402,8 @@ class TestPodFailure:
         """
         This test tests degraded writes before and after unsafe pod shutdown
         """
-        LOGGER.info(
-            "STARTED: Test to verify degraded writes before and after unsafe pod shutdown.")
+        LOGGER.info("STARTED: Test to verify degraded writes before and after unsafe"
+                    " pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. "
                     "0B + (1KB - 512MB)")
@@ -473,6 +472,7 @@ class TestPodFailure:
         LOGGER.info(
             "ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26444")
@@ -482,32 +482,43 @@ class TestPodFailure:
         This test tests degraded deletes before and after safe pod shutdown
         """
         LOGGER.info("STARTED: Test to verify degraded deletes before and after safe pod shutdown.")
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        del_bucket = wr_bucket - 10
+        event = threading.Event()
+        wr_output = Queue()
+        del_output = Queue()
+        LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
+                    wr_bucket)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-26444'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        bucket_num = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
-        LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
-                    bucket_num)
-        buckets = [f"test-26444-bucket-{i}-{str(int(time.time()))}" for i in range(bucket_num + 1)]
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipread=True, skipcleanup=True,
-                nsamples=1, nclients=1)
-            assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(bucket_num, len(resp[1]), resp)
+
+        LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = ()
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
+                                                           f"of buckets. Created {len(buckets)} "
+                                                           f"number of buckets")
         LOGGER.info("Step 1: Sucessfully created %s buckets & "
-                    "perform WRITEs with variable size objects.", bucket_num)
+                    "perform WRITEs with variable size objects.", wr_bucket)
+
         LOGGER.info("Step 2: Shutdown/Delete the data pod safely by making replicas=0")
         LOGGER.info("Get pod name to be Shutdown/Deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -537,20 +548,44 @@ class TestPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
-        LOGGER.info("Step 6: Perform DELETEs on random %s buckets", bucket_num - 10)
-        for _ in range(bucket_num - 10 + 1):
-            del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
-            resp = s3_test_obj.delete_bucket(bucket_name=del_bucket, force=True)
-            assert_utils.assert_true(resp[0], resp)
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(10, len(resp[1]), resp)
-        LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", bucket_num - 10)
-        LOGGER.info("Step 7: Perform READs on the remaining 10 buckets and delete the same.")
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipwrite=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully performed READs on the remaining 10 buckets.")
+        LOGGER.info("Step 6: Perform DELETEs on random %s buckets", del_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        remain_bkt = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(remain_bkt), wr_bucket - del_bucket,
+                                  f"Failed to delete {del_bucket} number of buckets from "
+                                  f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
+        LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", del_bucket)
+        LOGGER.info("Step 7: Perform READs on the remaining %s buckets and delete the same.",
+        remain_bkt)
+        rd_output = Queue()
+        new_s3data = {}
+        for bkt in remain_bkt:
+            new_s3data[bkt] = s3_data[bkt]
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
+                'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.", remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded deletes before & after safe pod shutdown.")
 
     @pytest.mark.ha
@@ -563,6 +598,13 @@ class TestPodFailure:
         """
         LOGGER.info(
             "STARTED: Test to verify degraded deletes before and after unsafe pod shutdown.")
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        del_bucket = wr_bucket - 10
+        event = threading.Event()
+        wr_output = Queue()
+        del_output = Queue()
+        LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
+                    wr_bucket)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -570,23 +612,28 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-26644'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        bucket_num = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
-        LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
-                    bucket_num)
-        buckets = [f"test-26644-bucket-{i}-{int(perf_counter_ns())}" for i in range(bucket_num + 1)]
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipread=True, skipcleanup=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(bucket_num, len(resp[1]), resp)
+
+        LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = ()
+        while len(wr_resp) != 3: wr_resp = wr_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
+                                                           f"of buckets. Created {len(buckets)} "
+                                                           f"number of buckets")
         LOGGER.info("Step 1: Sucessfully created %s buckets & "
-                    "perform WRITEs with variable size objects.", bucket_num)
+                    "perform WRITEs with variable size objects.", wr_bucket)
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -618,20 +665,45 @@ class TestPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
-        LOGGER.info("Step 6: Perform DELETEs on random %s buckets", bucket_num - 10)
-        for _ in range(bucket_num - 10 + 1):
-            del_bucket = buckets.pop(self.system_random.randrange(len(buckets)))
-            resp = s3_test_obj.delete_bucket(bucket_name=del_bucket, force=True)
-            assert_utils.assert_true(resp[0], resp)
-        resp = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(10, len(resp[1]), resp)
-        LOGGER.info("Step 6: Successfully performed DELETEs on random 140 buckets")
-        LOGGER.info("Step 7: Perform READs on the remaining 10 buckets.")
-        for bucket in buckets:
-            resp = self.ha_obj.ha_s3_workload_operation(
-                s3userinfo=self.s3_clean, log_prefix=bucket, skipwrite=True)
-            assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully performed READs on the remaining 10 buckets.")
+        LOGGER.info("Step 6: Perform DELETEs on random %s buckets", del_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = ()
+        while len(del_resp) != 2: del_resp = del_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        remain_bkt = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(remain_bkt), wr_bucket - del_bucket,
+                                  f"Failed to delete {del_bucket} number of buckets from "
+                                  f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
+        LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", del_bucket)
+        LOGGER.info("Step 7: Perform READs on the remaining %s buckets and delete the same.",
+                    remain_bkt)
+        rd_output = Queue()
+        new_s3data = {}
+        for bkt in remain_bkt:
+            new_s3data[bkt] = s3_data[bkt]
+
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
+                'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = ()
+        while len(rd_resp) != 4: rd_resp = rd_output.get(
+            timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.", remain_bkt)
         LOGGER.info(
             "COMPLETED: Test to verify degraded deletes before and after unsafe pod shutdown.")
 
@@ -1729,8 +1801,8 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        remove_file(self.multipart_obj_path)
-        remove_file(download_path)
+        sysutils.remove_file(self.multipart_obj_path)
+        sysutils.remove_file(download_path)
 
         LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
@@ -1855,8 +1927,8 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        remove_file(self.multipart_obj_path)
-        remove_file(download_path)
+        sysutils.remove_file(self.multipart_obj_path)
+        sysutils.remove_file(download_path)
 
         LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
@@ -1908,7 +1980,7 @@ class TestPodFailure:
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
-        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown"
+        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown "
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
@@ -1931,30 +2003,38 @@ class TestPodFailure:
                 break
         LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
         LOGGER.info("Shutdown the node: %s", node_fqdn)
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
         resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", node_fqdn)
         self.restore_node = True
 
+        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+            "pod_eviction_time"])
+        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
+        pod_list.remove(data_pod_name)
+        running_pod = random.sample(pod_list, 1)[0]
+        server_list.remove(serverpod_name)
+
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Checked cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
                     "pod %s", data_pod_name, serverpod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
-                                                           fail=True, hostname=hostname)
+                                                           fail=True, hostname=hostname,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
                     "pod %s are in offline state", data_pod_name, serverpod_name)
-        pod_list.remove(data_pod_name)
-        server_list.remove(serverpod_name)
+
         online_pods = pod_list + server_list
         LOGGER.info("Step 5: Check services status on remaining pods %s", online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
@@ -1984,6 +2064,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not Available")
     @pytest.mark.tags("TEST-32460")
     @CTFailOn(error_handler)
     def test_ha_pod_failover(self):
@@ -2094,8 +2175,8 @@ class TestPodFailure:
         part_numbers = list(range(1, total_parts))
         random.shuffle(part_numbers)
         output = Queue()
-        failed_parts = dict()
-        parts_etag = list()
+        failed_parts = {}
+        parts_etag = []
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
@@ -2176,10 +2257,13 @@ class TestPodFailure:
                                                         object_name=self.object_name,
                                                         part_numbers=list(failed_parts.keys()),
                                                         remaining_upload=True, parts=failed_parts,
-                                                        mpu_id=mpu_id, parts_etag=parts_etag)
-
+                                                        mpu_id=mpu_id)
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+            parts_etag1 = resp[3]
+            parts_etag = parts_etag + parts_etag1
             LOGGER.info("Step 6: Successfully uploaded remaining parts")
+
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
 
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
@@ -2251,7 +2335,7 @@ class TestPodFailure:
         download_path = os.path.join(self.test_dir_path, download_file)
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
-        create_file(self.multipart_obj_path, file_size)
+        sysutils.create_file(self.multipart_obj_path, file_size)
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]
@@ -2671,30 +2755,36 @@ class TestPodFailure:
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where data pod was running.", data_node_fqdn)
         self.restore_node = True
+        remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
+        running_pod = random.sample(remain_pod_list1, 1)[0]
+        remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
+        remain_pod_list = remain_pod_list1 + remain_pod_list2
+        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+            "pod_eviction_time"])
+        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
         LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=remain_pod_list1)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on data and server pod")
         LOGGER.info("Check services on %s data pod", data_pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name], fail=True,
-                                                           hostname=pod_host)
+                                                           hostname=pod_host, pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Check services on %s server pod", server_pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name], fail=True,
-                                                           hostname=srv_pod_host)
+                                                           hostname=srv_pod_host,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of data and server pods are in offline state")
 
-        remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
-        remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
-        remain_pod_list = remain_pod_list1 + remain_pod_list2
         LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
@@ -3047,34 +3137,45 @@ class TestPodFailure:
         assert_utils.assert_true(resp, f"{self.node_name} is not powered off")
         LOGGER.info("Step 2: Sucessfully shutdown RC node %s.", self.node_name)
         self.restore_node = True
+        pod_list.remove(rc_datapod)
+        server_list.remove(rc_serverpod)
+        running_pod = random.sample(pod_list, 1)[0]
+        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+            "pod_eviction_time"])
+        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
-        LOGGER.info("Step 3: Check services status that were running on RC node %s's data pod %s "
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
             "and server pod %s are in offline state", self.node_name, rc_datapod, rc_serverpod)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
-                                                           fail=True, hostname=hostname)
+                                                           fail=True, hostname=hostname,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Checked services status that were running on RC node %s's data pod %s "
+        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
                     "and server pod %s are in offline state", self.node_name, rc_datapod,
                     rc_serverpod)
 
-        pod_list.remove(rc_datapod)
-        server_list.remove(rc_serverpod)
         online_pods = pod_list + server_list
-        LOGGER.info("Step 4: Check services status on remaining pods %s are in online state",
+        LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
+                                                           pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
+        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
-        LOGGER.info("Step 5: Check for RC node failed over node.")
+        LOGGER.info("Step 6: Check for RC node failed over node.")
         rc_node = self.motr_obj.get_primary_cortx_node()
         assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
-        LOGGER.info("Step 5: RC node has been failed over to %s node", list(rc_info.values())[0])
+        LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
 
-        LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects).")
+        LOGGER.info("Step 7: Start IOs (create s3 acc, buckets and upload objects).")
         io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-33209-1', nusers=1)
         assert_utils.assert_true(io_resp[0], io_resp[1])
         di_check_data = (io_resp[1], io_resp[2])
@@ -3082,7 +3183,7 @@ class TestPodFailure:
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop(list(io_resp[2].keys())[0])
-        LOGGER.info("Step 6: Successfully completed IOs.")
+        LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
 
