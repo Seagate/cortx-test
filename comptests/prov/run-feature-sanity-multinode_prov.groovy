@@ -34,7 +34,7 @@ deactivate
 			    sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
-python3.7 scripts/cicd_k8s/client_multinode_conf.py "${HOST1}" "${HOST2}" "${HOST3}" --node_count 3 --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
+python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
 '''
 			}
