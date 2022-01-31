@@ -41,7 +41,7 @@ def setup_s3bench(
         get_cmd=cfg_obj["s3bench_get"]):
     """
     Configuring client machine with s3bench dependencies.
-    :param string get_cmd: S3Bench go get command
+    :param get_cmd: S3Bench go get command
     :return bool: True/False
     """
     LOGGER.debug("Installing go/s3bench.")
@@ -197,7 +197,7 @@ def s3bench(
     :param skip_write: Skip writing objects
     :param validate: Validate checksum for the objects
         This option will download the object and give error if checksum is wrong
-    :param duration: Execute same ops with defined time. 1h24m|0h22m else None
+    :param duration: Execute same ops with defined time. 1h24m10s|0h22m0s else None
     :param verbose: verbose per thread status write and read
     :param log_file_prefix: Test number prefix for log file
     :return: tuple with json response and log path
@@ -221,35 +221,26 @@ def s3bench(
         cmd = cmd + "-validate "
     if verbose:
         cmd = cmd + "-verbose "
-
     cmd = f"{cmd}>> {log_path} 2>&1"
-
-    # In case duration is None
-    if not duration:
-        duration = "0h0m"
-
-    # Calculating execution time based on the duration given
-    hour, mins = duration.lower().replace("h", ":").replace("m", "").split(":")
-    dur_time = str(
-        datetime.now() +
-        timedelta(
-            hours=int(hour),
-            minutes=int(mins)))[11:19]
-
-    # Executing s3bench based on the current time and expected duration time
-    # calculated
-    while str(datetime.now())[11:19] <= dur_time:
+    LOGGER.info("Workload execution started.")
+    if duration:
+        if not duration.lower().endswith("s"):
+            duration += "0s"
+        # Calculating execution time based on the duration given
+        hour, mins, secs = duration.lower().replace(
+            "h", ":").replace("m", ":").replace("s", "").split(":")
+        dur_time = datetime.now() + timedelta(hours=int(hour), minutes=int(mins), seconds=int(secs))
+        # Executing s3bench based on the current time and expected duration time calculated.
+        while datetime.now() <= dur_time:
+            res1 = run_local_cmd(cmd)
+            LOGGER.debug("Response: %s", res1)
+            result.append(res1[1])
+    else:  # In case duration is None
         res1 = run_local_cmd(cmd)
         LOGGER.debug("Response: %s", res1)
         result.append(res1[1])
+    LOGGER.info("Workload execution completed.")
 
-    # with open(log_path, "r") as r_fd:
-    #     r_data = r_fd.readlines()
-    #
-    # for line in r_data:
-    #     LOGGER.debug(line)
-    # Creating log file
-    # log_path = create_log(result)
     # Creating json response this function skips the verbose data
     json_resp = create_json_reps(result)
 
