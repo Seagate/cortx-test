@@ -36,8 +36,8 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import TEST_DATA_FOLDER
-from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
+from commons.params import TEST_DATA_FOLDER, LATEST_LOG_FOLDER, LOG_DIR
+from commons.utils import system_utils, assert_utils, ext_lbconfig_utils, support_bundle_utils
 from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
@@ -998,6 +998,7 @@ class ProvDeployK8sCortxLib:
         keyword:setup_client_config_flag: flsg to setup client with haproxy
         keyword:run_basic_s3_io_flag: flag to run basic s3 io
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
+        keyword:collect_support_bundle_flag: flag to collect support bundle
         keyword:destroy_setup_flag:flag to destroy cortx cluster
         keyword:log_path:log_path of cortx cluster
         keyword:data_disk_size: data disk size
@@ -1005,30 +1006,26 @@ class ProvDeployK8sCortxLib:
         keyword:custom_repo_path: Custom repo path to be used for ONLY DESTROY cortx cluster
         """
         setup_k8s_cluster_flag = \
-            kwargs.get("setup_k8s_cluster_flag",
-                       PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
+            kwargs.get("setup_k8s_cluster_flag", self.deploy_cfg['setup_k8s_cluster_flag'])
         cortx_cluster_deploy_flag = \
             kwargs.get("cortx_cluster_deploy_flag",
-                       PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
+                       self.deploy_cfg['cortx_cluster_deploy_flag'])
         setup_client_config_flag = \
             kwargs.get("setup_client_config_flag",
-                       PROV_CFG['k8s_cortx_deploy']['setup_client_config_flag'])
+                       self.deploy_cfg['setup_client_config_flag'])
         run_basic_s3_io_flag = \
-            kwargs.get("run_basic_s3_io_flag",
-                       PROV_CFG['k8s_cortx_deploy']['run_basic_s3_io_flag'])
+            kwargs.get("run_basic_s3_io_flag", self.deploy_cfg['run_basic_s3_io_flag'])
         run_s3bench_workload_flag = \
             kwargs.get("run_s3bench_workload_flag",
-                       PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
-        destroy_setup_flag = kwargs.get("destroy_setup_flag",
-                                        PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
+                       self.deploy_cfg['run_s3bench_workload_flag'])
+        collect_support_bundle_flag = kwargs.get("collect_support_bundle",
+                                                 self.deploy_cfg['collect_support_bundle_flag'])
+        destroy_setup_flag = kwargs.get("destroy_setup_flag", self.deploy_cfg['destroy_setup_flag'])
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
-        custom_repo_path = kwargs.get("custom_repo_path",
-                                      PROV_CFG["k8s_cortx_deploy"]["k8s_dir"])
-        report_path = kwargs.get("report_filepath", PROV_CFG["k8s_cortx_deploy"]["report_file"])
-        data_disk_size = kwargs.get("data_disk_size",
-                                    PROV_CFG["k8s_cortx_deploy"]["data_disk_size"])
-        metadata_disk_size = kwargs.get("meta_disk_size",
-                                        PROV_CFG["k8s_cortx_deploy"]["metadata_disk_size"])
+        custom_repo_path = kwargs.get("custom_repo_path", self.deploy_cfg["k8s_dir"])
+        report_path = kwargs.get("report_filepath", self.deploy_cfg["report_file"])
+        data_disk_size = kwargs.get("data_disk_size", self.deploy_cfg["data_disk_size"])
+        metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
         row = list()
         row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
@@ -1043,6 +1040,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
         LOGGER.debug("run_basic_s3_io_flag = %s", run_basic_s3_io_flag)
         LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
+        LOGGER.debug("support_bundle_flag = %s", collect_support_bundle_flag)
         LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
             LOGGER.info("Step to Perform k8s Cluster Deployment")
@@ -1113,6 +1111,12 @@ class ProvDeployK8sCortxLib:
                 self.io_workload(access_key=access_key, secret_key=secret_key,
                                  bucket_prefix=bucket_name)
 
+        path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+        if collect_support_bundle_flag:
+            LOGGER.info("Collecting the support bundle")
+            support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
+                                                            scripts_path=
+                                                            self.deploy_cfg['k8s_dir'])
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
