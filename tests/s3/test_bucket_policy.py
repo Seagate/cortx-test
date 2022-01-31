@@ -36,6 +36,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.s3_utils import poll
 from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from config.s3 import S3_CFG
 from libs.s3 import s3_bucket_policy_test_lib
@@ -13507,7 +13508,7 @@ _date."""
             "Checked the bucket policy to verify the applied policy - run from default account")
         self.log.info("Step 5 & 6: Account switch "
                       "Get bucket ACL. - run from account1")
-        resp = self.s3_obj_acl_1.get_bucket_acl(self.bucket_name)
+        resp = poll(self.s3_obj_acl_1.get_bucket_acl, self.bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: "
