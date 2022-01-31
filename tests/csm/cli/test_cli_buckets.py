@@ -182,6 +182,8 @@ class TestCliS3BKT:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.logger.info("Failed to create bucket using csm user %s", resp[1])
+        # delete created CSM user
+        self.csm_user_obj.delete_csm_user(csm_user_name)
 
     @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
