@@ -2666,6 +2666,28 @@ class TestCsmUser():
         self.log.info(
             "Verifying CSM user with role manager cannot perform any REST API "
             "request on IAM user")
+        self.log.info(
+            "Step 1: Verifying CSM admin user cannot perform GET request on "
+            "IAM user")
+        rest_iam_user = RestIamUser()
+        new_iam_user = "testiam" + str(int(time.time()))
+        response = rest_iam_user.list_iam_users(login_as="csm_admin_user")
+        assert_utils.assert_equals(response.status_code,
+                                   const.FORBIDDEN)
+        self.log.info(
+            "Step 1: Verified CSM admin user cannot perform GET request on "
+            "IAM user")
+
+        self.log.info(
+            "Step 2: Verifying CSM manage user cannot perform GET request on "
+            "IAM user")
+        response = rest_iam_user.list_iam_users(
+            login_as="csm_user_manage")
+        assert_utils.assert_equals(response.status_code,
+                                   const.FORBIDDEN)
+        self.log.info(
+            "Step 2: Verified CSM manage user cannot perform GET request on "
+            "IAM user")
 
         self.log.info("Creating IAM user for test verification purpose")
         rest_iam_user = RestIamUser()
