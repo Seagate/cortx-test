@@ -22,7 +22,6 @@
 
 """S3 package initializer."""
 
-from commons import constants as const
 from commons.helpers.s3_helper import S3Helper
 from config import CMN_CFG
 from config.s3 import S3_CFG
