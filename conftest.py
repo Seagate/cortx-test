@@ -756,7 +756,9 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
                                                    local_path=support_log)
         if resp[0]:
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
-            shutil.rmtree(support_log)
+            if os.path.isfile(support_log):
+                os.remove(support_log)
+                LOGGER.info("Removed the files from local path after uploading to NFS share")
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
