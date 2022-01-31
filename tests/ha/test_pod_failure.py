@@ -183,22 +183,22 @@ class TestPodFailure:
             LOGGER.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
                                                     self.node_worker_list,
-                                                    const.K8S_PRE_DISK_PATH)
+                                                    const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Cleanup: Cluster destroyed successfully")
 
             LOGGER.info("Cleanup: Setting prerequisite")
             self.deploy_lc_obj.execute_prereq_cortx(self.node_master_list[0],
                                                     const.K8S_SCRIPTS_PATH,
-                                                    const.K8s_PRE_DISK_PATH)
+                                                    const.K8S_PRE_DISK)
             for node in self.node_worker_list:
                 self.deploy_lc_obj.execute_prereq_cortx(node, const.K8S_SCRIPTS_PATH,
-                                                        const.K8S_PRE_DISK_PATH)
+                                                        const.K8S_PRE_DISK)
             LOGGER.info("Cleanup: Prerequisite set successfully")
 
             LOGGER.info("Cleanup: Deploying the Cluster")
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
-                                                         const.K8S_PRE_DISK_PATH)
+                                                         const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             LOGGER.info("Cleanup: Cluster deployment successfully")
 
