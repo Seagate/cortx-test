@@ -24,11 +24,13 @@
 import os
 import shutil
 import logging
+from datetime import datetime
 
 from config.io import CMN_CFG
+from commons import params
 from commons.helpers.health_helper import Health
+from commons.utils import system_utils
 from commons.utils import support_bundle_utils as sb
-
 
 LOGGER = logging.getLogger(__name__)
 NODES = CMN_CFG["nodes"]
@@ -145,4 +147,25 @@ def rotate_sb_logs(sb_dpath: str, sb_max_count: int = CMN_CFG["max_sb"]) -> bool
     except OSError as error:
         LOGGER.error(error)
 
-    return len(os.listdir(sb_dpath)) == sb_max_count
+    return len(os.listdir(sb_dpath)) <= sb_max_count
+
+
+def collect_upload_sb_to_nfs_server(host_dir=params.NFS_SERVER_DIR, mnt_dir=params.MOUNT_DIR):
+    """Collect SB and copy to NFS server log and keep SB logs as per max_sb count."""
+    try:
+        sb_dir = os.path.join(
+            mnt_dir, "CorIO-Execution", str(datetime.now().year), str(datetime.now().month))
+        system_utils.mount_nfs_server(host_dir=host_dir, mnt_dir=mnt_dir)
+        if not os.path.exists(sb_dir):
+            os.makedirs(sb_dir)
+        status, fpath = collect_support_bundle()
+        shutil.copy2(fpath, sb_dir)
+        rotate_sb_logs(sb_dir)
+        sb_files = os.listdir(sb_dir)
+        LOGGER.info("SB list: %s", sb_files)
+        system_utils.umount_dir(mnt_dir)
+    except IOError as error:
+        LOGGER.error(error)
+        return False, error
+
+    return status, sb_files
