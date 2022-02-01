@@ -314,13 +314,13 @@ UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_ob
                         ' -X PUT http://127.0.0.1:28081'
 
 # VM power operations:
-CMD_VM_POWER_ON = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_POWER_OFF = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                    "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_INFO = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
+CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_REVERT = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
