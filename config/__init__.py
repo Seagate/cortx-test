@@ -127,9 +127,9 @@ JMETER_CFG = configmanager.get_config_wrapper(
 if PROD_FAMILY_LC == CMN_CFG["product_family"]:
     CSM_REST_CFG = configmanager.get_config_wrapper(
         fpath=CSM_CONFIG, config_key="Restcall_LC", target=target, target_key="csm")
-elif PROD_FAMILY_MGW == CMN_CFG["product_family"]:
-    # TODO add MGW related logic
-    CSM_REST_CFG = None
+#elif PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+#    # TODO add MGW related logic
+#    CSM_REST_CFG = None
 else:
     CSM_REST_CFG = configmanager.get_config_wrapper(
         fpath=CSM_CONFIG, config_key="Restcall", target=target, target_key="csm")
