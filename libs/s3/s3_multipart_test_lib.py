@@ -203,7 +203,7 @@ class S3MultipartTestLib(Multipart):
         Upload specified/precalculated part sizes for a specific multipart upload ID one part
         at a time.
 
-        :param mpu_id: Multipart Upload ID.
+        :param upload_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :return: (Boolean, Dict of uploaded parts and expected multipart ETag).
@@ -449,19 +449,14 @@ class S3MultipartTestLib(Multipart):
         try:
             content_md5 = kwargs.get("content_md5", None)
             # CopySourceRange='bytes=1-100000'
-            copy_source_range = kwargs.get("copy_source_range", "bytes=0-")
+            copy_source_range = kwargs.get("copy_source_range", None)
             part_number = kwargs.get("part_number", None)
             upload_id = kwargs.get("upload_id", None)
             LOGGER.info("uploading part copy")
-            if content_md5:
-                response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                    upload_id=upload_id, part_number=part_number,
-                                                    copy_source_range=copy_source_range,
-                                                    content_md5=content_md5)
-            else:
-                response = super().upload_part_copy(copy_source, bucket_name, object_name,
-                                                    upload_id=upload_id, part_number=part_number,
-                                                    copy_source_range=copy_source_range)
+            response = super().upload_part_copy(copy_source, bucket_name, object_name,
+                                                upload_id=upload_id, part_number=part_number,
+                                                copy_source_range=copy_source_range,
+                                                content_md5=content_md5)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",

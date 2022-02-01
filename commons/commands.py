@@ -206,6 +206,7 @@ CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
 CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
@@ -317,13 +318,15 @@ UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_ob
                         ' -X PUT http://127.0.0.1:28081'
 
 # VM power operations:
-CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+CMD_VM_POWER_ON = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+CMD_VM_POWER_OFF = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                    "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
+CMD_VM_INFO = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
-CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+CMD_VM_REVERT = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
@@ -453,10 +456,10 @@ K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_GET_MGNT = "kubectl get pods -o wide"
 K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- hctl status --json"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
-K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 GET_STATS = "consul kv get -recurse stats"
 # Kubectl command prefix
@@ -471,7 +474,7 @@ KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
 KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
-KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
