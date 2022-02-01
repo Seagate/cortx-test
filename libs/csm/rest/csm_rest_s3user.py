@@ -147,7 +147,6 @@ class RestS3user(RestTestLib):
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"Delete bypassed"}'
-            return response
         else:
             # Building request url
             self.log.debug(
@@ -158,6 +157,7 @@ class RestS3user(RestTestLib):
 
             # Fetching api response
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+        return response
 
     def verify_list_s3account_details(self, expect_no_user=False):
         """
