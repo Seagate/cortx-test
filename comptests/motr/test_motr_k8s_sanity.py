@@ -28,6 +28,8 @@ import logging
 from random import SystemRandom
 import pytest
 from commons.utils import config_utils
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
@@ -76,6 +78,9 @@ class TestExecuteK8Sanity:
         logger.info(self.motr_obj.get_primary_cortx_node())
         logger.info(self.motr_obj.get_cortx_node_endpoints())
 
+    @pytest.mark.tags("TEST-14925")
+    @pytest.mark.motr_sanity
+    @CTFailOn(error_handler)
     def test_m0crate_utility(self, param_loop):
         """
         This is to run the m0crate utility tests.
@@ -111,6 +116,9 @@ class TestExecuteK8Sanity:
         config_utils.write_ordered_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
 
+    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.motr_sanity
+    @CTFailOn(error_handler)
     def test_m0cp_m0cat_workload(self):
         """
         Verify different size object m0cp m0cat operation
