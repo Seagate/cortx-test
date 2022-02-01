@@ -93,13 +93,10 @@ class TestFailureHandlingPodFailure:
 
         datapod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
         before_del = len(datapod_list)
-        print("################", datapod_list)
         pod_name = random.sample(datapod_list, 1)[0]
         LOGGER.info("Step 1: Delete data pod and check Pods status(kubectl delete pods <pod>)")
         LOGGER.info("Deleting pod %s", pod_name)
-        delpod_time=time.time()
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=False)
-        print("#################", delpod_time)
         assert resp, "Data pod didn't deleted successfully"
         LOGGER.info("Step 2: Check the node status.")
         time.sleep(30)
