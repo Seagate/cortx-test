@@ -43,6 +43,8 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+echo $PYTHONPATH
 export Target_Node="${Target_Node}"
 sh comptests/prov/run_lc_tests.sh ${Target_Node}
 deactivate
