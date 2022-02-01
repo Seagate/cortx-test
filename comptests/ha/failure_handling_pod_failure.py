@@ -127,4 +127,3 @@ class TestFailureHandlingPodFailure:
             output = str(output, 'UTF-8')
         lt = output.split("{")[1].split(",")[-2].strip().split(":")[1].strip()
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - Delete pod.")
-
