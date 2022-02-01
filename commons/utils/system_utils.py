@@ -1087,14 +1087,14 @@ def mount_nfs_server(host_dir: str = None, mnt_dir: str = None) -> tuple:
         if os.path.ismount(mnt_dir):
             resp = run_local_cmd(cmd=commands.CMD_FORCE_UMOUNT.format(mnt_dir))
             if not resp[0]:
-                raise IOError("Failed to unmount: %s", mnt_dir)
+                raise IOError(f"Failed to unmount: {mnt_dir}")
         if not os.path.exists(mnt_dir):
             os.makedirs(mnt_dir)
             LOGGER.info("Created directory: %s", mnt_dir)
         if not os.path.ismount(mnt_dir):
             resp = run_local_cmd(cmd=commands.CMD_MOUNT.format(host_dir, mnt_dir))
             if not resp[0]:
-                raise IOError("Failed to mount server: %s on %s", host_dir, mnt_dir)
+                raise IOError(f"Failed to mount server: {host_dir} on {mnt_dir}")
     except IOError as error:
         LOGGER.info(error)
         return False, error
