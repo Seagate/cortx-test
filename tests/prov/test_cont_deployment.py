@@ -30,7 +30,6 @@ import pytest
 from commons import configmanager, commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
-from commons.utils import support_bundle_utils
 from config import CMN_CFG
 from config import PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
