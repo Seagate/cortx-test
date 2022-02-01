@@ -46,8 +46,6 @@ class S3AccountOperationsRestAPI(RestS3user):
         super(S3AccountOperationsRestAPI, self).__init__()
         self.endpoint = CSM_REST_CFG["s3accounts_endpoint"]
 
-    @RestTestLib.authenticate_and_login
-    @RestTestLib.rest_logout
     def create_s3_account(self, user_name, email_id, passwd) -> tuple:
         """
         Function will create new s3 account user.
@@ -80,8 +78,6 @@ class S3AccountOperationsRestAPI(RestS3user):
             raise CTException(
                 err.S3_REST_POST_REQUEST_FAILED, error) from error
 
-    @RestTestLib.authenticate_and_login
-    @RestTestLib.rest_logout
     def list_s3_accounts(self) -> tuple:
         """
         Function will list down all created s3 accounts.
@@ -108,8 +104,6 @@ class S3AccountOperationsRestAPI(RestS3user):
             raise CTException(
                 err.S3_REST_GET_REQUEST_FAILED, error) from error
 
-    @RestTestLib.authenticate_and_login
-    @RestTestLib.rest_logout
     def delete_s3_account(self, user_name):
         """
         Function will delete the required user.
@@ -137,8 +131,6 @@ class S3AccountOperationsRestAPI(RestS3user):
             raise CTException(
                 err.S3_REST_DELETE_REQUEST_FAILED, error) from error
 
-    @RestTestLib.authenticate_and_login
-    @RestTestLib.rest_logout
     def reset_s3account_password(self, user_name, new_password):
         """
         Function will update the s3 account password.
@@ -170,8 +162,7 @@ class S3AccountOperationsRestAPI(RestS3user):
             raise CTException(
                 err.S3_REST_PATCH_REQUEST_FAILED, error) from error
 
-    @RestTestLib.authenticate_and_login
-    @RestTestLib.rest_logout
+
     def create_s3account_access_key(
             self,
             user_name,
