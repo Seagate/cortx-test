@@ -51,6 +51,7 @@ class S3bench:
         self.skip_cleanup = skip_cleanup
         self.validate = validate
         self.multipart_size = multipart
+        self.min_duration = 10
         if not duration:
             self.finish_time = datetime.now() + timedelta(hours=int(100 * 24))
         else:
@@ -65,21 +66,16 @@ class S3bench:
     @staticmethod
     def install_s3bench():
         """Install s3bench if already not installed"""
-        if os.system("go run s3bench --help"):
+        if os.system("s3bench --help"):
             LOGGER.error("ERROR: s3bench is not installed")
-            if os.system("yum install -y go"):
+            if os.system(
+                    "wget -O /usr/bin/s3bench https://github.com/Seagate/s3bench/releases/download/v2021-06-28/s3bench.2021-06-28"):
                 LOGGER.error("ERROR: Unable to install go")
                 return False
-            if os.system("rm -rf /root/go/src/s3bench"):
-                LOGGER.error("ERROR: Unable delete existing directory")
+            if os.system("chmod +x /usr/bin/s3bench"):
+                LOGGER.error("ERROR: Unable to install go")
                 return False
-            if os.system("go get github.com/Seagate/s3bench"):
-                LOGGER.error("ERROR: Unable to go get s3bench")
-                return False
-            if os.system("git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench"):
-                LOGGER.error("ERROR: Unable to clone s3bench")
-                return False
-            if os.system("go run s3bench --help"):
+            if os.system("s3bench --help"):
                 LOGGER.error("ERROR: Unable to install s3bench")
                 return False
         return True
@@ -129,8 +125,8 @@ class S3bench:
                 old_log = f"s3bench-{self.label}-{iter_del}.log"
                 self.delete_logs([old_report, old_cli_log, old_log])
             object_size = random.randrange(self.size_low, self.size_high)
-            bucket = f"{self.bucket}-i-{time.time()}"
-            cmd = f"go run s3bench -accessKey={self.access_key} -accessSecret={self.secret_key} " \
+            bucket = f"{self.bucket}-{i}-{time.time()}"
+            cmd = f"s3bench -accessKey={self.access_key} -accessSecret={self.secret_key} " \
                   f"-endpoint={self.endpoint} -bucket={bucket} -objectSize={object_size}b " \
                   f"-numClients={self.num_clients} -numSamples={self.num_samples} " \
                   f"-objectNamePrefix={self.object_prefix} -t json "
@@ -152,6 +148,14 @@ class S3bench:
             self.cmd = f"{cmd} -o {report} -label {label} >> {cli_log} 2>&1"
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
+            if timedelta_sec < self.min_duration:
+                if i == 1:
+                    LOGGER.info(f"s3bench workload did not execute since given duration is "
+                                f"less than {self.min_duration} seconds.")
+                    return False, None
+                else:
+                    LOGGER.info("s3bench workload execution done.")
+                    return True, None
             LOGGER.info("Remaining test time %s", timedelta_v)
             timeout = self.execute_command(timedelta_sec)
             if timeout:
