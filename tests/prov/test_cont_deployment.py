@@ -30,6 +30,7 @@ import pytest
 from commons import configmanager, commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
+from commons.utils import support_bundle_utils
 from config import CMN_CFG
 from config import PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -175,7 +176,6 @@ class TestContDeployment:
                                                run_s3bench_workload_flag=
                                                self.run_s3bench_workload_flag,
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                               collect_support_bundle=self.collect_support_bundle,
                                                destroy_setup_flag=self.destroy_setup_flag,
                                                custom_repo_path=self.custom_repo_path,
                                                report_filepath=self.report_file,

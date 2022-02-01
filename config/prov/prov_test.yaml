@@ -162,7 +162,6 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
-  collect_support_bundle_flag: "False"
 test_basic_io:
   io_upper_limits:
     Kb: 130
