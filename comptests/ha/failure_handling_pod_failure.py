@@ -27,8 +27,8 @@ import time
 import pytest
 
 from libs.ha.ha_common_libs_k8s import HAK8s
-from commons.utils import assert_utils
 from config import CMN_CFG
+from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from commons import constants as common_const
 from commons import commands as common_cmd
@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 class TestFailureHandlingPodFailure:
     """
-    Test suite for Pod Failure hadling
+    Test suite for Pod Failure handling
     """
 
     @classmethod
@@ -69,12 +69,13 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
         ha_container = [common_const.HA_K8S_CONTAINER_NAME,
-                     common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                     common_const.HA_HEALTH_MONITOR_CONTAINER_NAME]
+                        common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
+                        common_const.HA_HEALTH_MONITOR_CONTAINER_NAME]
         for container in ha_container:
             res = self.node_master_list[0].send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
@@ -91,7 +92,8 @@ class TestFailureHandlingPodFailure:
         """
         LOGGER.info("STARTED: Publish the pod failure event in message bus to Hare - Delete pod.")
 
-        datapod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        datapod_list = self.node_master_list[0].\
+            get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
         before_del = len(datapod_list)
         pod_name = random.sample(datapod_list, 1)[0]
         LOGGER.info("Step 1: Delete data pod and check Pods status(kubectl delete pods <pod>)")
@@ -105,22 +107,29 @@ class TestFailureHandlingPodFailure:
         print("after delete", after_del)
         print("before delete", before_del)
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
-        pod_list = self.node_master_list[0].get_all_pods\
-            (pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        LOGGER.info("Get the HA pod hostname")
         ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
         for line in ha_hostname:
             if "cortx-ha" in line:
                 hapod_hostname = line.split()[6]
         print("Cortx HA pod running on: ", hapod_hostname)
-        node_obj = LogicalNode(hostname=hapod_hostname,
-                                        username="root",password="seagate1")
-        time.sleep(20)
-        cm = "tail -2 /mnt/fs-local-volume/local-path-provisioner" \
-             "/pvc-b775c91c-1921-45e9-a3a4-ebc250137ef0_default_cortx-ha-fs-local-pvc-default" \
-             "/log/ha/*/health_monitor.log | grep 'to component hare'"
-        output = node_obj.execute_cmd(cm)
+        for node in range(self.num_nodes):
+            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
+                node_obj = LogicalNode(hostname=hapod_hostname,
+                                    username=CMN_CFG["nodes"][node]["username"],
+                                    password=CMN_CFG["nodes"][node]["password"])
+        pvc_list = node_obj.execute_cmd\
+            ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+        for hapvc in pvc_list:
+            if "cortx-ha" in hapvc:
+                hapvc = hapvc.replace("\n", "")
+                print("hapvc list", hapvc)
+                break
+        cmd_halog = "tail -5 /mnt/fs-local-volume/local-path-provisioner/"\
+                    + hapvc + "/log/ha/*/health_monitor.log | grep 'to component hare'"
+        output = node_obj.execute_cmd(cmd_halog)
         if isinstance(output, bytes):
             output = str(output, 'UTF-8')
-        lt = output.split("{")[1].split(",")[-2].strip().split(":")[1].strip()
+        ha_gen_id = output.split("{")[2].split(",")[0].split(":")[1].strip().replace('"', '')
+        assert_utils.assert_exact_string(pod_name, ha_gen_id, "Deleted Pod Name does not match")
+        print("HA pod generation ID",ha_gen_id)
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - Delete pod.")
