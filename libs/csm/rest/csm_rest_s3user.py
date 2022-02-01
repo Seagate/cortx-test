@@ -89,7 +89,6 @@ class RestS3user(RestTestLib):
             response.status_code = 200
             response._content = b'{"s3_accounts": [\
                 {"account_name": "nightly_s3dk", "account_email": "nightly_s3dk@seagate.com"}]}'
-            return response
         else:
             # Building request url
             self.log.debug("Try to fetch all s3 accounts ...")
@@ -100,7 +99,7 @@ class RestS3user(RestTestLib):
             response = self.restapi.rest_call(
                 "get", endpoint=endpoint, headers=self.headers)
 
-            return response
+        return response
 
     @RestTestLib.authenticate_and_login
     def edit_s3_account_user(self, username, payload="valid"):
@@ -636,6 +635,7 @@ class RestS3user(RestTestLib):
     def create_s3_basic(self):
         """All Create s3 account calls will be directed from this function only.
         """
+        self.log.info("Simulating S3 account creation.")
         s3_response = Response()
         s3_response.code = "expired"
         s3_response.error_type = None
