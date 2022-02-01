@@ -153,6 +153,8 @@ s3bench-install:
 	go get github.com/Seagate/s3bench
 	-trust anchor $(CA_CRT)
 	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
+	echo 'export GO111MODULE=auto' >> /root/.bashrc
+	source ~/.bashrc
 	@echo "###Installed s3bench tool###"
 
 hsbench-install:
