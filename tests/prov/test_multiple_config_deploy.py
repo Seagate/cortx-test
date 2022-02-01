@@ -27,8 +27,10 @@ import pytest
 
 from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
-from commons.utils import assert_utils, support_bundle_utils
+from commons.params import LOG_DIR
+from commons.params import LATEST_LOG_FOLDER
+from commons.utils import assert_utils
+from commons.utils import support_bundle_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
@@ -64,8 +66,8 @@ class TestMultipleConfDeploy:
         """
         Teardown method
         """
-        path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
         if self.collect_sb:
+            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
