@@ -506,6 +506,7 @@ CMD_CURL = "curl -o {} {}"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CLONE_D = "git clone {} {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
 # docker commands
