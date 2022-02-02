@@ -139,3 +139,6 @@ class TestExecuteK8Sanity:
                     self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
+
+    def test_sample(self):
+        logger.info(self.motr_obj.get_node_ep())
