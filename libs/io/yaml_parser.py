@@ -44,28 +44,47 @@ def convert_to_bytes(size):
     function to convert any size to bytes
     """
     kb = 1000
+    kib = 1024
     sz = str(size[-2:]).lower()
-    if sz == "kb":
-        return int(size[:-2]) * kb
-    elif sz == "mb":
-        return int(size[:-2]) * kb * kb
-    elif sz == "gb":
-        return int(size[:-2]) * kb * kb * kb
-    elif sz == "tb":
-        return int(size[:-2]) * kb * kb * kb * kb
+    if sz in ['kb', 'mb', 'gb', 'tb']:
+        if sz == "kb":
+            return int(size[:-2]) * kb
+        elif sz == "mb":
+            return int(size[:-2]) * kb * kb
+        elif sz == "gb":
+            return int(size[:-2]) * kb * kb * kb
+        elif sz == "tb":
+            return int(size[:-2]) * kb * kb * kb * kb
+    else:
+        sz = str(size[-3:]).lower()
+        if sz == "kib":
+            return int(size[:-3]) * kib
+        elif sz == "mib":
+            return int(size[:-3]) * kib * kib
+        elif sz == "gib":
+            return int(size[:-3]) * kib * kib * kib
+        elif sz == "tib":
+            return int(size[:-3]) * kib * kib * kib * kib
 
 
 def convert_to_time_delta(time):
     """
     function to convert execution time in time delta format
     """
-    hrs = time[:2]
-    mnt = time[3:5]
-    sec = time[6:8]
+    hrs = mnt = sec = 00
+    if 'h' in time:
+        hrs = int(time[:2])
+    if 'm' in time:
+        mnt = int(time[3:5])
+    if 's' in time:
+        sec = int(time[6:8])
     return datetime.timedelta(hours=hrs, minutes=mnt, seconds=sec)
 
 
 def test_parser(yaml_file):
+    """
+    parse a test yaml file
+    """
     s3_io_test = yaml_parser(yaml_file)
     delta_list = list()
     for test, data in s3_io_test.items():
