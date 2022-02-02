@@ -23,7 +23,7 @@
 """Python Library to perform bucket operations using boto3 module."""
 
 import logging
-from libs.io.s3api.s3api_core_lib import S3ApiRest
+from libs.io.s3api.s3_core_lib import S3ApiRest
 
 LOGGER = logging.getLogger(__name__)
 

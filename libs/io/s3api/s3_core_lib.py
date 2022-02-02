@@ -22,9 +22,7 @@
 
 """Python Library using boto3 module."""
 
-import os
 import logging
-from typing import Union
 from botocore.config import Config
 
 import boto3
@@ -41,7 +39,6 @@ class S3ApiRest:
                  access_key: str = None,
                  secret_key: str = None,
                  endpoint_url: str = None,
-                 s3_cert_path: Union[str, bool] = None,
                  **kwargs) -> None:
         """
         method initializes members of S3Lib.
@@ -60,17 +57,12 @@ class S3ApiRest:
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
-        self.use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
-        self.s3_cert_path = s3_cert_path if val_cert else False
-        if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]):
-            raise IOError(f'Certificate path {S3_CFG["s3_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
         self.s3_resource = boto3.resource("s3",
-                                          use_ssl=self.use_ssl,
-                                          verify=self.s3_cert_path,
+                                          use_ssl=True,
+                                          verify=False,
                                           aws_access_key_id=access_key,
                                           aws_secret_access_key=secret_key,
                                           endpoint_url=endpoint_url,
@@ -78,8 +70,8 @@ class S3ApiRest:
                                           aws_session_token=aws_session_token,
                                           config=config)
         self.s3_client = boto3.client("s3",
-                                      use_ssl=self.use_ssl,
-                                      verify=self.s3_cert_path,
+                                      use_ssl=True,
+                                      verify=False,
                                       aws_access_key_id=access_key,
                                       aws_secret_access_key=secret_key,
                                       endpoint_url=endpoint_url,
