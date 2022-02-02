@@ -22,14 +22,13 @@
 """IO cluster services module."""
 
 import os
+import glob
 import shutil
 import logging
 from datetime import datetime
 
 from config.io import CMN_CFG
-from commons import params
 from commons.helpers.health_helper import Health
-from commons.utils import system_utils
 from commons.utils import support_bundle_utils as sb
 
 LOGGER = logging.getLogger(__name__)
@@ -127,35 +126,39 @@ def collect_crash_files():
     return os.path.exists(crash_fpath), crash_fpath
 
 
-def rotate_sb_logs(sb_dpath: str, sb_max_count: int = CMN_CFG["max_sb"]) -> bool:
+def rotate_sb_logs(sb_dpath: str, sb_max_count: int = 0):
     """
     Remove old SB logs as per max SB count.
 
     :param: sb_dpath: Directory path of support bundles.
     :param: sb_max_count: Maximum count of support bundles to keep.
     """
+    sb_max_count = sb_max_count if sb_max_count else CMN_CFG.get("max_sb", 5)
+    if not os.path.exists(sb_dpath):
+        raise IOError(f"Directory '{sb_dpath}' path does not exists.")
+    files = sorted(glob.glob(sb_dpath + '*'), key=os.path.getctime, reverse=True)
+    if len(files) > sb_max_count:
+        for fpath in files[sb_max_count:]:
+            if os.path.exists(fpath):
+                os.remove(fpath)
+                LOGGER.info("Old SB removed: %s", fpath)
+
+    if not len(os.listdir(sb_dpath)) <= sb_max_count:
+        raise IOError(f"Failed to rotate SB logs: {os.listdir(sb_dpath)}")
+
+
+def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str):
+    """
+    Collect SB and copy to NFS server log and keep SB logs as per max_sb count.
+
+    :param mount_path: Path of mounted directory.
+    :param run_id: Unique id for each run.
+    """
     try:
-        if not os.path.exists(sb_dpath):
-            raise IOError("Directory '%s' path does not exists.", sb_dpath)
-        files = sorted([file for file in os.listdir(sb_dpath)], reverse=True)
-        if len(files) > sb_max_count:
-            for file in files[sb_max_count:]:
-                fpath = os.path.join(sb_dpath, file)
-                if os.path.exists(fpath):
-                    os.remove(fpath)
-                    LOGGER.info("Old SB removed: %s", fpath)
-    except OSError as error:
-        LOGGER.error(error)
-
-    return len(os.listdir(sb_dpath)) <= sb_max_count
-
-
-def collect_upload_sb_to_nfs_server(host_dir=params.NFS_SERVER_DIR, mnt_dir=params.MOUNT_DIR):
-    """Collect SB and copy to NFS server log and keep SB logs as per max_sb count."""
-    try:
-        sb_dir = os.path.join(
-            mnt_dir, "CorIO-Execution", str(datetime.now().year), str(datetime.now().month))
-        system_utils.mount_nfs_server(host_dir=host_dir, mnt_dir=mnt_dir)
+        sb_dir = os.path.join(mount_path, "CorIO-Execution", run_id, "Support_Bundles",
+                              str(datetime.now().year), str(datetime.now().month))
+        if not os.path.ismount(mount_path):
+            raise IOError(f"Incorrect mount path: {mount_path}")
         if not os.path.exists(sb_dir):
             os.makedirs(sb_dir)
         status, fpath = collect_support_bundle()
@@ -163,7 +166,6 @@ def collect_upload_sb_to_nfs_server(host_dir=params.NFS_SERVER_DIR, mnt_dir=para
         rotate_sb_logs(sb_dir)
         sb_files = os.listdir(sb_dir)
         LOGGER.info("SB list: %s", sb_files)
-        system_utils.umount_dir(mnt_dir)
     except IOError as error:
         LOGGER.error(error)
         return False, error
