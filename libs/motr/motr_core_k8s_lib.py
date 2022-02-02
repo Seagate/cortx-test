@@ -82,7 +82,8 @@ class MotrCoreK8s():
                             node_dict[nodename]['hax_fid'] = svc["fid"]
                             node_dict[nodename]['hax_ep'] = svc["ep"]
                         if svc["name"] == "m0_client":
-                            node_dict[nodename]['m0client'].append({"ep": svc["ep"], "fid": svc["fid"]})
+                            node_dict[nodename]['m0client'].append({"ep": svc["ep"],
+                                 "fid": svc["fid"]})
             return node_dict
 
     def get_node_pod_dict(self):
