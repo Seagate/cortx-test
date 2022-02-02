@@ -71,14 +71,20 @@ def convert_to_time_delta(time):
     """
     function to convert execution time in time delta format
     """
-    hrs = mnt = sec = 00
+    time = time.lower()
+    days = hrs = mnt = sec = 00
+    if 'd' in time:
+        days = int(time.split('d')[0])
+        time = time.split('d')[1]
     if 'h' in time:
-        hrs = int(time[:2])
+        hrs = int(time.split('h')[0])
+        time = time.split('h')[1]
     if 'm' in time:
-        mnt = int(time[3:5])
+        mnt = int(time.split('m')[0])
+        time = time.split('m')[1]
     if 's' in time:
-        sec = int(time[6:8])
-    return datetime.timedelta(hours=hrs, minutes=mnt, seconds=sec)
+        sec = int(time.split('s')[0])
+    return datetime.timedelta(days=days, hours=hrs, minutes=mnt, seconds=sec)
 
 
 def test_parser(yaml_file):
