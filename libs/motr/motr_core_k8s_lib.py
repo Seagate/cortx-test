@@ -72,16 +72,17 @@ class MotrCoreK8s():
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
-                nodename = node["name"]
-                self.cortx_node_list.append(nodename)
-                node_dict[nodename] = {}
-                node_dict[nodename]['m0client'] = []
-                for svc in node["svcs"]:
-                    if svc["name"] == "hax":
-                        node_dict[nodename]['hax_fid'] = svc["fid"]
-                        node_dict[nodename]['hax_ep'] = svc["ep"]
-                    if svc["name"] == "m0_client":
-                        node_dict[nodename]['m0client'].append({"ep": svc["ep"], "fid": svc["fid"]})
+                if 'data' in node['name']:
+                    nodename = node["name"]
+                    self.cortx_node_list.append(nodename)
+                    node_dict[nodename] = {}
+                    node_dict[nodename]['m0client'] = []
+                    for svc in node["svcs"]:
+                        if svc["name"] == "hax":
+                            node_dict[nodename]['hax_fid'] = svc["fid"]
+                            node_dict[nodename]['hax_ep'] = svc["ep"]
+                        if svc["name"] == "m0_client":
+                            node_dict[nodename]['m0client'].append({"ep": svc["ep"], "fid": svc["fid"]})
             return node_dict
 
     def get_node_pod_dict(self):

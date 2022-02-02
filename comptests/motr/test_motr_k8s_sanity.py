@@ -80,7 +80,6 @@ class TestExecuteK8Sanity:
 
     @pytest.mark.tags("TEST-14925")
     @pytest.mark.motr_sanity
-    @CTFailOn(error_handler)
     def test_m0crate_utility(self, param_loop):
         """
         This is to run the m0crate utility tests.
@@ -88,7 +87,7 @@ class TestExecuteK8Sanity:
         """
         source_file = TEMP_PATH + 'source_file'
         remote_file = TEMP_PATH + M0CRATE_WORKLOAD_YML.split("/")[-1]
-        m0cfg = config_utils.read_ordered_yaml(M0CRATE_WORKLOAD_YML)[1]
+        m0cfg = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
         node = self.system_random.choice(self.motr_obj.cortx_node_list)
         node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
         for key, value in param_loop.items():
@@ -113,7 +112,7 @@ class TestExecuteK8Sanity:
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
         count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_ordered_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
+        config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False, sort_keys=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
 
     @pytest.mark.tags("TEST-23036")
