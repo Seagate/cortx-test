@@ -94,3 +94,4 @@ Restcall_LC:
   degraded_cap_keys: [['healthy_byte_count','degraded_byte_count','critical_byte_count',
                        'damaged_byte_count'],['stats','timestamp','date']]
   percentage_compare: 10
+  cluster_operation_endpoint: "/api/v2/system/management"

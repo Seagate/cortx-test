@@ -416,11 +416,17 @@ MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
+SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["s3", "hare", "utils"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr", "utils"],
+                                    HA_POD_NAME_PREFIX: ["utils"]}
+SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
+K8S_PRE_DISK = "/dev/sdb"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"

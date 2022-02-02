@@ -27,7 +27,7 @@ import os
 
 import pytest
 
-from commons import configmanager
+from commons import configmanager, commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import CMN_CFG
@@ -44,6 +44,7 @@ class TestContDeployment:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
+        cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.setup_k8s_cluster_flag = bool(distutils.util.strtobool(os.getenv("setup_k8s_cluster")))
         cls.setup_client_config_flag = \
             bool(distutils.util.strtobool(os.getenv("setup_client_config")))
@@ -63,11 +64,11 @@ class TestContDeployment:
             cls.dix = [int(dix_item) for dix_item in cls.dix]
             cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
             cls.data_disk_per_cvg = int(os.getenv("DATA_DISK_PER_CVG"))
-
+        cls.data_disk_size = os.getenv("DATA_DISK_SIZE", cls.deploy_cfg["data_disk_size"])
+        cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE", cls.deploy_cfg["metadata_disk_size"])
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
-        cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH",
-                                         PROV_CFG["k8s_cortx_deploy"]["git_remote_dir"])
+        cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH", cls.deploy_cfg["k8s_dir"])
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -84,9 +85,22 @@ class TestContDeployment:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        for worker_obj in cls.worker_node_list:
+            size = worker_obj.execute_cmd(cmd=commands.CMD_LSBLK_SIZE, read_lines=True)
+            logging.debug("size of disk are %s", size)
+            disk_list = list()
+            for element in size[1:]:
+                disk_list.append(element.strip('G\n'))
+            for data_size in disk_list:
+                if data_size < cls.data_disk_size.strip('Gi') or \
+                        data_size < cls.meta_disk_size.strip('Gi'):
+                    cls.log.error("VM disk size is %sG and provided disk size are %s, %s",
+                                  data_size, cls.data_disk_size, cls.meta_disk_size)
+                    return False, f"VM disk size is {data_size}G and provided disk size are" \
+                                  f" {cls.data_disk_size},{cls.meta_disk_size}"
+
         cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-        cls.report_file = os.path.join(cls.report_filepath,
-                                       PROV_CFG["k8s_cortx_deploy"]["report_file"])
+        cls.report_file = os.path.join(cls.report_filepath, cls.deploy_cfg["report_file"])
         logging.info("Report path is %s", cls.report_file)
         if not os.path.isfile(cls.report_file):
             logging.debug("File not exists")
@@ -163,5 +177,7 @@ class TestContDeployment:
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                                                destroy_setup_flag=self.destroy_setup_flag,
                                                custom_repo_path=self.custom_repo_path,
-                                               report_filepath=self.report_file)
+                                               report_filepath=self.report_file,
+                                               data_disk_size=self.data_disk_size,
+                                               meta_disk_size=self.meta_disk_size)
             iteration = iteration + 1
