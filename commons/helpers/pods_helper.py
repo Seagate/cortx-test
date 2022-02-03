@@ -354,7 +354,7 @@ class LogicalNode(Host):
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
 
-    def get_all_pods_and_ips(self, pod_prefix):
+    def get_all_pods_and_ips(self, pod_prefix) -> dict:
         """
         Helper function to get pods name with pod_prefix and their IPs
         :param: pod_prefix: Prefix to define the pod category
@@ -372,9 +372,9 @@ class LogicalNode(Host):
 
     def get_container_of_pod(self, pod_name, container_prefix):
         """
-        Helper function to get container with container_prefix from the specified pod_name
+        Gets containers with container_prefix (str) from the specified pod_name
         :param: pod_name : Pod name to query container of
-        :param: container_prefix: Prefix to define container catergory
+        :param: container_prefix: Prefix to define container category
         :return: list
         """
         cmd = commands.KUBECTL_GET_POD_CONTAINERS.format(pod_name)
@@ -387,15 +387,22 @@ class LogicalNode(Host):
 
         return container_list
 
-    def get_recent_pod_name(self):
+    def get_recent_pod_name(self, deployment_name=None):
         """
         Helper function to get name of recently created pod
-        :return: str
+        :param deployment_name: Name of the deployment (Optional)
+        :return: str (pod name)
         """
-        log.info("Get most recently created pod name")
-        cmd = commands.KUBECTL_GET_RECENT_POD
-        output = self.execute_cmd(cmd=cmd, read_lines=True)
-        pod_name = output[0].strip()
+        if deployment_name:
+            log.info("Getting recently created pod by deployment %s", deployment_name)
+            cmd = commands.KUBECTL_GET_RECENT_POD_DEPLOY.format(deployment_name)
+            output = self.execute_cmd(cmd=cmd, read_lines=True)
+            pod_name = output[0].strip()
+        else:
+            log.info("Getting recently created pod in cluster")
+            cmd = commands.KUBECTL_GET_RECENT_POD
+            output = self.execute_cmd(cmd=cmd, read_lines=True)
+            pod_name = output[0].strip()
         return pod_name
 
     def get_all_pods(self, pod_prefix=None) -> list:
@@ -415,3 +422,60 @@ class LogicalNode(Host):
             pods_list = pods
         log.debug("Pods list : %s", pods_list)
         return pods_list
+
+    def copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
+        """
+        Helper function to copy file on node to specified container inside the specified pod at \
+            the specified path
+        :param: local_file_path : Absolute local file path on the node
+        :param: pod_name: Pod name where container resides
+        :param: container_path: Path inside container where the file will be copied
+        :param: container_name: Name of the container where the file will be copied
+        """
+        try:
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
+                container_path, container_name)
+            output = self.execute_cmd(cmd=cmd, exc=False)
+            return True, output
+        except Exception as error:
+            log.error("*ERROR* An exception occurred in %s: %s",
+                    LogicalNode.copy_file_to_container.__name__, error)
+            return False, error
+
+    def get_machine_id_for_pod(self, pod_name: str):
+        """
+        Getting machine id for given pod
+        """
+        log.info("Getting machine id for pod: %s", pod_name)
+        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                 command_suffix="cat /etc/machine-id",
+                                 decode=True)
+        return resp
+
+    def get_pods_node_fqdn(self, pod_prefix):
+        """
+        Helper function to get pods name with pod_prefix and their node fqdn
+        :param: pod_prefix: Prefix to define the pod category
+        :return: dict
+        """
+        pod_dict = {}
+        output = self.execute_cmd(cmd=commands.K8S_GET_MGNT, read_lines=True)
+        for line in output:
+            if pod_prefix in line:
+                data = line.strip()
+                pod_name = data.split()[0]
+                node_fqdn = data.split()[6]
+                pod_dict[pod_name.strip()] = node_fqdn.strip()
+        return pod_dict
+
+    def get_pod_hostname(self, pod_name):
+        """
+        Helper function to get pod hostname
+        :param pod_name: name of the pod
+        :return: str
+        """
+        log.info("Getting pod hostname for pod %s", pod_name)
+        cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        hostname = output[0].strip()
+        return hostname

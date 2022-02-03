@@ -323,3 +323,27 @@ test_29168:
     chunk_size: 1048576
     total_parts: 20
     mpu_count: 20
+
+test_32702_1:
+    file_size: 150
+    chunk_size: 1048576
+    part_sizes:
+        - part_size: 20.5
+          count: 2
+        - part_size: 29.5
+          count: 2
+        - part_size: 9.5
+          count: 2
+        - part_size: 10.5
+          count: 2
+        - part_size: 10
+          count: 1
+
+test_32702_2:
+    file_size: 50
+    chunk_size: 1048576
+    part_sizes:
+        - part_size: 20.5
+          count: 1
+        - part_size: 29.5
+          count: 1

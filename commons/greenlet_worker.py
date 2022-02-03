@@ -162,6 +162,11 @@ class GeventPool:
         self.group = Group()
         self.responses = dict()
 
+    def __del__(self):
+        """cleanup all resources"""
+        del self.pool
+        del self.group
+
     def add_handler(self, func: Any, *args: Any, **kwargs: Any) -> None:
         """
         method to check pool capability and spawn/group threads
@@ -224,6 +229,9 @@ class GeventPool:
         :return: None
         """
         self.pool.kill()
+        gevent.killall(self.group)
+        THREADS.clear()
+        self.responses.clear()
 
     def result(self) -> dict:
         """

@@ -370,11 +370,11 @@ class Health(Host):
 
         return True, "Server is Online"
 
-    def hctl_status_json(self):
+    def hctl_status_json(self, pod_name=None):
         """
         This will Check Node status, Logs the output in debug.log file and
         returns the response in json format.
-        :param str node: Node on which status to be checked
+        :param pod_name: Running data pod name to fetch the hctl status
         :return: Json response of stdout
         :rtype: dict
         """
@@ -394,9 +394,10 @@ class Health(Host):
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
-            resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
-            assert_true(resp[0], resp[1])
-            pod_name = resp[1]
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
             out = node.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
@@ -537,114 +538,121 @@ class Health(Host):
         :param resource_cleanup: If True will do pcs resources cleanup.
         :return: True or False, response/dictionary of failed hctl/pcs resources status.
         """
-        LOG.info("Checking online status of %s node", self.hostname)
-        response = check_ping(self.hostname)
-        if not response:
-            return response, "Node {} is offline.".format(self.hostname)
-        LOG.info("Node %s is online.", self.hostname)
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            LOG.info("Checking online status of %s node", self.hostname)
+            response = check_ping(self.hostname)
+            if not response:
+                return response, "Node {} is offline.".format(self.hostname)
+            LOG.info("Node %s is online.", self.hostname)
 
-        LOG.info("Checking hctl status for %s node", self.hostname)
-        status, hctl_result = run_remote_cmd(
-            cmd=commands.MOTR_STATUS_CMD,
-            hostname=self.hostname,
-            username=self.username,
-            password=self.password,
-            read_lines=True)
-        if not status:
-            return False, f"Failed to get HCTL status {hctl_result}"
+            LOG.info("Checking hctl status for %s node", self.hostname)
+            status, hctl_result = run_remote_cmd(
+                cmd=commands.MOTR_STATUS_CMD,
+                hostname=self.hostname,
+                username=self.username,
+                password=self.password,
+                read_lines=True)
+            if not status:
+                return False, f"Failed to get HCTL status {hctl_result}"
 
-        resp = self.hctl_status_json()
-        hctl_services_failed = {}
-        svcs_elem = {'service': None, 'status': None}
-        for node_data in resp['nodes']:
-            hctl_services_failed[node_data['name']] = list()
-            for svcs in node_data['svcs']:
-                temp_svc = svcs_elem.copy()
-                is_data = False
-                if svcs['name'] != "m0_client" and svcs['status'] != 'started':
-                    temp_svc['service'] = svcs['name']
-                    temp_svc['status'] = svcs['status']
-                    is_data = True
-                if is_data:
-                    hctl_services_failed[node_data['name']].append(temp_svc)
-        node_hctl_failure = {}
-        for key, val in hctl_services_failed.items():
-            if val:
-                node_hctl_failure[key] = val
+            resp = self.hctl_status_json()
+            hctl_services_failed = {}
+            svcs_elem = {'service': None, 'status': None}
+            for node_data in resp['nodes']:
+                hctl_services_failed[node_data['name']] = list()
+                for svcs in node_data['svcs']:
+                    temp_svc = svcs_elem.copy()
+                    is_data = False
+                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                        temp_svc['service'] = svcs['name']
+                        temp_svc['status'] = svcs['status']
+                        is_data = True
+                    if is_data:
+                        hctl_services_failed[node_data['name']].append(temp_svc)
+            node_hctl_failure = {}
+            for key, val in hctl_services_failed.items():
+                if val:
+                    node_hctl_failure[key] = val
 
-        if resource_cleanup:
-            LOG.info("cleanup pcs resources for %s node", self.hostname)
-            response = self.pcs_resource_cleanup(options="--all")
-            if "Cleaned up all resources on all nodes" not in str(response):
-                return False, "Failed to clean up all resources on all nodes"
-            time.sleep(10)
+            if resource_cleanup:
+                LOG.info("cleanup pcs resources for %s node", self.hostname)
+                response = self.pcs_resource_cleanup(options="--all")
+                if "Cleaned up all resources on all nodes" not in str(response):
+                    return False, "Failed to clean up all resources on all nodes"
+                time.sleep(10)
 
-        LOG.info("Checking pcs status for %s node", self.hostname)
-        status, pcs_result = run_remote_cmd(
-            cmd=commands.PCS_STATUS_CMD,
-            hostname=self.hostname,
-            username=self.username,
-            password=self.password,
-            read_lines=True)
-        if not status:
-            return False, f"Failed to get PCS status {pcs_result}"
+            LOG.info("Checking pcs status for %s node", self.hostname)
+            status, pcs_result = run_remote_cmd(
+                cmd=commands.PCS_STATUS_CMD,
+                hostname=self.hostname,
+                username=self.username,
+                password=self.password,
+                read_lines=True)
+            if not status:
+                return False, f"Failed to get PCS status {pcs_result}"
 
-        pcs_failed_data = {}
-        daemons = ["corosync:", "pacemaker:", "pcsd:"]
-        LOG.info("Checking status of Daemons: %s", daemons)
-        for daemon in daemons:
-            for line in pcs_result:
-                if daemon in line:
-                    if "active/enabled" not in line:
-                        pcs_failed_data[daemon] = line
-                        LOG.debug("Daemon %s status: %s", daemon, line)
+            pcs_failed_data = {}
+            daemons = ["corosync:", "pacemaker:", "pcsd:"]
+            LOG.info("Checking status of Daemons: %s", daemons)
+            for daemon in daemons:
+                for line in pcs_result:
+                    if daemon in line:
+                        if "active/enabled" not in line:
+                            pcs_failed_data[daemon] = line
+                            LOG.debug("Daemon %s status: %s", daemon, line)
 
-        response = self.execute_cmd(cmd=commands.CMD_PCS_GET_XML, read_lines=False, exc=False)
-        if isinstance(response, bytes):
-            response = str(response, 'UTF-8')
-        json_format = self.get_node_health_xml(pcs_response=response)
-        crm_mon_res = json_format['crm_mon']['resources']
-        no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
+            response = self.execute_cmd(cmd=commands.CMD_PCS_GET_XML, read_lines=False, exc=False)
+            if isinstance(response, bytes):
+                response = str(response, 'UTF-8')
+            json_format = self.get_node_health_xml(pcs_response=response)
+            crm_mon_res = json_format['crm_mon']['resources']
+            no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
 
-        clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
-        for key, val in clone_set_dict.items():
-            if "stonith" in key:
-                for srvnode, status in val.items():
-                    currentnode = "srvnode-{}".format(key.split("-")[2])
-                    if srvnode != currentnode and status != "Started":
+            clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
+            for key, val in clone_set_dict.items():
+                if "stonith" in key:
+                    for srvnode, status in val.items():
+                        currentnode = "srvnode-{}".format(key.split("-")[2])
+                        if srvnode != currentnode and status != "Started":
+                            pcs_failed_data[key] = val
+                    continue
+                for status in val.values():
+                    if status != "Started":
                         pcs_failed_data[key] = val
-                continue
-            for status in val.values():
-                if status != "Started":
-                    pcs_failed_data[key] = val
 
-        resource_dict = self.get_resource_status(crm_mon_res)
-        for resource, value in resource_dict.items():
-            if value['status'] != 'Started':
-                pcs_failed_data[resource] = value
+            resource_dict = self.get_resource_status(crm_mon_res)
+            for resource, value in resource_dict.items():
+                if value['status'] != 'Started':
+                    pcs_failed_data[resource] = value
 
-        group_dict = self.get_group_status(crm_mon_res)
-        for group, value in group_dict.items():
-            if value['status'] != 'Started':
-                pcs_failed_data[group] = value
-        node_health_failure = {}
-        if pcs_failed_data:
-            LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname,
-                      pcs_result)
-            LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
-                      self.hostname, clone_set_dict)
-            LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
-                      self.hostname, resource_dict)
-            LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
-                      self.hostname, group_dict)
-            node_health_failure['PCS_STATUS'] = pcs_failed_data
-        if node_hctl_failure:
-            LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname,
-                      hctl_result)
-            node_health_failure['HCTL_STATUS'] = node_hctl_failure
-        if node_health_failure:
-            LOG.error("Node health failure: %s", node_health_failure)
-            return False, node_health_failure
+            group_dict = self.get_group_status(crm_mon_res)
+            for group, value in group_dict.items():
+                if value['status'] != 'Started':
+                    pcs_failed_data[group] = value
+            node_health_failure = {}
+            if pcs_failed_data:
+                LOG.debug(" ********* PCS status Response for %s ********* \n %s \n",
+                          self.hostname, pcs_result)
+                LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
+                          self.hostname, clone_set_dict)
+                LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
+                          self.hostname, resource_dict)
+                LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
+                          self.hostname, group_dict)
+                node_health_failure['PCS_STATUS'] = pcs_failed_data
+            if node_hctl_failure:
+                LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n",
+                          self.hostname, hctl_result)
+                node_health_failure['HCTL_STATUS'] = node_hctl_failure
+            if node_health_failure:
+                LOG.error("Node health failure: %s", node_health_failure)
+                return False, node_health_failure
+
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            resp = self.is_motr_online()
+            if not resp:
+                return resp, "cluster health is not good"
 
         return True, "cluster on {} up and running.".format(self.hostname)
 
@@ -969,13 +977,17 @@ class Health(Host):
             return True
         return False
 
-    def get_pod_svc_status(self, pod_list, fail=True):
+    def get_pod_svc_status(self, pod_list, fail=True, hostname=None, pod_name=None):
         """
         Helper function to get pod wise service status
         :param pod_list: List pof pods
         :param fail: Flag to check failed/started status of services
+        :param hostname: Hostname of the pod
+        :param pod_name: Running pod to fetch the hctl status
         :return: Bool, list
         """
+        pod_obj = LogicalNode(hostname=self.hostname, username=self.username,
+                              password=self.password)
         try:
             results = []
             if fail:
@@ -983,12 +995,10 @@ class Health(Host):
             else:
                 search_str = ["started", "online"]
             LOG.info("Getting services status for all pods")
-            hctl_output = self.hctl_status_json()
+            hctl_output = self.hctl_status_json(pod_name=pod_name)
             for pod in pod_list:
-                LOG.info("Getting pod hostname for pod %s", pod)
-                cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod)
-                output = self.execute_cmd(cmd=cmd, read_lines=True)
-                hostname = output[0].strip()
+                if hostname is None:
+                    hostname = pod_obj.get_pod_hostname(pod_name=pod)
                 for node in hctl_output["nodes"]:
                     if hostname == node["name"]:
                         services = node["svcs"]

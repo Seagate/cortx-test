@@ -56,7 +56,7 @@ class S3TestLib(S3Lib):
                  s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
-        Initialize members of SS3TestLib and its parent class.
+        Initialize members of S3TestLib and its parent class.
 
         :param access_key: access key.
         :param secret_key: secret key.
@@ -609,23 +609,33 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None) -> tuple:
+            key: str = None,
+            ranges: str = None,
+            raise_exec: bool = True) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
+        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
+        :param ranges: Byte range to be retrieved
         :param bucket: The bucket name containing the object.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = poll(super().get_object, bucket, key)
+            response = poll(super().get_object, bucket, key, ranges)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
+            if raise_exec:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            else:
+                if error.response['Error']['Code'] == 'NoSuchKey':
+                    LOGGER.info('No object found - returning empty')
+                    return False, dict()
+                else:
+                    return False, error.response
         return True, response
 
     def list_objects_with_prefix(

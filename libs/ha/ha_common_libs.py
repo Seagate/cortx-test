@@ -59,8 +59,7 @@ class HALibs:
             "QA_VM_POOL_ID", pswdmanager.decrypt(
                 HA_CFG["vm_params"]["uname"]))
         self.vm_password = os.getenv(
-            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["passwd"]))
+            "QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
         self.bmc_user = CMN_CFG["bmc"]["username"]
         self.bmc_pwd = CMN_CFG["bmc"]["password"]
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]

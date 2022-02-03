@@ -893,6 +893,7 @@ class TestAccountUserManagement:
         self.log.info("END: SSL certificate.")
 
     @pytest.mark.parallel
+    @pytest.mark.lr
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5426")
     @CTFailOn(error_handler)

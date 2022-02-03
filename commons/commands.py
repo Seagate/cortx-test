@@ -202,6 +202,7 @@ CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
 CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
@@ -226,6 +227,7 @@ CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-k
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
+CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -319,6 +321,8 @@ CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
 CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
@@ -448,12 +452,12 @@ K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_GET_MGNT = "kubectl get pods -o wide"
 K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- hctl status --json"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
-K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
-
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
+GET_STATS = "consul kv get -recurse stats"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
@@ -466,9 +470,13 @@ KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
 KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
-KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
+KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
+KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
+                                "--sort-by=.metadata.creationTimestamp -o " \
+                                "jsonpath='{{.items[-1:].metadata.name}}'"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -483,6 +491,9 @@ HELM_GET_VALUES = "helm get values {}"
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
+DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh"
+DESTROY_CLUSTER_CMD = "cd {}; sh destroy-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -495,6 +506,7 @@ CMD_CURL = "curl -o {} {}"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CLONE_D = "git clone {} {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
 # docker commands
@@ -521,3 +533,8 @@ FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} 
                            "--parity {} --spare {}"
 FIELD_CLUSTER_PREPARE = "cluster prepare"
 FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
+
+# LC Support Bundle
+SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
+              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"

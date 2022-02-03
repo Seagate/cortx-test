@@ -37,7 +37,7 @@ release = [
         'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-CentOS',
         'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
-    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+    {'label': 'LR-R1-RHEL', 'value': 'LR1_RHEL'},
 
 ]
 
@@ -121,6 +121,11 @@ stats_input_options = [
             Dropdown(
                 id='perf_nodes_dropdown',
                 placeholder="Select Nodes",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_clients_dropdown',
+                placeholder="Select Clients",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(

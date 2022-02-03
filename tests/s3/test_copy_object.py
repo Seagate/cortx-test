@@ -1010,6 +1010,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.regression
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19891")
     @CTFailOn(error_handler)
@@ -1299,6 +1300,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.regression
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19895")
     @CTFailOn(error_handler)
@@ -1638,9 +1640,9 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19900")
-    @pytest.mark.parametrize("object_name",
-                             ["new% (1234) ::#$$^**", "cp-object"])
+    @pytest.mark.parametrize("object_name", ["new% (1234) ::#$$^**", "cp-object"])
     def test_19900(self, object_name):
         """
         Copy object while S3 IOs are in progress.

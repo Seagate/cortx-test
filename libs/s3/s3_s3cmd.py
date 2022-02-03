@@ -19,14 +19,12 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-"""Python library contains methods for s3 awscli."""
+"""Python library contains facade for s3cmd."""
 
 import os
 import logging
-import typing
-from collections import OrderedDict
-from config.s3 import S3_CFG
-from commons import commands
+from typing import AnyStr
+from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
 
 LOGGER = logging.getLogger(__name__)
@@ -36,6 +34,7 @@ class S3CmdCommandBuilder:
     """A temporary class to build s3cmd commands.
      It should be replaced by more glorified command builder.
      """
+
     def __init__(self, **kwargs):
         self.parent_cmd = ['s3cmd']
         self.cmd_action = 'get'  # default get
@@ -56,49 +55,66 @@ class S3CmdCommandBuilder:
         :returns options string
         """
         if self.user_opts.get('access_key'):
-            self.current_options = self.current_options + ["--access_key=" + str(self.user_opts.get('access_key'))]
+            self.current_options = self.current_options + [
+                "--access_key=" + str(self.user_opts.get('access_key'))]
 
         if self.user_opts.get('secret_key'):
-            self.current_options = self.current_options + ["--secret_key=" + str(self.user_opts.get('secret_key'))]
+            self.current_options = self.current_options + [
+                "--secret_key=" + str(self.user_opts.get('secret_key'))]
 
         if self.user_opts.get('ssl'):
             self.current_options = self.current_options + ["--ssl"]
         else:
-            self.current_options = self.current_options + ["--no-ssl"]
+            self.current_options = self.current_options + ["--no_ssl"]
 
-        if self.user_opts.get('check-certificate'):
+        if self.user_opts.get('check_certificate'):
             self.current_options = self.current_options + ["--check-certificate"]
         else:
             self.current_options = self.current_options + ["--no-check-certificate"]
 
-        if self.user_opts.get('host'):
-            self.current_options = self.current_options + ["--host=" + str(self.user_opts.get('host_port'))]
+        if self.user_opts.get('host_port'):
+            self.current_options = self.current_options + [
+                "--host=" + str(self.user_opts.get('host_port'))]
 
-        if self.user_opts.get('host-bucket'):
-            self.current_options = self.current_options + ["--host-bucket=" + str(self.user_opts.get('host-bucket'))]
+        if self.user_opts.get('host_bucket'):
+            self.current_options = self.current_options + [
+                "--host-bucket=" + str(self.user_opts.get('host_bucket'))]
+
+        if self.user_opts.get('disable_multipart'):
+            self.current_options = self.current_options + ["--disable-multipart"]
+
+        if self.user_opts.get('multipart_chunk_size_mb'):
+            self.current_options = self.current_options + [
+                "--multipart-chunk-size-mb=" + str(self.user_opts.get('multipart_chunk_size_mb'))]
         return self.current_options
 
-    def build_put_command(self, path: str, bucket: str) -> str:
-        """Builds the s3cmd command line."""
+    def build_put_command(self, path: str, bucket: str) -> AnyStr:
+        """Builds the s3cmd command line.
+        :param path : s3 prefix plus object name e.g. tmp/tmpobject.db'
+        :param bucket: can be of form s3://bucket or just bucket name
+        """
+        assert_utils.assert_true(path.startswith('/'))
         # Build option
         self.parent_cmd += self.build_options()
         # Build action
         self.parent_cmd += ['put']
         # Build Command
         bucket = bucket if bucket.startswith('s3://') else 's3://' + bucket
-        part = [path] + [bucket]
+        part = '/'.join([bucket, os.path.split(path)[-1]])
+        self.parent_cmd += [path]
         self.parent_cmd += [part]
         return self.parent_cmd
 
-    def build_get_command(self, local_file_path: str, object_uri: str) -> str:
+    def build_get_command(self, local_file_path: str, object_uri: str) -> AnyStr:
         """Builds the s3cmd command line.
         :param local_file_path : full local file path to be created
-        :param object_uri : s3 URI like s3://bucket/object  bucket/object with proto prefix.
+        :param object_uri : s3 URI like s3://bucket/object or bucket/object with proto prefix.
         """
+        assert_utils.assert_true(object_uri.startswith('s3://'),
+                                 'Object URI should start with s3://')
         self.parent_cmd += self.build_options()
         self.parent_cmd += ['get']
         # Build Command
-        object_uri = object_uri if object_uri.startswith('s3://') else 's3://' + object_uri
         self.parent_cmd += [object_uri, local_file_path]
         return self.parent_cmd
 
@@ -112,7 +128,8 @@ class S3CmdCommandBuilder:
 class S3CmdFacade:
     """Wrapper Class implementing methods to expose needed s3cmd functionality."""
 
-    def upload_object_s3cmd(self, bucket_name: str = None,
+    @classmethod
+    def upload_object_s3cmd(cls, bucket_name: str = None,
                             file_path: str = None, **kwargs) -> tuple:
         """
         Uploading Object to the Bucket using s3cmd.
@@ -122,19 +139,16 @@ class S3CmdFacade:
         :param file_path: Path of the file.
         :return: response.
         """
-        s3cmd = S3CmdCommandBuilder(kwargs)
+        s3cmd = S3CmdCommandBuilder(**kwargs)
         cmd = s3cmd.build_put_command(file_path, bucket_name)
-
+        cmd = ' '.join(cmd)
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
-
         return response
 
-    def download_object_s3cmd(
-            self,
-            bucket_name: str = None,
-            file_path: str = None,
-            **kwargs) -> tuple:
+    @classmethod
+    def download_object_s3cmd(cls, bucket_name: str = None, file_path: str = None,
+                              **kwargs) -> tuple:
         """
         Downloading s3 object to a local dir.
 
@@ -143,11 +157,26 @@ class S3CmdFacade:
         :param profile_name: AWS profile name.
         :return: download bucket cli response.
         """
-        s3cmd = S3CmdCommandBuilder(kwargs)
+        s3cmd = S3CmdCommandBuilder(**kwargs)
         object_uri = kwargs.get('object_uri')
         if not os.path.exists(file_path):
-            os.mkdir(file_path)
+            if not os.path.exists(os.path.split(file_path)[0]):
+                os.mkdir(os.path.split(file_path)[0])
         cmd = s3cmd.build_get_command(local_file_path=file_path, object_uri=object_uri)
+        cmd = ' '.join(cmd)
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
         return response
+
+
+if __name__ == '__main__':
+    odict = dict(access_key='access_key', secret_key='secret_key',
+                 ssl=True, no_check_certificate=False,
+                 host_port='host_port', host_bucket='host-bucket',
+                 multipart_chunk_size_mb='15MB')
+    S3CmdFacade.upload_object_s3cmd(bucket_name='dummy', file_path='/tmp/tmpobject.db', **odict)
+    dodict = dict(access_key='access_key', secret_key='secret_key',
+                  ssl=True, no_check_certificate=False,
+                  host_port='host_port', object_uri='s3://host-bucket/tmpobject.db')
+    S3CmdFacade.download_object_s3cmd(bucket_name='host-bucket',
+                                      file_path='/tmp/tmpobject2.db', **dodict)

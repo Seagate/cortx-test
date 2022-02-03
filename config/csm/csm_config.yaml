@@ -86,3 +86,12 @@ Restcall_LC:
   csmuser_endpoint : "/api/v2/csm/users"
   csmuser_permission_endpoint: "/api/v2/permissions"
   bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"
+  perf_stats_endpoint: "/api/v2/metrics/perf"
+  accounts_capacity_endpoint: "/api/v2/metrics/capacity/account"
+  account_capacity_endpoint: "/api/v2/metrics/capacity/account/{}"
+  degraded_cap_endpoint: "/api/v2/capacity/status/bytecount"
+  degraded_cap_complete_endpoint: "/api/v2/capacity/status"
+  degraded_cap_keys: [['healthy_byte_count','degraded_byte_count','critical_byte_count',
+                       'damaged_byte_count'],['stats','timestamp','date']]
+  percentage_compare: 10
+  cluster_operation_endpoint: "/api/v2/system/management"

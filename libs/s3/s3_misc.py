@@ -165,9 +165,10 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
 
 
 def create_put_objects(object_name: str, bucket_name: str,
-                       access_key: str, secret_key: str, **kwargs):
+                       access_key: str, secret_key: str, object_size:int=10, **kwargs):
     """
     PUT object in the given bucket with access key and secret key.
+    :param object_size: size of the file in MB.
     """
 
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
@@ -185,8 +186,10 @@ def create_put_objects(object_name: str, bucket_name: str,
     LOGGER.debug("S3 boto resource created")
 
     LOGGER.debug("Created an object : %s", object_name)
+    if not os.path.exists(TEST_DATA_FOLDER):
+        os.mkdir(TEST_DATA_FOLDER)
     file_path = os.path.join(TEST_DATA_FOLDER, object_name)
-    resp = system_utils.create_file(file_path, 10)
+    resp = system_utils.create_file(file_path, object_size)
     if not resp[0]:
         LOGGER.error("Unable to create object file: %s", file_path)
         return False
@@ -205,3 +208,28 @@ def create_put_objects(object_name: str, bucket_name: str,
 
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
     return result
+
+def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Delete object from give bucket, access key and secret key.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+
+    LOGGER.debug("Delete object : %s in bucket: %s", obj_name, bucket_name)
+    s3_resource.Object(bucket_name, obj_name).delete()
+    del s3_resource
+    return True

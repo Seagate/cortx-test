@@ -67,6 +67,7 @@ from Performance.backend import *
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
@@ -74,11 +75,11 @@ from Performance.backend import *
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_s3bench(n_clicks, release_combined, branch, build, nodes, pfull, itrns,
+def update_s3bench(n_clicks, release_combined, branch, build, nodes, clients, pfull, itrns,
                    custom, sessions, buckets):
     table = None
     if not (all([
-        release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
+        release_combined, branch, build, nodes, clients, itrns, custom, n_clicks, sessions, buckets
     ])) and pfull is None:
         raise PreventUpdate
 
@@ -87,7 +88,7 @@ def update_s3bench(n_clicks, release_combined, branch, build, nodes, pfull, itrn
         op_sys = release_combined.split("_")[1]
         data = {
             'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
-            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'nodes': nodes, 'clients': clients, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
@@ -105,6 +106,7 @@ def update_s3bench(n_clicks, release_combined, branch, build, nodes, pfull, itrn
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
@@ -112,11 +114,11 @@ def update_s3bench(n_clicks, release_combined, branch, build, nodes, pfull, itrn
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_metadata(n_clicks, release_combined, branch, build, nodes,
+def update_metadata(n_clicks, release_combined, branch, build, nodes, clients,
                     pfull, itrns, custom, sessions, buckets):
     table = None
     if not (all([
-        release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
+        release_combined, branch, build, nodes, clients, itrns, custom, n_clicks, sessions, buckets
     ])) and pfull is None:
         raise PreventUpdate
 
@@ -125,7 +127,7 @@ def update_metadata(n_clicks, release_combined, branch, build, nodes,
         op_sys = release_combined.split("_")[1]
         data = {
             'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
-            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'nodes': nodes, 'clients': clients, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
         }
         dataframe, run_states = get_metadata_latencies(data)
@@ -142,6 +144,7 @@ def update_metadata(n_clicks, release_combined, branch, build, nodes,
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
@@ -149,7 +152,7 @@ def update_metadata(n_clicks, release_combined, branch, build, nodes,
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hsbench(n_clicks, release_combined, branch, build, nodes,
+def update_hsbench(n_clicks, release_combined, branch, build, nodes, clients,
                    pfull, itrns, custom, sessions, buckets):
     table = None
     if not (all([release_combined, branch, build, nodes,
@@ -161,7 +164,7 @@ def update_hsbench(n_clicks, release_combined, branch, build, nodes,
         op_sys = release_combined.split("_")[1]
         data = {
             'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
-            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'nodes': nodes, 'clients': clients, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
         dataframe, states = get_data_for_stats(data)
@@ -178,6 +181,7 @@ def update_hsbench(n_clicks, release_combined, branch, build, nodes,
      State('perf_branch_dropdown', 'value'),
      State('perf_build_dropdown', 'value'),
      State('perf_nodes_dropdown', 'value'),
+     State('perf_clients_dropdown', 'value'),
      State('perf_pfull_dropdown', 'value'),
      State('perf_iteration_dropdown', 'value'),
      State('perf_custom_dropdown', 'value'),
@@ -186,17 +190,17 @@ def update_hsbench(n_clicks, release_combined, branch, build, nodes,
      State('perf_bucketops_dropdown', 'value')],
     prevent_initial_call=True
 )
-def update_bucketops(n_clicks, release_combined, branch, build, nodes,
+def update_bucketops(n_clicks, release_combined, branch, build, nodes, clients,
                      pfull, itrns, custom, sessions, buckets, objsize):
     table = None
-    if not (all([release_combined, branch, build, nodes,
+    if not (all([release_combined, branch, build, nodes, clients,
                  itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
             'release': release_combined.split("_")[0], 'OS': release_combined.split("_")[1],
-            'build': build, 'branch': branch, 'nodes': nodes,
+            'build': build, 'branch': branch, 'nodes': nodes, 'clients': clients,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
@@ -214,6 +218,7 @@ def update_bucketops(n_clicks, release_combined, branch, build, nodes,
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
@@ -221,10 +226,10 @@ def update_bucketops(n_clicks, release_combined, branch, build, nodes,
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_cosbench(n_clicks, release_combined, branch, build, nodes,
+def update_cosbench(n_clicks, release_combined, branch, build, nodes, clients,
                     pfull, itrns, custom, sessions, buckets):
     table = None
-    if not (all([release_combined, branch, build, nodes,
+    if not (all([release_combined, branch, build, nodes, clients,
                  itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
@@ -233,7 +238,7 @@ def update_cosbench(n_clicks, release_combined, branch, build, nodes,
         op_sys = release_combined.split("_")[1]
         data = {
             'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
-            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'nodes': nodes, 'clients': clients, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }
         dataframe, states = get_data_for_stats(data)

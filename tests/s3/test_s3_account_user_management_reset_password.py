@@ -746,6 +746,7 @@ class TestAccountUserManagementResetPassword:
             "ENDED: Test reset n number of s3 account password using csm user having different role"
             " (admin, manage, monitor) while S3 IO's are in progress.")
 
+    @pytest.mark.skip("reason=EOS-27117: s3 login is unsupported on management port.")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -812,6 +813,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using LDAP credentials.")
 
+    @pytest.mark.skip("reason=EOS-27117: s3 login is unsupported on management port.")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -862,6 +864,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using invalid credentials.")
 
+    @pytest.mark.skip("reason=EOS-27117: s3 login is unsupported on management port.")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -892,6 +895,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
                       "mentioning Account name.")
 
+    @pytest.mark.skip("reason=EOS-27117: s3 login is unsupported on management port.")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd

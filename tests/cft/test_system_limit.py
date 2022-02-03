@@ -133,12 +133,11 @@ class TestS3IOSystemLimits:
         csm_users = []
         for _ in range(count):
             self.log.info("Creating new CSM user...")
-            res = self.csm_user_obj.create_and_verify_csm_user_creation(
-                user_type="valid",
-                user_role="manage",
-                expect_status_code=Const.SUCCESS_STATUS_FOR_POST,
-            )
-            assert res, "Unable to create CSM account"
+            time.sleep(1)
+            response = self.csm_user_obj.create_csm_user(user_type="valid", user_role="manage")
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                "Unable to create CSM account"
             self.log.info(f"Response : {self.csm_user_obj.recently_created_csm_user}")
             csm_users.append(self.csm_user_obj.recently_created_csm_user)
             self.log.info("CSM Manage user created ...")
@@ -244,7 +243,7 @@ class TestS3IOSystemLimits:
         response = rep.json()
         created_csm_users = []
         for each in response['users']:
-            if each['username'].startswith("test"):
+            if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
         self.log.info(
             f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")
@@ -648,8 +647,8 @@ class TestS3IOSystemLimits:
                          random.SystemRandom().randint(metadata_limit+1, 4000)]
         for metadata in metadata_size:
             object_name = f"mp-obj-test20271{metadata}"
-            m_key = system_utils.random_metadata_generator(10)
-            m_value = system_utils.random_metadata_generator(metadata-10)
+            m_key = system_utils.random_string_generator(10)
+            m_value = system_utils.random_string_generator(metadata-10)
 
             obj_size = random.SystemRandom().randint(5, 20)
 

@@ -3142,3 +3142,39 @@ test_22299:
           CanonicalUser: "{}"
         Action: "s3:PutObjectAcl"
         Resource: "arn:aws:s3:::{}/*"
+
+test_32278:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32279:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32695:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
