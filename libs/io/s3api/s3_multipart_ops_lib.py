@@ -32,34 +32,32 @@ LOGGER = logging.getLogger(__name__)
 class S3MultiParts(S3ApiRest):
     """Class for Multipart operations."""
 
-    def create_multipart_upload(self, bucket_name: str = None, obj_name: str = None) -> dict:
+    def create_multipart_upload(self, bucket_name: str, obj_name: str) -> dict:
         """
         Request to initiate a multipart upload.
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
-        :return: response
+        :return: Response of create multipart upload.
         """
         response = self.s3_client.create_multipart_upload(Bucket=bucket_name, Key=obj_name)
         LOGGER.debug("Response: %s", response)
 
         return response
 
-    def upload_part(self,
-                    body: str = None,
-                    bucket_name: str = None,
-                    object_name: str = None,
-                    **kwargs) -> dict:
+    def upload_part(self, body: str, bucket_name: str, object_name: str, **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload.
 
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        :return:
+        :upload_id: upload id of the multipart upload.
+        :part_number: part number to be uploaded.
+        :return: response of upload part.
         """
-        upload_id = kwargs.get("upload_id", None)
-        part_number = kwargs.get("part_number", None)
+        upload_id = kwargs.get("upload_id")
+        part_number = kwargs.get("part_number")
         response = self.s3_client.upload_part(
             Body=body, Bucket=bucket_name, Key=object_name,
             UploadId=upload_id, PartNumber=part_number)
@@ -67,18 +65,14 @@ class S3MultiParts(S3ApiRest):
 
         return response
 
-    def list_parts(
-            self,
-            mpu_id: str = None,
-            bucket: str = None,
-            object_name: str = None,) -> dict:
+    def list_parts(self, mpu_id: str, bucket: str, object_name: str) -> dict:
         """
         list parts of a specific multipart upload.
 
-        :param mpu_id: Multipart upload ID
-        :param bucket: Name of the bucket
-        :param object_name: Name of the object
-        :return: response
+        :param mpu_id: Multipart upload ID.
+        :param bucket: Name of the bucket.
+        :param object_name: Name of the object.
+        :return: Response of list parts.
         """
         response = self.s3_client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
         LOGGER.debug(response)
@@ -87,10 +81,10 @@ class S3MultiParts(S3ApiRest):
 
     def complete_multipart_upload(
             self,
-            mpu_id: str = None,
-            parts: list = None,
-            bucket: str = None,
-            object_name: str = None) -> dict:
+            mpu_id: str,
+            parts: list,
+            bucket: str,
+            object_name: str) -> dict:
         """
         Complete a multipart upload, s3 creates an object by concatenating the parts.
 
@@ -98,9 +92,9 @@ class S3MultiParts(S3ApiRest):
         :param parts: Uploaded parts in sorted ordered.
         :param bucket: Name of the bucket.
         :param object_name: Name of the object.
-        :return: response
+        :return: response of complete multipart upload.
         """
-        LOGGER.info("initiated complete multipart upload")
+        LOGGER.debug("initiated complete multipart upload")
         response = self.s3_client.complete_multipart_upload(
             Bucket=bucket,
             Key=object_name,
@@ -110,27 +104,26 @@ class S3MultiParts(S3ApiRest):
 
         return response
 
-    def list_multipart_uploads(self, bucket: str = None) -> dict:
+    def list_multipart_uploads(self, bucket: str) -> dict:
         """
         List all initiated multipart uploads.
 
         :param bucket: Name of the bucket.
-        :return: response.
+        :return: response of list multipart uploads.
         """
         response = self.s3_client.list_multipart_uploads(Bucket=bucket)
         LOGGER.debug(response)
 
         return response
 
-    def abort_multipart_upload(self, bucket: str = None, object_name: str = None,
-                               upload_id: str = None) -> dict:
+    def abort_multipart_upload(self, bucket: str, object_name: str, upload_id: str) -> dict:
         """
         Abort multipart upload for given upload_id.
 
         :param bucket: Name of the bucket.
         :param object_name: Name of the object.
         :param upload_id: Name of the object.
-        :return: response.
+        :return: Response of abort multipart upload.
         """
         response = self.s3_client.abort_multipart_upload(
             Bucket=bucket, Key=object_name, UploadId=upload_id)
@@ -138,23 +131,20 @@ class S3MultiParts(S3ApiRest):
 
         return response
 
-    def upload_part_copy(self,
-                         copy_source: str = None,
-                         bucket_name: str = None,
-                         object_name: str = None,
-                         **kwargs) -> dict:
+    def upload_part_copy(self, copy_source: str, bucket_name: str,
+                         object_name: str, **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload from existing object.
 
         :param copy_source: source of part copy.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        :upload_id: upload id of the multipart upload
-        :part_number: part number to be uploaded
-        :return: response.
+        :upload_id: upload id of the multipart upload.
+        :part_number: part number to be uploaded.
+        :return: response of the upload part copy.
         """
-        upload_id = kwargs.get("upload_id", None)
-        part_number = kwargs.get("part_number", None)
+        upload_id = kwargs.get("upload_id")
+        part_number = kwargs.get("part_number")
         response = self.s3_client.upload_part_copy(
             Bucket=bucket_name, Key=object_name,
             UploadId=upload_id, PartNumber=part_number,

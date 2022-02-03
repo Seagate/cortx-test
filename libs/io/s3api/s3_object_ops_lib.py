@@ -33,71 +33,69 @@ LOGGER = logging.getLogger(__name__)
 class S3Object(S3ApiRest):
     """Class for object operations."""
 
-    def upload_object(self, bucket_name: str = None, object_name: str = None,
-                      file_path: str = None) -> dict:
+    def upload_object(self, bucket_name: str, object_name: str, file_path: str) -> dict:
         """
         Uploading object to the Bucket.
 
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param file_path: Path of the file.
-        :return: response.
+        :return: Response of the upload s3 object.
         """
         response = self.s3_resource.meta.client.upload_file(file_path, bucket_name, object_name)
-        LOGGER.info(response)
+        LOGGER.debug(response)
 
         return response
 
-    def list_objects(self, bucket_name: str = None) -> list:
+    def list_objects(self, bucket_name: str) -> list:
         """
         Listing Objects.
 
         :param bucket_name: Name of the bucket.
-        :return: response.
+        :return: Response of the list objects.
         """
         bucket = self.s3_resource.Bucket(bucket_name)
-        all_objects = [obj.key for obj in bucket.objects.all()]
-        LOGGER.debug(all_objects)
+        objects = [obj.key for obj in bucket.objects.all()]
+        LOGGER.debug(objects)
 
-        return all_objects
+        return objects
 
-    def delete_object(self, bucket_name: str = None, obj_name: str = None) -> dict:
+    def delete_object(self, bucket_name: str, obj_name: str) -> dict:
         """
         Deleting object.
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of object.
-        :return: response.
+        :return: Response of delete object.
         """
         response = self.s3_resource.Object(bucket_name, obj_name).delete()
         logging.debug(response)
-        LOGGER.info("Object '%s' deleted Successfully", obj_name)
+        LOGGER.debug("Object '%s' deleted Successfully", obj_name)
 
         return response
 
-    def head_object(self, bucket_name: str = None, key: str = None) -> dict:
+    def head_object(self, bucket_name: str, key: str) -> dict:
         """
         Retrieve metadata from an object without returning the object itself.
 
         you must have READ access to the object.
         :param bucket_name: Name of the bucket.
         :param key: Key of object.
-        :return: response.
+        :return: Response of head object.
         """
         response = self.s3_resource.meta.client.head_object(Bucket=bucket_name, Key=key)
         LOGGER.debug(response)
 
         return response
 
-    def download_object(self, bucket_name: str = None, obj_name: str = None,
-                        file_path: str = None) -> str:
+    def download_object(self, bucket_name: str, obj_name: str, file_path: str) -> dict:
         """
         Downloading Object of the required Bucket.
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
         :param file_path: Path of the file.
-        :return: response.
+        :return: Response of download object.
         """
         response = self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
         if os.path.exists(file_path):
@@ -106,10 +104,10 @@ class S3Object(S3ApiRest):
         return response
 
     def copy_object(self,
-                    source_bucket: str = None,
-                    source_object: str = None,
-                    dest_bucket: str = None,
-                    dest_object: str = None,
+                    source_bucket: str,
+                    source_object: str,
+                    dest_bucket: str,
+                    dest_object: str,
                     **kwargs) -> tuple:
         """
         Copy of an object that is already stored in Seagate S3 with different permissions.
@@ -120,14 +118,14 @@ class S3Object(S3ApiRest):
         :param dest_object: The name of the destination object.
         :param kwargs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services
         /s3.html#S3.Client.copy_object
-        :return: True, dict.
+        :return: Response of copy object.
         """
         response = self.s3_client.copy_object(
             Bucket=dest_bucket,
             CopySource='/{}/{}'.format(source_bucket, source_object),
             Key=dest_object,
             **kwargs
-            )
+        )
         LOGGER.debug(response)
 
         return response

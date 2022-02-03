@@ -31,12 +31,12 @@ LOGGER = logging.getLogger(__name__)
 class S3Bucket(S3ApiRest):
     """Class for bucket operations."""
 
-    def create_bucket(self, bucket_name: str = None) -> dict:
+    def create_bucket(self, bucket_name: str) -> dict:
         """
         Creating Bucket.
 
         :param bucket_name: Name of the bucket.
-        :return: response.
+        :return: Response of create bucket.
         """
         response = self.s3_resource.create_bucket(Bucket=bucket_name)
         LOGGER.debug("Response: %s", str(response))
@@ -47,31 +47,31 @@ class S3Bucket(S3ApiRest):
         """
         Listing all the buckets.
 
-        :return: response.
+        :return: Response of bucket list.
         """
         response = [bucket.name for bucket in self.s3_resource.buckets.all()]
-        LOGGER.info(response)
+        LOGGER.debug(response)
 
         return response
 
-    def head_bucket(self, bucket_name: str = None) -> dict:
+    def head_bucket(self, bucket_name: str) -> dict:
         """
-        To determine if a bucket exists and you have permission to access it.
+        To determine if a bucket exists and have a permission to access it.
 
         :param bucket_name: Name of the bucket.
-        :return: response.
+        :return: Response of head bucket.
         """
         response = self.s3_resource.meta.client.head_bucket(Bucket=bucket_name)
         LOGGER.debug(response)
 
         return response
 
-    def bucket_location(self, bucket_name: str = None) -> dict:
+    def bucket_location(self, bucket_name: str) -> dict:
         """
         Getting Bucket Location.
 
         :param bucket_name: Name of the bucket.
-        :return: response.
+        :return: Response of bucket location.
         """
         LOGGER.debug("BucketName: %s", bucket_name)
         response = self.s3_resource.meta.client.get_bucket_location(Bucket=bucket_name)
@@ -79,18 +79,18 @@ class S3Bucket(S3ApiRest):
 
         return response
 
-    def delete_bucket(self, bucket_name: str = None, force: bool = False) -> dict:
+    def delete_bucket(self, bucket_name: str, force: bool = False) -> dict:
         """
         Deleting the empty bucket or deleting the buckets along with objects stored in it.
 
         :param bucket_name: Name of the bucket.
         :param force: Value for delete bucket with object or without object.
-        :return: response.
+        :return: Response of delete bucket.
         """
         bucket = self.s3_resource.Bucket(bucket_name)
         if force:
-            LOGGER.info("This might cause data loss as you have opted for bucket deletion with "
-                        "objects in it")
+            LOGGER.debug("This might cause data loss as you have opted for bucket deletion with "
+                         "objects in it")
             response = bucket.objects.all().delete()
             LOGGER.debug("Objects deleted successfully. response: %s", response)
         response = bucket.delete()
@@ -98,17 +98,17 @@ class S3Bucket(S3ApiRest):
 
         return response
 
-    def get_bucket_storage(self, bucket_name: str = None) -> int:
+    def get_bucket_storage(self, bucket_name: str) -> int:
         """
         Getting consumed storage of the s3 bucket.
 
         :param bucket_name: Name of the bucket.
-        :return: (Boolean, size of bucket in int)
+        :return: storage consumed by s3 bucket.
         """
         total_size = 0
         bucket = self.s3_resource.Bucket(bucket_name)
         for each_object in bucket.objects.all():
             total_size += each_object.size
-        LOGGER.info("Total storage: %s", total_size)
+        LOGGER.debug("Total storage: %s", total_size)
 
         return total_size

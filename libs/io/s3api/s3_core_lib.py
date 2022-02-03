@@ -32,14 +32,14 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class S3ApiRest:
+class S3ApiRest(object):
     """Basic Class for Creating Boto3 REST API Objects."""
 
     def __init__(self,
-                 access_key: str = None,
-                 secret_key: str = None,
-                 endpoint_url: str = None,
-                 **kwargs) -> None:
+                 access_key: str,
+                 secret_key: str,
+                 endpoint_url: str,
+                 **kwargs):
         """
         method initializes members of S3Lib.
 
@@ -53,15 +53,16 @@ class S3ApiRest:
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
-        region = kwargs.get("region", None)
-        aws_session_token = kwargs.get("aws_session_token", None)
+        region = kwargs.get("region", S3_CFG["region"])
+        aws_session_token = kwargs.get("aws_session_token")
         debug = kwargs.get("debug", S3_CFG["debug"])
-        config = Config(retries={'max_attempts': 6})
+        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        config = Config(retries={'max_attempts': S3_CFG["s3api_retry"]})
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
         self.s3_resource = boto3.resource("s3",
-                                          use_ssl=True,
+                                          use_ssl=use_ssl,
                                           verify=False,
                                           aws_access_key_id=access_key,
                                           aws_secret_access_key=secret_key,
@@ -70,7 +71,7 @@ class S3ApiRest:
                                           aws_session_token=aws_session_token,
                                           config=config)
         self.s3_client = boto3.client("s3",
-                                      use_ssl=True,
+                                      use_ssl=use_ssl,
                                       verify=False,
                                       aws_access_key_id=access_key,
                                       aws_secret_access_key=secret_key,
