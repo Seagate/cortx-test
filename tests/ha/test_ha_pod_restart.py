@@ -1561,12 +1561,13 @@ class TestPodRestart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = list(range(1, total_parts))
+        part_numbers = list(range(1, total_parts+1))
         random.shuffle(part_numbers)
         output = Queue()
         parts_etag = []
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
+        event = threading.Event()  # Event to be used to send intimation of pod restart
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -1577,6 +1578,8 @@ class TestPodRestart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account")
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
@@ -1627,13 +1630,15 @@ class TestPodRestart:
                 'object_name': self.object_name, 'file_size': file_size, 'total_parts': total_parts,
                 'multipart_obj_path': self.multipart_obj_path, 'part_numbers': part_numbers,
                 'parts_etag': parts_etag, 'output': output}
-        prc = Process(target=self.ha_obj.start_random_mpu, kwargs=args)
-        prc.start()
+        thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
         LOGGER.info("Step 5: Started multipart upload of 5GB object in background")
 
-        time.sleep(HA_CFG["common_params"]["5sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
         LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
+        event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -1651,35 +1656,44 @@ class TestPodRestart:
         LOGGER.info("Step 7: Cluster is in good state. All the services are up and running")
 
         LOGGER.info("Step 5: Checking responses from background process")
-        prc.join()
-        if output.empty():
+        thread.join()
+        responses = tuple()
+        while len(responses) < 4:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        if not responses:
             assert_utils.assert_true(False, "Background process failed to do multipart upload")
 
-        res = output.get()
-        mpu_id = None
-        if isinstance(res[0], dict):
-            failed_parts = res[0]
-            assert_utils.assert_true(False, f"Multipart upload is expected to be passed. Failed "
-                                            f"parts : {failed_parts}")
-        elif isinstance(res[0], list):
+        exp_failed_parts = responses[0]
+        failed_parts = responses[1]
+        parts_etag = responses[2]
+        mpu_id = responses[3]
+        LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
+                     "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
+                     failed_parts, parts_etag, mpu_id)
+        if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             LOGGER.info("All the parts are uploaded successfully")
-            parts_etag = res[0]
-            mpu_id = res[1]
+        elif exp_failed_parts or failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in good "
+                                            f"state. Failed parts: {failed_parts} and "
+                                            f"{exp_failed_parts}")
+        LOGGER.info("Step 5: Successfully checked background process responses")
 
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]
         LOGGER.info("Step 5: Successfully uploaded all the parts of multipart upload.")
 
         LOGGER.info("Step 8: Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
-        if not res[0] or len(res[1]["Parts"]) != total_parts:
-            assert_utils.assert_true(False, res)
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 8: Listed parts of multipart upload: %s", res[1])
 
         LOGGER.info("Step 9: Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
-                                                            self.object_name)
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
+                                                       self.object_name)
         assert_utils.assert_true(res[0], res)
         res = s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, res[1], res)
@@ -1698,13 +1712,13 @@ class TestPodRestart:
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 11: Create s3 account, create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34081-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34081-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 11: Successfully created s3 account and multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify multipart upload during data pod restart")
@@ -1719,7 +1733,7 @@ class TestPodRestart:
         """
         LOGGER.info("STARTED: Test to verify copy object during data pod restart")
 
-        bkt_obj_dict = {}
+        bkt_obj_dict = dict()
         bkt_obj_dict["ha-bkt-{}".format(self.random_time)] = "ha-obj-{}".format(self.random_time)
         output = Queue()
 
@@ -1792,7 +1806,9 @@ class TestPodRestart:
         bkt_obj_dict1 = {}
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         for cnt in range(bkt_cnt):
-            bkt_obj_dict1[f"ha-bkt-{cnt}-{perf_counter_ns()}"] = f"ha-obj-{cnt}-{perf_counter_ns()}"
+            rd_time = perf_counter_ns()
+            s3_test_obj.create_bucket(f"ha-bkt{cnt}-{rd_time}")
+            bkt_obj_dict1[f"ha-bkt{cnt}-{rd_time}"] = f"ha-obj{cnt}-{rd_time}"
         bkt_obj_dict.update(bkt_obj_dict1)
         LOGGER.info("Step 6: Create multiple buckets and copy object from %s to other buckets in "
                     "background", self.bucket_name)
@@ -1804,7 +1820,8 @@ class TestPodRestart:
         prc.start()
         LOGGER.info("Step 6: Successfully started background process")
 
-        time.sleep(HA_CFG["common_params"]["1sec_delay"])
+        # Delay added to sync this operation with background thread to achieve expected scenario
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -1844,13 +1861,13 @@ class TestPodRestart:
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 10: Create s3 account, create multiple buckets and run IOs")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34084-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(resp[0], resp[1])
-        di_check_data = (resp[1], resp[2])
-        self.s3_clean.update(resp[2])
+        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-34084-1', nusers=1, nbuckets=10)
+        assert_utils.assert_true(io_resp[0], io_resp[1])
+        di_check_data = (io_resp[1], io_resp[2])
+        self.s3_clean.update(io_resp[2])
         resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(resp[2].keys())[0])
+        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 10: Successfully created s3 account and multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify copy object during data pod restart")
