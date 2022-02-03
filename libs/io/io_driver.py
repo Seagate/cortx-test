@@ -31,11 +31,17 @@ import os
 import sched
 import sys
 import time
-from datetime import datetime
+import yaml
+from datetime import datetime, timedelta
 from multiprocessing import Process, Manager
+
+from tools.s3bench import S3bench
 
 io_driver_config = "config/io/io_driver_config.yaml"
 io_driver_log = "io_driver.log"
+
+with open(io_driver_config) as cfg:
+    conf = yaml.safe_load(cfg)
 
 log = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -58,45 +64,45 @@ process_states = manager.dict()
 process_list = manager.list()
 
 
-def launch_process(process, process_type):
+def launch_process(process, process_type, test_id):
     """
     This method is intended to Start the process and add PID to dictionary.
     process_states : Dictionary of process as key and pid as value
-    process: Object of Process
-    process_type: Type of tool invoked by process
+    :param process: Object of Process
+    :param process_type: Type of tool invoked by process
     """
-    log.info(f"Launching process : {process}")
     process.start()
     pid = process.pid
-    log.info("Started Process %s", pid)
+    log.info(f"Started Process PID :{pid} TEST_ID :{test_id} TYPE: {process_type}")
     new_proc_data = manager.dict()
     new_proc_data['state'] = 'started'
     new_proc_data['type'] = process_type
     new_proc_data['start_time'] = datetime.now()
     process_states[pid] = new_proc_data
-    log.info(f"launch : proc state {process_states}")
 
 
 def update_process_termination(return_status):
     """
     Update the required structures with return status from process.
+    :param return_status: Return status from the executed process
     """
     pid = os.getpid()
     log.info("Process terminated : %s Response: %s", pid, return_status)
-    log.info(f"Proc state: {process_states}")
     process_states[pid]['state'] = 'done'
     process_states[pid]['ret_status'] = return_status[0]
     process_states[pid]['response'] = return_status[1]
-    log.info(f"Proc state post termination : {process_states[pid]['state']}")
+    log.info(f"Proc state post termination : {pid} {process_states[pid]['state']}")
 
 
-def run_s3bench():
+def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low, size_high, seed,
+                duration):
     """
     Execute S3bench tool and update error code if any, to process_state on termination.
     """
     log.info("Start S3bench run ")
-    time.sleep(30)
-    ret = (True, True)
+    s3bench = S3bench(access, secret, endpoint, test_id, clients, samples, size_low, size_high,
+                      seed, duration)
+    ret = s3bench.run_check()
     update_process_termination(return_status=ret)
     log.info("Completed S3bench run ")
 
@@ -107,44 +113,88 @@ def run_warp():
     """
     log.info("Start warp run ")
     time.sleep(150)
-    ret = (True, True)
+    ret = (True, True)  # TODO: add warp tool support
     update_process_termination(return_status=ret)
     log.info("Completed warp run ")
-
-
-def periodic_sb(interval):
-    sched_obj.enter(interval, 2, periodic_sb, (interval))
-    process = Process(target=collect_sb)
-    launch_process(process, 'support_bundle')
 
 
 def collect_sb():
     """
     Collect support bundle and update error code if any, to process_state on termination.
     """
-    log.info("collect sb")
+    log.info("Collect Support bundle")
     time.sleep(10)
-    log.info("collect sb done!!")
+    ret = (True, True)  # TODO: add support bundle collection call
+    update_process_termination(return_status=ret)
+    log.info("Support bundle collection done!!")
+
+
+def perform_health_check():
+    """
+    Collect support bundle and update error code if any, to process_state on termination.
+    """
+    log.info("Performing health check")
+    time.sleep(10)
+    ret = (True, True)  # TODO: add health check call
+    update_process_termination(return_status=ret)
+    log.info("Health check done!!")
+
+
+def periodic_sb():
+    """
+    Perform Periodic support bundle collection
+    """
+    sb_interval = conf['sb_interval_mins'] * 60
+    sched_obj.enter(sb_interval, 1, periodic_sb)
+    process = Process(target=collect_sb)
+    launch_process(process, 'support_bundle', None)
+
+
+def periodic_hc():
+    """
+    Perform periodic health check
+    """
+    hc_interval = conf['hc_interval_mins'] * 60
+    sched_obj.enter(hc_interval, 1, periodic_hc)
+    process = Process(target=perform_health_check)
+    launch_process(process, 'health_check', None)
 
 
 def main():
     # Retrieve output(dict) from yaml parser
-    test_input = {'p1': {'tool': 's3bench', 'time': 10}, 'p2': {'tool': 's3bench', 'time': 30},
-                  'p3': {'tool': 'warp', 'time': 50}}
+    access = "AKIAwfeFB7yMQzeupWaH962v1w"
+    secret = "4sC3YTdgw2Ij3Ck2hUSc/ad/O9o21IavMNH4M4ZO"
+    endpoint = "https://s3.seagate.com"
+    seed = '111'
+
+    test_input = {
+        'test_1': {'tool': 's3bench', 'TEST_ID': 'TEST-1111', 'start_range': 0, 'end_range': 100000,
+                   'result_duration': '01h00m00s', 'sessions_per_node': 1,
+                   'time_delta': timedelta(seconds=10)},
+        'test_2': {'tool': 's3bench', 'TEST_ID': 'TEST-123', 'start_range': 100000,
+                   'end_range': 1000000, 'result_duration': '04h00m00s', 'sessions_per_node': 2,
+                   'time_delta': timedelta(seconds=10)}}
     for key, value in test_input.items():
         process_type = value['tool'].lower()
         if process_type == 's3bench':
-            process = Process(target=run_s3bench)
+            process = Process(target=run_s3bench, args=[access, secret, endpoint, value['TEST_ID'],
+                                                        value['sessions_per_node'], 100,
+                                                        value['start_range'], value['end_range'],
+                                                        seed, '60s'])
         elif process_type == 'warp':
             process = Process(target=run_warp)
-        elif process_type == 'support_bundle':
-            process = Process(target=collect_sb)
         else:
             log.error(f"Error! Tool type not defined : {process_type}")
             sys.exit(1)
-        sched_obj.enter(value['time'], 1, launch_process, (process, process_type))
-    # periodic_sb(20)
-    time.sleep(2)
+        sched_obj.enter(value['time_delta'].seconds, 1, launch_process,
+                        (process, process_type, key))
+
+    if conf['capture_support_bundle']:
+        sched_obj.enter(conf['sb_interval_mins'] * 60, 1, periodic_sb)
+
+    if conf['perform_health_check']:
+        sched_obj.enter(conf['hc_interval_mins'] * 60, 1, periodic_hc)
+
     log.info("*****Starting schedular*****")
     sched_obj.run()
 
@@ -158,7 +208,7 @@ def main():
 
         for key, value in process_states.items():
             if value['state'] == 'done':
-                if not value['ret_status']:
+                if value['ret_status'] == False:
                     terminate_run = True
                     error_proc = key
                     error_proc_data = value
