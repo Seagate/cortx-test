@@ -744,8 +744,11 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     if log == 'csm_gui':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
-    else:
+    elif log == 's3bench':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    else:
+        support_logs = glob.glob(f"{LOG_DIR}/latest/logs-cortx-cloud-*")
+    LOGGER.debug("support logs is %s", support_logs)
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -753,6 +756,9 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
                                                    local_path=support_log)
         if resp[0]:
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+            if os.path.isfile(support_log):
+                os.remove(support_log)
+                LOGGER.info("Removed the files from local path after uploading to NFS share")
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
@@ -908,6 +914,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
+        upload_supporting_logs(test_id, remote_path, "")
         upload_supporting_logs(test_id, remote_path, "csm_gui")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(os.path.join(resp[1], name))
