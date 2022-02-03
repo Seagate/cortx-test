@@ -305,6 +305,7 @@ class TestProvK8Cortx:
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
@@ -348,6 +349,7 @@ class TestProvK8Cortx:
         LOGGER.info("Step 5: Cluster is back online.")
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
