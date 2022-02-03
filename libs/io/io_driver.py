@@ -29,116 +29,152 @@ support bundle collection on regular intervals.
 import logging
 import os
 import sched
+import sys
 import time
-from copy import deepcopy
-from multiprocessing import Process, Queue
+from datetime import datetime
+from multiprocessing import Process, Manager
 
-from s3bench import S3bench
+io_driver_config = "config/io/io_driver_config.yaml"
+io_driver_log = "io_driver.log"
 
-ACCESS_KEY = ""
-SECRET_KEY = ""
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('io_driver.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
+log = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh = logging.FileHandler(io_driver_log)
+ch = logging.StreamHandler()
+
+log.setLevel(logging.DEBUG)
+fh.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
+
 ch.setFormatter(formatter)
 fh.setFormatter(formatter)
-# add the handlers to logger
-logger.addHandler(ch)
-logger.addHandler(fh)
+
+log.addHandler(ch)
+log.addHandler(fh)
+
+sched_obj = sched.scheduler(time.time, time.sleep)
+manager = Manager()
+process_states = manager.dict()
+process_list = manager.list()
 
 
-def s3bench_run(return_q, access, secret, endpoint, bucket, object_prefix, log_file, clients,
-                samples,
-                object_size, head, skip_read, skip_write, skip_cleanup, validate, duration):
-    s3bench = S3bench(access, secret, endpoint, bucket, object_prefix, log_file, clients, samples,
-                      object_size, head, skip_read, skip_write, skip_cleanup, validate, duration)
-    error, ops = s3bench.run_check()
-    pid = os.getpid()
-    logger.info("S3bench %s PID", bucket)
-    ret = {pid: (error, deepcopy(ops))}
-    return_q.put(ret)
-    logger.info("S3bench %s complete PID = %s", bucket, pid)
-
-
-def launch_process(process: Process, process_states: dict):
+def launch_process(process, process_type):
     """
     This method is intended to Start the process and add PID to dictionary.
-    :param process: Object of Process
-    :process_states : Dictionary of process as key and pid as value
+    process_states : Dictionary of process as key and pid as value
+    process: Object of Process
+    process_type: Type of tool invoked by process
     """
-    logger.info("Launching process")
+    log.info(f"Launching process : {process}")
     process.start()
     pid = process.pid
-    logger.info("Started Process %s", pid)
-    process_states[process] = pid
+    log.info("Started Process %s", pid)
+    new_proc_data = manager.dict()
+    new_proc_data['state'] = 'started'
+    new_proc_data['type'] = process_type
+    new_proc_data['start_time'] = datetime.now()
+    process_states[pid] = new_proc_data
+    log.info(f"launch : proc state {process_states}")
+
+
+def update_process_termination(return_status):
+    """
+    Update the required structures with return status from process.
+    """
+    pid = os.getpid()
+    log.info("Process terminated : %s Response: %s", pid, return_status)
+    log.info(f"Proc state: {process_states}")
+    process_states[pid]['state'] = 'done'
+    process_states[pid]['ret_status'] = return_status[0]
+    process_states[pid]['response'] = return_status[1]
+    log.info(f"Proc state post termination : {process_states[pid]['state']}")
+
+
+def run_s3bench():
+    """
+    Execute S3bench tool and update error code if any, to process_state on termination.
+    """
+    log.info("Start S3bench run ")
+    time.sleep(30)
+    ret = (True, True)
+    update_process_termination(return_status=ret)
+    log.info("Completed S3bench run ")
+
+
+def run_warp():
+    """
+    Execute warp tool and update error code if any, to process_state on termination.
+    """
+    log.info("Start warp run ")
+    time.sleep(150)
+    ret = (True, True)
+    update_process_termination(return_status=ret)
+    log.info("Completed warp run ")
+
+
+def periodic_sb(interval):
+    sched_obj.enter(interval, 2, periodic_sb, (interval))
+    process = Process(target=collect_sb)
+    launch_process(process, 'support_bundle')
+
+
+def collect_sb():
+    """
+    Collect support bundle and update error code if any, to process_state on termination.
+    """
+    log.info("collect sb")
+    time.sleep(10)
+    log.info("collect sb done!!")
 
 
 def main():
-    started_process = {}
-    # instance is created
-    scheduler = sched.scheduler(time.time, time.sleep)
-    return_q = Queue()
-    bucket1 = "test-bucket-1"
-    bucket2 = "test-bucket-2"
-    p1 = Process(target=s3bench_run,
-                 args=(return_q, ACCESS_KEY, SECRET_KEY, "https://s3.seagate.com",
-                       bucket1, "test-obj", "1kb_10_100-1", 10, 100,
-                       "1Kb", True, True, False, False, True, "00h01m"))
-    started_process[p1] = None
-    p2 = Process(target=s3bench_run,
-                 args=(return_q, ACCESS_KEY, SECRET_KEY, "https://s3.seagate.com",
-                       bucket2, "test-obj", "1kb_10_100-2", 10, 100,
-                       "1Kb", True, True, False, False, True, "00h01m"))
-    started_process[p2] = None
-    # first event with delay of 1 second
-    scheduler.enter(1, 1, launch_process, (p1, started_process))
-    scheduler.enter(10, 1, launch_process, (p2, started_process))
-    # executing the events
-    scheduler.run()
-    logger.info("Started schedular")
-    stop = False
-    completed_process = {}
+    # Retrieve output(dict) from yaml parser
+    test_input = {'p1': {'tool': 's3bench', 'time': 10}, 'p2': {'tool': 's3bench', 'time': 30},
+                  'p3': {'tool': 'warp', 'time': 50}}
+    for key, value in test_input.items():
+        process_type = value['tool'].lower()
+        if process_type == 's3bench':
+            process = Process(target=run_s3bench)
+        elif process_type == 'warp':
+            process = Process(target=run_warp)
+        elif process_type == 'support_bundle':
+            process = Process(target=collect_sb)
+        else:
+            log.error(f"Error! Tool type not defined : {process_type}")
+            sys.exit(1)
+        sched_obj.enter(value['time'], 1, launch_process, (process, process_type))
+    # periodic_sb(20)
+    time.sleep(2)
+    log.info("*****Starting schedular*****")
+    sched_obj.run()
+
     while True:
-        time.sleep(1)
-        for process, pid in started_process.items():
-            alive = process.is_alive()
-            if pid and not alive:
-                # check returns for this process
-                if not return_q.empty():
-                    message = return_q.get(False)
-                    logger.debug("Returned = %s", message)
-                    if pid in message:
-                        # Valid response frm subprocess, Stop if error returned
-                        status = message[pid]
-                        logger.debug("Process %s, Returned %s", pid, status)
-                        completed_process[process] = pid
-                    else:
-                        logger.error("Not Empty: Process %s terminated without response", pid)
-                        stop = True
-                        break
-                else:
-                    logger.error("Empty: Process %s terminated without response", pid)
-                    stop = True
-                    break
-        logger.debug("CPs: %s", completed_process.items())
-        logger.debug("SPs: %s", started_process.items())
-        for _, pid in completed_process.items():
-            started_process = {k: v for k, v in started_process.items() if v != pid}
-        if stop or not started_process:
-            if not started_process:
-                logger.info("No running process,exiting scheduler")
-            else:
-                logger.error("Process terminated without response. Exiting scheduler")
-            break
-    logger.info("IO Driver Complete")
+        time.sleep(30)
+        log.info('.')
+        error_proc = None
+        error_proc_data = None
+        terminate_run = False
+        is_process_running = False
+
+        for key, value in process_states.items():
+            if value['state'] == 'done':
+                if not value['ret_status']:
+                    terminate_run = True
+                    error_proc = key
+                    error_proc_data = value
+            if value['state'] == 'started':
+                is_process_running = True
+
+        # Terminate if error observed in any process
+        if terminate_run:
+            log.error(f"Error observed in process {error_proc} {error_proc_data}")
+            log.error(f"Terminating schedular..")
+            sys.exit(0)
+
+        # Terminate if no process scheduled or running.
+        if sched_obj.empty() and not is_process_running:
+            log.info("No jobs scheduled in schedular,exiting..!!")
+            sys.exit(0)
 
 
 if __name__ == '__main__':
