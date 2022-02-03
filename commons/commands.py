@@ -11,6 +11,7 @@ MOTR_STATUS_CMD = "hctl status"
 HA_LOG_CMD = "/bin/bash"
 HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
 SERVICE_HA_STATUS = "ps -aux"
+HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
