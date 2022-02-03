@@ -38,7 +38,7 @@ class RestCsmUser(RestTestLib):
         self.recent_patch_payload = None
         self.user_type = ("valid", "duplicate", "invalid", "missing")
         self.user_roles = ["manage", "monitor"]
-        self.random_user = False
+        self.random_user = True
         self.random_num = 0
         self.csm_user_list_params = ("offset", "limit", "sortby", "dir")
 
@@ -66,6 +66,8 @@ class RestCsmUser(RestTestLib):
 
             if user_type == "valid":
                 if self.random_user:
+                    self.random_num = random.randint(
+                    const.RANDOM_NUM_START, const.RANDOM_NUM_END)
                     user_name = "csm{}{}".format(
                         int(self.random_num), int(time.time()))
                     user_role = user_defined_role
