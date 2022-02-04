@@ -29,7 +29,10 @@ from logging import handlers
 
 
 class StreamToLogger(object):
+    """logger class for corio driver."""
+
     def __init__(self, file_path, logger):
+        """"initialize logger."""
         self.file_path = file_path
         self.logger = logger
         self.formatter = '[%(asctime)s] [%(threadName)-6s] [%(levelname)-6s] ' \
@@ -39,7 +42,7 @@ class StreamToLogger(object):
         self.set_filehandler_logger()
 
     def make_logdir(self) -> None:
-        """Create directory if not exists."""
+        """Create log directory if not exists."""
         head, tail = path.split(self.file_path)
         if not os.path.exists(head):
             os.makedirs(head, exist_ok=True)
@@ -77,15 +80,15 @@ class CorIORotatingFileHandler(handlers.RotatingFileHandler):
         """
         Method to form log file name for rotation internally called by rotation_filename() method
         :param name: name of the base file
-        :return: cortx rotated log file name e.g., io_driver-YYYY-MM-DD-1.gz
+        :return: rotated log file name e.g., io_driver-YYYY-MM-DD-1.gz
         """
         return "{}-{}-{}.gz".format(name, str(datetime.date.today()), name.split('.')[-1])
 
     def rotate(self, source, dest):
         """
         Method to compress and rotate the current log when size limit is reached.
-        :param source: current log file path
-        :param dest: destination path for rotated file
+        :param source: current log file path.
+        :param dest: destination path for rotated file.
         """
         with open(source, "rb") as sf:
             with gzip.open(dest, "wb", 9) as df:
