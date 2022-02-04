@@ -26,7 +26,6 @@ import re
 import shutil
 import socket
 import stat
-import sys
 import time
 from typing import Any
 from typing import List

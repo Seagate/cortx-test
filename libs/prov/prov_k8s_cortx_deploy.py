@@ -38,11 +38,11 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
@@ -1137,7 +1137,7 @@ class ProvDeployK8sCortxLib:
         end_time = start_time + 1800  # 30 mins timeout
         response = list()
         while int(time.time()) < end_time:
-            pod_name = master_node_obj.get_pod_nam(epod_prefix=pod_prefix)
+            pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
             assert_utils.assert_true(pod_name[0], pod_name[1])
             resp = self.get_hctl_status(master_node_obj, pod_name[1])
             if resp[0]:
