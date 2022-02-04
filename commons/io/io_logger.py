@@ -19,18 +19,27 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+import os
 import logging
+from os import path
 from logging.handlers import RotatingFileHandler
 
 
 class StreamToLogger(object):
-    def __init__(self, file_name, log_level=logging.DEBUG):
-        self.file_name = file_name
+    def __init__(self, file_path, log_level=logging.DEBUG):
+        self.file_path = file_path
         self.log_level = log_level
         self.formatter = '[%(asctime)s] [%(threadName)-6s] [%(levelname)-6s] ' \
                          '[%(filename)s: %(lineno)d]: %(message)s'
+        self.make_logdir()
         self.set_stream_logger()
         self.set_filehandler_logger()
+
+    def make_logdir(self) -> None:
+        """Create directory if not exists."""
+        head, tail = path.split(self.file_path)
+        if not os.path.exists(head):
+            os.makedirs(head, exist_ok=True)
 
     def set_stream_logger(self):
         """
@@ -50,7 +59,7 @@ class StreamToLogger(object):
         """
         logger = logging.getLogger(__name__)
         logger.setLevel(self.log_level)
-        handler = RotatingFileHandler(self.file_name, maxBytes=5000000, backupCount=5)
+        handler = RotatingFileHandler(self.file_path, maxBytes=10485760, backupCount=5)
         handler.setLevel(self.log_level)
         formatter = logging.Formatter(self.formatter)
         handler.setFormatter(formatter)
