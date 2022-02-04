@@ -308,6 +308,19 @@ class ProvDeployK8sCortxLib:
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
+        log_file = 'deployment.log'
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
+        remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
+        LOGGER.debug("Local PATH %s", local_path)
+        LOGGER.debug("Remote PATH %s", remote_path)
+        LOGGER.debug("COPY to local")
+        master_node_list[0].copy_file_to_local(remote_path, local_path)
+        with open(local_path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                if "timed out" in line:
+                    LOGGER.error(line)
+                    return False, "Failed due to script Timeout"
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
