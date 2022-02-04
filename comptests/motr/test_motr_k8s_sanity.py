@@ -28,8 +28,6 @@ import logging
 from random import SystemRandom
 import pytest
 from commons.utils import config_utils
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
