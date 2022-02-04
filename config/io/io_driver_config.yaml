@@ -7,3 +7,4 @@ terminate_driver_on_failure:
     s3bench: True
     warp: True
     health_check: True
+driver_log: io_driver.log

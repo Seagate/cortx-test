@@ -25,9 +25,10 @@ Consists of Schedular which parses yaml based inputs and schedules, monitor jobs
 IO driver will also be responsible for performing health checks and
 support bundle collection on regular intervals.
 """
-
+import argparse
 import logging
 import os
+import random
 import sched
 import sys
 import time
@@ -39,14 +40,13 @@ import yaml
 from tools.s3bench import S3bench
 
 IO_DRIVER_CFG = "config/io/io_driver_config.yaml"
-DRIVER_LOG = "io_driver.log"
 
 with open(IO_DRIVER_CFG) as cfg:
     conf = yaml.safe_load(cfg)
 
 log = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh = logging.FileHandler(DRIVER_LOG)
+fh = logging.FileHandler(conf['driver_log'])
 ch = logging.StreamHandler()
 
 log.setLevel(logging.DEBUG)
@@ -65,6 +65,16 @@ process_states = manager.dict()
 process_list = manager.list()
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, help="seed", default=random.randint(1, 9999999))
+    parser.add_argument("secret_key", type=str, help="Secret Key", required=True)
+    parser.add_argument("access_key", type=str, help="Access Key", required=True)
+    parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations",
+                        default="https://s3.seagate.com")
+    return parser.parse_args()
+
+
 def launch_process(process, process_type, test_id):
     """
     This method is intended to Start the process and add PID to dictionary.
@@ -80,7 +90,6 @@ def launch_process(process, process_type, test_id):
     new_proc_data['type'] = process_type
     new_proc_data['start_time'] = datetime.now()
     process_states[pid] = new_proc_data
-
 
 
 def update_process_termination(return_status):
@@ -163,13 +172,14 @@ def periodic_hc():
     launch_process(process, 'health_check', None)
 
 
-def main():
-    # Retrieve output(dict) from yaml parser
-    access = "AKIAwfeFB7yMQzeupWaH962v1w"
-    secret = "4sC3YTdgw2Ij3Ck2hUSc/ad/O9o21IavMNH4M4ZO"
-    endpoint = "https://s3.seagate.com"
-    seed = '111'
+def main(opts):
+    access = opts.access_key
+    secret = opts.secret_key
+    endpoint = opts.end_point
+    seed = opts.seed
+    log.info("Seed Used : %s", seed)
 
+    # Retrieve output(dict) from yaml parser
     test_input = {
         'test_1': {'tool': 's3bench', 'TEST_ID': 'TEST-1111', 'start_range': 0, 'end_range': 100000,
                    'result_duration': '01h00m00s', 'sessions_per_node': 1,
@@ -231,4 +241,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    opts = parse_args()
+    main(opts)
