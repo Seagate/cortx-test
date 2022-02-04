@@ -82,6 +82,7 @@ def launch_process(process, process_type, test_id):
     process_states[pid] = new_proc_data
 
 
+
 def update_process_termination(return_status):
     """
     Update the required structures with return status from process.
@@ -179,10 +180,10 @@ def main():
     for key, value in test_input.items():
         process_type = value['tool'].lower()
         if process_type == 's3bench':
-            process = Process(target=run_s3bench, args=[access, secret, endpoint, value['TEST_ID'],
+            process = Process(target=run_s3bench, args=(access, secret, endpoint, value['TEST_ID'],
                                                         value['sessions_per_node'], 100,
                                                         value['start_range'], value['end_range'],
-                                                        seed, '60s'])
+                                                        seed, '60s'))
         elif process_type == 'warp':
             process = Process(target=run_warp)
         else:
