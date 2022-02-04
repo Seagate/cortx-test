@@ -177,7 +177,6 @@ class AbsHost:
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)
-        sys.stderr.flush()
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()

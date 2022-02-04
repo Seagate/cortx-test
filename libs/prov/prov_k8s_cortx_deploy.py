@@ -42,6 +42,7 @@ from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
@@ -248,7 +249,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
-    @staticmethod
+    @stapathticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
         """
         Validate cluster status
