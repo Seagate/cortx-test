@@ -19,13 +19,39 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import sys
 import logging
+from logging.handlers import RotatingFileHandler
 
 
 class StreamToLogger(object):
-    def __init__(self, logger, log_level=logging.INFO):
-        self.logger = logger
+    def __init__(self, file_name, log_level=logging.DEBUG):
+        self.file_name = file_name
         self.log_level = log_level
-        self.formatter = logging.Formatter('[%(asctime)s] [%(threadName)-6s] [%(levelname)-6s] '
-                                           '[%(filename)s: %(lineno)d]: %(message)s')
+        self.formatter = '[%(asctime)s] [%(threadName)-6s] [%(levelname)-6s] ' \
+                         '[%(filename)s: %(lineno)d]: %(message)s'
+        self.set_stream_logger()
+        self.set_filehandler_logger()
+
+    def set_stream_logger(self):
+        """
+        Add a stream handler for the logging module. default, this logs all messages to ``stdout``.
+        """
+        logger = logging.getLogger(__name__)
+        logger.setLevel(self.log_level)
+        handler = logging.StreamHandler()
+        handler.setLevel(self.log_level)
+        formatter = logging.Formatter(self.formatter)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    def set_filehandler_logger(self):
+        """
+        Add a file handler for the logging module. this logs all messages to ``file_name``.
+        """
+        logger = logging.getLogger(__name__)
+        logger.setLevel(self.log_level)
+        handler = RotatingFileHandler(self.file_name, maxBytes=5000000, backupCount=5)
+        handler.setLevel(self.log_level)
+        formatter = logging.Formatter(self.formatter)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
