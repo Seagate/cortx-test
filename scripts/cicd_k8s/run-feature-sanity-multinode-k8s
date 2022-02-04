@@ -7,7 +7,6 @@ pipeline {
     }
     environment {
 		Target_Node = 'multi-node-' + "${"${M_NODE}".split("\\.")[0]}"
-		WORK_SPACE = "/root/workspace/${JOB_BASE_NAME}"
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -26,7 +25,6 @@ export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
-export WORK_SPACE="${WORK_SPACE}"
 deactivate
 '''
 			}
@@ -46,8 +44,7 @@ deactivate
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
 export Target_Node="${Target_Node}"
-export WORK_SPACE="${WORK_SPACE}"
-sh scripts/cicd_k8s/run_lc_tests.sh ${Target_Node} ${WORK_SPACE}
+sh scripts/cicd_k8s/run_feature_tests.sh ${Target_Node}
 deactivate
 '''
 			}
