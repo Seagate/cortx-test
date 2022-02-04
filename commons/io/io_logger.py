@@ -20,15 +20,18 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import os
+import gzip
+import shutil
+import datetime
 import logging
 from os import path
-from logging.handlers import RotatingFileHandler
+from logging import handlers
 
 
 class StreamToLogger(object):
-    def __init__(self, file_path, log_level=logging.DEBUG):
+    def __init__(self, file_path, logger):
         self.file_path = file_path
-        self.log_level = log_level
+        self.logger = logger
         self.formatter = '[%(asctime)s] [%(threadName)-6s] [%(levelname)-6s] ' \
                          '[%(filename)s: %(lineno)d]: %(message)s'
         self.make_logdir()
@@ -45,22 +48,46 @@ class StreamToLogger(object):
         """
         Add a stream handler for the logging module. default, this logs all messages to ``stdout``.
         """
-        logger = logging.getLogger(__name__)
-        logger.setLevel(self.log_level)
         handler = logging.StreamHandler()
-        handler.setLevel(self.log_level)
         formatter = logging.Formatter(self.formatter)
         handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        self.logger.addHandler(handler)
 
     def set_filehandler_logger(self):
-        """
-        Add a file handler for the logging module. this logs all messages to ``file_name``.
-        """
-        logger = logging.getLogger(__name__)
-        logger.setLevel(self.log_level)
-        handler = RotatingFileHandler(self.file_path, maxBytes=10485760, backupCount=5)
-        handler.setLevel(self.log_level)
+        """Add a file handler for the logging module. this logs all messages to ``file_name``."""
+        handler = CorIORotatingFileHandler(self.file_path, maxbyte=1073741824, backupcount=5)
         formatter = logging.Formatter(self.formatter)
         handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        self.logger.addHandler(handler)
+
+
+class CorIORotatingFileHandler(handlers.RotatingFileHandler):
+    """
+    Handler overriding the existing RotatingFileHandler for switching corio log files
+    when the current file reaches a certain size default is 1GB.
+    """
+
+    def __init__(self, filename, maxbyte, backupcount):
+        """
+        Initialization for cortx rotating file handler
+        """
+        super().__init__(filename=filename, maxBytes=maxbyte, backupCount=backupcount)
+
+    def rotation_filename(self, name):
+        """
+        Method to form log file name for rotation internally called by rotation_filename() method
+        :param name: name of the base file
+        :return: cortx rotated log file name e.g., io_driver-YYYY-MM-DD-1.gz
+        """
+        return "{}-{}-{}.gz".format(name, str(datetime.date.today()), name.split('.')[-1])
+
+    def rotate(self, source, dest):
+        """
+        Method to compress and rotate the current log when size limit is reached.
+        :param source: current log file path
+        :param dest: destination path for rotated file
+        """
+        with open(source, "rb") as sf:
+            with gzip.open(dest, "wb", 9) as df:
+                shutil.copyfileobj(sf, df)
+        os.remove(source)
