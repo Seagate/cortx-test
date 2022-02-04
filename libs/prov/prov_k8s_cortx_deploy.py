@@ -249,7 +249,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
-    @stapathticmethod
+    @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
         """
         Validate cluster status
