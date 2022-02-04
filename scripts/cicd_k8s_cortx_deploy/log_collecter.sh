@@ -27,6 +27,7 @@
   mv_cmd2="mv $3/support_bundle/*.tar $LOG_PATH"
   mv_cmd3="mv $3/crash_files/*.gz $LOG_PATH"
   mv_csv="cp $3/log/latest/*.csv $LOG_PATH"
+  mv_log="mv $3/log/latest/deployment.log $LOG_PATH"
   export_cmd="export LOG_PATH=$LOG_PATH"
   if [ -d $dir_path ]
   then
@@ -52,6 +53,8 @@
       eval "$mv_cmd"
       eval "$mv_cmd2"
       eval "$mv_cmd3"
+      eval "$mv_log"
+      eval "$mv_csv"
       echo "INFO: Copied the logs: $LOG_PATH"
       eval "$export_cmd"
   else
@@ -61,6 +64,7 @@
       eval "$mv_cmd"
       eval "$mv_cmd2"
       eval "$mv_cmd3"
+      eval "$mv_log"
       eval "$mv_csv"
      echo "INFO: Copied the logs: $LOG_PATH"
      eval "$export_cmd"

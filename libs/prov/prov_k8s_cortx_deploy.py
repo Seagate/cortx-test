@@ -308,7 +308,7 @@ class ProvDeployK8sCortxLib:
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
-        log_file = 'deployment.log'
+        log_file = self.deploy_cfg['log_file']
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         LOGGER.debug("Local PATH %s", local_path)

@@ -137,6 +137,7 @@ k8s_cortx_deploy:
   new_file_path: "solution.yaml"
   deploy_file_path: "deploy-cortx-cloud.sh"
   report_file: "deployment_report.csv"
+  log_file: "deployment.log"
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
