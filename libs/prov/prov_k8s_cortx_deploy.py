@@ -260,10 +260,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Validate Cluster status")
         cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path)
         resp = node_obj.execute_cmd(cmd)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         if b"FAILED" in resp:
-            return False, resp
-        return True, resp
+            return False, resp.decode('utf-8')
+        return True, resp.decode('utf-8')
 
     def pull_cortx_image(self, worker_obj_list: list):
         """
@@ -1169,8 +1168,8 @@ class ProvDeployK8sCortxLib:
                                                    common_const.SERVER_POD_NAME_PREFIX)
         LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
                      data_pod_list, server_pod_list)
-        assert_utils.assert_not_equal(len(data_pod_list), 0)
-        assert_utils.assert_not_equal(len(server_pod_list), 0)
+        assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
+        assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
         end_time = start_time + 1800  # 30 mins timeout
         response = list()
