@@ -47,7 +47,7 @@ deactivate
 			    sh label: '', script: '''source venv/bin/activate
 export Target_Node="${Target_Node}"
 export WORK_SPACE="${WORK_SPACE}"
-sh comptests/prov/run_lc_tests.sh ${Target_Node}
+sh comptests/prov/run_lc_tests.sh ${Target_Node} {WORK_SPACE}
 deactivate
 '''
 			}
