@@ -181,6 +181,7 @@ class AbsHost:
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
+            stdout.flush()
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
             LOGGER.debug("Error: %s", str(err))
