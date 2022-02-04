@@ -120,6 +120,7 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
+  clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
@@ -132,7 +133,6 @@ k8s_cortx_deploy:
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
-  git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   deploy_file_path: "deploy-cortx-cloud.sh"
