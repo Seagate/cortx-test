@@ -24,6 +24,8 @@
   cmd3="mkdir -p $LOG_PATH"
   mount_cmd="mount cftic2.pun.seagate.com:/cftshare_temp $dir_path"
   mv_cmd="mv $3/log/latest/TEST-N* $LOG_PATH"
+  mv_cmd2="mv $3/support_bundle/*.tar $LOG_PATH"
+  mv_cmd3="mv $3/crash_files/*.gz $LOG_PATH"
   mv_csv="cp $3/log/latest/*.csv $LOG_PATH"
   export_cmd="export LOG_PATH=$LOG_PATH"
   if [ -d $dir_path ]
@@ -48,6 +50,8 @@
       echo "INFO: Directory exists"
       echo "INFO: Copying logs to nfs share"
       eval "$mv_cmd"
+      eval "$mv_cmd2"
+      eval "$mv_cmd3"
       echo "INFO: Copied the logs: $LOG_PATH"
       eval "$export_cmd"
   else
@@ -55,6 +59,8 @@
       echo "INFO: Creating dir"
       eval "$cmd3"
       eval "$mv_cmd"
+      eval "$mv_cmd2"
+      eval "$mv_cmd3"
       eval "$mv_csv"
      echo "INFO: Copied the logs: $LOG_PATH"
      eval "$export_cmd"

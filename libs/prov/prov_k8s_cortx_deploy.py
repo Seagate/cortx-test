@@ -243,9 +243,8 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = "cd {}; {} | tee deployment.log".format(remote_code_path,
-                                                      self.deploy_cfg["deploy_cluster"])
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        resp = node_obj.execute_cmd(common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path),
+                                    read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
@@ -258,11 +257,10 @@ class ProvDeployK8sCortxLib:
         return : Boolean
         """
         LOGGER.info("Validate Cluster status")
-        cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
-                                                          common_cmd.CLSTR_STATUS_CMD)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path)
+        resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        if "FAILED" in resp:
+        if b"FAILED" in resp:
             return False, resp
         return True, resp
 
@@ -699,8 +697,7 @@ class ProvDeployK8sCortxLib:
         param: master node obj list
         param: worker node obj list
         """
-        destroy_cmd = "cd {} && {} --force".format(custom_repo_path,
-                                                   self.deploy_cfg["destroy_cluster"])
+        destroy_cmd = common_cmd.DESTROY_CLUSTER_CMD.format(custom_repo_path)
         list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
         list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
         try:
@@ -1127,7 +1124,7 @@ class ProvDeployK8sCortxLib:
         end_time = start_time + 1800  # 30 mins timeout
         response = list()
         while int(time.time()) < end_time:
-            pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
+            pod_name = master_node_obj.get_pod_nam(epod_prefix=pod_prefix)
             assert_utils.assert_true(pod_name[0], pod_name[1])
             resp = self.get_hctl_status(master_node_obj, pod_name[1])
             if resp[0]:
@@ -1150,12 +1147,16 @@ class ProvDeployK8sCortxLib:
         param: nodeObj of Master node.
         returns: dict of all pods with service status True/False and time taken
         """
+        resp = self.check_pods_status(master_node_obj)
+        assert_utils.assert_true(resp, "All Pods are not in Running state")
         data_pod_list = LogicalNode.get_all_pods(master_node_obj,
                                                  common_const.POD_NAME_PREFIX)
         server_pod_list = LogicalNode.get_all_pods(master_node_obj,
                                                    common_const.SERVER_POD_NAME_PREFIX)
         LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
                      data_pod_list, server_pod_list)
+        assert_utils.assert_not_equal(len(data_pod_list), 0)
+        assert_utils.assert_not_equal(len(server_pod_list), 0)
         start_time = int(time.time())
         end_time = start_time + 1800  # 30 mins timeout
         response = list()
@@ -1173,8 +1174,9 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
                 response.append(status)
                 response.append(time_taken)
-                break
+                return response
         LOGGER.info("hctl_status = %s", hctl_status)
+        response.extend([False, 'Timeout'])
         return response
 
     # pylint: disable=broad-except
