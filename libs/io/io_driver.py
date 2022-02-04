@@ -31,21 +31,22 @@ import os
 import sched
 import sys
 import time
-import yaml
 from datetime import datetime, timedelta
 from multiprocessing import Process, Manager
 
+import yaml
+
 from tools.s3bench import S3bench
 
-io_driver_config = "config/io/io_driver_config.yaml"
-io_driver_log = "io_driver.log"
+IO_DRIVER_CFG = "config/io/io_driver_config.yaml"
+DRIVER_LOG = "io_driver.log"
 
-with open(io_driver_config) as cfg:
+with open(IO_DRIVER_CFG) as cfg:
     conf = yaml.safe_load(cfg)
 
 log = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh = logging.FileHandler(io_driver_log)
+fh = logging.FileHandler(DRIVER_LOG)
 ch = logging.StreamHandler()
 
 log.setLevel(logging.DEBUG)
@@ -73,7 +74,7 @@ def launch_process(process, process_type, test_id):
     """
     process.start()
     pid = process.pid
-    log.info(f"Started Process PID :{pid} TEST_ID :{test_id} TYPE: {process_type}")
+    log.info("Started Process PID: %s TEST_ID: %s TYPE: %s", pid, test_id, process_type)
     new_proc_data = manager.dict()
     new_proc_data['state'] = 'started'
     new_proc_data['type'] = process_type
@@ -84,16 +85,17 @@ def launch_process(process, process_type, test_id):
 def update_process_termination(return_status):
     """
     Update the required structures with return status from process.
-    :param return_status: Return status from the executed process
+    param return_status: Return status from the executed process
     """
     pid = os.getpid()
     log.info("Process terminated : %s Response: %s", pid, return_status)
     process_states[pid]['state'] = 'done'
     process_states[pid]['ret_status'] = return_status[0]
     process_states[pid]['response'] = return_status[1]
-    log.info(f"Proc state post termination : {pid} {process_states[pid]['state']}")
+    log.info("Proc state post termination : %s %s", pid, process_states[pid]['state'])
 
 
+# pylint: disable=too-many-arguments
 def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low, size_high, seed,
                 duration):
     """
@@ -184,7 +186,7 @@ def main():
         elif process_type == 'warp':
             process = Process(target=run_warp)
         else:
-            log.error(f"Error! Tool type not defined : {process_type}")
+            log.error("Error! Tool type not defined: %s", process_type)
             sys.exit(1)
         sched_obj.enter(value['time_delta'].seconds, 1, launch_process,
                         (process, process_type, key))
@@ -208,7 +210,7 @@ def main():
 
         for key, value in process_states.items():
             if value['state'] == 'done':
-                if value['ret_status'] == False:
+                if not value['ret_status']:
                     terminate_run = True
                     error_proc = key
                     error_proc_data = value
@@ -217,8 +219,8 @@ def main():
 
         # Terminate if error observed in any process
         if terminate_run:
-            log.error(f"Error observed in process {error_proc} {error_proc_data}")
-            log.error(f"Terminating schedular..")
+            log.error("Error observed in process %s %s", error_proc, error_proc_data)
+            log.error("Terminating schedular..")
             sys.exit(0)
 
         # Terminate if no process scheduled or running.
