@@ -18,7 +18,7 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
-"""IO Configs are initialized here."""
+"""Yaml Parser for IO stability"""
 
 import datetime
 import yaml
@@ -45,26 +45,25 @@ def convert_to_bytes(size):
     """
     kb = 1000
     kib = 1024
-    sz = str(size[-2:]).lower()
-    if sz in ['kb', 'mb', 'gb', 'tb']:
-        if sz == "kb":
-            return int(size[:-2]) * kb
-        elif sz == "mb":
-            return int(size[:-2]) * kb * kb
-        elif sz == "gb":
-            return int(size[:-2]) * kb * kb * kb
-        elif sz == "tb":
-            return int(size[:-2]) * kb * kb * kb * kb
-    else:
-        sz = str(size[-3:]).lower()
-        if sz == "kib":
-            return int(size[:-3]) * kib
-        elif sz == "mib":
-            return int(size[:-3]) * kib * kib
-        elif sz == "gib":
-            return int(size[:-3]) * kib * kib * kib
-        elif sz == "tib":
-            return int(size[:-3]) * kib * kib * kib * kib
+    sz = size.lower()
+    if 'bytes' in sz or 'byte' in sz:
+        return int(sz.split('byte')[0])
+    elif 'kb' in sz:
+        return int(sz.split('kb')[0]) * kb
+    elif 'kib' in sz:
+        return int(sz.split('kib')[0]) * kib
+    elif 'mb' in sz:
+        return int(sz.split('mb')[0]) * kb * kb
+    elif 'mib' in sz:
+        return int(sz.split('mib')[0]) * kib * kib
+    elif 'gb' in sz:
+        return int(sz.split('gb')[0]) * kb * kb * kb
+    elif 'gib' in sz:
+        return int(sz.split('gib')[0]) * kib * kib * kib
+    elif 'tb' in sz:
+        return int(sz.split('tb')[0]) * kb * kb * kb * kb
+    elif 'tib' in sz:
+        return int(sz.split('tib')[0]) * kib * kib * kib * kib
 
 
 def convert_to_time_delta(time):
