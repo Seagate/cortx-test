@@ -28,7 +28,7 @@ from commons import const
 NWORKERS = 32
 
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will
-# run in parallel.
+i# run in parallel.
 NGREENLETS = 32
 
 # SB contansts
@@ -45,6 +45,10 @@ PROD_TYPE_NODE = "node"
 POD_NAME_PREFIX = "cortx-data"
 SERVER_POD_NAME_PREFIX = "cortx-server"
 HA_POD_NAME_PREFIX = "cortx-ha"
+HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
+HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
+HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
+HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 HAX_CONTAINER_NAME = "cortx-hax"
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
