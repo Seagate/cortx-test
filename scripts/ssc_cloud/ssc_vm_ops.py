@@ -16,21 +16,21 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-import os
-import csv
-import logging
-import requests
 import argparse
+import csv
 import json
-import sys
-import time
+import logging
+import os
 import random
 import string
+import sys
+import time
 
-from requests.packages import urllib3
+import requests
 from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from requests.auth import HTTPBasicAuth
+from requests.packages import urllib3
+from urllib3.util.retry import Retry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def get_args():
     # Add the arguments
     parser.add_argument('--action', '-a',
                         choices=['create_vm_snap', 'create_vm', 'list_vm_snaps', 'revert_vm_snap',
-                                 'retire_vm', 'get_vm_info', 'get_vms',
+                                 'retire_vm', 'get_vm_info', 'get_vms', 'refresh_vm',
                                  'power_on', 'power_off'], required=True,
                         help="Perform the Operation")
     parser.add_argument('--token', '-t', help="Token for API Authentication")
@@ -129,6 +129,7 @@ class VMOperations:
     power_off_vm(): Stop the operation for given VM
     power_on_vm(): Start the operation for given VM
     get_vms() : Download all available VMs to csv
+    refresh_vm_state(): Refresh the given VM state
     """
 
     def __init__(self, parameters):
@@ -405,10 +406,13 @@ class VMOperations:
             _res_stop = self.check_status(_response)
         return _response
 
-    def refresh_vm_state(self, vm_id):
+    def refresh_vm_state(self, vm_id=None):
         """
         Refresh vm state
         """
+        _vm_info = self.get_vm_info()
+        _vm_id = _vm_info['resources'][0]['id']
+        vm_id = vm_id if vm_id else _vm_id
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
         self.payload = {
@@ -613,6 +617,9 @@ def main():
     elif args.action == "power_off":
         if args.host:
             result = vm_object.power_off_vm()
+    elif args.action == "refresh_vm":
+        if args.host:
+            result = vm_object.refresh_vm_state()
 
     if result:
         print("VM operation %s request has been polled successfully....." % args.action)
