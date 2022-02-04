@@ -26,6 +26,7 @@ import re
 import shutil
 import socket
 import stat
+import sys
 import time
 from typing import Any
 from typing import List
@@ -176,12 +177,12 @@ class AbsHost:
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)
+        sys.stderr.flush()
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
-            stdout.flush()
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
             LOGGER.debug("Error: %s", str(err))
