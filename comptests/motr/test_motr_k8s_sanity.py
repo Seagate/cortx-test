@@ -117,7 +117,6 @@ class TestExecuteK8Sanity:
 
     @pytest.mark.tags("TEST-23036")
     @pytest.mark.motr_sanity
-    @CTFailOn(error_handler)
     def test_m0cp_m0cat_workload(self):
         """
         Verify different size object m0cp m0cat operation
