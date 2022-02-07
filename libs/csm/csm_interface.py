@@ -1,4 +1,4 @@
-
+"""This module implements CSM interface for CLI, GUI , REST"""
 
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_alert import SystemAlerts
