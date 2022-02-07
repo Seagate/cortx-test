@@ -23,20 +23,20 @@ HA common utility methods
 """
 import logging
 import os
+import random
+import sys
 import time
 from multiprocessing import Process
-import sys
-import random
 from time import perf_counter_ns
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
-from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
-from commons.utils import system_utils
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import system_utils
+from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -46,7 +46,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from commons.utils.system_utils import run_local_cmd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,6 +92,10 @@ class HAK8s:
             resp = system_utils.check_ping(host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
+                LOGGER.info("Refreshing %s", vm_name)
+                system_utils.execute_cmd(
+                    common_cmd.CMD_VM_REFRESH.format(
+                        self.vm_username, self.vm_password, vm_name))
                 vm_info = system_utils.execute_cmd(
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
@@ -726,9 +729,10 @@ class HAK8s:
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
-    def check_cluster_status(self, pod_obj):
+    def check_cluster_status(self, pod_obj, pod_list=None):
         """
         :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the hctl status
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
@@ -736,21 +740,20 @@ class HAK8s:
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
             if "FAILED" in line:
-                LOGGER.info("Response for K8s cluster status:")
-                LOGGER.debug(line)
-                return False, resp
-        resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        pod_name = resp[1]
-        res = pod_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
-            decode=True)
-        for line in res.split("\n"):
-            if "failed" in line or "offline" in line or "unknown" in line:
-                LOGGER.info("Response for cortx cluster status: %s", res)
-                return False, res
-
-        return True, "K8s and cortx both cluster up."
+                LOGGER.error("Response for K8s cluster status: %s", resp)
+                return False, "K8S cluster status has Failures"
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        for pod_name in pod_list:
+            res = pod_obj.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
+                               f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
+            for line in res.split("\n"):
+                if "failed" in line or "offline" in line or "unknown" in line:
+                    LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
+                    return False, f"Cortx HCTL status has Failures in pod {pod_name}"
+        return True, "K8s and cortx both cluster up and clean."
 
     @staticmethod
     def cal_compare_checksum(file_list, compare=False):
@@ -870,6 +873,7 @@ class HAK8s:
         :rtype: Boolean, list
         """
         log_list = []
+        resp = False
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
             resp = s3bench.check_log_file_error(file_path=log)
@@ -988,7 +992,7 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                        time.sleep(HA_CFG["common_params"]["20sec_delay"])
                         bucket_list = s3_test_obj.bucket_list()[1]
 
             LOGGER.info("Deleted %s number of buckets.", count)
@@ -1066,7 +1070,7 @@ class HAK8s:
                 LOGGER.info("Make %s interface down for %s node", node_iface, host)
                 new_worker_obj.execute_cmd(
                     cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
-                resp = sysutils.check_ping(host=node_ip)
+                resp = system_utils.check_ping(host=node_ip)
                 if not resp:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
