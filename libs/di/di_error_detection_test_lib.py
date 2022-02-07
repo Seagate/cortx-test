@@ -30,7 +30,6 @@ from config import CMN_CFG
 from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -105,14 +104,15 @@ class DIErrorDetection:
         return self.validate_valid_config(disabled_cfg=True)
 
     # pylint: disable-msg=too-many-branches
-    def validate_valid_config(self, default_cfg: bool = False,
-                            enabled_cfg: bool = False, disabled_cfg: bool = False):
+    def validate_valid_config(self, default_cfg: bool = False, enabled_cfg: bool = False,
+                              disabled_cfg: bool = False):
         """
         This function needs optimization.
         :param: default_cfg Boolean
         :param: enabled_cfg Boolean
         :param: disabled_cfg Boolean
         :return:tuple
+        # TODO Needs logic change.
         """
         skip_mark = True
         resp = self.di_control.verify_s3config_flag_all_nodes(section=self.config_section,
@@ -152,7 +152,7 @@ class DIErrorDetection:
 
     def get_file_and_csum(self, size, data_folder_prefix):
         """
-        this function will create a corrupted file
+        this function will create a file
         :param size: size of file
         :param data_folder_prefix: data folder prefix
         :return location of file

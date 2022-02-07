@@ -60,7 +60,7 @@ def create_db_entry(m_node, username: str, password: str,
     node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     mgnt_resp = node_obj.execute_cmd(com_cmds.K8S_GET_MGNT, read_lines=True)
     for line in mgnt_resp:
-        if "cortx-control-pod" in line:
+        if "cortx-control" in line:
             mgmt_vip = line.split()[6]
     print("Cortx control pod running on: ", mgmt_vip)
     output_node = node_obj.execute_cmd(com_cmds.CMD_GET_NODE, read_lines=True)

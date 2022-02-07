@@ -207,11 +207,17 @@ class S3FailureInjection(EnableFailureInjection):
                                                                               "cortx-s3-0")
                 s3_instance = len(s3_containers)
                 for each in range(0, s3_instance):
+                    retries = 2
                     s3_port = 28070 + each + 1
                     cmd = f'curl -X PUT -H "x-seagate-faultinjection: ' \
                           f'{fault_op},always,{fault_type},0,0" {pod_ip}:{s3_port}'
-                    resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
+                    while retries > 0:
+                        resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
+                        LOGGER.debug("http server resp : %s", resp)
+                        if not resp:
+                            break
+                        retries -= 1
+
             return True
         except IOError as ex:
             LOGGER.error("Exception: %s", ex)
@@ -238,7 +244,7 @@ class S3FailureInjection(EnableFailureInjection):
                 self.master_node_list[0].copy_file_to_remote(local_path=local_path,
                                                              remote_path=remote_path)
                 resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                LOGGER.debug("Resp: %s", resp)
+                LOGGER.debug("Set S3 Srv with Fault Injection Resp: %s", resp)
                 time.sleep(30)
                 return True, resp
             except IOError as ex:
@@ -259,6 +265,24 @@ class S3FailureInjection(EnableFailureInjection):
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
             status = self._set_fault_k8s(fault_type=fault_type, fault_operation=True)
+        return status
+
+    def disable_data_block_corruption(self) -> bool:
+        """
+        disable data block corruption
+        output: Bool
+        """
+        fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
+        status = False
+        if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+            status, stout = self._set_fault(fault_type=fault_type, fault_operation=False,
+                                            use_script=False)
+            LOGGER.debug("status: %s  stout: %s", status, stout)
+            all(status)
+        elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+            status = self._set_fault_k8s(fault_type=fault_type, fault_operation=False)
         return status
 
     def enable_data_block_corruption_using_node_script(self):

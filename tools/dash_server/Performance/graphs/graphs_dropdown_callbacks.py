@@ -579,6 +579,7 @@ def update_buckets_dropdown(
         Output("graphs_branch_compare_dropdown", "style"),
         Output("graphs_build_compare_dropdown", "style"),
         Output("graphs_nodes_compare_dropdown", "style"),
+        Output("graphs_clients_compare_dropdown", "style"),
         Output("graphs_pfull_compare_dropdown", "style"),
         Output("graphs_iteration_compare_dropdown", "style"),
         Output("graphs_custom_compare_dropdown", "style"),
@@ -589,11 +590,12 @@ def update_buckets_dropdown(
 )
 def update_compare_dropdown_styles(flag):
     """shows 2nd set of dropdowns of comparison only when button is toggled"""
-    return_val = [{"display": "None"}] * 9
+    return_val = [{"display": "None"}] * 10
     if flag:
         return_val = [
             style_dropdown_large,
             style_dropdown_small_2,
+            style_dropdown_medium,
             style_dropdown_medium,
             style_dropdown_medium,
             style_dropdown_small_2,

@@ -23,11 +23,13 @@ from __future__ import absolute_import
 
 import os
 import logging
+import shutil
 import time
 from multiprocessing import Process
 import pytest
 
 from commons import constants
+from commons import commands as comm
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -91,7 +93,7 @@ class TestR2SupportBundle:
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
         return True
-     
+
     def size_verify(self,component_dir_name):
         """
         This function which is used to verify component directory has specific size limit logs
@@ -217,9 +219,14 @@ class TestR2SupportBundle:
         sb_identifier = system_utils.random_string_generator(10)
         msg = "TEST-32752"
         self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
-        generate_sb_process = Process(
-            target=sb.generate_sb_lc,
-            args=(dest_dir, sb_identifier, None, msg))
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+
+        output = self.node_obj.execute_cmd(cmd=comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
+                                      read_lines=True)
+        container_list = output[0].split()
+
+        generate_sb_process = Process(target=sb.generate_sb_lc,
+            args=(dest_dir, sb_identifier, pod_list[0], msg, container_list[0]))
 
         generate_sb_process.start()
         time.sleep(2)
@@ -328,6 +335,30 @@ class TestR2SupportBundle:
                             f"{file_size}MB for file:{line[-1]}")
         self.LOGGER.info("Successfully validated CSM log files size, "
                          "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31252")
+    def test_31252(self):
+        """
+        Validate CSM rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking CSM rotating log files are as per frequency configured")
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
+            if "No such file" in resp:
+                assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
+                                                f"does not exist on pod: {pod} resp: {resp}")
+            lines = resp.splitlines()
+            self.LOGGER.info("CSM log files on path %s: %s", constants.LOG_PATH_CSM, resp)
+            if constants.MAX_NO_OF_ROTATED_LOG_FILES['CSM'] < (len(lines) - 1):
+                assert_utils.assert_true(False, f"Max rotating CSM log files "
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['CSM']} "
+                                        f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated CSM rotating log files are as per "
+                         "frequency configured for all pods")
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
@@ -441,6 +472,35 @@ class TestR2SupportBundle:
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31255")
+    def test_31255(self):
+        """
+        Validate Utils rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking Utils rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_UTILS:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
+                if constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils'] < (len(lines) - 1):
+                    assert_utils.assert_true(False, f"Max rotating Utils log files "
+                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']} "
+                                            f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated Utils rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31248")
     def test_31248(self):
         """
@@ -493,3 +553,316 @@ class TestR2SupportBundle:
                                 f"and actual file size is: {file_size}MB for file:{line[-1]}")
         self.LOGGER.info("Successfully validated HARE log files size, "
                              "all files are within max limit")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31254")
+    def test_31254(self):
+        """
+        Validate HARE rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Checking HARE rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_HARE:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                if "No such file" in resp:
+                    assert_utils.assert_true(False, f"Log path {log_path} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                lines = resp.splitlines()
+                self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
+                if constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare'] < (len(lines) - 1):
+                    assert_utils.assert_true(False, f"Max rotating HARE log files "
+                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} "
+                                            f"and actual no of files are: {len(lines) - 1}")
+        self.LOGGER.info("Successfully validated HARE rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31250")
+    def test_31250(self):
+        """
+        Validate Motr log path exists
+        """
+        self.LOGGER.info("Checking Motr log file paths")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s", log_path_m0d, resp)
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr log file paths for all pods")
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31262")
+    def test_31262(self):
+        """
+        Validate Motr log file size
+        """
+        self.LOGGER.info("Checking Motr log file size")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s",
+                                         log_path_m0d, resp)
+                        for counter in range(1, len(lines_m0d)):
+                            line = lines_m0d[counter].split()
+                            file_size = int(line[4][:-2])
+                            if file_size > constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]:
+                                assert_utils.assert_true(False, f"Motr trace max file size is: "
+                                    f"{constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]}MB "
+                                    f"and actual file size: {file_size}MB for file:{line[-1]}")
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+                            act_files = resp.splitlines()
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
+                            for ctr in range(1, len(act_files)):
+                                line = act_files[ctr].split()
+                                file_size = int(line[4][:-2])
+                                if file_size > constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]:
+                                    assert_utils.assert_true(False, f"Motr addb max file size is: "
+                                        f"{constants.LOG_PATH_FILE_SIZE_MB_MOTR[file_path]}MB "
+                                        f"and actual file size: {file_size}MB for file:{line[-1]}")
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr log file size for all pods")
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.log_rotation
+    @pytest.mark.tags("TEST-31256")
+    def test_31256(self):
+        """
+        Validate Motr rotating log files are as per frequency configured
+        """
+        self.LOGGER.info("Motr rotating log files are as per frequency configured")
+
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+        for pod in pod_list:
+            self.LOGGER.info("Checking log path of %s pod", pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
+            for file_path in constants.LOG_PATH_FILE_SIZE_MB_MOTR:
+                log_path = file_path.format(machine_id)
+                self.LOGGER.info("log path: %s", log_path)
+                resp = sb.log_file_size_on_path(pod, log_path)
+                lines = resp.splitlines()
+                self.LOGGER.info("Motr log files on path %s: %s", log_path, resp)
+                for count in range(1, len(lines)):
+                    line = lines[count].split()
+                    log_path_m0d = log_path + line[-1] + "/"
+                    resp = sb.log_file_size_on_path(pod, log_path_m0d)
+                    lines_m0d = resp.splitlines()
+                    if "trace" in log_path_m0d:
+                        if "No such file" in resp:
+                            assert_utils.assert_true(False, f"Log path {log_path_m0d} "
+                                                    f"does not exist on pod: {pod} resp: {resp}")
+                        self.LOGGER.info("Motr trace log files on path %s: %s",
+                                         log_path_m0d, resp)
+                        if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(lines_m0d) - 1):
+                            assert_utils.assert_true(False, f"Max rotating trace log files "
+                                    f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
+                                    f"and actual no of files are: {len(lines_m0d) - 1}")
+                    elif "addb" in log_path_m0d:
+                        for counter in range(1, len(lines_m0d)):
+                            addb_stobs_dir = lines_m0d[counter].split()
+                            log_path_addb_stobs = log_path_m0d + addb_stobs_dir[-1] + "/o"
+                            resp = sb.log_file_size_on_path(pod, log_path_addb_stobs)
+                            act_files = resp.splitlines()
+                            if "No such file" in resp:
+                                assert_utils.assert_true(False, f"Log path {log_path_addb_stobs}"
+                                                    f"does not exist on pod: {pod} resp:{resp}")
+                            self.LOGGER.info("Motr addb log files on path %s: %s",
+                                             log_path_addb_stobs, resp)
+                            if constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr'] < (len(act_files)-1):
+                                assert_utils.assert_true(False, f"Max rotating addb log files "
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Motr']} "
+                                        f"and actual no of files are: {len(lines_m0d) - 1}")
+                    else:
+                        assert_utils.assert_true(False, f"No addb or trace directory found "
+                                                        f"on path: {log_path_m0d}")
+
+        self.LOGGER.info("Successfully validated Motr rotating log files are as per "
+                         "frequency configured for all pods")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.lc
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-35001")
+    def test_35001(self):
+        """
+        Validate support bundle contains component logs
+        """
+        self.LOGGER.info("STARTED: Test to validate support bundle contains component logs")
+
+        self.LOGGER.info("Step 1: Generate support bundle")
+        #pod_to_check = [constants.POD_NAME_PREFIX, constants.SERVER_POD_NAME_PREFIX]
+        dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
+
+        for pod in constants.SB_POD_PREFIX_AND_COMPONENT_LIST:
+            pod_list = self.node_obj.get_all_pods(pod_prefix=pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
+
+            cmd_get_container_of_pod = comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0])
+            output = self.node_obj.execute_cmd(cmd=cmd_get_container_of_pod, read_lines=True)
+            container_list = output[0].split()
+            container_name = container_list[0]
+
+            self.LOGGER.info("Generating support bundle for pod: %s", pod_list[0])
+            sb_identifier = system_utils.random_string_generator(10)
+            self.LOGGER.info("Support Bundle identifier of : %s", sb_identifier)
+
+            resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0],
+                                     "TEST-35001", container_name)
+            self.LOGGER.info("response of support bundle generation: %s", resp)
+            sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
+
+            self.LOGGER.info("Step 2: Creating local directory")
+            if os.path.exists(sb_local_path):
+                self.LOGGER.info("Removing existing directory %s", sb_local_path)
+                shutil.rmtree(sb_local_path)
+            os.mkdir(sb_local_path)
+            self.LOGGER.info("sb copy path: %s", sb_local_path)
+
+            self.LOGGER.info("Step 3: Copy support bundle to local directory")
+            copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
+            sb_copy_path = "/root/support_bundle/"
+            copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod_list[0], copy_sb_from_path,
+                                        sb_copy_path, container_name)
+            self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
+
+            sb_copy_full_path = sb_copy_path + sb_identifier + "_" + machine_id + ".tar.gz"
+            sb_local_full_path = sb_local_path + "/" + sb_identifier +".tar.gz"
+            self.node_obj.copy_file_to_local(sb_copy_full_path, sb_local_full_path)
+
+            self.LOGGER.info("Step 4: Extract support bundle tar file")
+            tar_cmd = comm.CMD_TAR.format(sb_local_full_path, sb_local_path)
+            system_utils.run_local_cmd(cmd=tar_cmd)
+            comp_in_sb = os.listdir(sb_local_path + "/" + sb_identifier)
+
+            self.LOGGER.info("Step 5: Checking component log files in collected support bundle")
+            comp_list = constants.SB_POD_PREFIX_AND_COMPONENT_LIST[pod]
+            for comp in comp_list:
+                if comp == "csm":
+                    comp = sb_identifier + "_" + machine_id + "_" + comp
+
+                if comp in comp_in_sb:
+                    comp_dir_path = sb_local_path + "/" + sb_identifier + "/" + comp
+                    comp_tar_files = os.listdir(comp_dir_path)
+                    os.mkdir(comp_dir_path + "/" + comp)
+                    tar_cmd = comm.CMD_TAR.format(comp_dir_path + "/" +
+                                                  comp_tar_files[0], comp_dir_path + "/" + comp)
+                    system_utils.run_local_cmd(cmd=tar_cmd)
+                    comp_dir_path = comp_dir_path + "/" + comp
+
+                    if comp == "hare":
+                        hare_dir = os.listdir(comp_dir_path)
+                        unzip_hare_dir = comp_dir_path + "/" + hare_dir[0]
+                        resp = sb.file_with_prefix_exists_on_path(unzip_hare_dir +
+                                                    constants.SB_EXTRACTED_PATH + "hare/log/"
+                                                                  + machine_id, "hare")
+                        if resp:
+                            self.LOGGER.info("hare logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No hare log file "
+                                                            "found in support bundle")
+                    if comp == "motr":
+                        motr_dir = os.listdir(comp_dir_path)
+                        unzip_motr_dir = comp_dir_path + "/" + motr_dir[0]
+                        resp = sb.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
+                        if resp:
+                            self.LOGGER.info("motr logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No motr log file "
+                                                            "found in support bundle")
+                    if comp == "s3":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path +
+                                                    constants.SB_EXTRACTED_PATH + "s3/" +
+                                                                  machine_id, "s3server")
+                        if resp:
+                            self.LOGGER.info("s3server logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No s3server log file "
+                                                            "found in support bundle")
+                    if comp == "utils":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
+                        if resp:
+                            self.LOGGER.info("utils logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No utils log file "
+                                                            "found in support bundle")
+                    if comp == sb_identifier + "_" + machine_id + "_" + "csm":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/csm", "csm")
+                        if resp:
+                            self.LOGGER.info("csm logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No csm log file "
+                                                            "found in support bundle")
+                else:
+                    self.LOGGER.info("assert: %s", comp)
+                    assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
+
+        self.LOGGER.info("ENDED: Test to validate support bundle contains component logs")

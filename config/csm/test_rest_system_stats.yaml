@@ -107,6 +107,11 @@ test_4968:
   default_interval: 10
   error_msg: "403: Forbidden"
 
+
+csm_telemetry_auth_url:
+  csm_key: ["S3/iam/endpoints","S3/iam/host"]
+  csm_value: ["https://cortx-io-svc1:9443","cortx-io-svc1"]
+
 test_32663:
   metric_name: throughput_read
   mode : ['GET']
@@ -206,3 +211,4 @@ test_32673:
   threads : 2
   bucket : 1
   json_path : file_test_32673
+

@@ -346,10 +346,11 @@ class S3BackgroundIO:
         self.log_prefix = "parallel_io"
         self.parallel_ios = None
         assert_utils.assert_true(path_exists(s3bench.S3_BENCH_PATH),
-                                 f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+                                 f"S3bench tool is not installed: {s3bench.S3_BENCH_PATH}")
         try:
             self.bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
-        except CTException:
+        except CTException as error:
+            LOG.warning(error.message)
             self.bucket_exists = False
 
     @staticmethod
@@ -414,6 +415,7 @@ class S3BackgroundIO:
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             LOG.info("Created IO bucket: %s", self.io_bucket_name)
+            self.bucket_exists = True
         LOG.info("Check s3 bench tool installed.")
         self.parallel_ios = Process(
             target=self.s3_ios,

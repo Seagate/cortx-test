@@ -151,11 +151,16 @@ class RestS3user(RestTestLib):
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
             self.log.debug("Endpoint for s3 accounts is %s", endpoint)
-
             # Fetching api response
             response = self.restapi.rest_call(
                 "delete", endpoint=endpoint, headers=self.headers)
-
+            # As per Pranay's suggestion, adding retry/polling of 25's to delete s3 account.
+            end_time = time.time() + 25  # retry/polling for 25's
+            status = response.status_code != const.SUCCESS_STATUS or response.ok is not True
+            while status and time.time() <= end_time:
+                response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+                status = response.status_code != const.SUCCESS_STATUS or response.ok is not True
+                time.sleep(5)  # delay for next call.
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
@@ -215,7 +220,7 @@ class RestS3user(RestTestLib):
             # Validating user
             if user not in self.user_type:
                 self.log.error("Invalid user type ...")
-                return False
+                return False, None
 
             # Create s3account user
             response = self.create_s3_account(user_type=user)
@@ -223,31 +228,31 @@ class RestS3user(RestTestLib):
             # Handling specific scenarios
             if user != "valid":
                 self.log.debug("verify status code for user %s", user)
-                return response.status_code == expect_status_code
+                return response.status_code == expect_status_code, response
 
             # Checking status code
             self.log.debug("Response to be verified : ",
                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != expect_status_code:
                 self.log.debug("Response is not 200")
-                return False
+                return False, response
 
             # Checking presence of access key and secret key
             response = response.json()
             if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
                 self.log.debug("secret key and/or access key is not present")
-                return False
+                return False, response
 
             # Checking account name
             self.log.debug("verifying Newly created account data ...")
             if response[const.ACC_NAME] != self.recently_created_s3_account_user[const.ACC_NAME]:
                 self.log.debug("Miss match user name ...")
-                return False
+                return False, response
 
             # Checking account name
             if response[const.ACC_EMAIL] != self.recently_created_s3_account_user[const.ACC_EMAIL]:
                 self.log.debug("Miss match email address ...")
-                return False
+                return False, response
 
             # Checking response in details
             self.log.debug(
@@ -257,7 +262,7 @@ class RestS3user(RestTestLib):
                                const.ACC_NAME: response[const.ACC_NAME]}
 
             return any(config_utils.verify_json_response(actual_result, expected_result)
-                       for actual_result in list_acc)
+                       for actual_result in list_acc), response
         except Exception as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
@@ -376,40 +381,40 @@ class RestS3user(RestTestLib):
                     "verify status code for edit user without changing access")
                 if (not response) or response.status_code != const.SUCCESS_STATUS:
                     self.log.debug("Response is not 200")
-                    return False
+                    return False, account_name
                 response = response.json()
                 # For edit user without changing access secret key and access
                 # key should not be visible
                 return (response[const.ACC_NAME] == account_name) and (
                     const.ACCESS_KEY not in response) and (
-                    const.SECRET_KEY not in response)
+                    const.SECRET_KEY not in response), account_name
 
             # Handling specific scenarios
             if user_payload != "valid":
                 self.log.debug(
                     "verify status code for user %s", user_payload)
-                return (not response) and response.status_code == const.BAD_REQUEST
+                return (not response) and response.status_code == const.BAD_REQUEST, account_name
 
             # Checking status code
             self.log.debug("Response to be verified : ",
                            self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self.log.debug("Response is not 200")
-                return False
+                return False, account_name
 
             # Checking presence of access key and secret key
             response = response.json()
             if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
                 self.log.debug("secret key and/or access key is not present")
-                return False
+                return False, account_name
 
             # Checking account name
             self.log.debug("verifying Newly created account data ...")
             if const.ACC_NAME not in response:
                 self.log.debug("username key is not present ...")
-                return False
+                return False, account_name
 
-            return response[const.ACC_NAME] == account_name
+            return response[const.ACC_NAME] == account_name, account_name
         except Exception as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
@@ -563,7 +568,7 @@ class RestS3user(RestTestLib):
     def create_custom_s3_payload(self, user_type: str):
         """
         Create the payload for the create S3
-        :param type: value from "valid","duplicate_user",..
+        :param user_type: value from "valid","duplicate_user",..
         """
         user_name = "test%s" % int(time.time())
         email_id = "test%s@seagate.com" % int(time.time())

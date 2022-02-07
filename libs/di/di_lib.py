@@ -28,16 +28,21 @@ import logging
 import hashlib
 import random
 from time import perf_counter_ns
+from hashlib import md5
 from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
+from commons.constants import MB
+from commons.constants import POD_NAME_PREFIX, PROD_FAMILY_LC, PROD_TYPE_K8S
 from commons.exceptions import CortxTestException
 from commons import params
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons import constants as const
 from commons.helpers.node_helper import Node
+from config import cmn_cfg
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_base import _init_s3_conn
 from libs.di.file_formats import all_extensions
@@ -201,7 +206,7 @@ def get_random_bucket_name():
     Function will return a random bucket name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-bkt-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_object_name():
@@ -209,7 +214,7 @@ def get_random_object_name():
     Function will return a random object name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    return "di-test-obj-{}".format(datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
 
 def get_random_account_name():
@@ -233,5 +238,116 @@ def get_random_file_name():
     Function will return a random filename name.
     This function is not thread safe or does not work for nano sec granularity.
     """
-    return "data_durability{}.{}".format(perf_counter_ns(), random.sample(all_extensions, 1))
+    ext = random.sample(all_extensions, 1)[0]
+    return "data_durability{}{}".format(perf_counter_ns(), ext)
 
+
+def calc_checksum(buf: object):
+    """
+    calc checksum from buffer / bytes.
+    :param buf: byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    file_hash = md5()  # nosec
+    file_hash.update(buf)
+    return file_hash.hexdigest()
+
+
+def kill_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace):
+    """
+    kill s3 processes in given list of pods
+    """
+    for pod in data_pods:
+        s3_containers = master_node.get_container_of_pod(pod_name=pod,
+                                                         container_prefix="cortx-s3-0")
+        for s3_container in s3_containers:
+            cmd = "pkill -9 s3server"
+            LOGGER.info("cmd : %s", cmd)
+            retry_count = 2
+            while retry_count > 0:
+                try:
+                    master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                                             command_suffix=f"-c {s3_container} -- {cmd}",
+                                             decode=True)
+                    break
+                except IOError as err:
+                    LOGGER.info("err: %s ", err)
+                    retry_count -= 1
+            if retry_count <= 0:
+                return False
+        return True
+
+
+def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace):
+    """
+    check s3 process in given list of pods
+    """
+    for pod in data_pods:
+        s3_containers = master_node.get_container_of_pod(pod_name=pod,
+                                                         container_prefix="cortx-s3-0")
+        for s3_container in s3_containers:
+            counter = 0
+            resp = None
+            while counter < 30:
+                try:
+                    cmd = "pgrep s3server 2> /dev/null"
+                    resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
+                                                    command_suffix=f"-c {s3_container} -- "
+                                                                   f"{cmd}", decode=True)
+                    LOGGER.info("resp : %s", resp)
+                    LOGGER.info("counter is : %s", counter)
+                    if resp:
+                        LOGGER.info("Breaking while loop for container %s of pod %s",
+                                    s3_container, pod)
+                        break
+                except IOError as err:
+                    LOGGER.info("err: %s ", err)
+                    counter = counter + 1
+                    time.sleep(1)
+            if not resp:
+                return False
+    return True
+
+
+def restart_s3_processes_k8s():
+    """
+    restart s3 processes for k8s based setup
+    """
+    if cmn_cfg["product_family"] == PROD_FAMILY_LC and cmn_cfg["product_type"] == PROD_TYPE_K8S:
+        nodes = cmn_cfg["nodes"]
+        master_node_list = list()
+        for node in nodes:
+            if node["node_type"].lower() == "master":
+                node_obj = LogicalNode(hostname=node["hostname"], username=node["username"],
+                                       password=node["password"])
+                master_node_list.append(node_obj)
+        master_node = master_node_list[0]
+        LOGGER.info(master_node)
+        data_pods = master_node.get_all_pods(POD_NAME_PREFIX)
+        LOGGER.info(data_pods)
+        kill_status = kill_s3_process_in_k8s(master_node=master_node, data_pods=data_pods,
+                                             namespace=const.NAMESPACE)
+        if kill_status:
+            status = check_s3_process_in_k8s(master_node=master_node, data_pods=data_pods,
+                                             namespace=const.NAMESPACE)
+            return status
+    return False
+
+
+def get_random_ranges(size: int, greater_than_unit_size: bool = False):
+    """
+    will return random range
+    :param size: in bytes
+    :param greater_than_unit_size: true/false
+    if true, range will be returned between 1 MB and rest of size
+    """
+    start = 0
+    end = size
+    if greater_than_unit_size:
+        start = 1 * MB
+    first = random.SystemRandom().randint(start, end)
+    second = random.SystemRandom().randint(start, end)
+    if second < first:
+        return second, first
+    return first, second

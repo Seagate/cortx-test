@@ -42,14 +42,12 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME_PREFIX = "cortx-data-pod"
-SERVER_POD_NAME_PREFIX = "cortx-server-pod"
-HA_POD_NAME_PREFIX = "cortx-ha-pod"
-HAX_CONTAINER_NAME = "cortx-motr-hax"
+POD_NAME_PREFIX = "cortx-data"
+SERVER_POD_NAME_PREFIX = "cortx-server"
+HA_POD_NAME_PREFIX = "cortx-ha"
+HAX_CONTAINER_NAME = "cortx-hax"
 NAMESPACE = "default"
-CONTROL_POD_NAME_PREFIX = "cortx-control-pod"
-HA_POD_NAME_PREFIX = "cortx-ha-pod"
-SERVER_POD_NAME_PREFIX = "cortx-server-pod"
+CONTROL_POD_NAME_PREFIX = "cortx-control"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -418,11 +416,17 @@ MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
+SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["s3", "hare", "utils"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr", "utils"],
+                                    HA_POD_NAME_PREFIX: ["utils"]}
+SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
+K8S_PRE_DISK = "/dev/sdb"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
@@ -434,9 +438,13 @@ RESTORE_DEPLOYMENT_HELM = "helm"
 
 # log rotation
 LOG_PATH_CSM = "/etc/cortx/log/csm"
-MAX_LOG_FILE_SIZE_CSM_MB = 16
+MAX_LOG_FILE_SIZE_CSM_MB = 17
 LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5,
                             "/etc/cortx/log/auth/{}/server/":20,
                             "/etc/cortx/log/s3/{}/haproxy/":5}
-LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/":5}
+LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/iem/":5,
+                               "/etc/cortx/log/utils/{}/message_bus/":5}
 LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
+LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
+                              "/etc/cortx/log/motr/{}/trace/":17}
+MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}

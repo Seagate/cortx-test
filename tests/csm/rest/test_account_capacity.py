@@ -699,7 +699,8 @@ class TestAccountCapacity():
         self.log.info("Step 5: Shutdown the data pod safely by making replicas=0")
         self.log.info("Get pod name to be deleted")
         pod_list = self.master_node_list[0].get_all_pods(pod_prefix=POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)
+        pod_name = random.sample(pod_list, 1)[0]
+        pod_host = self.master_node_list[0].get_pod_hostname(pod_name=pod_name)
 
         self.log.info("Deleting pod %s", pod_name)
         resp = self.master_node_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
@@ -716,14 +717,16 @@ class TestAccountCapacity():
         self.log.info("Step 6: Cluster is in degraded state")
 
         self.log.info("Step 7: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=pod_host)
         self.log.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 7: Services of pod are in offline state")
 
+        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
         self.log.info("Step 8: Check services status on remaining pods %s",
-                      pod_list.remove(pod_name))
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
+                      remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list,
                                                            fail=False)
         self.log.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)

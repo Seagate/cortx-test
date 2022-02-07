@@ -59,6 +59,7 @@ from core.runner import get_db_credential
 from core.runner import get_jira_credential
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
+from libs.di.fi_adapter import S3FailureInjection
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -743,8 +744,11 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     if log == 'csm_gui':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
-    else:
+    elif log == 's3bench':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    else:
+        support_logs = glob.glob(f"{LOG_DIR}/latest/logs-cortx-cloud-*")
+    LOGGER.debug("support logs is %s", support_logs)
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -752,6 +756,9 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
                                                    local_path=support_log)
         if resp[0]:
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+            if os.path.isfile(support_log):
+                os.remove(support_log)
+                LOGGER.info("Removed the files from local path after uploading to NFS share")
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
@@ -907,6 +914,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
+        upload_supporting_logs(test_id, remote_path, "")
         upload_supporting_logs(test_id, remote_path, "csm_gui")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(os.path.join(resp[1], name))
@@ -1011,3 +1019,19 @@ def filter_report_session_finish(session):
                     "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))
+
+
+@pytest.fixture(scope="class", autouse=False)
+def restart_s3server_with_fault_injection(request):
+    """Fixture to restart s3 server with fault injection."""
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("Restart S3 Server with Fault Injection option")
+    request.cls.log.info("Enable Fault Injection")
+    fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
+    resp = fi_adapter.set_fault_injection(flag=True)
+    request.cls.fault_injection = True
+    assert resp[0], resp[1]
+    yield
+    resp = fi_adapter.set_fault_injection(flag=False)
+    request.cls.fault_injection = False
+    assert resp[0], resp[1]

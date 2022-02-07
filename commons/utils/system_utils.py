@@ -34,6 +34,8 @@ import string
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
+from pathlib import Path
+from botocore.response import StreamingBody
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
@@ -324,6 +326,40 @@ def calculate_checksum(
     if kwargs.get("filter_resp", None) and binary_bz64:
         result = (result[0], filter_bin_md5(result[1]))
     return result
+
+
+def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
+    """
+    Calculate checksum of file or stream.
+    :param object_ref: Object/File Path or byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    read_sz = 8192
+    csum = None
+    file_hash = md5()  # nosec
+    if hash_algo != 'md5':
+        raise NotImplementedError('Only md5 supported')
+    if isinstance(object_ref, StreamingBody):
+        chunk = object_ref.read(amt=read_sz)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = object_ref.read(amt=read_sz)
+        return file_hash.hexdigest()
+    if os.path.exists(object_ref):
+        size = Path(object_ref).stat().st_size
+
+        with open(object_ref, 'rb') as file_ptr:
+            if size < read_sz:
+                buf = file_ptr.read(size)
+            else:
+                buf = file_ptr.read(read_sz)
+            while buf:
+                file_hash.update(buf)
+                buf = file_ptr.read(read_sz)
+            csum = file_hash.hexdigest()
+
+    return csum
 
 
 def cal_percent(num1: float, num2: float) -> float:
@@ -1019,11 +1055,15 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
+        LOGGER.info("local path and new path are %s\n%s", local_path, new_path)
         if os.path.isfile(local_path):
+            LOGGER.debug("Copy from %s to %s", local_path, new_path)
             shutil.copy(local_path, new_path)
         else:
+            LOGGER.debug("Copy in else")
             shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
+
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")

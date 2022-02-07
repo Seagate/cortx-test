@@ -370,11 +370,11 @@ class Health(Host):
 
         return True, "Server is Online"
 
-    def hctl_status_json(self):
+    def hctl_status_json(self, pod_name=None):
         """
         This will Check Node status, Logs the output in debug.log file and
         returns the response in json format.
-        :param str node: Node on which status to be checked
+        :param pod_name: Running data pod name to fetch the hctl status
         :return: Json response of stdout
         :rtype: dict
         """
@@ -394,9 +394,10 @@ class Health(Host):
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
-            resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
-            assert_true(resp[0], resp[1])
-            pod_name = resp[1]
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
             out = node.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
@@ -976,13 +977,17 @@ class Health(Host):
             return True
         return False
 
-    def get_pod_svc_status(self, pod_list, fail=True):
+    def get_pod_svc_status(self, pod_list, fail=True, hostname=None, pod_name=None):
         """
         Helper function to get pod wise service status
         :param pod_list: List pof pods
         :param fail: Flag to check failed/started status of services
+        :param hostname: Hostname of the pod
+        :param pod_name: Running pod to fetch the hctl status
         :return: Bool, list
         """
+        pod_obj = LogicalNode(hostname=self.hostname, username=self.username,
+                              password=self.password)
         try:
             results = []
             if fail:
@@ -990,12 +995,10 @@ class Health(Host):
             else:
                 search_str = ["started", "online"]
             LOG.info("Getting services status for all pods")
-            hctl_output = self.hctl_status_json()
+            hctl_output = self.hctl_status_json(pod_name=pod_name)
             for pod in pod_list:
-                LOG.info("Getting pod hostname for pod %s", pod)
-                cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod)
-                output = self.execute_cmd(cmd=cmd, read_lines=True)
-                hostname = output[0].strip()
+                if hostname is None:
+                    hostname = pod_obj.get_pod_hostname(pod_name=pod)
                 for node in hctl_output["nodes"]:
                     if hostname == node["name"]:
                         services = node["svcs"]

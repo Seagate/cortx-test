@@ -26,6 +26,8 @@ import time
 import yaml
 
 from commons import commands as common_cmd
+from commons import constants as cons
+from commons.utils import assert_utils
 from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
@@ -65,7 +67,7 @@ class RestCsmCluster(RestTestLib):
         data = data.split("\n")
         res = False
         for line in data:
-            if "cortx-control-pod" in line:
+            if "cortx-control" in line:
                 line_found = line
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[0]
@@ -196,3 +198,52 @@ class RestCsmCluster(RestTestLib):
         if not pod_up:
             return pod_up, "Pod is not up"
         return pod_up, "Pod is restarted"
+
+    def set_telemetry_auth(self, pod_name, csm_list_key_value, csm_rest_api=True):
+        """
+        Stop and start control pod
+        :param pod_name: Name of the pod
+        :param csm_list_key_value: CSM API key value list
+        :param csm_rest_api: True when we are not updating consul db
+        :return True/False: If able to set Telemetry Auth
+        """
+        if csm_rest_api:
+            self.nd_objs[0].execute_cmd(cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
+                pod_name, cons.CSM_CONF_PATH, cons.CSM_COPY_PATH, cons.CORTX_CSM_POD),
+                read_lines=False, exc=False)
+            resp = self.nd_objs[0].copy_file_to_local(
+                remote_path=cons.CSM_COPY_PATH, local_path=cons.CSM_COPY_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            stream = open(cons.CSM_COPY_PATH, 'r')
+            data = yaml.safe_load(stream)
+            for csm_dict in csm_list_key_value:
+                for csm_key, csm_val in csm_dict.items():
+                    url_list = csm_key.split('/')
+                    dict1 = dict(zip(range(0, len(url_list)), url_list))
+                    if len(url_list) == 3:
+                        data[dict1[0]][dict1[1]][dict1[2]] = csm_val
+                    elif len(url_list) == 2:
+                        data[dict1[0]][dict1[1]] = csm_val
+                    elif len(url_list) == 1:
+                        data[dict1[0]] = csm_val
+                    elif len(url_list) == 4:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]] = csm_val
+                    elif len(url_list) == 5:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]][dict1[4]] = csm_val
+                    elif len(url_list) == 6:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]][dict1[4]][dict1[5]] = csm_val
+                    else:
+                        return False, "Not able to set telemetry auth using CSM REST"
+            with open(cons.CSM_COPY_PATH, 'w') as yaml_file:
+                yaml_file.write(yaml.dump(data, default_flow_style=False))
+            yaml_file.close()
+            resp = self.nd_objs[0].copy_file_to_remote(
+                local_path=cons.CSM_COPY_PATH, remote_path=cons.CSM_COPY_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            # cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c
+            # cortx-csm-agent
+            self.nd_objs[0].execute_cmd(cmd=common_cmd.K8S_CP_TO_CONTAINER_CMD.format(
+                cons.CSM_COPY_PATH, pod_name, cons.CSM_CONF_PATH, cons.CORTX_CSM_POD),
+                read_lines=False, exc=False)
+            return True, "Able to set telemetry auth "
+        return False, "Not able to set telemetry auth using CSM REST"

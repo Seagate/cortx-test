@@ -127,9 +127,15 @@ class S3AccountOperationsRestAPI(RestS3user):
             endpoint = "{}/{}".format(self.endpoint, user_name)
             LOGGER.debug("Endpoint for s3 accounts is %s", endpoint)
             # Fetching api response
-            response = self.restapi.rest_call(
-                "delete", endpoint=endpoint, headers=self.headers)
-            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+            # As per Pranay's suggestion, adding retry/polling of 25's to delete s3 account.
+            end_time = time.time() + 25  # retry/polling for 25's
+            status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
+            while status and time.time() <= end_time:
+                response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+                status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
+                time.sleep(5)  # delay for next call.
+            if status:
                 return False, response.json()["message"]
             LOGGER.debug(response.json())
 
@@ -392,8 +398,8 @@ class S3AuthServerRestAPI(RestS3user):
 
     # pylint: disable=too-many-arguments
     def create_custom_iam_accesskey(
-        self, user_name, s3_access_key, s3_secret_key , iam_access_key=None,
-        iam_secret_key=None ) -> tuple:
+            self, user_name, s3_access_key, s3_secret_key, iam_access_key=None,
+            iam_secret_key=None) -> tuple:
         """
         Create s3/iam account user custom access & secret keys using s3authserver rest api.
 

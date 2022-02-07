@@ -28,6 +28,7 @@ from http import HTTPStatus
 import pytest
 
 from commons import configmanager
+from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.helpers.pods_helper import LogicalNode
@@ -566,7 +567,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -591,7 +600,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -617,7 +634,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -642,7 +667,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -665,7 +698,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to False")
-        # TODO : call telemetry_auth = False api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -690,7 +731,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
@@ -715,7 +764,15 @@ class TestSystemStats():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step-1: Change telemetry_auth to True")
-        # TODO : call telemetry_auth = True api (dev will provide a query to set that in consul db)
+        resp, pod_name = self.nd_obj.get_pod_name(pod_prefix=CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp, pod_name)
+        csm_list_key_value = []
+        csm_list_key = self.test_conf["csm_telemetry_auth_url"]["csm_key"]
+        csm_list_value = self.test_conf["csm_telemetry_auth_url"]["csm_value"]
+        csm_list_key_value.append(dict(zip(csm_list_key, csm_list_value)))
+        csm_resp = self.csm_cluster.set_telemetry_auth(pod_name, csm_list_key_value,
+                                                       csm_rest_api=True)
+        assert_utils.assert_true(csm_resp[0], csm_resp[1])
         self.log.info("Step 2: Delete control pod and wait for restart")
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
