@@ -5,8 +5,9 @@
 "in_use_for_parallel": false,
 "parallel_client_cnt": 0,
 "is_setup_free": true,
-"product_family":"LC",
-"product_type":"k8s",
+"product_family": "LC",
+"s3_engine": 2,
+"product_type": "k8s",
 "lb": "192.168.60.166",
 "nodes":[
     {
