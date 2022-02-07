@@ -3162,7 +3162,6 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Successfully shutdown RC node data pod %s.", rc_datapod)
         pod_list.remove(rc_datapod)
-        running_pod = random.sample(pod_list, 1)[0]
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
@@ -3172,8 +3171,7 @@ class TestPodFailure:
         LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
                     " are in offline state", self.node_name, rc_datapod)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod],
-                                                           fail=True, hostname=hostname,
-                                                           pod_name=running_pod)
+                                                           fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
@@ -3181,8 +3179,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False,
-                                                           pod_name=running_pod)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
