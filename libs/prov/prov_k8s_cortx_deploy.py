@@ -244,8 +244,8 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        resp = node_obj.execute_cmd(common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path),
-                                    read_lines=True)
+        cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
@@ -258,11 +258,20 @@ class ProvDeployK8sCortxLib:
         return : Boolean
         """
         LOGGER.info("Validate Cluster status")
-        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path)
-        resp = node_obj.execute_cmd(cmd)
-        if b"FAILED" in resp:
-            return False, resp.decode('utf-8')
-        return True, resp.decode('utf-8')
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + " > status.log"
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.info("response is %s" , resp)
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, "status.log")
+        remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], "status.log")
+        LOGGER.debug("COPY status.log file to local")
+        node_obj.copy_file_to_local(remote_path, local_path)
+        with open(local_path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                LOGGER.debug("line is %s", line)
+                if "FAILED" in line:
+                    return False, line
+        return True, lines
 
     def pull_cortx_image(self, worker_obj_list: list):
         """
@@ -314,12 +323,10 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Remote PATH %s", remote_path)
         LOGGER.debug("COPY to local")
         master_node_list[0].copy_file_to_local(remote_path, local_path)
-        with open(local_path, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                if "timed out" in line:
-                    LOGGER.error(line)
-                    return False, "Failed due to script Timeout"
+        if not resp[0]:
+            with open(local_path, 'r') as file:
+                lines = file.read()
+                LOGGER.debug(lines)
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
