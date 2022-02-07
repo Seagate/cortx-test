@@ -3141,15 +3141,10 @@ class TestPodFailure:
         LOGGER.info("RC Node is running on %s node", self.node_name)
         LOGGER.info("Get the data pod running on %s node", self.node_name)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
-        rc_datapod = rc_serverpod = None
+        rc_datapod = None
         for pod_name, node in data_pods.items():
             if node == self.node_name:
                 rc_datapod = pod_name
-                break
-        for server_pod, node in server_pods.items():
-            if node == self.node_name:
-                rc_serverpod = server_pod
                 break
         LOGGER.info("RC node %s has data pod: %s ", self.node_name, rc_datapod)
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=rc_datapod)
@@ -3182,8 +3177,7 @@ class TestPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
-                    "and server pod %s are in offline state", self.node_name, rc_datapod,
-                    rc_serverpod)
+                    "are in offline state", self.node_name, rc_datapod)
 
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     pod_list)
