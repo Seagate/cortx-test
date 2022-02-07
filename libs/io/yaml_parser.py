@@ -21,8 +21,8 @@
 """Yaml Parser for IO stability"""
 
 import datetime
-import yaml
 import logging
+import yaml
 
 logger = logging.getLogger()
 
@@ -30,45 +30,54 @@ logger = logging.getLogger()
 def yaml_parser(yaml_file):
     """
     YAML file to python dictionary
+    :param yaml_file: yaml file to parse
+    :return python dict containing file contents
     """
     logger.debug("YAML file selected for parse: %s", yaml_file)
     yaml_dict = dict()
     with open(yaml_file) as obj:
         data = yaml.safe_load(obj)
         yaml_dict.update(data)
+    logger.debug("YAML file data: %s", yaml_dict)
     return yaml_dict
 
 
 def convert_to_bytes(size):
     """
     function to convert any size to bytes
+    :param size: object size
+    can be provided as byte(s), kb, kib, mb, mib, gb, gib, tb, tib
+    :return equivalent bytes value for object size
     """
     kb = 1000
     kib = 1024
     sz = size.lower()
     if 'bytes' in sz or 'byte' in sz:
         return int(sz.split('byte')[0])
-    elif 'kb' in sz:
+    if 'kb' in sz:
         return int(sz.split('kb')[0]) * kb
-    elif 'kib' in sz:
+    if 'kib' in sz:
         return int(sz.split('kib')[0]) * kib
-    elif 'mb' in sz:
+    if 'mb' in sz:
         return int(sz.split('mb')[0]) * kb * kb
-    elif 'mib' in sz:
+    if 'mib' in sz:
         return int(sz.split('mib')[0]) * kib * kib
-    elif 'gb' in sz:
+    if 'gb' in sz:
         return int(sz.split('gb')[0]) * kb * kb * kb
-    elif 'gib' in sz:
+    if 'gib' in sz:
         return int(sz.split('gib')[0]) * kib * kib * kib
-    elif 'tb' in sz:
+    if 'tb' in sz:
         return int(sz.split('tb')[0]) * kb * kb * kb * kb
-    elif 'tib' in sz:
+    if 'tib' in sz:
         return int(sz.split('tib')[0]) * kib * kib * kib * kib
+    return 0
 
 
 def convert_to_time_delta(time):
     """
     function to convert execution time in time delta format
+    :param time : accepts time in format 0d0h0m0s
+    :return python timedelta object
     """
     time = time.lower()
     days = hrs = mnt = sec = 00
@@ -83,12 +92,16 @@ def convert_to_time_delta(time):
         time = time.split('m')[1]
     if 's' in time:
         sec = int(time.split('s')[0])
-    return datetime.timedelta(days=days, hours=hrs, minutes=mnt, seconds=sec)
+    datetime_obj = datetime.timedelta(days=days, hours=hrs, minutes=mnt, seconds=sec)
+    logger.debug("Date time object: %s", str(datetime_obj))
+    return datetime_obj
 
 
 def test_parser(yaml_file):
     """
     parse a test yaml file
+    :param yaml_file: accepts and parses a test YAML file
+    :return python dictionary containing file contents
     """
     s3_io_test = yaml_parser(yaml_file)
     delta_list = list()
@@ -103,4 +116,5 @@ def test_parser(yaml_file):
         else:
             data['start_time'] = delta_list.pop()
             delta_list.append(data['start_time'] + convert_to_time_delta(data['result_duration']))
+    logger.debug("test object %s: ", s3_io_test)
     return s3_io_test
