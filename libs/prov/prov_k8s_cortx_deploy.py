@@ -260,7 +260,6 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Validate Cluster status")
         cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + " > status.log"
         resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("response is %s" , resp)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, "status.log")
         remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], "status.log")
         LOGGER.debug("COPY status.log file to local")
