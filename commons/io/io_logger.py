@@ -28,7 +28,7 @@ from os import path
 from logging import handlers
 
 
-class StreamToLogger(object):
+class StreamToLogger:
     """logger class for corio driver."""
 
     def __init__(self, file_path, logger):
@@ -43,7 +43,7 @@ class StreamToLogger(object):
 
     def make_logdir(self) -> None:
         """Create log directory if not exists."""
-        head, tail = path.split(self.file_path)
+        head, _ = path.split(self.file_path)
         if not os.path.exists(head):
             os.makedirs(head, exist_ok=True)
 
@@ -76,13 +76,14 @@ class CorIORotatingFileHandler(handlers.RotatingFileHandler):
         """
         super().__init__(filename=filename, maxBytes=maxbyte, backupCount=backupcount)
 
-    def rotation_filename(self, name):
+    def rotation_filename(self, default_name):
         """
         Method to form log file name for rotation internally called by rotation_filename() method
-        :param name: name of the base file
+        :param default_name: name of the base file
         :return: rotated log file name e.g., io_driver-YYYY-MM-DD-1.gz
         """
-        return "{}-{}-{}.gz".format(name, str(datetime.date.today()), name.split('.')[-1])
+        return "{}-{}-{}.gz".format(
+            default_name, str(datetime.date.today()), default_name.split('.')[-1])
 
     def rotate(self, source, dest):
         """
@@ -90,7 +91,7 @@ class CorIORotatingFileHandler(handlers.RotatingFileHandler):
         :param source: current log file path.
         :param dest: destination path for rotated file.
         """
-        with open(source, "rb") as sf:
-            with gzip.open(dest, "wb", 9) as df:
-                shutil.copyfileobj(sf, df)
+        with open(source, "rb") as sf_obj:
+            with gzip.open(dest, "wb", 9) as df_obj:
+                shutil.copyfileobj(sf_obj, df_obj)
         os.remove(source)

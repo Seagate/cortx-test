@@ -29,16 +29,15 @@ from commons.io.io_logger import StreamToLogger
 logger = logging.getLogger(__name__)
 
 
-def str_to_bool(string):
+def str_to_bool(fstring):
     """To convert a string value to bool."""
-    if isinstance(string, bool):
-        return string
-    if string.lower() in ('yes', 'true', 'y', '1'):
+    if isinstance(fstring, bool):
+        return fstring
+    if fstring.lower() in ('yes', 'true', 'y', '1'):
         return True
-    elif string.lower() in ('no', 'false', 'f', 'n', '0'):
+    if fstring.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+    raise argparse.ArgumentTypeError(f'Boolean value expected: {fstring}.')
 
 
 def initialize_loghandler(level=logging.DEBUG):
@@ -53,6 +52,7 @@ def initialize_loghandler(level=logging.DEBUG):
 
 
 def parse_args():
+    """Commandline arguments for CorIO Driver."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--log_level", type=int, default=10,
                         help="log level value as defined below: " +
@@ -70,5 +70,5 @@ def parse_args():
 
 if __name__ == '__main__':
     opts = parse_args()
-    level = logging.getLevelName(opts.log_level)
-    initialize_loghandler(level=level)
+    log_level = logging.getLevelName(opts.log_level)
+    initialize_loghandler(level=log_level)
