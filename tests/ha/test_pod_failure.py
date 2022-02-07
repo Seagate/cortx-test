@@ -910,6 +910,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32456")
     @CTFailOn(error_handler)
     def test_pod_shutdown_kubectl_delete(self):
@@ -1986,6 +1987,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32459")
     @CTFailOn(error_handler)
     def test_control_pod_failover(self):
@@ -2739,6 +2741,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32458")
     @CTFailOn(error_handler)
     def test_pod_fail_node_down(self):
@@ -2823,6 +2826,7 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32457")
     @CTFailOn(error_handler)
     def test_pod_fail_node_nw_down(self):
@@ -3131,7 +3135,6 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Get the RC node data pod and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         rc_node = self.motr_obj.get_primary_cortx_node()
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
@@ -3148,8 +3151,7 @@ class TestPodFailure:
             if node == self.node_name:
                 rc_serverpod = server_pod
                 break
-        LOGGER.info("RC node %s has data pod: %s and server pod : %s", self.node_name,
-                    rc_datapod, rc_serverpod)
+        LOGGER.info("RC node %s has data pod: %s ", self.node_name, rc_datapod)
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=rc_datapod)
 
         LOGGER.info("Deleting pod of RC node, pod name %s", rc_datapod)
@@ -3165,11 +3167,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Successfully shutdown RC node data pod %s.", rc_datapod)
         pod_list.remove(rc_datapod)
-        server_list.remove(rc_serverpod)
         running_pod = random.sample(pod_list, 1)[0]
-        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
-            "pod_eviction_time"])
-        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
@@ -3177,9 +3175,8 @@ class TestPodFailure:
         LOGGER.info("Step 3: Cluster is in degraded state")
 
         LOGGER.info("Step 4: Check services status that were running on RC node %s's data pod %s "
-                    "and server pod %s are in offline state", self.node_name, rc_datapod,
-                    rc_serverpod)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod, rc_serverpod],
+                    " are in offline state", self.node_name, rc_datapod)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[rc_datapod],
                                                            fail=True, hostname=hostname,
                                                            pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
@@ -3188,10 +3185,9 @@ class TestPodFailure:
                     "and server pod %s are in offline state", self.node_name, rc_datapod,
                     rc_serverpod)
 
-        online_pods = pod_list + server_list
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
-                    online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
+                    pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False,
                                                            pod_name=running_pod)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
