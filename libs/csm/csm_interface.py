@@ -24,6 +24,6 @@ class CLIInterface:
 class GUIInterface:
     pass
 
-def CSMFactory(interface ="rest"):
+def CSMApiFactory(interface ="rest"):
     localizers = {"cli": CLIInterface, "rest": RESTInterface, "gui": GUIInterface,}
     return localizers[interface]()
