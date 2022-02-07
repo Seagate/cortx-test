@@ -5356,7 +5356,7 @@ class TestCsmUser():
         self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
         payload = {"password": new_password, "current_password": current_password}
         for usr in self.created_s3_users:
-            response = self.s3user.edit_s3_account(
+            response = self.s3user.edit_s3_account_user_invalid_password(
                 username=usr,
                 payload=json.dumps(payload),
                 login_as=new_user)
