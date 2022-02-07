@@ -3129,7 +3129,7 @@ class TestPodFailure:
         self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 1: IOs completed successfully.")
 
-        LOGGER.info("Step 2: Get the RC node and shutdown the same.")
+        LOGGER.info("Step 2: Get the RC node data pod and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         rc_node = self.motr_obj.get_primary_cortx_node()
@@ -3151,11 +3151,19 @@ class TestPodFailure:
         LOGGER.info("RC node %s has data pod: %s and server pod : %s", self.node_name,
                     rc_datapod, rc_serverpod)
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=rc_datapod)
-        LOGGER.info("Shutdown the RC node: %s", self.node_name)
-        resp = self.ha_obj.host_safe_unsafe_power_off(host=self.node_name)
-        assert_utils.assert_true(resp, f"{self.node_name} is not powered off")
-        LOGGER.info("Step 2: Successfully shutdown RC node %s.", self.node_name)
-        self.restore_node = self.deploy = True
+
+        LOGGER.info("Deleting pod of RC node, pod name %s", rc_datapod)
+        resp = self.node_master_list[0].delete_deployment(pod_name=rc_datapod)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {rc_datapod} by deleting"
+                                           f" deployment")
+        LOGGER.info("Successfully shutdown/deleted pod %s by deleting deployment ", rc_datapod)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 2: Successfully shutdown RC node data pod %s.", rc_datapod)
         pod_list.remove(rc_datapod)
         server_list.remove(rc_serverpod)
         running_pod = random.sample(pod_list, 1)[0]
