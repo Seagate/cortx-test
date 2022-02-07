@@ -68,8 +68,8 @@ process_list = manager.list()
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, help="seed", default=random.randint(1, 9999999))
-    parser.add_argument("secret_key", type=str, help="Secret Key", required=True)
-    parser.add_argument("access_key", type=str, help="Access Key", required=True)
+    parser.add_argument("secret_key", type=str, help="Secret Key")
+    parser.add_argument("access_key", type=str, help="Access Key")
     parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations",
                         default="https://s3.seagate.com")
     return parser.parse_args()
@@ -81,6 +81,7 @@ def launch_process(process, process_type, test_id):
     process_states : Dictionary of process as key and pid as value
     :param process: Object of Process
     :param process_type: Type of tool invoked by process
+    :param test_id: Jira Test id
     """
     process.start()
     pid = process.pid
@@ -175,18 +176,22 @@ def periodic_hc():
 def main(opts):
     access = opts.access_key
     secret = opts.secret_key
-    endpoint = opts.end_point
+    endpoint = opts.endpoint
     seed = opts.seed
     log.info("Seed Used : %s", seed)
 
     # Retrieve output(dict) from yaml parser
     test_input = {
-        'test_1': {'tool': 's3bench', 'TEST_ID': 'TEST-1111', 'start_range': 0, 'end_range': 100000,
+        'test_1': {'tool': 's3bench', 'TEST_ID': 'TEST-111', 'start_range': 0, 'end_range': 100000,
                    'result_duration': '01h00m00s', 'sessions_per_node': 1,
                    'time_delta': timedelta(seconds=10)},
-        'test_2': {'tool': 's3bench', 'TEST_ID': 'TEST-123', 'start_range': 100000,
+        'test_2': {'tool': 's3bench', 'TEST_ID': 'TEST-222', 'start_range': 100000,
                    'end_range': 1000000, 'result_duration': '04h00m00s', 'sessions_per_node': 2,
-                   'time_delta': timedelta(seconds=10)}}
+                   'time_delta': timedelta(seconds=30)},
+        'test_3': {'tool': 's3bench', 'TEST_ID': 'TEST-333', 'start_range': 1000000,
+                   'end_range': 10000000, 'result_duration': '04h00m00s', 'sessions_per_node': 2,
+                   'time_delta': timedelta(seconds=60)}
+    }
     for key, value in test_input.items():
         process_type = value['tool'].lower()
         if process_type == 's3bench':
