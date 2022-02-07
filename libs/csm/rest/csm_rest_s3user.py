@@ -169,7 +169,7 @@ class RestS3user(RestTestLib):
         response = self.list_all_created_s3account()
 
         # Checking status code
-        self.log.debug("Response to be verified : ",
+        self.log.debug("Response to be verified : %s",
                         self.recently_created_s3_account_user)
         if (not response) or response.status_code != const.SUCCESS_STATUS:
             self.log.debug("Response is not 200")
@@ -212,7 +212,7 @@ class RestS3user(RestTestLib):
             return response.status_code == expect_status_code, response
 
         # Checking status code
-        self.log.debug("Response to be verified : ",
+        self.log.debug("Response to be verified : %s",
                         self.recently_created_s3_account_user)
         if (not response) or response.status_code != expect_status_code:
             self.log.debug("Response is not 200")
@@ -354,7 +354,7 @@ class RestS3user(RestTestLib):
             return (not response) and response.status_code == const.BAD_REQUEST, account_name
 
         # Checking status code
-        self.log.debug("Response to be verified : ",
+        self.log.debug("Response to be verified : %s",
                         self.recently_created_s3_account_user)
         if (not response) or response.status_code != const.SUCCESS_STATUS:
             self.log.debug("Response is not 200")

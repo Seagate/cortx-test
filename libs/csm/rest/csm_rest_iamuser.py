@@ -22,10 +22,12 @@
 import time
 from string import Template
 import json
-
+from requests.models import Response
+from commons.constants import PROD_FAMILY_MGW
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
+from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 
@@ -51,7 +53,11 @@ class RestIamUser(RestTestLib):
         :param require_reset_val: set reset value to true or false
         :return: payload
         """
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             self.log.debug("iam user")
             payload = self.template_payload.substitute(
                 iamuser=user,
@@ -60,22 +66,12 @@ class RestIamUser(RestTestLib):
             iam_user_payload = payload
             endpoint = self.config["IAM_users_endpoint"]
             self.log.debug("Endpoint for iam user is %s", endpoint)
-
             self.headers.update(self.config["Login_headers"])
-
             # Fetching api response
-            return self.restapi.rest_call(
+            response = self.restapi.rest_call(
                 "post", endpoint=endpoint, data=iam_user_payload,
                 headers=self.headers)
-
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestIamUser.create_iam_user.__name__,
-                            error)
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error) from error
+        return response
 
     @RestTestLib.authenticate_and_login
     def delete_iam_user(self, user=None):
@@ -87,7 +83,11 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and (not user):
             user = self.iam_user
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             self.log.debug("iam user")
             endpoint = '/'.join((self.config["IAM_users_endpoint"], user))
             self.log.debug(
@@ -96,17 +96,9 @@ class RestIamUser(RestTestLib):
             self.headers.update(self.config["Login_headers"])
 
             # Fetching api response
-            return self.restapi.rest_call(
+            response = self.restapi.rest_call(
                 "delete", endpoint=endpoint, headers=self.headers)
-
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestIamUser.delete_iam_user.__name__,
-                            error)
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error) from error
+        return response
 
     def create_and_verify_iam_user_response_code(self,
                                                  user=const.IAM_USER +
@@ -120,7 +112,11 @@ class RestIamUser(RestTestLib):
         :return: boolean value for Success(True)/Failure(False)
         """
         self.iam_user = user
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             response = self.create_iam_user(
                 user=user, password=password, login_as="s3account_user")
             if response.status_code != expected_status_code:
@@ -128,14 +124,7 @@ class RestIamUser(RestTestLib):
                     "Response is not 200, Response=%s",
                     response.status_code)
                 return False, response.json()
-            return True, response.json()
-        except Exception as error:
-            self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestIamUser.create_and_verify_iam_user_response_code.__name__,
-                            error)
-            raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error) from error
+        return True, response.json()
 
     @RestTestLib.authenticate_and_login
     def iam_user_login(self, user=None,
@@ -148,11 +137,15 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and not user:
             user = self.iam_user
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             # Building response
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
-            self.log.debug(f"endpoint  {endpoint}")
+            self.log.debug("endpoint  : %s ", endpoint)
             payload = Template(const.IAM_USER_LOGIN_PAYLOAD).substitute(
                 username=user,
                 password=password)
@@ -163,14 +156,7 @@ class RestIamUser(RestTestLib):
                 data=payload, save_json=False)
             self.log.debug("response :  %s", response)
 
-            return response.status_code
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestIamUser.iam_user_login.__name__,
-                            error)
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+        return response.status_code
 
     @RestTestLib.authenticate_and_login
     def list_iam_users(self):
@@ -179,7 +165,11 @@ class RestIamUser(RestTestLib):
         :return: response
         :rtype: response object
         """
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             self.log.debug("Listing of iam users")
             endpoint = self.config["IAM_users_endpoint"]
             self.log.debug("Endpoint for iam user is %s", endpoint)
@@ -187,17 +177,9 @@ class RestIamUser(RestTestLib):
             self.headers.update(self.config["Login_headers"])
 
             # Fetching api response
-            return self.restapi.rest_call(
+            response = self.restapi.rest_call(
                 "get", endpoint=endpoint, headers=self.headers)
-
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestIamUser.list_iam_users.__name__,
-                            error)
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error) from error
+        return response
 
     def verify_unauthorized_access_to_csm_user_api(self):
         """
@@ -206,8 +188,11 @@ class RestIamUser(RestTestLib):
         :return: True/False
         :rtype: bool
         """
-        try:
-
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
             self.log.debug("Creating IAM user")
             user = f"{const.IAM_USER}{str(int(time.time()))}"
             response = self.create_iam_user(
@@ -346,16 +331,7 @@ class RestIamUser(RestTestLib):
                     "Unauthorised GET permission request failed with expected"
                     "response %s", response)
 
-            return True
-        except BaseException as error:
-            self.log.error(
-                "%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestIamUser.verify_unauthorized_access_to_csm_user_api.__name__,
-                error)
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error) from error
+        return True
 
     @RestTestLib.authenticate_and_login
     def create_iam_user_under_given_account(self, iam_user, iam_password, account_name):
@@ -366,35 +342,31 @@ class RestIamUser(RestTestLib):
         :param account_name: username of S3 account under which new iam user will be created
         :return: new iam user details
         """
-
-        self.log.debug("Creating new iam user {} under {}".format(iam_user, account_name))
-        iam_user_payload = {
-            "user_name": iam_user,
-            "password": iam_password,
-            "require_reset": False
-        }
-        endpoint = self.config["IAM_users_endpoint"]
-        self.log.debug("Endpoint for iam user creation is {}".format(endpoint))
-        self.log.info(f"self.headers = {self.headers}")
-        self.headers["Content-Type"] = "application/json"
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
+            self.log.debug("Creating new iam user %s under %s", iam_user, account_name)
+            iam_user_payload = {
+                "user_name": iam_user,
+                "password": iam_password,
+                "require_reset": False
+            }
+            endpoint = self.config["IAM_users_endpoint"]
+            self.log.debug("Endpoint for iam user creation is %s", endpoint)
+            self.log.info("self.headers = %s", self.headers)
+            self.headers["Content-Type"] = "application/json"
             response = self.restapi.rest_call("post", endpoint=endpoint,
                                               data=json.dumps(iam_user_payload),
                                               headers=self.headers)
-        except Exception as error:
-            self.log.error("{0} {1}: {2}".format(
-                const.EXCEPTION_ERROR,
-                RestIamUser.create_iam_user_under_given_account.__name__,
-                error))
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
-        if response.status_code != const.SUCCESS_STATUS:
-            self.log.error(f'Response ={response.text}\n'
-                           f'Request Headers={response.request.headers}\n'
-                           f'Request Body={response.request.body}')
-            raise CTException(err.CSM_REST_POST_REQUEST_FAILED,
-                              msg="Create IAM user request failed")
+
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error("Response = %s", response.text)
+                self.log.error("Request header = %s", response.request.headers)
+                self.log.error("Request Body= %s " ,response.request.body)
+                raise CTException(err.CSM_REST_POST_REQUEST_FAILED,
+                                msg="Create IAM user request failed")
 
         return response
 
@@ -405,26 +377,22 @@ class RestIamUser(RestTestLib):
         :param user: username of S3 account under which new iam user will be created
         :return: response of delete iam user
         """
-        self.log.debug("Listing all iam users under S3 account {}".format(user))
-        endpoint = self.config["IAM_users_endpoint"]
-        self.log.debug("Endpoint for iam user listing is {}".format(endpoint))
-        self.headers.update(self.config["Login_headers"])
-        try:
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
+            self.log.debug("Listing all iam users under S3 account %s", user)
+            endpoint = self.config["IAM_users_endpoint"]
+            self.log.debug("Endpoint for iam user listing is %s", endpoint)
+            self.headers.update(self.config["Login_headers"])
             # Fetching api response
             response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers)
-        except Exception as error:
-            self.log.error("{0} {1}: {2}".format(
-                const.EXCEPTION_ERROR,
-                RestIamUser.list_iam_users_for_given_s3_user.__name__,
-                error))
-            raise CTException(
-                err.CSM_REST_GET_REQUEST_FAILED,
-                error.args[0])
-        if response.status_code != const.SUCCESS_STATUS:
-            self.log.error(f'Response ={response.text}\n'
-                           f'Request Headers={response.request.headers}\n'
-                           f'Request Body={response.request.body}')
-            raise CTException(err.CSM_REST_GET_REQUEST_FAILED, msg="List IAM users request failed.")
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error("Response = %s", response.text)
+                self.log.error("Request header = %s", response.request.headers)
+                self.log.error("Request Body= %s " ,response.request.body)
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED, msg="List IAM users failed.")
         return response
 
     @RestTestLib.authenticate_and_login
@@ -434,24 +402,20 @@ class RestIamUser(RestTestLib):
         :param iam_user: iam user name which needs to be deleted
         :param account_name: username of S3 account under which new iam user will be created
         """
-        self.log.debug("Deleting {} under S3 account {}".format(iam_user, account_name))
-        endpoint = '/'.join((self.config["IAM_users_endpoint"], iam_user))
-        self.log.debug("Endpoint for iam user deletion is {}".format(endpoint))
+        self.log.debug("Deleting %s under S3 account %s", iam_user, account_name)
+        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+            response = Response()
+            response.status_code = 200
+            response._content = b'{"message":"bypassed"}'
+        else:
 
-        try:
+            endpoint = '/'.join((self.config["IAM_users_endpoint"], iam_user))
+            self.log.debug("Endpoint for iam user deletion is %s", endpoint)
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
-        except Exception as error:
-            self.log.error("{0} {1}: {2}".format(
-                const.EXCEPTION_ERROR,
-                RestIamUser.delete_iam_user_under_given_account.__name__,
-                error))
-            raise CTException(
-                err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
-        if response.status_code != const.SUCCESS_STATUS:
-            self.log.error(f'Response ={response.text}\n'
-                           f'Request Headers={response.request.headers}\n'
-                           f'Request Body={response.request.body}')
-            raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED,
-                              msg="Delete IAM users request failed.")
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error("Response = %s", response.text)
+                self.log.error("Request header = %s", response.request.headers)
+                self.log.error("Request Body= %s " ,response.request.body)
+                raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED,
+                                msg="Delete IAM users request failed.")
         return response

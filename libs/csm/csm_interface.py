@@ -16,14 +16,24 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 class RESTInterface(AccountCapacity, SystemAlerts, RestAuditLogs, RestS3Bucket, SystemCapacity,
                     RestCsmCluster, RestCsmUser, RestIamUser, RestS3user, SystemStats, SystemHealth
                     ):
-    pass
+    """
+    Derived class all the rest api class in the lib dir. These has all the functionality available
+    from csm libs.
+    """
 
 class CLIInterface:
-    pass
+    """
+    Dummpy class for implementing CLI interface
+    """
 
 class GUIInterface:
-    pass
+    """
+    Dummy class for implementing GUI interface
+    """
 
-def CSMApiFactory(interface ="rest"):
+def csm_api_factory(interface ="rest"):
+    """
+    Single point of access for all the tests and libs outside libs/csm for csm interface.
+    """
     localizers = {"cli": CLIInterface, "rest": RESTInterface, "gui": GUIInterface,}
     return localizers[interface]()
