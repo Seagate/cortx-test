@@ -2218,7 +2218,7 @@ class TestPodFailure:
                     "deployment")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = list(range(1, total_parts+1))
+        part_numbers = list(range(1, total_parts + 1))
         random.shuffle(part_numbers)
         output = Queue()
         parts_etag = list()
@@ -2309,7 +2309,7 @@ class TestPodFailure:
         if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             LOGGER.info("All the parts are uploaded successfully")
         elif failed_parts:
-            assert_utils.assert_true(False, "Failed to upload parts when cluster was in good "
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in degraded "
                                             f"state. Failed parts: {failed_parts}")
         elif exp_failed_parts:
             LOGGER.info("Step 6.1: Upload remaining parts")
@@ -2338,7 +2338,7 @@ class TestPodFailure:
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 7: Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Step 7: Listed parts of multipart upload. Count: %s". len(res[1]["Parts"]))
 
         LOGGER.info("Step 8: Completing multipart upload and check upload size is %s",
                     file_size * const.Sizes.MB)
@@ -2502,7 +2502,7 @@ class TestPodFailure:
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 8: Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Step 8: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
 
         LOGGER.info("Step 9: Completing multipart upload Completing multipart upload and check "
                     "upload size is %s", file_size * const.Sizes.MB)

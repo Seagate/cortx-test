@@ -872,7 +872,7 @@ class TestPodRestart:
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 10: Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Step 10: Listed parts of multipart upload, Count: %s", len(res[1]["Parts"]))
 
         LOGGER.info("Step 11: Completing multipart upload & check upload size is %s", file_size *
                     const.Sizes.MB)
@@ -1561,7 +1561,7 @@ class TestPodRestart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = list(range(1, total_parts+1))
+        part_numbers = list(range(1, total_parts + 1))
         random.shuffle(part_numbers)
         output = Queue()
         parts_etag = []
@@ -1689,7 +1689,7 @@ class TestPodRestart:
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 8: Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Step 8: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
 
         LOGGER.info("Step 9: Completing multipart upload")
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
