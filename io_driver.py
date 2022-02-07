@@ -24,24 +24,18 @@
 import os
 import logging
 import argparse
+from distutils.util import strtobool
 from commons.io.io_logger import StreamToLogger
 
 logger = logging.getLogger(__name__)
 
 
-def str_to_bool(fstring):
-    """To convert a string value to bool."""
-    if isinstance(fstring, bool):
-        return fstring
-    if fstring.lower() in ('yes', 'true', 'y', '1'):
-        return True
-    if fstring.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    raise argparse.ArgumentTypeError(f'Boolean value expected: {fstring}.')
-
-
 def initialize_loghandler(level=logging.DEBUG):
-    """Initialize io driver runner logging with stream and file handlers."""
+    """
+    Initialize io driver runner logging with stream and file handlers.
+
+    :param level: logging level used in CorIO tool.
+    """
     logger.setLevel(level)
     dir_path = os.path.join(os.path.join(os.getcwd(), "log", "latest"))
     if not os.path.exists(dir_path):
@@ -62,7 +56,7 @@ def parse_args():
                              "INFO = 20 " +
                              "DEBUG = 10"
                         )
-    parser.add_argument("--use_ssl", type=str_to_bool, default=True,
+    parser.add_argument("--use_ssl", type=lambda x: bool(strtobool(str(x))), default=True,
                         help="Use HTTPS/SSL connection for S3 endpoint.")
 
     return parser.parse_args()
@@ -72,3 +66,4 @@ if __name__ == '__main__':
     opts = parse_args()
     log_level = logging.getLevelName(opts.log_level)
     initialize_loghandler(level=log_level)
+    logger.info("Arguments: %s", opts)
