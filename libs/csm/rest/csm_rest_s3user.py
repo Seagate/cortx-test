@@ -151,11 +151,16 @@ class RestS3user(RestTestLib):
             endpoint = "{}/{}".format(
                 self.config["s3accounts_endpoint"], username)
             self.log.debug("Endpoint for s3 accounts is %s", endpoint)
-
             # Fetching api response
             response = self.restapi.rest_call(
                 "delete", endpoint=endpoint, headers=self.headers)
-
+            # As per Pranay's suggestion, adding retry/polling of 25's to delete s3 account.
+            end_time = time.time() + 25  # retry/polling for 25's
+            status = response.status_code != const.SUCCESS_STATUS or response.ok is not True
+            while status and time.time() <= end_time:
+                response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+                status = response.status_code != const.SUCCESS_STATUS or response.ok is not True
+                time.sleep(5)  # delay for next call.
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
