@@ -13,17 +13,6 @@ def main():
     actual_ports = []
     netstat_port_list = []
 
-    #contexts, active_context = config.list_kube_config_contexts()
-    #if not contexts:
-    #    print("Cannot find any context in kube-config file.")
-    #    return
-    #contexts = [context['name'] for context in contexts]
-    #active_index = contexts.index(active_context['name'])
-    #option, _ = pick(contexts, title="Pick the context to load", default_index=active_index)
-    # Configs can be set in Configuration class directly or using helper
-    # utility
-    # config.load_kube_config(context=option)
-
     LOGGER.info(' This is cortx port scanner!')
 
     option="kubernetes-admin@kubernetes"
@@ -58,9 +47,7 @@ def main():
 
     # Prepare a list of actual ports
 
-    #LOGGER.info(" Complete list of actual ports...")
     actual_ports.sort()
-    #LOGGER.info(actual_ports)
 
     # Read port numbers from file specification
     req_port_list = []
