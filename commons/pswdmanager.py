@@ -72,6 +72,7 @@ def decrypt_all_passwd(data: dict) -> dict:
     decrypt_list = [
         "password",
         'new_password',
+        'current_password',
         'list_of_passwords',
         'list_special_invalid_char',
         'special_char_pwd',
