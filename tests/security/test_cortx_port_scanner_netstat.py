@@ -100,4 +100,4 @@ def has_numbers(input_string):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_netstat.log')
-    main()
+    test_cortx_port_scanner_netstat()

@@ -88,4 +88,4 @@ def test_cortx_port_scanner_kubectl_svc():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_kubectl_svc.log')
-    main()
+    test_cortx_port_scanner_kubectl_svc()
