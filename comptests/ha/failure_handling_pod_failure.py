@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-HA component test suite for stop cluster.
+HA component test suite for pod failure.
 """
 import logging
 import random
@@ -99,7 +99,9 @@ class TestFailureHandlingPodFailure:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        self.restored = False
+            LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -139,12 +141,11 @@ class TestFailureHandlingPodFailure:
         node_obj = None
         for node in range(self.num_nodes):
             if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                ha_fqdn = node
                 node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
                                        username=CMN_CFG["nodes"][node]["username"],
                                        password=CMN_CFG["nodes"][node]["password"])
-                break
-        pvc_list = node_obj.execute_cmd \
-            (common_cmd.HA_LOG_PVC, read_lines=True)
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         hapvc = None
         for hapvc in pvc_list:
             if common_const.HA_POD_NAME_PREFIX in hapvc:
@@ -166,7 +167,7 @@ class TestFailureHandlingPodFailure:
     @pytest.mark.tags("TEST-30220")
     def test_delete_pod_replicaset_down(self):
         """
-        This test tests delete pod by scalling down pod(replica=0)
+        This test tests delete pod by scaling down pod(replica=0)
         """
         LOGGER.info(
             "STARTED: Publish the pod failure event in message bus to Hare - "
@@ -201,8 +202,7 @@ class TestFailureHandlingPodFailure:
                                        username=CMN_CFG["nodes"][node]["username"],
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
-        pvc_list = node_obj.execute_cmd \
-            (common_cmd.HA_LOG_PVC, read_lines=True)
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         LOGGER.info("Getting the HA pod pvc log dir %s", node_obj)
         hapvc = None
         for hapvc in pvc_list:
@@ -266,8 +266,7 @@ class TestFailureHandlingPodFailure:
                                        username=CMN_CFG["nodes"][node]["username"],
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
-        pvc_list = node_obj.execute_cmd \
-            (common_cmd.HA_LOG_PVC, read_lines=True)
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         LOGGER.info("Getting the HA pod pvc log dir %s", node_obj)
         hapvc = None
         for hapvc in pvc_list:
@@ -329,8 +328,7 @@ class TestFailureHandlingPodFailure:
                                        username=CMN_CFG["nodes"][node]["username"],
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
-        pvc_list = node_obj.execute_cmd \
-            (common_cmd.HA_LOG_PVC, read_lines=True)
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         hapvc = None
         for hapvc in pvc_list:
             if common_const.HA_POD_NAME_PREFIX in hapvc:
@@ -347,4 +345,3 @@ class TestFailureHandlingPodFailure:
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
-
