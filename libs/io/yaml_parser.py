@@ -111,7 +111,7 @@ def test_parser(yaml_file):
         end_bytes = convert_to_bytes(data['end_range'])
         data['end_range'] = end_bytes
         if test == "test_1":
-            data['start_time'] = str(datetime.timedelta(hours=00, minutes=00, seconds=00))
+            data['start_time'] = datetime.timedelta(hours=00, minutes=00, seconds=00)
             delta_list.append(convert_to_time_delta(data['result_duration']))
         else:
             data['start_time'] = delta_list.pop()
