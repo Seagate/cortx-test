@@ -99,9 +99,9 @@ class TestFailureHandlingPodFailure:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-            LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -301,7 +301,7 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Step 1: Delete data pod and check Pods status"
                     "(kubectl delete pods <pod>) forcefully")
         LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=False)
+        resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
         assert_utils.assert_true(resp, "Data pod didn't deleted successfully")
         LOGGER.info("Step 1:Data pod deleted successfully")
 
