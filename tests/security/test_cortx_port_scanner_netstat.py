@@ -9,7 +9,7 @@ from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
-def main():
+def test_cortx_port_scanner_netstat():
 
     """
     This is cortx port scanner
