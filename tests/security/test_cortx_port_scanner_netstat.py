@@ -1,4 +1,4 @@
-"""This is cortx port scanner"""
+"""This is cortx port scanner using netstat"""
 import logging
 from kubernetes import client, config
 from kubernetes.stream import stream

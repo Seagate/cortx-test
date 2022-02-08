@@ -1,4 +1,4 @@
-"""This is cortx port scanner"""
+"""This is cortx port scanner using kubectl svc"""
 import logging
 from kubernetes import client, config
 from commons.utils import assert_utils
