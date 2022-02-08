@@ -25,12 +25,12 @@
 import os
 import logging
 
-from libs.io.s3api.s3_core_lib import S3ApiRest
+from libs.io.s3api.s3_restapi import S3RestApi
 
 LOGGER = logging.getLogger(__name__)
 
 
-class S3Object(S3ApiRest):
+class S3Object(S3RestApi):
     """Class for object operations."""
 
     def upload_object(self, bucket_name: str, object_name: str, file_path: str) -> dict:

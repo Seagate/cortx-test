@@ -23,12 +23,12 @@
 """Python Library to perform bucket operations using boto3 module."""
 
 import logging
-from libs.io.s3api.s3_core_lib import S3ApiRest
+from libs.io.s3api.s3_restapi import S3RestApi
 
 LOGGER = logging.getLogger(__name__)
 
 
-class S3Bucket(S3ApiRest):
+class S3Bucket(S3RestApi):
     """Class for bucket operations."""
 
     def create_bucket(self, bucket_name: str) -> dict:
