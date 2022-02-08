@@ -19,9 +19,9 @@
 
 """S3 utility Library."""
 import os
+import time
 import logging
 import boto3
-import time
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
