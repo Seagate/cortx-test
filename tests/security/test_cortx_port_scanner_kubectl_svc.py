@@ -32,7 +32,7 @@ def main():
     for item in ret.items:
         LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
         list_containers = item.spec.containers
-         for list_each_con in list_containers:
+        for list_each_con in list_containers:
              LOGGER.info(list_each_con.name)
 
     # listing all services
