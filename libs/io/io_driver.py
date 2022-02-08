@@ -66,6 +66,9 @@ process_list = manager.list()
 
 
 def parse_args():
+    """
+    Parse command line arguments
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, help="seed", default=random.randint(1, 9999999))
     parser.add_argument("secret_key", type=str, help="Secret Key")
@@ -173,11 +176,15 @@ def periodic_hc():
     launch_process(process, 'health_check', None)
 
 
-def main(opts):
-    access = opts.access_key
-    secret = opts.secret_key
-    endpoint = opts.endpoint
-    seed = opts.seed
+def main(options):
+    """
+    Main function
+    :param options: command line options
+    """
+    access = options.access_key
+    secret = options.secret_key
+    endpoint = options.endpoint
+    seed = options.seed
     log.info("Seed Used : %s", seed)
 
     # Retrieve output(dict) from yaml parser
