@@ -1,9 +1,8 @@
 """
 This is cortx port scanner
 """
-from kubernetes import client, config, watch
+from kubernetes import client, config
 from kubernetes.client import configuration
-from kubernetes.stream import stream
 from commons.utils import assert_utils
 import logging
 
@@ -11,6 +10,9 @@ LOGGER = logging.getLogger(__name__)
 
 def main():
 
+    """
+    This is cortx port scanner
+    """
     # Initialization
 
     actual_ports = []
@@ -28,25 +30,25 @@ def main():
     LOGGER.info(" Listing pods with their IPs:")
     ret = core_client.list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
-         LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
-         list_containers = item.spec.containers
+        LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
+        list_containers = item.spec.containers
          for list_each_con in list_containers:
-              LOGGER.info(list_each_con.name)
+             LOGGER.info(list_each_con.name)
 
     # listing all services
 
     LOGGER.info(" Listing All the services running in cluster:")
     ret = core_client.list_service_for_all_namespaces(watch=False)
     for item in ret.items:
-         LOGGER.info(item.spec.cluster_ip)
-         if item.spec.cluster_ip != "None":
-             list_of_ports=item.spec.ports
-             LOGGER.info(" Listing all ports")
-             for port_item in list_of_ports:
-                  LOGGER.info(port_item.name)
-                  LOGGER.info(port_item.port)
-                  if port_item.port != "NoneType":
-                      actual_ports.append(int(port_item.port))
+        LOGGER.info(item.spec.cluster_ip)
+        if item.spec.cluster_ip != "None":
+            list_of_ports=item.spec.ports
+            LOGGER.info(" Listing all ports")
+            for port_item in list_of_ports:
+                LOGGER.info(port_item.name)
+                LOGGER.info(port_item.port)
+                if port_item.port != "NoneType":
+                    actual_ports.append(int(port_item.port))
 
     # Prepare a list of actual ports
 
@@ -57,8 +59,8 @@ def main():
 
     with open("requirement_ports.txt") as file:
           for req_ports in file:
-               LOGGER.info(req_ports.rstrip())
-               req_port_list.append(int(req_ports.rstrip()))
+              LOGGER.info(req_ports.rstrip())
+              req_port_list.append(int(req_ports.rstrip()))
 
     req_port_list.sort()
 

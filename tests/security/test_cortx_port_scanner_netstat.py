@@ -2,11 +2,10 @@
 This is cortx port scanner
 """
 
-from kubernetes import client, config, watch
-from kubernetes.client import configuration
+import logging
+from kubernetes import client, config
 from kubernetes.stream import stream
 from commons.utils import assert_utils
-import logging
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,8 +28,8 @@ def main():
 
     with open("requirement_ports.txt") as file:
           for req_ports in file:
-               #LOGGER.info(req_ports.rstrip())
-               req_port_list.append(int(req_ports.rstrip()))
+              #LOGGER.info(req_ports.rstrip())
+              req_port_list.append(int(req_ports.rstrip()))
 
     req_port_list.sort()
 
@@ -44,24 +43,24 @@ def main():
 
     ret = core_client.list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
-         LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
-         if "cortx" in item.metadata.name:
-             list_containers = item.spec.containers
-             LOGGER.info(" --------------------------------------")
-             for list_each_con in list_containers:
-                  LOGGER.info(" Open Ports for Container: " + list_each_con.name)
-                  LOGGER.info(list_each_con.name)
-                  LOGGER.info(" Installing net-tools")
-                  resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_install_net_tool, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
-                  LOGGER.info("Executing netstat")
-                  resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_run_netstat, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
-                  resp_list_of_ports=resp.splitlines()
-                  for each_port in resp_list_of_ports:
-                       if has_numbers(each_port):
-                           netstat_port_list.append(int(each_port))
-                  LOGGER.info("Response: " + resp)
+        LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
+        if "cortx" in item.metadata.name:
+            list_containers = item.spec.containers
+            LOGGER.info(" --------------------------------------")
+            for list_each_con in list_containers:
+                LOGGER.info(" Open Ports for Container: " + list_each_con.name)
+                LOGGER.info(list_each_con.name)
+                LOGGER.info(" Installing net-tools")
+                resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_install_net_tool, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                LOGGER.info("Executing netstat")
+                resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_run_netstat, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                resp_list_of_ports=resp.splitlines()
+                for each_port in resp_list_of_ports:
+                    if has_numbers(each_port):
+                        netstat_port_list.append(int(each_port))
+                LOGGER.info("Response: " + resp)
 
-             LOGGER.info("--------------------------------------")
+            LOGGER.info("--------------------------------------")
 
 
     # Print the difference between actual_ports and req_port_list
