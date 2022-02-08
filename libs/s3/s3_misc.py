@@ -25,7 +25,6 @@ import time
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
-from commons.constants import NODE_SYNC_DELAY
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +84,7 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
 
     iam.delete_user(UserName=user_name)
     LOGGER.debug("Delete IAM user command success")
-    time.sleep(NODE_SYNC_DELAY)
+    time.sleep(S3_CFG["delete_account_delay"])
     result = False
     for iam_user in iam.list_users()["Users"]:
         if user_name == iam_user['UserName']:
