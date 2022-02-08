@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -29,7 +30,6 @@ import pytest
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from config import CMN_CFG
-from config import HA_CFG
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from commons import constants as common_const
@@ -108,16 +108,16 @@ class TestShutdownCluster:
 
         LOGGER.info("STARTED: Stop Cluster - Shutdown cluster.")
         LOGGER.info("Step 1: Stop the cluster")
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
         for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                    username=CMN_CFG["nodes"][node]["username"],
-                                    password=CMN_CFG["nodes"][node]["password"])
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
+                break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         if not resp[0]:
             assert_utils.assert_false(resp,"Error during Stopping cluster")
@@ -127,22 +127,21 @@ class TestShutdownCluster:
         LOGGER.info("Step 2:Verify all HA logs for SIGTERM alert message")
         for log in common_const.HA_SHUTDOWN_LOGS:
             pvc_list = node_obj.execute_cmd\
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s",  hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                         + hapvc + "/log/ha/*/" + log + " | grep 'SIGTERM'"
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-            print("SIGTERM time", output)
-            assert_utils.assert_in("Received SIGTERM", output, "Not received")  
-            print("SIGTERM time", output)
+            assert_utils.assert_in("Received SIGTERM", output, "SIGTERM not received")              
         LOGGER.info("Step 2:Verified all HA logs for SIGTERM alert message")
+        LOGGER.info("Completed: Stopped Cluster - Shutdown cluster ")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -151,47 +150,42 @@ class TestShutdownCluster:
         """
         This tests test the consul key after shutdown signal and shutdown cluster
         """
-        
         LOGGER.info("STARTED: Verify consul key.")
      
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path='/tmp/'+ base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
-        print("Pod Name..", pod_name)
-        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format('/tmp/ha_shutdown_signal.py',pod_name,'/tmp'),
+        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
-        print("kubectl cp", ha_pod_copy)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', '/tmp/' + base_path),
+        LOGGER.info("kubectl cp %s", ha_pod_copy)
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
         
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
-        resp1 = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
-        num_nodes = len(CMN_CFG["nodes"])
-        for node in range(num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                        username=CMN_CFG["nodes"][node]["username"],
-                                        password=CMN_CFG["nodes"][node]["password"])
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
+        for node in range(self.num_nodes):
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
                 break
             else:
-                LOGGER.error("hapod_hostname: " + hapod_hostname + ".")
+                LOGGER.error("HA pod name: " + pod_nameha + ".")
         for log in range(len(common_const.HA_SHUTDOWN_LOGS) -1):              
             pvc_list = node_obj.execute_cmd \
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s", hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                 + hapvc + "/log/ha/*/" + common_const.HA_SHUTDOWN_LOGS[log] + " | grep '{}'"            
@@ -203,8 +197,8 @@ class TestShutdownCluster:
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-                print("Cluster stop timing", output)
-                assert_utils.assert_in(cluster_stop_cmd, output, "Not received")
+                LOGGER.info("Cluster stop timing %s", output)
+                assert_utils.assert_in(cluster_stop_cmd, output, "SIGTERM Not received")
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
 
         LOGGER.info("Step 3: Shutdown a data pod using replica set")
@@ -221,26 +215,25 @@ class TestShutdownCluster:
         LOGGER.info("Step 4: Verify consul key after shutdown signal is sent")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
-        print("Pod Name..", pod_name)
         ha_consul_update_cmd = self.node_master_list[0].execute_cmd(
             common_cmd.HA_CONSUL_UPDATE_CMD.format(pod_name, 
                                                    common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                                                   (*common_const.HA_CONSUL_LIST),read_lines=True))
+                                                   (*common_const.HA_CONSUL_LIST), read_lines=True))
         ha_consul_update_cmd = ha_consul_update_cmd.strip().decode("utf-8")
         assert_utils.assert_in(ha_consul_update_cmd,common_const.HA_CONSUL_VERIFY, "Key not found")
         LOGGER.info("Step 4: Verified consul key after shutdown signal is sent")
 
         LOGGER.info("Step 5: Stop the cluster")
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
         for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                    username=CMN_CFG["nodes"][node]["username"],
-                                    password=CMN_CFG["nodes"][node]["password"])
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
+                break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         if not resp[0]:
             assert_utils.assert_false(resp,"Error during Stopping cluster")
@@ -248,17 +241,19 @@ class TestShutdownCluster:
         LOGGER.info("Step 5: Stopped the cluster successfully")
 
         LOGGER.info("Step 6: Verify consul key after shutdown cluster")
-        ha_consul_update_cmd = self.node_master_list[0].execute_cmd(
-            common_cmd.HA_CONSUL_UPDATE_CMD.format(pod_name, 
-                                                   common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                                                   (*common_const.HA_CONSUL_LIST),read_lines=True))
-        ha_consul_update_cmd = ha_consul_update_cmd.strip().decode("utf-8")
-        if "NotFound" in str(ha_consul_update_cmd):
-            assert_utils.assert_in(ha_consul_update_cmd,common_const.HA_CONSUL_NOKEY, "Key is not delete")
-        else:
-            LOGGER.error("NotFound string in " + ha_consul_update_cmd)
+        ha_cmd_output = ""
+        try:        
+            ha_cmd_output = self.node_master_list[0].execute_cmd(
+                common_cmd.HA_CONSUL_UPDATE_CMD.format(pod_name, 
+                                                       common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
+                                                       (*common_const.HA_CONSUL_LIST), read_lines=True))
+        except Exception as err:
+            if "NotFound" in str(err):
+                LOGGER.info("Key got deleted successfully"+ str(err))                 
+            else:
+                LOGGER.error("Key did not got deleted " + str(err))
         LOGGER.info("Step 6: Verified consul key after shutdown cluster")
-
+        LOGGER.info("Completed: Verified consul key ")
               
     @pytest.mark.ha
     @pytest.mark.lc
@@ -267,45 +262,40 @@ class TestShutdownCluster:
         """
         This tests test shutdown signal and shutdown cluster
         """
-        LOGGER.info("Send Shutdown Signal and Shutdown Cluster.")
+        LOGGER.info("START: Send Shutdown Signal and Shutdown Cluster.")
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path='/tmp/'+ base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
-        print("Pod Name..", pod_name)
-        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format('/tmp/ha_shutdown_signal.py',pod_name,'/tmp'),
+        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
-        print("kubectl cp", ha_pod_copy)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', '/tmp/' + base_path),
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
 
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
-        resp1 = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
-        num_nodes = len(CMN_CFG["nodes"])
-        for node in range(num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                        username=CMN_CFG["nodes"][node]["username"],
-                                        password=CMN_CFG["nodes"][node]["password"])
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
+        for node in range(self.num_nodes):
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
                 break
             else:
-                LOGGER.error("hapod_hostname: " + hapod_hostname + ".")
+                LOGGER.error("HA pod name: " + pod_nameha + ".")
         for log in range(len(common_const.HA_SHUTDOWN_LOGS) -1):              
             pvc_list = node_obj.execute_cmd \
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s", hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                 + hapvc + "/log/ha/*/" + common_const.HA_SHUTDOWN_LOGS[log] + " | grep '{}'"            
@@ -317,21 +307,21 @@ class TestShutdownCluster:
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-                print("Cluster stop timing", output)
-                assert_utils.assert_in(cluster_stop_cmd, output, "Not received")
+                LOGGER.info("Cluster stop timing %s", output)
+                assert_utils.assert_in(cluster_stop_cmd, output, "SIGTERM Not received")
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
 
         LOGGER.info("Step 3: Stop the cluster")
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
         for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                    username=CMN_CFG["nodes"][node]["username"],
-                                    password=CMN_CFG["nodes"][node]["password"])
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
+                break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         if not resp[0]:
             assert_utils.assert_false(resp,"Error during Stopping cluster")
@@ -341,22 +331,21 @@ class TestShutdownCluster:
         LOGGER.info("Step 4:Verify the HA logs for SIGTERM alert message")
         for log in common_const.HA_SHUTDOWN_LOGS:
             pvc_list = node_obj.execute_cmd\
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s", hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                         + hapvc + "/log/ha/*/" + log + " | grep 'SIGTERM'"
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-            print("SIGTERM time", output)
-            assert_utils.assert_in("Received SIGTERM", output, "Not received")  
-            print("SIGTERM time", output)
+            assert_utils.assert_in("Received SIGTERM", output, "SIGTERM not received")  
         LOGGER.info("Step 4:Verified the HA logs for SIGTERM alert message")
+        LOGGER.info("COMPETED: Sent Shutdown Signal and Shutdown Cluster")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -368,42 +357,38 @@ class TestShutdownCluster:
         LOGGER.info("STARTED: Scale pod down and up and verify HA alerts.")
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path='/tmp/'+ base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
-        print("Pod Name..", pod_name)
-        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format('/tmp/ha_shutdown_signal.py',pod_name,'/tmp'),
+        ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
-        print("kubectl cp", ha_pod_copy)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', '/tmp/' + base_path),
+        LOGGER.info("kubectl cp %s", ha_pod_copy)
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
 
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
-        resp1 = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
-        num_nodes = len(CMN_CFG["nodes"])
-        for node in range(num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                        username=CMN_CFG["nodes"][node]["username"],
-                                        password=CMN_CFG["nodes"][node]["password"])
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
+        for node in range(self.num_nodes):
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
                 break
             else:
-                LOGGER.error("hapod_hostname: " + hapod_hostname + ".")
+                LOGGER.error("HA pod name: " + pod_nameha + ".")
         for log in range(len(common_const.HA_SHUTDOWN_LOGS) -1):              
             pvc_list = node_obj.execute_cmd \
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s", hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                 + hapvc + "/log/ha/*/" + common_const.HA_SHUTDOWN_LOGS[log] + " | grep '{}'"            
@@ -415,17 +400,17 @@ class TestShutdownCluster:
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-                print("Cluster stop timing", output)
-                assert_utils.assert_in(cluster_stop_cmd, output, "Not received")
+                LOGGER.info("Cluster stop timing %s", output)
+                assert_utils.assert_in(cluster_stop_cmd, output, "SIGTERM Not received")
         LOGGER.info("Step 2: Verify HA logs for cluster stop key message.")
 
         LOGGER.info("Step 3: Scale down and up pod using replica set")
-        pvc_list = node_obj.execute_cmd("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         hapvc = None
         for hapvc in pvc_list:
-            if "cortx-ha" in hapvc:
+            if common_const.HA_POD_NAME_PREFIX in hapvc:
                 hapvc = hapvc.replace("\n", "")
-                print("hapvc list", hapvc)
+                LOGGER.info("hapvc list %s", hapvc)
                 break
         ha_wc_count_cmd = "/mnt/fs-local-volume/local-path-provisioner/"+ hapvc + "/log/ha/*/"+ common_const.HA_SHUTDOWN_LOGS[2]
         ha_wc_count_cmd = common_cmd.LINE_COUNT_CMD.format(ha_wc_count_cmd)
@@ -455,21 +440,21 @@ class TestShutdownCluster:
         ha_wc_count_after_scale = node_obj.execute_cmd(ha_wc_count_cmd)
         if isinstance(ha_wc_count_after_scale, bytes):
             ha_wc_count_after_scale = str(ha_wc_count_after_scale, 'UTF-8')
-        print("count after scale", ha_wc_count_after_scale)
+        LOGGER.info("count after scale %s", ha_wc_count_after_scale)
         assert_utils.assert_equal(ha_wc_count,ha_wc_count_after_scale,"Count does not match" )
         LOGGER.info("Step 4: Verified health monitor log")
         
         LOGGER.info("Step 5: Stop the cluster")
-        ha_hostname = self.node_master_list[0].execute_cmd(common_cmd.K8S_GET_MGNT, read_lines=True)
-        for line in ha_hostname:
-            if "cortx-ha" in line:
-                hapod_hostname = line.split()[6]
-        print("Cortx HA pod running on: ", hapod_hostname)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_nameha = pod_list[0]
+        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
         for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == hapod_hostname:
-                node_obj = LogicalNode(hostname=hapod_hostname,
-                                    username=CMN_CFG["nodes"][node]["username"],
-                                    password=CMN_CFG["nodes"][node]["password"])
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
+                break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         if not resp[0]:
             assert_utils.assert_false(resp,"Error during Stopping cluster")
@@ -479,20 +464,19 @@ class TestShutdownCluster:
         LOGGER.info("Step 6:Verify the HA logs for SIGTERM alert message")
         for log in common_const.HA_SHUTDOWN_LOGS:
             pvc_list = node_obj.execute_cmd\
-                ("ls /mnt/fs-local-volume/local-path-provisioner/", read_lines=True)
+                (common_cmd.HA_LOG_PVC, read_lines=True)
             hapvc = None
             for hapvc in pvc_list:
-                if "cortx-ha" in hapvc:
+                if common_const.HA_POD_NAME_PREFIX in hapvc:
                     hapvc = hapvc.replace("\n", "")
-                    print("hapvc list", hapvc)
+                    LOGGER.info("hapvc list %s", hapvc)
                     break
             cmd_halog = "tail -10 /mnt/fs-local-volume/local-path-provisioner/"\
                         + hapvc + "/log/ha/*/" + log + " | grep 'SIGTERM'"
             output = node_obj.execute_cmd(cmd_halog)
             if isinstance(output, bytes):
                 output = str(output, 'UTF-8')
-            print("SIGTERM time", output)
-            assert_utils.assert_in("Received SIGTERM", output, "Not received")  
-            print("SIGTERM time", output)
+            assert_utils.assert_in("Received SIGTERM", output, "SIGTERM Not received")  
         LOGGER.info("Step 6:Verified the HA logs for SIGTERM alert message")
+        LOGGER.info("COMPETED: Scaled pod down and up and verified HA alerts")
 
