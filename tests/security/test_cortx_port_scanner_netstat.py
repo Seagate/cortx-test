@@ -42,7 +42,7 @@ def main():
 
     ret = client.CoreV1Api().list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
-        LOGGER.info("%s\t%s\t%s" % (item.status.pod_ip,item.metadata.namespace,item.metadata.name))
+        LOGGER.info("%s\t%s\t%s", item.status.pod_ip,item.metadata.namespace,item.metadata.name)
         if "cortx" in item.metadata.name:
             LOGGER.info(" --------------------------------------")
             for list_each_con in item.spec.containers:
