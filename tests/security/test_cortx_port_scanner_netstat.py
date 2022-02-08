@@ -91,11 +91,13 @@ def main():
         assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
     else:
         LOGGER.info(" Test Case successful!!")
+
 def has_numbers(input_string):
     """
     Function to check if string is number
     """
     return any(char.isdigit() for char in input_string)
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_netstat.log')
     main()
