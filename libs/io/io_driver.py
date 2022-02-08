@@ -237,14 +237,13 @@ def main(options):
                     terminate_run = True
                     error_proc = key
                     error_proc_data = value
-            if value['state'] == 'started':
-                is_process_running = True
-
+            
         # Terminate if error observed in any process
         if terminate_run:
             log.error("Error observed in process %s %s", error_proc, error_proc_data)
             log.error("Terminating schedular..")
             sys.exit(0)
+
 
 if __name__ == '__main__':
     opts = parse_args()
