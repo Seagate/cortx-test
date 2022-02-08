@@ -14,5 +14,5 @@ given from bytes, KB, MB up to TB. We can also use KiB format as well.
 
 Result duration can be specified from seconds up to days. For example, 1d1h, 1h or 2d1h.
 
-Tool can be specified from one of these **s3bench**, **boto3** or **warp**.
+Tool can be specified from one of these **s3bench**, **s3api** or **warp**.
 
