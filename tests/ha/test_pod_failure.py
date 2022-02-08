@@ -823,7 +823,7 @@ class TestPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
         LOGGER.info("Step 2: Successfully completed READs and verified DI on the written data in "
@@ -1199,7 +1199,7 @@ class TestPodFailure:
         assert_utils.assert_false(len(resp[1]), f"Expected Pass, But Logs which contain failures:"
                                                 f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
                     "failed/error.")
@@ -1365,7 +1365,7 @@ class TestPodFailure:
         assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
                                                 f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
                     "down is failed/error.")
