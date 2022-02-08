@@ -1,10 +1,9 @@
 """
 This is cortx port scanner
 """
-from kubernetes import client, config
-from kubernetes.client import configuration
-from commons.utils import assert_utils
 import logging
+from kubernetes import client, config
+from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,7 +15,6 @@ def main():
     # Initialization
 
     actual_ports = []
-    netstat_port_list = []
 
     LOGGER.info(' This is cortx port scanner!')
 
@@ -30,10 +28,10 @@ def main():
     LOGGER.info(" Listing pods with their IPs:")
     ret = core_client.list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
-        LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
+        LOGGER.info( " %s\t%s\t%s",item.status.pod_ip,item.metadata.namespace,item.metadata.name)
         list_containers = item.spec.containers
         for list_each_con in list_containers:
-             LOGGER.info(list_each_con.name)
+            LOGGER.info(list_each_con.name)
 
     # listing all services
 
@@ -83,13 +81,10 @@ def main():
     final_list_of_fault_ports=list(set(to_log_actual_ports) - set(req_port_list))
     final_list_of_fault_ports.sort()
     LOGGER.info(final_list_of_fault_ports)
-
-    if final_list_of_fault_ports: 
+    if final_list_of_fault_ports:
         assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
-    else: 
+    else:
         LOGGER.info(" Test Case successful!!")
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_kubectl_svc.log')
     main()
-
