@@ -32,7 +32,7 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class S3ApiRest(object):
+class S3RestApi(object):
     """Basic Class for Creating Boto3 REST API Objects."""
 
     def __init__(self,
@@ -54,7 +54,7 @@ class S3ApiRest(object):
         :param debug: debug mode.
         """
         region = kwargs.get("region", S3_CFG["region"])
-        aws_session_token = kwargs.get("aws_session_token")
+        aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         config = Config(retries={'max_attempts': S3_CFG["s3api_retry"]})
