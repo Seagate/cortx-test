@@ -1,3 +1,4 @@
+"""This is cortx port scanner"""
 import logging
 from kubernetes import client, config
 from commons.utils import assert_utils
