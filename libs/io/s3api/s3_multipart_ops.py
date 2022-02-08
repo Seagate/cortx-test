@@ -24,12 +24,12 @@
 
 import logging
 
-from libs.io.s3api.s3_core_lib import S3ApiRest
+from libs.io.s3api.s3_restapi import S3RestApi
 
 LOGGER = logging.getLogger(__name__)
 
 
-class S3MultiParts(S3ApiRest):
+class S3MultiParts(S3RestApi):
     """Class for Multipart operations."""
 
     def create_multipart_upload(self, bucket_name: str, obj_name: str) -> dict:
