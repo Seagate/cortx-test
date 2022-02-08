@@ -14,6 +14,7 @@ SERVICE_HA_STATUS = "ps -aux"
 HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {} {} {} {} {} {}'
+HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"

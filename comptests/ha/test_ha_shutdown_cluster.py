@@ -495,4 +495,4 @@ class TestShutdownCluster:
             assert_utils.assert_in("Received SIGTERM", output, "Not received")  
             print("SIGTERM time", output)
         LOGGER.info("Step 6:Verified the HA logs for SIGTERM alert message")
-        
+
