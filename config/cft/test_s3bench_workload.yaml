@@ -17,5 +17,5 @@ test_24673:
 test_25016:
   clients: 16
   samples: 256
-  read_loops: 100
+  read_loops: 200
   object_size: 128Mb
