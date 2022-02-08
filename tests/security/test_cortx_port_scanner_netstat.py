@@ -46,7 +46,7 @@ def main():
         if "cortx" in item.metadata.name:
             LOGGER.info(" --------------------------------------")
             for list_each_con in item.spec.containers:
-                LOGGER.info(" Open Ports for Container: " + list_each_con.name)
+                LOGGER.info(" Open Ports for Container: %s",list_each_con.name)
                 LOGGER.info(list_each_con.name)
                 LOGGER.info(" Installing net-tools")
                 resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, \
@@ -61,7 +61,7 @@ def main():
                 for each_port in resp.splitlines():
                     if has_numbers(each_port):
                         netstat_port_list.append(int(each_port))
-                LOGGER.info("Response: " + resp)
+                LOGGER.info("Response: %s", resp)
 
             LOGGER.info("--------------------------------------")
 
