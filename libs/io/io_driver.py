@@ -230,7 +230,6 @@ def main(options):
         error_proc = None
         error_proc_data = None
         terminate_run = False
-        is_process_running = False
 
         for key, value in process_states.items():
             if value['state'] == 'done':
