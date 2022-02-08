@@ -81,16 +81,15 @@ def main():
     final_list_of_fault_ports=list(set(netstat_port_list) - set(req_port_list))
     final_list_of_fault_ports.sort()
     LOGGER.info(final_list_of_fault_ports)
-
     if final_list_of_fault_ports: 
         assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
     else: 
         LOGGER.info(" Test Case successful!!")
-
 def has_numbers(input_string):
+    """
+    Function to check if string is number
+    """
     return any(char.isdigit() for char in input_string)
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_netstat.log')
     main()
-
