@@ -49,9 +49,15 @@ def main():
                 LOGGER.info(" Open Ports for Container: " + list_each_con.name)
                 LOGGER.info(list_each_con.name)
                 LOGGER.info(" Installing net-tools")
-                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=cmd_install_net_tool, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, \
+                              item.metadata.name, "default", container=list_each_con.name, \
+                              command=cmd_install_net_tool, stderr=True, stdin=False, \
+                              stdout=True, tty=False, _preload_content=True)
                 LOGGER.info("Executing netstat")
-                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=cmd_run_netstat, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, \
+                              item.metadata.name, "default", container=list_each_con.name, \
+                              command=cmd_run_netstat, stderr=True, stdin=False, \
+                              stdout=True, tty=False, _preload_content=True)
                 for each_port in resp.splitlines():
                     if has_numbers(each_port):
                         netstat_port_list.append(int(each_port))
