@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -70,7 +69,6 @@ class TestShutdownCluster:
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        #assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
@@ -119,8 +117,7 @@ class TestShutdownCluster:
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
-        if not resp[0]:
-            assert_utils.assert_false(resp,"Error during Stopping cluster")
+        assert_utils.assert_true(resp[0], "Error during Stopping cluster")
         LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 1: Stopped the cluster successfully")
 
@@ -154,14 +151,14 @@ class TestShutdownCluster:
      
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + '/' + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
         ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
         LOGGER.info("kubectl cp %s", ha_pod_copy)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + '/' + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
         
@@ -218,7 +215,7 @@ class TestShutdownCluster:
         ha_consul_update_cmd = self.node_master_list[0].execute_cmd(
             common_cmd.HA_CONSUL_UPDATE_CMD.format(pod_name, 
                                                    common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                                                   (*common_const.HA_CONSUL_LIST), read_lines=True))
+                                                   common_const.HA_CONSUL_STR, read_lines=True))
         ha_consul_update_cmd = ha_consul_update_cmd.strip().decode("utf-8")
         assert_utils.assert_in(ha_consul_update_cmd,common_const.HA_CONSUL_VERIFY, "Key not found")
         LOGGER.info("Step 4: Verified consul key after shutdown signal is sent")
@@ -235,23 +232,16 @@ class TestShutdownCluster:
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
-        if not resp[0]:
-            assert_utils.assert_false(resp,"Error during Stopping cluster")
+        assert_utils.assert_true(resp[0], "Error during Stopping cluster")
         LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 5: Stopped the cluster successfully")
 
         LOGGER.info("Step 6: Verify consul key after shutdown cluster")
-        ha_cmd_output = ""
-        try:        
-            ha_cmd_output = self.node_master_list[0].execute_cmd(
-                common_cmd.HA_CONSUL_UPDATE_CMD.format(pod_name, 
-                                                       common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                                                       (*common_const.HA_CONSUL_LIST), read_lines=True))
-        except Exception as err:
-            if "NotFound" in str(err):
-                LOGGER.info("Key got deleted successfully"+ str(err))                 
-            else:
-                LOGGER.error("Key did not got deleted " + str(err))
+        ha_cmd_output = self.node_master_list[0].\
+            execute_cmd(common_cmd.HA_CONSUL_UPDATE_CMD.
+                        format(pod_name,common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
+                               common_const.HA_CONSUL_STR), read_lines=True, exc=False)                                         
+        assert_utils.assert_in("NotFound",ha_cmd_output[1][0],"Key not deleted")                
         LOGGER.info("Step 6: Verified consul key after shutdown cluster")
         LOGGER.info("Completed: Verified consul key ")
               
@@ -265,13 +255,13 @@ class TestShutdownCluster:
         LOGGER.info("START: Send Shutdown Signal and Shutdown Cluster.")
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + '/' + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
         ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + '/' + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
 
@@ -323,8 +313,7 @@ class TestShutdownCluster:
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
-        if not resp[0]:
-            assert_utils.assert_false(resp,"Error during Stopping cluster")
+        assert_utils.assert_true(resp[0], "Error during Stopping cluster")
         LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 3: Stopped the cluster successfully")
 
@@ -357,14 +346,14 @@ class TestShutdownCluster:
         LOGGER.info("STARTED: Scale pod down and up and verify HA alerts.")
         LOGGER.info("Step 1: Send the cluster shutdown signal.")
         base_path=os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
-        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + base_path)
+        ha_cp_remote = self.node_master_list[0].copy_file_to_remote(local_path=common_const.HA_SHUTDOWN_SIGNAL_PATH, remote_path=common_const.HA_TMP + '/' + base_path)
         assert_utils.assert_true(ha_cp_remote[0])
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
         ha_pod_copy = self.node_master_list[0].execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + '/ha_shutdown_signal.py',pod_name,common_const.HA_TMP),
                                                            read_lines=True)
         LOGGER.info("kubectl cp %s", ha_pod_copy)
-        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + base_path),
+        ha_pod_run_script = self.node_master_list[0].execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name,'/usr/bin/python3', common_const.HA_TMP + '/' + base_path),
                                                            read_lines=True)
         LOGGER.info("Step 1: Sent the cluster shutdown signal successfully.")
 
@@ -456,8 +445,7 @@ class TestShutdownCluster:
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
-        if not resp[0]:
-            assert_utils.assert_false(resp,"Error during Stopping cluster")
+        assert_utils.assert_true(resp[0], "Error during Stopping cluster")
         LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 5: Stopped the cluster successfully")
 
@@ -479,4 +467,3 @@ class TestShutdownCluster:
             assert_utils.assert_in("Received SIGTERM", output, "SIGTERM Not received")  
         LOGGER.info("Step 6:Verified the HA logs for SIGTERM alert message")
         LOGGER.info("COMPETED: Scaled pod down and up and verified HA alerts")
-
