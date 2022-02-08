@@ -67,7 +67,7 @@ class RestCsmCluster(RestTestLib):
         data = data.split("\n")
         res = False
         for line in data:
-            if "cortx-control-pod" in line:
+            if "cortx-control" in line:
                 line_found = line
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[0]
