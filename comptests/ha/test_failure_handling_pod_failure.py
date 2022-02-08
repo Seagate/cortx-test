@@ -141,7 +141,6 @@ class TestFailureHandlingPodFailure:
         node_obj = None
         for node in range(self.num_nodes):
             if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
-                ha_fqdn = node
                 node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
                                        username=CMN_CFG["nodes"][node]["username"],
                                        password=CMN_CFG["nodes"][node]["password"])
