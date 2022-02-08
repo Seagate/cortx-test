@@ -1,5 +1,5 @@
 import logging
-from libs.csm.csm_interface import CSMApiFactory
+from libs.csm.csm_interface import csm_api_factory
 
 class TestCsmInterface:
 
@@ -9,11 +9,11 @@ class TestCsmInterface:
         """
         Test to run IO and verify the download sequentially within test
         """
-        csm_obj = CSMApiFactory("rest")
+        csm_obj = csm_api_factory("rest")
         self.log.info("Testing function from CSM User class")
         resp = csm_obj.create_payload_for_new_csm_user("valid", "manage")
         self.log.info(resp)
-        assert resp is None, "payload not created"
+        assert resp["role"] == "manage", "payload not created"
         resp = csm_obj.create_payload_for_new_csm_user("valid", "manage")
         assert resp["role"]=="manage", "Required user not created."
         resp = csm_obj.create_csm_user()
@@ -32,7 +32,7 @@ class TestCsmInterface:
         """
         Test to run IO and verify the download sequentially within test
         """
-        csm_obj = CSMApiFactory("rest")
+        csm_obj = csm_api_factory("rest")
         self.log.info("Testing function from S3 User class")
         resp = csm_obj.create_s3_account()
         assert resp.status_code == 201, "create failed"
@@ -68,7 +68,7 @@ class TestCsmInterface:
         """
         Test to run IO and verify the download sequentially within test
         """
-        csmrest_obj = CSMApiFactory("cli")
+        csmrest_obj = csm_api_factory("cli")
         self.log.info("Testing function from CLI class")
         assert csmrest_obj is not None, "Unable to create cli object"
 
@@ -76,6 +76,6 @@ class TestCsmInterface:
         """
         Test to run IO and verify the download sequentially within test
         """
-        csmrest_obj = CSMApiFactory("gui")
+        csmrest_obj = csm_api_factory("gui")
         self.log.info("Testing function from GUI class")
         assert csmrest_obj is not None, "Unable to create gui object"
