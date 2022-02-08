@@ -467,3 +467,5 @@ class TestShutdownCluster:
             assert_utils.assert_in("Received SIGTERM", output, "SIGTERM Not received")  
         LOGGER.info("Step 6:Verified the HA logs for SIGTERM alert message")
         LOGGER.info("COMPETED: Scaled pod down and up and verified HA alerts")
+
+
