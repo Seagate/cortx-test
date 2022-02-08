@@ -1,7 +1,3 @@
-"""
-This is cortx port scanner
-"""
-
 import logging
 from kubernetes import client, config
 from kubernetes.stream import stream
