@@ -49,11 +49,11 @@ from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
+from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
-from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from libs.s3.s3_blackbox_test_lib import JCloudClient
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ class TestPodFailure:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = cls.random_time = cls.restored = None
+        cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = None
@@ -123,7 +123,6 @@ class TestPodFailure:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
-        self.restored = True
         self.restore_node = False
         self.restore_ip = False
         self.deploy = False
@@ -163,26 +162,23 @@ class TestPodFailure:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        if self.restored:
-            if self.restore_node:
-                LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
-                resp = self.ha_obj.host_power_on(host=self.node_name)
-                assert_utils.assert_true(resp, "Host is not powered on")
-                LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
-                            " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
-                time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
-            if self.restore_ip:
-                LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
-                self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
-                                                read_lines=True)
-                resp = sysutils.check_ping(host=self.node_ip)
-                assert_utils.assert_true(resp, "Interface is still not up.")
-            LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        if self.restore_node:
+            LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
+            resp = self.ha_obj.host_power_on(host=self.node_name)
+            assert_utils.assert_true(resp, "Host is not powered on")
+            LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
+                        " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
+            time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
+        if self.restore_ip:
+            LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
+            self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
+                                            read_lines=True)
+            resp = sysutils.check_ping(host=self.node_ip)
+            assert_utils.assert_true(resp, "Interface is still not up.")
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
-
+        # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
+        #  every test
         if self.deploy:
             LOGGER.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
@@ -823,7 +819,7 @@ class TestPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
         LOGGER.info("Step 2: Successfully completed READs and verified DI on the written data in "
@@ -1199,7 +1195,7 @@ class TestPodFailure:
         assert_utils.assert_false(len(resp[1]), f"Expected Pass, But Logs which contain failures:"
                                                 f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
                     "failed/error.")
@@ -1365,7 +1361,7 @@ class TestPodFailure:
         assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
                                                 f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
                     "down is failed/error.")
