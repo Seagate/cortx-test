@@ -40,8 +40,6 @@ def main():
 
     # Execute command on a POD
 
-    LOGGER.info("Execute command on a POD")
-
     exec_command_install_net_tool = ['/bin/sh', '-c', 'yum install net-tools -y']
     exec_command_run_netstat = ['/bin/sh', '-c', 'netstat -plnt | awk \'{print $4}\' | cut -d \":\" -f2']
 
@@ -69,8 +67,6 @@ def main():
 
     # Print the difference between actual_ports and req_port_list
 
-    LOGGER.info("------------------------------")
-    LOGGER.info("\n")
     LOGGER.info("------------------------------")
     LOGGER.info("List of ports opened in cluster - scanned using netstat")
     LOGGER.info("------------------------------")
