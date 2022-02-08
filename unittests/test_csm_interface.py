@@ -1,7 +1,13 @@
+"""
+Unit tests for CSM interface
+"""
 import logging
 from libs.csm.csm_interface import csm_api_factory
 
 class TestCsmInterface:
+    """
+    Class for all csm calls testing with csm interface
+    """
 
     log = logging.getLogger(__name__)
 
