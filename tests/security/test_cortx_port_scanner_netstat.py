@@ -25,8 +25,6 @@ def main():
 
     config.load_kube_config(context=option)
 
-    core_client = client.CoreV1Api()
-
     # Read port numbers from file specification
     req_port_list = []
 
@@ -37,27 +35,24 @@ def main():
 
     req_port_list.sort()
 
-
     # Execute command on a POD
 
     exec_command_install_net_tool = ['/bin/sh', '-c', 'yum install net-tools -y']
     exec_command_run_netstat = ['/bin/sh', '-c', 'netstat -plnt | awk \'{print $4}\' | cut -d \":\" -f2']
 
-    ret = core_client.list_pod_for_all_namespaces(watch=False)
+    ret = client.CoreV1Api().list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
         LOGGER.info( " %s\t%s\t%s" % (item.status.pod_ip, item.metadata.namespace, item.metadata.name))
         if "cortx" in item.metadata.name:
-            list_containers = item.spec.containers
             LOGGER.info(" --------------------------------------")
-            for list_each_con in list_containers:
+            for list_each_con in item.spec.containers:
                 LOGGER.info(" Open Ports for Container: " + list_each_con.name)
                 LOGGER.info(list_each_con.name)
                 LOGGER.info(" Installing net-tools")
-                resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_install_net_tool, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_install_net_tool, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
                 LOGGER.info("Executing netstat")
-                resp = stream(core_client.connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_run_netstat, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
-                resp_list_of_ports=resp.splitlines()
-                for each_port in resp_list_of_ports:
+                resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, item.metadata.name, "default", container=list_each_con.name, command=exec_command_run_netstat, stderr=True, stdin=False, stdout=True, tty=False, _preload_content=True)
+                for each_port in resp.splitlines():
                     if has_numbers(each_port):
                         netstat_port_list.append(int(each_port))
                 LOGGER.info("Response: " + resp)
