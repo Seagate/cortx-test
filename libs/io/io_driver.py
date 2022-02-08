@@ -70,7 +70,8 @@ def parse_args():
     Parse command line arguments
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, help="seed", default=random.randint(1, 9999999))
+    parser.add_argument("--seed", type=int, help="seed",
+                        default=random.SystemRandom().randint(1, 9999999))
     parser.add_argument("secret_key", type=str, help="Secret Key")
     parser.add_argument("access_key", type=str, help="Access Key")
     parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations",
@@ -245,12 +246,6 @@ def main(options):
             log.error("Error observed in process %s %s", error_proc, error_proc_data)
             log.error("Terminating schedular..")
             sys.exit(0)
-
-        # Terminate if no process scheduled or running.
-        if sched_obj.empty() and not is_process_running:
-            log.info("No jobs scheduled in schedular,exiting..!!")
-            sys.exit(0)
-
 
 if __name__ == '__main__':
     opts = parse_args()
