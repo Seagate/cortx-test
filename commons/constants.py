@@ -28,7 +28,7 @@ from commons import const
 NWORKERS = 32
 
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will
-i# run in parallel.
+# run in parallel.
 NGREENLETS = 32
 
 # SB contansts
@@ -48,10 +48,14 @@ HA_POD_NAME_PREFIX = "cortx-ha"
 HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
-HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 HAX_CONTAINER_NAME = "cortx-hax"
+HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
+HA_CONSUL_LIST = ["consul", "kv", "get", "-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500", "--recurse", "cortx/ha/v1/cluster_stop_key"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
+HA_SHUTDOWN_SIGNAL_PATH = "/root/cortx-test/scripts/server_scripts/ha_shutdown_signal.py"
+HA_CONSUL_VERIFY = "cortx/ha/v1/cluster_stop_key:1"
+HA_CONSUL_NOKEY = "NotFound"
 
 # RAS Paths
 BYTES_TO_READ = 8000
