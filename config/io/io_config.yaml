@@ -45,3 +45,4 @@
     "s3_auth": "iam.seagate.com:9443"
 
 "max_storage": 98.0  # Storage percentage should not exceed for IO to be run on cluster.
+"max_sb": 5

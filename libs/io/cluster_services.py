@@ -22,13 +22,14 @@
 """IO cluster services module."""
 
 import os
+import glob
 import shutil
 import logging
+from datetime import datetime
 
 from config.io import CMN_CFG
 from commons.helpers.health_helper import Health
 from commons.utils import support_bundle_utils as sb
-
 
 LOGGER = logging.getLogger(__name__)
 NODES = CMN_CFG["nodes"]
@@ -123,3 +124,50 @@ def collect_crash_files():
         return False, error
 
     return os.path.exists(crash_fpath), crash_fpath
+
+
+def rotate_sb_logs(sb_dpath: str, sb_max_count: int = 0):
+    """
+    Remove old SB logs as per max SB count.
+
+    :param: sb_dpath: Directory path of support bundles.
+    :param: sb_max_count: Maximum count of support bundles to keep.
+    """
+    sb_max_count = sb_max_count if sb_max_count else CMN_CFG.get("max_sb", 5)
+    if not os.path.exists(sb_dpath):
+        raise IOError(f"Directory '{sb_dpath}' path does not exists.")
+    files = sorted(glob.glob(sb_dpath + '*'), key=os.path.getctime, reverse=True)
+    if len(files) > sb_max_count:
+        for fpath in files[sb_max_count:]:
+            if os.path.exists(fpath):
+                os.remove(fpath)
+                LOGGER.info("Old SB removed: %s", fpath)
+
+    if not len(os.listdir(sb_dpath)) <= sb_max_count:
+        raise IOError(f"Failed to rotate SB logs: {os.listdir(sb_dpath)}")
+
+
+def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str):
+    """
+    Collect SB and copy to NFS server log and keep SB logs as per max_sb count.
+
+    :param mount_path: Path of mounted directory.
+    :param run_id: Unique id for each run.
+    """
+    try:
+        sb_dir = os.path.join(mount_path, "CorIO-Execution", run_id, "Support_Bundles",
+                              str(datetime.now().year), str(datetime.now().month))
+        if not os.path.ismount(mount_path):
+            raise IOError(f"Incorrect mount path: {mount_path}")
+        if not os.path.exists(sb_dir):
+            os.makedirs(sb_dir)
+        status, fpath = collect_support_bundle()
+        shutil.copy2(fpath, sb_dir)
+        rotate_sb_logs(sb_dir)
+        sb_files = os.listdir(sb_dir)
+        LOGGER.info("SB list: %s", sb_files)
+    except IOError as error:
+        LOGGER.error(error)
+        return False, error
+
+    return status, sb_files
