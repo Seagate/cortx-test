@@ -1078,13 +1078,13 @@ class HAK8s:
                     return True, node_ip, node_iface, new_worker_obj
 
     @staticmethod
-    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, multipart_obj_path, output):
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output):
         """
-        Helper function to complete multipart upload.
+        Helper function to do chunk upload.
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param file_size: Size of the file to be created to upload
-        :param multipart_obj_path: Path of the file to be uploaded
+        :param chunk_obj_path: Path of the file to be uploaded
         :param output: Queue used to fill output
         :return: response
         """
@@ -1102,14 +1102,14 @@ class HAK8s:
         LOGGER.info("Created a bucket with name : %s", bucket_name)
 
         LOGGER.info("Creating object file of 5GB")
-        resp = system_utils.create_file(multipart_obj_path, file_size)
+        resp = system_utils.create_file(chunk_obj_path, file_size)
         LOGGER.info("Response: %s", resp)
         if not resp[0]:
             output.put(False)
             sys.exit(1)
 
         java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
-        put_cmd = f"{java_cmd} -c {jclient_prop} put {multipart_obj_path} s3://{bucket_name} " \
+        put_cmd = f"{java_cmd} -c {jclient_prop} put {chunk_obj_path} s3://{bucket_name} " \
                   f"--access_key {access_key} --secret_key {secret_key}"
         LOGGER.info("Running command %s", put_cmd)
         resp = system_utils.execute_cmd(put_cmd)

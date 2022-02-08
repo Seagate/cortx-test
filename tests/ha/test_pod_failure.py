@@ -2339,7 +2339,7 @@ class TestPodFailure:
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 7: Listed parts of multipart upload. Count: %s". len(res[1]["Parts"]))
+        LOGGER.info("Step 7: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
 
         LOGGER.info("Step 8: Completing multipart upload and check upload size is %s",
                     file_size * const.Sizes.MB)
@@ -3333,7 +3333,7 @@ class TestPodFailure:
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         download_file = "test_chunk_upload" + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
-        multipart_obj_path = os.path.join(self.test_dir_path, self.object_name)
+        chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
         output = Queue()
 
         LOGGER.info("Step 1: Perform setup steps for jclient")
@@ -3357,7 +3357,7 @@ class TestPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
 
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
-                'file_size': file_size, 'multipart_obj_path': multipart_obj_path, 'output': output}
+                'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.create_bucket_chunk_upload, kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -3400,7 +3400,7 @@ class TestPodFailure:
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 6: Services of pod are in online state")
+        LOGGER.info("Step 6: Services of remaining pods are in online state")
 
         LOGGER.info("Step 7: Verifying response of background process")
         thread.join()
@@ -3410,7 +3410,7 @@ class TestPodFailure:
                 break
 
         if resp is None:
-            assert_utils.assert_true(False, "Background process failed")
+            assert_utils.assert_true(False, "Background process of chunk upload failed")
 
         LOGGER.info("Step 7: Successfully verified response of background process")
 
@@ -3419,7 +3419,7 @@ class TestPodFailure:
             self.ha_obj.create_bucket_chunk_upload(s3_data=self.s3_clean,
                                                    bucket_name=self.bucket_name,
                                                    file_size=file_size,
-                                                   multipart_obj_path=multipart_obj_path,
+                                                   chunk_obj_path=chunk_obj_path,
                                                    output=output)
 
             while True:
@@ -3428,11 +3428,11 @@ class TestPodFailure:
                     break
 
             if not resp or resp is None:
-                assert_utils.assert_true(False, "Chunk upload failed")
-            LOGGER.info("Step 8: Retried chuck upload successfully")
+                assert_utils.assert_true(False, "Retried chunk upload failed")
+            LOGGER.info("Step 8: Retried chunk upload successfully")
 
-        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
-        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[multipart_obj_path],
+        LOGGER.info("Calculating checksum of file %s", chunk_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
                                                            compare=False)[0]
 
         LOGGER.info("Step 9: Download object and verify checksum")
