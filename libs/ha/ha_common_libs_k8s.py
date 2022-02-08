@@ -46,6 +46,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
+from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1075,3 +1076,70 @@ class HAK8s:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
                     return True, node_ip, node_iface, new_worker_obj
+
+    @staticmethod
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output):
+        """
+        Helper function to do chunk upload.
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param file_size: Size of the file to be created to upload
+        :param chunk_obj_path: Path of the file to be uploaded
+        :param output: Queue used to fill output
+        :return: response
+        """
+        jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        LOGGER.info("Creating a bucket with name : %s", bucket_name)
+        res = s3_test_obj.create_bucket(bucket_name)
+        if not res[0] or res[1] != bucket_name:
+            output.put(False)
+            sys.exit(1)
+        LOGGER.info("Created a bucket with name : %s", bucket_name)
+
+        LOGGER.info("Creating object file of 5GB")
+        resp = system_utils.create_file(chunk_obj_path, file_size)
+        LOGGER.info("Response: %s", resp)
+        if not resp[0]:
+            output.put(False)
+            sys.exit(1)
+
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
+        put_cmd = f"{java_cmd} -c {jclient_prop} put {chunk_obj_path} s3://{bucket_name} " \
+                  f"--access_key {access_key} --secret_key {secret_key}"
+        LOGGER.info("Running command %s", put_cmd)
+        resp = system_utils.execute_cmd(put_cmd)
+        if not resp:
+            output.put(False)
+            sys.exit(1)
+
+        output.put(True)
+        sys.exit(0)
+
+    @staticmethod
+    def setup_jclient(jc_obj):
+        """
+        Helper function to setup jclient
+        :param jc_obj: Object for jclient
+        :return: response
+        """
+        LOGGER.info("Setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            LOGGER.info(res)
+            if not res:
+                LOGGER.error("Error: jcloudclient.jar or jclient.jar file does not exists")
+                return res
+        resp = jc_obj.update_jclient_jcloud_properties()
+        return resp
