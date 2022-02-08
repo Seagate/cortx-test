@@ -58,9 +58,9 @@ def main():
     req_port_list = []
 
     with open("requirement_ports.txt") as file:
-          for req_ports in file:
-              LOGGER.info(req_ports.rstrip())
-              req_port_list.append(int(req_ports.rstrip()))
+        for req_ports in file:
+            LOGGER.info(req_ports.rstrip())
+            req_port_list.append(int(req_ports.rstrip()))
 
     req_port_list.sort()
 
@@ -88,7 +88,6 @@ def main():
         assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
     else: 
         LOGGER.info(" Test Case successful!!")
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename='port_scanner_kubectl_svc.log')

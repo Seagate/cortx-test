@@ -11,6 +11,10 @@ LOGGER = logging.getLogger(__name__)
 
 def main():
 
+    """
+    This is cortx port scanner
+    """
+
     # Initialization
 
     netstat_port_list = []
@@ -27,9 +31,9 @@ def main():
     req_port_list = []
 
     with open("requirement_ports.txt") as file:
-          for req_ports in file:
-              #LOGGER.info(req_ports.rstrip())
-              req_port_list.append(int(req_ports.rstrip()))
+        for req_ports in file:
+            #LOGGER.info(req_ports.rstrip())
+            req_port_list.append(int(req_ports.rstrip()))
 
     req_port_list.sort()
 
@@ -87,13 +91,10 @@ def main():
     final_list_of_fault_ports.sort()
     LOGGER.info(final_list_of_fault_ports)
 
-
     if final_list_of_fault_ports: 
         assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
     else: 
         LOGGER.info(" Test Case successful!!")
-
-
 
 def has_numbers(input_string):
     return any(char.isdigit() for char in input_string)
