@@ -51,25 +51,25 @@ def convert_to_bytes(size):
     """
     kb = 1000
     kib = 1024
-    sz = size.lower()
-    if 'bytes' in sz or 'byte' in sz:
-        return int(sz.split('byte')[0])
-    if 'kb' in sz:
-        return int(sz.split('kb')[0]) * kb
-    if 'kib' in sz:
-        return int(sz.split('kib')[0]) * kib
-    if 'mb' in sz:
-        return int(sz.split('mb')[0]) * kb * kb
-    if 'mib' in sz:
-        return int(sz.split('mib')[0]) * kib * kib
-    if 'gb' in sz:
-        return int(sz.split('gb')[0]) * kb * kb * kb
-    if 'gib' in sz:
-        return int(sz.split('gib')[0]) * kib * kib * kib
-    if 'tb' in sz:
-        return int(sz.split('tb')[0]) * kb * kb * kb * kb
-    if 'tib' in sz:
-        return int(sz.split('tib')[0]) * kib * kib * kib * kib
+    size = size.lower()
+    if 'bytes' in size or 'byte' in size:
+        return int(size.split('byte')[0])
+    if 'kb' in size:
+        return int(size.split('kb')[0]) * kb
+    if 'kib' in size:
+        return int(size.split('kib')[0]) * kib
+    if 'mb' in size:
+        return int(size.split('mb')[0]) * kb * kb
+    if 'mib' in size:
+        return int(size.split('mib')[0]) * kib * kib
+    if 'gb' in size:
+        return int(size.split('gb')[0]) * kb * kb * kb
+    if 'gib' in size:
+        return int(size.split('gib')[0]) * kib * kib * kib
+    if 'tb' in size:
+        return int(size.split('tb')[0]) * kb * kb * kb * kb
+    if 'tib' in size:
+        return int(size.split('tib')[0]) * kib * kib * kib * kib
     return 0
 
 
