@@ -72,16 +72,18 @@ class MotrCoreK8s():
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
-                nodename = node["name"]
-                self.cortx_node_list.append(nodename)
-                node_dict[nodename] = {}
-                node_dict[nodename]['m0client'] = []
-                for svc in node["svcs"]:
-                    if svc["name"] == "hax":
-                        node_dict[nodename]['hax_fid'] = svc["fid"]
-                        node_dict[nodename]['hax_ep'] = svc["ep"]
-                    if svc["name"] == "m0_client":
-                        node_dict[nodename]['m0client'].append({"ep": svc["ep"], "fid": svc["fid"]})
+                if 'data' in node['name']:
+                    nodename = node["name"]
+                    self.cortx_node_list.append(nodename)
+                    node_dict[nodename] = {}
+                    node_dict[nodename]['m0client'] = []
+                    for svc in node["svcs"]:
+                        if svc["name"] == "hax":
+                            node_dict[nodename]['hax_fid'] = svc["fid"]
+                            node_dict[nodename]['hax_ep'] = svc["ep"]
+                        if svc["name"] == "m0_client":
+                            node_dict[nodename]['m0client'].append({"ep": svc["ep"],
+                                 "fid": svc["fid"]})
             return node_dict
 
     def get_node_pod_dict(self):
@@ -89,7 +91,7 @@ class MotrCoreK8s():
         Returns all the node and data pod names in dict format
         """
         node_pod_dict = {}
-        cmd = "| awk '/cortx-data-pod/ {print $1}'"
+        cmd = "| awk '/cortx-data/ {print $1}'"
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
@@ -194,12 +196,9 @@ class MotrCoreK8s():
                                                                       self.master_passwd)
         log.info("%s , %s", result, error1)
         if ret:
-            log.info('"%s" Failed, Please check the log', cmd)
-            assert False
-        if (b"ERROR" or b"Error") in error1:
-            log.error('"%s" failed, please check the log', cmd)
-            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
+            assert False, "Failed with return code {}, Please check the logs".format(ret)
+        assert not any((error_str in error1.decode("utf-8") for error_str in
+            ['error', 'ERROR', 'Error'])), "Errors found in output {}".format(error1)
 
     def dd_cmd(self, b_size, count, file, node):
         """

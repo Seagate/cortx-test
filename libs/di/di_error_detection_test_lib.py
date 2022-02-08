@@ -152,7 +152,7 @@ class DIErrorDetection:
 
     def get_file_and_csum(self, size, data_folder_prefix):
         """
-        this function will create a corrupted file
+        this function will create a file
         :param size: size of file
         :param data_folder_prefix: data folder prefix
         :return location of file

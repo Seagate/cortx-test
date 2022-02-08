@@ -115,17 +115,20 @@ class JiraTask:
                     else:
                         is_valid_platform = True
                 env_field = details.fields.environment
-                if env_field:
-                    env_field = env_field.lower()
-                    tp_env = tp_env.lower()
-                    if env_field.strip() == "multinode":
-                        is_valid_env = True
-                    elif env_field.strip() == "1node" and num_nodes == 1:
-                        is_valid_env = True
-                    elif tp_env.strip() == env_field.strip():
-                        is_valid_env = True
-                else:
+                if num_nodes == '':
                     is_valid_env = True
+                else:
+                    if env_field:
+                        env_field = env_field.lower()
+                        tp_env = tp_env.lower()
+                        if env_field.strip() == "multinode":
+                            is_valid_env = True
+                        elif env_field.strip() == "1node" and num_nodes == 1:
+                            is_valid_env = True
+                        elif tp_env.strip() == env_field.strip():
+                            is_valid_env = True
+                    else:
+                        is_valid_env = True
                 if core_category == 'NA':
                     is_valid_category = True
                 else:
