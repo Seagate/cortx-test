@@ -910,7 +910,6 @@ class TestPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32456")
     @CTFailOn(error_handler)
     def test_pod_shutdown_kubectl_delete(self):
