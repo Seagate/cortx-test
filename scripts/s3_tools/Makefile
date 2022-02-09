@@ -148,14 +148,15 @@ jcloud-client-install:
 s3bench-install:
 
 	@echo "###Installing s3bench tool###"
-	rm -rf /root/go/src/s3bench
-	sudo yum install -y go
-	go get github.com/Seagate/s3bench
-	-trust anchor $(CA_CRT)
-	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
-	echo 'export GO111MODULE=auto' >> /root/.bashrc
-	source ~/.bashrc
+	wget -O /usr/bin/s3bench https://github.com/Seagate/s3bench/releases/download/v2021-06-28/s3bench.2021-06-28
+	chmod +x /usr/bin/s3bench
 	@echo "###Installed s3bench tool###"
+
+warp-install:
+
+	@echo "###Installing warp tool###"
+	yum install -y https://github.com/minio/warp/releases/download/v0.5.5/warp_0.5.5_Linux_x86_64.rpm
+	@echo "###Installed warp tool###"
 
 hsbench-install:
 
@@ -206,7 +207,7 @@ apache-jmeter-install:
 	@echo "###Installed apache jmeter in current machine###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install bashrc-configure
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install warp-install apache-jmeter-install bashrc-configure
 	@echo "### All tools are installed & configured. ###"
 
 
