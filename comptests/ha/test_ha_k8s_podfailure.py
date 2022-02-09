@@ -21,6 +21,7 @@
 """ HA component level test cases for pod failure events """
 
 import logging
+import pytest
 import json
 import time
 from config import CMN_CFG
