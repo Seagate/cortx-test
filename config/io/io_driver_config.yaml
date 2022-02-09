@@ -1,0 +1,10 @@
+capture_support_bundle: True
+sb_interval_mins: 60
+perform_health_check: True
+hc_interval_mins: 60
+terminate_driver_on_failure:
+    support_bundle: False
+    s3bench: True
+    warp: True
+    health_check: True
+driver_log: io_driver.log
