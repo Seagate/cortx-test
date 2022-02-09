@@ -195,6 +195,7 @@ class TestFailureHandlingPodFailure:
         pod_nameha = pod_list[0]
         ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
         LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
+        node_obj = None
         for node in range(self.num_nodes):
             if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
                 node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
@@ -344,3 +345,4 @@ class TestFailureHandlingPodFailure:
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
+
