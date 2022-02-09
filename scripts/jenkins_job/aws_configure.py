@@ -115,7 +115,9 @@ def test_create_acc_aws_conf():
     secret_key = resp[1]["secret_key"]
     configure_awscli(access_key, secret_key)
     print("Installing s3 tools")
-    run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS=access_key SECRET=secret_key")
+    resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS=access_key "
+                   "SECRET=secret_key")
+    print("Response for tools install: {}".format(resp))
 
 
 def test_preboarding():
