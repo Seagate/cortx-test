@@ -3410,7 +3410,8 @@ class TestPodFailure:
                                                    bucket_name=self.bucket_name,
                                                    file_size=file_size,
                                                    chunk_obj_path=chunk_obj_path,
-                                                   output=output)
+                                                   output=output,
+                                                   bkt_op=False)
 
             while True:
                 resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])

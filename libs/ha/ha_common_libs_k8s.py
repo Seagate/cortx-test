@@ -1078,7 +1078,8 @@ class HAK8s:
                     return True, node_ip, node_iface, new_worker_obj
 
     @staticmethod
-    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output):
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
+                                   bkt_op=True):
         """
         Helper function to do chunk upload.
         :param s3_data: s3 account details
@@ -1086,6 +1087,7 @@ class HAK8s:
         :param file_size: Size of the file to be created to upload
         :param chunk_obj_path: Path of the file to be uploaded
         :param output: Queue used to fill output
+        :param bkt_op: Flag to create bucket and object
         :return: response
         """
         jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
@@ -1094,19 +1096,20 @@ class HAK8s:
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = s3_test_obj.create_bucket(bucket_name)
-        if not res[0] or res[1] != bucket_name:
-            output.put(False)
-            sys.exit(1)
-        LOGGER.info("Created a bucket with name : %s", bucket_name)
+        if bkt_op:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                output.put(False)
+                sys.exit(1)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
 
-        LOGGER.info("Creating object file of 5GB")
-        resp = system_utils.create_file(chunk_obj_path, file_size)
-        LOGGER.info("Response: %s", resp)
-        if not resp[0]:
-            output.put(False)
-            sys.exit(1)
+            LOGGER.info("Creating object file of 5GB")
+            resp = system_utils.create_file(chunk_obj_path, file_size)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                output.put(False)
+                sys.exit(1)
 
         java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
         put_cmd = f"{java_cmd} -c {jclient_prop} put {chunk_obj_path} s3://{bucket_name} " \
