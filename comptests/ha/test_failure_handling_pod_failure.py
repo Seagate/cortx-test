@@ -69,6 +69,12 @@ class TestFailureHandlingPodFailure:
         """
         This function will be invoked prior to each test case.
         """
+        LOGGER.info("Check the overall status of the cluster.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster status is online.")
         LOGGER.info("STARTED: Setup Operations")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
         pod_name = pod_list[0]
@@ -102,6 +108,9 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
