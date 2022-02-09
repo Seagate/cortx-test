@@ -107,6 +107,9 @@ pipeline {
 								echo "$te"
 							    python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NO} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
 							done <$ALL_SETUP_ENTRY
+						python3 scripts/cicd_k8s_cortx_deploy/result.py
+						RESULT="cat test_result.txt"
+						echo $RESULT
                         deactivate
                         '''
                     }

@@ -2,6 +2,7 @@
 JIRA Access Utility Class
 """
 import json
+import sys
 import traceback
 import requests
 from requests.adapters import HTTPAdapter
@@ -162,6 +163,39 @@ class JiraTask:
         if response.status_code == HTTPStatus.OK:
             return response.json()
         return response.text
+
+    @staticmethod
+    def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
+        """
+        Args:
+            test_plan (str): Test plan number in JIRA
+            username (str): JIRA Username
+            password (str): JIRA Password
+
+        Returns:
+            List of dictionaries
+            Each dict will have id, key, latestStatus keys
+            [{'id': 265766, 'key': 'TEST-4871', 'latestStatus': 'PASS'},
+             {'id': 271956, 'key': 'TEST-6930', 'latestStatus': 'PASS'}]
+        """
+        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/test'
+        responses = []
+        i = 0
+        while True:
+            i = i + 1
+            query = {'limit': 100, 'page': i}
+            response = requests.get(jira_url, auth=(username, password), params=query)
+            if response.status_code == HTTPStatus.OK and response.json():
+                responses.extend(response.json())
+            elif response.status_code == HTTPStatus.OK and not response.json():
+                break
+            else:
+                print(f'get_test_list GET on {jira_url} failed')
+                print(f'RESPONSE={response.text}\n'
+                      f'HEADERS={response.request.headers}\n'
+                      f'BODY={response.request.body}')
+                sys.exit(1)
+        return responses
 
     def get_issue_details(self, issue_id: str, auth_jira: JIRA = None) -> Issue:
         """
