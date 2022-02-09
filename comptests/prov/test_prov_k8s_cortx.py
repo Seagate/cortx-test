@@ -139,6 +139,7 @@ class TestProvK8Cortx:
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-29269")
@@ -152,6 +153,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp)
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28387")
@@ -176,6 +178,7 @@ class TestProvK8Cortx:
                 assert_utils.assert_in(secret[0], SECRETS_FILES_LIST)
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28437")
@@ -198,6 +201,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(len(machine_id_list) == len(set(machine_id_list)))
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28384")
@@ -221,6 +225,7 @@ class TestProvK8Cortx:
                 assert_utils.assert_in(out[0], PVC_LIST)
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28351")
@@ -245,6 +250,7 @@ class TestProvK8Cortx:
                 assert_utils.assert_not_in(resp, "error")
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-29114")
@@ -265,6 +271,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28436")
@@ -298,6 +305,8 @@ class TestProvK8Cortx:
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
+    @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32940")
@@ -340,6 +349,8 @@ class TestProvK8Cortx:
         LOGGER.info("Step 5: Cluster is back online.")
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.prov_sanity
+    @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32939")
@@ -366,6 +377,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Test Completed.")
 
+    @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32640")
@@ -387,6 +399,7 @@ class TestProvK8Cortx:
                                     master_node_list=self.master_node_list,
                                     worker_node_list=self.master_node_list)
 
+    @pytest.mark.singlenode
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-32654")
