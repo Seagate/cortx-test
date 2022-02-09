@@ -37,6 +37,7 @@ from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import HA_TEST_CONFIG_PATH
 from commons.params import PROV_CONFIG_PATH
+from commons.params import IO_DRIVER_CFG_PATH
 from commons.constants import PROD_FAMILY_LC
 
 
@@ -142,6 +143,7 @@ PROV_TEST_CFG = configmanager.get_config_wrapper(fpath=PROV_CONFIG_PATH)
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
 
+IO_DRIVER_CFG = configmanager.get_config_yaml(IO_DRIVER_CFG_PATH)
 # Munched configs. These can be used by dot "." operator.
 
 di_cfg = munch.munchify(DI_CFG)
