@@ -36,6 +36,7 @@ from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils
+from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
@@ -1075,3 +1076,60 @@ class HAK8s:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
                     return True, node_ip, node_iface, new_worker_obj
+
+    @staticmethod
+    def check_string_in_log_file(ha_node_obj, sub_str: "str", log_file: str) -> tuple:
+        """
+        Helper function to check sub string in log file.
+        :param ha_node_obj: HA node(Logical Node object)
+        :param sub_str: Sub string to match.
+        :param log_file: Log file.
+        :return: True/False and message
+        """
+        LOGGER.info("Get HA log pvc from pvc list.")
+        pvc_list = ha_node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        # ha_pvc = None
+        for ha_pvc in pvc_list:
+            if common_const.HA_POD_NAME_PREFIX in ha_pvc:
+                ha_pvc = ha_pvc.replace("\n", "")
+                LOGGER.info("ha pvc: %s", ha_pvc)
+                break
+        LOGGER.info("Check sub string in log file: %s.", log_file)
+        cmd_halog = f"tail -10 /mnt/fs-local-volume/local-path-provisioner/{ha_pvc}/log/ha/*/" \
+            f"{log_file} | grep {sub_str}"
+        output = ha_node_obj.execute_cmd(cmd_halog)
+        if isinstance(output, bytes):
+            output = str(output, 'UTF-8')
+        if sub_str in output:
+            return True, "Sub String found in log file."
+        return False, "Sub String not found in log file."
+
+    @staticmethod
+    def shutdown_signal(node_obj, local_path: str, remote_path: str) -> tuple:
+        """
+        Helper function to send shutdown signal to component HA
+        :param node_obj: Master node(Logical Node object)
+        :param local_path: Local path of script.
+        :param remote_path: POD path for copy operation.
+        :return: True/False and message/error
+        """
+        LOGGER.info("Get file name.")
+        # base_path = os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
+        base_path = local_path.split("/")[-1]
+        ha_cp_remote = node_obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
+        assert_utils.assert_true(ha_cp_remote[0])
+        try:
+            LOGGER.info("Run python module from POD.")
+            pod_name = node_obj.get_pod_name(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+            # pod_name = pod_list[0]
+            node_obj.execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + "/"
+                                                            + base_path, pod_name[1],
+                                                            common_const.HA_TMP))
+            node_obj.execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name[1], '/usr/bin/python3',
+                                                                    common_const.HA_TMP + '/' +
+                                                                    base_path))
+            # LOGGER.info("Step 1: Triggered ‘Start Cluster Shutdown’ message to HA. successfully.")
+        except Exception as err:
+            LOGGER.error("An error occurred in %s:", HAK8s.shutdown_signal.__name__)
+            return False, err
+        return True, "Successfully ran the script."
