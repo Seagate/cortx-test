@@ -118,21 +118,17 @@ def update_process_termination(return_status):
     process_states[pid]['state'] = 'done'
     process_states[pid]['ret_status'] = return_status[0]
     process_states[pid]['response'] = return_status[1]
-    logger.info("Proc state post termination : %s %s", pid,
-                process_states[pid]['state'])
+    logger.info("Proc state post termination : %s %s", pid, process_states[pid]['state'])
 
 
 # pylint: disable=too-many-arguments
 def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low,
-                size_high, seed,
-                duration):
-    """
-    Execute S3bench tool and update error code if any, to process_state on termination.
-    """
+                size_high, seed, duration=None):
+    """Execute S3bench tool and update error code if any, to process_state on termination."""
     logger.info("Start S3bench run ")
-    s3bench = S3bench(access, secret, endpoint, test_id, clients, samples,
-                      size_low, size_high,
-                      seed, duration)
+    s3bench = S3bench(access=access, secret=secret, endpoint=endpoint, test_id=test_id,
+                      clients=clients, samples=samples, size_low=size_low, size_high=size_high,
+                      seed=seed, duration=duration)
     ret = s3bench.run_check()
     update_process_termination(return_status=ret)
     logger.info("Completed S3bench run ")
