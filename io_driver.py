@@ -238,6 +238,9 @@ def monitor_proc():
 
 
 def main(options):
+    """
+    Main function
+    """
     access = options.access_key
     secret = options.secret_key
     endpoint = options.endpoint
