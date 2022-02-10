@@ -113,7 +113,7 @@ def test_create_acc_aws_conf():
     print("Response for account creation: {}".format(resp))
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
-    configure_awscli(access_key, secret_key)
+    #configure_awscli(access_key, secret_key)
     print("Installing s3 tools")
     resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
                    .format(access_key, secret_key))
