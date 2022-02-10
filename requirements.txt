@@ -16,7 +16,7 @@ gevent~=21.1.2
 greenlet==0.4.17
 idna==2.8
 itsdangerous==1.1.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 jira~=3.0.1
 jmespath==0.9.4
 jproperties==2.1.0
