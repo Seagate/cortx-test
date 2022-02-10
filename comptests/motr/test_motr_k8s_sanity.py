@@ -23,10 +23,10 @@ Test class that contains MOTR K8s tests.
 """
 
 import os
-import csv
 import logging
 from random import SystemRandom
 import pytest
+from motr import CSV_DATA
 from commons.utils import config_utils
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
@@ -35,9 +35,6 @@ logger = logging.getLogger(__name__)
 
 
 M0CRATE_WORKLOAD_YML = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
-M0CRATE_TEST_CSV = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
-with open(M0CRATE_TEST_CSV) as CSV_FH:
-    CSV_DATA = [row for row in csv.DictReader(CSV_FH)]
 
 
 @pytest.fixture(params=CSV_DATA)
@@ -85,7 +82,7 @@ class TestExecuteK8Sanity:
         """
         source_file = TEMP_PATH + 'source_file'
         remote_file = TEMP_PATH + M0CRATE_WORKLOAD_YML.split("/")[-1]
-        m0cfg = config_utils.read_ordered_yaml(M0CRATE_WORKLOAD_YML)[1]
+        m0cfg = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
         node = self.system_random.choice(self.motr_obj.cortx_node_list)
         node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
         for key, value in param_loop.items():
