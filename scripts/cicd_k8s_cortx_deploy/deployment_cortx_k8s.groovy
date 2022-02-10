@@ -19,13 +19,7 @@ pipeline {
 			steps {
 			    echo "${WORKSPACE}"
 			    echo "BUILD : ${params.BUILD}"
-     			echo "Setup k8s cluster ${params.setup_k8s_cluster}"
-     			echo "Setup Client Config ${params.setup_client_config}"
-    		    echo "Run Basic S3 IO ${params.run_basic_s3_io}"
-    		    echo "Run S3 bench workload ${params.run_s3bench_workload}"
-                echo "Destroy Cortx Setup ${params.destroy_setup}"
-                echo "Collect Support Bundle ${params.collect_support_bundle}"
-                echo "Raise EOS Jira on failure ${params.raise_jira}"
+                echo "TEST PLAN: ${params.TEST_PLAN_NUMBER}"
 			    sh label: '', script: '''
 
                     yum install -y nfs-utils
@@ -105,11 +99,12 @@ pipeline {
 							do
 								echo "$target"
 								echo "$te"
-							    python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NO} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
+							    //python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NO} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
 							done <$ALL_SETUP_ENTRY
 						python3 scripts/cicd_k8s_cortx_deploy/result.py
 						RESULT="cat test_result.txt"
 						echo $RESULT
+						export REPORT=$RESULT
                         deactivate
                         '''
                     }
@@ -131,12 +126,20 @@ pipeline {
                         deactivate
                         '''
                     }
+                    env.TestPlan = ${TEST_PLAN_NUMBER}
+                    if ( fileExists("test_result.txt") ) {
+                        def file1 = readFile "test_result.txt"
+                        def lines = file1.readLines()
+                        env.Report = lines
+                        println lines
+                    }
                 }
             }
         }
     }
 	post {
         always {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/*.log, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
             echo "End of jenkins_job"
         }
     }
