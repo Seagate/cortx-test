@@ -71,7 +71,7 @@ event_list = list()
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, help="seed",
-                        default=random.randint(1, 9999999))
+                        default=random.SystemRandom().randint(1, 9999999))
     parser.add_argument("secret_key", type=str, help="Secret Key")
     parser.add_argument("access_key", type=str, help="Access Key")
     parser.add_argument("--endpoint", type=str,
@@ -187,7 +187,7 @@ def ps_kill(proc_pid):
     Kill process with proc_pid and its child process
     :param proc_pid: Pid of process to be killed
     """
-    log.info(f"Killing {proc_pid}")
+    log.info("Killing %s", proc_pid)
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
@@ -225,10 +225,10 @@ def monitor_proc():
                 ps_kill(pid)
             for event in event_list:
                 try:
-                    log.info(f"Cancelling event {event}")
+                    log.info("Cancelling event %s", event)
                     sched_obj.cancel(event)
                 except ValueError:
-                    log.info(f"Event not present {event}")
+                    log.info("Event not present %s", event)
             sys.exit(0)
 
         # Terminate if no process scheduled or running.
@@ -237,13 +237,11 @@ def monitor_proc():
             sys.exit(0)
 
 
-def main(opts):
-    log.info(f"PID main : {os.getpid()}")
-
-    access = opts.access_key
-    secret = opts.secret_key
-    endpoint = opts.endpoint
-    seed = opts.seed
+def main(options):
+    access = options.access_key
+    secret = options.secret_key
+    endpoint = options.endpoint
+    seed = options.seed
     log.info("Seed Used : %s", seed)
 
     test_input = yaml_parser.test_parser(
