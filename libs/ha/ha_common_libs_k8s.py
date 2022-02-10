@@ -1088,7 +1088,6 @@ class HAK8s:
         """
         LOGGER.info("Get HA log pvc from pvc list.")
         pvc_list = ha_node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        # ha_pvc = None
         for ha_pvc in pvc_list:
             if common_const.HA_POD_NAME_PREFIX in ha_pvc:
                 ha_pvc = ha_pvc.replace("\n", "")
@@ -1096,7 +1095,7 @@ class HAK8s:
                 break
         LOGGER.info("Check sub string in log file: %s.", log_file)
         cmd_halog = f"tail -10 /mnt/fs-local-volume/local-path-provisioner/{ha_pvc}/log/ha/*/" \
-            f"{log_file} | grep {sub_str}"
+            f"{log_file} | grep '{sub_str}'"
         output = ha_node_obj.execute_cmd(cmd_halog)
         if isinstance(output, bytes):
             output = str(output, 'UTF-8')
@@ -1114,22 +1113,21 @@ class HAK8s:
         :return: True/False and message/error
         """
         LOGGER.info("Get file name.")
-        # base_path = os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
         base_path = local_path.split("/")[-1]
         ha_cp_remote = node_obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
         assert_utils.assert_true(ha_cp_remote[0])
         try:
             LOGGER.info("Run python module from POD.")
             pod_name = node_obj.get_pod_name(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-            # pod_name = pod_list[0]
             node_obj.execute_cmd(common_cmd.HA_COPY_CMD.format(common_const.HA_TMP + "/"
                                                             + base_path, pod_name[1],
                                                             common_const.HA_TMP))
-            node_obj.execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name[1], '/usr/bin/python3',
-                                                                    common_const.HA_TMP + '/' +
-                                                                    base_path))
-            # LOGGER.info("Step 1: Triggered ‘Start Cluster Shutdown’ message to HA. successfully.")
-        except Exception as err:
+            node_obj.execute_cmd(common_cmd.HA_POD_RUN_SCRIPT.format(pod_name[1],
+                                                                     '/usr/bin/python3',
+                                                                     common_const.HA_TMP +
+                                                                     '/' + base_path))
+        except IOError as err:
             LOGGER.error("An error occurred in %s:", HAK8s.shutdown_signal.__name__)
             return False, err
         return True, "Successfully ran the script."
+
