@@ -258,11 +258,12 @@ class ProvDeployK8sCortxLib:
         return : Boolean
         """
         LOGGER.info("Validate Cluster status")
-        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + " > status.log"
+        status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
         resp = node_obj.execute_cmd(cmd, read_lines=True)
-        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, "status.log")
-        remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], "status.log")
-        LOGGER.debug("COPY status.log file to local")
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
+        remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
+        LOGGER.debug("COPY status file to local")
         node_obj.copy_file_to_local(remote_path, local_path)
         with open(local_path, 'r') as file:
             lines = file.readlines()
@@ -316,11 +317,9 @@ class ProvDeployK8sCortxLib:
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
+
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
-        LOGGER.debug("Local PATH %s", local_path)
-        LOGGER.debug("Remote PATH %s", remote_path)
-        LOGGER.debug("COPY to local")
         master_node_list[0].copy_file_to_local(remote_path, local_path)
         if not resp[0]:
             with open(local_path, 'r') as file:
