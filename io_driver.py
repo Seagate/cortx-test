@@ -61,28 +61,30 @@ def initialize_loghandler(level=logging.DEBUG):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
     name = os.path.splitext(os.path.basename(__file__))[0]
-    name = os.path.join(dir_path, f"{name}.log")
+    name = os.path.join(dir_path, f"{name}_console.log")
     StreamToLogger(name, logger)
 
 
 def parse_args():
     """Commandline arguments for CorIO Driver."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log_level", type=int, default=10,
+    parser.add_argument("--test-input", type=lambda path: os.path.abspath(path),
+                        help="test data configuration yaml.")
+    parser.add_argument("--logging-level", type=int, default=10,
                         help="log level value as defined below: " +
-                             "CRITICAL = 50 " +
-                             "ERROR = 40 " +
-                             "WARNING = 30 " +
-                             "INFO = 20 " +
-                             "DEBUG = 10"
+                             "CRITICAL=50 " +
+                             "ERROR=40 " +
+                             "WARNING=30 " +
+                             "INFO=20 " +
+                             "DEBUG=10"
                         )
-    parser.add_argument("--use_ssl", type=lambda x: bool(strtobool(str(x))), default=True,
+    parser.add_argument("--use-ssl", type=lambda x: bool(strtobool(str(x))), default=True,
                         help="Use HTTPS/SSL connection for S3 endpoint.")
-    parser.add_argument("--seed", type=int, help="seed",
+    parser.add_argument("--seed", type=int, help="seed.",
                         default=random.SystemRandom().randint(1, 9999999))
-    parser.add_argument("--secret_key", type=str, help="Secret Key")
-    parser.add_argument("--access_key", type=str, help="Access Key")
-    parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations",
+    parser.add_argument("--secret-key", type=str, help="s3 secret Key.")
+    parser.add_argument("--access-key", type=str, help="s3 access Key.")
+    parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations.",
                         default="https://s3.seagate.com")
 
     return parser.parse_args()
@@ -244,15 +246,14 @@ def monitor_proc():
 
 
 def main(options):
-    """
-    Main function
-    """
+    """Main Entry function using argument parser to parse options and start execution."""
     access = options.access_key
     secret = options.secret_key
     endpoint = options.endpoint
     seed = options.seed
+    test_input = options.test_input
     logger.info("Seed Used : %s", seed)
-    test_input = yaml_parser.test_parser('config/io/s3bench_random_io_object_test.yaml')
+    test_input = yaml_parser.test_parser(test_input)  # Read test data from test_input yaml.
     for key, value in test_input.items():
         process_type = value['tool'].lower()
         if process_type == 's3bench':
