@@ -254,16 +254,19 @@ def main(options):
     test_input = options.test_input
     logger.info("Seed Used : %s", seed)
     test_input = yaml_parser.test_parser(test_input)  # Read test data from test_input yaml.
+    process = None
     for key, value in test_input.items():
         process_type = value['tool'].lower()
         if process_type == 's3bench':
             process = Process(target=run_s3bench,
                               args=(access, secret, endpoint, value['TEST_ID'],
-                                    value['sessions_per_node'], 2000,
+                                    value['sessions_per_node'], value['samples'],
                                     value['start_range'], value['end_range'],
-                                    seed, '60s'))
+                                    seed))
         elif process_type == 'warp':
             process = Process(target=run_warp)
+        elif process_type == 's3api':
+            pass  # TODO: Implementation of s3api using boto3.
         else:
             logger.error("Error! Tool type not defined: %s", process_type)
             sys.exit(1)
@@ -282,14 +285,15 @@ def main(options):
     #     logger.info("Scheduling health check")
     #     event_list.append(sched_obj.enter(conf['hc_interval_mins'] * 60, 1, periodic_hc))
 
-    logger.info("Starting scheduler")
+    logger.info("Starting scheduler...")
     sched_obj.run()
     process.join()
+    logger.info("Execution completed...")
 
 
 if __name__ == '__main__':
     opts = parse_args()
-    log_level = logging.getLevelName(opts.log_level)
+    log_level = logging.getLevelName(opts.logging_level)
     initialize_loghandler(level=log_level)
     logger.info("Arguments: %s", opts)
     main(opts)
