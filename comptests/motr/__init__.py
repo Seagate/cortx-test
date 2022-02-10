@@ -1,3 +1,4 @@
+""" Generating test data after reading the m0crate tests CSV """
 import os
 import csv
 
@@ -9,7 +10,7 @@ def read_m0crate_tests_csv():
     """
     m0crate_test_csv = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
     with open(m0crate_test_csv) as csv_fh:
-        csv_data = [row for row in csv.DictReader(csv_fh)]
+        csv_data = list(csv.DictReader(csv_fh))
     return csv_data
 
 CSV_DATA = read_m0crate_tests_csv()
