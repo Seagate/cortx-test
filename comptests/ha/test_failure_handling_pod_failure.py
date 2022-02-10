@@ -353,4 +353,4 @@ class TestFailureHandlingPodFailure:
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
-        
+
