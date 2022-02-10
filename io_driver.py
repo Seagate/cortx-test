@@ -68,7 +68,7 @@ def initialize_loghandler(level=logging.DEBUG):
 def parse_args():
     """Commandline arguments for CorIO Driver."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test-input", type=lambda path: os.path.abspath(path),
+    parser.add_argument("--test-input", type=str,
                         help="test data configuration yaml.")
     parser.add_argument("--logging-level", type=int, default=10,
                         help="log level value as defined below: " +
