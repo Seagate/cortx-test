@@ -27,7 +27,7 @@ s3_operation_data:
   total_parts: 100
 
 copy_obj_data:
-  bkt_cnt: 2
+  bkt_cnt: 5
 
 s3_bucket_data:
   no_buckets_for_deg_deletes: 150

@@ -21,6 +21,7 @@ jira~=3.0.1
 jmespath==0.9.4
 jproperties==2.1.0
 jsonschema==3.2.0
+kubernetes==21.7.0
 locust==1.4.3
 MarkupSafe==1.1.1
 matplotlib==3.1.1
