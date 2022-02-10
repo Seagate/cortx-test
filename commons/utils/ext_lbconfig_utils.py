@@ -118,6 +118,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
         else:
             assert_utils.assert_true(False, f"Can't find port details for {worker} "
                                             f"from {get_port_data}")
+
     with open(cm_const.HAPROXY_DUMMY_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
     if not os.path.exists("/etc/haproxy"):

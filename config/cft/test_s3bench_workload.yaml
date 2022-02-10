@@ -8,7 +8,7 @@ test_12345:
     100Mb: 1.56
     1Gb: 0.03
     10Gb: 0.01
-  loops: 1
+  loops: 100
   clients: 10
 
 test_24673:
@@ -17,5 +17,5 @@ test_24673:
 test_25016:
   clients: 16
   samples: 256
-  read_loops: 100
+  read_loops: 200
   object_size: 128Mb

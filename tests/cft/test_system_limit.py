@@ -133,12 +133,11 @@ class TestS3IOSystemLimits:
         csm_users = []
         for _ in range(count):
             self.log.info("Creating new CSM user...")
-            res = self.csm_user_obj.create_and_verify_csm_user_creation(
-                user_type="valid",
-                user_role="manage",
-                expect_status_code=Const.SUCCESS_STATUS_FOR_POST,
-            )
-            assert res, "Unable to create CSM account"
+            time.sleep(1)
+            response = self.csm_user_obj.create_csm_user(user_type="valid", user_role="manage")
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                "Unable to create CSM account"
             self.log.info(f"Response : {self.csm_user_obj.recently_created_csm_user}")
             csm_users.append(self.csm_user_obj.recently_created_csm_user)
             self.log.info("CSM Manage user created ...")
@@ -244,7 +243,7 @@ class TestS3IOSystemLimits:
         response = rep.json()
         created_csm_users = []
         for each in response['users']:
-            if each['username'].startswith("test"):
+            if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
         self.log.info(
             f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")

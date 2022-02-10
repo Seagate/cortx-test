@@ -34,7 +34,6 @@ import csv
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 
 import yaml
-import oyaml
 from defusedxml.cElementTree import parse
 from jsonschema import validate
 from jproperties import Properties
@@ -45,27 +44,6 @@ from commons.exceptions import CTException
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
 
- 
-def read_ordered_yaml(fpath: str) -> tuple:
-    """
-    Read yaml file and return ordered dictionary/list of the content.
-
-    :param str fpath: Path of yaml file to be read
-    :return: Boolean, Data
-    """
-    if os.path.isfile(fpath):
-        with open(fpath) as fin:
-            try:
-                data = oyaml.safe_load(fin)
-            except oyaml.YAMLError as exc:
-                err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
-                LOG.error(err_msg)
-                return False, exc
-    else:
-        err_msg = "Specified file doesn't exist: {}".format(fpath)
-        LOG.error(err_msg)
-        return False, cterr.FILE_MISSING
-    return True, data
 
 def read_yaml(fpath: str) -> tuple:
     """
@@ -95,40 +73,12 @@ def read_yaml(fpath: str) -> tuple:
 
     return True, data
 
-def write_ordered_yaml(
-        fpath: str,
-        write_data: dict or list,
-        backup: bool = True) -> tuple:
-    """
-    Function overwrites the content of given yaml file with given data in ordered format.
-
-    :param str fpath: yaml file path to be overwritten
-    :param dict/list write_data: data to be written in yaml file
-    :param bool backup: if set False, backup will not be taken before
-    overwriting
-    :return: True/False, yaml file path
-    :rtype: boolean, str
-    """
-    try:
-        if backup:
-            bkup_path = f'{fpath}.bkp'
-            shutil.copy2(fpath, bkup_path)
-            LOG.debug("Backup file %s at %s", fpath, bkup_path)
-        with open(fpath, 'w') as fobj:
-            oyaml.safe_dump(write_data, fobj)
-        LOG.debug("Updated yaml file at %s", fpath)
-    except FileNotFoundError as error:
-        LOG.error(
-            "%s", CTException(cterr.FILE_MISSING, error))
-        return False, error
-    return True, fpath
-
-
 
 def write_yaml(
         fpath: str,
         write_data: dict or list,
-        backup: bool = True) -> tuple:
+        backup: bool = True,
+        sort_keys = True) -> tuple:
     """
     Function overwrites the content of given yaml file with given data.
 
@@ -136,6 +86,7 @@ def write_yaml(
     :param dict/list write_data: data to be written in yaml file
     :param bool backup: if set False, backup will not be taken before
     overwriting
+    :param bool sort_keys: if set False, order of keys will be preserved
     :return: True/False, yaml file path
     :rtype: boolean, str
     """
@@ -145,7 +96,7 @@ def write_yaml(
             shutil.copy2(fpath, bkup_path)
             LOG.debug("Backup file %s at %s", fpath, bkup_path)
         with open(fpath, 'w') as fobj:
-            yaml.safe_dump(write_data, fobj)
+            yaml.safe_dump(write_data, fobj, sort_keys=sort_keys)
         LOG.debug("Updated yaml file at %s", fpath)
     except FileNotFoundError as error:
         LOG.error(

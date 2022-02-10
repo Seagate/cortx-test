@@ -76,6 +76,8 @@ class TestExecuteK8Sanity:
         logger.info(self.motr_obj.get_primary_cortx_node())
         logger.info(self.motr_obj.get_cortx_node_endpoints())
 
+    @pytest.mark.tags("TEST-14925")
+    @pytest.mark.motr_sanity
     def test_m0crate_utility(self, param_loop):
         """
         This is to run the m0crate utility tests.
@@ -108,9 +110,11 @@ class TestExecuteK8Sanity:
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
         count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_ordered_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False)
+        config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False, sort_keys=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
 
+    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.motr_sanity
     def test_m0cp_m0cat_workload(self):
         """
         Verify different size object m0cp m0cat operation

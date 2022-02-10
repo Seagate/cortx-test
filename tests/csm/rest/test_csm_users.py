@@ -150,6 +150,7 @@ class TestCsmUser():
                                             read_lines=False,
                                             exc=False)
         pod_name = self.csm_cluster.get_pod_name(resp_node)
+        self.log.info(pod_name)
         # cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
             cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
@@ -187,7 +188,7 @@ class TestCsmUser():
             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                                 read_lines=False,
                                                 exc=False)
-            if "cortx-control-pod" in resp_node.decode('UTF-8'):
+            if cons.CONTROL_POD_NAME_PREFIX in resp_node.decode('UTF-8'):
                 pod_up = True
                 break
             else:
@@ -229,7 +230,7 @@ class TestCsmUser():
             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                                 read_lines=False,
                                                 exc=False)
-            if "cortx-control-pod" in resp_node.decode('UTF-8'):
+            if cons.CONTROL_POD_NAME_PREFIX in resp_node.decode('UTF-8'):
                 pod_up = True
                 break
             else:
@@ -494,7 +495,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert (self.csm_user.create_and_verify_csm_user_creation(
+        assert (self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="valid",
             user_role="manage",
             expect_status_code=const.SUCCESS_STATUS_FOR_POST))
@@ -512,7 +513,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="invalid", user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
@@ -530,7 +531,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="missing",
             user_role="manage",
             expect_status_code=const.BAD_REQUEST)
@@ -565,7 +566,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
             expect_status_code=const.CONFLICT)
@@ -640,6 +641,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -722,6 +724,8 @@ class TestCsmUser():
 
         self.log.info("Reading the username")
         username = response.json()["username"]
+        userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Sending the request to user %s", username)
@@ -788,6 +792,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and "
@@ -837,6 +842,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info(
@@ -957,6 +963,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Step 2: Verified User %s got created successfully", username)
 
@@ -1202,6 +1209,7 @@ class TestCsmUser():
 
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         actual_response = response.json()
         created_time = actual_response["created_time"]
         modified_time_format = self.csm_user.edit_datetime_format(created_time)
@@ -1385,6 +1393,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and change"
@@ -1487,6 +1496,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 3: Step 2: Login as csm root user and change "
@@ -2656,23 +2666,11 @@ class TestCsmUser():
         self.log.info(
             "Verifying CSM user with role manager cannot perform any REST API "
             "request on IAM user")
-
-        self.log.info("Creating IAM user for test verification purpose")
-        rest_iam_user = RestIamUser()
-        new_iam_user = "testiam" + str(int(time.time()))
-        response = rest_iam_user.create_iam_user(
-            user=new_iam_user, login_as="s3account_user")
-
-        self.log.info(
-            "Verifying IAM user %s creation was successful", new_iam_user)
-        assert_utils.assert_equals(response.status_code,
-                                   const.SUCCESS_STATUS)
-        self.log.info(
-            "Verified IAM user %s creation was successful", new_iam_user)
-
         self.log.info(
             "Step 1: Verifying CSM admin user cannot perform GET request on "
             "IAM user")
+        rest_iam_user = RestIamUser()
+        new_iam_user = "testiam" + str(int(time.time()))
         response = rest_iam_user.list_iam_users(login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
@@ -2691,6 +2689,8 @@ class TestCsmUser():
             "Step 2: Verified CSM manage user cannot perform GET request on "
             "IAM user")
 
+        self.log.info("Creating IAM user for test verification purpose")
+        rest_iam_user = RestIamUser()
         self.log.info(
             "Step 3: Verifying CSM admin user cannot perform POST request on "
             "IAM user")
@@ -2719,7 +2719,7 @@ class TestCsmUser():
             "Step 5: Verifying CSM admin user cannot perform DELETE request on "
             "IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_admin_user")
+            user=new_iam_user1, login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -2730,7 +2730,7 @@ class TestCsmUser():
             "Step 6: Verifying CSM manage user cannot perform DELETE request on"
             " IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_user_manage")
+            user=new_iam_user1, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -2744,6 +2744,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -2858,6 +2859,7 @@ class TestCsmUser():
         self.log.info(
             "Verified user was created successfully")
         userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Verifying that CSM user with monitor role cannot perform "
@@ -3161,6 +3163,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Verified User %s got created successfully", username)
 
@@ -3366,6 +3369,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         user_name = response.json()["username"]
         user_id = response.json()["id"]
+        self.created_users.append(user_id)
         self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 3: Verifying edit email functionality for admin user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
