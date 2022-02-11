@@ -42,7 +42,7 @@ from libs.io import yaml_parser
 from libs.io.tools.s3bench import S3bench
 from commons.io.io_logger import StreamToLogger
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 sched_obj = sched.scheduler(time.time, time.sleep)
 manager = Manager()

@@ -61,16 +61,16 @@ class StreamToLogger:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-    def set_filehandler_logger(self, maxbyte=1073741824, backupcount=5):
+    def set_filehandler_logger(self, maxbyte=524288000, backupcount=5):
         """
         Add a file handler for the logging module. this logs all messages to ``file_name``.
 
-        :param maxbyte: Rollover occurs whenever the current log file is nearly maxBytes in
-        length.
+        :param maxbyte: Rollover occurs whenever the current log file is nearly maxBytes in length.
         :param backupcount: count of the max rotation/rollover of logs.
         """
         handler = CorIORotatingFileHandler(self.file_path, maxbyte=maxbyte, backupcount=backupcount)
         formatter = logging.Formatter(self.formatter)
+        handler.setLevel(logging.getLevelName(self.logger.level))
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
