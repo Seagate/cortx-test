@@ -197,18 +197,19 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
         LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1', nusers=1)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-29301-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
 
         LOGGER.info(
