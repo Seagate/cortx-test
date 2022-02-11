@@ -2,6 +2,7 @@
 This is cortx port scanner using kubectl svc
 """
 import logging
+import os
 from kubernetes import client, config
 from commons.utils import assert_utils
 
@@ -18,9 +19,17 @@ def test_cortx_port_scanner_kubectl_svc():
 
     LOGGER.info(' This is cortx port scanner!')
 
-    option="kubernetes-admin@kubernetes"
-
-    config.load_kube_config(context=option)
+    k8s_config_file = os.environ.get('KUBECONFIG')
+    if k8s_config_file:
+        try:
+          logging.info('Loading kubernetes config from the file %s', k8s_config_file)
+          config.load_kube_config(config_file=k8s_config_file)
+        except Exception as e:
+          raise RuntimeError('Can not load kube config from the file %s, error: %s', \
+                            k8s_config_file, e)
+    else:
+        k8s_config_file="/root/.kube/config"
+        config.load_kube_config(config_file=k8s_config_file)
 
     # listing all pods
 
@@ -82,10 +91,6 @@ def test_cortx_port_scanner_kubectl_svc():
     final_list_of_fault_ports.sort()
     LOGGER.info(final_list_of_fault_ports)
     if final_list_of_fault_ports:
-        assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
+        LOGGER.error(" Test Failed!!")
     else:
         LOGGER.info(" Test Case successful!!")
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='port_scanner_kubectl_svc.log')
-    test_cortx_port_scanner_kubectl_svc()
