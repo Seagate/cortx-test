@@ -421,6 +421,7 @@ class RestIamUser(RestTestLib):
 
     def iam_user_payload_rgw(self, user_type="valid"):
         """
+        Return payload for IAM user for RGW with Ceph
         """
         # Initialize all variables
         payload = {}
@@ -456,6 +457,7 @@ class RestIamUser(RestTestLib):
     @RestTestLib.authenticate_and_login
     def create_iam_user_rgw(self, payload: dict):
         """
+        Creates IAM user for given payload.
         """
         self.log.info("Creating IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
@@ -477,10 +479,10 @@ class RestIamUser(RestTestLib):
             result = True
             if verify_response:
                 self.log.info("Checking response...")
-                for key in payload.keys():
-                    if payload[key] != resp[key]:
-                        self.log.info("Expected response for %s: %s", key, payload[key])
-                        self.log.info("Actual response for %s: %s", key, payload[key])
+                for key,value in payload.items():
+                    if value != resp[key]:
+                        self.log.info("Expected response for %s: %s", key,value)
+                        self.log.info("Actual response for %s: %s", key, resp[key])
                         self.log.error("Actual and expected response for %s didnt match", key)
                         result = False
         else:
