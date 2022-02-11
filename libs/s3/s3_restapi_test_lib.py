@@ -128,13 +128,13 @@ class S3AccountOperationsRestAPI(RestS3user):
             LOGGER.debug("Endpoint for s3 accounts is %s", endpoint)
             # Fetching api response
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
-            # As per Pranay's suggestion, adding retry/polling of 10's to delete s3 account.
-            end_time = time.time() + 10  # retry/polling for 10's
+            # As per Pranay's suggestion, adding retry/polling of 25's to delete s3 account.
+            end_time = time.time() + 25  # retry/polling for 25's
             status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
             while status and time.time() <= end_time:
                 response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
                 status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
-                time.sleep(2)  # delay for next call.
+                time.sleep(5)  # delay for next call.
             if status:
                 return False, response.json()["message"]
             LOGGER.debug(response.json())
