@@ -438,17 +438,17 @@ class RestIamUser(RestTestLib):
         tenant = ""
         if user_type == "valid":
             payload.update({"uid": user_id})
-            payload.update({"display-name": display_name})
+            payload.update({"display_name": display_name})
         if user_type == "loaded":
             payload.update({"uid": user_id})
-            payload.update({"display-name": display_name})
+            payload.update({"display_name": display_name})
             payload.update({"email": email})
-            payload.update({"key-type": key_type})
-            payload.update({"access-key": access_key})
-            payload.update({"secret-key": secret_key})
-            payload.update({"user-caps": user_cap})
-            payload.update({"generate-key": generate_key})
-            payload.update({"max-buckets": max_buckets})
+            payload.update({"key_type": key_type})
+            payload.update({"access_key": access_key})
+            payload.update({"secret_key": secret_key})
+            payload.update({"user_caps": user_cap})
+            payload.update({"generate_key": generate_key})
+            payload.update({"max_buckets": max_buckets})
             payload.update({"suspended": suspended})
             payload.update({"tenant": tenant})
         self.log.info("Payload : %s", payload)
@@ -461,7 +461,7 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Creating IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
-        response = self.restapi.rest_call("put", endpoint=endpoint, data=payload,
+        response = self.restapi.rest_call("post", endpoint=endpoint, data=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
         return response
