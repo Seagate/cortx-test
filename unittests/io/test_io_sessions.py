@@ -64,8 +64,13 @@ class TestIOSessions(unittest.TestCase):
         return {}
 
     def test_make_sessions(self):
+        """
+        Simple function to test dummy api with multiple sessions/processes
+        :return: None
+        """
         print("Testing make sessions")
-        make_sessions(self.dummy_api)(self.list_of_post_ids, number_of_workers=4)
+        data1, data2, data3, data4 = self.list_of_post_ids
+        make_sessions(self.dummy_api)(data1, data2, data3, data4, number_of_workers=4)
 
 
 if __name__ == '__main__':

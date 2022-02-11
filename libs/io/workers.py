@@ -39,8 +39,8 @@ from functools import wraps
 def make_sessions(func):
     """
         Decorator used to decorate any function which needs to be parallelized.
-        After the input of the function should be a list in which each element is an instance of input fot the normal function.
-        You can also pass in keyword arguments separately.
+        function, each element is an instance of input for the normal function.
+        keyword arguments consists of number of workers need to be created separately.
         :param func: function
             The instance of the function that needs to be parallelized.
         :return: function
@@ -49,13 +49,13 @@ def make_sessions(func):
     @wraps(func)
     def spawn(*args, **kwargs):
         """
-
-        :param number_of_workers:
+        :param args : Varying input data
+        :param kwargs :number_of_workers:
             The number of session need to run simultaneously
         :return:
         """
         # the number of threads that can be max-spawned.
-        # If the number of threads are too high, then the overhead of creating the threads will be significant.
+        # If the number of threads are high, overhead of creating the threads will be significant.
         number_of_cpu = int(os.cpu_count())
         print("Number of CPU Cores",number_of_cpu)
         number_of_workers = kwargs.get("number_of_workers", 1)
@@ -71,13 +71,13 @@ def make_sessions(func):
                 # So we run it serially.
                 result = [func(args[0])]
             else:
-                # Core Code, where we are creating max number of threads and running the decorated function in parallel.
+                # Create max number of threads and running the decorated function in parallel.
                 result = []
-                with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_workers) as executer:
-                    bag = {executer.submit(func, i): i for i in args}
+                with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_workers) as exe:
+                    bag = {exe.submit(func, i): i for i in args}
                     for future in concurrent.futures.as_completed(bag):
                         result.append(future.result())
-                        print("\n------------Running------------\n", future.result())
+                        print("\n------------Session Running------------\n", future.result())
         else:
             result = []
         return result
