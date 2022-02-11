@@ -51,6 +51,8 @@ def check_cluster_services():
                 LOGGER.critical(
                     'Cluster Node {%s} failed in health check. Reason: {%s}', hostname, response)
                 raise IOError(response[1])
+        resp = check_cluster_space()
+        LOGGER.info(resp)
         LOGGER.info("Cluster status is healthy.")
     except OSError as error:
         LOGGER.error("An error occurred in check_cluster_services: %s", str(error))
@@ -62,27 +64,22 @@ def check_cluster_services():
 def check_cluster_space():
     """Check nodes space and accepts till 98 % occupancy."""
     LOGGER.info("Check cluster storage for all nodes.")
-    try:
-        ha_used_percent = 0.0
-        for node in NODES:
-            if node.get("node_type", None).lower() != "master":
-                continue
-            hostname = node['hostname']
-            health = Health(hostname=hostname, username=node['username'], password=node['password'])
-            ha_total, ha_avail, ha_used = health.get_sys_capacity()
-            LOGGER.info("Total capacity: %s GB", ha_total / (1024**3))
-            LOGGER.info("Available capacity: %s GB", ha_avail / (1024**3))
-            LOGGER.info("Used capacity: %s GB", ha_used / (1024**3))
-            ha_used_percent = round((ha_used / ha_total) * 100, 1)
-            health.disconnect()
-            if ha_used_percent > CMN_CFG["max_storage"]:
-                raise IOError(f'Cluster Node {hostname} failed space {ha_used_percent} check.')
-        response = True, ha_used_percent
-    except OSError as error:
-        LOGGER.error("An error occurred in check_cluster_space: %s", str(error))
-        response = False, error
+    ha_used_percent = 0.0
+    for node in NODES:
+        if node.get("node_type", None).lower() != "master":
+            continue
+        hostname = node['hostname']
+        health = Health(hostname=hostname, username=node['username'], password=node['password'])
+        ha_total, ha_avail, ha_used = health.get_sys_capacity()
+        LOGGER.info("Total capacity: %s GB", ha_total / (1024**3))
+        LOGGER.info("Available capacity: %s GB", ha_avail / (1024**3))
+        LOGGER.info("Used capacity: %s GB", ha_used / (1024**3))
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        health.disconnect()
+        if ha_used_percent > CMN_CFG["max_storage"]:
+            raise IOError(f'Cluster Node {hostname} failed space {ha_used_percent} check.')
 
-    return response
+    return ha_used_percent > CMN_CFG["max_storage"], f"Used capacity: {ha_used_percent}"
 
 
 def collect_support_bundle():
@@ -126,33 +123,34 @@ def collect_crash_files():
     return os.path.exists(crash_fpath), crash_fpath
 
 
-def rotate_sb_logs(sb_dpath: str, sb_max_count: int = 0):
+def rotate_logs(dpath: str, max_count: int = 0):
     """
-    Remove old SB logs as per max SB count.
+    Remove old logs based on creation time and keep as per max log count, default is 5.
 
     :param: sb_dpath: Directory path of support bundles.
     :param: sb_max_count: Maximum count of support bundles to keep.
     """
-    sb_max_count = sb_max_count if sb_max_count else CMN_CFG.get("max_sb", 5)
-    if not os.path.exists(sb_dpath):
-        raise IOError(f"Directory '{sb_dpath}' path does not exists.")
-    files = sorted(glob.glob(sb_dpath + '*'), key=os.path.getctime, reverse=True)
-    if len(files) > sb_max_count:
-        for fpath in files[sb_max_count:]:
+    max_count = max_count if max_count else CMN_CFG.get("max_sb", 5)
+    if not os.path.exists(dpath):
+        raise IOError(f"Directory '{dpath}' path does not exists.")
+    files = sorted(glob.glob(dpath + '*'), key=os.path.getctime, reverse=True)
+    if len(files) > max_count:
+        for fpath in files[max_count:]:
             if os.path.exists(fpath):
                 os.remove(fpath)
-                LOGGER.info("Old SB removed: %s", fpath)
+                LOGGER.info("Removed: Old log file: %s", fpath)
 
-    if not len(os.listdir(sb_dpath)) <= sb_max_count:
-        raise IOError(f"Failed to rotate SB logs: {os.listdir(sb_dpath)}")
+    if not len(os.listdir(dpath)) <= max_count:
+        raise IOError(f"Failed to rotate SB logs: {os.listdir(dpath)}")
 
 
-def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str):
+def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str, max_sb: int = 0):
     """
     Collect SB and copy to NFS server log and keep SB logs as per max_sb count.
 
     :param mount_path: Path of mounted directory.
     :param run_id: Unique id for each run.
+    :param max_sb: maximum sb count to keep on nfs server.
     """
     try:
         sb_dir = os.path.join(mount_path, "CorIO-Execution", run_id, "Support_Bundles",
@@ -163,7 +161,7 @@ def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str):
             os.makedirs(sb_dir)
         status, fpath = collect_support_bundle()
         shutil.copy2(fpath, sb_dir)
-        rotate_sb_logs(sb_dir)
+        rotate_logs(sb_dir, max_sb)
         sb_files = os.listdir(sb_dir)
         LOGGER.info("SB list: %s", sb_files)
     except IOError as error:
