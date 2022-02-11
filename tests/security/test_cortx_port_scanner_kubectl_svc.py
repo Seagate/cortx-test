@@ -21,12 +21,8 @@ def test_cortx_port_scanner_kubectl_svc():
 
     k8s_config_file = os.environ.get('KUBECONFIG')
     if k8s_config_file:
-        try:
-            logging.info('Loading kubernetes config from the file %s', k8s_config_file)
-            config.load_kube_config(config_file=k8s_config_file)
-        except Exception as e:
-            raise RuntimeError('Can not load kube config from the file %s, error: %s', \
-                              k8s_config_file, e)
+        logging.info('Loading kubernetes config from the file %s', k8s_config_file)
+        config.load_kube_config(config_file=k8s_config_file)
     else:
         k8s_config_file="/root/.kube/config"
         config.load_kube_config(config_file=k8s_config_file)
