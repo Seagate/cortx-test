@@ -77,9 +77,9 @@ def check_cluster_space():
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         health.disconnect()
         if ha_used_percent > CMN_CFG["max_storage"]:
-            raise IOError(f'Cluster Node {hostname} failed space {ha_used_percent} check.')
+            raise IOError(f'Cluster Node {hostname} failed space check: {ha_used_percent}%.')
 
-    return ha_used_percent > CMN_CFG["max_storage"], f"Used capacity: {ha_used_percent}"
+    return ha_used_percent < CMN_CFG["max_storage"], f"Used capacity: {ha_used_percent}%"
 
 
 def collect_support_bundle():
@@ -153,8 +153,8 @@ def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str, max_sb: int = 
     :param max_sb: maximum sb count to keep on nfs server.
     """
     try:
-        sb_dir = os.path.join(mount_path, "CorIO-Execution", run_id, "Support_Bundles",
-                              str(datetime.now().year), str(datetime.now().month))
+        sb_dir = os.path.join(mount_path, "CorIO-Execution", str(run_id), str(datetime.now().year),
+                              str(datetime.now().month), "Support_Bundles")
         if not os.path.ismount(mount_path):
             raise IOError(f"Incorrect mount path: {mount_path}")
         if not os.path.exists(sb_dir):

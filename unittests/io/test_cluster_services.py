@@ -29,8 +29,6 @@ from commons.utils.system_utils import umount_nfs_server
 from libs.io import cluster_services
 
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
 
 
 class ClusterServicesTestCase(unittest.TestCase):
