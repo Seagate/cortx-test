@@ -170,13 +170,13 @@ class TestShutdownCluster:
         """
         LOGGER.info("STARTED: Consul key update cluster_stop_key when receiving shutdown signal.")
         LOGGER.info("Step 1: Trigger ‘Start Cluster Shutdown’ message to HA.")
+        node_obj = self.get_ha_node_object(self.node_master_list[0])
         base_path = os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
         resp = HAK8s.shutdown_signal(self.node_master_list[0], common_const.HA_SHUTDOWN_SIGNAL_PATH,
                                      common_const.HA_TMP + '/' + base_path)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Triggered ‘Start Cluster Shutdown’ message to HA. successfully.")
         LOGGER.info("Step 2: Verify k8s and fault tolerance log for cluster stop key message.")
-        node_obj = self.get_ha_node_object(self.node_master_list[0])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
         resp = HAK8s.check_string_in_log_file(node_obj, "cluster stop",
                                               common_const.HA_SHUTDOWN_LOGS[0])
@@ -228,6 +228,7 @@ class TestShutdownCluster:
         """
         LOGGER.info("START: Shutdown entire Cluster with prior message sent to HA logs.")
         LOGGER.info("Step 1: Trigger ‘Start Cluster Shutdown’ message to HA.")
+        node_obj = self.get_ha_node_object(self.node_master_list[0])
         base_path = os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
         resp = HAK8s.shutdown_signal(self.node_master_list[0], common_const.HA_SHUTDOWN_SIGNAL_PATH,
                                      common_const.HA_TMP + '/' + base_path)
@@ -235,7 +236,6 @@ class TestShutdownCluster:
         LOGGER.info("Step 1: Triggered ‘Start Cluster Shutdown’ message to HA successfully.")
 
         LOGGER.info("Step 2: Verify k8s and fault tolerance for cluster stop key message.")
-        node_obj = self.get_ha_node_object(self.node_master_list[0])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
         resp = HAK8s.check_string_in_log_file(node_obj, "cluster stop",
                                               common_const.HA_SHUTDOWN_LOGS[0])
@@ -269,13 +269,13 @@ class TestShutdownCluster:
         """
         LOGGER.info("STARTED: Send shutdown signal and Health monitor should not receive alerts")
         LOGGER.info("Step 1: Trigger ‘Start Cluster Shutdown’ message to HA")
+        node_obj = self.get_ha_node_object(self.node_master_list[0])
         base_path = os.path.basename(common_const.HA_SHUTDOWN_SIGNAL_PATH)
         resp = HAK8s.shutdown_signal(self.node_master_list[0], common_const.HA_SHUTDOWN_SIGNAL_PATH,
                                      common_const.HA_TMP + '/' + base_path)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Triggered ‘Start Cluster Shutdown’ message to HA successfully")
         LOGGER.info("Step 2: Verify k8s and fault tolerance for cluster stop key message")
-        node_obj = self.get_ha_node_object(self.node_master_list[0])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
         resp = HAK8s.check_string_in_log_file(node_obj, "cluster stop",
                                               common_const.HA_SHUTDOWN_LOGS[0])
