@@ -259,6 +259,7 @@ class TestShutdownCluster:
                     common_const.HA_SHUTDOWN_LOGS)
         LOGGER.info("COMPETED: Shutdown entire Cluster with prior message sent to HA logs")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-30698")
@@ -342,4 +343,3 @@ class TestShutdownCluster:
         LOGGER.info("Step 8:Verify all HA logs for SIGTERM alert message %s",
                     common_const.HA_SHUTDOWN_LOGS)
         LOGGER.info("COMPETED: Sent shutdown signal and Health monitor should not receive alert")
-    

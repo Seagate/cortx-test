@@ -1088,6 +1088,7 @@ class HAK8s:
         """
         LOGGER.info("Get HA log pvc from pvc list.")
         pvc_list = ha_node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        ha_pvc = None
         for ha_pvc in pvc_list:
             if common_const.HA_POD_NAME_PREFIX in ha_pvc:
                 ha_pvc = ha_pvc.replace("\n", "")
@@ -1130,4 +1131,3 @@ class HAK8s:
             LOGGER.error("An error occurred in %s:", HAK8s.shutdown_signal.__name__)
             return False, err
         return True, "Successfully ran the script."
-
