@@ -22,7 +22,7 @@
 
 # External modules import
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
-from dash_core_components import Dropdown, Graph
+from dash_core_components import Dropdown, Graph, Loading
 import dash_html_components as html
 import dash_daq as daq
 
@@ -240,11 +240,11 @@ graphs_perf_tabs = html.Div(
                         ],
                         style={"font-size": "20px", "color": "#3131b0"},
                     ),
-                    Graph(id="plot_Throughput"),
-                    Graph(id="plot_Latency"),
-                    Graph(id="plot_IOPS"),
-                    Graph(id="plot_TTFB"),
-                    Graph(id="plot_all"),
+                    Loading(Graph(id="plot_Throughput")),
+                    Loading(Graph(id="plot_Latency")),
+                    Loading(Graph(id="plot_IOPS")),
+                    Loading(Graph(id="plot_TTFB")),
+                    Loading(Graph(id="plot_all")),
                 ]
             ),
             className="flex-sm-fill nav-link",
