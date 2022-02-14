@@ -13,7 +13,6 @@ HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
 SERVICE_HA_STATUS = "ps -aux"
 HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
-HA_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 HA_CONSUL_STR = "consul kv get " \
                 "-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 " \
