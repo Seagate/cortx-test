@@ -1077,6 +1077,7 @@ class HAK8s:
                 else:
                     return True, node_ip, node_iface, new_worker_obj
 
+    @staticmethod
     def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
                                    bkt_op=True):
         """
