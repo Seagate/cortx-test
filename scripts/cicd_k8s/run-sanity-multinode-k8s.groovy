@@ -66,7 +66,7 @@ deactivate
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
 				script {
-			        env.Sanity_Failed = true
+			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
@@ -106,8 +106,8 @@ deactivate
                         def lines = failures.readLines()
                         if (lines) {
                             echo "Sanity Test Failed"
+                            env.Sanity_Failed = true
                             currentBuild.result = 'FAILURE'
-                            error('Skipping Regression as Sanity Test Failed')
                         }
                     }
 				}
@@ -116,7 +116,6 @@ deactivate
 		stage('REGRESSION_TEST_EXECUTION') {
 			steps {
 				script {
-			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
