@@ -56,11 +56,11 @@ class TestIOSessions(unittest.TestCase):
         """
             Just a sample function which would make dummy API calls
         """
+        print("Executing dummy api with id {}".format(post_id))
         url = f"https://jsonplaceholder.typicode.com/comments?postId={post_id}"
         response = requests.get(url)
         if response.status_code == 200:
             return response.json()
-        self.log.info(" ")
         return {}
 
     def test_make_sessions(self):
@@ -70,7 +70,13 @@ class TestIOSessions(unittest.TestCase):
         """
         print("Testing make sessions")
         data1, data2, data3, data4 = self.list_of_post_ids
-        make_sessions(self.dummy_api)(data1, data2, data3, data4, number_of_workers=4)
+        result = make_sessions(self.dummy_api)(data1, data2, data3, data4, number_of_workers=4)
+        print(result)
+
+    def test_make_sessions_with_iterable(self):
+        print("Testing make sessions with either list or tuple data set")
+        result = make_sessions(self.dummy_api)(list(range(1, 10000)), number_of_workers=10000)
+        print(result)
 
 
 if __name__ == '__main__':

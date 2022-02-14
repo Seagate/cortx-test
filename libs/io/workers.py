@@ -35,6 +35,9 @@ import concurrent.futures
 import os
 from functools import wraps
 
+import psutil
+import timeit
+
 
 def make_sessions(func):
     """
@@ -52,20 +55,24 @@ def make_sessions(func):
         :param args : Varying input data
         :param kwargs :number_of_workers:
             The number of session need to run simultaneously
-        :return:
+        :return: list
         """
         # the number of threads that can be max-spawned.
         # If the number of threads are high, overhead of creating the threads will be significant.
         number_of_cpu = int(os.cpu_count())
-        print("Number of CPU Cores",number_of_cpu)
-        number_of_workers = kwargs.get("number_of_workers", 1)
-        if len(args) < number_of_workers:
+        print("Number of CPU Cores", number_of_cpu)
+        print('RAM memory % used:', psutil.virtual_memory()[2])
+        # Default we are keeping max concurrent workers equal to number of data arguments
+        max_concurrent_workers = kwargs.get("number_of_workers", len(args))
+        args = args[0] if type(args[0]) in (list, tuple) else args
+        if len(args) < max_concurrent_workers:
             # If the length of the list is low, we would only require those many number of threads.
             # Here we are avoiding creating unnecessary threads
-            number_of_workers = len(args)
+            max_concurrent_workers = len(args)
 
-        if number_of_workers:
-            if number_of_workers == 1:
+        start = timeit.default_timer()
+        if max_concurrent_workers:
+            if max_concurrent_workers == 1:
                 # If the length of the list that needs to be parallelized is 1, there is no point in
                 # parallelize the function.
                 # So we run it serially.
@@ -73,13 +80,16 @@ def make_sessions(func):
             else:
                 # Create max number of threads and running the decorated function in parallel.
                 result = []
-                with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_workers) as exe:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent_workers) as exe:
                     bag = {exe.submit(func, i): i for i in args}
                     for future in concurrent.futures.as_completed(bag):
                         result.append(future.result())
                         print("\n------------Session Running------------\n", future.result())
         else:
             result = []
+
+        stop = timeit.default_timer()
+        print('Total Execution Time is: ', stop - start)
         return result
 
     return spawn
