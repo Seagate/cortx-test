@@ -28,6 +28,7 @@ import datetime
 import logging
 from os import path
 from logging import handlers
+from config import IO_DRIVER_CFG
 
 
 class StreamToLogger:
@@ -61,13 +62,14 @@ class StreamToLogger:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-    def set_filehandler_logger(self, maxbyte=524288000, backupcount=5):
+    def set_filehandler_logger(self, maxbyte=0, backupcount=5):
         """
         Add a file handler for the logging module. this logs all messages to ``file_name``.
 
         :param maxbyte: Rollover occurs whenever the current log file is nearly maxBytes in length.
         :param backupcount: count of the max rotation/rollover of logs.
         """
+        maxbyte = maxbyte if maxbyte else IO_DRIVER_CFG["log_size"]
         handler = CorIORotatingFileHandler(self.file_path, maxbyte=maxbyte, backupcount=backupcount)
         formatter = logging.Formatter(self.formatter)
         handler.setLevel(logging.getLevelName(self.logger.level))

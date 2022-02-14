@@ -68,9 +68,9 @@ def initialize_loghandler(level=logging.DEBUG):
 def parse_args():
     """Commandline arguments for CorIO Driver."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test-input", type=str,
+    parser.add_argument("-ti", "--test-input", type=str,
                         help="test data configuration yaml.")
-    parser.add_argument("--logging-level", type=int, default=10,
+    parser.add_argument("-ll", "--logging-level", type=int, default=10,
                         help="log level value as defined below: " +
                              "CRITICAL=50 " +
                              "ERROR=40 " +
@@ -78,13 +78,13 @@ def parse_args():
                              "INFO=20 " +
                              "DEBUG=10"
                         )
-    parser.add_argument("--use-ssl", type=lambda x: bool(strtobool(str(x))), default=True,
+    parser.add_argument("-us", "--use-ssl", type=lambda x: bool(strtobool(str(x))), default=True,
                         help="Use HTTPS/SSL connection for S3 endpoint.")
-    parser.add_argument("--seed", type=int, help="seed.",
+    parser.add_argument("-sd", "--seed", type=int, help="seed.",
                         default=random.SystemRandom().randint(1, 9999999))
-    parser.add_argument("--secret-key", type=str, help="s3 secret Key.")
-    parser.add_argument("--access-key", type=str, help="s3 access Key.")
-    parser.add_argument("--endpoint", type=str, help="Endpoint for S3 operations.",
+    parser.add_argument("-sk", "--secret-key", type=str, help="s3 secret Key.")
+    parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
+    parser.add_argument("-ep", "--endpoint", type=str, help="Endpoint for S3 operations.",
                         default="https://s3.seagate.com")
 
     return parser.parse_args()
