@@ -90,4 +90,3 @@ class HAK8SCompLib:
             LOGGER.error("An error occurred in %s:", HAK8SCompLib.shutdown_signal.__name__)
             return False, err
         return True, "Successfully ran the script."
-        
