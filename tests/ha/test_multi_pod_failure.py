@@ -82,6 +82,7 @@ class TestPodFailure:
         cls.hlth_master_list = []
         cls.host_worker_list = []
         cls.node_worker_list = []
+        cls.pod_name_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
@@ -89,6 +90,7 @@ class TestPodFailure:
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
+        cls.pod_dict = {}
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.motr_obj = MotrCoreK8s()
@@ -154,14 +156,17 @@ class TestPodFailure:
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
         if self.restore_pod:
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup})
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+            for pod_name in self.pod_name_list:
+                deployment_name = self.pod_dict.get(pod_name)[2]
+                deployment_backup = self.pod_dict.get(pod_name)[1]
+                resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                               restore_method=self.restore_method,
+                                               restore_params={"deployment_name": deployment_name,
+                                                           "deployment_backup": deployment_backup})
+                LOGGER.debug("Response: %s", resp)
+                assert_utils.assert_true(resp[0], f"Failed to restore pod by "
+                                                  f"{self.restore_method} way")
+                LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
             resp = self.ha_obj.host_power_on(host=self.node_name)
@@ -218,5 +223,72 @@ class TestPodFailure:
         Test to verify degraded READs after all K data pods are failed.
         """
         LOGGER.info("Started: Test to verify degraded READs after all K data pods are failed.")
+
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35772'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipread=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Perform READs and verify DI on the written data")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Performed READs and verified DI on the written data")
+
+        LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get the value of K for the given cluster.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        value = self.ha_obj.get_parity_value(self.node_master_list[0])
+        LOGGER.info("The cluster has %s parity pods", value)
+        LOGGER.info("Get pod names to be deleted")
+        self.pod_name_list = random.sample(pod_list, value)
+        for pod_name in self.pod_name_list:
+            pod_data = list()
+            pod_data.append(self.node_master_list[0].get_pod_hostname(pod_name=pod_name)) #hostname
+            LOGGER.info("Deleting pod %s", pod_name)
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                               f"deployment (unsafe)")
+            pod_data.append(resp[1]) #deployment_backup
+            pod_data.append(resp[2]) #deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+            self.pod_dict[pod_name] = pod_data
+            LOGGER.info("Deleted pod %s by deleting deployment (unsafe)", pod_name)
+        LOGGER.info("Step 3: Successfully deleted %s data pods", value)
+
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 4: Cluster is in degraded state")
+
+        LOGGER.info("Step 5: Check services status that were running on pods which are deleted")
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Services of pods are in offline state")
+
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 6: Services of pod are in online state")
+
+        LOGGER.info("Step 7: Perform READs and verify DI on the written data")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
         LOGGER.info("Completed: Test to verify degraded READs after all K data pods are failed.")

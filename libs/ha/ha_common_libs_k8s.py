@@ -1147,20 +1147,21 @@ class HAK8s:
         resp = jc_obj.update_jclient_jcloud_properties()
         return resp
 
-    def get_parity_value(self, m_node_obj: object, data_pod_name: str):
+    def get_parity_value(self, m_node_obj):
         """
         Get the parity value from the sns cluster config.
         :param m_node_obj: Object for mastre node
-        :param data_pod_name: Data pod name for reading cluster config file
-        :return: boolean, response
+        :return: response
         """
+        pod_list = m_node_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        data_pod_name = random.sample(pod_list, 1)[0]
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(data_pod_name, common_cmd.GET_CLSTR_CONFIG
                                                         .format("durabiity", "sns", "parity"))
         resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
         if not resp:
-            return False, "No SNS config found."
+            return 1
         LOGGER.info("SNS config response : %s", resp)
         k_value = resp.split(":")[1]
         k_value = k_value.strip('')
 
-        return True, k_value
+        return k_value
