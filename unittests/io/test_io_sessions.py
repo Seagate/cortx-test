@@ -60,8 +60,17 @@ class TestIOSessions(unittest.TestCase):
         url = f"https://jsonplaceholder.typicode.com/comments?postId={post_id}"
         response = requests.get(url)
         if response.status_code == 200:
+            self.log.info(response.json())
             return response.json()
         return {}
+
+    def dummy_method(self, post_id):
+        """
+            Just a sample function which would make dummy API calls
+        """
+        print("Executing dummy api with id {}".format(post_id))
+        self.log.info(post_id)
+        return {"post_id": post_id}
 
     def test_make_sessions(self):
         """
@@ -74,8 +83,21 @@ class TestIOSessions(unittest.TestCase):
         print(result)
 
     def test_make_sessions_with_iterable(self):
+        """
+        Simple function to test dummy api with multiple sessions/processes with ten thousand workers
+        :return: None
+        """
         print("Testing make sessions with either list or tuple data set")
-        result = make_sessions(self.dummy_api)(list(range(1, 10000)), number_of_workers=10000)
+        result = make_sessions(self.dummy_method)(list(range(1, 10000)), number_of_workers=10000)
+        print(result)
+
+    def test_make_sessions_with_iterable_defaut_workers(self):
+        """
+        Simple function to test dummy api with multiple sessions/processes with default workers
+        :return: None
+        """
+        print("Testing make sessions with either list or tuple data set")
+        result = make_sessions(self.dummy_method)(list(range(1, 5000)))
         print(result)
 
 

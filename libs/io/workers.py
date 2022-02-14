@@ -63,8 +63,8 @@ def make_sessions(func):
         print("Number of CPU Cores", number_of_cpu)
         print('RAM memory % used:', psutil.virtual_memory()[2])
         # Default we are keeping max concurrent workers equal to number of data arguments
-        max_concurrent_workers = kwargs.get("number_of_workers", len(args))
         args = args[0] if type(args[0]) in (list, tuple) else args
+        max_concurrent_workers = kwargs.get("number_of_workers", len(args))
         if len(args) < max_concurrent_workers:
             # If the length of the list is low, we would only require those many number of threads.
             # Here we are avoiding creating unnecessary threads
@@ -72,19 +72,13 @@ def make_sessions(func):
 
         start = timeit.default_timer()
         if max_concurrent_workers:
-            if max_concurrent_workers == 1:
-                # If the length of the list that needs to be parallelized is 1, there is no point in
-                # parallelize the function.
-                # So we run it serially.
-                result = [func(args[0])]
-            else:
-                # Create max number of threads and running the decorated function in parallel.
-                result = []
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent_workers) as exe:
-                    bag = {exe.submit(func, i): i for i in args}
-                    for future in concurrent.futures.as_completed(bag):
-                        result.append(future.result())
-                        print("\n------------Session Running------------\n", future.result())
+            # Create max number of threads and running the decorated function in parallel.
+            result = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent_workers) as exe:
+                bag = {exe.submit(func, i): i for i in args}
+                for future in concurrent.futures.as_completed(bag):
+                    result.append(future.result())
+                    print("\n------------Session Running------------\n", future.result())
         else:
             result = []
 
