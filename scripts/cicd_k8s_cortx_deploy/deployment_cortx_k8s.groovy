@@ -18,8 +18,10 @@ pipeline {
 		stage('ENV_SETUP') {
 			steps {
 			    echo "${WORKSPACE}"
-			    echo "BUILD : ${params.BUILD}"
-                echo "TEST PLAN: ${params.TEST_PLAN_NUMBER}"
+			    echo "BUILD : ${BUILD}"
+			    echo "Service Release : ${GIT_SCRIPT_TAG}"
+			    echo "TP : ${TEST_PLAN_NUMBER}"
+
 			    sh label: '', script: '''
 
                     yum install -y nfs-utils
@@ -40,6 +42,8 @@ pipeline {
 
                 sh label: '', script: ''' source venv/bin/activate
                     export PYTHONPATH="$PWD"
+                    export TEST_PLAN_NUMBER=${TEST_PLAN_NUMBER}
+                    echo ${TEST_PLAN_NUMBER}
                     SETUP_FILE="cicd_setup_name.txt"
                     ALL_SETUP_ENTRY="all_setup_entry.txt"
 
@@ -92,6 +96,7 @@ pipeline {
 								TEST_TYPES="${TEST_TYPES} ${EXECUTING_TYPE}"
 							fi
 						fi
+
 						echo $TEST_TYPES
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
                         cat $ALL_SETUP_ENTRY
@@ -99,8 +104,9 @@ pipeline {
 							do
 								echo "$target"
 								echo "$te"
-							    //python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NO} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
+								python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NUMBER} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
 							done <$ALL_SETUP_ENTRY
+						export PYTHONPATH="$PWD"
 						python3 scripts/cicd_k8s_cortx_deploy/result.py
 						RESULT="cat test_result.txt"
 						echo $RESULT
@@ -116,22 +122,15 @@ pipeline {
                         if [ "${collect_support_bundle}" = "$var_true" ]; then
                             echo "Collect support bundle"
                         fi
-                        chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
-                        sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
-
-                        if [ "${raise_jira}" = "$var_true" ]; then
-                            echo "Raise Jira on Failure"
-                            python scripts/cicd_k8s_cortx_deploy/create_jira_issue.py
-                        fi
                         deactivate
                         '''
                     }
-                    env.TestPlan = ${TEST_PLAN_NUMBER}
+                    env.TestPlan = "${TEST_PLAN_NUMBER}"
+                    env.ServicesVersion = "${GIT_SCRIPT_TAG}"
                     if ( fileExists("test_result.txt") ) {
                         def file1 = readFile "test_result.txt"
                         def lines = file1.readLines()
-                        env.Report = lines
-                        println lines
+                        env.Report = "$lines"
                     }
                 }
             }
@@ -139,7 +138,7 @@ pipeline {
     }
 	post {
         always {
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/*.log, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
+            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: 'pragam.jain@seagate.com'
             echo "End of jenkins_job"
         }
     }

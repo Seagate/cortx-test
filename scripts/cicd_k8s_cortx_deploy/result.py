@@ -45,7 +45,8 @@ def main():
                 with open("test_result.txt", 'a') as file:
                     file.write(key + ":" + str(value))
                     file.write("\n")
-
+                    if key == "FAIL" and value != "0":
+                        return False
     except Exception as ex:
         print(f"Exception Occurred : {ex}")
         sys.exit(1)
