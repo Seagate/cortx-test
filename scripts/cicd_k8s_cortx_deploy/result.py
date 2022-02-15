@@ -45,6 +45,7 @@ def main():
                 with open("test_result.txt", 'a') as file:
                     file.write(key + ":" + str(value))
                     file.write("\n")
+            for key, value in result_dict.items():
                 if key == "FAIL" and value != "0":
                     sys.exit(1)
     # pylint: disable=broad-except
