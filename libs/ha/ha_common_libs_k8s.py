@@ -1155,13 +1155,14 @@ class HAK8s:
         """
         pod_list = m_node_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
         data_pod_name = random.sample(pod_list, 1)[0]
-        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(data_pod_name, common_cmd.GET_CLSTR_CONFIG
-                                                        .format("durabiity", "sns", "parity"))
+        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(data_pod_name, common_cmd.GET_CLSTR_CONFIG)
         resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
         if not resp:
-            return 1
+            LOGGER.info("Not getting cluster config details, considering K as 1")
+            return "1"
         LOGGER.info("SNS config response : %s", resp)
+        resp = resp[11]
         k_value = resp.split(":")[1]
-        k_value = k_value.strip('')
+        k_value = k_value.strip("'\\\n'b'")
 
         return k_value

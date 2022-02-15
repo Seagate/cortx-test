@@ -463,7 +463,7 @@ K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 GET_STATS = "consul kv get -recurse stats"
-GET_CLSTR_CONFIG = "cat /etc/cortx/cluster.conf | grep \'{}\' -A8 | grep \'{}\' -A3 | grep \'{}\'"
+GET_CLSTR_CONFIG = "cat /etc/cortx/cluster.conf"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
