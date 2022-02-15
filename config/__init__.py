@@ -19,12 +19,13 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 """Configs are initialized here."""
-
+import os.path
 import sys
 import ast
 import munch
 from typing import List
 from commons import configmanager
+from commons.utils import config_utils
 from commons.params import S3_CONFIG
 from commons.params import IO_DRIVER_CFG_PATH
 
@@ -41,22 +42,44 @@ def split_args(sys_cmd: List):
     return eq_splitted
 
 
+def get_local_aws_keys():
+    """Fetch local aws access secret keys."""
+    path = S3_CFG["aws_path"]
+    section = S3_CFG["aws_cred_section"]
+    if os.path.exists(path):
+        try:
+            aws_access_key = config_utils.get_config(path, section, "aws_access_key_id")
+            aws_secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
+            return aws_access_key, aws_secret_key
+        except BaseException:
+            pass
+    return None, None
+
+
+IO_DRIVER_CFG = configmanager.get_config_yaml(IO_DRIVER_CFG_PATH)
+S3_CFG = configmanager.get_config_yaml(fpath=S3_CONFIG)
+
 io_driver_args = split_args(sys.argv)
-_use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl' if '--use_ssl' in io_driver_args else None
+_use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl' if '--use_ssl' in io_driver_args\
+    else None
 ssl_flg = io_driver_args[io_driver_args.index(_use_ssl) + 1] if _use_ssl else True
-_endpoint = '-ep' if '-ep' in io_driver_args else '--endpoint' if '--endpoint' in io_driver_args else None
+_endpoint = '-ep' if '-ep' in io_driver_args else '--endpoint' if '--endpoint' in io_driver_args\
+    else None
 s3_url = io_driver_args[io_driver_args.index(_endpoint) + 1] if _endpoint else "s3.seagate.com"
-_access_key = "-ak" if '-ak' in io_driver_args else '--access_key' if '--access_key' in io_driver_args else None
-ACCESS_KEY = io_driver_args[io_driver_args.index(_access_key) + 1] if _access_key else None
-_secret_key = "-ak" if '-ak' in io_driver_args else '--secret_key' if '--secret_key' in io_driver_args else None
-SECRET_KEY = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
+_access_key = "-ak" if '-ak' in io_driver_args else '--access_key' if '--access_key' in\
+                                                                      io_driver_args else None
+access_key = io_driver_args[io_driver_args.index(_access_key) + 1] if _access_key else None
+_secret_key = "-ak" if '-ak' in io_driver_args else '--secret_key' if '--secret_key' in\
+                                                                      io_driver_args else None
+secret_key = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
 use_ssl = ast.literal_eval(str(ssl_flg).title())
 s3_endpoint = f"{'https' if ssl_flg else 'http'}://{s3_url}"
 
-S3_CFG = configmanager.get_config_yaml(fpath=S3_CONFIG)
-S3_CFG["use_ssl"] = use_ssl
-S3_CFG["s3_url"] = s3_endpoint
-IO_DRIVER_CFG = configmanager.get_config_yaml(IO_DRIVER_CFG_PATH)
-# Munched configs. These can be used by dot "." operator.
 
-s3_cfg = munch.munchify(S3_CFG)
+ACCESS_KEY = access_key if access_key else get_local_aws_keys()[0]
+SECRET_KEY = secret_key if secret_key else get_local_aws_keys()[1]
+S3_CFG["use_ssl"] = use_ssl
+S3_CFG["endpoint"] = s3_endpoint
+
+# Munched configs. These can be used by dot "." operator.
+S3_CFG = munch.munchify(S3_CFG)

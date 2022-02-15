@@ -56,7 +56,7 @@ class S3RestApi(object):
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        endpoint_url = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+        endpoint_url = kwargs.get("endpoint_url", S3_CFG["endpoint"])
         config = Config(retries={'max_attempts': S3_CFG["s3api_retry"]})
         if debug:
             # Uncomment to enable debug
