@@ -8,3 +8,4 @@ terminate_driver_on_failure:
     warp: True
     health_check: True
 driver_log: io_driver.log
+log_size: 524288000
