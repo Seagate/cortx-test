@@ -239,7 +239,12 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get the value of K for the given cluster.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        value = self.ha_obj.get_parity_value(self.node_master_list[0])
+        resp = self.ha_obj.get_config_value(self.node_master_list[0])
+        if resp[0]:
+            value = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
+        else:
+            LOGGER.info("Failed to get parity value will use 1.")
+            value = 1
         LOGGER.info("The cluster has %s parity pods", value)
         LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = random.sample(pod_list, value)

@@ -28,6 +28,7 @@ import sys
 import time
 from multiprocessing import Process
 from time import perf_counter_ns
+import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -1167,3 +1168,35 @@ class HAK8s:
         value = int(k_value)
 
         return value
+
+    @staticmethod
+    def get_config_value(pod_obj, pod_list=None):
+        """
+        :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the cluster.conf File
+        :return: (bool, response)
+        """
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        conf_cp = common_cmd.K8S_CP_TO_LOCAL_CMD.format(pod_name,
+                                                        common_const.CLUSTER_CONF_PATH,
+                                                        common_const.LOCAL_CONF_PATH,
+                                                        common_const.HAX_CONTAINER_NAME)
+        resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False, exc=False)
+        if not resp_node[0]:
+            LOGGER.error("Error: Not able to get cluster config file")
+            return False, resp_node
+        LOGGER.debug("%s response %s ", conf_cp, resp_node)
+        local_conf = os.path.join(os.getcwd(), "cluster.conf")
+        if os.path.exists(local_conf):
+            os.remove(local_conf)
+        resp = pod_obj.copy_file_to_local(
+            remote_path=common_const.LOCAL_CONF_PATH, local_path=local_conf)
+        if not resp[0]:
+            LOGGER.error("Error: Failed to copy cluster.conf to local")
+            return False, resp
+        conf_fd = open(local_conf, 'r')
+        data = yaml.safe_load(conf_fd)
+
+        return True, data
