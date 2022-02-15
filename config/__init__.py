@@ -27,19 +27,20 @@ from typing import List
 from commons import configmanager
 from commons.utils import config_utils
 from commons.params import S3_CONFIG
+from commons.params import S3_IO_CFG_PATH
 from commons.params import IO_DRIVER_CFG_PATH
 
 
 def split_args(sys_cmd: List):
     """split args and make it compliant."""
-    eq_splitted = list()
+    _args = list()
     for item in sys_cmd:
         if item.find('=') != -1:
-            eq_splitted.extend(item.split('='))
+            _args.extend(item.split('='))
         else:
-            eq_splitted.extend([item])
+            _args.extend([item])
 
-    return eq_splitted
+    return _args
 
 
 def get_local_aws_keys():
@@ -51,13 +52,15 @@ def get_local_aws_keys():
             aws_access_key = config_utils.get_config(path, section, "aws_access_key_id")
             aws_secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
             return aws_access_key, aws_secret_key
-        except BaseException:
+        except KeyError:
             pass
     return None, None
 
 
 IO_DRIVER_CFG = configmanager.get_config_yaml(IO_DRIVER_CFG_PATH)
 S3_CFG = configmanager.get_config_yaml(fpath=S3_CONFIG)
+CMN_CFG = configmanager.get_config_wrapper(fpath=S3_IO_CFG_PATH)
+
 
 io_driver_args = split_args(sys.argv)
 _use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl' if '--use_ssl' in io_driver_args\
@@ -76,8 +79,8 @@ use_ssl = ast.literal_eval(str(ssl_flg).title())
 s3_endpoint = f"{'https' if ssl_flg else 'http'}://{s3_url}"
 
 
-ACCESS_KEY = access_key if access_key else get_local_aws_keys()[0]
-SECRET_KEY = secret_key if secret_key else get_local_aws_keys()[1]
+S3_CFG["access_key"] = access_key if access_key else get_local_aws_keys()[0]
+S3_CFG["secret_key"] = secret_key if secret_key else get_local_aws_keys()[1]
 S3_CFG["use_ssl"] = use_ssl
 S3_CFG["endpoint"] = s3_endpoint
 

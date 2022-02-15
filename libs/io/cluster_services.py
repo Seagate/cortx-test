@@ -127,20 +127,21 @@ def rotate_logs(dpath: str, max_count: int = 0):
     """
     Remove old logs based on creation time and keep as per max log count, default is 5.
 
-    :param: sb_dpath: Directory path of support bundles.
-    :param: sb_max_count: Maximum count of support bundles to keep.
+    :param: dpath: Directory path of log files.
+    :param: max_count: Maximum count of log files to keep.
     """
     max_count = max_count if max_count else CMN_CFG.get("max_sb", 5)
     if not os.path.exists(dpath):
         raise IOError(f"Directory '{dpath}' path does not exists.")
-    files = sorted(glob.glob(dpath + '*'), key=os.path.getctime, reverse=True)
+    files = sorted(glob.glob(dpath + '/**'), key=os.path.getctime, reverse=True)
+    LOGGER.info(files)
     if len(files) > max_count:
         for fpath in files[max_count:]:
             if os.path.exists(fpath):
                 os.remove(fpath)
                 LOGGER.info("Removed: Old log file: %s", fpath)
 
-    if not len(os.listdir(dpath)) <= max_count:
+    if len(os.listdir(dpath)) > max_count:
         raise IOError(f"Failed to rotate SB logs: {os.listdir(dpath)}")
 
 

@@ -22,16 +22,15 @@
 """UT's for IO cluster services module."""
 
 import unittest
-import logging
 from commons import params
 from commons.utils.system_utils import mount_nfs_server
 from commons.utils.system_utils import umount_nfs_server
 from libs.io import cluster_services
-
-logger = logging.getLogger(__name__)
+from unittests.io import logger
 
 
 class ClusterServicesTestCase(unittest.TestCase):
+    """Tests suite for cluster service operations."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -40,7 +39,7 @@ class ClusterServicesTestCase(unittest.TestCase):
         logger.info("Mount nfs server.")
         status = mount_nfs_server(params.NFS_SERVER_DIR, params.MOUNT_DIR)
         cls.assertTrue(status, "Failed to mount nfs server: {}".format(params.NFS_SERVER_DIR))
-        logger.info("Server '{}' mounted successfully.".format(params.NFS_SERVER_DIR))
+        logger.info("Server '%s' mounted successfully.", params.NFS_SERVER_DIR)
         logger.info("ENDED: Test suite setup level operations.")
 
     @classmethod
@@ -50,7 +49,7 @@ class ClusterServicesTestCase(unittest.TestCase):
         logger.info("Unmount nfs server.")
         status = umount_nfs_server(params.MOUNT_DIR)
         cls.assertTrue(status, "Failed to unmount nfs server: {}".format(params.NFS_SERVER_DIR))
-        logger.info("Server '{}' unmounted successfully.".format(params.NFS_SERVER_DIR))
+        logger.info("Server '%s' unmounted successfully.", params.NFS_SERVER_DIR)
         logger.info("ENDED: Test suite teardown level operations.")
 
     def test_check_cluster_services(self):
@@ -88,14 +87,14 @@ class ClusterServicesTestCase(unittest.TestCase):
     def test_collect_upload_sb_to_nfs_server(self):
         """Test collect upload sb to nfs server."""
         logger.info("STARTED: Test collect upload sb to nfs server.")
-        for _ in range(10):
-            resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 10)
+        for _ in range(4):
+            resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 4)
             logger.info(resp)
             self.assertTrue(resp[0], resp[1])
-        resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 7)
+        resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 4)
         logger.info(resp)
         self.assertTrue(resp[0], resp[1])
-        resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 4)
+        resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 2)
         logger.info(resp)
         self.assertTrue(resp[0], resp[1])
         resp = cluster_services.collect_upload_sb_to_nfs_server(params.MOUNT_DIR, "5403", 3)
