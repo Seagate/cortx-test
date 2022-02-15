@@ -21,17 +21,13 @@ pipeline {
 			    echo "BUILD : ${BUILD}"
 			    echo "Service Release : ${GIT_SCRIPT_TAG}"
 			    echo "TP : ${TEST_PLAN_NUMBER}"
-
 			    sh label: '', script: '''
-
                     yum install -y nfs-utils
                     yum install -y s3cmd
                     yum install -y s3fs-fuse
-
                     sh scripts/jenkins_job/virt_env_setup.sh . venv
                     source venv/bin/activate
                     python --version
-
                     deactivate
                 '''
             }
@@ -39,21 +35,18 @@ pipeline {
         stage('CREATE_SETUP_ENTRY') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'cortxadmin', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
-
-                sh label: '', script: ''' source venv/bin/activate
+                sh label: '', script: '''source venv/bin/activate
                     export PYTHONPATH="$PWD"
                     export TEST_PLAN_NUMBER=${TEST_PLAN_NUMBER}
                     echo ${TEST_PLAN_NUMBER}
                     SETUP_FILE="cicd_setup_name.txt"
                     ALL_SETUP_ENTRY="all_setup_entry.txt"
-
                     for te in $(echo ${TEST_EXECUTION_NUMBER})
                     do
 					    echo $te
                         export TEST_EXECUTION_NUMBER=$te
                         rm -rf $SETUP_FILE
                         python scripts/cicd_k8s_cortx_deploy/create_db_entry.py
-
                         if [ -f "$SETUP_FILE" ]
                         then
                             echo "****DB entry successful****"
@@ -68,35 +61,34 @@ pipeline {
         }
         stage('TEST_EXECUTION') {
             steps {
-                script{
-                    try{
-                       sh label: '', script: ''' source venv/bin/activate
+                script {
+                    try {
+                       sh label: '', script: '''source venv/bin/activate
                        TEST_TYPES=''
 					   TODO_TYPE='TODO'
 					   FAILED_TYPE='FAIL'
 					   BLOCKED_TYPE='BLOCKED'
 					   ABORTED_TYPE='ABORTED'
 					   EXECUTING_TYPE='EXECUTING'
-						if ${All_Tests}; then
-						TEST_TYPES="ALL"
-						else
-							if ${Todo_Tests}; then
-								TEST_TYPES="${TEST_TYPES} ${TODO_TYPE}"
-							fi
-							if ${Failed_Tests}; then
-								TEST_TYPES="${TEST_TYPES} ${FAILED_TYPE}"
-							fi
-							if ${Blocked_Tests}; then
-								TEST_TYPES="${TEST_TYPES} ${BLOCKED_TYPE}"
-							fi
-							if ${Aborted_Tests}; then
-								TEST_TYPES="${TEST_TYPES} ${ABORTED_TYPE}"
-							fi
-							if ${Executing_Tests}; then
-								TEST_TYPES="${TEST_TYPES} ${EXECUTING_TYPE}"
-							fi
+					   if ${All_Tests}; then
+						   TEST_TYPES="ALL"
+					   else
+						   if ${Todo_Tests}; then
+						       TEST_TYPES="${TEST_TYPES} ${TODO_TYPE}"
+						   fi
+						   if ${Failed_Tests}; then
+						       TEST_TYPES="${TEST_TYPES} ${FAILED_TYPE}"
+						   fi
+						   if ${Blocked_Tests}; then
+							   TEST_TYPES="${TEST_TYPES} ${BLOCKED_TYPE}"
+						   fi
+						   if ${Aborted_Tests}; then
+						       TEST_TYPES="${TEST_TYPES} ${ABORTED_TYPE}"
+						   fi
+						   if ${Executing_Tests}; then
+						       TEST_TYPES="${TEST_TYPES} ${EXECUTING_TYPE}"
+						   fi
 						fi
-
 						echo $TEST_TYPES
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
                         cat $ALL_SETUP_ENTRY
@@ -138,7 +130,7 @@ pipeline {
     }
 	post {
         always {
-            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: 'pragam.jain@seagate.com'
+            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: "${mailRecipients}"
             echo "End of jenkins_job"
         }
     }
