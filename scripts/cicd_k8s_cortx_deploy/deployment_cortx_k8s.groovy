@@ -63,74 +63,73 @@ pipeline {
             steps {
                 script {
                     try {
-                       sh label: '', script: '''source venv/bin/activate
-                       TEST_TYPES=''
-					   TODO_TYPE='TODO'
-					   FAILED_TYPE='FAIL'
-					   BLOCKED_TYPE='BLOCKED'
-					   ABORTED_TYPE='ABORTED'
-					   EXECUTING_TYPE='EXECUTING'
-					   if ${All_Tests}; then
-						   TEST_TYPES="ALL"
-					   else
-						   if ${Todo_Tests}; then
-						       TEST_TYPES="${TEST_TYPES} ${TODO_TYPE}"
-						   fi
-						   if ${Failed_Tests}; then
-						       TEST_TYPES="${TEST_TYPES} ${FAILED_TYPE}"
-						   fi
-						   if ${Blocked_Tests}; then
-							   TEST_TYPES="${TEST_TYPES} ${BLOCKED_TYPE}"
-						   fi
-						   if ${Aborted_Tests}; then
-						       TEST_TYPES="${TEST_TYPES} ${ABORTED_TYPE}"
-						   fi
-						   if ${Executing_Tests}; then
-						       TEST_TYPES="${TEST_TYPES} ${EXECUTING_TYPE}"
-						   fi
-						fi
-						echo $TEST_TYPES
-                        ALL_SETUP_ENTRY="all_setup_entry.txt"
-                        cat $ALL_SETUP_ENTRY
-                        while IFS=' ' read -r target te
-							do
-								echo "$target"
-								echo "$te"
-								python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NUMBER} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
-							done <$ALL_SETUP_ENTRY
-						export PYTHONPATH="$PWD"
-						python3 scripts/cicd_k8s_cortx_deploy/result.py
-						RESULT="cat test_result.txt"
-						echo $RESULT
-						export REPORT=$RESULT
-                        deactivate
-                        '''
-                    }
-                    catch(err)
-                    {
-                        currentBuild.result = "FAILURE"
-                        sh label: '', script: '''source venv/bin/activate
-                        var_true="true"
-                        if [ "${collect_support_bundle}" = "$var_true" ]; then
-                            echo "Collect support bundle"
-                        fi
-                        deactivate
-                        '''
-                    }
-                    env.TestPlan = "${TEST_PLAN_NUMBER}"
-                    env.ServicesVersion = "${GIT_SCRIPT_TAG}"
-                    if ( fileExists("test_result.txt") ) {
-                        def file1 = readFile "test_result.txt"
-                        def lines = file1.readLines()
-                        env.Report = "$lines"
-                    }
-                }
-            }
-        }
-    }
+                        sh (label: '', script: '''source venv/bin/activate
+TEST_TYPES=''
+TODO_TYPE='TODO'
+FAILED_TYPE='FAIL'
+BLOCKED_TYPE='BLOCKED'
+ABORTED_TYPE='ABORTED'
+EXECUTING_TYPE='EXECUTING'
+if ${All_Tests}; then
+    TEST_TYPES="ALL"
+else
+    if ${Todo_Tests}; then
+	    TEST_TYPES="${TEST_TYPES} ${TODO_TYPE}"
+	fi
+    if ${Failed_Tests}; then
+        TEST_TYPES="${TEST_TYPES} ${FAILED_TYPE}"
+    fi
+    if ${Blocked_Tests}; then
+	    TEST_TYPES="${TEST_TYPES} ${BLOCKED_TYPE}"
+    fi
+    if ${Aborted_Tests}; then
+        TEST_TYPES="${TEST_TYPES} ${ABORTED_TYPE}"
+    fi
+    if ${Executing_Tests}; then
+        TEST_TYPES="${TEST_TYPES} ${EXECUTING_TYPE}"
+    fi
+fi
+echo $TEST_TYPES
+ALL_SETUP_ENTRY="all_setup_entry.txt"
+cat $ALL_SETUP_ENTRY
+while IFS=' ' read -r target te
+    do
+		echo "$target"
+		echo "$te"
+		python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NUMBER} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
+	done <$ALL_SETUP_ENTRY
+export PYTHONPATH="$PWD"
+status=`python3 scripts/cicd_k8s_cortx_deploy/result.py`
+RESULT="cat test_result.txt"
+echo $RESULT
+export REPORT=$RESULT
+deactivate
+''')
+               }
+               catch(err) {
+                   currentBuild.result = "FAILURE"
+                   sh (label: '', script: '''source venv/bin/activate
+var_true="true"
+if [ "${collect_support_bundle}" = "$var_true" ]; then
+    echo "Collect support bundle"
+fi
+deactivate
+''')
+               }
+               env.TestPlan = "${TEST_PLAN_NUMBER}"
+               env.ServicesVersion = "${GIT_SCRIPT_TAG}"
+               if ( fileExists("test_result.txt") ) {
+               def file1 = readFile "test_result.txt"
+               def lines = file1.readLines()
+               env.Report = "$lines"
+                   }
+               }
+           }
+       }
+   }
 	post {
         always {
-            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: "${mailRecipients}"
+            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: 'Deployment Test Report on Build # $BUILD - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: "${mailRecipients}"
             echo "End of jenkins_job"
         }
     }
