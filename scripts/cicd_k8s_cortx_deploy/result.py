@@ -47,6 +47,7 @@ def main():
                     file.write("\n")
                     if key == "FAIL" and value != "0":
                         sys.exit(1)
+    # pylint: disable=broad-except
     except Exception as ex:
         print(f"Exception Occurred : {ex}")
         sys.exit(1)

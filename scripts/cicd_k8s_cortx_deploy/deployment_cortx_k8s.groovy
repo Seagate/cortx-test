@@ -63,7 +63,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh (label: '', script: '''source venv/bin/activate
+sh (label: '', script: '''source venv/bin/activate
 TEST_TYPES=''
 TODO_TYPE='TODO'
 FAILED_TYPE='FAIL'
@@ -106,9 +106,9 @@ export REPORT=$RESULT
 deactivate
 ''')
                }
-               catch(err) {
+               catch (err) {
                    currentBuild.result = "FAILURE"
-                   sh (label: '', script: '''source venv/bin/activate
+sh (label: '', script: '''source venv/bin/activate
 var_true="true"
 if [ "${collect_support_bundle}" = "$var_true" ]; then
     echo "Collect support bundle"
@@ -129,7 +129,7 @@ deactivate
    }
 	post {
         always {
-            emailext body: '${SCRIPT, template="K8s_Cortx_Deployment_test.template"}', subject: 'Deployment Test Report on Build # $BUILD - $GIT_SCRIPT_TAG- $BUILD_STATUS!', to: "${mailRecipients}"
+            emailext body: "${SCRIPT, template="K8s_Cortx_Deployment_test.template"}", subject: "Deployment Test Report on Build # $BUILD - $GIT_SCRIPT_TAG- $BUILD_STATUS!"", to: "${mailRecipients}"
             echo "End of jenkins_job"
         }
     }
