@@ -24,7 +24,7 @@ from string import Template
 import json
 from http import HTTPStatus
 from requests.models import Response
-from commons.constants import PROD_FAMILY_MGW
+from commons.constants import S3_ENGINE_RGW
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -55,7 +55,7 @@ class RestIamUser(RestTestLib):
         :param require_reset_val: set reset value to true or false
         :return: payload
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             payload = self.iam_user_payload_rgw(user_type="valid")
             response = self.create_iam_user_rgw(payload)
         else:
@@ -84,7 +84,7 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and (not user):
             user = self.iam_user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -113,7 +113,7 @@ class RestIamUser(RestTestLib):
         :return: boolean value for Success(True)/Failure(False)
         """
         self.iam_user = user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             return self.verify_create_iam_user_rgw(user_type="valid")
         else:
             response = self.create_iam_user(
@@ -136,7 +136,7 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and not user:
             user = self.iam_user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -164,7 +164,7 @@ class RestIamUser(RestTestLib):
         :return: response
         :rtype: response object
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -187,7 +187,7 @@ class RestIamUser(RestTestLib):
         :return: True/False
         :rtype: bool
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -341,7 +341,7 @@ class RestIamUser(RestTestLib):
         :param account_name: username of S3 account under which new iam user will be created
         :return: new iam user details
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -376,7 +376,7 @@ class RestIamUser(RestTestLib):
         :param user: username of S3 account under which new iam user will be created
         :return: response of delete iam user
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -402,7 +402,7 @@ class RestIamUser(RestTestLib):
         :param account_name: username of S3 account under which new iam user will be created
         """
         self.log.debug("Deleting %s under S3 account %s", iam_user, account_name)
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
