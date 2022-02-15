@@ -38,9 +38,13 @@ MAX = 1300000
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
-PROD_FAMILY_MGW = "MGW"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
+
+# S3 Engine Type and versions
+S3_ENGINE = "MGW"
+S3_ENGINE_CORTX = 1
+S3_ENGINE_RGW = 2
 
 # K8s for cortx
 POD_NAME_PREFIX = "cortx-data-pod"
