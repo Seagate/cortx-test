@@ -42,11 +42,14 @@ def split_args(sys_cmd: List):
 
 
 io_driver_args = split_args(sys.argv)
-_use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl'
+_use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl' if '--use_ssl' in io_driver_args else None
 ssl_flg = io_driver_args[io_driver_args.index(_use_ssl) + 1] if _use_ssl else True
-_endpoint = '-ep' if '-ep' in io_driver_args else '--endpoint'
+_endpoint = '-ep' if '-ep' in io_driver_args else '--endpoint' if '--endpoint' in io_driver_args else None
 s3_url = io_driver_args[io_driver_args.index(_endpoint) + 1] if _endpoint else "s3.seagate.com"
-
+_access_key = "-ak" if '-ak' in io_driver_args else '--access_key' if '--access_key' in io_driver_args else None
+ACCESS_KEY = io_driver_args[io_driver_args.index(_access_key) + 1] if _access_key else None
+_secret_key = "-ak" if '-ak' in io_driver_args else '--secret_key' if '--secret_key' in io_driver_args else None
+SECRET_KEY = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
 use_ssl = ast.literal_eval(str(ssl_flg).title())
 s3_endpoint = f"{'https' if ssl_flg else 'http'}://{s3_url}"
 
