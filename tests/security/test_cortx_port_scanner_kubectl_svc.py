@@ -60,7 +60,7 @@ def test_cortx_port_scanner_kubectl_svc():
     # Read port numbers from file specification
     req_port_list = []
 
-    with open("requirement_ports.txt") as file:
+    with open("tests/security/requirement_ports.txt") as file:
         for req_ports in file:
             LOGGER.info(req_ports.rstrip())
             req_port_list.append(int(req_ports.rstrip()))
