@@ -11,8 +11,12 @@ MOTR_STATUS_CMD = "hctl status"
 HA_LOG_CMD = "/bin/bash"
 HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
 SERVICE_HA_STATUS = "ps -aux"
+HA_COPY_CMD = "kubectl cp {} {}:{}"
+HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
-
+HA_CONSUL_STR = "consul kv get " \
+                "-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 " \
+                "--recurse cortx/ha/v1/cluster_stop_key"
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"
@@ -462,6 +466,7 @@ K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker |
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
+K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_CLSTR_CONFIG = "cat /etc/cortx/cluster.conf"
 # Kubectl command prefix
