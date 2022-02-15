@@ -91,13 +91,22 @@ class TestIOSessions(unittest.TestCase):
         result = make_sessions(self.dummy_method)(list(range(1, 10000)), number_of_workers=10000)
         print(result)
 
-    def test_make_sessions_with_iterable_defaut_workers(self):
+    def test_make_sessions_with_iterable_default_workers(self):
         """
         Simple function to test dummy api with multiple sessions/processes with default workers
         :return: None
         """
         print("Testing make sessions with either list or tuple data set")
-        result = make_sessions(self.dummy_method)(list(range(1, 5000)))
+        result = make_sessions(self.dummy_method)(list(range(1, 1000)))
+        print(result)
+
+    def test_make_sessions_with_iterable_lessthen_default_workers(self):
+        """
+        Simple function to test dummy api with multiple sessions/processes with default workers
+        :return: None
+        """
+        print("Testing make sessions with either list or tuple data set")
+        result = make_sessions(self.dummy_method)(list(range(1, 15)))
         print(result)
 
 
