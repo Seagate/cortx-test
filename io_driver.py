@@ -84,8 +84,8 @@ def parse_args():
                         default=random.SystemRandom().randint(1, 9999999))
     parser.add_argument("-sk", "--secret-key", type=str, help="s3 secret Key.")
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
-    parser.add_argument("-ep", "--endpoint", type=str, help="Endpoint for S3 operations.",
-                        default="https://s3.seagate.com")
+    parser.add_argument("-ep", "--endpoint", type=str, help="fqdn of s3 endpoint for io operations.",
+                        default="s3.seagate.com")
 
     return parser.parse_args()
 
@@ -223,7 +223,7 @@ def monitor_proc():
 
         # Terminate if error observed in any process
         if terminate_run:
-            logger.error("Error observed in process %s %s", error_proc,  error_proc_data)
+            logger.error("Error observed in process %s %s", error_proc, error_proc_data)
             logger.error("Terminating schedular..")
             for pid in process_states.keys():
                 ps_kill(pid)
