@@ -1,12 +1,14 @@
 """This is cortx port scanner using netstat"""
 import logging
 import os
+import pytest
 from kubernetes import client, config
 from kubernetes.stream import stream
 from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
+@pytest.mark.tags("TEST-34218")
 def test_cortx_port_scanner_netstat():
 
     """

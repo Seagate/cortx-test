@@ -3,11 +3,13 @@ This is cortx port scanner using kubectl svc
 """
 import logging
 import os
+import pytest
 from kubernetes import client, config
 from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
+@pytest.mark.tags("TEST-34217")
 def test_cortx_port_scanner_kubectl_svc():
 
     """
