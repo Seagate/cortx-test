@@ -1163,6 +1163,7 @@ class HAK8s:
         LOGGER.info("SNS config response : %s", resp)
         resp = resp[11]
         k_value = resp.split(":")[1]
-        k_value = k_value.strip("'\\\n'b'")
+        k_value = k_value.strip(" '\\\n'b'")
+        value = int(k_value)
 
-        return k_value
+        return value
