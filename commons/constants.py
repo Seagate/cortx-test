@@ -49,8 +49,14 @@ HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
+HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
+HA_SHUTDOWN_SIGNAL_PATH = "/root/cortx-test/scripts/server_scripts/ha_shutdown_signal.py"
+HA_CONSUL_VERIFY = "cortx/ha/v1/cluster_stop_key:1"
+HA_CONSUL_NOKEY = "NotFound"
+HA_TMP = "/root"
+HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
 
 # RAS Paths
 BYTES_TO_READ = 8000
