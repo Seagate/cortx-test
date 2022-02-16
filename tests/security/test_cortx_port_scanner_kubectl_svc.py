@@ -9,6 +9,8 @@ from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
+@pytest.mark.s3_ops
+@pytest.mark.regression
 @pytest.mark.tags("TEST-34217")
 def test_cortx_port_scanner_kubectl_svc():
 
