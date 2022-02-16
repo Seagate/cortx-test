@@ -21,7 +21,7 @@
 # !/usr/bin/python
 
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab  # , Tabs
-from dash_core_components import Dropdown, Markdown
+from dash_core_components import Dropdown, Markdown, Loading
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
     style_sub_label, style_perf_captions, style_workload_captions,\
@@ -57,11 +57,11 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=style_table_caption),
-        html.Div(id="statistics_s3bench_table"),
+        Loading(html.Div(id="statistics_s3bench_table")),
 
         html.P("Metadata Operations Latency (captured with 1KB object)",
                style=style_table_caption),
-        html.Div(id="statistics_metadata_table"),
+        Loading(html.Div(id="statistics_metadata_table")),
 
         html.Br(),
         html.P("COSBench", style=style_perf_captions),
@@ -71,7 +71,7 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics (Mixed IO - Read 50%, Write 50%)",
                style=style_table_caption),
-        html.Div(id="statistics_cosbench_table"),
+        Loading(html.Div(id="statistics_cosbench_table")),
 
         html.Br(),
         html.P("HSBench", style=style_perf_captions),
@@ -81,7 +81,7 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=style_table_caption),
-        html.Div(id="statistics_hsbench_table"),
+        Loading(html.Div(id="statistics_hsbench_table")),
 
         html.P("Bucket Operations Statistics",
                style=style_table_caption),
@@ -91,8 +91,8 @@ statistics_layout = Card(
                 placeholder="Select Object Size",
                 style=dict_Style_Stats_input_options
             ), justify='center'),
-        html.Div(id="statistics_bucketops_table",
-                 style={'margin-top': '20px'}),
+        Loading(html.Div(id="statistics_bucketops_table",
+                 style={'margin-top': '20px'})),
     ]
     ),
     className="flex-sm-fill nav-link"
