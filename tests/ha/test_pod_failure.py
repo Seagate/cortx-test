@@ -438,6 +438,7 @@ class TestPodFailure:
                     "512MB)")
         self.test_prefix = 'test-23552-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -534,6 +535,7 @@ class TestPodFailure:
                     "1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-26440-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -957,6 +959,7 @@ class TestPodFailure:
                     "1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-32455-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -1349,6 +1352,7 @@ class TestPodFailure:
                     "1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-32454-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -2621,6 +2625,7 @@ class TestPodFailure:
                     "+ (1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-32449-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -3252,6 +3257,7 @@ class TestPodFailure:
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-32461-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -3360,6 +3366,7 @@ class TestPodFailure:
                     "1KB - 512MB) on degraded cluster")
         self.test_prefix = 'test-33209-1'
         self.s3acc_name = f"{self.s3acc_name}_1"
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         LOGGER.info("Create s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
