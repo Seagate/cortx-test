@@ -1,7 +1,10 @@
 import argparse
 import requests
 from http import HTTPStatus
+import csv
+import os
 
+todo_count_csv = 'todo_count.csv'
 parser = argparse.ArgumentParser(description="TODO count")
 parser.add_argument("-tp", help="test plan", required=True)
 parser.add_argument("-ji", help="jira password", required=True)
@@ -15,7 +18,12 @@ jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/' \
 response = requests.get(jira_url, auth=(jira_id, jira_password))
 if response.status_code == HTTPStatus.OK:
     res = response.json()
-    print(len([test for test in res if test['latestStatus'] == 'TODO']))
+    total = len(res)
+    todo = len([test for test in res if test['latestStatus'] == 'TODO'])
+    with open(os.path.join(os.getcwd(), todo_count_csv), 'w', newline='') as tp_info_csv:
+        writer = csv.writer(tp_info_csv)
+        writer.writerow([total, todo])
+
 
 
 '''
