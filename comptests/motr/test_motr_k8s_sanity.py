@@ -162,7 +162,7 @@ class TestExecuteK8Sanity:
             logger.info("RUNNING TEST: %s", test)
             cmd_batch = m0kv_tests[test]["batch"]
             for index, cnt in enumerate(cmd_batch):
-                logger.info("%s", cnt)
+                logger.info("Command number: %s", index)
                 cmd = cnt["cmnd"]
                 param = cnt["params"]
                 logger.info("CMD: %s, PARAMS: %s", cmd, param)
@@ -174,11 +174,10 @@ class TestExecuteK8Sanity:
                                                                pod=node_pod_dict[node],
                                                                namespace=common_const.NAMESPACE,
                                                                command_suffix=
-                                                               f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                               f"-c {common_const.HAX_CONTAINER_NAME}"
                                                                f"-- {cmd}", decode=True)
                     logger.info("Resp: %s", resp)
                     assert_utils.assert_not_in("ERROR" or "Error", resp,
                                                f'"{cmd}" Failed, Please check the log')
 
         logger.info("Stop: Verified multiple m0kv operations")
-
