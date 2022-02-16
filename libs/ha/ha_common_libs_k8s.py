@@ -362,7 +362,7 @@ class HAK8s:
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
-                bucket=f"bucket-{workload.lower()}-{log_prefix}",
+                bucket=f"bucket-{workload.lower()}-{log_prefix}-{perf_counter_ns()}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
@@ -1147,27 +1147,6 @@ class HAK8s:
                 return res
         resp = jc_obj.update_jclient_jcloud_properties()
         return resp
-
-    def get_parity_value(self, m_node_obj):
-        """
-        Get the parity value from the sns cluster config.
-        :param m_node_obj: Object for mastre node
-        :return: response
-        """
-        pod_list = m_node_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
-        data_pod_name = random.sample(pod_list, 1)[0]
-        cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(data_pod_name, common_cmd.GET_CLSTR_CONFIG)
-        resp = m_node_obj.execute_cmd(cmd=cmd, read_lines=True)
-        if not resp:
-            LOGGER.info("Not getting cluster config details, considering K as 1")
-            return "1"
-        LOGGER.info("SNS config response : %s", resp)
-        resp = resp[11]
-        k_value = resp.split(":")[1]
-        k_value = k_value.strip(" '\\\n'b'")
-        value = int(k_value)
-
-        return value
 
     @staticmethod
     def get_config_value(pod_obj, pod_list=None):
