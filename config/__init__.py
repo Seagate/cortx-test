@@ -76,7 +76,7 @@ _secret_key = "-ak" if '-ak' in io_driver_args else '--secret_key' if '--secret_
                                                                       io_driver_args else None
 secret_key = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
 use_ssl = ast.literal_eval(str(ssl_flg).title())
-s3_endpoint = f"{'https' if ssl_flg else 'http'}://{s3_url}"
+s3_endpoint = f"{'https' if use_ssl else 'http'}://{s3_url}"
 
 
 S3_CFG["access_key"] = access_key if access_key else get_local_aws_keys()[0]
