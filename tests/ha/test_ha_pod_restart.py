@@ -232,7 +232,7 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in online state")
 
-        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 512MB(VM)/5GB(HW))")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34072'
         self.s3_clean.update(users)
@@ -318,7 +318,8 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in online state")
 
-        LOGGER.info("Step 5: Perform WRITEs-READs-Verify with variable object sizes. 0B - 5GB")
+        LOGGER.info("Step 5: Perform WRITEs-READs-Verify with variable object sizes. 0B - 512MB("
+                    "VM)/5GB(HW)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34074'
         self.s3_clean.update(users)
@@ -352,7 +353,8 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
 
-        LOGGER.info("Step 9: Perform WRITEs-READs-Verify with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 9: Perform WRITEs-READs-Verify with variable object sizes. (0B - 512MB("
+                    "VM)/5GB(HW))")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34074-1'
         self.s3_clean.update(users)
@@ -1085,7 +1087,7 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in online state")
 
-        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 512MB(VM)/5GB(HW))")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34073'
         self.s3_clean.update(users)
@@ -2179,7 +2181,8 @@ class TestPodRestart:
         LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
                     remain_pod_list)
 
-        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 5GB) in background")
+        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 512MB(VM)/5GB(HW)) "
+                    "in background")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34075'
         self.s3_clean.update(users)
@@ -2706,7 +2709,8 @@ class TestPodRestart:
         """
         LOGGER.info("STARTED: Test to verify READs after data pod restart.")
 
-        LOGGER.info("Step 1: Perform WRITEs/READs/Verify with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 1: Perform WRITEs/READs/Verify with variable object sizes. (0B - 512MB("
+                    "VM)/5GB(HW))")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-36003'
         self.s3_clean.update(users)
@@ -2756,13 +2760,13 @@ class TestPodRestart:
         LOGGER.info("Step 5: Services of pod are in online state")
 
         LOGGER.info("Step 6: Perform READs & Verify DI on written variable object sizes. "
-                    "(0B - 5GB), on degraded cluster")
+                    "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, nsamples=10, nclients=10)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed READs & Verify DI on written variable object sizes. "
-                    "(0B - 5GB), on degraded cluster")
+                    "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
 
         LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -2782,15 +2786,16 @@ class TestPodRestart:
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
 
         LOGGER.info("Step 9: Perform READs & verify DI on written variable object sizes. "
-                    "(0B - 5GB), after pod restart on online cluster")
+                    "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, nsamples=10, nclients=10)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed READs & verified DI on written variable object sizes. "
-                    "(0B - 5GB), after pod restart on online cluster")
+                    "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
 
-        LOGGER.info("Step 10: Perform WRITEs/READs/Verify with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 10: Perform WRITEs/READs/Verify with variable object sizes. (0B - "
+                    "512MB(VM)/5GB(HW))")
         self.test_prefix = 'test-36003-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10,
@@ -2813,7 +2818,8 @@ class TestPodRestart:
         output = Queue()
         event = threading.Event()  # Event to be used to send intimation of pod restart
 
-        LOGGER.info("Step 1: Perform WRITEs/READs/Verify with variable object sizes. (0B - 5GB)")
+        LOGGER.info("Step 1: Perform WRITEs/READs/Verify with variable object sizes. (0B - 512MB("
+                    "VM)/5GB(HW))")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-36004'
         self.s3_clean.update(users)
