@@ -1,79 +1,143 @@
 test_1:
-  TEST_ID:
-  start_range: 1Gb
-  end_range: 1Gb
-  result_duration: 4h
-  sessions_per_node: 1
-  tool: s3api
+    TEST_ID: TEST-36184
+    object_size:
+        start: 4Gb
+        end: 4Gb
+    part_range:
+        start: 50
+        end: 100
+    result_duration: 2h
+    sessions: 5  # One object per session.
+    tool: s3api
 
 test_2:
-  TEST_ID:
-  start_range: 1Gb
-  end_range: 1Gb
-  result_duration: 8h
-  sessions_per_node: 2
-  tool: s3api
+    TEST_ID: TEST-36185
+    object_size:
+        start: 8Gb
+        end: 8Gb
+    part_range:
+        start: 100
+        end: 200
+    result_duration: 2h
+    sessions: 5
+    tool: s3api
 
 test_3:
-  TEST_ID:
-  start_range: 10Gb
-  end_range: 10Gb
-  result_duration: 2d
-  sessions_per_node: 3
-  tool: s3api
+    TEST_ID: TEST-36186
+    object_size:
+        start: 16Gb
+        end: 16Gb
+    part_range:
+        start: 200
+        end: 300
+    result_duration: 20h
+    sessions: 10
+    tool: s3api
 
 test_4:
-  TEST_ID:
-  start_range: 10Gb
-  end_range: 10Gb
-  result_duration: 2d
-  sessions_per_node: 5
-  tool: s3api
+    TEST_ID: TEST-36187
+    object_size:
+        start: 32Gb
+        end: 32Gb
+    part_range:
+        start: 300
+        end: 400
+    result_duration: 1d
+    sessions: 10
+    tool: s3api
 
 test_5:
-  TEST_ID:
-  start_range: 100Gb
-  end_range: 100Gb
-  result_duration: 5d
-  sessions_per_node: 8
-  tool: s3api
+    TEST_ID: TEST-36188
+    object_size:
+        start: 64Gb
+        end: 64Gb
+    part_range:
+        start: 400
+        end: 500
+    result_duration: 1d
+    sessions: 15
+    tool: s3api
 
 test_6:
-  TEST_ID:
-  start_range: 100Gb
-  end_range: 100Gb
-  result_duration: 10d
-  sessions_per_node: 13
-  tool: s3api
+    TEST_ID: TEST-36189
+    object_size:
+        start: 128Gb
+        end: 128Gb
+    part_range:
+        start: 500
+        end: 600
+    result_duration: 2d
+    sessions: 15
+    tool: s3api
 
 test_7:
-  TEST_ID:
-  start_range: 1Tb
-  end_range: 1Tb
-  result_duration: 15d
-  sessions_per_node: 21
-  tool: s3api
+    TEST_ID: TEST-36190
+    object_size:
+        start: 256Gb
+        end: 256Gb
+    part_range:
+        start: 600
+        end: 700
+    result_duration: 2d
+    sessions: 20
+    tool: s3api
 
 test_8:
-  TEST_ID:
-  start_range: 1Tb
-  end_range: 1Tb
-  result_duration: 15d
-  sessions_per_node: 34
-  tool: s3api
+    TEST_ID: TEST-36191
+    object_size:
+        start: 512Gb
+        end: 512Gb
+    part_range:
+        start: 700
+        end: 800
+    result_duration: 4d
+    sessions: 20
+    tool: s3api
 
 test_9:
-  TEST_ID:
-  start_range: 5Tb
-  end_range: 5Tb
-  result_duration: 25d
-  sessions_per_node: 55
-  tool: s3api
+    TEST_ID: TEST-36192
+    object_size:
+        start: 1Tb
+        end: 1Tb
+    part_range:
+        start: 800
+        end: 1600
+    result_duration: 5d
+    sessions: 25
+    tool: s3api
 
 test_10:
-  TEST_ID:
-  start_range: 5Tb
-  end_range: 5Tb
-  result_duration: 30d
-  sessions_per_node: 89
-  tool: s3api
+    TEST_ID: TEST-36194
+    object_size:
+        start: 2Tb
+        end: 2Tb
+    part_range:
+        start: 1600
+        end: 3200
+    result_duration: 5d
+    sessions: 25
+    tool: s3api
+
+test_11:
+    TEST_ID: TEST-36195
+    object_size:
+        start: 4Tb
+        end: 4Tb
+    part_range:
+        start: 3200
+        end: 6400
+    result_duration: 5d
+    sessions: 30
+    tool: s3api
+
+test_12:
+    TEST_ID: TEST-36196
+    object_size:
+        start: 5Tb
+        end: 5Tb
+    part_range:
+        start: 6400
+        end: 10000
+    result_duration: 5d
+    sessions: 30
+    tool: s3api
