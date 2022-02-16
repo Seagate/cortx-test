@@ -493,7 +493,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-264401-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -899,7 +898,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32455-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1274,7 +1272,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32454-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2537,7 +2534,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32449-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -3151,7 +3147,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -3242,7 +3237,6 @@ class TestPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-33209-1'
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
