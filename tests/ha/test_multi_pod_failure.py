@@ -209,6 +209,7 @@ class TestPodFailure:
 
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35772")
