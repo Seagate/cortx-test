@@ -220,25 +220,17 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test to verify degraded reads before and after safe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32443'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipread=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -278,7 +270,7 @@ class TestPodFailure:
         LOGGER.info("Step 6: Services of pod are in online state")
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
@@ -296,25 +288,17 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test to verify degraded reads before and after unsafe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-23553'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipread=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -358,7 +342,7 @@ class TestPodFailure:
         LOGGER.info("Step 6: Services of pod are in online state")
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
@@ -378,18 +362,10 @@ class TestPodFailure:
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
                     "512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-23552'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
@@ -428,7 +404,7 @@ class TestPodFailure:
         LOGGER.info("Step 5: Services of pod are in online state")
 
         LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
@@ -436,20 +412,9 @@ class TestPodFailure:
 
         LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
                     "512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-23552-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -471,18 +436,10 @@ class TestPodFailure:
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. "
                     "0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26440'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
@@ -525,7 +482,7 @@ class TestPodFailure:
         LOGGER.info("Step 5: Services of pod are in online state")
 
         LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
@@ -533,18 +490,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB) on degraded cluster")
-        self.test_prefix = 'test-26440-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-264401-1'
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -904,18 +851,10 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32455'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
@@ -957,18 +896,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32455-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1298,18 +1227,10 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32454'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
@@ -1350,18 +1271,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32454-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -2623,18 +2534,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 11: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B "
                     "+ (1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32449-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -3202,18 +3103,10 @@ class TestPodFailure:
 
         LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
@@ -3255,18 +3148,8 @@ class TestPodFailure:
 
         LOGGER.info("STEP 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -3289,18 +3172,10 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-33209'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
@@ -3364,18 +3239,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
                     "1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-33209-1'
-        self.s3acc_name = f"{self.s3acc_name}_1"
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        users = {'s3_acc1': {'accesskey': access_key, 'secretkey': secret_key,
-                             'user_name': self.s3acc_name}}
         self.s3_clean.update(users)
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -3396,20 +3261,12 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test control pod deletion should not affect existing user I/O")
 
         LOGGER.info("Step 1: Perform Continuous READs and WRITEs during control pod down")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34827'
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        self.s3_clean = users
         event = threading.Event()
         output = Queue()
-        args = {'s3userinfo': list(self.s3_clean.values())[0], 'log_prefix': self.test_prefix,
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 5, 'skipcleanup': False, 'output': output}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
