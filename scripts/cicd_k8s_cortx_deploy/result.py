@@ -25,6 +25,9 @@ import os
 import sys
 from collections import Counter
 from commons.utils import jira_utils
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 def main():
@@ -41,7 +44,7 @@ def main():
             counters.append(Counter(test['latestStatus'] for test in tests))
             result_dict = counters[0]
             for key, value in result_dict.items():
-                print(key, ":", value)
+                LOGGER.info(key, ":", value)
                 with open("test_result.txt", 'a') as file:
                     file.write(key + ":" + str(value))
                     file.write("\n")
