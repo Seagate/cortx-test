@@ -27,13 +27,15 @@ import csv
 import logging
 from random import SystemRandom
 import pytest
+from commons.utils import assert_utils
 from commons.utils import config_utils
+from commons import constants as common_const
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
 
-
+M0KV_CFG = config_utils.read_yaml("config/motr/m0kv_test.yaml")
 M0CRATE_WORKLOAD_YML = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
 M0CRATE_TEST_CSV = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
 with open(M0CRATE_TEST_CSV) as CSV_FH:
@@ -108,7 +110,7 @@ class TestExecuteK8Sanity:
         logger.info(m0cfg['MOTR_CONFIG'])
         logger.info(m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'])
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
-        count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
+        count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False, sort_keys=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
@@ -144,3 +146,39 @@ class TestExecuteK8Sanity:
                     self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
+
+    @pytest.mark.tags("TEST-14921")
+    @pytest.mark.motr_sanity
+    def test_m0kv_utility(self):
+        """
+        This is to run the m0kv utility tests.
+        Verify different options of m0kv utility
+        """
+        logger.info("Running m0kv tests")
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
+        node = self.system_random.choice(list(node_pod_dict.keys()))
+        m0kv_tests = M0KV_CFG[1]
+        for test in m0kv_tests:
+            logger.info("RUNNING TEST: %s", test)
+            cmd_batch = m0kv_tests[test]["batch"]
+            for index, cnt in enumerate(cmd_batch):
+                logger.info("%s", cnt)
+                cmd = cnt["cmnd"]
+                param = cnt["params"]
+                logger.info("CMD: %s, PARAMS: %s", cmd, param)
+                if cmd == "m0kv":
+                    self.motr_obj.kv_cmd(cnt["params"], node, 0)
+                else:
+                    cmd = f'{cmd} {param}'
+                    resp = self.motr_obj.node_obj.send_k8s_cmd(operation="exec",
+                                                               pod=node_pod_dict[node],
+                                                               namespace=common_const.NAMESPACE,
+                                                               command_suffix=
+                                                               f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                               f"-- {cmd}", decode=True)
+                    logger.info("Resp: %s", resp)
+                    assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                               f'"{cmd}" Failed, Please check the log')
+
+        logger.info("Stop: Verified multiple m0kv operations")
+
