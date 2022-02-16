@@ -190,10 +190,10 @@ class JiraTask:
             elif response.status_code == HTTPStatus.OK and not response.json():
                 break
             else:
-                LOGGER.info(f'get_test_list GET on {jira_url} failed')
-                LOGGER.info(f'RESPONSE={response.text}\n'
-                            f'HEADERS={response.request.headers}\n'
-                            f'BODY={response.request.body}')
+                LOGGER.info("get_test_list GET on %s failed", jira_url)
+                LOGGER.info("RESPONSE=%s\n",response.text)
+                LOGGER.info("HEADERS=%s\n", response.request.headers)
+                LOGGER.info("BODY=%s", response.request.body)
                 sys.exit(1)
         return responses
 

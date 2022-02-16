@@ -23,9 +23,9 @@ Fetch result summary from TEST PLAN in JIRA.
 """
 import os
 import sys
+import logging
 from collections import Counter
 from commons.utils import jira_utils
-import logging
 
 LOGGER = logging.getLogger(__name__)
 
