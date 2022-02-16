@@ -953,6 +953,7 @@ class RestCsmUser(RestTestLib):
             patch_payload.update({"password": password})
         if current_password is not None:
             patch_payload.update({"current_password": current_password})
+        patch_payload = json.dumps(patch_payload)
         self.log.info(patch_payload)
         response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
                                           headers=self.headers)
@@ -974,6 +975,7 @@ class RestCsmUser(RestTestLib):
             patch_payload.update({"password": password})
         if current_password is not None:
             patch_payload.update({"current_password": current_password})
+        patch_payload = json.dumps(patch_payload)
         self.log.info(patch_payload)
         response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
                                           headers=header)
