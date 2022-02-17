@@ -21,13 +21,10 @@
 #
 
 """
-io_schedular Library.
+io worker Library.
 
-This module consists of following classes
-io schedular  is a Public class and can be used to create objects and using
-functionality of io scheduling operations.
-
-Below classes are protected and private and need to be used for internal purpose
+This module consists of following method
+make_sessions  is a decorator method and be used to spawn sessions
 
 """
 
@@ -38,7 +35,9 @@ from functools import wraps
 
 import psutil
 import timeit
+
 logger = logging.getLogger(__name__)
+
 
 def make_sessions(func):
     """
@@ -66,7 +65,7 @@ def make_sessions(func):
         # Default we are keeping max concurrent workers equal to number of cpu cores
         # For e.g. if there are N CPUs then for dul core system total Cores will be N*2
         args = args[0] if type(args[0]) in (list, tuple) else args
-        max_concurrent_workers = kwargs.get("number_of_workers", number_of_cpu*2)
+        max_concurrent_workers = kwargs.get("number_of_workers", number_of_cpu * 2)
         if len(args) < max_concurrent_workers:
             # If the length of the list is low, we would only require those many number of threads.
             # Here we are avoiding creating unnecessary threads
