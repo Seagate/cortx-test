@@ -88,7 +88,7 @@ class TestIOSessions(unittest.TestCase):
         :return: None
         """
         print("Testing make sessions with either list or tuple data set")
-        result = make_sessions(self.dummy_method)(list(range(1, 10000)), number_of_workers=10000)
+        result = make_sessions(self.dummy_method)(list(range(1, 10000)), number_of_workers=10)
         print(result)
 
     def test_make_sessions_with_iterable_default_workers(self):
