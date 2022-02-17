@@ -1101,7 +1101,7 @@ def mount_nfs_server(host_dir: str, mnt_dir: str) -> bool:
     return os.path.ismount(mnt_dir)
 
 
-def umount_nfs_server(mnt_dir: str)->bool:
+def umount_nfs_server(mnt_dir: str) -> bool:
     """
     Unmount nfs serve from mounted directory.
 
@@ -1315,6 +1315,7 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
 
 def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
     """
