@@ -362,7 +362,7 @@ class HAK8s:
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
-                bucket=f"bucket-{workload.lower()}-{log_prefix}-{perf_counter_ns()}",
+                bucket=f"bucket-{workload.lower()}-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
