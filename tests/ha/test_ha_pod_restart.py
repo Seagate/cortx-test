@@ -137,7 +137,7 @@ class TestPodRestart:
         self.test_prefix = f'ha-pod-restart-{int(perf_counter_ns())}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.ha_obj.delete_s3_acc_buckets_objects(users)
         assert_utils.assert_true(resp[0], resp[1])
@@ -148,6 +148,12 @@ class TestPodRestart:
         """
         This function will be invoked after each test function in the module.
         """
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
+        if os.path.exists(self.test_dir_path):
+            system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("STARTED: Teardown Operations.")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -168,12 +174,6 @@ class TestPodRestart:
                                             read_lines=True)
             resp = sysutils.check_ping(host=self.node_ip)
             assert_utils.assert_true(resp, "Interface is still not up.")
-        if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
-        if os.path.exists(self.test_dir_path):
-            system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -238,7 +238,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipread=True,
-                                                    skipcleanup=True, nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs with variable sizes objects.")
 
@@ -262,7 +262,7 @@ class TestPodRestart:
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
 
@@ -324,8 +324,7 @@ class TestPodRestart:
         self.test_prefix = 'test-34074'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=10, nclients=10)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs-READs-Verify with variable sizes objects.")
 
@@ -348,8 +347,7 @@ class TestPodRestart:
 
         LOGGER.info("Step 8: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True,
-                                                    nsamples=10, nclients=10)
+                                                    log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed READs and verified DI on the written data")
 
@@ -360,7 +358,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed WRITEs-READs-Verify with variable sizes objects.")
 
@@ -1144,10 +1142,10 @@ class TestPodRestart:
                     "background")
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
-        self.test_prefix = 'TEST-34073-1'
+        self.test_prefix = 'test-34073-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
@@ -1212,10 +1210,10 @@ class TestPodRestart:
         LOGGER.info("Step 5: Start IOs (create s3 acc, buckets and upload objects).")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34086'
+        self.test_prefix = 'test-34086'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: IOs completed successfully.")
 
@@ -1236,10 +1234,10 @@ class TestPodRestart:
         LOGGER.info("Step 8: Start IOs (create s3 acc, buckets and upload objects).")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34086-1'
+        self.test_prefix = 'test-34086-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: IOs completed successfully.")
 
@@ -1311,10 +1309,10 @@ class TestPodRestart:
         LOGGER.info("Step 5: Start IOs (create s3 acc, buckets and upload objects).")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34085'
+        self.test_prefix = 'test-34085'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: IOs completed successfully.")
 
@@ -1338,10 +1336,10 @@ class TestPodRestart:
         LOGGER.info("Step 8: Start IOs (create s3 acc, buckets and upload objects).")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34085-1'
+        self.test_prefix = 'test-34085-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: IOs completed successfully.")
 
@@ -1402,10 +1400,10 @@ class TestPodRestart:
             LOGGER.info("Step 5: Create s3 account, create multiple buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
-            self.test_prefix = 'TEST-34091'
+            self.test_prefix = 'test-34091'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=10, nclients=10)
+                                                        skipcleanup=True)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 5: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -1429,10 +1427,10 @@ class TestPodRestart:
             LOGGER.info("Step 8: Create s3 account, create multiple buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
-            self.test_prefix = 'TEST-34091-1'
+            self.test_prefix = 'test-34091-1'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=10, nclients=10)
+                                                        skipcleanup=True)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 8: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -1498,10 +1496,10 @@ class TestPodRestart:
             LOGGER.info("Step 5: Create s3 account, create multiple buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
-            self.test_prefix = 'TEST-34090'
+            self.test_prefix = 'test-34090'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=10, nclients=10)
+                                                        skipcleanup=True)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 5: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -1525,10 +1523,10 @@ class TestPodRestart:
             LOGGER.info("Step 8: Create s3 account, create multiple buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
-            self.test_prefix = 'TEST-34090-1'
+            self.test_prefix = 'test-34090-1'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=10, nclients=10)
+                                                        skipcleanup=True)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 8: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -1705,10 +1703,10 @@ class TestPodRestart:
         LOGGER.info("Step 11: Create s3 account, create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34081-1'
+        self.test_prefix = 'test-34081-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 11: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -1854,10 +1852,10 @@ class TestPodRestart:
         LOGGER.info("Step 10: Create s3 account, create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34084-1'
+        self.test_prefix = 'test-34084-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Successfully created s3 account and multiple buckets and ran IOs")
 
@@ -2229,10 +2227,10 @@ class TestPodRestart:
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34075-1'
+        self.test_prefix = 'test-34075-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
@@ -2339,10 +2337,10 @@ class TestPodRestart:
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34076-1'
+        self.test_prefix = 'test-34076-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
@@ -2426,10 +2424,10 @@ class TestPodRestart:
                     "shutdown.", rc_node)
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34088'
+        self.test_prefix = 'test-34088'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: IOs completed Successfully after RC node %s shutdown.", rc_node)
 
@@ -2450,10 +2448,10 @@ class TestPodRestart:
                     "restart.", rc_node)
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34088-1'
+        self.test_prefix = 'test-34088-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: IOs completed Successfully after RC node %s restart.", rc_node)
 
@@ -2508,10 +2506,10 @@ class TestPodRestart:
                     "shutdown by making replicas=0.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34087'
+        self.test_prefix = 'test-34087'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully IOs completed after pod shutdown by making replicas=0.")
 
@@ -2531,10 +2529,10 @@ class TestPodRestart:
         LOGGER.info("Step 7: Verified cluster is in online state. All services are up & running")
 
         LOGGER.info("Step 8: Start IOs again after data pod restart by making replicas=1.")
-        self.test_prefix = 'TEST-34087-1'
+        self.test_prefix = 'test-34087-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2592,10 +2590,10 @@ class TestPodRestart:
                     "pod shutdown by making replicas=0")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34089'
+        self.test_prefix = 'test-34089'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: IOs are completed successfully after server pod shutdown by making "
                     "replicas=0")
@@ -2616,10 +2614,10 @@ class TestPodRestart:
         LOGGER.info("Step 7: Verified cluster is in online state. All services are up & running")
 
         LOGGER.info("Step 8: Start IOs again after server pod restart by making replicas=1.")
-        self.test_prefix = 'TEST-34089-1'
+        self.test_prefix = 'test-34089-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully IOs completed after server pod restart by making "
                     "replicas=1.")
@@ -2671,10 +2669,10 @@ class TestPodRestart:
                     "shutdown by kubectl delete")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34261'
+        self.test_prefix = 'test-34261'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully IOs completed after pod shutdown by kubectl delete")
 
@@ -2688,10 +2686,10 @@ class TestPodRestart:
                     "starting the pod ")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
-        self.test_prefix = 'TEST-34261-1'
+        self.test_prefix = 'test-34261-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after starting the pod")
 
@@ -2716,7 +2714,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True, nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
@@ -2763,7 +2761,7 @@ class TestPodRestart:
                     "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed READs & Verify DI on written variable object sizes. "
                     "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
@@ -2789,7 +2787,7 @@ class TestPodRestart:
                     "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed READs & verified DI on written variable object sizes. "
                     "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
@@ -2798,8 +2796,7 @@ class TestPodRestart:
                     "512MB(VM)/5GB(HW))")
         self.test_prefix = 'test-36003-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, nsamples=10,
-                                                    nclients=10)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Performed WRITEs/READs/Verify with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify READs after data pod restart.")
@@ -2928,7 +2925,7 @@ class TestPodRestart:
         self.test_prefix = 'test-36004-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nsamples=10, nclients=10)
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
