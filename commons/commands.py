@@ -309,10 +309,6 @@ CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts
 # ca.crt path.
 CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
 
-# S3 bench
-CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
-              "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
-
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
 CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"

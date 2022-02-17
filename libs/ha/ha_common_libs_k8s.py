@@ -26,6 +26,7 @@ import os
 import random
 import sys
 import time
+import copy
 from multiprocessing import Process
 from time import perf_counter_ns
 import yaml
@@ -352,7 +353,7 @@ class HAK8s:
         :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
-        workloads = HA_CFG["s3_bench_workloads"]
+        workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
