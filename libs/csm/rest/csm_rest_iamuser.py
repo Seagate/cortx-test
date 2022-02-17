@@ -425,8 +425,8 @@ class RestIamUser(RestTestLib):
         """
         # Initialize all variables
         payload = {}
-        user_id = const.IAM_USER + int(time.time())
-        display_name = const.IAM_USER + int(time.time())
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
         email = user_id + "@seagate.com"
         key_type = "s3"
         access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
@@ -461,13 +461,13 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Creating IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
-        response = self.restapi.rest_call("post", endpoint=endpoint, data=payload,
+        response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
         return response
 
     def verify_create_iam_user_rgw(
-            self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
+            self, user_type="valid", expected_response=HTTPStatus.OK, verify_response=False):
         """
         creates and verify status code and response for iam user request.
         """
