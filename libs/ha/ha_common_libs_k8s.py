@@ -337,7 +337,7 @@ class HAK8s:
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
-            nsamples: int = 20,
+            nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False):
         """
