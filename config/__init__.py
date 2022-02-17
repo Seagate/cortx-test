@@ -72,7 +72,7 @@ s3_url = io_driver_args[io_driver_args.index(_endpoint) + 1] if _endpoint else "
 _access_key = "-ak" if '-ak' in io_driver_args else '--access_key' if '--access_key' in\
                                                                       io_driver_args else None
 access_key = io_driver_args[io_driver_args.index(_access_key) + 1] if _access_key else None
-_secret_key = "-ak" if '-ak' in io_driver_args else '--secret_key' if '--secret_key' in\
+_secret_key = "-sk" if '-sk' in io_driver_args else '--secret_key' if '--secret_key' in\
                                                                       io_driver_args else None
 secret_key = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
 use_ssl = ast.literal_eval(str(ssl_flg).title())
