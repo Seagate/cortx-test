@@ -1,8 +1,6 @@
 test_1:
     TEST_ID: TEST-36184
-    object_size:
-        start: 4Gb
-        end: 4Gb
+    object_size: 4Gb
     part_range:
         start: 50
         end: 100
@@ -12,9 +10,7 @@ test_1:
 
 test_2:
     TEST_ID: TEST-36185
-    object_size:
-        start: 8Gb
-        end: 8Gb
+    object_size: 8Gb
     part_range:
         start: 100
         end: 200
@@ -24,9 +20,7 @@ test_2:
 
 test_3:
     TEST_ID: TEST-36186
-    object_size:
-        start: 16Gb
-        end: 16Gb
+    object_size: 16Gb
     part_range:
         start: 200
         end: 300
@@ -36,9 +30,7 @@ test_3:
 
 test_4:
     TEST_ID: TEST-36187
-    object_size:
-        start: 32Gb
-        end: 32Gb
+    object_size: 32Gb
     part_range:
         start: 300
         end: 400
@@ -48,9 +40,7 @@ test_4:
 
 test_5:
     TEST_ID: TEST-36188
-    object_size:
-        start: 64Gb
-        end: 64Gb
+    object_size: 64Gb
     part_range:
         start: 400
         end: 500
@@ -60,9 +50,7 @@ test_5:
 
 test_6:
     TEST_ID: TEST-36189
-    object_size:
-        start: 128Gb
-        end: 128Gb
+    object_size: 128Gb
     part_range:
         start: 500
         end: 600
@@ -72,9 +60,7 @@ test_6:
 
 test_7:
     TEST_ID: TEST-36190
-    object_size:
-        start: 256Gb
-        end: 256Gb
+    object_size: 256Gb
     part_range:
         start: 600
         end: 700
@@ -84,9 +70,7 @@ test_7:
 
 test_8:
     TEST_ID: TEST-36191
-    object_size:
-        start: 512Gb
-        end: 512Gb
+    object_size: 512Gb
     part_range:
         start: 700
         end: 800
@@ -96,9 +80,7 @@ test_8:
 
 test_9:
     TEST_ID: TEST-36192
-    object_size:
-        start: 1Tb
-        end: 1Tb
+    object_size: 1Tb
     part_range:
         start: 800
         end: 1600
@@ -108,9 +90,7 @@ test_9:
 
 test_10:
     TEST_ID: TEST-36194
-    object_size:
-        start: 2Tb
-        end: 2Tb
+    object_size: 2Tb
     part_range:
         start: 1600
         end: 3200
@@ -120,9 +100,7 @@ test_10:
 
 test_11:
     TEST_ID: TEST-36195
-    object_size:
-        start: 4Tb
-        end: 4Tb
+    object_size: 4Tb
     part_range:
         start: 3200
         end: 6400
@@ -132,9 +110,7 @@ test_11:
 
 test_12:
     TEST_ID: TEST-36196
-    object_size:
-        start: 5Tb
-        end: 5Tb
+    object_size: 5Tb
     part_range:
         start: 6400
         end: 10000
