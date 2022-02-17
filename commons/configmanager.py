@@ -40,9 +40,7 @@ def get_config_yaml(fpath: str) -> dict:
     with open(fpath) as fin:
         LOG.debug("Reading details from file : %s", fpath)
         data = yaml.safe_load(fin)
-        data['end'] = 'end'
-        LOG.debug("Decrypting password from file : %s", fpath)
-        pswdmanager.decrypt_all_passwd(data)
+
     return data
 
 

@@ -37,6 +37,7 @@ from distutils.util import strtobool
 from datetime import datetime
 from multiprocessing import Process, Manager
 import psutil
+from config import S3_CFG
 from config import IO_DRIVER_CFG
 from libs.io import yaml_parser
 from libs.io.tools.s3bench import S3bench
@@ -84,8 +85,8 @@ def parse_args():
                         default=random.SystemRandom().randint(1, 9999999))
     parser.add_argument("-sk", "--secret-key", type=str, help="s3 secret Key.")
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
-    parser.add_argument("-ep", "--endpoint", type=str, help="Endpoint for S3 operations.",
-                        default="https://s3.seagate.com")
+    parser.add_argument("-ep", "--endpoint", type=str,
+                        help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
 
     return parser.parse_args()
 
@@ -223,7 +224,7 @@ def monitor_proc():
 
         # Terminate if error observed in any process
         if terminate_run:
-            logger.error("Error observed in process %s %s", error_proc,  error_proc_data)
+            logger.error("Error observed in process %s %s", error_proc, error_proc_data)
             logger.error("Terminating schedular..")
             for pid in process_states.keys():
                 ps_kill(pid)
@@ -243,9 +244,9 @@ def monitor_proc():
 
 def main(options):
     """Main Entry function using argument parser to parse options and start execution."""
-    access = options.access_key
-    secret = options.secret_key
-    endpoint = options.endpoint
+    access = S3_CFG.access_key
+    secret = S3_CFG.secret_key
+    endpoint = S3_CFG.endpoint
     seed = options.seed
     test_input = options.test_input
     logger.info("Seed Used : %s", seed)
@@ -266,9 +267,8 @@ def main(options):
         else:
             logger.error("Error! Tool type not defined: %s", process_type)
             sys.exit(1)
-        event_list.append(
-            sched_obj.enter(value['start_time'].seconds, 1, launch_process,
-                            (process, process_type, key)))
+        event_list.append(sched_obj.enter(value['start_time'].total_seconds(), 1, launch_process,
+                                          (process, process_type, key)))
 
     process = Process(target=monitor_proc)
     process.start()

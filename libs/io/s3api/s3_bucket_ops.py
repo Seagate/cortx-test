@@ -43,7 +43,7 @@ class S3Bucket(S3RestApi):
 
         return response
 
-    def bucket_list(self) -> list:
+    def list_bucket(self) -> list:
         """
         Listing all the buckets.
 
@@ -66,7 +66,7 @@ class S3Bucket(S3RestApi):
 
         return response
 
-    def bucket_location(self, bucket_name: str) -> dict:
+    def get_bucket_location(self, bucket_name: str) -> dict:
         """
         Getting Bucket Location.
 
