@@ -25,7 +25,7 @@ from http import HTTPStatus
 from requests.models import Response
 import commons.errorcodes as err
 from commons.constants import Rest as const
-from commons.constants import PROD_FAMILY_MGW
+from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -84,7 +84,7 @@ class RestS3user(RestTestLib):
             This function will list down all created accounts
             :return: response of create user
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"s3_accounts": [\
@@ -143,7 +143,7 @@ class RestS3user(RestTestLib):
         :param username: user name of the account need to be deleted
         :return: response delete s3account
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"Delete bypassed"}'
@@ -392,8 +392,7 @@ class RestS3user(RestTestLib):
             username=account_name)
 
         # Checking status code
-        self.log.debug(
-            f"Response to be verified for user: {account_name}")
+        self.log.debug(f"Response to be verified for user: {account_name}")
         if (not response) or response.status_code != const.SUCCESS_STATUS:
             self.log.debug("Response is not 200")
             return False
@@ -412,7 +411,7 @@ class RestS3user(RestTestLib):
         :return: response
         :rtype: json
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"Delete bypassed"}'

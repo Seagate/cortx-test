@@ -37,7 +37,6 @@ from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import HA_TEST_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
-from commons.constants import PROD_FAMILY_MGW
 
 
 def split_args(sys_cmd: List):

@@ -22,12 +22,14 @@
 import time
 from string import Template
 import json
+from http import HTTPStatus
 from requests.models import Response
-from commons.constants import PROD_FAMILY_MGW
+from commons.constants import S3_ENGINE_RGW
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
-from config import CMN_CFG
+from commons.utils import config_utils
+from config import CMN_CFG, CSM_REST_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 
@@ -53,10 +55,9 @@ class RestIamUser(RestTestLib):
         :param require_reset_val: set reset value to true or false
         :return: payload
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            payload = self.iam_user_payload_rgw(user_type="valid")
+            response = self.create_iam_user_rgw(payload)
         else:
             self.log.debug("iam user")
             payload = self.template_payload.substitute(
@@ -83,7 +84,7 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and (not user):
             user = self.iam_user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -112,10 +113,8 @@ class RestIamUser(RestTestLib):
         :return: boolean value for Success(True)/Failure(False)
         """
         self.iam_user = user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            return self.verify_create_iam_user_rgw(user_type="valid")
         else:
             response = self.create_iam_user(
                 user=user, password=password, login_as="s3account_user")
@@ -137,7 +136,7 @@ class RestIamUser(RestTestLib):
         """
         if self.iam_user and not user:
             user = self.iam_user
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -165,7 +164,7 @@ class RestIamUser(RestTestLib):
         :return: response
         :rtype: response object
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -188,7 +187,7 @@ class RestIamUser(RestTestLib):
         :return: True/False
         :rtype: bool
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -342,7 +341,7 @@ class RestIamUser(RestTestLib):
         :param account_name: username of S3 account under which new iam user will be created
         :return: new iam user details
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -364,9 +363,9 @@ class RestIamUser(RestTestLib):
             if response.status_code != const.SUCCESS_STATUS:
                 self.log.error("Response = %s", response.text)
                 self.log.error("Request header = %s", response.request.headers)
-                self.log.error("Request Body= %s " ,response.request.body)
+                self.log.error("Request Body= %s ", response.request.body)
                 raise CTException(err.CSM_REST_POST_REQUEST_FAILED,
-                                msg="Create IAM user request failed")
+                                  msg="Create IAM user request failed")
 
         return response
 
@@ -377,7 +376,7 @@ class RestIamUser(RestTestLib):
         :param user: username of S3 account under which new iam user will be created
         :return: response of delete iam user
         """
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -391,7 +390,7 @@ class RestIamUser(RestTestLib):
             if response.status_code != const.SUCCESS_STATUS:
                 self.log.error("Response = %s", response.text)
                 self.log.error("Request header = %s", response.request.headers)
-                self.log.error("Request Body= %s " ,response.request.body)
+                self.log.error("Request Body= %s ", response.request.body)
                 raise CTException(err.CSM_REST_GET_REQUEST_FAILED, msg="List IAM users failed.")
         return response
 
@@ -403,7 +402,7 @@ class RestIamUser(RestTestLib):
         :param account_name: username of S3 account under which new iam user will be created
         """
         self.log.debug("Deleting %s under S3 account %s", iam_user, account_name)
-        if PROD_FAMILY_MGW == CMN_CFG["product_family"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             response = Response()
             response.status_code = 200
             response._content = b'{"message":"bypassed"}'
@@ -415,7 +414,78 @@ class RestIamUser(RestTestLib):
             if response.status_code != const.SUCCESS_STATUS:
                 self.log.error("Response = %s", response.text)
                 self.log.error("Request header = %s", response.request.headers)
-                self.log.error("Request Body= %s " ,response.request.body)
+                self.log.error("Request Body= %s ", response.request.body)
                 raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED,
-                                msg="Delete IAM users request failed.")
+                                  msg="Delete IAM users request failed.")
         return response
+
+    def iam_user_payload_rgw(self, user_type="valid"):
+        """
+        Return payload for IAM user for RGW with Ceph
+        """
+        # Initialize all variables
+        payload = {}
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        email = user_id + "@seagate.com"
+        key_type = "s3"
+        access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+        secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+        user_cap = []
+        generate_key = True
+        max_buckets = 1000
+        suspended = False
+        tenant = ""
+        if user_type == "valid":
+            payload.update({"uid": user_id})
+            payload.update({"display_name": display_name})
+        if user_type == "loaded":
+            payload.update({"uid": user_id})
+            payload.update({"display_name": display_name})
+            payload.update({"email": email})
+            payload.update({"key_type": key_type})
+            payload.update({"access_key": access_key})
+            payload.update({"secret_key": secret_key})
+            payload.update({"user_caps": user_cap})
+            payload.update({"generate_key": generate_key})
+            payload.update({"max_buckets": max_buckets})
+            payload.update({"suspended": suspended})
+            payload.update({"tenant": tenant})
+        self.log.info("Payload : %s", payload)
+        return payload
+
+    @RestTestLib.authenticate_and_login
+    def create_iam_user_rgw(self, payload: dict):
+        """
+        Creates IAM user for given payload.
+        """
+        self.log.info("Creating IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+        response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("IAM user request successfully sent...")
+        return response
+
+    def verify_create_iam_user_rgw(
+            self, user_type="valid", expected_response=HTTPStatus.OK, verify_response=False):
+        """
+        creates and verify status code and response for iam user request.
+        """
+        payload = self.iam_user_payload_rgw(user_type=user_type)
+        response = self.create_iam_user_rgw(payload)
+        resp = response.json()
+        if response.status_code == expected_response:
+            self.log.info("Status code check passed.")
+            result = True
+            if verify_response:
+                self.log.info("Checking response...")
+                for key,value in payload.items():
+                    if value != resp[key]:
+                        self.log.info("Expected response for %s: %s", key,value)
+                        self.log.info("Actual response for %s: %s", key, resp[key])
+                        self.log.error("Actual and expected response for %s didnt match", key)
+                        result = False
+        else:
+            self.log.error("Status code check failed.")
+            result = False
+        return result, resp

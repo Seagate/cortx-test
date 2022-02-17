@@ -21,12 +21,15 @@
 """Tests various operations on IAM users using REST API
 NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
+from http import HTTPStatus
 import logging
 import pytest
 from commons import configmanager
 from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.csm_interface import csm_api_factory
+
 
 class TestIamUser():
     """REST API Test cases for IAM users"""
@@ -99,10 +102,9 @@ class TestIamUser():
             assert value
 
         self.log.info("Verified that S3 account %s was successfully able to create IAM user: %s",
-            self.rest_iam_user.config["s3account_user"]["username"], response)
+                      self.rest_iam_user.config["s3account_user"]["username"], response)
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
 
     @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
@@ -121,3 +123,163 @@ class TestIamUser():
         self.log.debug(
             "Verified that IAM user is not able to execute and access the CSM REST APIs")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+class TestIamUserRGW():
+    """
+    Tests related to RGW
+    """
+    @classmethod
+    def setup_class(cls):
+        """
+        setup class
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("[START] CSM setup class started.")
+        cls.log.info("Initializing test configuration...")
+        cls.csm_obj = csm_api_factory("rest")
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_iam_user.yaml")
+        cls.config = CSMConfigsCheck()
+        setup_ready = cls.config.check_predefined_csm_user_present()
+        if not setup_ready:
+            setup_ready = cls.config.setup_csm_users()
+        assert setup_ready
+        cls.created_iam_users = set()
+        cls.log.info("[END] CSM setup class completed.")
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35603')
+    def test_35603(self):
+        """
+        Test create IAM User with Invalid uid and display-name parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing with empty UID")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload["uid"] = ""
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for empty uid"
+        self.log.info("[END] Testing with empty UID")
+
+        self.log.info("[START] Testing with empty display name")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload["display-name"] = ""
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+               "Status code check failed for empty display name"
+        self.log.info("[END] Testing with empty display name")
+
+        self.log.info("[START] Testing with empty UID and display name")
+        payload = {"uid": "", "display-name": ""}
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+               "Status code check failed for empty uid and display name"
+        self.log.info("[END] Testing with empty UID and display name")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35604')
+    def test_35604(self):
+        """
+        Test create IAM User with missing uid and display-name parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing with missing UID")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload.pop("uid")
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status check failed for missing uid"
+        self.log.info("[END] Testing with missing UID")
+
+        self.log.info("[START] Testing with missing display name")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload.pop("display-name")
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+               "Status code check failed for missing display name"
+        self.log.info("[END] Testing with missing display name")
+
+        self.log.info("[START] Testing with missing UID and display name")
+        payload = {}
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+               "Status code check failed for missing uid and display name"
+        self.log.info("[END] Testing with missing UID and display name")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35605')
+    def test_35605(self):
+        """
+        Test create IAM User with mandatory/Non-mandatory parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with basic parameters")
+        result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                               verify_response=True)
+        assert result, "Failed to create IAM user using basic parameters."
+        self.log.info("Response : %s", resp)
+        self.log.info("[END]Creating IAM user with basic parameters")
+
+        self.log.info("[START] Creating IAM user with all parameters")
+        result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                               verify_response=True)
+        assert result, "Failed to create IAM user using all parameters."
+        self.log.info("Response : %s", resp)
+        self.log.info("[END]Creating IAM user with all parameters")
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35606')
+    def test_35606(self):
+        """
+        Test create IAM User with Invalid Keys and Capability parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35607')
+    def test_35607(self):
+        """
+        Test create IAM User with csm monitor user.( non admin)
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with basic parameters")
+        result, resp = self.csm_obj.verify_create_iam_user_rgw(
+            user_type="valid",
+            expected_response=HTTPStatus.FORBIDDEN.value,
+            verify_response=False,
+            login_as="csm_user_monitor")
+        assert result, "Failed to create IAM user using basic parameters."
+        self.log.info("TODO Verify Response : %s", resp)
+        self.log.info("[END]Creating IAM user with basic parameters")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
