@@ -51,7 +51,8 @@ class TestIOSessions(unittest.TestCase):
         logger.info("STARTED: Teardown operations")
         logger.info("ENDED: Teardown operations")
 
-    def dummy_api(self, post_id):
+    @staticmethod
+    def dummy_api(post_id):
         """
             Just a sample function which would make dummy API calls
         """
@@ -63,7 +64,8 @@ class TestIOSessions(unittest.TestCase):
             return response.json()
         return {}
 
-    def dummy_method(self, post_id):
+    @staticmethod
+    def dummy_method(post_id):
         """
             Just a sample function which would make dummy API calls
         """
