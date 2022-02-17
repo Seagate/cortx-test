@@ -170,12 +170,13 @@ class TestExecuteK8Sanity:
                     self.motr_obj.kv_cmd(cnt["params"], node, 0)
                 else:
                     cmd = f'{cmd} {param}'
-                    resp = self.motr_obj.node_obj.send_k8s_cmd(operation="exec",
-                                                               pod=node_pod_dict[node],
-                                                               namespace=common_const.NAMESPACE,
-                                                               command_suffix=
-                                                               f"-c {common_const.HAX_CONTAINER_NAME}"
-                                                               f"-- {cmd}", decode=True)
+                    resp = self.motr_obj.node_obj.send_k8s_cmd(
+                                                            operation="exec",
+                                                            pod=node_pod_dict[node],
+                                                            namespace=common_const.NAMESPACE,
+                                                            command_suffix=
+                                                            f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                            f"-- {cmd}", decode=True)
                     logger.info("Resp: %s", resp)
                     assert_utils.assert_not_in("ERROR" or "Error", resp,
                                                f'"{cmd}" Failed, Please check the log')
