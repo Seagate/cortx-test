@@ -78,6 +78,7 @@ class Provisioner:
             while True:
                 build_info = jenkins_server_obj.get_build_info(
                     job_name, next_build_number)
+                LOGGER.debug("Build info %s", build_info)
                 result = build_info['result']
                 expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
                 LOGGER.debug("result is %s::", result)

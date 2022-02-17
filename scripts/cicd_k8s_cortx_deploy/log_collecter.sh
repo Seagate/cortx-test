@@ -54,10 +54,25 @@
       echo "INFO: Creating dir"
       eval "$cmd3"
   fi
-  eval "$mv_cmd"
-  eval "$mv_cmd2"
-  eval "$mv_cmd3"
-  eval "$mv_log"
-  eval "$mv_csv"
+  if [ -f "$3/log/latest/TEST-N*" ]
+  then
+      eval "$mv_cmd"
+  fi
+  if [ -f "$3/support_bundle/*.tar" ]
+  then
+      eval "$mv_cmd2"
+  fi
+  if [ -f "$3/crash_files/*.gz" ]
+  then
+      eval "$mv_cmd3"
+  fi
+  if [ -f "$3/log/latest/deployment.log" ]
+  then
+      eval "$mv_log"
+  fi
+  if [ -f "$3/log/latest/*.csv" ]
+  then
+      eval "$mv_csv"
+  fi
   echo "INFO: Copied the logs: $LOG_PATH"
   eval "$export_cmd"

@@ -35,6 +35,7 @@ from typing import Union
 import mdstat
 import paramiko
 import pysftp
+from paramiko.ssh_exception import SSHException
 
 from commons import commands, const
 
@@ -72,11 +73,18 @@ class AbsHost:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             LOGGER.debug("Connecting to host: %s", str(self.hostname))
-            self.host_obj.connect(hostname=self.hostname,
-                                  username=self.username,
-                                  password=self.password,
-                                  timeout=timeout,
-                                  **kwargs)
+            i = 2
+            while i > 2:
+                try:
+                    self.host_obj.connect(hostname=self.hostname,
+                                          username=self.username,
+                                          password=self.password,
+                                          timeout=timeout,
+                                          **kwargs)
+                    break
+                except SSHException as error:
+                    LOGGER.exception("Error %s", error)
+                    i = i-1
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
 
