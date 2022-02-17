@@ -760,7 +760,7 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
 def check_cortx_cluster_health():
     """Check the cluster health before each test is picked up for run."""
     LOGGER.info("Check cluster status for all nodes.")
-    if CMN_CFG.get("product_family") == const.PROD_FAMILY_MGW:
+    if CMN_CFG.get("s3_engine") == const.S3_ENGINE_RGW:
         # TODO move code block to appropriate location in the function for MGW
         return
     nodes = CMN_CFG["nodes"]
@@ -782,7 +782,7 @@ def check_cortx_cluster_health():
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
     LOGGER.info("Check cluster storage for all nodes.")
-    if CMN_CFG.get("product_family") == const.PROD_FAMILY_MGW:
+    if CMN_CFG.get("s3_engine") == const.S3_ENGINE_RGW:
         # TODO move code block to appropriate location in the function for MGW
         return
     nodes = CMN_CFG["nodes"]
