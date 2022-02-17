@@ -73,8 +73,8 @@ class AbsHost:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             LOGGER.debug("Connecting to host: %s", str(self.hostname))
-            i = 2
-            while i > 2:
+            i = 0
+            while i < 2:
                 try:
                     self.host_obj.connect(hostname=self.hostname,
                                           username=self.username,
@@ -83,8 +83,8 @@ class AbsHost:
                                           **kwargs)
                     break
                 except SSHException as error:
-                    LOGGER.exception("Error %s", error)
-                    i = i-1
+                    LOGGER.exception("catch %s", error)
+                    i = i+1
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
 
