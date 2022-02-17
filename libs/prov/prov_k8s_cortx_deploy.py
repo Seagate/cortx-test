@@ -1054,14 +1054,16 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
         LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
-            LOGGER.info("Step to Perform k8s Cluster Deployment")
-            resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step to Taint master nodes if not already done.")
-            for node in master_node_list:
-                resp = self.validate_master_tainted(node)
-                if not resp:
-                    self.taint_master(node)
+            resp = self.verify_k8s_cluster_exists(master_node_list, worker_node_list)
+            if not resp:
+                LOGGER.info("Step to Perform k8s Cluster Deployment")
+                resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
+                assert_utils.assert_true(resp[0], resp[1])
+                LOGGER.info("Step to Taint master nodes if not already done.")
+                for node in master_node_list:
+                    resp = self.validate_master_tainted(node)
+                    if not resp:
+                        self.taint_master(node)
 
         if cortx_cluster_deploy_flag:
             LOGGER.info("Step to Download solution file template")
@@ -1282,3 +1284,27 @@ class ProvDeployK8sCortxLib:
         if "Error" in resp or "Failed" in resp:
             return False, resp
         return True, resp
+
+    @staticmethod
+    def verify_k8s_cluster_exists(master_node_list, worker_node_list):
+        """
+        This method is to verfiy the K8S setup exists for given set of nodes.
+        master_node_list: is the Master Node
+        worker_node_list: Worker Nodes
+        """
+        cmd = common_cmd.K8S_WORKER_NODES
+        cmd2 = common_cmd.K8S_MASTER_NODE
+        resp = master_node_list[0].execute_cmd(cmd, read_lines=True)
+        worker_list = []
+        worker_nodes = []
+        for worker in resp[1:]:
+            worker_list.append(worker.strip())
+        LOGGER.info(worker_list)
+        for nodes in worker_node_list:
+            worker_nodes.append(nodes.hostname)
+        LOGGER.info("Data from setup_details %s", worker_nodes)
+        master_rsp = master_node_list[0].execute_cmd(cmd2, read_lines=True)
+        if worker_nodes.sort() == resp[1:].sort() and master_rsp[-1].strip() == master_node_list[0].hostname:
+            LOGGER.debug("Master and Worker nodes are matched. skipping K8s Cluster")
+            return True
+
