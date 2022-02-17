@@ -33,11 +33,12 @@ Below classes are protected and private and need to be used for internal purpose
 
 import concurrent.futures
 import os
+import logging
 from functools import wraps
 
 import psutil
 import timeit
-
+logger = logging.getLogger(__name__)
 
 def make_sessions(func):
     """
@@ -60,8 +61,8 @@ def make_sessions(func):
         # the number of threads that can be max-spawned.
         # If the number of threads are high, overhead of creating the threads will be significant.
         number_of_cpu = int(os.cpu_count())
-        print("Number of CPU Cores", number_of_cpu)
-        print('RAM memory % used:', psutil.virtual_memory()[2])
+        logger.info("Number of CPU Cores", number_of_cpu)
+        logger.info('RAM memory % used:', psutil.virtual_memory()[2])
         # Default we are keeping max concurrent workers equal to number of cpu cores
         # For e.g. if there are N CPUs then for dul core system total Cores will be N*2
         args = args[0] if type(args[0]) in (list, tuple) else args
@@ -70,7 +71,7 @@ def make_sessions(func):
             # If the length of the list is low, we would only require those many number of threads.
             # Here we are avoiding creating unnecessary threads
             max_concurrent_workers = len(args)
-        print("Executing with {} Workers".format(max_concurrent_workers))
+        logger.info("Executing with {} Workers".format(max_concurrent_workers))
         start = timeit.default_timer()
         if max_concurrent_workers:
             # Create max number of threads and running the decorated function in parallel.
@@ -79,12 +80,12 @@ def make_sessions(func):
                 bag = {exe.submit(func, i): i for i in args}
                 for future in concurrent.futures.as_completed(bag):
                     result.append(future.result())
-                    print("\n------------Session Running------------\n", future.result())
+                    logger.info("\n------------Session Running------------\n", future.result())
         else:
             result = []
 
         stop = timeit.default_timer()
-        print('Total Execution Time is: ', stop - start)
+        logger.info('Total Execution Time is: ', stop - start)
         return result
 
     return spawn

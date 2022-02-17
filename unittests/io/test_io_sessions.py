@@ -20,11 +20,11 @@
 #
 
 """ io sessions Unit Tests."""
-import logging
 import unittest
 import requests
 
 from libs.io.workers import make_sessions
+from unittests.io import logger
 
 
 class TestIOSessions(unittest.TestCase):
@@ -38,10 +38,9 @@ class TestIOSessions(unittest.TestCase):
         It will perform prerequisite test steps if any
         Defined var for log, config, creating common account or bucket
         """
-        self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup operations")
+        logger.info("STARTED: Setup operations")
         self.list_of_post_ids = list(range(1, 5))
-        self.log.info("ENDED: Setup operations")
+        logger.info("ENDED: Setup operations")
 
     def tearDown(self):
         """
@@ -49,18 +48,18 @@ class TestIOSessions(unittest.TestCase):
         It will clean up resources which are getting created during test case execution.
         This function will reset accounts, delete buckets, accounts and files.
         """
-        self.log.info("STARTED: Teardown operations")
-        self.log.info("ENDED: Teardown operations")
+        logger.info("STARTED: Teardown operations")
+        logger.info("ENDED: Teardown operations")
 
     def dummy_api(self, post_id):
         """
             Just a sample function which would make dummy API calls
         """
-        print("Executing dummy api with id {}".format(post_id))
+        logger.info("Executing dummy api with id {}".format(post_id))
         url = f"https://jsonplaceholder.typicode.com/comments?postId={post_id}"
         response = requests.get(url)
         if response.status_code == 200:
-            self.log.info(response.json())
+            logger.info(response.json())
             return response.json()
         return {}
 
@@ -68,8 +67,8 @@ class TestIOSessions(unittest.TestCase):
         """
             Just a sample function which would make dummy API calls
         """
-        print("Executing dummy api with id {}".format(post_id))
-        self.log.info(post_id)
+        logger.info("Executing dummy api with id {}".format(post_id))
+        logger.info(post_id)
         return {"post_id": post_id}
 
     def test_make_sessions(self):
@@ -77,37 +76,37 @@ class TestIOSessions(unittest.TestCase):
         Simple function to test dummy api with multiple sessions/processes
         :return: None
         """
-        print("Testing make sessions")
+        logger.info("Testing make sessions")
         data1, data2, data3, data4 = self.list_of_post_ids
         result = make_sessions(self.dummy_api)(data1, data2, data3, data4, number_of_workers=4)
-        print(result)
+        logger.info(result)
 
     def test_make_sessions_with_iterable(self):
         """
         Simple function to test dummy api with multiple sessions/processes with ten thousand workers
         :return: None
         """
-        print("Testing make sessions with either list or tuple data set")
+        logger.info("Testing make sessions with either list or tuple data set")
         result = make_sessions(self.dummy_method)(list(range(1, 10000)), number_of_workers=10)
-        print(result)
+        logger.info(result)
 
     def test_make_sessions_with_iterable_default_workers(self):
         """
         Simple function to test dummy api with multiple sessions/processes with default workers
         :return: None
         """
-        print("Testing make sessions with either list or tuple data set")
+        logger.info("Testing make sessions with either list or tuple data set")
         result = make_sessions(self.dummy_method)(list(range(1, 1000)))
-        print(result)
+        logger.info(result)
 
     def test_make_sessions_with_iterable_lessthen_default_workers(self):
         """
         Simple function to test dummy api with multiple sessions/processes with default workers
         :return: None
         """
-        print("Testing make sessions with either list or tuple data set")
+        logger.info("Testing make sessions with either list or tuple data set")
         result = make_sessions(self.dummy_method)(list(range(1, 15)))
-        print(result)
+        logger.info(result)
 
 
 if __name__ == '__main__':
