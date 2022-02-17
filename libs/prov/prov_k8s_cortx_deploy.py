@@ -1307,4 +1307,7 @@ class ProvDeployK8sCortxLib:
         if worker_nodes.sort() == resp[1:].sort() and master_rsp[-1].strip() == master_node_list[0].hostname:
             LOGGER.debug("Master and Worker nodes are matched. skipping K8s Cluster")
             return True
+        else:
+            LOGGER.error("Input Setup details mismatch with current setup")
+            return False
 
