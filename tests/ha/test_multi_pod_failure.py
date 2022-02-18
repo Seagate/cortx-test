@@ -83,7 +83,7 @@ class TestPodFailure:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = cls.deploy = cls.value = None
+        cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.pod_dict = {}
         cls.mgnt_ops = ManagementOPs()
@@ -133,11 +133,11 @@ class TestPodFailure:
         LOGGER.info("Get the value of K for the given cluster.")
         resp = self.ha_obj.get_config_value(self.node_master_list[0])
         if resp[0]:
-            self.value = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
+            self.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
         else:
             LOGGER.info("Failed to get parity value, will use 1.")
-            self.value = 1
-        LOGGER.info("The cluster has %s parity pods", self.value)
+            self.kvalue = 1
+        LOGGER.info("The cluster has %s parity pods", self.kvalue)
         self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
@@ -169,7 +169,8 @@ class TestPodFailure:
                 LOGGER.debug("Response: %s", resp)
                 assert_utils.assert_true(resp[0], f"Failed to restore pod by "
                                                   f"{self.restore_method} way")
-                LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+                LOGGER.info("Successfully restored pod %s by %s way",
+                            pod_name, self.restore_method)
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
             resp = self.ha_obj.host_power_on(host=self.node_name)
@@ -248,8 +249,9 @@ class TestPodFailure:
         LOGGER.info("Step 3: Shutdown the data pod by deleting deployment (unsafe)")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
-        self.pod_name_list = random.sample(pod_list, self.value)
+        self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
             pod_data = list()
             pod_data.append(self.node_master_list[0].get_pod_hostname(pod_name=pod_name)) #hostname
             LOGGER.info("Deleting %s pod %s", count, pod_name)
@@ -263,24 +265,24 @@ class TestPodFailure:
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 3: Successfully deleted %s data pods", self.value)
+        LOGGER.info("Step 3: Successfully deleted %s data pods", self.kvalue)
 
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 4: Cluster is in degraded state")
 
-        LOGGER.info("Step 5: Check services status that were running on pods which are deleted")
+        LOGGER.info("Step 5: Check services status that were running on pods which are deleted.")
         counter = 0
         for pod_name in self.pod_name_list:
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
-            LOGGER.debug("Response: %s", resp)
+            LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
             pod_list.remove(pod_name)
-        assert_utils.assert_is_not_none(counter, "Services on some pods not stopped.")
+        assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
         LOGGER.info("Step 5: Services of pods are in offline state")
 
         LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
@@ -328,10 +330,10 @@ class TestPodFailure:
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
         LOGGER.info("Shutdown %s (K) data pods one by one and verify read/verify "
-                    "after each pod down.", self.value)
+                    "after each pod down.", self.kvalue)
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
-        self.pod_name_list = random.sample(pod_list, self.value)
+        self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             LOGGER.info("Step 3: Shutdown %s data pod %s by deleting deployment (unsafe)",
                         count, pod_name)
@@ -376,7 +378,7 @@ class TestPodFailure:
             LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
         LOGGER.info("%s (K) data pods shutdown one by one successfully and read/verify "
-                    "after each pod down verified", self.value)
+                    "after each pod down verified", self.kvalue)
 
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
                     "data pods fail.")
