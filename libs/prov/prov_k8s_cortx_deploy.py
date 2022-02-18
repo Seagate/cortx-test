@@ -1313,4 +1313,6 @@ class ProvDeployK8sCortxLib:
             else:
                 LOGGER.error("Input Setup details mismatch with current setup")
                 return False
+        else:
+            return False
 
