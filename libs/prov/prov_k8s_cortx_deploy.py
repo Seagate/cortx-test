@@ -1059,11 +1059,11 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform k8s Cluster Deployment")
                 resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
                 assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Step to Taint master nodes if not already done.")
-                for node in master_node_list:
-                    resp = self.validate_master_tainted(node)
-                    if not resp:
-                        self.taint_master(node)
+            LOGGER.info("Step to Taint master nodes if not already done.")
+            for node in master_node_list:
+                resp = self.validate_master_tainted(node)
+                if not resp:
+                    self.taint_master(node)
 
         if cortx_cluster_deploy_flag:
             LOGGER.info("Step to Download solution file template")
@@ -1307,12 +1307,13 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Data from setup_details %s", worker_nodes)
         master_rsp = master_node_list[0].execute_cmd(cmd2, read_lines=True)
         if len(worker_nodes) == len(worker_list):
-            if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == master_node_list[0].hostname:
-                LOGGER.debug("Master and Worker nodes are matched. skipping K8s Cluster")
+            if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == \
+                    master_node_list[0].hostname:
+                LOGGER.debug("Master and Worker nodes are matched.skipping K8s Cluster")
                 return True
             else:
                 LOGGER.error("Input Setup details mismatch with current setup")
                 return False
         else:
+            LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
             return False
-
