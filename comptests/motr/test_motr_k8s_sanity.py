@@ -59,7 +59,7 @@ class TestExecuteK8Sanity:
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
         cls.system_random = SystemRandom()
-        cls.M0KV_CFG = config_utils.read_yaml("config/motr/m0kv_test.yaml")
+        cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
@@ -157,7 +157,7 @@ class TestExecuteK8Sanity:
         logger.info("Running m0kv tests")
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         node = self.system_random.choice(list(node_pod_dict.keys()))
-        m0kv_tests = self.M0KV_CFG[1]
+        m0kv_tests = self.m0kv_cfg[1]
         for test in m0kv_tests:
             logger.info("RUNNING TEST: %s", test)
             cmd_batch = m0kv_tests[test]["batch"]
