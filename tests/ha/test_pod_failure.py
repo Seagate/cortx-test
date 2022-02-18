@@ -753,14 +753,15 @@ class TestPodFailure:
         self.s3_clean = users
         output = Queue()
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    nsamples=30, log_prefix=self.test_prefix,
+                                                    nsamples=30, nclients=20,
+                                                    log_prefix=self.test_prefix,
                                                     skipread=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
         LOGGER.info("Step 2: Perform READs and verify DI on the written data in background")
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 2, 'nsamples': 30, 'skipwrite': True, 'skipcleanup': True,
+                'nclients': 5, 'nsamples': 30, 'skipwrite': True, 'skipcleanup': True,
                 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
@@ -815,7 +816,9 @@ class TestPodFailure:
         while len(responses) != 2: responses = output.get(
             timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
@@ -826,15 +829,12 @@ class TestPodFailure:
                     "background")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-32444-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        self.test_prefix = 'test-32444-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
-
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")
 
     @pytest.mark.ha
@@ -1615,7 +1615,7 @@ class TestPodFailure:
         thread1.start()
         LOGGER.info("Successfully started READs in background")
 
-        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
@@ -1665,10 +1665,11 @@ class TestPodFailure:
         event.clear()
         thread1.join()
         thread2.join()
-
+        LOGGER.info("Background READs and DELETEs threads joined successful")
         LOGGER.info("Step 1: Verifying responses from READs background process")
         rd_resp = tuple()
         while len(rd_resp) != 4:
+            LOGGER.info("Get READs Output from Queue")
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
             assert_utils.assert_true(False, "Background process failed to do reads")
@@ -1687,6 +1688,7 @@ class TestPodFailure:
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = tuple()
         while len(del_resp) != 2:
+            LOGGER.info("Get DELETEs Output from Queue")
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
             assert_utils.assert_true(False, "Background process failed to do deletes")
@@ -1743,13 +1745,11 @@ class TestPodFailure:
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26447-1', nusers=1, nbuckets=10)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+        self.test_prefix = 'test-26447-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify Continuous READs and DELETEs during data pod down by "
