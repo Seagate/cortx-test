@@ -1295,6 +1295,8 @@ class ProvDeployK8sCortxLib:
         cmd = common_cmd.K8S_WORKER_NODES
         cmd2 = common_cmd.K8S_MASTER_NODE
         resp = master_node_list[0].execute_cmd(cmd, read_lines=True)
+        if len(resp) == 0:
+            return False
         worker_list = []
         worker_nodes = []
         for worker in resp[1:]:
