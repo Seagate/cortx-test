@@ -841,7 +841,7 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-
+        event_clear_flg = False
         resp = s3bench.setup_s3bench()
         if not resp:
             status = (resp, "Couldn't setup s3bench on client machine.")
@@ -857,9 +857,13 @@ class HAK8s:
                 end_point=S3_CFG["s3b_url"])
             if event.is_set():
                 fail_res.append(resp)
+                event_clear_flg = True
             else:
+                if event_clear_flg:
+                    fail_res.append(resp)
+                    event_clear_flg = False
+                    continue
                 pass_res.append(resp)
-
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
 
