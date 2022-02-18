@@ -35,7 +35,6 @@ from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
 
-M0KV_CFG = config_utils.read_yaml("config/motr/m0kv_test.yaml")
 M0CRATE_WORKLOAD_YML = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
 M0CRATE_TEST_CSV = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
 with open(M0CRATE_TEST_CSV) as CSV_FH:
@@ -60,6 +59,7 @@ class TestExecuteK8Sanity:
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
         cls.system_random = SystemRandom()
+        cls.M0KV_CFG = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
@@ -157,7 +157,7 @@ class TestExecuteK8Sanity:
         logger.info("Running m0kv tests")
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         node = self.system_random.choice(list(node_pod_dict.keys()))
-        m0kv_tests = M0KV_CFG[1]
+        m0kv_tests = self.M0KV_CFG[1]
         for test in m0kv_tests:
             logger.info("RUNNING TEST: %s", test)
             cmd_batch = m0kv_tests[test]["batch"]
@@ -171,12 +171,12 @@ class TestExecuteK8Sanity:
                 else:
                     cmd = f'{cmd} {param}'
                     resp = self.motr_obj.node_obj.send_k8s_cmd(
-                                                            operation="exec",
-                                                            pod=node_pod_dict[node],
-                                                            namespace=common_const.NAMESPACE,
-                                                            command_suffix=
-                                                            f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                            f"-- {cmd}", decode=True)
+                                                           operation="exec",
+                                                           pod=node_pod_dict[node],
+                                                           namespace=common_const.NAMESPACE,
+                                                           command_suffix=
+                                                           f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                           f"-- {cmd}", decode=True)
                     logger.info("Resp: %s", resp)
                     assert_utils.assert_not_in("ERROR" or "Error", resp,
                                                f'"{cmd}" Failed, Please check the log')
