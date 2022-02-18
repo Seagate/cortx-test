@@ -25,6 +25,8 @@ import logging
 
 from commons import commands as common_cmd
 from commons import constants as common_const
+from config import CMN_CFG
+from commons.helpers.pods_helper import LogicalNode
 
 
 LOGGER = logging.getLogger(__name__)
@@ -90,3 +92,22 @@ class HAK8SCompLib:
             LOGGER.error("An error occurred in %s:", HAK8SCompLib.shutdown_signal.__name__)
             return False, err
         return True, "Successfully ran the script."
+
+    @staticmethod
+    def get_ha_node_object(master_node_obj) -> LogicalNode:
+        """
+        Helper function to get HA node object.
+        :param master_node_obj: Master node(Logical Node object)
+        :return: HA node object
+        """
+        pod_name = master_node_obj.get_pod_name(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        ha_hostname = master_node_obj.get_pods_node_fqdn(pod_name[1])
+        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_name[1]])
+        node_obj = object()
+        for node in range(len(CMN_CFG["nodes"])):
+            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_name[1]]:
+                node_obj = LogicalNode(hostname=ha_hostname[pod_name[1]],
+                                       username=CMN_CFG["nodes"][node]["username"],
+                                       password=CMN_CFG["nodes"][node]["password"])
+                break
+        return node_obj
