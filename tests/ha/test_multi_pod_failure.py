@@ -251,9 +251,10 @@ class TestPodFailure:
         LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
             pod_data = list()
             pod_data.append(self.node_master_list[0].get_pod_hostname(pod_name=pod_name)) #hostname
-            LOGGER.info("Deleting %s pod %s", count+1, pod_name)
+            LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
