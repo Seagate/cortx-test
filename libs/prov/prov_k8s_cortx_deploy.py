@@ -1292,9 +1292,8 @@ class ProvDeployK8sCortxLib:
         master_node_list: is the Master Node
         worker_node_list: Worker Nodes
         """
-        cmd = common_cmd.K8S_WORKER_NODES
-        cmd2 = common_cmd.K8S_MASTER_NODE
-        resp = master_node_list[0].execute_cmd(cmd, read_lines=True)
+        resp = master_node_list[0].execute_cmd(common_cmd.K8S_WORKER_NODES,
+                                               read_lines=True)
         if len(resp) == 0:
             return False
         worker_list = []
@@ -1305,7 +1304,8 @@ class ProvDeployK8sCortxLib:
         for nodes in worker_node_list:
             worker_nodes.append(nodes.hostname)
         LOGGER.info("Data from setup_details %s", worker_nodes)
-        master_rsp = master_node_list[0].execute_cmd(cmd2, read_lines=True)
+        master_rsp = master_node_list[0].execute_cmd(common_cmd.K8S_MASTER_NODE,
+                                                     read_lines=True)
         if len(worker_nodes) == len(worker_list):
             if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == \
                     master_node_list[0].hostname:
@@ -1314,6 +1314,5 @@ class ProvDeployK8sCortxLib:
             else:
                 LOGGER.error("Input Setup details mismatch with current setup")
                 return False
-        else:
-            LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
-            return False
+        LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
+        return False

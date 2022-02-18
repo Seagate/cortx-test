@@ -85,6 +85,9 @@ class AbsHost:
                 except SSHException as error:
                     LOGGER.exception("catch %s", error)
                     i = i+1
+                    if i == 2:
+                        raise error
+
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
 
