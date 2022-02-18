@@ -1311,8 +1311,7 @@ class ProvDeployK8sCortxLib:
                     master_node_list[0].hostname:
                 LOGGER.debug("Master and Worker nodes are matched.skipping K8s Cluster")
                 return True
-            else:
-                LOGGER.error("Input Setup details mismatch with current setup")
-                return False
+            LOGGER.error("Input Setup details mismatch with current setup")
+            return False
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
