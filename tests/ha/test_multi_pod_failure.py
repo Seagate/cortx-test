@@ -281,7 +281,7 @@ class TestPodFailure:
             if not resp[0]:
                 counter += 1
             pod_list.remove(pod_name)
-        assert_utils.assert_is_not_none(counter, "Services on some pods not stopped.")
+        assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
         LOGGER.info("Step 5: Services of pods are in offline state")
 
         LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
