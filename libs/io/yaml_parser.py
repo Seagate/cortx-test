@@ -93,7 +93,6 @@ def convert_to_time_delta(time):
     if 's' in time:
         sec = int(time.split('s')[0])
     datetime_obj = datetime.timedelta(days=days, hours=hrs, minutes=mnt, seconds=sec)
-    logger.debug("Date time object: %s", str(datetime_obj))
     return datetime_obj
 
 

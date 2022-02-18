@@ -1,48 +1,8 @@
 "product_family": "LC"
 "product_type": "k8s"
-"lb": "192.168.56.99"
 "nodes":
     - "hostname": "ssc-vm-g3-rhev4-2552.colo.seagate.com"
       "ip": "10.230.250.44"
       "username": "root"
       "password": "seagate"
       "node_type": "master"
-    - "hostname": "ssc-vm-g3-rhev4-2553.colo.seagate.com"
-      "ip": "10.230.241.73"
-      "username": "root"
-      "password": "seagate"
-      "node_type": "worker"
-    - "hostname": "ssc-vm-g3-rhev4-2554.colo.seagate.com"
-      "ip": "10.230.249.138"
-      "username": "root"
-      "password": "seagate"
-      "node_type": "worker"
-    - "hostname": "ssc-vm-g3-rhev4-2555.colo.seagate.com"
-      "ip": "10.230.240.134"
-      "username": "root"
-      "password": "seagate"
-      "node_type": "worker"
-    - "hostname": "ssc-vm-g3-rhev4-2556.colo.seagate.com"
-      "ip": "10.230.244.41"
-      "username": "root"
-      "password": "seagate"
-      "node_type": "worker"
-    - "hostname": "ssc-vm-g3-rhev4-2557.colo.seagate.com"
-      "ip": "10.230.243.87"
-      "username": "root"
-      "password": "seagate"
-      "node_type": "worker"
-
-"csm":
-    "mgmt_vip": "ssc-vm-g3-rhev4-2555.colo.seagate.com"
-    "port": "31169"
-    "csm_admin_user":
-        "username": "cortxadmin"
-        "password": "Cortxadmin@123"
-
-"s3endpoints":
-    "s3_io": "s3.seagate.com"
-    "s3_auth": "iam.seagate.com:9443"
-
-"max_storage": 98.0  # Storage percentage should not exceed for IO to be run on cluster.
-"max_sb": 5
