@@ -1306,10 +1306,11 @@ class ProvDeployK8sCortxLib:
             worker_nodes.append(nodes.hostname)
         LOGGER.info("Data from setup_details %s", worker_nodes)
         master_rsp = master_node_list[0].execute_cmd(cmd2, read_lines=True)
-        if worker_nodes.sort() == resp[1:].sort() and master_rsp[-1].strip() == master_node_list[0].hostname:
-            LOGGER.debug("Master and Worker nodes are matched. skipping K8s Cluster")
-            return True
-        else:
-            LOGGER.error("Input Setup details mismatch with current setup")
-            return False
+        if len(worker_nodes) == len(worker_list):
+            if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == master_node_list[0].hostname:
+                LOGGER.debug("Master and Worker nodes are matched. skipping K8s Cluster")
+                return True
+            else:
+                LOGGER.error("Input Setup details mismatch with current setup")
+                return False
 
