@@ -21,10 +21,11 @@
 
 import logging
 import os
-import sys
-import shutil
+import random
+import hashlib
 from datetime import datetime, timedelta
 from time import perf_counter_ns
+from typing import Optional
 from botocore.exceptions import ClientError
 from libs.io.s3api.s3_multipart_ops import S3MultiParts
 from libs.io.s3api.s3_object_ops import S3Object
@@ -38,7 +39,8 @@ class S3MutiParts(S3MultiParts, S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, object_size: int, part_range: list, duration: timedelta = None) -> None:
+                 use_ssl: str, object_size: Optional[int, dict], part_range: dict,
+                 duration: timedelta = None) -> None:
         """
         s3 multipart init class.
 
@@ -49,7 +51,7 @@ class S3MutiParts(S3MultiParts, S3Object, S3Bucket):
         :param use_ssl: To use secure connection.
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """
-        super().__init__(access_key, secret_key, endpoint_url, use_ssl=use_ssl)
+        super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
         self.duration = duration
         self.mpart_bucket = "s3mpart_bkt_{}_{}".format(
             test_id.lower() if test_id else "sample", perf_counter_ns())
@@ -59,13 +61,57 @@ class S3MutiParts(S3MultiParts, S3Object, S3Bucket):
         self.part_range = part_range
         self.test_id = test_id
         self.iteration = 1
-        if not duration:
-            self.finish_time = datetime.now() + timedelta(hours=int(100 * 24))
-        else:
-            self.finish_time = datetime.now() + duration
+        self.min_duration = 10  # In seconds
+        self.finish_time = datetime.now() + duration if duration else datetime.now() + \
+            timedelta(hours=int(100 * 24))
 
-    def run_workload(self):
+    def execute_multipart_workload(self):
         """Execute multipart workload for specific duration."""
-        logger.info("Iteration {} is started...", self.iteration)
-        response = self.create_bucket(self.mpart_bucket)
-        
+        while True:
+            logger.info("Iteration {} is started...", self.iteration)
+            try:
+                file_size = self.object_size if not isinstance(
+                    self.object_size, dict) else random.randrange(
+                    self.object_size["start"], self.object_size["end"])
+                number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
+                single_part_size = file_size // number_of_parts
+                logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
+                response = self.create_bucket(self.mpart_bucket)
+                logger.info(response)
+                response = self.create_multipart_upload(self.mpart_bucket, self.s3mpart_object)
+                mpu_id = response["UploadId"]
+                parts = list()
+                file_hash = hashlib.md5()
+                for i in range(1, number_of_parts + 1):
+                    byte_s = os.urandom(single_part_size)
+                    response = self.upload_part(byte_s, self.mpart_bucket,
+                                                self.object_size, upload_id=mpu_id, part_number=i)
+                    parts.append({"PartNumber": i, "ETag": response["ETag"]})
+                    file_hash.update(byte_s)
+                upload_obj_checksum = file_hash.hexdigest()
+                logger.info("Checksum of uploaded object:", upload_obj_checksum)
+                response = self.list_parts(mpu_id, self.mpart_bucket, self.s3mpart_object)
+                logger.info(response)
+                response = self.list_multipart_uploads(self.mpart_bucket)
+                logger.info(response)
+                response = self.complete_multipart_upload(
+                    mpu_id, parts, self.mpart_bucket, self.s3mpart_object)
+                logger.info(response)
+                response = self.head_object(self.mpart_bucket, self.s3mpart_object)
+                logger.info(response)
+                download_obj_checksum = self.get_s3object_md5sum(
+                    self.mpart_bucket, self.s3mpart_object, single_part_size)
+                logger.info("Checksum of s3 object:", download_obj_checksum)
+                if upload_obj_checksum != download_obj_checksum:
+                    raise ClientError(
+                        f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}",
+                        operation_name="Match checksum")
+            except (ClientError, IOError, AssertionError) as err:
+                logger.exception(err)
+                return False, str(err)
+            timedelta_v = (self.finish_time - datetime.now())
+            timedelta_sec = timedelta_v.total_seconds()
+            if timedelta_sec < self.min_duration:
+                return True, "Multipart execution completed successfully."
+            logger.info("Iteration {} is completed...", self.iteration)
+            self.iteration += 1
