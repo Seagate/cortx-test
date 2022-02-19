@@ -24,6 +24,7 @@
 
 import os
 import logging
+import hashlib
 
 from libs.io.s3api.s3_restapi import S3RestApi
 
@@ -146,3 +147,21 @@ class S3Object(S3RestApi):
         LOGGER.debug(response)
 
         return response
+
+    def get_s3object_md5sum(self, bucket_name: str, object_name: str, byte_to_read: int) -> str:
+        """
+        Read object in chunk and calculate md5sum.
+
+        :param bucket_name: The name of the s3 bucket.
+        :param object_name: The name of the s3 object.
+        :param byte_to_read: range to read content of s3 object.
+        """
+        file_obj = self.s3_resource.Object(bucket_name, object_name).get()['Body']
+        file_hash = hashlib.md5()
+        content = file_obj.read(byte_to_read)
+        file_hash.update(content)
+        while content:
+            content = file_obj.read(byte_to_read)
+            file_hash.update(content)
+
+        return file_hash.hexdigest()
