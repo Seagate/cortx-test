@@ -806,9 +806,6 @@ class TestR2SupportBundle:
             self.LOGGER.info("Step 5: Checking component log files in collected support bundle")
             comp_list = constants.SB_POD_PREFIX_AND_COMPONENT_LIST[pod]
             for comp in comp_list:
-                if comp == "csm":
-                    comp = sb_identifier + "_" + machine_id + "_" + comp
-
                 if comp in comp_in_sb:
                     comp_dir_path = sb_local_path + "/" + sb_identifier + "/" + comp
                     comp_tar_files = os.listdir(comp_dir_path)
@@ -854,7 +851,7 @@ class TestR2SupportBundle:
                         else:
                             assert_utils.assert_true(False, "No utils log file "
                                                             "found in support bundle")
-                    if comp == sb_identifier + "_" + machine_id + "_" + "csm":
+                    if comp == "csm":
                         resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/csm", "csm")
                         if resp:
                             self.LOGGER.info("csm logs are present in support Bundle")

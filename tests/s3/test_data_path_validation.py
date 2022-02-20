@@ -26,7 +26,6 @@ from commons import commands as cmd
 from commons.constants import const
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.commands import CMD_S3BENCH
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.health_helper import Health
 from config import CMN_CFG as CM_CFG
@@ -144,30 +143,21 @@ class TestDataPathValidation:
         :return: None
         """
         self.log.info("concurrent users TC using S3bench")
-        s3bench_cmd = CMD_S3BENCH.format(
-            self.access_key,
-            self.secret_key,
-            bucket,
-            S3_CFG["s3b_url"],
-            100,
-            100,
-            obj_prefix,
-            "4Kb")
-        resp = system_utils.run_local_cmd(s3bench_cmd)
-        self.log.debug(resp)
+        res = s3bench_obj.s3bench(
+            access_key=self.access_key,
+            secret_key=self.secret_key,
+            bucket=bucket,
+            end_point=S3_CFG['s3b_url'],
+            num_clients=100,
+            num_sample=100,
+            obj_name_pref=obj_prefix,
+            obj_size="4Kb",
+            log_file_prefix=obj_prefix)
+        self.log.debug(res)
+        self.log_file.append(res[1])
+        resp = system_utils.validate_s3bench_parallel_execution(
+            log_dir=s3bench_obj.LOG_DIR, log_prefix=obj_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_is_not_none(resp[1], resp)
-        resp_split = resp[1].split("\\n")
-        resp_filtered = [i for i in resp_split if 'Number of Errors' in i]
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        assert_utils.assert_not_in(
-            "exit status 2", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
-        assert_utils.assert_not_in(
-            "panic", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_data_path
