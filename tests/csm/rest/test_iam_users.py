@@ -23,10 +23,12 @@ NOTE: These tests are no longer valid as CSM will no longer support IAM user ope
 """
 import logging
 import pytest
+import time
 from http import HTTPStatus
 
 from commons import configmanager
 from commons import cortxlogging
+from commons.constants import Rest as const
 from commons.utils import assert_utils
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -150,6 +152,15 @@ class TestIamUserRGW():
         assert setup_ready
         cls.created_iam_users = set()
         cls.log.info("[END] CSM setup class completed.")
+
+    def teardown_method(self):
+        """Teardown method which run after each function.
+        """
+        self.log.info("Teardown started")
+        for user in self.created_iam_users:
+            # TODO delete iam user
+            self.log.info("deleting iam user %s", user)
+        self.log.info("Teardown ended")
 
     @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
@@ -304,6 +315,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        self.created_iam_users.add(optional_payload['uid'])
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -331,6 +343,7 @@ class TestIamUserRGW():
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+            self.created_iam_users.add(optional_payload['uid'])
             resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
             assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                               f"expected was {resp[2]}, received {resp[3]}")
@@ -358,6 +371,7 @@ class TestIamUserRGW():
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+            self.created_iam_users.add(optional_payload['uid'])
             resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
             assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                               f"expected was {resp[2]}, received {resp[3]}")
@@ -405,6 +419,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        self.created_iam_users.add(uid)
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -437,6 +452,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        self.created_iam_users.add(uid)
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -481,6 +497,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        self.created_iam_users.add(payload["uid"])
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -521,11 +538,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user with generate-keys=false")
-        self.log.info(f"Creating new iam user {uid}")
+        self.log.info("Creating new iam user")
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"generate-keys": False})
-        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        self.created_iam_users.add(payload["uid"])
         if resp["keys"][0]["access_key"] != "":
             assert_utils.assert_true(False, "access key is available in response")
         elif resp["keys"][0]["secret_key"] != "":

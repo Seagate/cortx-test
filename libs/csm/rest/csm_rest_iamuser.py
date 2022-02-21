@@ -19,19 +19,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test library for IAM user related operations."""
-import time
-from string import Template
 import json
+import random
+import time
 from http import HTTPStatus
+from random import randrange
 from requests.models import Response
-from commons.constants import S3_ENGINE_RGW
-from commons.constants import Rest as const
+from string import Template
+
 import commons.errorcodes as err
+from commons.constants import Rest as const
+from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from config import CMN_CFG, CSM_REST_CFG
-from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
 class RestIamUser(RestTestLib):
@@ -103,7 +106,7 @@ class RestIamUser(RestTestLib):
 
     def create_and_verify_iam_user_response_code(self,
                                                  user=const.IAM_USER +
-                                                 str(int(time.time())),
+                                                      str(int(time.time())),
                                                  password=const.IAM_PASSWORD,
                                                  expected_status_code=200):
         """
@@ -419,7 +422,11 @@ class RestIamUser(RestTestLib):
                                   msg="Delete IAM users request failed.")
         return response
 
-    def iam_user_option_payload_rgw(self, payload):
+    @staticmethod
+    def iam_user_option_payload_rgw(payload):
+        """
+            Get optional parameters
+        """
         email = user_id + "@seagate.com"
         key_type = "s3"
         access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
@@ -429,8 +436,6 @@ class RestIamUser(RestTestLib):
         max_buckets = 1000
         suspended = False
         tenant = ""
-        payload.update({"uid": user_id})
-        payload.update({"display_name": display_name})
         payload.update({"email": email})
         payload.update({"key_type": key_type})
         payload.update({"access_key": access_key})
@@ -461,7 +466,7 @@ class RestIamUser(RestTestLib):
             optional_payload = payload.copy()
             ran_sel = random.sample(range(0, len(optional_payload)),
                                     randrange(0, len(optional_payload)))
-            for i, (k, v) in enumerate(payload.items()):
+            for i, (k, _) in enumerate(payload.items()):
                 if i not in ran_sel:
                     del optional_payload[k]
             optional_payload.update({"uid": user_id})
@@ -521,9 +526,9 @@ class RestIamUser(RestTestLib):
             result = True
             if verify_response:
                 self.log.info("Checking response...")
-                for key,value in payload.items():
+                for key, value in payload.items():
                     if value != resp[key]:
-                        self.log.info("Expected response for %s: %s", key,value)
+                        self.log.info("Expected response for %s: %s", key, value)
                         self.log.info("Actual response for %s: %s", key, resp[key])
                         self.log.error("Actual and expected response for %s didnt match", key)
                         result = False
