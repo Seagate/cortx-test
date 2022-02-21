@@ -111,3 +111,24 @@ class HAK8SCompLib:
                                        password=CMN_CFG["nodes"][node]["password"])
                 break
         return node_obj
+
+    @staticmethod
+    def check_ha_services(master_node_obj):
+        """
+        Helper function to check whether all ha services are running
+        :param master_node_obj:  Master node(Logical Node object)
+        :return True/False
+        """
+        pod_list = master_node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+        output = master_node_obj.execute_cmd(
+            cmd=common_cmd.KUBECTL_GET_POD_CONTAINERS.format(pod_name),
+            read_lines=True)
+        container_list = output[0].split()
+        for container in container_list:
+            res = master_node_obj.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {container} -- {common_cmd.SERVICE_HA_STATUS}", decode=True)
+            if HA_PROCESS not in res:
+                return False
+        return True
