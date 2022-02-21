@@ -37,6 +37,7 @@ from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import HA_TEST_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
+from commons.constants import S3_ENGINE_RGW
 
 
 def split_args(sys_cmd: List):
@@ -119,7 +120,10 @@ else:
     S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
+if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+    S3_CFG["region"] = "default"
 CMN_CFG.update(S3_CFG)
+
 JMETER_CFG = configmanager.get_config_wrapper(
     fpath=CSM_CONFIG, config_key="JMeterConfig", target=target, target_key="csm")
 

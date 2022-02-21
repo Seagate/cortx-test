@@ -152,7 +152,8 @@ class TestDataPathValidation:
             100,
             100,
             obj_prefix,
-            "4Kb")
+            "4Kb",
+            "us-east-1")
         resp = system_utils.run_local_cmd(s3bench_cmd)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], resp[1])
