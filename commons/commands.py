@@ -301,7 +301,7 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 
 # S3 bench
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
-              "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={} -region={}"
+              "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
 
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
