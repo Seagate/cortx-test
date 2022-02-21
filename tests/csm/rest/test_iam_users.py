@@ -25,8 +25,8 @@ import logging
 import time
 from http import HTTPStatus
 import os
+from random import SystemRandom
 import pytest
-import random
 
 from commons import configmanager
 from commons import cortxlogging
@@ -59,6 +59,8 @@ class TestIamUser():
         assert setup_ready
         cls.created_iam_users = set()
         cls.rest_iam_user = RestIamUser()
+        cls.cryptogen = SystemRandom()
+        cls.file_size = self.cryptogen.randrange(10, 100)
         cls.log.info("Initiating Rest Client ...")
 
     def teardown_method(self):
@@ -385,11 +387,10 @@ class TestIamUserRGW():
             status, resp = s3_obj.create_bucket(bucket_name)
             assert_utils.assert_true(status, resp)
             test_file = "test-object.txt"
-            size = random.randint(10, 100)
             file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-            system_utils.create_file(file_path_upload, size)
+            system_utils.create_file(file_path_upload, self.file_size)
             self.log.info("Step: Verify put object.")
             resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
@@ -447,7 +448,7 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user with max bucket 1")
         uid = "iam_user_1_" + str(int(time.time()))
-        self.log.info(f"Creating new iam user {uid}")
+        self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
@@ -468,16 +469,15 @@ class TestIamUserRGW():
             if bucket_cnt == 0:
                 assert_utils.assert_true(status, resp)
                 test_file = "test-object.txt"
-                size = random.randint(10, 100)
                 file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
                 if os.path.exists(file_path_upload):
                     os.remove(file_path_upload)
-                system_utils.create_file(file_path_upload, size)
+                system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
-                resp = self.s3_test_obj.get_object(bucket_name, test_file)
+                resp = s3_obj.get_object(bucket_name, test_file)
                 assert_utils.assert_false(resp[0], resp)
             else:
                 assert_utils.assert_false(status, resp)
@@ -513,11 +513,10 @@ class TestIamUserRGW():
             if bucket_cnt < 1000:
                 assert_utils.assert_true(status, resp)
                 test_file = "test-object.txt"
-                size = random.randint(10, 100)
                 file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
                 if os.path.exists(file_path_upload):
                     os.remove(file_path_upload)
-                system_utils.create_file(file_path_upload, size)
+                system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
                 assert_utils.assert_true(resp[0], resp[1])

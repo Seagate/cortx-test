@@ -23,9 +23,9 @@ import json
 import random
 import time
 from http import HTTPStatus
-from random import randrange
-from requests.models import Response
+from random import SystemRandom
 from string import Template
+from requests.models import Response
 
 import commons.errorcodes as err
 from commons.constants import Rest as const
@@ -45,6 +45,7 @@ class RestIamUser(RestTestLib):
         self.template_payload = Template(const.IAM_USER_DATA_PAYLOAD)
         self.iam_user = None
         self.csm_user = RestCsmUser()
+        self.cryptogen = SystemRandom()
 
     @RestTestLib.authenticate_and_login
     def create_iam_user(self, user=const.IAM_USER,
@@ -465,7 +466,7 @@ class RestIamUser(RestTestLib):
             del payload["display_name"]
             optional_payload = payload.copy()
             ran_sel = random.sample(range(0, len(optional_payload)),
-                                    randrange(0, len(optional_payload)))
+                                    self.cryptogen.randrange(0, len(optional_payload)))
             for i, (k, _) in enumerate(payload.items()):
                 if i not in ran_sel:
                     del optional_payload[k]
