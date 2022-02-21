@@ -335,6 +335,7 @@ class TestPodFailure:
         LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
             LOGGER.info("Step 3: Shutdown %s data pod %s by deleting deployment (unsafe)",
                         count, pod_name)
             pod_data = list()
