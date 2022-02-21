@@ -74,8 +74,9 @@ class AbsHost:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             LOGGER.debug("Connecting to host: %s", str(self.hostname))
-            i = 0
-            while i < CMN_CFG['ssh_retry_count']:
+            count = 0
+            retry_count = 3
+            while count < retry_count:
                 try:
                     self.host_obj.connect(hostname=self.hostname,
                                           username=self.username,
@@ -85,8 +86,8 @@ class AbsHost:
                     break
                 except SSHException as error:
                     LOGGER.exception("Exception is %s", error)
-                    i = i+1
-                    if i == CMN_CFG['ssh_retry_count']:
+                    count = count+1
+                    if count == retry_count:
                         raise error
                     LOGGER.debug("Retrying to connect the host")
 

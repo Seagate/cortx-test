@@ -1,7 +1,6 @@
 # Common configs
 delay_60sec: 60
 sshWaitTime: 120
-ssh_retry_count: 3
 
 dataPathServices:
   - "s3authserver"
