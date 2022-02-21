@@ -394,6 +394,8 @@ class TestIamUserRGW():
             self.log.info("Step: Verify put object.")
             resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
+            self.log.info("Removing uploaded object from a local path.")
+            os.remove(file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
             resp = s3_obj.get_object(bucket_name, test_file)
@@ -475,6 +477,8 @@ class TestIamUserRGW():
                 system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
+                self.log.info("Removing uploaded object from a local path.")
+                os.remove(file_path_upload)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
                 resp = s3_obj.get_object(bucket_name, test_file)
@@ -519,6 +523,8 @@ class TestIamUserRGW():
                 system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
+                self.log.info("Removing uploaded object from a local path.")
+                os.remove(file_path_upload)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
                 resp = s3_obj.get_object(bucket_name, test_file)

@@ -424,10 +424,11 @@ class RestIamUser(RestTestLib):
         return response
 
     @staticmethod
-    def iam_user_option_payload_rgw(payload):
+    def iam_user_optional_payload_rgw(payload):
         """
             Get optional parameters
         """
+        user_id = payload["uid"]
         email = user_id + "@seagate.com"
         key_type = "s3"
         access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
@@ -459,9 +460,9 @@ class RestIamUser(RestTestLib):
         payload.update({"uid": user_id})
         payload.update({"display_name": display_name})
         if user_type == "loaded":
-            payload = self.iam_user_option_payload_rgw(payload)
+            payload = self.iam_user_optional_payload_rgw(payload)
         elif user_type == "random":
-            payload = self.iam_user_option_payload_rgw(payload)
+            payload = self.iam_user_optional_payload_rgw(payload)
             del payload["uid"]
             del payload["display_name"]
             optional_payload = payload.copy()
