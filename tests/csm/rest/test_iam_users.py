@@ -21,14 +21,17 @@
 """Tests various operations on IAM users using REST API
 NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
-from http import HTTPStatus
 import logging
 import pytest
+from http import HTTPStatus
+
 from commons import configmanager
 from commons import cortxlogging
+from commons.utils import assert_utils
+from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
-from libs.csm.csm_interface import csm_api_factory
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestIamUser():
@@ -76,8 +79,8 @@ class TestIamUser():
         assert status, response
         user_name = response['user_name']
         self.created_iam_users.add(response['user_name'])
-        assert(
-            self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
+        assert (
+                self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
@@ -129,6 +132,7 @@ class TestIamUserRGW():
     """
     Tests related to RGW
     """
+
     @classmethod
     def setup_class(cls):
         """
@@ -171,16 +175,16 @@ class TestIamUserRGW():
         payload["display-name"] = ""
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
-               "Status code check failed for empty display name"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for empty display name"
         self.log.info("[END] Testing with empty display name")
 
         self.log.info("[START] Testing with empty UID and display name")
         payload = {"uid": "", "display-name": ""}
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
-               "Status code check failed for empty uid and display name"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for empty uid and display name"
         self.log.info("[END] Testing with empty UID and display name")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -208,16 +212,16 @@ class TestIamUserRGW():
         payload.pop("display-name")
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
-               "Status code check failed for missing display name"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for missing display name"
         self.log.info("[END] Testing with missing display name")
 
         self.log.info("[START] Testing with missing UID and display name")
         payload = {}
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
-               "Status code check failed for missing uid and display name"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for missing uid and display name"
         self.log.info("[END] Testing with missing UID and display name")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -240,7 +244,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with basic parameters")
 
         self.log.info("[START] Creating IAM user with all parameters")
-        result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+        result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="loaded",
                                                                verify_response=True)
         assert result, "Failed to create IAM user using all parameters."
         self.log.info("Response : %s", resp)
@@ -282,4 +286,249 @@ class TestIamUserRGW():
         assert result, "Failed to create IAM user using basic parameters."
         self.log.info("TODO Verify Response : %s", resp)
         self.log.info("[END]Creating IAM user with basic parameters")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35929')
+    def test_35929(self):
+        """
+        Test create IAM User with random selection of optional parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with random selection of optional parameters")
+        optional_payload = self.csm_obj.iam_user_payload_rgw("random")
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                          f"expected was {resp[2]}, received {resp[3]}")
+        self.log.info("Verified Response")
+        self.log.info("[END]Creating IAM user with random selection of optional parameters")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35930')
+    def test_35930(self):
+        """
+        Test create MAX IAM Users with random selection of optional parameters.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating %s IAM user with random selection of optional parameters",
+                      const.MAX_IAM_USERS)
+        for cnt in range(const.MAX_IAM_USERS):
+            self.log.info("Creating IAM user number %s with random selection of optional "
+                          "parameters", cnt)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("random")
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                              f"expected was {resp[2]}, received {resp[3]}")
+        self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35931')
+    def test_35931(self):
+        """
+        Test create IAM users with different tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        bucket_name = "iam_user_bucket_" + str(int(time.time()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                              f"expected was {resp[2]}, received {resp[3]}")
+            self.log.info("Create bucket and perform IO")
+            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
+                               secret_key=resp["keys"][0]["secret_key"])
+            self.log.info("Step: Verify create bucket")
+            status, resp = s3_obj.create_bucket(bucket_name)
+            assert_utils.assert_true(status, resp)
+            test_file = "test-object.txt"
+            size = random.randint(10, 100)
+            file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+            if os.path.exists(file_path_upload):
+                os.remove(file_path_upload)
+            system_utils.create_file(file_path_upload, size)
+            self.log.info("Step: Verify put object.")
+            resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                     file_path=file_path_upload)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Step: Verify get object.")
+            resp = self.s3_test_obj.get_object(bucket_name, test_file)
+            assert_utils.assert_false(resp[0], resp)
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35932')
+    def test_35932(self):
+        """
+        Test create IAM user with suspended true, and perform IO
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with suspended")
+        uid = "iam_user_1_" + str(int(time.time()))
+        bucket_name = "iam_user_bucket_" + str(int(time.time()))
+        self.log.info(f"Creating new iam user {uid}")
+        payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        payload.update({"uid": uid})
+        payload.update({"display_name": uid})
+        payload.update({"suspended": True})
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                          f"expected was {resp[2]}, received {resp[3]}")
+        self.log.info("Verify create bucket")
+        s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
+                           secret_key=resp["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_false(status, resp)
+        self.log.info("[END]Creating IAM user with suspended")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35933')
+    def test_35933(self):
+        """
+        Create user and check max bucket parameter
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with max bucket 1")
+        uid = "iam_user_1_" + str(int(time.time()))
+        self.log.info(f"Creating new iam user {uid}")
+        payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        payload.update({"uid": uid})
+        payload.update({"display_name": uid})
+        payload.update({"max_buckets": 1})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                          f"expected was {resp[2]}, received {resp[3]}")
+        for bucket_cnt in range(2):
+            bucket_name = "iam_user_bucket_" + str(bucket_cnt) + str(int(time.time()))
+            # Create bucket with bucket_name and perform IO
+            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
+                               secret_key=resp["keys"][0]["secret_key"])
+            status, resp = s3_obj.create_bucket(bucket_name)
+            if bucket_cnt == 0:
+                assert_utils.assert_true(status, resp)
+                test_file = "test-object.txt"
+                size = random.randint(10, 100)
+                file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+                if os.path.exists(file_path_upload):
+                    os.remove(file_path_upload)
+                system_utils.create_file(file_path_upload, size)
+                resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                         file_path=file_path_upload)
+                assert_utils.assert_true(resp[0], resp[1])
+                self.log.info("Step: Verify get object.")
+                resp = self.s3_test_obj.get_object(bucket_name, test_file)
+                assert_utils.assert_false(resp[0], resp)
+            else:
+                assert_utils.assert_false(status, resp)
+        self.log.info("[END]Creating IAM user with max bucket 1")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35934')
+    def test_35934(self):
+        """
+        Create user and check max bucket parameter
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with max buckets")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
+                                          f"expected was {resp[2]}, received {resp[3]}")
+        for bucket_cnt in range(1001):
+            bucket_name = "iam_user_bucket_" + str(bucket_cnt) + str(int(time.time()))
+            # Create bucket with bucket_name and perform IO
+            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
+                               secret_key=resp["keys"][0]["secret_key"])
+            status, resp = s3_obj.create_bucket(bucket_name)
+            if bucket_cnt < 1000:
+                assert_utils.assert_true(status, resp)
+                test_file = "test-object.txt"
+                size = random.randint(10, 100)
+                file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+                if os.path.exists(file_path_upload):
+                    os.remove(file_path_upload)
+                system_utils.create_file(file_path_upload, size)
+                resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                         file_path=file_path_upload)
+                assert_utils.assert_true(resp[0], resp[1])
+                self.log.info("Step: Verify get object.")
+                resp = self.s3_test_obj.get_object(bucket_name, test_file)
+                assert_utils.assert_false(resp[0], resp)
+            else:
+                assert_utils.assert_false(status, resp)
+        self.log.info("[END]Creating IAM user with max buckets")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-35935')
+    def test_35935(self):
+        """
+        Create user with generate-keys=false
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM user with generate-keys=false")
+        self.log.info(f"Creating new iam user {uid}")
+        payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        payload.update({"generate-keys": False})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        if resp["keys"][0]["access_key"] != "":
+            assert_utils.assert_true(False, "access key is available in response")
+        elif resp["keys"][0]["secret_key"] != "":
+            assert_utils.assert_true(False, "secret key is available in response")
+        self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)

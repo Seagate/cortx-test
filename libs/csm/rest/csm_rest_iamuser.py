@@ -419,14 +419,7 @@ class RestIamUser(RestTestLib):
                                   msg="Delete IAM users request failed.")
         return response
 
-    def iam_user_payload_rgw(self, user_type="valid"):
-        """
-        Return payload for IAM user for RGW with Ceph
-        """
-        # Initialize all variables
-        payload = {}
-        user_id = const.IAM_USER + str(int(time.time()))
-        display_name = const.IAM_USER + str(int(time.time()))
+    def iam_user_option_payload_rgw(self, payload):
         email = user_id + "@seagate.com"
         key_type = "s3"
         access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
@@ -436,23 +429,72 @@ class RestIamUser(RestTestLib):
         max_buckets = 1000
         suspended = False
         tenant = ""
-        if user_type == "valid":
-            payload.update({"uid": user_id})
-            payload.update({"display_name": display_name})
+        payload.update({"uid": user_id})
+        payload.update({"display_name": display_name})
+        payload.update({"email": email})
+        payload.update({"key_type": key_type})
+        payload.update({"access_key": access_key})
+        payload.update({"secret_key": secret_key})
+        payload.update({"user_caps": user_cap})
+        payload.update({"generate_key": generate_key})
+        payload.update({"max_buckets": max_buckets})
+        payload.update({"suspended": suspended})
+        payload.update({"tenant": tenant})
+        return payload
+
+    def iam_user_payload_rgw(self, user_type="valid"):
+        """
+        Return payload for IAM user for RGW with Ceph
+        """
+        # Initialize all variables
+        payload = {}
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        payload.update({"uid": user_id})
+        payload.update({"display_name": display_name})
         if user_type == "loaded":
-            payload.update({"uid": user_id})
-            payload.update({"display_name": display_name})
-            payload.update({"email": email})
-            payload.update({"key_type": key_type})
-            payload.update({"access_key": access_key})
-            payload.update({"secret_key": secret_key})
-            payload.update({"user_caps": user_cap})
-            payload.update({"generate_key": generate_key})
-            payload.update({"max_buckets": max_buckets})
-            payload.update({"suspended": suspended})
-            payload.update({"tenant": tenant})
+            payload = self.iam_user_option_payload_rgw(payload)
+        elif user_type == "random":
+            payload = self.iam_user_option_payload_rgw(payload)
+            del payload["uid"]
+            del payload["display_name"]
+            optional_payload = payload.copy()
+            ran_sel = random.sample(range(0, len(optional_payload)),
+                                    randrange(0, len(optional_payload)))
+            for i, (k, v) in enumerate(payload.items()):
+                if i not in ran_sel:
+                    del optional_payload[k]
+            optional_payload.update({"uid": user_id})
+            optional_payload.update({"display_name": display_name})
+            payload = optional_payload.copy()
         self.log.info("Payload : %s", payload)
         return payload
+
+    @staticmethod
+    def compare_iam_payload_response(rest_response, payload):
+        """
+            Compare rest response with expected response
+        """
+        payload["user_id"] = payload.pop("uid")
+        payload["caps"] = payload.pop("user_caps")
+        for key, value in payload.items():
+            if key in rest_response:
+                if key == "suspended":
+                    expected_val = 0
+                    if value:
+                        expected_val = 1
+                    if rest_response[key] != expected_val:
+                        return False, key, expected_val, rest_response[key]
+                if key == "access_key":
+                    if value != rest_response["keys"][0]["access_key"]:
+                        return False, key, value, rest_response["keys"][0]["access_key"]
+
+                elif key == "secret_key":
+                    if value != rest_response["keys"][0]["secret_key"]:
+                        return False, key, value, rest_response["keys"][0]["secret_key"]
+                elif rest_response[key] != value:
+                    return False, key, value, rest_response[key]
+        return True, None
 
     @RestTestLib.authenticate_and_login
     def create_iam_user_rgw(self, payload: dict):
