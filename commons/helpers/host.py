@@ -38,6 +38,7 @@ import pysftp
 from paramiko.ssh_exception import SSHException
 
 from commons import commands, const
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class AbsHost:
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             LOGGER.debug("Connecting to host: %s", str(self.hostname))
             i = 0
-            while i < 2:
+            while i < CMN_CFG['ssh_retry_count']:
                 try:
                     self.host_obj.connect(hostname=self.hostname,
                                           username=self.username,
@@ -83,10 +84,12 @@ class AbsHost:
                                           **kwargs)
                     break
                 except SSHException as error:
-                    LOGGER.exception("catch %s", error)
+                    LOGGER.exception("Exception is %s", error)
                     i = i+1
-                    if i == 2:
+                    if i == CMN_CFG['ssh_retry_count']:
                         raise error
+                    else:
+                        LOGGER.debug("Retrying to connect the host")
 
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
