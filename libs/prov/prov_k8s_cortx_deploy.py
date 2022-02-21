@@ -1288,9 +1288,10 @@ class ProvDeployK8sCortxLib:
     @staticmethod
     def verify_k8s_cluster_exists(master_node_list, worker_node_list):
         """
-        This method is to verfiy the K8S setup exists for given set of nodes.
+        This method is to verify the K8S setup exists for given set of nodes.
         master_node_list: is the Master Node
         worker_node_list: Worker Nodes
+        returns True if we have K8s cluster exists
         """
         resp = master_node_list[0].execute_cmd(common_cmd.K8S_WORKER_NODES,
                                                read_lines=True)
@@ -1300,16 +1301,17 @@ class ProvDeployK8sCortxLib:
         worker_nodes = []
         for worker in resp[1:]:
             worker_list.append(worker.strip())
-        LOGGER.info(worker_list)
+        LOGGER.debug(worker_list)
         for nodes in worker_node_list:
             worker_nodes.append(nodes.hostname)
-        LOGGER.info("Data from setup_details %s", worker_nodes)
+        LOGGER.debug("Data from setup_details %s", worker_nodes)
         master_rsp = master_node_list[0].execute_cmd(common_cmd.K8S_MASTER_NODE,
                                                      read_lines=True)
         if len(worker_nodes) == len(worker_list):
             if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == \
                     master_node_list[0].hostname:
-                LOGGER.debug("Master and Worker nodes are matched.skipping K8s Cluster")
+                LOGGER.debug("Master and Worker nodes are matched."
+                             "skipping K8s Cluster deployment")
                 return True
             LOGGER.error("Input Setup details mismatch with current setup")
             return False

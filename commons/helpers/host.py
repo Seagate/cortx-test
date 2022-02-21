@@ -84,7 +84,7 @@ class AbsHost:
                                           **kwargs)
                     break
                 except SSHException as error:
-                    LOGGER.exception("Exception is %s", error)
+                    LOGGER.exception("Exception in connecting %s", error)
                     count = count+1
                     if count == retry_count:
                         raise error
