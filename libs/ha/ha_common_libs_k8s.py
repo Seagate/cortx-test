@@ -995,8 +995,12 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(HA_CFG["common_params"]["20sec_delay"])
-                        bucket_list = s3_test_obj.bucket_list()[1]
+                        while True:
+                            time.sleep(HA_CFG["common_params"]["5sec_delay"])
+                            bucket_list = s3_test_obj.bucket_list()[1]
+                            if len(bucket_list) > 0:
+                                time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                                break
 
             LOGGER.info("Deleted %s number of buckets.", count)
 
