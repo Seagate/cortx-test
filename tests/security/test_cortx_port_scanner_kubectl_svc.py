@@ -2,11 +2,15 @@
 This is cortx port scanner using kubectl svc
 """
 import logging
+import os
+import pytest
 from kubernetes import client, config
 from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
+@pytest.mark.security
+@pytest.mark.tags("TEST-34217")
 def test_cortx_port_scanner_kubectl_svc():
 
     """
@@ -18,9 +22,13 @@ def test_cortx_port_scanner_kubectl_svc():
 
     LOGGER.info(' This is cortx port scanner!')
 
-    option="kubernetes-admin@kubernetes"
-
-    config.load_kube_config(context=option)
+    k8s_config_file = os.environ.get('KUBECONFIG')
+    if k8s_config_file:
+        logging.info('Loading kubernetes config from the file %s', k8s_config_file)
+        config.load_kube_config(config_file=k8s_config_file)
+    else:
+        k8s_config_file="/root/.kube/config"
+        config.load_kube_config(config_file=k8s_config_file)
 
     # listing all pods
 
@@ -55,7 +63,7 @@ def test_cortx_port_scanner_kubectl_svc():
     # Read port numbers from file specification
     req_port_list = []
 
-    with open("requirement_ports.txt") as file:
+    with open("tests/security/requirement_ports.txt") as file:
         for req_ports in file:
             LOGGER.info(req_ports.rstrip())
             req_port_list.append(int(req_ports.rstrip()))
@@ -82,10 +90,6 @@ def test_cortx_port_scanner_kubectl_svc():
     final_list_of_fault_ports.sort()
     LOGGER.info(final_list_of_fault_ports)
     if final_list_of_fault_ports:
-        assert_utils.assert_true(False, "Incorrect ports opened in cortx cluster...")
+        LOGGER.error(" Test Failed!!")
     else:
         LOGGER.info(" Test Case successful!!")
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, filename='port_scanner_kubectl_svc.log')
-    test_cortx_port_scanner_kubectl_svc()
