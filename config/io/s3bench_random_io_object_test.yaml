@@ -1,7 +1,8 @@
 test_1:
   TEST_ID: TEST-35678
-  start_range: 0Kib
-  end_range: 100Kib
+  object_size:
+    start : 0Kib
+    end : 100Kib
   result_duration: 1h
   sessions_per_node: 1
   samples: 100
@@ -9,8 +10,9 @@ test_1:
 
 test_2:
   TEST_ID: TEST-35679
-  start_range: 100Kib
-  end_range: 1Mib
+  object_size:
+    start: 100Kib
+    end: 1Mib
   result_duration: 4h
   sessions_per_node: 2
   samples: 200
@@ -18,17 +20,19 @@ test_2:
 
 test_3:
   TEST_ID: TEST-35680
-  start_range: 1Mib
-  end_range: 10Mib
-  result_duration: 1d
+  object_size:
+    start: 1Mib
+    end: 10Mib
+  result_duration: 20h
   sessions_per_node: 3
   samples: 300
   tool: s3bench
 
 test_4:
   TEST_ID: TEST-35681
-  start_range: 10Mib
-  end_range: 20Mib
+  object_size:
+    start: 10Mib
+    end: 20Mib
   result_duration: 1d
   sessions_per_node: 5
   samples: 400
@@ -36,8 +40,9 @@ test_4:
 
 test_5:
   TEST_ID: TEST-35682
-  start_range: 20Mib
-  end_range: 100Mib
+  object_size:
+    start: 20Mib
+    end: 100Mib
   result_duration: 1d
   sessions_per_node: 8
   samples: 500
@@ -45,35 +50,39 @@ test_5:
 
 test_6:
   TEST_ID: TEST-35683
-  start_range: 100Mib
-  end_range: 500Mib
-  result_duration: 1d
+  object_size:
+    start: 100Mib
+    end: 500Mib
+  result_duration: 2d
   sessions_per_node: 13
   samples: 600
   tool: s3bench
 
 test_7:
   TEST_ID: TEST-35684
-  start_range: 500Mib
-  end_range: 1Gib
-  result_duration: 1d
+  object_size:
+    start: 500Mib
+    end: 1Gib
+  result_duration: 2d
   sessions_per_node: 21
   samples: 700
   tool: s3bench
 
 test_8:
   TEST_ID: TEST-35685
-  start_range: 1Gib
-  end_range: 2Gib
-  result_duration: 7d
+  object_size:
+    start: 1Gib
+    end: 2Gib
+  result_duration: 4d
   sessions_per_node: 34
   samples: 800
   tool: s3bench
 
 test_9:
   TEST_ID: TEST-35686
-  start_range: 2Gib
-  end_range: 5Gib
+  object_size:
+    start: 2Gib
+    end: 5Gib
   result_duration: 5d
   sessions_per_node: 55
   samples: 900
@@ -81,8 +90,9 @@ test_9:
 
 test_10:
   TEST_ID: TEST-35687
-  start_range: 5Gib
-  end_range: 10Gib
+  object_size:
+    start: 5Gib
+    end: 10Gib
   result_duration: 5d
   sessions_per_node: 89
   samples: 1000
@@ -90,8 +100,9 @@ test_10:
 
 test_11:
   TEST_ID: TEST-35688
-  start_range: 10Gib
-  end_range: 20Gib
+  object_size:
+    start: 10Gib
+    end: 20Gib
   result_duration: 5d
   sessions_per_node: 144
   samples: 1100
@@ -99,8 +110,9 @@ test_11:
 
 test_12:
   TEST_ID: TEST-35689
-  start_range: 20Gib
-  end_range: 50Gib
+  object_size:
+    start: 20Gib
+    end: 50Gib
   result_duration: 5d
   sessions_per_node: 233
   samples: 1200
