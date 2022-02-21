@@ -29,6 +29,7 @@ from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.csm_interface import csm_api_factory
+from libs.s3.s3_test_lib import S3TestLib
 
 class TestIamUser():
     """REST API Test cases for IAM users"""
@@ -302,13 +303,14 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.OK, \
             "User could not be created"
         self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam_user_bucket_" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
                            secret_key=resp["keys"][0]["secret_key"])
         status, resp = s3_obj.create_bucket(bucket_name)
         assert status, resp
         self.log.info("Create bucket failed for user")
         self.log.info("##### Test ended -  %s #####", test_case_name)
-    
+ 
     @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
