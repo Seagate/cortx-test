@@ -88,8 +88,7 @@ class AbsHost:
                     i = i+1
                     if i == CMN_CFG['ssh_retry_count']:
                         raise error
-                    else:
-                        LOGGER.debug("Retrying to connect the host")
+                    LOGGER.debug("Retrying to connect the host")
 
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
