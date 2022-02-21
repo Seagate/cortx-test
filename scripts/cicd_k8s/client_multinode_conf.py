@@ -153,6 +153,15 @@ def main():
                                              json_data['DB_USER'], json_data['DB_PASSWORD']),
                                      flg=True)
         print("Output for updated DB entry: ", out)
+    print("Creating new dir for kube config.")
+    sysutils.execute_cmd(cmd="mkdir -p /root/.kube")
+    print("Copying config from Master node.")
+    m_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
+    resp = m_obj.copy_file_to_local(remote_path="/root/.kube/config", local_path="/root/.kube/.")
+    if not resp[0]:
+        print("Failed to copy config file, security tests might fail.")
+    print("Listing contents of kube dir")
+    sysutils.execute_cmd(cmd="ls -l /root/.kube/")
     print("Mutlinode Server-Client Setup Done.")
 
 
