@@ -26,8 +26,10 @@ import os
 import random
 import sys
 import time
+import copy
 from multiprocessing import Process
 from time import perf_counter_ns
+import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -335,7 +337,7 @@ class HAK8s:
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
-            nsamples: int = 20,
+            nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False):
         """
@@ -351,7 +353,7 @@ class HAK8s:
         :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
-        workloads = HA_CFG["s3_bench_workloads"]
+        workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
@@ -369,7 +371,7 @@ class HAK8s:
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
                 return False, f"s3bench operation failed with {resp}"
-        return True, "Sucessfully completed s3bench operation"
+        return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
         """
@@ -993,8 +995,12 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(HA_CFG["common_params"]["20sec_delay"])
-                        bucket_list = s3_test_obj.bucket_list()[1]
+                        while True:
+                            time.sleep(HA_CFG["common_params"]["5sec_delay"])
+                            bucket_list = s3_test_obj.bucket_list()[1]
+                            if len(bucket_list) > 0:
+                                time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                                break
 
             LOGGER.info("Deleted %s number of buckets.", count)
 
@@ -1146,3 +1152,35 @@ class HAK8s:
                 return res
         resp = jc_obj.update_jclient_jcloud_properties()
         return resp
+
+    @staticmethod
+    def get_config_value(pod_obj, pod_list=None):
+        """
+        :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the cluster.conf File
+        :return: (bool, response)
+        """
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        conf_cp = common_cmd.K8S_CP_TO_LOCAL_CMD.format(pod_name,
+                                                        common_const.CLUSTER_CONF_PATH,
+                                                        common_const.LOCAL_CONF_PATH,
+                                                        common_const.HAX_CONTAINER_NAME)
+        resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False, exc=False)
+        if not resp_node[0]:
+            LOGGER.error("Error: Not able to get cluster config file")
+            return False, resp_node
+        LOGGER.debug("%s response %s ", conf_cp, resp_node)
+        local_conf = os.path.join(os.getcwd(), "cluster.conf")
+        if os.path.exists(local_conf):
+            os.remove(local_conf)
+        resp = pod_obj.copy_file_to_local(
+            remote_path=common_const.LOCAL_CONF_PATH, local_path=local_conf)
+        if not resp[0]:
+            LOGGER.error("Error: Failed to copy cluster.conf to local")
+            return False, resp
+        conf_fd = open(local_conf, 'r')
+        data = yaml.safe_load(conf_fd)
+
+        return True, data
