@@ -33,7 +33,6 @@ from config import HA_CFG
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from commons import constants as common_const
-from commons import commands as common_cmd
 
 LOGGER = logging.getLogger(__name__)
 
