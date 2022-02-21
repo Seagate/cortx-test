@@ -362,6 +362,7 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
+M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
 DIFF = "diff {} {}"
 MD5SUM = "md5sum {} {}"
 GETRPM = "rpm -qa| grep {}"
