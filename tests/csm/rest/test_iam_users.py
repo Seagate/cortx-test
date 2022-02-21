@@ -23,8 +23,8 @@ NOTE: These tests are no longer valid as CSM will no longer support IAM user ope
 """
 from http import HTTPStatus
 import logging
-import pytest
 import time
+import pytest
 from commons import configmanager
 from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
