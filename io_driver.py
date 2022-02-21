@@ -124,12 +124,12 @@ def update_process_termination(return_status):
 
 # pylint: disable=too-many-arguments
 def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low,
-                size_high, seed, duration=None):
+                size_high, seed, part_low, part_high, duration=None):
     """Execute S3bench tool and update error code if any, to process_state on termination."""
     logger.info("Start S3bench run ")
     s3bench = S3bench(access=access, secret=secret, endpoint=endpoint, test_id=test_id,
                       clients=clients, samples=samples, size_low=size_low, size_high=size_high,
-                      seed=seed, duration=duration)
+                      seed=seed, part_low=part_low, part_high=part_high, duration=duration)
     ret = s3bench.run_check()
     update_process_termination(return_status=ret)
     logger.info("Completed S3bench run ")
@@ -258,8 +258,8 @@ def main(options):
             process = Process(target=run_s3bench,
                               args=(access, secret, endpoint, value['TEST_ID'],
                                     value['sessions_per_node'], value['samples'],
-                                    value['start_range'], value['end_range'],
-                                    seed))
+                                    value['object_size']["start"], value['object_size']["end"],
+                                    seed, value['part_size']["start"], value['part_size']["end"]))
         elif process_type == 'warp':
             process = Process(target=run_warp)
         elif process_type == 's3api':

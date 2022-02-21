@@ -103,18 +103,36 @@ def test_parser(yaml_file):
     :param yaml_file: accepts and parses a test YAML file
     :return python dictionary containing file contents
     """
+    size_types = ["object_size", "part_size"]
     s3_io_test = yaml_parser(yaml_file)
     delta_list = list()
     for test, data in s3_io_test.items():
-        start_bytes = convert_to_bytes(data['start_range'])
-        data['start_range'] = start_bytes
-        end_bytes = convert_to_bytes(data['end_range'])
-        data['end_range'] = end_bytes
+        if "object_size" not in data:
+            logger.error("Object size is compulsory")
+            return False
+        for size_type in size_types:
+            if size_type in data:
+                if isinstance(data[size_type], dict):
+                    if "start" not in data[size_type] or "end" not in data[size_type]:
+                        logger.error("Please define range using start and end keys")
+                        return False
+                    data[size_type]["start"] = convert_to_bytes(data[size_type]["start"])
+                    data[size_type]["end"] = convert_to_bytes(data[size_type]["end"])
+                else:
+                    size = data[size_type]
+                    data[size_type] = {}
+                    data[size_type]["start"] = convert_to_bytes(size)
+                    data[size_type]["end"] = convert_to_bytes(size) + 1
         if test == "test_1":
             data['start_time'] = datetime.timedelta(hours=00, minutes=00, seconds=00)
             delta_list.append(convert_to_time_delta(data['result_duration']))
         else:
             data['start_time'] = delta_list.pop()
             delta_list.append(data['start_time'] + convert_to_time_delta(data['result_duration']))
+        data['result_duration'] = convert_to_time_delta(data['result_duration'])
+        if "part_size" not in data:
+            data["part_size"] = {}
+            data["part_size"]["start"] = 0
+            data["part_size"]["end"] = 0
     logger.debug("test object %s: ", s3_io_test)
     return s3_io_test

@@ -1,95 +1,107 @@
 test_1:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35748
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 1h
   sessions_per_node: 1
   tool: s3api
 
 test_2:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35749
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 4h
   sessions_per_node: 2
   tool: s3api
 
 test_3:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35750
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 1d
   sessions_per_node: 3
   tool: s3api
 
 test_4:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35751
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 2d
   sessions_per_node: 5
   tool: s3api
 
 test_5:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35752
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 3d
   sessions_per_node: 8
   tool: s3api
 
 test_6:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35753
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 5d
   sessions_per_node: 13
   tool: s3api
 
 test_7:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35754
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 7d
   sessions_per_node: 21
   tool: s3api
 
 test_8:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35755
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 15d
   sessions_per_node: 34
   tool: s3api
 
 test_9:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35756
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 20d
   sessions_per_node: 55
   tool: s3api
 
 test_10:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35757
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 25d
   sessions_per_node: 89
   tool: s3api
 
 test_11:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35758
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 30d
   sessions_per_node: 144
   tool: s3api
 
 test_12:
-  TEST_ID:
-  start_range: 0Kb
-  end_range: 0Kb
+  TEST_ID: TEST-35759
+  object_size:
+    start: 0Kib
+    end: 100Kib
   result_duration: 40d
   sessions_per_node: 233
   tool: s3api
