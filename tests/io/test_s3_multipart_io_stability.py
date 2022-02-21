@@ -34,7 +34,7 @@ from libs.io.s3api.s3_bucket_ops import S3Bucket
 logger = logging.getLogger(__name__)
 
 
-class S3MutiParts(S3MultiParts, S3Object, S3Bucket):
+class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
     """S3 multipart class for executing given io stability workload"""
 
     # pylint: disable=too-many-arguments,too-many-locals
@@ -47,7 +47,7 @@ class S3MutiParts(S3MultiParts, S3Object, S3Bucket):
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint with http or https.
-        :param test_id: Test ID string, used for log file name.
+        :param test_id: Test ID string.
         :param use_ssl: To use secure connection.
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """

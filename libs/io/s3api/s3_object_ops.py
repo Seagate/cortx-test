@@ -162,6 +162,7 @@ class S3Object(S3RestApi):
         file_hash.update(content)
         while content:
             content = file_obj.read(byte_to_read)
-            file_hash.update(content)
+            if content:
+                file_hash.update(content)
 
         return file_hash.hexdigest()
