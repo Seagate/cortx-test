@@ -345,12 +345,14 @@ class TestIamUserRGW():
         self.log.info("Step 1: Login using csm user")
         self.log.info("Step 1: Create a user with invalid access key")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
-        payload["keys"][1]["access_key"] = self.csm_conf["test_36448"]["invalid_key"]
+        invalid_key = self.csm_conf["test_36448"]["invalid_key"]
+        payload.update({"access_key": invalid_key})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST
         self.log.info("Step 2: create user with valid access key")
-        payload["keys"][1]["access_key"] = self.csm_conf["test_36448"]["valid_key"]
+        valid_key = self.csm_conf["test_36448"]["valid_key"]
+        payload.update({"access_key": valid_key})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.OK
