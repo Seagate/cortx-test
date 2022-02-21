@@ -28,6 +28,7 @@ import logging
 from datetime import datetime
 
 from config.io import CMN_CFG
+from config import IO_DRIVER_CFG
 from commons.helpers.health_helper import Health
 from commons.utils import support_bundle_utils as sb
 
@@ -76,10 +77,10 @@ def check_cluster_space():
         LOGGER.info("Used capacity: %s GB", ha_used / (1024**3))
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         health.disconnect()
-        if ha_used_percent > CMN_CFG["max_storage"]:
+        if ha_used_percent > IO_DRIVER_CFG['max_storage']:
             raise IOError(f'Cluster Node {hostname} failed space check: {ha_used_percent}%.')
 
-    return ha_used_percent < CMN_CFG["max_storage"], f"Used capacity: {ha_used_percent}%"
+    return ha_used_percent < IO_DRIVER_CFG['max_storage'], f"Used capacity: {ha_used_percent}%"
 
 
 def collect_support_bundle():
@@ -130,7 +131,7 @@ def rotate_logs(dpath: str, max_count: int = 0):
     :param: dpath: Directory path of log files.
     :param: max_count: Maximum count of log files to keep.
     """
-    max_count = max_count if max_count else CMN_CFG.get("max_sb", 5)
+    max_count = max_count if max_count else IO_DRIVER_CFG.get("max_sb", 5)
     if not os.path.exists(dpath):
         raise IOError(f"Directory '{dpath}' path does not exists.")
     files = sorted(glob.glob(dpath + '/**'), key=os.path.getctime, reverse=True)

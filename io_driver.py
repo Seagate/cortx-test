@@ -25,7 +25,6 @@ Consists of Schedular which parses yaml based inputs and schedules, monitor jobs
 IO driver will also be responsible for performing health checks and
 support bundle collection on regular intervals.
 """
-
 import argparse
 import logging
 import os
@@ -33,15 +32,21 @@ import random
 import sched
 import sys
 import time
-from distutils.util import strtobool
 from datetime import datetime
+from distutils.util import strtobool
 from multiprocessing import Process, Manager
+
 import psutil
-from config import S3_CFG
-from config import IO_DRIVER_CFG
-from libs.io import yaml_parser
-from libs.io.tools.s3bench import S3bench
+
 from commons.io.io_logger import StreamToLogger
+from commons.params import NFS_SERVER_DIR, MOUNT_DIR
+from commons.utils import assert_utils
+from commons.utils.system_utils import mount_nfs_server
+from config import IO_DRIVER_CFG
+from config import S3_CFG
+from libs.io import yaml_parser
+from libs.io.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
+from libs.io.tools.s3bench import S3bench
 
 logger = logging.getLogger()
 
@@ -49,13 +54,14 @@ sched_obj = sched.scheduler(time.time, time.sleep)
 manager = Manager()
 process_states = manager.dict()
 event_list = list()
+nfs_dir = NFS_SERVER_DIR
+mount_dir = MOUNT_DIR
 
 
 def initialize_loghandler(level=logging.DEBUG):
     """
     Initialize io driver runner logging with stream and file handlers.
-
-    :param level: logging level used in CorIO tool.
+    param level: logging level used in CorIO tool.
     """
     logger.setLevel(level)
     dir_path = os.path.join(os.path.join(os.getcwd(), "log", "latest"))
@@ -91,17 +97,37 @@ def parse_args():
     return parser.parse_args()
 
 
-def launch_process(process, process_type, test_id):
+def launch_process(test_id, value, seed=None):
     """
     This method is intended to Start the process and add PID to dictionary.
-    process_states : Dictionary of process as key and pid as value
-    :param process: Object of Process
-    :param process_type: Type of tool invoked by process
-    :param test_id: Jira Test id
+    param test_id: Jira Test id
+    param value: argument for specific test
+    param seed: Seed value for random value generator for S3 operations
     """
+    access = S3_CFG.access_key
+    secret = S3_CFG.secret_key
+    endpoint = S3_CFG.endpoint
+    logger.info("Seed Used : %s", seed)
+    process_type = value['tool'].lower()
+    if process_type == 's3bench':
+        process = Process(target=run_s3bench,
+                          args=(access, secret, endpoint, value['TEST_ID'],
+                                value['sessions_per_node'], value['samples'],
+                                value['object_size']["start"], value['object_size']["end"],
+                                seed, value['part_size']["start"], value['part_size']["end"]))
+    elif process_type == 'warp':
+        process = Process(target=run_warp)
+    elif process_type == 'support_bundle':
+        process = Process(target=collect_sb, args=(value['sb_identifier'],))
+    elif process_type == 'health_check':
+        process = Process(target=perform_health_check)
+    else:
+        logger.error("Process type not defined!!")
+        sys.exit(1)
     process.start()
     pid = process.pid
-    logger.info("Started Process PID: %s TEST_ID: %s TYPE: %s", pid, test_id, process_type)
+    logger.info("Started Process PID: %s TEST_ID: %s TYPE: %s", pid, test_id,
+                process_type)
     new_proc_data = manager.dict()
     new_proc_data['state'] = 'started'
     new_proc_data['type'] = process_type
@@ -119,7 +145,8 @@ def update_process_termination(return_status):
     process_states[pid]['state'] = 'done'
     process_states[pid]['ret_status'] = return_status[0]
     process_states[pid]['response'] = return_status[1]
-    logger.info("Proc state post termination : %s %s", pid, process_states[pid]['state'])
+    logger.info("Proc state post termination : %s %s", pid,
+                process_states[pid]['state'])
 
 
 # pylint: disable=too-many-arguments
@@ -146,13 +173,13 @@ def run_warp():
     logger.info("Completed warp run ")
 
 
-def collect_sb():
+def collect_sb(sb_identifier):
     """
     Collect support bundle and update error code if any, to process_state on termination.
     """
     logger.info("Collect Support bundle")
-    time.sleep(10)
-    ret = (True, True)  # TODO: add support bundle collection call
+    ret = collect_upload_sb_to_nfs_server(mount_dir, sb_identifier,
+                                          max_sb=IO_DRIVER_CFG['max_no_of_sb'])
     update_process_termination(return_status=ret)
     logger.info("Support bundle collection done!!")
 
@@ -162,20 +189,18 @@ def perform_health_check():
     Collect support bundle and update error code if any, to process_state on termination.
     """
     logger.info("Performing health check")
-    time.sleep(10)
-    ret = (True, True)  # TODO: add health check call
+    ret = check_cluster_services()
     update_process_termination(return_status=ret)
     logger.info("Health check done!!")
 
 
-def periodic_sb():
+def periodic_sb(sb_identifier):
     """
     Perform Periodic support bundle collection
     """
     sb_interval = IO_DRIVER_CFG['sb_interval_mins'] * 60
-    event_list.append(sched_obj.enter(sb_interval, 1, periodic_sb))
-    process = Process(target=collect_sb)
-    launch_process(process, 'support_bundle', None)
+    event_list.append(sched_obj.enter(sb_interval, 1, periodic_sb, argument=(sb_identifier,)))
+    launch_process(None, {'sb_identifier': sb_identifier, 'tool': 'support_bundle'}, None)
 
 
 def periodic_hc():
@@ -184,13 +209,12 @@ def periodic_hc():
     """
     hc_interval = IO_DRIVER_CFG['hc_interval_mins'] * 60
     event_list.append(sched_obj.enter(hc_interval, 1, periodic_hc))
-    process = Process(target=perform_health_check)
-    launch_process(process, 'health_check', None)
+    launch_process(None, {'tool': 'health_check'}, None)
 
 
 def ps_kill(proc_pid):
     """
-    Kill process with proc_pid and its child process
+    Kills process with proc_pid and its child process
     :param proc_pid: Pid of process to be killed
     """
     logger.info("Killing %s", proc_pid)
@@ -224,10 +248,13 @@ def monitor_proc():
 
         # Terminate if error observed in any process
         if terminate_run:
-            logger.error("Error observed in process %s %s", error_proc, error_proc_data)
+            logger.error("Error observed in process %s %s", error_proc,
+                         error_proc_data)
             logger.error("Terminating schedular..")
-            for pid in process_states.keys():
-                ps_kill(pid)
+            for pid, value in process_states.items():
+                if value['state'] != 'done':
+                    logger.info('pid : %s state: %s', pid, value['state'])
+                    ps_kill(pid)
             for event in event_list:
                 try:
                     logger.info("Cancelling event %s", event)
@@ -242,49 +269,52 @@ def monitor_proc():
             sys.exit(0)
 
 
+def setup_environment():
+    """
+    Tool installations for test execution
+    """
+    ret = mount_nfs_server(nfs_dir, mount_dir)
+    assert_utils.assert_true(ret, "Error while Mounting NFS directory")
+
+
 def main(options):
     """Main Entry function using argument parser to parse options and start execution."""
-    access = S3_CFG.access_key
-    secret = S3_CFG.secret_key
-    endpoint = S3_CFG.endpoint
-    seed = options.seed
+    logger.info("Performing tools installations")
+    setup_environment()
+
     test_input = options.test_input
-    logger.info("Seed Used : %s", seed)
     test_input = yaml_parser.test_parser(test_input)  # Read test data from test_input yaml.
-    process = None
     for key, value in test_input.items():
-        process_type = value['tool'].lower()
-        if process_type == 's3bench':
-            process = Process(target=run_s3bench,
-                              args=(access, secret, endpoint, value['TEST_ID'],
-                                    value['sessions_per_node'], value['samples'],
-                                    value['object_size']["start"], value['object_size']["end"],
-                                    seed, value['part_size']["start"], value['part_size']["end"]))
-        elif process_type == 'warp':
-            process = Process(target=run_warp)
-        elif process_type == 's3api':
-            pass  # TODO: Implementation of s3api using boto3.
-        else:
-            logger.error("Error! Tool type not defined: %s", process_type)
-            sys.exit(1)
-        event_list.append(sched_obj.enter(value['start_time'].total_seconds(), 1, launch_process,
-                                          (process, process_type, key)))
+        logger.info("Test No : %s", key)
+        logger.info("Test Values : %s", value)
+        event_list.append(
+            sched_obj.enter(value['start_time'].total_seconds(), 1, launch_process,
+                            (key, value, options.seed)))
+    sb_identifier = int(time.time())
+    if IO_DRIVER_CFG['capture_support_bundle']:
+        logger.info("Scheduling Support bundle collection")
+        logger.debug("Scheduling sb at interval : %s", IO_DRIVER_CFG['sb_interval_mins'] * 60)
+        event_list.append(
+            sched_obj.enter(IO_DRIVER_CFG['sb_interval_mins'] * 60, 1, periodic_sb,
+                            argument=(sb_identifier,)))
 
-    process = Process(target=monitor_proc)
-    process.start()
+    if IO_DRIVER_CFG['perform_health_check']:
+        logger.info("Scheduling health check")
+        logger.debug("Scheduling health check at interval : %s",
+                     IO_DRIVER_CFG['hc_interval_mins'] * 60)
+        event_list.append(sched_obj.enter(IO_DRIVER_CFG['hc_interval_mins'] * 60, 1, periodic_hc))
 
-    # if IO_DRIVER_CFG['capture_support_bundle']:
-    #     logger.info("Scheduling Support bundle collection")
-    #     event_list.append(sched_obj.enter(conf['sb_interval_mins'] * 60, 1, periodic_sb))
+    logger.info("Starting scheduler")
+    sched_process = Process(target=sched_obj.run)
+    sched_process.start()
+    logger.info('Scheduler PID : %s', sched_process.pid)
+    logger.info("Starting monitor process")
+    monitor_process = Process(target=monitor_proc)
+    monitor_process.start()
+    logger.info('Monitor Process PID : %s', monitor_process.pid)
 
-    # if IO_DRIVER_CFG['perform_health_check']:
-    #     logger.info("Scheduling health check")
-    #     event_list.append(sched_obj.enter(conf['hc_interval_mins'] * 60, 1, periodic_hc))
-
-    logger.info("Starting scheduler...")
-    sched_obj.run()
-    process.join()
-    logger.info("Execution completed...")
+    monitor_process.join()
+    sched_process.terminate()
 
 
 if __name__ == '__main__':
