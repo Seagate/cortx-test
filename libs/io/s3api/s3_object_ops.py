@@ -148,20 +148,20 @@ class S3Object(S3RestApi):
 
         return response
 
-    def get_s3object_md5sum(self, bucket_name: str, object_name: str, byte_to_read: int) -> str:
+    def get_s3object_checksum(self, bucket_name: str, object_name: str, chunk_size: int) -> str:
         """
         Read object in chunk and calculate md5sum.
 
         :param bucket_name: The name of the s3 bucket.
         :param object_name: The name of the s3 object.
-        :param byte_to_read: range to read content of s3 object.
+        :param chunk_size: size to read the content of s3 object.
         """
         file_obj = self.s3_resource.Object(bucket_name, object_name).get()['Body']
-        file_hash = hashlib.md5()
-        content = file_obj.read(byte_to_read)
+        file_hash = hashlib.sha256()
+        content = file_obj.read(chunk_size)
         file_hash.update(content)
         while content:
-            content = file_obj.read(byte_to_read)
+            content = file_obj.read(chunk_size)
             if content:
                 file_hash.update(content)
 

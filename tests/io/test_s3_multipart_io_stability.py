@@ -19,6 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """This file contains s3 multipart test script for io stability."""
 
+from __future__ import division
 import logging
 import os
 import random
@@ -34,10 +35,11 @@ from libs.io.s3api.s3_bucket_ops import S3Bucket
 logger = logging.getLogger(__name__)
 
 
+# pylint: disable=too-few-public-methods, too-many-statements
 class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
     """S3 multipart class for executing given io stability workload"""
 
-    # pylint: disable=too-many-arguments,too-many-locals
+    # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
                  use_ssl: str, object_size: Optional[int, dict], part_range: dict,
                  duration: timedelta = None) -> None:
@@ -68,7 +70,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
     def execute_multipart_workload(self):
         """Execute multipart workload for specific duration."""
         while True:
-            logger.info("Iteration {} is started...", self.iteration)
+            logger.info("Iteration %s is started...", self.iteration)
             try:
                 file_size = self.object_size if not isinstance(
                     self.object_size, dict) else random.randrange(
@@ -81,7 +83,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                 response = self.create_multipart_upload(self.mpart_bucket, self.s3mpart_object)
                 mpu_id = response["UploadId"]
                 parts = list()
-                file_hash = hashlib.md5()
+                file_hash = hashlib.sha256()
                 for i in range(1, number_of_parts + 1):
                     byte_s = os.urandom(single_part_size)
                     response = self.upload_part(byte_s, self.mpart_bucket,
@@ -89,7 +91,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                     parts.append({"PartNumber": i, "ETag": response["ETag"]})
                     file_hash.update(byte_s)
                 upload_obj_checksum = file_hash.hexdigest()
-                logger.info("Checksum of uploaded object:", upload_obj_checksum)
+                logger.info("Checksum of uploaded object: %s", upload_obj_checksum)
                 response = self.list_parts(mpu_id, self.mpart_bucket, self.s3mpart_object)
                 logger.info(response)
                 response = self.list_multipart_uploads(self.mpart_bucket)
@@ -99,9 +101,9 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                 logger.info(response)
                 response = self.head_object(self.mpart_bucket, self.s3mpart_object)
                 logger.info(response)
-                download_obj_checksum = self.get_s3object_md5sum(
+                download_obj_checksum = self.get_s3object_checksum(
                     self.mpart_bucket, self.s3mpart_object, single_part_size)
-                logger.info("Checksum of s3 object:", download_obj_checksum)
+                logger.info("Checksum of s3 object: %s", download_obj_checksum)
                 if upload_obj_checksum != download_obj_checksum:
                     raise ClientError(
                         f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}",
@@ -113,5 +115,5 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:
                 return True, "Multipart execution completed successfully."
-            logger.info("Iteration {} is completed...", self.iteration)
+            logger.info("Iteration %s is completed...", self.iteration)
             self.iteration += 1
