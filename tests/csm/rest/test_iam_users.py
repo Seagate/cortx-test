@@ -59,8 +59,6 @@ class TestIamUser():
         assert setup_ready
         cls.created_iam_users = set()
         cls.rest_iam_user = RestIamUser()
-        cls.cryptogen = SystemRandom()
-        cls.file_size = self.cryptogen.randrange(10, 100)
         cls.log.info("Initiating Rest Client ...")
 
     def teardown_method(self):
@@ -156,6 +154,8 @@ class TestIamUserRGW():
             setup_ready = cls.config.setup_csm_users()
         assert setup_ready
         cls.created_iam_users = set()
+        cls.cryptogen = SystemRandom()
+        cls.file_size = cls.cryptogen.randrange(10, 100)
         cls.log.info("[END] CSM setup class completed.")
 
     def teardown_method(self):
@@ -521,7 +521,7 @@ class TestIamUserRGW():
                                          file_path=file_path_upload)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
-                resp = self.s3_test_obj.get_object(bucket_name, test_file)
+                resp = s3_obj.get_object(bucket_name, test_file)
                 assert_utils.assert_false(resp[0], resp)
             else:
                 assert_utils.assert_false(status, resp)
