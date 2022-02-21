@@ -24,6 +24,7 @@ NOTE: These tests are no longer valid as CSM will no longer support IAM user ope
 from http import HTTPStatus
 import logging
 import pytest
+import time
 from commons import configmanager
 from commons import cortxlogging
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -342,15 +343,15 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Login using csm user")
-        self.log.info("Step 1: Create a user with invalid access key characters")
+        self.log.info("Step 1: Create a user with invalid access key")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
-        payload["keys"][1]["access_key"] = "0555b35654ad1656d8#@"
+        payload["keys"][1]["access_key"] = self.csm_conf["test_36448"]["invalid_key"]
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST
-        self.log.info("Step 2: create user with invalid access key length")
-        payload["keys"][1]["access_key"] = "0555b35654ad1656d8"
+        self.log.info("Step 2: create user with valid access key")
+        payload["keys"][1]["access_key"] = self.csm_conf["test_36448"]["valid_key"]
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        assert resp.status_code == HTTPStatus.OK
         self.log.info("##### Test ended -  %s #####", test_case_name)
