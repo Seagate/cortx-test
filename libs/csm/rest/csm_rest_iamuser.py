@@ -431,11 +431,11 @@ class RestIamUser(RestTestLib):
         key_type = "s3"
         access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
         secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
-        user_cap = []
+        user_cap = "users=*"
         generate_key = True
         max_buckets = 1000
         suspended = False
-        tenant = ""
+        tenant = "abc"
         if user_type == "valid":
             payload.update({"uid": user_id})
             payload.update({"display_name": display_name})
@@ -480,9 +480,11 @@ class RestIamUser(RestTestLib):
             if verify_response:
                 self.log.info("Checking response...")
                 for key,value in payload.items():
+                    self.log.info("Expected response for %s: %s", key,value)
+                    if key == "uid":
+                        key = "user_id"
+                    self.log.info("Actual response for %s: %s", key, resp[key])
                     if value != resp[key]:
-                        self.log.info("Expected response for %s: %s", key,value)
-                        self.log.info("Actual response for %s: %s", key, resp[key])
                         self.log.error("Actual and expected response for %s didnt match", key)
                         result = False
         else:

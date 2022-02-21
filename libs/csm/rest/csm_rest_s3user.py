@@ -29,6 +29,7 @@ from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from config import CSM_REST_CFG, CMN_CFG
 
 class RestS3user(RestTestLib):
@@ -78,7 +79,7 @@ class RestS3user(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    #TMP S3 commented:  @RestTestLib.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def list_all_created_s3account(self):
         """
             This function will list down all created accounts
@@ -136,7 +137,7 @@ class RestS3user(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    #TMP S3 commented:  @RestTestLib.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def delete_s3_account_user(self, username):
         """
         This function will delete the required user
@@ -400,7 +401,7 @@ class RestS3user(RestTestLib):
         return response.json()["message"] == const.DELETE_SUCCESS_MSG
 
 
-    #TMP S3 commented:  @RestTestLib.authenticate_and_login
+    @RestTestLib.authenticate_and_login
     def edit_s3_account(self, username, payload):
         """
         This function will provide invalid password in Patch request for the specified s3 account
@@ -635,13 +636,19 @@ class RestS3user(RestTestLib):
         """All Create s3 account calls will be directed from this function only.
         """
         self.log.info("Simulating S3 account creation.")
+        rest_iam_user = RestIamUser()
+        resp = rest_iam_user.iam_user_payload_rgw(user_type="valid")
         s3_response = Response()
-        s3_response.code = "expired"
-        s3_response.error_type = None
-        s3_response.status_code = 201
-        s3_response._content = b'{"account_name": "nightly_s3dk",\
-            "account_email": "nightly_s3dk@seagate.com",\
-            "account_id": "1","canonical_id": "1",\
-            "access_key": "0555b35654ad1656d804",\
-            "secret_key": "h7GhxuBLTrlhVUyxSPUKUV8r/2EI4ngqJxD7iBdBYLhwluN30JaT3Q=="}'
+        if resp == HTTPStatus.OK:
+            resp_dict = {"account_name": resp["keys"][0]["user"],
+                        "account_email": resp["email"],
+                        "account_id": resp["user_id"],
+                        "canonical_id": resp["user_id"],
+                        "access_key": resp["keys"][0]["access_key"],
+                        "secret_key": resp["keys"][0]["secret_key"]}
+            s3_response.status_code = 201
+            s3_response._content = json.dumps(resp_dict)
+        else:
+            s3_response.status_code = 400
+            s3_response._content = json.dumps({"error":"Failed to create S3 account."})
         return s3_response
