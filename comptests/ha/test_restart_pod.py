@@ -116,7 +116,8 @@ class TestRestartPod:
     @pytest.mark.tags("TEST-36017")
     def test_datapod_status_online_after_replicas(self):
         """
-        This TC tests pod online event to component Hare - data pod comes online after data pod restart using replicas
+        This TC tests pod online event to component Hare -
+        data pod comes online after data pod restart using replicas
         """
         LOGGER.info("STARTED: Publish the pod online event to component Hare- "
                     "Data pod comes online after data pod restart using replicas.")
@@ -156,7 +157,8 @@ class TestRestartPod:
     @pytest.mark.tags("TEST-36161")
     def test_datapod_status_online_after_delete_deployment(self):
         """
-        This TC tests pod online event to component Hare - data pod comes online after data pod restart using deployment
+        This TC tests pod online event to component Hare -
+        data pod comes online after data pod restart using deployment
         """
         LOGGER.info("STARTED: Publish the pod online event to component Hare- "
                     "data pod comes online after data pod restart using deployment")
@@ -241,7 +243,8 @@ class TestRestartPod:
     @pytest.mark.tags("TEST-36193")
     def test_serverpod_status_online_after_delete_deployment(self):
         """
-        Publish the pod online event to Hare - server pod comes online after server pod restart using deployment
+        Publish the pod online event to Hare -
+        server pod comes online after server pod restart using deployment
         """
         LOGGER.info(
             "STARTED: Publish the pod online event to component Hare - "
@@ -249,7 +252,8 @@ class TestRestartPod:
 
         LOGGER.info("Step 1: Shutdown the server pod by deleting deployment")
         LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
+        pod_list = self.node_master_list[0].get_all_pods\
+            (pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
@@ -288,7 +292,8 @@ class TestRestartPod:
     @pytest.mark.tags("TEST-36197")
     def test_serverpod_status_online_after_replicas(self):
         """
-        This TC tests pod online event to component Hare-server pod comes online after server pod restart using replicas
+        This TC tests pod online event to component Hare-
+        server pod comes online after server pod restart using replicas
         """
 
         LOGGER.info("STARTED: Publish the pod online event to component Hare- "
@@ -296,7 +301,8 @@ class TestRestartPod:
 
         LOGGER.info("Step 1: Shutdown the data pod by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
+        pod_list = self.node_master_list[0].get_all_pods\
+            (pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
