@@ -135,8 +135,8 @@ class TestRestartPod:
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        # TODO Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("Step 4: Start pod by making replicas=1")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -146,8 +146,8 @@ class TestRestartPod:
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
 
-        # TODO Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare- "
                     "Data pod comes online after data pod restart using replicas.")
@@ -178,8 +178,8 @@ class TestRestartPod:
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_DEPLOYMENT_K8S
 
-        # TODO Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("Step 4: Start the deleted pod by creating deployment")
         if self.restore_pod:
@@ -193,8 +193,8 @@ class TestRestartPod:
         LOGGER.info("Step 4: Successfully restored pod by %s way", self.restore_method)
         self.restore_pod = False
 
-        # TODO Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Data pod comes online after data pod restart using deployment")
@@ -220,8 +220,8 @@ class TestRestartPod:
         assert_utils.assert_true(resp, "Data pod didn't deleted successfully")
         LOGGER.info("Step 1:Data pod deleted successfully")
 
-        # TODO Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("Step 4: Check the node status.")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
@@ -232,8 +232,8 @@ class TestRestartPod:
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 4: New data pod created automatically by kubernetes")
 
-        # TODO Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("COMPLETED: pod online event to component Hare -"
                     "data pod comes online after data pod restart using kubectl delete pod")
@@ -266,8 +266,8 @@ class TestRestartPod:
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_DEPLOYMENT_K8S
 
-        # TODO Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("Step 4: Start the deleted pod by creating deployment")
         if self.restore_pod:
@@ -281,8 +281,8 @@ class TestRestartPod:
         LOGGER.info("Step 4: Successfully restored pod by %s way", self.restore_method)
         self.restore_pod = False
 
-        # TODO Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Server pod comes online after server pod restart using deployment")
@@ -313,8 +313,8 @@ class TestRestartPod:
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        # TODO Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-2,3 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-2,3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("Step 4: Start pod by making replicas=1")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -324,8 +324,8 @@ class TestRestartPod:
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
 
-        # TODO Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
-        # TODO Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        #TODO: Step-5,6 | Getting multiple events for pod delete operation - CORTX-28560
+        #TODO: Step-5,6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare- "
                     "Data pod comes online after data pod restart using replicas.")
