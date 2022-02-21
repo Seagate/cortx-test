@@ -22,14 +22,17 @@
 NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
-import pytest
 import time
 from http import HTTPStatus
+import os
+import pytest
+import random
 
 from commons import configmanager
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
@@ -392,7 +395,7 @@ class TestIamUserRGW():
                                      file_path=file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
-            resp = self.s3_test_obj.get_object(bucket_name, test_file)
+            resp = s3_obj.get_object(bucket_name, test_file)
             assert_utils.assert_false(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -411,7 +414,7 @@ class TestIamUserRGW():
         self.log.info("[START] Creating IAM user with suspended")
         uid = "iam_user_1_" + str(int(time.time()))
         bucket_name = "iam_user_bucket_" + str(int(time.time()))
-        self.log.info(f"Creating new iam user {uid}")
+        self.log.info("Creating new iam user  %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
@@ -420,7 +423,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
         self.created_iam_users.add(uid)
-        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
         self.log.info("Verify create bucket")
@@ -449,11 +452,11 @@ class TestIamUserRGW():
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
         payload.update({"max_buckets": 1})
-        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
         self.created_iam_users.add(uid)
-        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
         for bucket_cnt in range(2):
@@ -498,7 +501,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
         self.created_iam_users.add(payload["uid"])
-        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
         for bucket_cnt in range(1001):
