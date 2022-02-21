@@ -55,9 +55,9 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
         self.duration = duration
-        self.mpart_bucket = "s3mpart_bkt_{}_{}".format(
+        self.mpart_bucket = "s3mpart-bkt-{}-{}".format(
             test_id.lower() if test_id else "sample", perf_counter_ns())
-        self.s3mpart_object = "s3mpart_obj_{}_{}".format(
+        self.s3mpart_object = "s3mpart-obj-{}-{}".format(
             test_id.lower() if test_id else "sample", perf_counter_ns())
         self.object_size = object_size
         self.part_range = part_range
@@ -79,8 +79,11 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                 single_part_size = file_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
                 response = self.create_bucket(self.mpart_bucket)
-                logger.info(response)
+                assert response.name == self.mpart_bucket, \
+                    f"Failed to create bucket: {self.mpart_bucket}"
                 response = self.create_multipart_upload(self.mpart_bucket, self.s3mpart_object)
+                assert response["UploadId"] is not None, \
+                    f"Failed to initiate multipart upload: {response}"
                 mpu_id = response["UploadId"]
                 parts = list()
                 file_hash = hashlib.sha256()
@@ -88,19 +91,20 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                     byte_s = os.urandom(single_part_size)
                     response = self.upload_part(byte_s, self.mpart_bucket,
                                                 self.object_size, upload_id=mpu_id, part_number=i)
+                    assert response["ETag"] is not None, f"Failed upload part: {response}"
                     parts.append({"PartNumber": i, "ETag": response["ETag"]})
                     file_hash.update(byte_s)
                 upload_obj_checksum = file_hash.hexdigest()
                 logger.info("Checksum of uploaded object: %s", upload_obj_checksum)
                 response = self.list_parts(mpu_id, self.mpart_bucket, self.s3mpart_object)
-                logger.info(response)
+                assert response, f"Failed to list parts: {response}"
                 response = self.list_multipart_uploads(self.mpart_bucket)
-                logger.info(response)
+                assert response, f"Failed to list multipart uploads: {response}"
                 response = self.complete_multipart_upload(
                     mpu_id, parts, self.mpart_bucket, self.s3mpart_object)
-                logger.info(response)
+                assert response, f"Failed to completed multi parts: {response}"
                 response = self.head_object(self.mpart_bucket, self.s3mpart_object)
-                logger.info(response)
+                assert response, f"Failed to do head object on {self.s3mpart_object}"
                 download_obj_checksum = self.get_s3object_checksum(
                     self.mpart_bucket, self.s3mpart_object, single_part_size)
                 logger.info("Checksum of s3 object: %s", download_obj_checksum)
@@ -108,6 +112,9 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                     raise ClientError(
                         f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}",
                         operation_name="Match checksum")
+                response = self.delete_bucket(self.mpart_bucket, force=True)
+                assert response["ResponseMetadata"][
+                    "HTTPStatusCode"] == 204, f"Failed to delete s3 bucket: {self.mpart_bucket}"
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
                 return False, str(err)
