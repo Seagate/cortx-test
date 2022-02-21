@@ -1,10 +1,11 @@
-import argparse
-import requests
 from http import HTTPStatus
+import argparse
 import csv
 import os
+import requests
 
-todo_count_csv = 'todo_count.csv'
+# CSV file contain test count in sequence[total,passed,fail,skip,todo]
+TOTAL_COUNT_CSV = 'total_count.csv'
 
 
 def get_test_plan_test_count(test_plan_id, jira_id, jira_password):
@@ -18,7 +19,7 @@ def get_test_plan_test_count(test_plan_id, jira_id, jira_password):
         passed = len([test for test in res if test['latestStatus'] == 'PASS'])
         fail = len([test for test in res if test['latestStatus'] == 'FAIL'])
         skip = len([test for test in res if test['latestStatus'] == 'SKIPPED'])
-        with open(os.path.join(os.getcwd(), todo_count_csv), 'w', newline='') as tp_info_csv:
+        with open(os.path.join(os.getcwd(), TOTAL_COUNT_CSV), 'w', newline='') as tp_info_csv:
             writer = csv.writer(tp_info_csv)
             writer.writerow([total, passed, fail, skip, todo])
 

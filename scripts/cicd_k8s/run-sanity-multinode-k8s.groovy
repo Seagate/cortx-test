@@ -167,8 +167,8 @@ python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=
 deactivate
 '''
 }
-                  if ( fileExists('todo_count.csv') ) {
-                      def testcount = readCSV file: 'todo_count.csv'
+                  if ( fileExists('total_count.csv')) {
+                      def testcount = readCSV file: 'total_count.csv'
                       env.totalcount = testcount[0][0]
                       env.passcount = testcount[0][1]
                       env.failcount = testcount[0][2]
