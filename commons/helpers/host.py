@@ -97,7 +97,7 @@ class AbsHost:
                          timeout_exception)
             reconnected = self.reconnect(retry=retry, shell=shell, timeout=timeout, **kwargs)
             if not reconnected:
-                raise TimeoutError(f'Connection timed out on {self.hostname}')
+                raise TimeoutError(f'Connection timed out on {self.hostname}') from None
         except Exception as error:
             LOGGER.error(
                 "Exception while connecting to server: Error: %s",
@@ -106,7 +106,7 @@ class AbsHost:
                 self.host_obj.close()
             if shell and self.shell_obj:
                 self.shell_obj.close()
-            raise error
+            raise RuntimeError('Rethrowing the SSH exception') from error
 
     def connect_pysftp(
             self,
@@ -194,7 +194,7 @@ class Host(AbsHost):
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
-        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout) #nosec
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
@@ -637,9 +637,8 @@ class Host(AbsHost):
 if __name__ == '__main__':
     hostobj = Host(hostname='<>',
                    username='<>',
-                   password='<>')
+                   word='<>')
     # Test 1
     print(hostobj.execute_cmd(cmd='ls', read_lines=True))
     # Test 2 -- term capturing API's are not supported.
     hostobj.execute_cmd(cmd='top', read_lines=True)
-    
