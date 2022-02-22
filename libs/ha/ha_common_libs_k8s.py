@@ -371,7 +371,7 @@ class HAK8s:
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
                 return False, f"s3bench operation failed with {resp}"
-        return True, "Sucessfully completed s3bench operation"
+        return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
         """
@@ -842,7 +842,8 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-
+        # Flag to store next workload status after/while event gets clear from test function
+        event_clear_flg = False
         resp = s3bench.setup_s3bench()
         if not resp:
             status = (resp, "Couldn't setup s3bench on client machine.")
@@ -858,9 +859,13 @@ class HAK8s:
                 end_point=S3_CFG["s3b_url"])
             if event.is_set():
                 fail_res.append(resp)
+                event_clear_flg = True
             else:
+                if event_clear_flg:
+                    fail_res.append(resp)
+                    event_clear_flg = False
+                    continue
                 pass_res.append(resp)
-
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
 
@@ -1029,7 +1034,7 @@ class HAK8s:
         LOGGER.info("Get the data pod running on %s node and %s node",
                     control_node_fqdn, ha_node_fqdn)
         data_pods = pod_obj.get_pods_node_fqdn(common_const.POD_NAME_PREFIX)
-        data_pod_name2 = data_pod_name1 = None
+        data_pod_name2 = data_pod_name1 = server_pod_name = None
         for pod_name, node in data_pods.items():
             if node == control_node_fqdn:
                 data_pod_name1 = pod_name

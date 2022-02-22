@@ -80,6 +80,7 @@ class Provisioner:
                     job_name, next_build_number)
                 result = build_info['result']
                 expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
+                LOGGER.debug("result is %s::", result)
                 if result in expected_result:
                     break
                 cur_epoch = int(time.time())
