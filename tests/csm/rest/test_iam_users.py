@@ -558,3 +558,79 @@ class TestIamUserRGW():
             assert_utils.assert_true(False, "secret key is available in response")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-36446')
+    def test_36446(self):
+        """
+        Create user with read only capabilities.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with read capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload.update({"user_caps":"read"})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.OK, \
+            "User could not be created"
+        self.created_iam_users.add(payload["uid"])
+        self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam_user_bucket_" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"]
+                           secret_key=resp["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert status, resp
+        self.log.info("Create bucket failed for user")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-36447')
+    def test_36447(self):
+        """
+        Create user with invalid capabilities
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with invalid capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload.update({"user_caps":"read-write"})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.FORBIDDEN, \
+            "Status code check failed for user"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-36448')
+    def test_36448(self):
+        """
+        User access/secret key validation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Login using csm user")
+        self.log.info("Step 1: Create a user with invalid access key")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        invalid_key = self.csm_conf["test_36448"]["invalid_key"]
+        payload.update({"access_key": invalid_key})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST
+        self.log.info("Step 2: create user with valid access key")
+        valid_key = self.csm_conf["test_36448"]["valid_key"]
+        payload.update({"access_key": valid_key})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.OK
+        self.created_iam_users.add(payload["uid"])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
