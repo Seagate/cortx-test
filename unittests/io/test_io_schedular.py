@@ -28,12 +28,16 @@ test_results = {}
 class TestSet1:
     """ TestSet1 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet1->Test1"] = "Executed"
         return "TestSet1->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet1->Test2"] = "Executed"
         return "TestSet1->Test2"
@@ -42,12 +46,16 @@ class TestSet1:
 class TestSet2:
     """ TestSet2 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet2->Test1"] = "Executed"
         return "TestSet2->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet2->Test2"] = "Executed"
         return "TestSet2->Test2"
@@ -56,12 +64,16 @@ class TestSet2:
 class TestSet3:
     """ testSet3 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet3->Test1"] = "Executed"
         return "TestSet3->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet3->Test2"] = "Executed"
         return "TestSet3->Test2"
@@ -70,12 +82,16 @@ class TestSet3:
 class TestSet4:
     """ TestSet4 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet4->Test1"] = "Executed"
         return "TestSet4->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet4->Test2"] = "Executed"
         return "TestSet4->Test2"
@@ -84,12 +100,16 @@ class TestSet4:
 class TestSet5:
     """ TestSet5 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet5->Test1"] = "Executed"
         return "TestSet5->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet5->Test2"] = "Executed"
         return "TestSet5->Test2"
@@ -98,12 +118,16 @@ class TestSet5:
 class TestSet6:
     """ TestSet6 """
 
-    def test1(self):
+    @staticmethod
+    def test1():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet6->Test1"] = "Executed"
         return "TestSet6->Test1"
 
-    def test2(self):
+    @staticmethod
+    def test2():
+        """testcase"""
         time.sleep(2)
         test_results["TestSet6->Test2"] = "Executed"
         return "TestSet6->Test2"
@@ -114,10 +138,10 @@ if __name__ == '__main__':
     print("Executing Following Suites", SuiteList)
     print("\n")
     try:
-        workers = cpu_count()
+        WORKERS = cpu_count()
     except NotImplementedError:
-        workers = 1
-    print("Number of workers", workers)
+        WORKERS = 1
+    print("Number of workers", WORKERS)
     t = time.time()
-    main(SuiteList, workers)
+    main(SuiteList, WORKERS)
     print("Total Execution Time Taken", time.time() - t)
