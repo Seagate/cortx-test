@@ -635,8 +635,8 @@ class Host(AbsHost):
 
 
 if __name__ == '__main__':
-    hostobj = Host(hostname='<>',
-                   username='<>',
+    hostobj = Host(hostname='<>',  #nosec
+                   username='<>',  #nosec
                    password='<>')  #nosec
     # Test 1
     print(hostobj.execute_cmd(cmd='ls', read_lines=True))
