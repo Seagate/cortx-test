@@ -5361,8 +5361,6 @@ class TestCsmUser():
                 payload=json.dumps(payload),
                 login_as=new_user)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
-            response = self.s3auth_obj.custom_rest_login(usr, new_password)
-            self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr

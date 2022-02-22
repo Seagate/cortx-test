@@ -24,7 +24,10 @@
   cmd3="mkdir -p $LOG_PATH"
   mount_cmd="mount cftic2.pun.seagate.com:/cftshare_temp $dir_path"
   mv_cmd="mv $3/log/latest/TEST-N* $LOG_PATH"
+  mv_cmd2="mv $3/support_bundle/*.tar $LOG_PATH"
+  mv_cmd3="mv $3/crash_files/*.gz $LOG_PATH"
   mv_csv="cp $3/log/latest/*.csv $LOG_PATH"
+  mv_log="mv $3/log/latest/deployment.log $LOG_PATH"
   export_cmd="export LOG_PATH=$LOG_PATH"
   if [ -d $dir_path ]
   then
@@ -46,16 +49,30 @@
   if [ -d "$LOG_PATH" ]
   then
       echo "INFO: Directory exists"
-      echo "INFO: Copying logs to nfs share"
-      eval "$mv_cmd"
-      echo "INFO: Copied the logs: $LOG_PATH"
-      eval "$export_cmd"
   else
       echo "INFO: Directory not exists"
       echo "INFO: Creating dir"
       eval "$cmd3"
-      eval "$mv_cmd"
-      eval "$mv_csv"
-     echo "INFO: Copied the logs: $LOG_PATH"
-     eval "$export_cmd"
   fi
+  if [ -f "$3/log/latest/TEST-N*" ]
+  then
+      eval "$mv_cmd"
+  fi
+  if [ -f "$3/support_bundle/*.tar" ]
+  then
+      eval "$mv_cmd2"
+  fi
+  if [ -f "$3/crash_files/*.gz" ]
+  then
+      eval "$mv_cmd3"
+  fi
+  if [ -f "$3/log/latest/deployment.log" ]
+  then
+      eval "$mv_log"
+  fi
+  if [ -f "$3/log/latest/*.csv" ]
+  then
+      eval "$mv_csv"
+  fi
+  echo "INFO: Copied the logs: $LOG_PATH"
+  eval "$export_cmd"

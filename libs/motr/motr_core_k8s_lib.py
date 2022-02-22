@@ -72,16 +72,18 @@ class MotrCoreK8s():
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
-                nodename = node["name"]
-                self.cortx_node_list.append(nodename)
-                node_dict[nodename] = {}
-                node_dict[nodename]['m0client'] = []
-                for svc in node["svcs"]:
-                    if svc["name"] == "hax":
-                        node_dict[nodename]['hax_fid'] = svc["fid"]
-                        node_dict[nodename]['hax_ep'] = svc["ep"]
-                    if svc["name"] == "m0_client":
-                        node_dict[nodename]['m0client'].append({"ep": svc["ep"], "fid": svc["fid"]})
+                if 'data' in node['name']:
+                    nodename = node["name"]
+                    self.cortx_node_list.append(nodename)
+                    node_dict[nodename] = {}
+                    node_dict[nodename]['m0client'] = []
+                    for svc in node["svcs"]:
+                        if svc["name"] == "hax":
+                            node_dict[nodename]['hax_fid'] = svc["fid"]
+                            node_dict[nodename]['hax_ep'] = svc["ep"]
+                        if svc["name"] == "m0_client":
+                            node_dict[nodename]['m0client'].append({"ep": svc["ep"],
+                                                                    "fid": svc["fid"]})
             return node_dict
 
     def get_node_pod_dict(self):
@@ -179,7 +181,7 @@ class MotrCoreK8s():
                                                                               remote_file_path,
                                                                               result[1]))
         m0crate_run_cmd = f'm0crate -S {remote_file_path}'
-        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node, \
+        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node,
                                                       remote_file_path,
                                                       common_const.HAX_CONTAINER_NAME)
         log.info(result)
@@ -194,12 +196,9 @@ class MotrCoreK8s():
                                                                       self.master_passwd)
         log.info("%s , %s", result, error1)
         if ret:
-            log.info('"%s" Failed, Please check the log', cmd)
-            assert False
-        if (b"ERROR" or b"Error") in error1:
-            log.error('"%s" failed, please check the log', cmd)
-            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
+            assert False, "Failed with return code {}, Please check the logs".format(ret)
+        assert not any((error_str in error1.decode("utf-8") for error_str in
+                        ['error', 'ERROR', 'Error'])), "Errors found in output {}".format(error1)
 
     def dd_cmd(self, b_size, count, file, node):
         """
@@ -365,13 +364,13 @@ class MotrCoreK8s():
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
+                                           f'"{cmd}" Failed, Please check the log')
             log.info('Checking libfabric version')
             cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_VERSION)     
+                                                            common_cmd.LIBFAB_VERSION)
             result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                           self.master_uname,
-                                                                          self.master_passwd)         
+                                                                          self.master_passwd)
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
@@ -381,10 +380,10 @@ class MotrCoreK8s():
                                            f'"{cmd}" Failed, Please check the log')
             log.info('Checking libfabric tcp protocol presence')
             cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_TCP)                                    
+                                                            common_cmd.LIBFAB_TCP)
             result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                           self.master_uname,
-                                                                          self.master_passwd)                                                  
+                                                                          self.master_passwd)
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
@@ -393,18 +392,18 @@ class MotrCoreK8s():
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                            f'"{cmd}" Failed, Please check the log')
             log.info('Checking libfabric socket protocol presence')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node], 
-                                                            common_cmd.LIBFAB_SOCKET)                                       
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
+                                                            common_cmd.LIBFAB_SOCKET)
             result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
                                                                           self.master_uname,
-                                                                          self.master_passwd)		
+                                                                          self.master_passwd)
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
+                                           f'"{cmd}" Failed, Please check the log')
             # Below support verbs for HW is removed from libfabrc code as of now.
             # ...Commenting the same
             """
@@ -441,3 +440,28 @@ class MotrCoreK8s():
         elif size[-1].upper() == 'K':
             size = int(size[0: -1]) * 1024
         return size
+
+    def kv_cmd(self, param, node, client_num):
+        """
+        M0KV command creation
+
+        :param: Input Parameters
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on m0client
+        """
+        if client_num is None:
+            client_num = 0
+        node_dict = self.get_cortx_node_endpoints(node)
+        cmd = common_cmd.M0KV.format(node_dict["m0client"][client_num]["ep"],
+                                     node_dict["hax_ep"],
+                                     node_dict["m0client"][client_num]["fid"],
+                                     self.profile_fid, param)
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                          namespace=common_const.NAMESPACE,
+                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                         f"-- {cmd}", decode=True)
+
+        log.info("Resp: %s", resp)
+
+        assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                   f'"{cmd}" Failed, Please check the log')

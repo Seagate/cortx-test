@@ -26,8 +26,10 @@ import os
 import random
 import sys
 import time
+import copy
 from multiprocessing import Process
 from time import perf_counter_ns
+import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -46,6 +48,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
+from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -334,7 +337,7 @@ class HAK8s:
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
-            nsamples: int = 20,
+            nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False):
         """
@@ -350,7 +353,7 @@ class HAK8s:
         :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
-        workloads = HA_CFG["s3_bench_workloads"]
+        workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
@@ -368,7 +371,7 @@ class HAK8s:
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
                 return False, f"s3bench operation failed with {resp}"
-        return True, "Sucessfully completed s3bench operation"
+        return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
         """
@@ -873,6 +876,7 @@ class HAK8s:
         :rtype: Boolean, list
         """
         log_list = []
+        resp = False
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
             resp = s3bench.check_log_file_error(file_path=log)
@@ -991,8 +995,12 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(HA_CFG["common_params"]["10sec_delay"])
-                        bucket_list = s3_test_obj.bucket_list()[1]
+                        while True:
+                            time.sleep(HA_CFG["common_params"]["5sec_delay"])
+                            bucket_list = s3_test_obj.bucket_list()[1]
+                            if len(bucket_list) > 0:
+                                time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                                break
 
             LOGGER.info("Deleted %s number of buckets.", count)
 
@@ -1074,3 +1082,105 @@ class HAK8s:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
                     return True, node_ip, node_iface, new_worker_obj
+
+    @staticmethod
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
+                                   bkt_op=True):
+        """
+        Helper function to do chunk upload.
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param file_size: Size of the file to be created to upload
+        :param chunk_obj_path: Path of the file to be uploaded
+        :param output: Queue used to fill output
+        :param bkt_op: Flag to create bucket and object
+        :return: response
+        """
+        jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        if bkt_op:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                output.put(False)
+                sys.exit(1)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
+
+            LOGGER.info("Creating object file of 5GB")
+            resp = system_utils.create_file(chunk_obj_path, file_size)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                output.put(False)
+                sys.exit(1)
+
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
+        put_cmd = f"{java_cmd} -c {jclient_prop} put {chunk_obj_path} s3://{bucket_name} " \
+                  f"--access_key {access_key} --secret_key {secret_key}"
+        LOGGER.info("Running command %s", put_cmd)
+        resp = system_utils.execute_cmd(put_cmd)
+        if not resp:
+            output.put(False)
+            sys.exit(1)
+
+        output.put(True)
+        sys.exit(0)
+
+    @staticmethod
+    def setup_jclient(jc_obj):
+        """
+        Helper function to setup jclient
+        :param jc_obj: Object for jclient
+        :return: response
+        """
+        LOGGER.info("Setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            LOGGER.info(res)
+            if not res:
+                LOGGER.error("Error: jcloudclient.jar or jclient.jar file does not exists")
+                return res
+        resp = jc_obj.update_jclient_jcloud_properties()
+        return resp
+
+    @staticmethod
+    def get_config_value(pod_obj, pod_list=None):
+        """
+        :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the cluster.conf File
+        :return: (bool, response)
+        """
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        conf_cp = common_cmd.K8S_CP_TO_LOCAL_CMD.format(pod_name,
+                                                        common_const.CLUSTER_CONF_PATH,
+                                                        common_const.LOCAL_CONF_PATH,
+                                                        common_const.HAX_CONTAINER_NAME)
+        resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False, exc=False)
+        if not resp_node[0]:
+            LOGGER.error("Error: Not able to get cluster config file")
+            return False, resp_node
+        LOGGER.debug("%s response %s ", conf_cp, resp_node)
+        local_conf = os.path.join(os.getcwd(), "cluster.conf")
+        if os.path.exists(local_conf):
+            os.remove(local_conf)
+        resp = pod_obj.copy_file_to_local(
+            remote_path=common_const.LOCAL_CONF_PATH, local_path=local_conf)
+        if not resp[0]:
+            LOGGER.error("Error: Failed to copy cluster.conf to local")
+            return False, resp
+        conf_fd = open(local_conf, 'r')
+        data = yaml.safe_load(conf_fd)
+
+        return True, data
