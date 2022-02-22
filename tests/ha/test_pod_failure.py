@@ -271,7 +271,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
@@ -343,7 +344,8 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
@@ -405,7 +407,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
@@ -416,7 +418,7 @@ class TestPodFailure:
         self.test_prefix = 'test-23552-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects.")
 
@@ -483,7 +485,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
@@ -494,7 +496,7 @@ class TestPodFailure:
         self.test_prefix = 'test-264401-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
