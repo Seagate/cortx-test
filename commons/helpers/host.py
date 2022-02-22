@@ -642,3 +642,4 @@ if __name__ == '__main__':
     print(hostobj.execute_cmd(cmd='ls', read_lines=True))
     # Test 2 -- term capturing API's are not supported.
     hostobj.execute_cmd(cmd='top', read_lines=True)
+    
