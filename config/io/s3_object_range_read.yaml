@@ -1,5 +1,5 @@
 test_1:
-  TEST_ID:
+  TEST_ID: TEST-36564
   object_size:
     start: 0Kb
     end: 100Kb
@@ -9,7 +9,7 @@ test_1:
   tool: s3api
 
 test_2:
-  TEST_ID:
+  TEST_ID: TEST-36565
   object_size:
     start: 100Kb
     end: 1Mb
@@ -19,7 +19,7 @@ test_2:
   tool: s3api
 
 test_3:
-  TEST_ID:
+  TEST_ID: TEST-36566
   object_size:
     start: 1Mb
     end: 10Mb
@@ -29,7 +29,7 @@ test_3:
   tool: s3api
 
 test_4:
-  TEST_ID:
+  TEST_ID: TEST-36567
   object_size:
     start: 10Mb
     end: 20Mb
@@ -39,7 +39,7 @@ test_4:
   tool: s3api
 
 test_5:
-  TEST_ID:
+  TEST_ID: TEST-36568
   object_size:
     start: 20Mb
     end: 100Mb
@@ -49,7 +49,7 @@ test_5:
   tool: s3api
 
 test_6:
-  TEST_ID:
+  TEST_ID: TEST-36569
   object_size:
     start: 100Mb
     end: 500Mb
@@ -59,7 +59,7 @@ test_6:
   tool: s3api
 
 test_7:
-  TEST_ID:
+  TEST_ID: TEST-36570
   object_size:
     start: 500Mb
     end: 1Gb
@@ -69,7 +69,7 @@ test_7:
   tool: s3api
 
 test_8:
-  TEST_ID:
+  TEST_ID: TEST-36571
   object_size:
     start: 1Gb
     end: 2Gb
@@ -79,7 +79,7 @@ test_8:
   tool: s3api
 
 test_9:
-  TEST_ID:
+  TEST_ID: TEST-36572
   object_size:
     start: 2Gb
     end: 5Gb
@@ -89,7 +89,7 @@ test_9:
   tool: s3api
 
 test_10:
-  TEST_ID:
+  TEST_ID: TEST-36573
   object_size:
     start: 5Gb
     end: 10Gb
@@ -99,7 +99,7 @@ test_10:
   tool: s3api
 
 test_11:
-  TEST_ID:
+  TEST_ID: TEST-36574
   object_size:
     start: 10Gb
     end: 20Gb
@@ -109,7 +109,7 @@ test_11:
   tool: s3api
 
 test_12:
-  TEST_ID:
+  TEST_ID: TEST-36575
   object_size:
     start: 20Gb
     end: 50Gb
