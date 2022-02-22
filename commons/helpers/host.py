@@ -42,7 +42,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AbsHost:
-
     """Abstract class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
@@ -83,7 +82,9 @@ class AbsHost:
         except socket.timeout as timeout_exception:
             LOGGER.error("Could not establish connection because of timeout: %s",
                          timeout_exception)
-            self.reconnect(retry, shell=shell, timeout=timeout, **kwargs)
+            reconnected = self.reconnect(retry=retry, shell=shell, timeout=timeout, **kwargs)
+            if not reconnected:
+                raise TimeoutError(f'Connection timed out on {self.hostname}')
         except Exception as error:
             LOGGER.error(
                 "Exception while connecting to server: Error: %s",
@@ -150,6 +151,10 @@ class AbsHost:
                 time.sleep(wait_time)
         return False
 
+
+class Host(AbsHost):
+    """Class for performing system file operation on Host"""
+
     def execute_cmd(self,
                     cmd: str,
                     inputs: str = None,
@@ -175,9 +180,8 @@ class AbsHost:
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
-        self.connect(timeout=timeout, **kwargs)
-        stdin, stdout, stderr = self.host_obj.exec_command(
-            cmd, timeout=timeout)
+        self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
@@ -202,11 +206,6 @@ class AbsHost:
             return stdout.readlines()
 
         return stdout.read(read_nbytes)
-
-
-class Host(AbsHost):
-
-    """Class for performing system file operation on Host"""
 
     def path_exists(self, path: str) -> bool:
         """
@@ -411,7 +410,7 @@ class Host(AbsHost):
             return False, "String Not Found"
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.is_string_in_remote_file.__name__, error)
+                         Host.is_string_in_remote_file.__name__, error)
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -436,7 +435,7 @@ class Host(AbsHost):
             return False, resp
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.validate_is_dir.__name__, error)
+                         Host.validate_is_dir.__name__, error)
             return False, error
 
     def list_dir(self, remote_path: str) -> list:
@@ -561,7 +560,7 @@ class Host(AbsHost):
             LOGGER.debug(resp)
         except Exception as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.shutdown_node.__name__, error)
+                         Host.shutdown_node.__name__, error)
             return False, error
 
         return True, "Node shutdown successfully"
@@ -620,3 +619,13 @@ class Host(AbsHost):
         self.disconnect()
 
         return not self.path_exists(filename)
+
+
+if __name__ == '__main__':
+    hostobj = Host(hostname='<>',
+                   username='<>',
+                   password='<>')
+    # Test 1
+    print(hostobj.execute_cmd(cmd='ls', read_lines=True))
+    # Test 2 -- term capturing API's are not supported.
+    hostobj.execute_cmd(cmd='top', read_lines=True)
