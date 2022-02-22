@@ -580,7 +580,7 @@ class TestIamUserRGW():
         self.created_iam_users.add(payload["uid"])
         self.log.info("Step 2: Create bucket and perform IO")
         bucket_name = "iam_user_bucket_" + str(int(time.time()))
-        s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"]
+        s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
                            secret_key=resp["keys"][0]["secret_key"])
         status, resp = s3_obj.create_bucket(bucket_name)
         assert status, resp
@@ -633,4 +633,3 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.OK
         self.created_iam_users.add(payload["uid"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
