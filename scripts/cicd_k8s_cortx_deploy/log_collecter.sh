@@ -49,23 +49,30 @@
   if [ -d "$LOG_PATH" ]
   then
       echo "INFO: Directory exists"
-      echo "INFO: Copying logs to nfs share"
-      eval "$mv_cmd"
-      eval "$mv_cmd2"
-      eval "$mv_cmd3"
-      eval "$mv_log"
-      eval "$mv_csv"
-      echo "INFO: Copied the logs: $LOG_PATH"
-      eval "$export_cmd"
   else
       echo "INFO: Directory not exists"
       echo "INFO: Creating dir"
       eval "$cmd3"
-      eval "$mv_cmd"
-      eval "$mv_cmd2"
-      eval "$mv_cmd3"
-      eval "$mv_log"
-      eval "$mv_csv"
-     echo "INFO: Copied the logs: $LOG_PATH"
-     eval "$export_cmd"
   fi
+  if [ -f "$3/log/latest/TEST-N*" ]
+  then
+      eval "$mv_cmd"
+  fi
+  if [ -f "$3/support_bundle/*.tar" ]
+  then
+      eval "$mv_cmd2"
+  fi
+  if [ -f "$3/crash_files/*.gz" ]
+  then
+      eval "$mv_cmd3"
+  fi
+  if [ -f "$3/log/latest/deployment.log" ]
+  then
+      eval "$mv_log"
+  fi
+  if [ -f "$3/log/latest/*.csv" ]
+  then
+      eval "$mv_csv"
+  fi
+  echo "INFO: Copied the logs: $LOG_PATH"
+  eval "$export_cmd"
