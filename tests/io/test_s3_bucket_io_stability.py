@@ -19,8 +19,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """This file contains S3 Bucket operations test script for io stability."""
 
-from __future__ import division
-
 import logging
 import os
 import random
@@ -44,13 +42,15 @@ class TestBucketOps(S3Object, S3Bucket):
                  use_ssl: str, obj_start_size: int, obj_end_size: int,
                  duration: timedelta = None) -> None:
         """
-        s3 multipart init class.
+        s3 bucket operations init class.
 
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint with http or https.
         :param test_id: Test ID string.
         :param use_ssl: To use secure connection.
+        :param obj_start_size: Object size start range
+        :param obj_end_size: Object size end range
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
@@ -70,12 +70,12 @@ class TestBucketOps(S3Object, S3Bucket):
             logger.info("Iteration %s is started...", self.iteration)
             try:
                 file_size = random.randrange(self.obj_start_size, self.obj_end_size)
-                bucket_name = f'bucket-op-{time.time()}'
+                bucket_name = f'bucket-op-{time.perf_counter_ns()}'
                 logger.info("Create bucket %s", bucket_name)
                 self.create_bucket(bucket_name)
                 logger.info("Upload %s objects to bucket %s", self.object_per_iter, bucket_name)
-                for i in range(0, self.object_per_iter):
-                    file_name = f'object-bucket-op-{time.time()}'
+                for _ in range(0, self.object_per_iter):
+                    file_name = f'object-bucket-op-{time.perf_counter_ns()}'
                     with open(file_name, 'wb') as fout:
                         fout.write(os.urandom(file_size))
                     self.upload_object(bucket_name, file_name, file_name)
