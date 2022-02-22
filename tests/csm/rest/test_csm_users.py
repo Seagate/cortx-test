@@ -3727,7 +3727,6 @@ class TestCsmUser():
         self.created_users.append(userid)
         self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
-        time.sleep(1)
         self.log.info("Creating monitor user")
         response = self.csm_obj.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Verifying if user was created successfully")
@@ -4983,7 +4982,6 @@ class TestCsmUser():
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             new_users[roles.index(role)].append(response.json()["username"])
             self.created_users.append(response.json()["username"])
-            time.sleep(1)
 
         self.log.info("Step 3: List users with roles and cross check")
         for role in roles:
@@ -5288,7 +5286,7 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'manage', "User is not created with manage role"
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 2: Creating 3 csm monitor users")
         for _ in range(3):
             response = self.csm_obj.create_csm_user(user_type="valid",
@@ -5301,7 +5299,7 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'monitor', "User is not created with monitor role"
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 3: Creating 3 s3 account users")
         for _ in range(3):
             response = self.csm_obj.create_s3_account(user_type="valid")
@@ -5311,7 +5309,7 @@ class TestCsmUser():
             self.created_s3_users.append(username)
             self.log.info("users list is %s", self.created_users)
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 4: Login with first manage user and change password for second")
         response = self.csm_obj.edit_csm_user(login_as=new_user,
                                                user=self.created_users[1],
@@ -5375,7 +5373,7 @@ class TestCsmUser():
             admin_usr.append(username)
             self.created_users.append(username)
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 2: Creating 10 manage users")
         for _ in range(10):
             response = self.csm_obj.create_csm_user(user_role="manage",
@@ -5386,7 +5384,7 @@ class TestCsmUser():
             manage_usr.append(username)
             self.created_users.append(username)
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 3: Creating 10 monitor users")
         for _ in range(10):
             response = self.csm_obj.create_csm_user(user_role="monitor",
@@ -5397,7 +5395,7 @@ class TestCsmUser():
             monitor_usr.append(username)
             self.created_users.append(username)
             self.log.info("Verified User %s got created successfully", username)
-            time.sleep(1)
+
         self.log.info("Step 4: change role of first 5 manage users to monitor")
         for usr in manage_usr[0:6]:
             self.log.info("Editing role for %s manage user", usr)
@@ -5482,7 +5480,7 @@ class TestCsmUser():
             self.log.info("Verifying if user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             self.created_users.append(response.json()["username"])
-            time.sleep(1)
+
         self.log.info("Deleting all random csm users except predefined ones...")
         for usr in self.created_users:
             response = self.csm_obj.delete_csm_user(usr)
@@ -5502,7 +5500,7 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
-            time.sleep(1)
+
         self.log.info("Deleting all csm admin users except predefined ones...")
         deleted_users = []
         for usr in self.created_users:
@@ -5523,7 +5521,7 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
-            time.sleep(1)
+
         deleted_users = []
         self.log.info("Deleting all csm manage users except predefined ones...")
         for usr in self.created_users:
@@ -5544,7 +5542,7 @@ class TestCsmUser():
             username = response.json()["username"]
             self.log.info("Verified User %s got created successfully", username)
             self.created_users.append(response.json()["username"])
-            time.sleep(1)
+
         deleted_users = []
         self.log.info("Deleting all csm monitor users except predefined ones...")
         for usr in self.created_users:
