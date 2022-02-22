@@ -1,0 +1,119 @@
+test_1:
+  TEST_ID: TEST-36184
+  object_size: 4Gib
+  part_size:
+    start: 5Mib
+    end: 10Mib
+  result_duration: 2h
+  sessions: 5
+  tool: s3bench
+
+test_2:
+  TEST_ID: TEST-36185
+  object_size: 8Gib
+  part_size:
+    start: 5Mib
+    end: 10Mib
+  result_duration: 2h
+  sessions: 5
+  tool: s3bench
+
+test_3:
+  TEST_ID: TEST-36186
+  object_size: 16Gib
+  part_size:
+    start: 7Mib
+    end: 10Mib
+  result_duration: 20h
+  sessions: 10
+  tool: s3bench
+
+test_4:
+  TEST_ID: TEST-36187
+  object_size: 32Gib
+  part_size:
+    start: 10Mib
+    end: 14Mib
+  result_duration: 1d
+  sessions: 10
+  tool: s3bench
+
+test_5:
+  TEST_ID: TEST-36188
+  object_size: 64Gib
+  part_size:
+    start: 17Mib
+    end: 21Mib
+  result_duration: 1d
+  sessions: 15
+  tool: s3bench
+
+test_6:
+  TEST_ID: TEST-36189
+  object_size: 128Gib
+  part_size:
+    start: 28Mib
+    end: 34Mib
+  result_duration: 2d
+  sessions: 15
+  tool: s3bench
+
+test_7:
+  TEST_ID: TEST-36190
+  object_size: 256Gib
+  part_size:
+    start: 49Mib
+    end: 57Mib
+  result_duration: 2d
+  sessions: 20
+  tool: s3bench
+
+test_8:
+  TEST_ID: TEST-36191
+  object_size: 512Gib
+  part_size:
+    start: 85Mib
+    end: 98Mib
+  result_duration: 4d
+  sessions: 20
+  tool: s3bench
+
+test_9:
+  TEST_ID: TEST-36192
+  object_size: 1Tib
+  part_size:
+    start: 85Mib
+    end: 171Mib
+  result_duration: 5d
+  sessions: 25
+  tool: s3bench
+
+test_10:
+  TEST_ID: TEST-36194
+  object_size: 2Tib
+  part_size:
+    start: 85Mib
+    end: 171Mib
+  result_duration: 5d
+  sessions: 25
+  tool: s3bench
+
+test_11:
+  TEST_ID: TEST-36195
+  object_size: 4Tib
+  part_size:
+    start: 85Mib
+    end: 171Mib
+  result_duration: 5d
+  sessions: 30
+  tool: s3bench
+
+test_12:
+  TEST_ID: TEST-36196
+  object_size: 5Tib
+  part_size:
+    start: 68Mib
+    end: 107Mib
+  result_duration: 5d
+  sessions: 30
+  tool: s3bench
