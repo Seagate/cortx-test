@@ -126,7 +126,6 @@ class TestRestartPod:
         self.deployment_name = resp[1]
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
         #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
@@ -138,6 +137,7 @@ class TestRestartPod:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
+        self.restore_pod = False
 
         #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
         #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
@@ -304,7 +304,6 @@ class TestRestartPod:
         self.deployment_name = resp[1]
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
         #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
@@ -316,6 +315,7 @@ class TestRestartPod:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
+        self.restore_pod = False
 
         #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
         #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867

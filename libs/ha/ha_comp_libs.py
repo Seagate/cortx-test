@@ -129,6 +129,6 @@ class HAK8SCompLib:
             res = master_node_obj.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
                 command_suffix=f"-c {container} -- {common_cmd.SERVICE_HA_STATUS}", decode=True)
-            if HA_PROCESS not in res:
+            if common_const.HA_PROCESS not in res:
                 return False
         return True
