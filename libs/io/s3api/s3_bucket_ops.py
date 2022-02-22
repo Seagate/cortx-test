@@ -31,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 class S3Bucket(S3RestApi):
     """Class for bucket operations."""
 
-    def create_bucket(self, bucket_name: str) -> dict:
+    def create_bucket(self, bucket_name: str) -> object:
         """
         Creating Bucket.
 
