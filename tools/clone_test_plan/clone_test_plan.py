@@ -168,7 +168,7 @@ def parse_args():
     parser.add_argument("-p", "--platform", type=str, default='VM_HW',
                         help="For which environment test plan needs to be created: VM/HW/OVA")
     parser.add_argument("-n", "--nodes", type=str,
-                        help="Number of nodes in target: 1/3/N", required=True)
+                        help="Number of nodes in target: 1/3/N", default='', required=True)
     parser.add_argument("-sr", "--server_type", type=str,
                         help="Server type: HPC/DELL/SMC", required=True)
     parser.add_argument("-e", "--enclosure_type", type=str, default='5U84',

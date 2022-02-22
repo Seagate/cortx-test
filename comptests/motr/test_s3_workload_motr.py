@@ -64,7 +64,7 @@ class TestWorkloadS3Bench:
         cls.downloaded_file_path = os.path.join(cls.test_dir_path, cls.downloaded_file)
         cls.buckets_list = list()
 
-    @pytest.mark.motr_io_load
+    @pytest.mark.motr_sanity
     @pytest.mark.tags("TEST-23041")
     @CTFailOn(error_handler)
     def test_23041(self):
@@ -92,7 +92,7 @@ class TestWorkloadS3Bench:
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
 
-    @pytest.mark.motr_io_load
+    @pytest.mark.motr_sanity
     @pytest.mark.tags("TEST-25612")
     @CTFailOn(error_handler)
     def test_download_object_from_bucket_25612(self):

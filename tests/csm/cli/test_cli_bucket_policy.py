@@ -503,6 +503,8 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 7: Deleting bucket policy with csm user is failed with error %s",
             resp[1])
+        # delete created CSM user
+        self.csm_user_obj.delete_csm_user(self.user_name)
 
     @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops

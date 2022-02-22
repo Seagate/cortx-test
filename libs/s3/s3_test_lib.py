@@ -56,7 +56,7 @@ class S3TestLib(S3Lib):
                  s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
-        Initialize members of SS3TestLib and its parent class.
+        Initialize members of S3TestLib and its parent class.
 
         :param access_key: access key.
         :param secret_key: secret key.

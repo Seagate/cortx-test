@@ -84,7 +84,8 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 
 # pylint: disable=max-args
-def create_support_bundle_single_cmd(local_dir, bundle_name,comp_list=None,size=None,services=None):
+def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
+                                     size=None, services=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param local_dir: Local directory where support bundles will be copied
@@ -272,13 +273,14 @@ def collect_crash_files_k8s(local_dir_path: str):
 
 
 def generate_sb_lc(dest_dir: str, sb_identifier: str,
-                   pod_name: str = None, msg: str = "SB"):
+                   pod_name: str = None, msg: str = "SB", container_name: str = None):
     """
     This function is used to generate support bundle
     :param dest_dir: target directory to create support bundle into
     :param sb_identifier: support bundle identifier
     :param pod_name: name of the pod in which support bundle is generated
     :param msg: Relevant comment to link to support bundle request
+    :param container_name: name of the container
     :rtype response of support bundle generate command
     """
     LOGGER.info("Generating support bundle")
@@ -295,9 +297,15 @@ def generate_sb_lc(dest_dir: str, sb_identifier: str,
         pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
         pod_name = pod_list[0]
 
+    if container_name is None:
+        output = node_obj.execute_cmd(cmd=cm_cmd.KUBECTL_GET_POD_CONTAINERS.format(pod_name),
+                                      read_lines=True)
+        container_list = output[0].split()
+        container_name = container_list[0]
+
     resp = node_obj.send_k8s_cmd(
         operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
-        command_suffix=f"-c {cm_const.HAX_CONTAINER_NAME} -- "
+        command_suffix=f"-c {container_name} -- "
                        f"{cm_cmd.SUPPORT_BUNDLE_LC.format(dest_dir, sb_identifier, msg)}",
         decode=True)
     return resp
@@ -348,3 +356,17 @@ def log_file_size_on_path(pod_name: str, log_path: str):
                                    command_suffix=f"-- ls -l --block-size=MB {log_path}",
                                    decode=True)
     return resp
+
+
+def file_with_prefix_exists_on_path(path: str, file_prefix: str):
+    """
+    This function is used to verify file with prefix exists on given path
+    :param path: directory path
+    :param file_prefix: file prefix
+    :rtype bool
+    """
+    resp = os.listdir(path)
+    for file in resp:
+        if file_prefix in str(file):
+            return True
+    return False

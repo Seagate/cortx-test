@@ -66,7 +66,7 @@ deactivate
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
 				script {
-			        env.Sanity_Failed = true
+			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
@@ -106,8 +106,8 @@ deactivate
                         def lines = failures.readLines()
                         if (lines) {
                             echo "Sanity Test Failed"
+                            env.Sanity_Failed = true
                             currentBuild.result = 'FAILURE'
-                            error('Skipping Regression as Sanity Test Failed')
                         }
                     }
 				}
@@ -116,7 +116,6 @@ deactivate
 		stage('REGRESSION_TEST_EXECUTION') {
 			steps {
 				script {
-			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
@@ -159,7 +158,28 @@ deactivate
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
+            		  env.new_TP = records[0][0]
         		  }
+        		   withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					sh label: '', script: '''source venv/bin/activate
+export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}
+deactivate
+'''
+}
+                  if ( fileExists('total_count.csv')) {
+                      def testcount = readCSV file: 'total_count.csv'
+                      env.totalcount = testcount[0][0]
+                      env.passcount = testcount[0][1]
+                      env.failcount = testcount[0][2]
+                      env.skipcount = testcount[0][3]
+                      env.todocount = testcount[0][4]
+                      echo "Total : ${totalcount}"
+                      echo "Pass : ${passcount}"
+                      echo "Fail : ${failcount}"
+                      echo "Skip : ${skipcount}"
+                      echo "Todo : ${todocount}"
+ }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
@@ -181,7 +201,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}

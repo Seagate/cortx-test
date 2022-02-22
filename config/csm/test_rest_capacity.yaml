@@ -27,4 +27,23 @@ test_33929:
   object_size:
     start_range: 10
     stop_range: 100
-
+test_33925:
+  err_margin: 0
+  object_size:
+    start_range: 10
+    stop_range: 100
+test_33926:
+  err_margin: 0
+  object_size:
+    start_range: 10
+    stop_range: 100
+test_33927:
+  err_margin: 0
+  object_size:
+    start_range: 10
+    stop_range: 100
+test_34698:
+  err_margin: 0
+  object_size:
+    start_range: 10
+    stop_range: 100

@@ -90,7 +90,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
-    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+    pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.SERVER_POD_NAME_PREFIX)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
@@ -98,13 +98,27 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
         worker_node[worker].update({"eth1": resp[0].strip("\n")})
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     resp = json.loads(resp)
+    get_port_data = dict()
     for item_data in resp["items"]:
         if item_data["spec"]["type"] == "LoadBalancer" and \
-                "cortx-data-pod" in item_data["spec"]["selector"]["app"]:
-            worker = item_data["spec"]["selector"]["app"].split("pod-")[1] + ".colo.seagate.com"
-            for port_items in item_data["spec"]["ports"]:
-                worker_node[worker].update({f"{port_items['targetPort']}": port_items["nodePort"]})
-    LOGGER.info("Worker node IP PORTs info for haproxy: %s", worker_node)
+                "cortx-server" in item_data["spec"]["selector"]["app"]:
+            worker = item_data["spec"]["selector"]["app"].split("cortx-server-")[1] \
+                     + ".colo.seagate.com"
+            get_port_data[worker] = dict()
+            if item_data["spec"].get("ports") is not None:
+                for port_items in item_data["spec"]["ports"]:
+                    get_port_data[worker].update({f"{port_items['targetPort']}":
+                                                      port_items["nodePort"]})
+            else:
+                LOGGER.info("Failed to get ports details from %s", get_port_data.get(worker))
+    LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_port_data)
+    for worker in worker_node.keys():
+        if get_port_data.get(worker) is not None:
+            worker_node[worker].update(get_port_data[worker])
+        else:
+            assert_utils.assert_true(False, f"Can't find port details for {worker} "
+                                            f"from {get_port_data}")
+
     with open(cm_const.HAPROXY_DUMMY_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
     if not os.path.exists("/etc/haproxy"):

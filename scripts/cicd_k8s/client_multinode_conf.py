@@ -60,7 +60,7 @@ def create_db_entry(m_node, username: str, password: str,
     node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     mgnt_resp = node_obj.execute_cmd(com_cmds.K8S_GET_MGNT, read_lines=True)
     for line in mgnt_resp:
-        if "cortx-control-pod" in line:
+        if "cortx-control" in line:
             mgmt_vip = line.split()[6]
     print("Cortx control pod running on: ", mgmt_vip)
     output_node = node_obj.execute_cmd(com_cmds.CMD_GET_NODE, read_lines=True)
@@ -153,6 +153,19 @@ def main():
                                              json_data['DB_USER'], json_data['DB_PASSWORD']),
                                      flg=True)
         print("Output for updated DB entry: ", out)
+    print("Creating new dir for kube config.")
+    sysutils.execute_cmd(cmd="mkdir -p /root/.kube")
+    print("Copying config from Master node.")
+    m_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
+    local_conf = os.path.join("/root/.kube", "config")
+    if os.path.exists(local_conf):
+        os.remove(local_conf)
+    resp = m_obj.copy_file_to_local(remote_path=local_conf, local_path=local_conf)
+    if not resp[0]:
+        print("Failed to copy config file, security tests might fail.")
+    print("Listing contents of kube dir")
+    resp = sysutils.execute_cmd(cmd="ls -l /root/.kube/")
+    print(resp)
     print("Mutlinode Server-Client Setup Done.")
 
 
