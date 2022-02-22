@@ -1615,7 +1615,7 @@ class TestPodFailure:
         thread1.start()
         LOGGER.info("Successfully started READs in background")
 
-        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Starting DELETEs of %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
@@ -1665,11 +1665,12 @@ class TestPodFailure:
         event.clear()
         thread1.join()
         thread2.join()
-        LOGGER.info("Background READs and DELETEs threads joined successful")
+        LOGGER.info("Background READs and DELETEs threads joined successfully.")
         LOGGER.info("Step 1: Verifying responses from READs background process")
         rd_resp = tuple()
+        LOGGER.info("Waiting for READ process output from Queue. Sleeping for %s",
+                    HA_CFG["common_params"]["60sec_delay"])
         while len(rd_resp) != 4:
-            LOGGER.info("Get READs Output from Queue")
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
             assert_utils.assert_true(False, "Background process failed to do reads")
@@ -1687,8 +1688,9 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Verifying responses from DELETEs background process")
         del_resp = tuple()
+        LOGGER.info("Waiting for DELETE process output from Queue. Sleeping for %s",
+                    HA_CFG["common_params"]["60sec_delay"])
         while len(del_resp) != 2:
-            LOGGER.info("Get DELETEs Output from Queue")
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
             assert_utils.assert_true(False, "Background process failed to do deletes")
