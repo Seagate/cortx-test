@@ -267,7 +267,8 @@ class TestIamUserRGW():
         payload.update({"access_key": ""})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status check failed for missing uid"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+                "Status check failed for invalid access key"
         self.log.info("[END] Testing with invalid access key")
 
         self.log.info("[START] Testing with invalid secret key")
@@ -275,7 +276,8 @@ class TestIamUserRGW():
         payload.update({"secret_key": ""})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status check failed for missing uid"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+                "Status check failed forinvalid access key"
         self.log.info("[END] Testing with invalid secret key")
 
         self.log.info("[START] Testing with invalid key-type")
@@ -283,7 +285,8 @@ class TestIamUserRGW():
         payload.update({"key_type": "abc"})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status check failed for missing uid"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+            "Status check failed for invalid key-type"
         self.log.info("[END] Testing with invalid key-type")
 
 
@@ -292,7 +295,8 @@ class TestIamUserRGW():
         payload.update({"user_caps": ""})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status check failed for missing uid"
+        assert resp.status_code == HTTPStatus.BAD_REQUEST,\
+            "Status check failed for invalid capability"
         self.log.info("[END] Testing with invalid capability parameter")
 
         self.log.info("[START] Testing with invalid token")
@@ -323,7 +327,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload,
                             login_as="csm_user_monitor")
-        assert resp.status_code == HTTPStatus.FORBIDDEN, "Failed to create IAM user"
+        assert resp.status_code == HTTPStatus.FORBIDDEN,\
+            "Create user with Monitor user check failed."
         self.log.info("TODO Verify Response : %s", resp)
         self.log.info("[END]Creating IAM user with basic parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
