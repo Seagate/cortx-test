@@ -28,11 +28,10 @@ import hashlib
 import logging
 import json
 import xmltodict
-from config import S3_CFG, CMN_CFG
+from config import S3_CFG
 from hashlib import md5
 from random import shuffle
 from typing import Any
-from commons.constants import S3_ENGINE_RGW
 
 
 
