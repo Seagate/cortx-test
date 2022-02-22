@@ -1,3 +1,7 @@
+"""
+Tests count from test plan
+"""
+
 import argparse
 import csv
 import os
@@ -8,6 +12,9 @@ TOTAL_COUNT_CSV = 'total_count.csv'
 
 
 def main():
+    """
+    main function
+    """
     parser = argparse.ArgumentParser(description="TODO count")
     parser.add_argument("-tp", help="test plan", required=True)
     parser.add_argument("-ji", help="jira password", required=True)
