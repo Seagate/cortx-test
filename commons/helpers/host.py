@@ -84,7 +84,7 @@ class AbsHost:
                     break
                 except SSHException as error:
                     LOGGER.exception("Exception in connecting %s", error)
-                    count = count+1
+                    count = count + 1
                     if count == retry_count:
                         raise error
                     LOGGER.debug("Retrying to connect the host")
@@ -178,7 +178,11 @@ class Host(AbsHost):
                                              bytes]]:
         """
         If connection is not established,  it will establish the connection and
-        Execute any command on remote machine/VM
+        Execute any command on remote machine/VM. Timeout is set for SSL handshake.
+        As per request by CFT Deployment team raising the TimeoutError if the timeout is
+        exceeded and the command is still running. This addition of `TimeoutError` has a
+        little performance overhead which might be more for fast commands and can consumes
+        more cpu cycles for larger timeouts.
         :param cmd: command user wants to execute on host.
         :param read_lines: Response will be return using readlines() else using read().
         :param inputs: used to pass yes argument to commands.
@@ -188,13 +192,19 @@ class Host(AbsHost):
         :param read_nbytes: maximum number of bytes to read.
         :return: stdout/strerr.
         """
+        timer = time.time()
         timeout = kwargs.get('timeout', 400)
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
-        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout) #nosec
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)  # nosec
+        # above is non blocking call and timeout is set for SSL handshake and command
+        while time.time() - timer < timeout and not stdout.channel.exit_status_ready():
+            time.sleep(1)  # to avoid perf impact on other commands
+        if time.time() - timer >= timeout:  # as per request by CFT Deployment team
+            raise TimeoutError('The script or command was not completed within estimated time')
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
@@ -635,9 +645,9 @@ class Host(AbsHost):
 
 
 if __name__ == '__main__':
-    hostobj = Host(hostname='<>',  #nosec
-                   username='<>',  #nosec
-                   password='<>')  #nosec
+    hostobj = Host(hostname='<>',  # nosec
+                   username='<>',  # nosec
+                   password='<>')  # nosec
     # Test 1
     print(hostobj.execute_cmd(cmd='ls', read_lines=True))
     # Test 2 -- term capturing API's are not supported.
