@@ -228,3 +228,8 @@ S3_DELETE_BUCKET_REQUEST_FAILED = CTError(9004, "S3-CLI Delete Bucket Request Fa
 S3_LOGGING_FAILED = CTError(9005, "S3-CLI Account Logging Failed")
 S3_LOGOUT_FAILED = CTError(9006, "S3-CLI Account Logout Failed")
 S3_START_IO_FAILED = CTError(9007, "S3-CLI IO Start Operation Failed")
+
+# DI
+S3_SET_FLAG = CTError(9008, "Unable to set flag in s3server config")
+MAINTENANCE_MODE = CTError(9009, "Unable to enable maintenance mode using hctl")
+UNMAINTENANCE_MODE = CTError(9010, "Unable to disable maintenance mode using hctl")

@@ -202,6 +202,7 @@ class Test3PSvcMonitoring:
         LOGGER.info("############ Successfully performed Teardown operation ############")
 
     @pytest.mark.tags("TEST-19609")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_19609_3ps_monitoring(self):
@@ -255,6 +256,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19963")
@@ -311,6 +313,7 @@ class Test3PSvcMonitoring:
         resp = self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, True)
         assert resp[0], resp[1]
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21194")
@@ -370,6 +373,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
             LOGGER.info("-" * 100)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21193")
@@ -437,6 +441,7 @@ class Test3PSvcMonitoring:
             assert op["state"] == "active", "Unable to recover the service"
             LOGGER.info("Step 9: Service configuration restored")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21196")
@@ -492,6 +497,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 4: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21198")
@@ -551,6 +557,7 @@ class Test3PSvcMonitoring:
 
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21233")
@@ -634,6 +641,7 @@ class Test3PSvcMonitoring:
                 starttime, const.ResourceType.SW_SVC, True)
             LOGGER.info("Step 11: Verified fault resolved alert on CSM")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21197")

@@ -88,6 +88,7 @@ class TestProvThreeNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.multinode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-21584")
     def test_deployment_three_node_vm(self):
         """

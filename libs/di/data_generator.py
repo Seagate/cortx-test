@@ -100,7 +100,7 @@ class DataGenerator:
 
         if datatype == DEFAULT_DATA_TYPE:
             # Ignoring de-dupe ratio for blobs.
-            if self.compression_ratio > 1:
+            if self.compression_ratio >= 1:
                 compressibility = int(100 - (1 / self.compression_ratio * 100))
                 buf = self.__get_data(size, compressibility, seed)
         buf = buf.encode('utf-8')[:size]  # hack until better solution is found.
@@ -178,6 +178,10 @@ class DataGenerator:
             LOGGER.error(f"An error {oe} occurred while creating path.")
 
         name = os.path.join(params.DATAGEN_HOME, data_folder_prefix, name)
+        return self.__save_data_to_file(fbuf, iosize, name, off, size)
+
+    # pylint: disable=max-args, R0201
+    def __save_data_to_file(self, fbuf, iosize, name, off, size):
         with open(name, 'wb', 512 * 1024) as fd:  # buffer size
             while off <= size:
                 if size < 1024:
@@ -197,9 +201,44 @@ class DataGenerator:
                 off += iosize
         return name
 
+    def create_file_from_buf(self,
+                             fbuf: Any,
+                             name: str,
+                             size: int) -> str:
+        """ Create file from a buffer with given name/path."""
+        if size < 1024:
+            iosize = 1024
+        elif (size >= 1024) & (size < 1024 * 1024):
+            iosize = 4096
+        elif size >= 1024 * 1024:
+            iosize = 1024 * 64
+        off = 0
+        return self.__save_data_to_file(fbuf, iosize, name, off, size)
+
+    @staticmethod
+    def add_first_byte_to_buffer(buffer, first_byte):
+        """
+        'non z and f' as first byte of file: then the file is not corrupted during put-object
+        'z' as first byte of file: then entire file zeroed during put-object after calculating
+         checksum, but before sending data to Motr.
+        'f' as first byte of file: then the first byte of the object is
+        set to 0 during put-object after calculating checksum,
+        but before sending data to Motr.
+
+        :param buffer:
+        :param first_byte: is a literal  z,f,Z, F which indicates different types of corruption.
+        :return: bytes
+        """
+        tbuf = bytearray(buffer)
+        tbuf[0] = ord(first_byte)
+        buffer = bytes(tbuf)
+        return buffer
+
+
 if __name__ == '__main__':
     # Test Data Generator here.
     d = DataGenerator(c_ratio=1)
     buf, csum = d.generate(1024 * 1024 * 5, seed=10)
     print(csum)
+    buf = d.add_first_byte_to_buffer(buf, 'z')
     d.save_buf_to_file(buf, csum, 1024 * 1024, "test-1")

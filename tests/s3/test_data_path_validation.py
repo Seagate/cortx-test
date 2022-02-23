@@ -26,11 +26,11 @@ from commons import commands as cmd
 from commons.constants import const
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.commands import CMD_S3BENCH
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.health_helper import Health
-from libs.s3 import CM_CFG
-from libs.s3 import S3H_OBJ, S3_CFG
+from config import CMN_CFG as CM_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
@@ -143,32 +143,25 @@ class TestDataPathValidation:
         :return: None
         """
         self.log.info("concurrent users TC using S3bench")
-        s3bench_cmd = CMD_S3BENCH.format(
-            self.access_key,
-            self.secret_key,
-            bucket,
-            S3_CFG["s3_url"],
-            100,
-            100,
-            obj_prefix,
-            "4Kb")
-        resp = system_utils.run_local_cmd(s3bench_cmd)
-        self.log.debug(resp)
+        res = s3bench_obj.s3bench(
+            access_key=self.access_key,
+            secret_key=self.secret_key,
+            bucket=bucket,
+            end_point=S3_CFG['s3b_url'],
+            num_clients=100,
+            num_sample=100,
+            obj_name_pref=obj_prefix,
+            obj_size="4Kb",
+            log_file_prefix=obj_prefix)
+        self.log.debug(res)
+        self.log_file.append(res[1])
+        resp = system_utils.validate_s3bench_parallel_execution(
+            log_dir=s3bench_obj.LOG_DIR, log_prefix=obj_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_is_not_none(resp[1], resp)
-        resp_split = resp[1].split("\\n")
-        resp_filtered = [i for i in resp_split if 'Number of Errors' in i]
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        assert_utils.assert_not_in(
-            "exit status 2", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
-        assert_utils.assert_not_in(
-            "panic", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8735')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
     def test_1696(self, obj_size, block_size):
@@ -184,6 +177,8 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8736')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, 1)])
     def test_1697(self, obj_size, block_size):
@@ -191,6 +186,8 @@ class TestDataPathValidation:
         self.test_1696(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8737')
     @pytest.mark.parametrize("obj_size, block_size", [(1, "1M")])
     def test_1698(self, obj_size, block_size):
@@ -206,6 +203,8 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8738')
     @pytest.mark.parametrize("obj_size, block_size", [(10, "1M")])
     def test_1699(self, obj_size, block_size):
@@ -213,6 +212,8 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8739')
     @pytest.mark.parametrize("obj_size, block_size", [(100, "1M")])
     def test_1700(self, obj_size, block_size):
@@ -220,6 +221,8 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-8740')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, "1M")])
     def test_1701(self, obj_size, block_size):
@@ -227,6 +230,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8741')
     @pytest.mark.parametrize("obj_size, block_size", [(10000, "1M")])
     def test_1702(self, obj_size, block_size):
@@ -234,6 +238,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8742')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
     def test_1703(self, obj_size, block_size):
@@ -250,6 +255,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8743')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, 1)])
     def test_1704(self, obj_size, block_size):
@@ -257,6 +263,7 @@ class TestDataPathValidation:
         self.test_1703(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8744')
     @pytest.mark.parametrize("obj_size, block_size", [(1, "1M")])
     def test_1705(self, obj_size, block_size):
@@ -273,6 +280,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8745')
     @pytest.mark.parametrize("obj_size, block_size", [(10, "1M")])
     def test_1706(self, obj_size, block_size):
@@ -280,6 +288,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8746')
     @pytest.mark.parametrize("obj_size, block_size", [(100, "1M")])
     def test_1707(self, obj_size, block_size):
@@ -287,6 +296,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8729')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, "1M")])
     def test_1708(self, obj_size, block_size):
@@ -294,6 +304,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8730')
     @pytest.mark.parametrize("obj_size, block_size", [(10000, "1M")])
     def test_1709(self, obj_size, block_size):
@@ -301,6 +312,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8731')
     @pytest.mark.parametrize("obj_size, requests",
                              [("8Mb", [100, 500, 1200, 1500])])
@@ -325,7 +337,7 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3_url"],
+                end_point=S3_CFG["s3b_url"],
                 num_clients=1,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
@@ -356,6 +368,7 @@ class TestDataPathValidation:
             " with single client on single bucket")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8732')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [10, 50, 100, 500], [10, 10, 12, 20])])
@@ -383,7 +396,7 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3_url"],
+                end_point=S3_CFG["s3b_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
@@ -416,6 +429,7 @@ class TestDataPathValidation:
             " with multiple clients on single buckets")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8733')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [100, 100, 100, 200], [1, 2, 3, 4])])
@@ -450,7 +464,7 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3_url"],
+                end_point=S3_CFG["s3b_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
@@ -483,6 +497,7 @@ class TestDataPathValidation:
             " with multiple clients on multiple buckets")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8734')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [120, 150], [10, 2])])
@@ -516,7 +531,7 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3_url"],
+                end_point=S3_CFG["s3b_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,

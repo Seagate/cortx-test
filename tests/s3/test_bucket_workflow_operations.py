@@ -32,7 +32,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -80,6 +80,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5463")
     @CTFailOn(error_handler)
     def test_name_lowercase_letters_1975(self):
@@ -104,6 +105,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5469")
     @CTFailOn(error_handler)
     def test_name_constains_alphanumeric_1976(self):
@@ -127,6 +129,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5467")
     @CTFailOn(error_handler)
     def test_bucketname_2to63_chars_long_1977(self):
@@ -163,6 +166,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5468")
     @CTFailOn(error_handler)
     def test_name_lessthan3chars_morethan63chars_1978(self):
@@ -190,6 +194,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5464")
     @CTFailOn(error_handler)
     def test_name_nouppercase_1979(self):
@@ -213,6 +218,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5465")
     @CTFailOn(error_handler)
     def test_name_with_underscores_1980(self):
@@ -234,6 +240,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5462")
     @CTFailOn(error_handler)
     def test_name_special_characters_1981(self):
@@ -267,6 +274,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5466")
     @CTFailOn(error_handler)
     def test_name_formatting_1982(self):
@@ -290,7 +298,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
@@ -317,6 +325,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5460")
     @CTFailOn(error_handler)
     def test_create_multiple_buckets_2040(self):
@@ -342,6 +351,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5461")
     @CTFailOn(error_handler)
     def test_duplicate_name_2043(self):
@@ -372,6 +382,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5447")
     @CTFailOn(error_handler)
     def test_max_bucket_creation_2044(self):
@@ -403,8 +414,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5457")
     @CTFailOn(error_handler)
     def test_delete_bucket_with_objects_2045(self):
@@ -445,6 +456,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5458")
     @CTFailOn(error_handler)
     def test_forcefully_delete_objects_2046(self):
@@ -478,7 +490,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
@@ -504,6 +516,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5454")
     @CTFailOn(error_handler)
     def test_delete_multiple_buckets_2048(self):
@@ -532,6 +545,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5456")
     @CTFailOn(error_handler)
     def test_delete_non_existing_bucket_2049(self):
@@ -552,8 +566,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
     def test_list_all_buckets_2050(self):
@@ -595,6 +609,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5448")
     @CTFailOn(error_handler)
     def test_disk_usages_verification_2051(self):
@@ -632,6 +647,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5453")
     @CTFailOn(error_handler)
     def test_head_non_existing_bucket_2055(self):
@@ -650,6 +666,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5445")
     @CTFailOn(error_handler)
     def test_verify_head_bucket_2056(self):
@@ -680,6 +698,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5446")
     @CTFailOn(error_handler)
     def test_verify_list_bucket_2057(self):
@@ -707,6 +726,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5450")
     @CTFailOn(error_handler)
     def test_bucket_location_verification_2059(self):
@@ -728,6 +748,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8031")
     @CTFailOn(error_handler)
     def test_delete_multiobjects_432(self):
@@ -771,6 +792,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8032")
     @CTFailOn(error_handler)
     def test_delete_non_existing_multibuckets_433(self):
@@ -805,6 +827,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8033")
     @CTFailOn(error_handler)
     def test_delete_object_without_permission_434(self):
@@ -869,6 +892,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8035")
     @CTFailOn(error_handler)
     def test_delete_multiple_objects_without_permission_435(self):

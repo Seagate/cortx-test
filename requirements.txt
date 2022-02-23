@@ -1,11 +1,11 @@
 aenum==2.2.4
+bandit==1.7.1
 boto3==1.9.202
 botocore==1.12.202
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
 confluent_kafka
-dataclasses~=0.6
 defusedxml~=0.7.1
 docutils==0.14
 fastavro
@@ -21,6 +21,7 @@ jira~=3.0.1
 jmespath==0.9.4
 jproperties==2.1.0
 jsonschema==3.2.0
+kubernetes==21.7.0
 locust==1.4.3
 MarkupSafe==1.1.1
 matplotlib==3.1.1
@@ -28,11 +29,14 @@ mdstat==1.0.4
 msgpack==0.6.2
 munch==2.5.0
 mypy==0.782
+numpy==1.22.0rc1
 pandas==1.2.1
 paramiko==2.6.0
+prometheus-client
 pika==1.1.0
 pycryptodome==3.10.1
 PyHamcrest==2.0.2
+pylint==2.12.2
 pymongo~=3.11.4
 pysftp==0.2.9
 pytest~=6.2.1
@@ -46,7 +50,7 @@ pytest-parallel==0.1.0
 pytest-xdist==2.3.0
 python-dateutil==2.8.0
 python-jenkins~=1.7.0
-pyyaml==5.1.2
+pyyaml==6.0.0
 pyzmq==18.0.2
 pyOpenSSL==20.0.1
 requests==2.22.0
@@ -65,4 +69,5 @@ urllib3==1.25.3
 Werkzeug==1.0.1
 xmltodict==0.12.0
 reportlab~=3.5.68
-numpy==1.22.0rc1
+cryptography~=35.0.0
+word2number~=1.1

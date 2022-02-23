@@ -233,35 +233,32 @@ test_562:
         Resource: "arn:aws:s3:::{}/*"
 
 test_566:
-  bucket_name: "bkt-policybkt-5661"
   error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bkt-policybkt-5661/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bkt-policybkt-5661/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_569:
-  bucket_name: "bktpolicybkt-5691"
   error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5691/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5691/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_570:
-  bucket_name: "bktpolicybkt-5701"
   error_message: "AccessDenied"
   id_str: "id={}"
   bucket_policy:
@@ -269,39 +266,37 @@ test_570:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5701/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5701/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_574:
-  bucket_name: "bktpolicybkt-5741"
   error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5741/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5741/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_582:
-  bucket_name: "bktpolicybkt-5821"
   error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5821/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5821/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_583:
   bucket_policy:
@@ -555,7 +550,6 @@ test_554:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
-        Principal: "*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
@@ -3124,11 +3118,23 @@ test_22292:
         Resource: "arn:aws:s3:::{}/*"
 
 test_22299:
-  bucket_policy:
+  bucket_policy_1:
     Statement:
       - Effect: "Allow"
         Principal:
          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
+  bucket_policy_2:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
@@ -3136,3 +3142,39 @@ test_22299:
           CanonicalUser: "{}"
         Action: "s3:PutObjectAcl"
         Resource: "arn:aws:s3:::{}/*"
+
+test_32278:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32279:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32695:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
