@@ -821,7 +821,7 @@ class HAK8s:
         return resp
 
     def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
                            output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
