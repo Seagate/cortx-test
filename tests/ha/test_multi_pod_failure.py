@@ -401,7 +401,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Test to verify continuous IOs while k data pods are failing one "
                     "by one")
 
-        LOGGER.info("Step 1: Perform Continuous WRITEs-READs-verify during k server pods are "
+        LOGGER.info("Step 1: Perform Continuous WRITEs-READs-verify during k data pods are "
                     "going down")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35790'
@@ -417,7 +417,7 @@ class TestPodFailure:
         LOGGER.info("Step 1: Successfully started WRITEs-READs-verify in background")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown the server pods by making replicas=0 (safe)")
+        LOGGER.info("Step 2: Shutdown the data pods by making replicas=0 (safe)")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = random.sample(pod_list, self.kvalue)
@@ -464,7 +464,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Verify status for In-flight WRITEs-READs-verify while server pods are "
+        LOGGER.info("Verify status for In-flight WRITEs-READs-verify while data pods are "
                     "down")
         thread.join()
         responses = dict()
