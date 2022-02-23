@@ -71,6 +71,7 @@ class TestBucketPolicy():
                 login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10783')
@@ -82,6 +83,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.create_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10784')
@@ -95,6 +97,7 @@ class TestBucketPolicy():
             operation='update_policy')
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10785')
@@ -108,6 +111,7 @@ class TestBucketPolicy():
                                                                   validate_expected_response=False)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10779')
@@ -121,6 +125,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10788')
@@ -135,6 +140,7 @@ class TestBucketPolicy():
             validate_expected_response=False)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10781')
@@ -150,6 +156,7 @@ class TestBucketPolicy():
             invalid_bucket=True)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10780')
@@ -162,6 +169,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.delete_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10786')
@@ -174,6 +182,7 @@ class TestBucketPolicy():
             expected_status_code=404)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10792')
@@ -196,6 +205,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10794')
@@ -219,6 +229,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10793')

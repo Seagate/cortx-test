@@ -71,12 +71,11 @@ class TestCliSupportBundle:
             "STARTED : Teardown operations at test function level")
         remove_cmd = commands.CMD_REMOVE_DIR.format("/tmp/csm_support_bundle/")
         for each_node in self.node_list:
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                "/tmp/csm_support_bundle/",
-                each_node,
-                CMN_CFG["csm"]["admin_user"],
-                CMN_CFG["csm"]["admin_pass"])
-            if resp[0]:
+            node_obj = Node(hostname=each_node,
+                            username=CMN_CFG["csm"]["admin_user"],
+                            password=CMN_CFG["csm"]["admin_pass"])
+            resp = node_obj.path_exists("/tmp/csm_support_bundle/")
+            if resp:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,

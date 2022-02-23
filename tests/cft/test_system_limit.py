@@ -17,7 +17,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-
+import json
 import logging
 import os
 import random
@@ -31,17 +31,19 @@ from commons.constants import Rest as Const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.params import TEST_DATA_PATH
+from commons.params import TEST_DATA_PATH, S3_BKT_TEST_CONFIG
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.assert_utils import assert_true
 from config import CSM_CFG, CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
-from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.s3 import iam_test_lib
+from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from robot_gui.utils.call_robot_test import trigger_robot
@@ -131,12 +133,11 @@ class TestS3IOSystemLimits:
         csm_users = []
         for _ in range(count):
             self.log.info("Creating new CSM user...")
-            res = self.csm_user_obj.create_and_verify_csm_user_creation(
-                user_type="valid",
-                user_role="manage",
-                expect_status_code=Const.SUCCESS_STATUS_FOR_POST,
-            )
-            assert res, "Unable to create CSM account"
+            time.sleep(1)
+            response = self.csm_user_obj.create_csm_user(user_type="valid", user_role="manage")
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                "Unable to create CSM account"
             self.log.info(f"Response : {self.csm_user_obj.recently_created_csm_user}")
             csm_users.append(self.csm_user_obj.recently_created_csm_user)
             self.log.info("CSM Manage user created ...")
@@ -153,8 +154,9 @@ class TestS3IOSystemLimits:
         for _ in range(count):
             self.log.info("Creating new S3 account...")
             res = self.s3_account_obj.create_s3_account()
-            assert res.status_code == Const.SUCCESS_STATUS, \
-                f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
+            assert res.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                f"Status code mismatch, expected {Const.SUCCESS_STATUS_FOR_POST} and " \
+                f"got {res.status_code} "
             s3_data = res.json()
             s3_block = {"account_name": s3_data["account_name"],
                         "access_key": s3_data["access_key"],
@@ -176,25 +178,13 @@ class TestS3IOSystemLimits:
             self.log.info(f"creating {count} IAMs for {s3_acc} s3 user")
             for _ in range(count):
                 iam_user = self.iam_user_prefix + str(int(time.time()))
-                password = self.s3_original_password
                 self.log.info(f"Creating new iam user {iam_user}")
-                # pylint: disable=C0302
-                res = self.iam_user_obj.create_iam_user_under_given_account(
-                    iam_user=iam_user, iam_password=password,
-                    account_name=s3_acc["account_name"],
-                    login_as={
-                        "username": s3_acc["account_name"],
-                        "password": password
-                    })
-                assert res.status_code == Const.SUCCESS_STATUS, \
-                    f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got " \
-                    f"{res.status_code}"
-                iam_data = res.json()
-                assert iam_data["user_name"] == iam_user, \
-                    f"IM user name mismatch, expected {0} and got {1}".format(iam_user,
-                                                                              iam_data["user_name"])
-
-                iam_users.append(iam_data["user_name"])
+                iam_obj = iam_test_lib.IamTestLib(
+                    access_key=s3_acc["access_key"],
+                    secret_key=s3_acc["secret_key"])
+                resp = iam_obj.create_user(iam_user)
+                assert_true(resp[0], resp[1])
+                iam_users.append(iam_user)
         self.log.info(f"Total IAM Users created: {iam_users}")
         return iam_users
 
@@ -206,19 +196,17 @@ class TestS3IOSystemLimits:
         """
         buckets = []
         for s3_acc in self.created_s3_users:
+            user = s3_acc['account_name']
+            access = s3_acc['access_key']
+            secret = s3_acc['secret_key']
             for num in range(count):
-                bucket_name = f"{self.bucket_prefix}-{s3_acc['account_name']}-{str(num)}"
+                s3TestL = S3TestLib(access_key=access, secret_key=secret)
+                bucket_name = f"{self.bucket_prefix}-{user}-{str(num)}"
                 self.log.info("Creating new S3 bucket...")
-                res = self.s3_bucket_obj.create_s3_bucket_for_given_account(
-                    bucket_name,
-                    account_name=s3_acc["account_name"],
-                    account_password=self.s3_original_password,
-                )
-                assert res.status_code == Const.SUCCESS_STATUS, \
-                    f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got " \
-                    f"{res.status_code}"
-                bucket_data = res.json()
-                buckets.append(bucket_data["bucket_name"])
+                resp = s3TestL.create_bucket(bucket_name)
+                assert_utils.assert_true(resp[0], resp[1])
+                buckets.append(resp[1])
+                del s3TestL
         self.log.info(f"S3 Buckets created: {buckets}")
         return buckets
 
@@ -255,7 +243,7 @@ class TestS3IOSystemLimits:
         response = rep.json()
         created_csm_users = []
         for each in response['users']:
-            if each['username'].startswith("test"):
+            if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
         self.log.info(
             f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")
@@ -279,41 +267,31 @@ class TestS3IOSystemLimits:
             f"Total S3 accounts listed {len(created_s3users)} :\n {created_s3users}")
         return created_s3users
 
-    def get_iam_accounts(self, s3_account, s3_password):
+    def get_iam_accounts(self, access, secret):
         """
         Get list of IAM accounts for given s3 account
         :return: list of IAM account usernames
         """
-        # pylint: disable=C0302
-        response = self.iam_user_obj.list_iam_users_for_given_s3_user(
-            user=s3_account,
-            login_as={
-                "username": s3_account,
-                "password": s3_password
-            })
-        response = response.json()
-        created_iam_users = []
-        for each in response['iam_users']:
-            if each['user_name'].startswith("test"):
-                created_iam_users.append(each['user_name'])
+        iam_obj = iam_test_lib.IamTestLib(
+            access_key=access,
+            secret_key=secret)
+        all_users = iam_obj.list_users()[1]
+        self.log.debug("all_users %s", all_users)
+        created_iam_users = [user["UserName"]
+                             for user in all_users if
+                             "test" in user["UserName"]]
         self.log.info(
             f"Total IAM accounts listed {len(created_iam_users)} : {created_iam_users}")
         return created_iam_users
 
-    def get_buckets(self, s3_account, s3_password):
+    def get_buckets(self, access, secret):
         """Get buckets for given s3 account"""
-        # pylint: disable=C0302
-        res = self.s3_bucket_obj.list_buckets_under_given_account(
-            account_name=s3_account,
-            login_as={
-                "username": s3_account,
-                "password": s3_password
-            })
+        s3TestL = S3TestLib(access_key=access, secret_key=secret)
+        resp = s3TestL.bucket_list()
         buckets_in_s3 = []
-        bucket_data = res.json()
-        for buc in bucket_data["buckets"]:
-            buckets_in_s3.append(buc["name"])
-
+        for bucket_name in resp[1]:
+            buckets_in_s3.append(bucket_name)
+        del s3TestL
         self.log.info("Buckets of this S3 : {}".format(buckets_in_s3))
         return buckets_in_s3
 
@@ -325,32 +303,26 @@ class TestS3IOSystemLimits:
 
         for s3_acc in created_s3users:
             s3 = s3_acc["account_name"]
+            access = s3_acc["access_key"]
+            secret = s3_acc["secret_key"]
             # Get all IAMs under S3 account
-            iam_user_in_s3 = self.get_iam_accounts(s3, s3_password)
+            iam_user_in_s3 = self.get_iam_accounts(access, secret)
 
             # Get all buckets under S3 account
-            buckets_in_s3 = self.get_buckets(s3, s3_password)
+            buckets_in_s3 = self.get_buckets(access, secret)
 
             # Delete all iam users from S3 account
             for iam in iam_user_in_s3:
                 self.log.info("Deleting IMA user {}...".format(iam))
-                # pylint: disable=C0302
-                self.iam_user_obj.delete_iam_user_under_given_account(
-                    iam_user=iam, account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": s3_password
-                    })
+                iam_obj = iam_test_lib.IamTestLib(
+                    access_key=s3_acc["access_key"],
+                    secret_key=s3_acc["secret_key"])
+                iam_obj.delete_user(iam)
+                del iam_obj
+
             # Delete all buckets from S3 account
-            for bucket in buckets_in_s3:
-                self.log.info("Deleting S3 bucket {}...".format(bucket))
-                # pylint: disable=C0302
-                self.s3_bucket_obj.delete_given_s3_bucket(
-                    bucket_name=bucket, account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": s3_password
-                    })
+            s3TestL = S3TestLib(access_key=access, secret_key=secret)
+            s3TestL.delete_multiple_buckets(buckets_in_s3)
 
             # Delete S3 account
             self.log.info(f"Deleting S3 account {s3}")
@@ -389,56 +361,42 @@ class TestS3IOSystemLimits:
 
         for s3_acc in created_s3users:
             s3 = s3_acc["account_name"]
+            access = s3_acc["access_key"]
+            secret = s3_acc["secret_key"]
             self.log.info(f"Listing new S3 buckets under {s3}")
-            res = self.s3_bucket_obj.list_buckets_under_given_account(
-                account_name=s3,
-                login_as={
-                    "username": s3,
-                    "password": password
-                })
+            # Get all buckets under S3 account
+            listed_buckets = self.get_buckets(access, secret)
 
-            assert res.status_code == Const.SUCCESS_STATUS, \
-                f"Status code mismatch while listing buckets, " \
-                f"expected {Const.SUCCESS_STATUS} and got {res.status_code}"
-
-            bucket_data = res.json()
-            listed_buckets = bucket_data["buckets"]
             self.log.info(f"List of all S3 buckets under {s3} account is {listed_buckets}")
 
             assert len(listed_buckets) >= self.cft_test_cfg[test]["bucket_count"], \
                 f"Created bucket count != listed bucket count for s3 user {s3}"
 
             for bucket in listed_buckets:
-                s3_bucket_policy_obj = RestS3BucketPolicy(bucket["name"])
                 # Create bucket policy for newly created bucket
-                self.log.info("Creating new bucket policy...")
-                # pylint: disable=C0302
-                s3_bucket_policy_obj.create_bucket_policy_under_given_account(
-                    account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": password
-                    })
-
-                # List bucket policy for newly created buckets
-                self.log.info("Listing all bucket policy...")
-                # pylint: disable=C0302
-                s3_bucket_policy_obj.get_bucket_policy_under_given_account(
-                    account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": password
-                    })
-
-                # Delete bucket policy for newly created buckets
+                self.log.info("Creating new bucket policy for bucket %s...", bucket)
+                BKT_POLICY_CONF = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+                bucket_policy = BKT_POLICY_CONF["test_1182"]["bucket_policy"]
+                self.log.debug("Original bucket_policy %s...", bucket_policy)
+                bucket_policy["Statement"][0]["Resource"] = \
+                    bucket_policy["Statement"][0]["Resource"].format(bucket)
+                self.log.debug("Modified bucket_policy %s...", bucket_policy)
+                s3_bkt_policy = S3BucketPolicyTestLib(access, secret)
+                bkt_policy_json = json.dumps(bucket_policy)
+                self.log.info("Applying json policy %s", bkt_policy_json)
+                # Apply bucket policy
+                self.log.info("Applying policy to a bucket %s", bucket)
+                resp = s3_bkt_policy.put_bucket_policy(bucket, bkt_policy_json)
+                assert resp[0], resp[1]
+                self.log.info("Policy is applied to a bucket %s", bucket)
+                # Retrieving bucket policy
+                self.log.info("Retrieving policy of a bucket %s", bucket)
+                resp = s3_bkt_policy.get_bucket_policy(bucket)
+                assert_utils.assert_equals(resp[1]["Policy"], bkt_policy_json, resp[1])
+                self.log.info("Retrieved policy of a bucket %s", bucket)
+                # Delete bucket policy
                 self.log.info("Deleting bucket policy...")
-                # pylint: disable=C0302
-                s3_bucket_policy_obj.delete_bucket_policy_under_given_name(
-                    account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": password
-                    })
+                s3_bkt_policy.delete_bucket_policy(bucket)
 
     @pytest.mark.scalability
     @pytest.mark.tags("TEST-13693")
@@ -503,8 +461,10 @@ class TestS3IOSystemLimits:
 
         for each_s3 in s3_accounts:
             s3 = each_s3["account_name"]
+            access = each_s3["access_key"]
+            secret = each_s3["secret_key"]
             self.log.info(f"Getting IAMs for {s3}")
-            iam_account = self.get_iam_accounts(s3, self.s3_original_password)
+            iam_account = self.get_iam_accounts(access, secret)
             assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"], \
                 f"Created iam user count != listed iam user count for s3 user {s3}"
 
@@ -549,13 +509,13 @@ class TestS3IOSystemLimits:
     @pytest.mark.tags("TEST-16910")
     def test_16910(self):
         """
-        For system limit of 1000 CSM users
-        Create 1000 csm accounts
+        For system limit of max CSM users
+        Create max csm accounts
         """
         test = "test_16910"
         self.create(test)
 
-        # List and update 1000 csm account
+        # List and update max csm account
         created_csm_users = self.get_created_csm_users()
         assert len(created_csm_users) >= self.cft_test_cfg[test][
             "csm_count"], f"Created CSM user count != listed CSM user count "
@@ -687,8 +647,8 @@ class TestS3IOSystemLimits:
                          random.SystemRandom().randint(metadata_limit+1, 4000)]
         for metadata in metadata_size:
             object_name = f"mp-obj-test20271{metadata}"
-            m_key = system_utils.random_metadata_generator(10)
-            m_value = system_utils.random_metadata_generator(metadata-10)
+            m_key = system_utils.random_string_generator(10)
+            m_value = system_utils.random_string_generator(metadata-10)
 
             obj_size = random.SystemRandom().randint(5, 20)
 
@@ -714,10 +674,10 @@ class TestS3IOSystemLimits:
                     res = S3_TEST_OBJ.object_info(bucket_name, object_name)
                     assert_utils.assert_true(res[0], res[1])
                     assert_utils.assert_in("Metadata", res[1], res[1])
-                    assert_utils.assert_in(m_key, res[1]["Metadata"], res[1]["Metadata"])
+                    assert_utils.assert_in(m_key.lower(), res[1]["Metadata"], res[1]["Metadata"])
                     assert_utils.assert_equals(m_value,
-                                               res[1]["Metadata"][m_key],
-                                               res[1]["Metadata"][m_key])
+                                               res[1]["Metadata"][m_key.lower()],
+                                               res[1]["Metadata"][m_key.lower()])
                 else:
                     self.log.error(f"Could not see exception while uploading object with "
                                    f"metadata size of {metadata} > {metadata_limit}")

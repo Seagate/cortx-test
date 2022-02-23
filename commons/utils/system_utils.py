@@ -31,12 +31,16 @@ import socket
 import builtins
 import errno
 import string
+import glob
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
+from pathlib import Path
+from botocore.response import StreamingBody
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
+from commons.constants import AWS_CLI_ERROR
 
 if sys.platform == 'win32':
     try:
@@ -52,6 +56,7 @@ if sys.platform in ['linux', 'linux2']:
 LOGGER = logging.getLogger(__name__)
 
 dns_rr_counter = 0
+
 
 def run_remote_cmd(
         cmd: str,
@@ -144,10 +149,11 @@ def run_remote_cmd_wo_decision(
         error = stderr.read()
         if error:
             LOGGER.debug("Error: %s", str(error))
+    client.close()
     return output, error, exit_status
 
 
-def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr=False) -> tuple:
+def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
@@ -158,24 +164,48 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr=False) -> tuple
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
     LOGGER.debug("Command: %s", cmd)
-    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    output, error = proc.communicate()
-    LOGGER.debug("output = %s", str(output))
-    LOGGER.debug("error = %s", str(error))
-    if flg:
-        return True, str((output, error))
-    if chk_stderr:
-        if error:
+    proc = None
+    try:
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        output, error = proc.communicate()
+        LOGGER.debug("output = %s", str(output))
+        LOGGER.debug("error = %s", str(error))
+        if flg:
+            return True, str((output, error))
+        if chk_stderr:
+            if error and check_aws_cli_error(str(error)):
+                return False, str(error)
+            return True, str(output)
+        if proc.returncode != 0:
             return False, str(error)
-    if proc.returncode != 0:
-        return False, str(error)
-    if b"Number of key(s) added: 1" in output:
-        return True, str(output)
-    if b"command not found" in error or \
-            b"not recognized as an internal or external command" in error or error:
-        return False, str(error)
+        if b"Number of key(s) added: 1" in output:
+            return True, str(output)
+        if b"command not found" in error or \
+                b"not recognized as an internal or external command" in error or error:
+            return False, str(error)
 
-    return True, str(output)
+        return True, str(output)
+    except Exception as ex:
+        LOGGER.error(ex)
+        return False, ex
+    finally:
+        if proc:
+            proc.terminate()
+
+
+def check_aws_cli_error(str_error: str):
+    """Validate error string from aws cli command."""
+    err_check = True
+    # InsecureRequestWarning: Unverified HTTPS request is being made to host 'public data ip'.
+    # Adding certificate verification is strongly advised.
+    if "InsecureRequestWarning" in str_error or "WARNING: " in str_error:
+        err_check = False
+    for error in AWS_CLI_ERROR:
+        if error in str_error:
+            err_check = True
+            break
+
+    return err_check
 
 
 def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:
@@ -263,20 +293,33 @@ def calculate_checksum(
         options: str = "",
         **kwargs) -> tuple:
     """
-    Calculate MD5 checksum with/without binary coversion for a file.
+    Calculate MD5 checksum with/without binary conversion for a file.
     :param file_path: Name of the file with path
-    :param binary_bz64: Calulate binary base64 checksum for file,
+    :param binary_bz64: Calculate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :param options: option for md5sum tool
     :keyword filter_resp: filter md5 checksum cmd response True/False
+    # :param hash_algo: calculate checksum for given hash algo
     :return: string or MD5 object
     """
+    hash_algo = kwargs.get("hash_algo", "md5")
     if not os.path.exists(file_path):
         return False, "Please pass proper file path"
-    if binary_bz64:
-        cmd = "openssl md5 -binary {} | base64".format(file_path)
-    else:
-        cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "md5":
+        if binary_bz64:
+            cmd = "openssl md5 -binary {} | base64".format(file_path)
+        else:
+            cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "SHA-1":
+        cmd = "sha1sum {}".format(file_path)
+    if hash_algo == "SHA-224":
+        cmd = "sha224sum {}".format(file_path)
+    if hash_algo == "SHA-256":
+        cmd = "sha256sum {}".format(file_path)
+    if hash_algo == "SHA-384":
+        cmd = "sha384sum {}".format(file_path)
+    if hash_algo == "SHA-512":
+        cmd = "sha512sum {}".format(file_path)
 
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
@@ -284,6 +327,40 @@ def calculate_checksum(
     if kwargs.get("filter_resp", None) and binary_bz64:
         result = (result[0], filter_bin_md5(result[1]))
     return result
+
+
+def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
+    """
+    Calculate checksum of file or stream.
+    :param object_ref: Object/File Path or byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    read_sz = 8192
+    csum = None
+    file_hash = md5()  # nosec
+    if hash_algo != 'md5':
+        raise NotImplementedError('Only md5 supported')
+    if isinstance(object_ref, StreamingBody):
+        chunk = object_ref.read(amt=read_sz)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = object_ref.read(amt=read_sz)
+        return file_hash.hexdigest()
+    if os.path.exists(object_ref):
+        size = Path(object_ref).stat().st_size
+
+        with open(object_ref, 'rb') as file_ptr:
+            if size < read_sz:
+                buf = file_ptr.read(size)
+            else:
+                buf = file_ptr.read(read_sz)
+            while buf:
+                file_hash.update(buf)
+                buf = file_ptr.read(read_sz)
+            csum = file_hash.hexdigest()
+
+    return csum
 
 
 def cal_percent(num1: float, num2: float) -> float:
@@ -543,18 +620,26 @@ def create_file(
     :param b_size: block size.
     :return:
     """
-    cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
-    LOGGER.debug(cmd)
-    proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")
-    output, error = proc.communicate()
-    LOGGER.debug("output = %s", str(output))
-    LOGGER.debug("error = %s", str(error))
-    if proc.returncode != 0:
-        if os.path.isfile(fpath):
-            os.remove(fpath)
-        raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
+    proc = None
+    try:
+        cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
+        LOGGER.debug(cmd)
+        proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")
+        output, error = proc.communicate()
+        LOGGER.debug("output = %s", str(output))
+        LOGGER.debug("error = %s", str(error))
+        if proc.returncode != 0:
+            if os.path.isfile(fpath):
+                os.remove(fpath)
+            raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
 
-    return os.path.exists(fpath), ", ".join([output, error])
+        return os.path.exists(fpath), ", ".join([output, error])
+    except Exception as ex:
+        LOGGER.error(ex)
+        return fpath, ex
+    finally:
+        if proc:
+            proc.terminate()
 
 
 def create_multiple_size_files(
@@ -618,7 +703,6 @@ def split_file(filename, size, split_count, random_part_size=False):
     :param random_part_size: True for random size parts, False for equal size parts
     :return: [{"Output":partname, "Size":partsize}]
     """
-
     if os.path.exists(filename):
         LOGGER.debug("Deleting existing file: %s", str(filename))
         remove_file(filename)
@@ -642,7 +726,6 @@ def split_file(filename, size, split_count, random_part_size=False):
                 split_fin.write(fin.read(read_bytes))
                 res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
     LOGGER.debug(res_d)
-
     return res_d
 
 
@@ -973,11 +1056,15 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
+        LOGGER.info("local path and new path are %s\n%s", local_path, new_path)
         if os.path.isfile(local_path):
+            LOGGER.debug("Copy from %s to %s", local_path, new_path)
             shutil.copy(local_path, new_path)
         else:
+            LOGGER.debug("Copy in else")
             shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
+
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")
@@ -1027,76 +1114,7 @@ def get_s3_url(cfg, node_index):
     return final_urls
 
 
-def configure_jclient_cloud(
-        source: str,
-        destination: str,
-        nfs_path: str,
-        ca_crt_path: str) -> bool:
-    """
-        Function to configure jclient and cloud jar files
-        :param ca_crt_path: s3 ca.crt path.
-        :param nfs_path: nfs server path where jcloudclient.jar, jclient.jar present.
-        :param source: path to the source dir where .jar are present.
-        :param destination: destination path where .jar need to be copied
-        """
-    if not os.path.exists(source):
-        os.mkdir(source)
-
-    dir_list = os.listdir(source)
-    if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
-        temp_dir = "/mnt/jjarfiles"
-        os.mkdir(temp_dir)
-        mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
-        umount_cmd = f"umount -v {temp_dir}"
-        run_local_cmd(mount_cmd)
-        run_local_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
-        run_local_cmd(umount_cmd)
-        os.remove(temp_dir)
-
-    run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
-    res_ls = run_local_cmd(f"ls {destination}")[1]
-    # Run commands to set cert files in client Location.
-    run_local_cmd(commands.CMD_KEYTOOL1)
-    run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
-
-    return bool(".jar" in res_ls)
-
-
-def configre_minio_cloud(minio_repo=None,
-                         endpoint_url=None,
-                         s3_cert_path=None,
-                         minio_cert_path_list=None,
-                         **kwargs):
-    """
-    Installing minio client in current machine.
-
-    :param minio_repo: minio repo path.
-    :param endpoint_url: s3 endpoint url.
-    :param s3_cert_path: s3 certificate path.
-    :param minio_cert_path_list: minio path list to be updated.
-    :param kwargs: access, secret keys.
-    :return: True if setup completed or false.
-    """
-    try:
-        LOGGER.info("Installing minio client in current machine.")
-        ACCESS = kwargs.get("access", None)
-        SECRET = kwargs.get("secret", None)
-        run_local_cmd("wget {}".format(minio_repo))
-        run_local_cmd("chmod +x {}".format(os.path.basename(minio_repo)))
-        run_local_cmd("./{} config host add s3 {} {} {} --api S3v4".format(os.path.basename(
-            minio_repo), endpoint_url, ACCESS, SECRET))
-        for crt_path in minio_cert_path_list:
-            if not os.path.exists(crt_path):
-                run_local_cmd("yes | cp -r {} {}".format(s3_cert_path, crt_path))
-        LOGGER.info("Installed minio client in current machine.")
-
-        return True
-    except Exception as error:
-        LOGGER.error(str(error))
-        return False
-
-
-def random_metadata_generator(
+def random_string_generator(
         size: int = 6,
         chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
     """
@@ -1195,22 +1213,23 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     return file_path_list
 
 
-def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+def validate_s3bench_parallel_execution(log_dir=None, log_prefix=None, log_path=None) -> tuple:
     """
     Validate the s3bench parallel execution log file for failure.
 
     :param log_dir: Log directory path.
     :param log_prefix: s3 bench log prefix.
+    :param log_path: s3 bench log path.
     :return: bool, response.
     """
-    LOGGER.info("S3 parallel ios log validation started.")
-    log_file_list = list_dir(log_dir)
-    log_path = None
-    for filename in log_file_list:
-        if filename.startswith(log_prefix):
-            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("S3 parallel ios log validation started...")
+    if log_dir and os.path.isdir(log_dir):
+        log_path = [filepath for filepath in sorted(
+            glob.glob(os.path.abspath(log_dir) + '/**'),
+            key=os.path.getctime)
+            if os.path.basename(filepath).startswith(log_prefix)][-1]
     LOGGER.info("IO log path: %s", log_path)
-    if not log_path:
+    if not os.path.isfile(log_path):
         return False, f"failed to generate logs for parallel run: {log_prefix}."
     lines = open(log_path).readlines()
     resp_filtered = [
@@ -1232,7 +1251,7 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
             return False, f"{error} Found in S3Bench Run."
     LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
     # remove_file(log_path)  # Keeping logs for FA/Debugging.
-    LOGGER.info("S3 parallel ios log validation completed.")
+    LOGGER.info("S3 parallel ios log validation completed...")
 
     return True, "S3 parallel ios completed successfully."
 
@@ -1259,3 +1278,16 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
+
+def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
+    """
+    validate MD5 checksum for 2 files
+    # :param hash_algo: calculate checksum for given hash algo
+    """
+    hash_algo = kwargs.get("hash_algo", "md5")
+    check_1 = calculate_checksum(file_path=file_path_1, hash_algo=hash_algo)
+    check_2 = calculate_checksum(file_path=file_path_2, hash_algo=hash_algo)
+    if check_1 == check_2:
+        return True
+    return False

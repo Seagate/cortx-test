@@ -32,7 +32,7 @@ from commons import pswdmanager
 from commons.utils import support_bundle_utils as sb
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
-cortx_obj = CortxCliTestLib()
+rest_obj = S3AccountOperationsRestAPI()
 config_chk = CSMConfigsCheck()
 
 
@@ -96,11 +96,10 @@ def create_s3_account():
     acc_name = "switch_setup_s3acc{}".format(perf_counter_ns())
     acc_email = "switch_setup_s3acc{}@seagate.com".format(perf_counter_ns())
     acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
-    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    resp = rest_obj.create_s3_account(acc_name, acc_email, acc_passwd)
     print("Response for account creation: {}".format(resp))
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
-    cortx_obj.close_connection()
     with open('s3acc_secrets', 'w') as ptr:
         ptr.write(access_key + ' ' + secret_key)
 
@@ -110,12 +109,14 @@ def test_create_acc_aws_conf():
     acc_name = "nightly_s3acc{}".format(perf_counter_ns())
     acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())
     acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
-    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    resp = rest_obj.create_s3_account(acc_name, acc_email, acc_passwd)
     print("Response for account creation: {}".format(resp))
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
-    configure_awscli(access_key, secret_key)
-    cortx_obj.close_connection()
+    print("Installing s3 tools")
+    resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
+                   .format(access_key, secret_key))
+    print("Response for tools install: {}".format(resp))
 
 
 def test_preboarding():
@@ -168,7 +169,25 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
+    else:
+        sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+
+def test_collect_crash_files():
+    """
+    Collect crash files from existing locations.
+    """
+    crash_dir = os.path.join(os.getcwd(), "crash_files")
+    if os.path.exists(crash_dir):
+        LOGGER.info("Removing existing directory %s", crash_dir)
+        shutil.rmtree(crash_dir)
+    os.mkdir(crash_dir)
+    if CMN_CFG["product_family"] == "LC":
+        sb.collect_crash_files_k8s(local_dir_path=crash_dir)
+    else:
+        sb.collect_crash_files(crash_dir)
+
 
 if __name__ == '__main':
     create_s3_account()

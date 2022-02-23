@@ -21,11 +21,11 @@
 """Failure Domain Test Suite."""
 import logging
 import os
+from multiprocessing import Pool
 
 import pytest
 
 from commons import commands as common_cmd
-from commons import configmanager
 from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
@@ -42,14 +42,13 @@ class TestFailureDomain:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        test_config = "config/cft/test_failure_domain.yaml"
-        cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
         cls.deplymt_cfg = PROV_CFG["deploy_ff"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
         cls.host_list = []
         for node in range(cls.num_nodes):
-            cls.host_list.append(CMN_CFG["nodes"][node]["host"])
+            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+            cls.host_list.append(vm_name)
             cls.node_list.append(Node(hostname=CMN_CFG["nodes"][node]["hostname"],
                                       username=CMN_CFG["nodes"][node]["username"],
                                       password=CMN_CFG["nodes"][node]["password"]))
@@ -64,6 +63,7 @@ class TestFailureDomain:
             "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
                 HA_CFG["vm_params"]["passwd"]))
         cls.build = os.getenv("Build", None)
+        cls.build_no = cls.build
         cls.build_branch = os.getenv("Build_Branch", "stable")
         if cls.build:
             if cls.build_branch == "stable" or cls.build_branch == "main":
@@ -80,8 +80,8 @@ class TestFailureDomain:
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        for host in self.host_list:
-            self.revert_vm_snapshot(host)
+        with Pool(self.num_nodes) as proc_pool:
+            proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -91,69 +91,27 @@ class TestFailureDomain:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-    def deploy_3node_vm(self, config_file_path: str = None, expect_failure: bool = False):
-        """
-        Deploy 3 node using jenkins job
-        """
-        test_cfg = self.cft_test_cfg["test_deployment"]
-        self.log.info("Adding data required for the jenkins job execution")
-        parameters = dict()
-
-        parameters['Client_Node'] = os.getenv("Client_Node", None)
-        parameters['Git_Repo'] = os.getenv("Git_Repo", 'https://github.com/Seagate/cortx-test.git')
-        parameters['Git_Branch'] = os.getenv("Git_Branch", 'dev')
-        parameters['Cortx_Build'] = os.getenv("Build", None)
-        parameters['Cortx_Build_Branch'] = os.getenv("Build_Branch", "stable")
-
-        parameters['Target_Node'] = CMN_CFG["setupname"]
-        parameters['Node1_Hostname'] = CMN_CFG["nodes"][0]["hostname"]
-        parameters['Node2_Hostname'] = CMN_CFG["nodes"][1]["hostname"]
-        parameters['Node3_Hostname'] = CMN_CFG["nodes"][2]["hostname"]
-        parameters['HOST_PASS'] = CMN_CFG["nodes"][0]["password"]
-        parameters['MGMT_VIP'] = CMN_CFG["csm"]["mgmt_vip"]
-        parameters['ADMIN_USR'] = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        parameters['ADMIN_PWD'] = CMN_CFG["csm"]["csm_admin_user"]["password"]
-        parameters['Skip_Deployment'] = test_cfg["skip_deployment"]
-        parameters['Skip_Preboarding'] = test_cfg["skip_preboarding"]
-        parameters['Skip_Onboarding'] = test_cfg["skip_onboarding"]
-        parameters['Skip_S3_Configuration'] = test_cfg["skip_s3_configure"]
-
-        self.log.info("Parameters for jenkins job : %s", parameters)
-
-        if config_file_path is not None and os.path.exists(config_file_path):
-            self.log.info("Retrieving the config details for deployment from provided config file")
-            with open(config_file_path, 'r') as file:
-                parameters['Provisioner_Config'] = file.read()
-        else:
-            self.log.error(
-                "Config file not provided, Deployment to be proceeded with defaults values")
-            assert_utils.assert_true(False, "Config File not provided for deployment")
-
-        output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters,
-                                       test_cfg["jenkins_token"],
-                                       test_cfg["jenkins_job_url"])
-        self.log.info("Jenkins Build URL: %s", output['url'])
-        self.log.info("Result : %s", output['result'])
-        if not expect_failure:
-            assert_utils.assert_equal(output['result'], "SUCCESS",
-                                      "Job is not successful, please check the url.")
-        else:
-            assert_utils.assert_equal(output['result'], "FAILURE",
-                                      "Job is successful, expected to fail")
-
     @pytest.mark.run(order=1)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-23540")
     def test_23540(self):
         """Perform deployment,preboarding, onboarding,s3 configuration with 4+2+0 config"""
+        self.log.info("Step 1: Create Deployment Config")
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
-                                                              mgmt_vip=self.mgmt_vip,
+                                                              mgmt_vip=self.mgmt_vip
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 4+2+0")
+        resp = self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+        assert_utils.assert_true(resp, "Failure in Deployment")
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=4)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 1, [6, 2, 0])])
@@ -163,6 +121,7 @@ class TestFailureDomain:
         Perform deployment with Invalid config and expect failure
         datapool : N+K+S : 6+2+0, data device per cvg: 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -175,9 +134,10 @@ class TestFailureDomain:
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=5)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(1, 7, [8, 2, 0])])
@@ -189,6 +149,7 @@ class TestFailureDomain:
         Data Devices per CVG: 7
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -200,9 +161,14 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 8+2+0")
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=8)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [3, 2, 0])])
@@ -215,6 +181,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -225,9 +192,14 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 3+2+0")
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=12)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [8, 4, 0])])
@@ -240,6 +212,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -250,9 +223,14 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 8+4+0")
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=16)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [10, 5, 0])])
@@ -265,6 +243,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -275,4 +254,8 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 10+5+0")
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.deploy_ff_obj.post_deployment_steps()

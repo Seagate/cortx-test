@@ -65,7 +65,7 @@ class TestS3BucketPolicyTestLib:
         self.log.info(
             "Delete created account with prefix: %s",
             self.acc_name_prefix)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = IAM_OBJ.list_accounts(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
@@ -94,7 +94,7 @@ class TestS3BucketPolicyTestLib:
         self.log.info(
             "Delete created account with prefix: %s",
             self.acc_name_prefix)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = IAM_OBJ.list_accounts(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
@@ -102,7 +102,7 @@ class TestS3BucketPolicyTestLib:
                    for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
         if all_acc:
             for acc in all_acc:
-                resp = IAM_OBJ.reset_account_access_key_s3iamcli(
+                resp = IAM_OBJ.reset_account_access_key(
                     acc, self.ldap_user, self.ldap_pwd)
                 access_key = resp[1]["AccessKeyId"]
                 secret_key = resp[1]["SecretKey"]
@@ -120,7 +120,7 @@ class TestS3BucketPolicyTestLib:
                     assert resp[0], resp[1]
                     self.log.info("Deleted all buckets")
                 self.log.info("Deleting IAM accounts...")
-                resp = IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                resp = IAM_OBJ.reset_access_key_and_delete_account(
                     acc)
                 assert resp[0], resp[1]
         pref_list = [

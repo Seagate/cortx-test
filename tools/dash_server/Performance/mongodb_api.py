@@ -130,3 +130,29 @@ def find_distinct_values(key: str,
 
 
 # collection.find(query).sort([("_id", pymongo.DESCENDING)]).limit(1)
+@pymongo_exception
+def get_aggregate(query: dict, group_query: dict, uri: str, db_name: str, collection: str
+                  ) -> (bool, int):
+    """
+    Count search results for query from MongoDB database
+
+    Args:
+        query: Query to be searched in MongoDB
+        uri: URI of MongoDB database
+        db_name: Database name
+        collection: Collection name in database
+
+    Returns:
+        On success returns number of documents
+    """
+    with MongoClient(uri) as client:
+        pymongo_db = client[db_name]
+        tests = pymongo_db[collection]
+        result = tests.aggregate([
+            {"$match": query},
+            {"$group": group_query}
+        ])
+        try:
+            return list(result)[0]
+        except IndexError:
+            return {}
