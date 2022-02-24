@@ -65,7 +65,7 @@ class RestS3user(RestTestLib):
                 "new_s3_account_user",
                 user_data["account_name"],
                 user_data["password"])
-        user_data = json.dumps(user_data)
+        #user_data = json.dumps(user_data)
         # Fetching api response
         return self.restapi.rest_call(
             "post", endpoint=endpoint, json_dict=user_data, headers=self.headers)
