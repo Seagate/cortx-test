@@ -245,9 +245,12 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Deploy Cortx cloud")
         cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        return True, resp
+        try:
+            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=7200)
+            LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+            return True, resp
+        except BaseException as error:
+            return False, error
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
@@ -721,7 +724,7 @@ class ProvDeployK8sCortxLib:
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
-            resp = master_node_obj.execute_cmd(cmd=destroy_cmd)
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True, timeout=1200)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
                 resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
