@@ -664,7 +664,6 @@ class RestS3user(RestTestLib):
         resp = rest_iam_user.create_iam_user_rgw(payload_rgw)
         s3_response = Response()
         if resp.status_code == HTTPStatus.CREATED:
-            import pdb; pdb.set_trace()
             resp = resp.json()
             resp_dict = {"account_name": resp["keys"][0]["user"],
                         "account_email": resp["email"],
