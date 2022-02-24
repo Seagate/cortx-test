@@ -71,10 +71,10 @@ class TestCsmUser():
         if not user_already_present:
             user_already_present = cls.config.setup_csm_users()
             assert user_already_present
-        s3acc_already_present = cls.config.check_predefined_s3account_present()
-        if not s3acc_already_present:
-            s3acc_already_present = cls.config.setup_csm_s3()
-        assert s3acc_already_present
+        #s3acc_already_present = cls.config.check_predefined_s3account_present()
+        #if not s3acc_already_present:
+        #    s3acc_already_present = cls.config.setup_csm_s3()
+        #assert s3acc_already_present
         cls.created_users = []
         cls.created_s3_users = []
         cls.remote_path = cons.CLUSTER_CONF_PATH

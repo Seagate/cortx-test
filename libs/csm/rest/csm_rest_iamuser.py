@@ -455,8 +455,8 @@ class RestIamUser(RestTestLib):
         """
         # Initialize all variables
         payload = {}
-        user_id = const.IAM_USER + str(int(time.time()))
-        display_name = const.IAM_USER + str(int(time.time()))
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        display_name = const.IAM_USER + str(int(time.time_ns()))
         payload.update({"uid": user_id})
         payload.update({"display_name": display_name})
         if user_type == "loaded":
@@ -516,7 +516,7 @@ class RestIamUser(RestTestLib):
         return response
 
     def verify_create_iam_user_rgw(
-            self, user_type="valid", expected_response=HTTPStatus.OK, verify_response=False):
+            self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
         """
         creates and verify status code and response for iam user request.
         """
@@ -532,6 +532,9 @@ class RestIamUser(RestTestLib):
                     self.log.info("Expected response for %s: %s", key,value)
                     if key == "uid":
                         key = "user_id"
+                    if key == "key_type" or key == "access_key" or key == "secret_key" or key == "user_caps" or key == "generate_key":
+                        continue
+
                     self.log.info("Actual response for %s: %s", key, resp[key])
                     if value != resp[key]:
                         self.log.error("Actual and expected response for %s didnt match", key)

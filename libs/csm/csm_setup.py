@@ -7,6 +7,7 @@ from commons.constants import Rest as const
 from commons.utils import config_utils
 from commons import constants
 from config import CMN_CFG
+from commons.constants import S3_ENGINE_RGW
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
@@ -91,16 +92,14 @@ class CSMConfigsCheck:
         :return: success/failure of presence of pre defined s3 account
         """
         result = False
-        try:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            return True
+        else:
             self._log.info("Checking the presence of pre defined s3 account")
             response = self._s3account.list_all_created_s3account().json()["s3_accounts"]
             expected_result = {const.ACC_NAME: self._s3account.config["s3account_user"]["username"]}
             result = any(config_utils.verify_json_response(
                 actual_result, expected_result) for actual_result in response)
-        except Exception as error:
-            # CTP Exception handling not done here as this is being called in setup for every test suit
-            # CTP Exception handling shall get complicated
-            self._log.error("Error occurred during setup : %s", error)
         return result
 
     def delete_csm_users(self):
