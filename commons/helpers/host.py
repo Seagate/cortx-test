@@ -194,6 +194,7 @@ class Host(AbsHost):
         """
         timer = time.time()
         timeout = kwargs.get('timeout', 400)
+        check_recv_ready = kwargs.get('recv_ready', False)
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
@@ -201,10 +202,11 @@ class Host(AbsHost):
         self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
         stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)  # nosec
         # above is non blocking call and timeout is set for SSL handshake and command
-        while time.time() - timer < timeout and not stdout.channel.exit_status_ready():
-            time.sleep(1)  # to avoid perf impact on other commands
-        if time.time() - timer >= timeout:  # as per request by CFT Deployment team
-            raise TimeoutError('The script or command was not completed within estimated time')
+        if check_recv_ready:
+            while time.time() - timer < timeout and not stdout.channel.exit_status_ready():
+                time.sleep(1)  # to avoid perf impact on other commands
+            if time.time() - timer >= timeout:  # as per request by CFT Deployment team
+                raise TimeoutError('The script or command was not completed within estimated time')
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
