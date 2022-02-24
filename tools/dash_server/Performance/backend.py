@@ -26,12 +26,11 @@ import dash_table
 import dash_html_components as html
 import plotly.graph_objs as go
 
-from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 from Performance.schemas import *
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
     sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list, \
     sort_sessions
-from Performance.mongodb_api import find_documents, count_documents
+from Performance.mongodb_api import find_documents, count_documents, get_aggregate
 from Performance.styles import style_dashtable_header, style_table_cell
 
 
@@ -50,9 +49,12 @@ def get_average_data(count, data, stat, subparam, multiplier):
     returns:
         rounded off value
     """
-    if count > 0 and keys_exists(data[0], stat):
-        return round_off(data[0][stat][subparam] * multiplier)
-    else:
+    try:
+        if count > 0 and keys_exists(data[0], stat):
+            return round_off(data[0][stat][subparam] * multiplier)
+        else:
+            return "NA"
+    except KeyError:
         return "NA"
 
 
@@ -92,18 +94,22 @@ def get_data_for_stats(data):
     objects = sort_object_sizes_list(objects)
 
     if data_needed_for_query['name'] == 'S3bench':
+        # stats_headings = statistics_column_headings.copy()
         results = {
             'Object Sizes': statistics_column_headings
         }
     else:
+        # mult_headings = multiple_buckets_headings.copy()
         results = {
             'Object Sizes': multiple_buckets_headings
         }
 
+    run_state_list = []
     for obj in objects:
         data_needed_for_query['objsize'] = obj
-        temp_data = get_benchmark_data(data_needed_for_query)
+        temp_data, run_state = get_benchmark_data(data_needed_for_query)
         if not check_empty_list(temp_data):
+            run_state_list.append(run_state)
             results[obj] = temp_data
 
     df = pd.DataFrame(results)
@@ -112,7 +118,111 @@ def get_data_for_stats(data):
     df.columns = df.iloc[0]
     df = df[1:]
 
-    return df
+    return df, run_state_list
+
+
+def get_data_for_degraded_stats(data):
+    """
+    function for degraded read tab to get data from database
+    Args:
+        data: dictionary needed for the query
+    Returns:
+        dataframe: list of Pandas dataframe with queried data
+    """
+    data_needed_for_query = data.copy()
+    query = get_statistics_schema(data_needed_for_query)
+    objects = get_distinct_keys(
+        data_needed_for_query['release'], 'Object_Size', query)
+    objects = sort_object_sizes_list(objects)
+    results = {
+        'Throughput':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'IOPS':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'Latency':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'TTFB':
+            {
+                'Object Sizes': statistics_column_headings
+            }
+    }
+    if data_needed_for_query['name'] != 'S3bench':
+        del results['TTFB']
+
+    for obj in objects:
+        data_needed_for_query['objsize'] = obj
+
+        if keys_exists(data_needed_for_query, 'degraded_cluster'):
+            temp_data = get_degraded_cluster_data(data_needed_for_query)
+            if not check_empty_list(temp_data):
+                for stat in temp_data:
+                    results[stat][obj] = temp_data
+
+    dataframes = []
+    for stat in results:
+        dataframe = pd.DataFrame(results[stat])
+        dataframe = dataframe.T
+        dataframe.reset_index(inplace=True)
+        dataframe.columns = dataframe.iloc[0]
+        dataframe = dataframe[1:]
+        dataframes.append(dataframe)
+
+    return dataframes
+
+
+def get_degraded_cluster_data(data_needed_for_query):
+    """
+    function to organise and get data required for degraded cluster view
+
+    Args:
+        data: dictionary needed for the query
+
+    Returns:
+        results: dictionary with data for this particular instance
+    """
+    temp_data = {}
+    data_needed_for_query['operation'] = 'Read'
+    cluster_states = ['normal-read', 'degraded-read', 'recovered-read']
+
+    if data_needed_for_query["name"] == 'S3bench':
+        stats = ["Throughput", "IOPS", "Latency", "TTFB"]
+    else:
+        stats = ["Throughput", "IOPS", "Latency"]
+
+    for stat in stats:
+        temp_data[stat] = []
+
+    uri, db_name, db_collection = get_db_details(
+        data_needed_for_query['release'])
+
+    for state in cluster_states:
+        data_needed_for_query['cluster_state'] = state
+        query = get_degraded_schema(data_needed_for_query)
+        count = count_documents(query=query, uri=uri, db_name=db_name,
+                                collection=db_collection)
+        db_data = find_documents(query=query, uri=uri, db_name=db_name,
+                                 collection=db_collection)
+
+        for stat in stats:
+            if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
+                temp_data[stat].append(get_average_data(
+                    count, db_data, stat, "Avg", 1000))
+            elif data_needed_for_query["name"] == 'S3bench':
+                temp_data[stat].append(get_data(count, db_data, stat, 1))
+            else:
+                try:
+                    temp_data[stat].append(get_data(count, db_data, stat, 1))
+                except TypeError:
+                    temp_data[stat].append(get_average_data(
+                        count, db_data, stat, "Avg", 1))
+
+    return temp_data
 
 
 def get_data_for_graphs(data, xfilter, xfilter_tag):
@@ -137,16 +247,16 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         if data_needed_for_query['name'] == 'S3bench':
             results = {
-                'Sessions': statistics_column_headings
+                'Concurrency': statistics_column_headings
             }
         else:
             results = {
-                'Sessions': multiple_buckets_headings
+                'Concurrency': multiple_buckets_headings
             }
 
         for session in sessions:
             data_needed_for_query['sessions'] = session
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[session] = temp_data
 
@@ -167,7 +277,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         for obj in objects:
             data_needed_for_query['objsize'] = obj
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[obj] = temp_data
     else:
@@ -186,16 +296,16 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             }
         for build in builds:
             data_needed_for_query['build'] = build
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[build] = temp_data
 
-    df = pd.DataFrame(results)
-    df = df.T
-    df.reset_index(inplace=True)
-    df.columns = df.iloc[0]
-    df = df[1:]
-    return df
+    dataframe = pd.DataFrame(results)
+    dataframe = dataframe.T
+    dataframe.reset_index(inplace=True)
+    dataframe.columns = dataframe.iloc[0]
+    dataframe = dataframe[1:]
+    return dataframe
 
 
 def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branches
@@ -204,16 +314,16 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
 
     Args:
         data: dictionary needed for the query
-        results: dictionary to append data for this particular instance
+
+    Returns:
+        results: dictionary to with appended data for this particular instance
     """
     temp_data = []
-    added_objects = False
-    operations = ["Write", "Read"]
+    run_state = "successful"
+    added_objects = "NA"
+    skipttfb = True
+    operations = ["Read", "Write"]
 
-    if data_needed_for_query["name"] == 'S3bench':
-        stats = ["Throughput", "IOPS", "Latency", "TTFB"]
-    else:
-        stats = ["Throughput", "IOPS", "Latency"]
 
     uri, db_name, db_collection = get_db_details(
         data_needed_for_query['release'])
@@ -222,58 +332,83 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
         data_needed_for_query['operation'] = operation
 
         query = get_complete_schema(data_needed_for_query)
-        count = count_documents(query=query, uri=uri, db_name=db_name,
-                                collection=db_collection)
-        db_data = find_documents(query=query, uri=uri, db_name=db_name,
-                                 collection=db_collection)
+        group_query = {
+            "_id": "null",
+            "total_objs": { "$sum": "$Objects"},
+            "sum_throughput": {"$sum": "$Throughput"},
+            "sum_iops": {"$sum": "$IOPS"},
+            "avg_lat": {"$avg": "$Latency"},
+            "avg_lat_avg": {"$avg": "$Latency.Avg"},
+            "run_state": { "$addToSet": "$Run_State"},
+            "avg_ttfb_avg": {"$avg": "$TTFB.Avg"},
+            "avg_ttfb_99p": {"$avg": "$TTFB.Avg"},
+            }
 
-        if not added_objects:
-            try:
-                num_objects = int(db_data[0]['Objects'])
-            except IndexError:
-                num_objects = "NA"
-            except KeyError:
-                num_objects = "NA"
+        cursor = get_aggregate(query=query, group_query=group_query, uri=uri, db_name=db_name,
+                        collection=db_collection)
+        if not cursor:
+            cursor = {
+            "_id": "null", "total_objs": "NA", "sum_throughput": "NA", "sum_iops": "NA",
+            "avg_lat": "NA", "avg_lat_avg": "NA", "run_state": "NA", "avg_ttfb_avg": "NA",
+            "avg_ttfb_99p": "NA"}
 
-            temp_data.append(num_objects)
-            added_objects = True
+        if cursor['total_objs'] != "NA":
+            added_objects = cursor['total_objs']
+        if 'failed' in cursor['run_state']:
+            run_state = 'failed'
 
-        for stat in stats:
-            if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
-                temp_data.append(get_average_data(
-                    count, db_data, stat, "Avg", 1000))
-            elif data_needed_for_query["name"] == 'S3bench':
-                temp_data.append(get_data(count, db_data, stat, 1))
-            else:
-                try:
-                    temp_data.append(get_data(count, db_data, stat, 1))
-                except TypeError:
-                    temp_data.append(get_average_data(
-                        count, db_data, stat, "Avg", 1))
+        temp_data.append(round_off(cursor['sum_throughput']))
+        temp_data.append(round_off(cursor['sum_iops']))
+        if data_needed_for_query["name"] == 'Hsbench':
+            temp_data.append(round_off(cursor['avg_lat']))
+        elif data_needed_for_query["name"] == 'S3bench':
+            temp_data.append(round_off(cursor['avg_lat_avg']*1000))
+            if skipttfb:
+                temp_data.append(round_off(cursor['avg_ttfb_avg']*1000))
+                temp_data.append(round_off(cursor['avg_ttfb_99p']*1000))
+        else:
+            temp_data.append(round_off(cursor['avg_lat']))
 
-    return temp_data
-    # if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
-    #     if data_needed_for_query['xfilter'] == 'Build':
-    #         results[data_needed_for_query['objsize']] = temp_data
-    #     else:
-    #         results[data_needed_for_query['build']] = temp_data
-    # elif not check_empty_list(temp_data):
-    #     results[data_needed_for_query['objsize']] = temp_data
+        skipttfb = False
+
+    temp_data.insert(0, added_objects)
+    return temp_data, run_state
 
 
-def get_dash_table_from_dataframe(df, bench, column_id):
+def get_dash_table_from_dataframe(dataframe, bench, column_id, states=None):
     """
     functional to get dash table to show stats from dataframe
 
     Args:
-        df: pandas dataframe containing data
+        dataframe: pandas dataframe containing data
         bench: bench for which the data is
         column_id: column id needed for the column to plot
 
     Returns:
         figure: dashtable figure with plotted plots
     """
-    if len(df) < 1:
+    def style_conditiona_func(states):
+        if states:
+            style_set = []
+            for i, state in enumerate(states):
+                if state == 'failed':
+                    style_set.append(
+                        {'if': {'row_index': i}, 'backgroundColor': '#FADBD8'
+                         })
+                elif i % 2 != 0:
+                    style_set.append(
+                        {'if': {'row_index': i}, 'backgroundColor': '#E5E4E2'})
+            style_set.append({'if': {'column_id': column_id},
+                             'backgroundColor': '#D8D8D8'})
+
+        else:
+            style_set = [
+                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
+                {'if': {'column_id': column_id}, 'backgroundColor': '#D8D8D8'}
+            ]
+        return style_set
+
+    if len(dataframe) < 1:
         benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
@@ -293,20 +428,17 @@ def get_dash_table_from_dataframe(df, bench, column_id):
             ]
         else:
             headings = [
-                {'name': column, 'id': column} for column in list(df.columns)
+                {'name': column, 'id': column} for column in list(dataframe.columns)
             ]
 
         benchmark = dash_table.DataTable(
             id=f"{bench}_table",
             columns=headings,
-            data=df.to_dict('records'),
+            data=dataframe.to_dict('records'),
             merge_duplicate_headers=True,
             sort_action="native",
             style_header=style_dashtable_header,
-            style_data_conditional=[
-                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
-                {'if': {'column_id': column_id}, 'backgroundColor': '#D8D8D8'}
-            ],
+            style_data_conditional=style_conditiona_func(states),
             style_cell=style_table_cell
         )
 
@@ -323,7 +455,10 @@ def get_workload_headings(data):
     Returns:
         H5: heading with workload string
     """
-    return html.H5(f"Data for {data['build']} build on branch {data['branch']} with {data['nodes']} nodes, {data['pfull']}% utilization having workload of {data['buckets']} bucket(s) and {data['sessions']} session(s).")
+    return html.H5(f"Data for {data['build']} build with {data['OS']} OS\
+        on branch {data['branch']} with {data['nodes']} nodes, \
+        {data['pfull']}% utilization having workload of {data['buckets']} \
+        bucket(s) and {data['sessions']} session(s).")
 
 
 def get_metadata_latencies(data_needed_for_query):
@@ -342,6 +477,8 @@ def get_metadata_latencies(data_needed_for_query):
         'Statistics': ['Add / Edit Object Tags', 'Read Object Tags',
                        'Read Object Metadata']
     }
+
+    run_state_list = []
     for obj in objects:
         temp_data = []
         operations = ["PutObjTag", "GetObjTag", "HeadObj"]
@@ -350,6 +487,7 @@ def get_metadata_latencies(data_needed_for_query):
             data_needed_for_query['release'])
 
         for operation in operations:
+            run_state = "successful"
             data_needed_for_query['operation'] = operation
             data_needed_for_query['objsize'] = obj
             query = get_complete_schema(data_needed_for_query)
@@ -358,8 +496,16 @@ def get_metadata_latencies(data_needed_for_query):
             db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                      collection=db_collection)
 
+            try:
+                if "Run_State" in db_data[0].keys():
+                    run_state = db_data[0]['Run_State']
+            except IndexError:
+                run_state = "successful"
+
             temp_data.append(get_average_data(
                 count, db_data, "Latency", "Avg", 1000))
+
+            run_state_list.append(run_state)
 
         if not check_empty_list(temp_data):
             results[obj] = temp_data
@@ -369,7 +515,7 @@ def get_metadata_latencies(data_needed_for_query):
     else:
         data_frame = pd.DataFrame()
 
-    return data_frame
+    return data_frame, run_state_list
 
 
 def get_bucktops(data_needed_for_query):
@@ -399,8 +545,16 @@ def get_bucktops(data_needed_for_query):
                             collection=db_collection)
     db_data = find_documents(query=query, uri=uri, db_name=db_name,
                              collection=db_collection)
+    run_state_list = ["successful"] * len(bucket_ops)
+
     try:
         results = db_data[0]["Bucket_Ops"]
+
+        try:
+            if "Run_State" in db_data[0].keys():
+                run_state_list = [db_data[0]['Run_State']] * len(bucket_ops)
+        except IndexError:
+            run_state_list = ["successful"] * len(bucket_ops)
 
         for bucket_operation in bucket_ops:
             temp_data = []
@@ -414,16 +568,16 @@ def get_bucktops(data_needed_for_query):
             if not check_empty_list(temp_data):
                 data[bucket_operation] = temp_data
     except IndexError:
-        return pd.DataFrame()
+        return pd.DataFrame(), run_state_list
     except KeyError:
-        return pd.DataFrame()
+        return pd.DataFrame(), run_state_list
 
     if len(data) > 1:
         data_frame = pd.DataFrame(data)
     else:
         data_frame = pd.DataFrame()
 
-    return data_frame
+    return data_frame, run_state_list
 
 
 def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
@@ -439,8 +593,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
         color: color to be given to the plot
     """
     trace = go.Scatter(
-        name='{} {} - {} {}'.format(
-            plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
+        name='{} - {}'.format(
+            plot_data['operation'], plot_data['name']),
         x=x_data,
         y=y_data,
         hovertemplate='<br>%{x}, %{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
@@ -450,6 +604,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
     )
 
     fig.add_trace(trace)
+    trace.update(
+        name=f"{plot_data['operation']} {plot_data['metric']} - {plot_data['name']}")
     fig_all.add_trace(trace)
 
 

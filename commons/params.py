@@ -21,6 +21,7 @@
 """Constants
 """
 import os
+import tempfile
 
 LOG_FILE = 'cortx-test.log'
 
@@ -34,7 +35,11 @@ VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
+S3_MPART_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_multipart_upload.yaml")
+S3_TEMP_CRED_CONFIG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delete_account_temp_cred.yaml")
+S3_BLACK_BOX_CONFIG_PATH = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
+S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(
+    CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
 S3CMD_TEST_CONFIG = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
@@ -46,6 +51,10 @@ COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
+DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
+IAM_POLICY_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
+S3_VER_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_versioning.yaml")
+PROV_CONFIG_PATH = "config/prov/test_prov_config.yaml"
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -110,6 +119,10 @@ DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
+S3_INSTANCES_PER_NODE = 1
+LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
+                                            'test_multiple_config_deploy', 'test_cont_deployment',
+                                            "test_di_deployment"]

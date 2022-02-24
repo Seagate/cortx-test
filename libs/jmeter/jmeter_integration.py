@@ -25,8 +25,10 @@ import string
 import os
 import logging
 import re
+import json
 from commons.commands import JMX_CMD
 from commons.utils import system_utils
+from commons.utils import config_utils
 from config import JMETER_CFG, CSM_REST_CFG
 
 
@@ -155,3 +157,12 @@ class JmeterInt():
         with open(fpath) as stream:
             lines = stream.readlines()
         return lines
+
+    def get_err_cnt(self,fpath):
+        """
+        Read the error count parameter from statistics.json file
+        :param fpath: Statistics.json file path
+        """
+        data = config_utils.read_content_json(fpath)
+        self.log.debug("Request Statistics : \n%s",json.dumps(data,indent=4, sort_keys=True))
+        return int(data["Total"]["errorCount"]), int(data["Total"]["sampleCount"])

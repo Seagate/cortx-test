@@ -1,0 +1,47 @@
+Script in project's path tools/setup_update can be used to generate a setup specific config entry.
+
+python setup_entry.py --help
+usage: setup_entry.py [-h] [--fpath FPATH] [--dbuser DBUSER]
+                      [--dbpassword DBPASSWORD] [--new_entry NEW_ENTRY]
+
+Update the setup entry
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --fpath FPATH         Path of the json entry file
+  --dbuser DBUSER       Database user
+  --dbpassword DBPASSWORD
+                        database password
+  --new_entry NEW_ENTRY
+                        True for new entry , False for update
+
+e.g. python3 tools/setup_update/setup_entry.py --dbuser <> --dbpassword <>
+
+Name of setup specified in json file should be unique in case you are creating a new setup.
+For example in sample json setup name value should be unique `"setupname":"Setup_T2"`.
+
+Refer tools/setup_update/setup_entry_lc.sample.json for sample setup entry.
+
+Steps to create DB Entry:
+
+1. Create a Setup json file from setup_entry_lc.sample.json or setup_entry_lc.json. Rename the
+file to setup_entry.json.
+2. cd ${Project_Root}  i.e. cd cortx-test, set virtual env
+[root@ssc-vm-3563 cortx-test]#. ./virenv/bin/activate
+3a. Run following command to create an MongoDB entry.
+python3.7 tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123
+
+```
+(virenv) [root@ssc-vm-3563 cortx-test]# cd tools/setup_update
+(virenv) [root@ssc-vm-3563 setup_update]# ls
+setup_entry.json  setup_entry_lc.json  setup_entry_lc.json.ori  setup_entry.py
+(virenv) [root@ssc-vm-3563 cortx-test]# mv tools/setup_update/setup_entry.json  tools/setup_update/setup_entry.json.ori
+(virenv) [root@ssc-vm-3563 cortx-test]# mv tools/setup_update/setup_entry_lc.json  tools/setup_update/setup_entry.json
+(virenv) [root@ssc-vm-3563 cortx-test]# vi tools/setup_update/setup_entry.json
+(virenv) [root@ssc-vm-3563 cortx-test]# python3.7 tools/setup_update/setup_entry.py --dbuser datawrite --dbpassword seagate@123
+tools/setup_update/setup_entry.py:79: DeprecationWarning: count is deprecated. Use Collection.count_documents instead.
+  entry_exist = collection_obj.find(setup_query).count()
+Record entry 61cdb760456c4e8dc53c3c94 is inserted successfully
+
+3b. If you want to update the old entry because of any reason then use following command;
+(virenv) [root@ssc-vm-3563 cortx-test]# python3.7 tools/setup_update/setup_entry.py --new_entry False --dbuser datawrite --dbpassword seagate@123

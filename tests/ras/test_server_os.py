@@ -23,9 +23,12 @@
 import time
 import os
 import logging
-import re
 import pytest
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG, S3_CFG, S3_OBJ_TST
+from config import CMN_CFG
+from config import RAS_VAL
+from config import RAS_TEST_CFG
+from config.s3 import S3_OBJ_TST
+from config.s3 import S3_CFG
 from commons.utils import config_utils
 from commons.constants import SwAlerts as const
 from commons import constants as cons
@@ -137,7 +140,6 @@ class TestServerOS:
         self.integrity_fault = False
         LOGGER.info("Completed setup_method.")
 
-
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("\n%s Performing Teardown operation %s", "*" * 50, "*" * 50)
@@ -215,6 +217,7 @@ class TestServerOS:
             LOGGER.info("Step 4: Resolved RAID integrity fault.")
 
     @pytest.mark.tags("TEST-21587")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21587_cpu_usage_threshold(self):
@@ -294,6 +297,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-21588")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21588_memory_usage_threshold(self):
@@ -375,6 +379,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-21586")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21586_disk_usage_threshold(self):
@@ -457,6 +462,7 @@ class TestServerOS:
 
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-23045")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_23045_cpu_fault(self):
@@ -522,6 +528,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22786")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_22786_memory_usage_stress(self):
@@ -627,6 +634,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22787")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_22787_cpu_usage(self):
@@ -708,6 +716,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22844")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_22844_cpu_usage_parallel(self):
@@ -789,6 +798,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22716")
+    @pytest.mark.lr
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22716_disk_usage_thres_with_persistence_cache(self):
@@ -869,6 +879,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22717")
+    @pytest.mark.lr
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22717_cpu_usage_thresh_with_persistence_cache(self):
@@ -946,6 +957,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22720")
+    @pytest.mark.lr
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22720_memory_usage_thresh_with_persistence_cache(self):
@@ -1024,6 +1036,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22718")
+    @pytest.mark.lr
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22718_cpu_usage_threshold_node_reboot(self):
@@ -1083,6 +1096,7 @@ class TestServerOS:
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22719")
+    @pytest.mark.lr
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22719_memory_usage_threshold_node_reboot(self):
@@ -1144,6 +1158,7 @@ class TestServerOS:
 
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-22891")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_22891_load_test(self):
@@ -1360,6 +1375,7 @@ class TestServerOS:
         LOGGER.info("Successfully verified CPU fault resolved alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-22781")
     @pytest.mark.skip("RAID integrity not reported - EOS-23324")

@@ -31,9 +31,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
-from config import S3_OBJ_TST
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
-from libs.s3 import s3_test_lib, S3_CFG
+from config.s3 import S3_OBJ_TST
+from config.s3 import S3_CFG
+from libs.s3 import s3_test_lib
 
 
 class TestObjectMetadataOperations:
@@ -119,6 +120,8 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5482")
     @CTFailOn(error_handler)
     def test_object_key_alphanumeric_chars_1983(self):
@@ -133,8 +136,8 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5478")
     @CTFailOn(error_handler)
     def test_object_valid_special_chars_1984(self):
@@ -149,8 +152,8 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5480")
     @CTFailOn(error_handler)
     def test_key_alphanumeric_valid_special_chars_1985(self):
@@ -167,6 +170,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5479")
     @CTFailOn(error_handler)
     def test_key_existing_object_key_1986(self):
@@ -206,6 +210,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5487")
     @CTFailOn(error_handler)
     def test_key_1024byte_long_1987(self):
@@ -227,6 +232,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5483")
     @CTFailOn(error_handler)
     def test_key_with_numeric_1989(self):
@@ -243,6 +249,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5486")
     @CTFailOn(error_handler)
     def test_keysize_morethan_1024bytes_1990(self):
@@ -282,6 +289,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-7636")
     @CTFailOn(error_handler)
     def test_keyname_delimiters_prefixes_1991(self):
@@ -303,6 +311,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5484")
     @CTFailOn(error_handler)
     def test_key_chars_require_special_handling_1992(self):
@@ -350,6 +359,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5485")
     @CTFailOn(error_handler)
     def test_keyname_chars_avoidlist_1993(self):
@@ -397,6 +407,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5488")
     @CTFailOn(error_handler)
     def test_metadata_with_adding_new_object_1994(self):
@@ -415,6 +426,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5489")
     @CTFailOn(error_handler)
     def test_update_metadat_while_copying_1995(self):
@@ -468,6 +480,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5476")
     @CTFailOn(error_handler)
     def test_update_metadata_upto2kb_1997(self):
@@ -498,6 +511,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5477")
     @CTFailOn(error_handler)
     def test_metadata_morethan2kb_1998(self):
@@ -546,6 +560,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5474")
     @CTFailOn(error_handler)
     def test_max_objects_2287(self):
@@ -591,6 +606,7 @@ class TestObjectMetadataOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5475")
     @CTFailOn(error_handler)
     def test_max_object_size_2292(self):

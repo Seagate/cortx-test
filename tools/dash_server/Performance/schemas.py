@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+
 def get_common_schema(data):
     """
     function for getting common performance schema wrt database
@@ -32,8 +33,10 @@ def get_common_schema(data):
         dict: data dict with db key mapped with given data
     """
     entry = {
+        'OS': data['OS'],
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
+        'Count_of_Clients': data['clients'],
         'Percentage_full': data['pfull'],
         'Iteration': data['itrns'],
         'Custom': data['custom'],
@@ -73,6 +76,7 @@ def get_graphs_schema(data, xfilter, xfilter_tag):
     """
     entry = get_common_schema(data)
     entry[xfilter] = data[xfilter_tag]
+    entry['Name'] = data['name']
 
     return entry
 
@@ -113,23 +117,69 @@ def get_complete_schema(data):
     entry['Object_Size'] = data['objsize']
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
-    # entry['Count_of_Clients'] = data['clients'],
+    entry['Cluster_State'] = {"$exists": False}
+    entry['Additional_op'] = {"$exists": False}
+
+    return entry
+
+
+def get_degraded_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data for degraded cluster
+    Args:
+        data: data needed for query
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
+    entry = get_common_schema(data)
+    entry['Build'] = data['build']
+    entry['Object_Size'] = data['objsize']
+    entry['Operation'] = data['operation']
+    entry['Name'] = data['name']
+    entry['Cluster_State'] = data['cluster_state']
+
+    return entry
+
+
+def get_copyobject_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data for copy object
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
+    entry = get_common_schema(data)
+    entry['Build'] = data['build']
+    entry['Object_Size'] = data['objsize']
+    entry['Operation'] = data['operation']
+    entry['Name'] = data['name']
+    entry['Cluster_State'] = {"$exists": False}
+    entry['Additional_op'] = 'Copy_op'
 
     return entry
 
 
 statistics_column_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
+    'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 bucketops_headings = [
     'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
     'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
 
+copyobj_headings = [
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Copy Object Throughput (MBps)', 'Copy Object IOPS',
+    'Copy Object Latency (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 def get_dropdown_labels(dropdown_type):
     """
@@ -142,11 +192,14 @@ def get_dropdown_labels(dropdown_type):
         string: corresponding mapping for the input string
     """
     mapping = {
+        'branch': ' Branch',
+        'build': ' Build',
         'nodes': ' Nodes',
+        'clients': ' Clients',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
-        'sessions': ' Session(s)'
+        'sessions': ' Concurrency'
     }
 
     return mapping[dropdown_type]

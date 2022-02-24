@@ -80,6 +80,7 @@ class Provisioner:
                     job_name, next_build_number)
                 result = build_info['result']
                 expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
+                LOGGER.debug("result is %s::", result)
                 if result in expected_result:
                     break
                 cur_epoch = int(time.time())
@@ -668,3 +669,50 @@ class Provisioner:
                 LOGGER.error(error.args[0])
             return False, error
         return True, config_file
+
+    @staticmethod
+    def change_field_user_password(node_obj,
+                                   new_password: str) -> tuple:
+        """
+        Change the field user password during first time login.
+        :param node_obj: node object for remote execution.
+        :param new_password: Password to set for user.
+        :return: True/False and message
+        """
+        try:
+            node_obj.connect(shell=True)
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            output = output.split('\n')[-1]
+            if output.strip() == '(current) UNIX password:':
+                node_obj.shell_obj.send(node_obj.password + '\n')
+                LOGGER.debug("Old password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output.strip() == 'New password:':
+                node_obj.shell_obj.send(new_password + '\n')
+                LOGGER.debug("New password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output.strip() == 'Retype new password:':
+                node_obj.shell_obj.send(new_password + '\n')
+                LOGGER.debug("Re-enter new password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output:
+                LOGGER.debug("Confirmation after setting new password is - {}".format(output))
+
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.change_field_user_password.__name__)
+            LOGGER.error("Unable to set new password due to - {}".format(str(error)))
+            return False, error
+        return True, "Password change Successful!!"
