@@ -38,6 +38,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
@@ -243,8 +244,7 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = "cd {}; {} | tee deployment.log".format(remote_code_path,
-                                                      self.deploy_cfg["deploy_cluster"])
+        cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
@@ -258,13 +258,20 @@ class ProvDeployK8sCortxLib:
         return : Boolean
         """
         LOGGER.info("Validate Cluster status")
-        cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
-                                                          common_cmd.CLSTR_STATUS_CMD)
+        status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
         resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        if "FAILED" in resp:
-            return False, resp
-        return True, resp
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
+        remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
+        LOGGER.debug("COPY status file to local")
+        node_obj.copy_file_to_local(remote_path, local_path)
+        with open(local_path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                LOGGER.debug("line is %s", line)
+                if "FAILED" in line:
+                    return False, line
+        return True, lines
 
     def pull_cortx_image(self, worker_obj_list: list):
         """
@@ -309,6 +316,15 @@ class ProvDeployK8sCortxLib:
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
+        log_file = self.deploy_cfg['log_file']
+
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
+        remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
+        master_node_list[0].copy_file_to_local(remote_path, local_path)
+        if not resp[0]:
+            with open(local_path, 'r') as file:
+                lines = file.read()
+                LOGGER.debug(lines)
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
@@ -699,8 +715,7 @@ class ProvDeployK8sCortxLib:
         param: master node obj list
         param: worker node obj list
         """
-        destroy_cmd = "cd {} && {} --force".format(custom_repo_path,
-                                                   self.deploy_cfg["destroy_cluster"])
+        destroy_cmd = common_cmd.DESTROY_CLUSTER_CMD.format(custom_repo_path)
         list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
         list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
         try:
@@ -1039,9 +1054,11 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
         LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
-            LOGGER.info("Step to Perform k8s Cluster Deployment")
-            resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
-            assert_utils.assert_true(resp[0], resp[1])
+            resp = self.verify_k8s_cluster_exists(master_node_list, worker_node_list)
+            if not resp:
+                LOGGER.info("Step to Perform k8s Cluster Deployment")
+                resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
+                assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Taint master nodes if not already done.")
             for node in master_node_list:
                 resp = self.validate_master_tainted(node)
@@ -1150,12 +1167,16 @@ class ProvDeployK8sCortxLib:
         param: nodeObj of Master node.
         returns: dict of all pods with service status True/False and time taken
         """
+        resp = self.check_pods_status(master_node_obj)
+        assert_utils.assert_true(resp, "All Pods are not in Running state")
         data_pod_list = LogicalNode.get_all_pods(master_node_obj,
                                                  common_const.POD_NAME_PREFIX)
         server_pod_list = LogicalNode.get_all_pods(master_node_obj,
                                                    common_const.SERVER_POD_NAME_PREFIX)
         LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
                      data_pod_list, server_pod_list)
+        assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
+        assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
         end_time = start_time + 1800  # 30 mins timeout
         response = list()
@@ -1173,8 +1194,9 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
                 response.append(status)
                 response.append(time_taken)
-                break
+                return response
         LOGGER.info("hctl_status = %s", hctl_status)
+        response.extend([False, 'Timeout'])
         return response
 
     # pylint: disable=broad-except
@@ -1262,3 +1284,36 @@ class ProvDeployK8sCortxLib:
         if "Error" in resp or "Failed" in resp:
             return False, resp
         return True, resp
+
+    @staticmethod
+    def verify_k8s_cluster_exists(master_node_list, worker_node_list):
+        """
+        This method is to verify the K8S setup exists for given set of nodes.
+        master_node_list: is the Master Node
+        worker_node_list: Worker Nodes
+        returns True if we have K8s cluster exists
+        """
+        resp = master_node_list[0].execute_cmd(common_cmd.K8S_WORKER_NODES,
+                                               read_lines=True)
+        if len(resp) == 0:
+            return False
+        worker_list = []
+        worker_nodes = []
+        for worker in resp[1:]:
+            worker_list.append(worker.strip())
+        LOGGER.debug(worker_list)
+        for nodes in worker_node_list:
+            worker_nodes.append(nodes.hostname)
+        LOGGER.debug("Data from setup_details %s", worker_nodes)
+        master_rsp = master_node_list[0].execute_cmd(common_cmd.K8S_MASTER_NODE,
+                                                     read_lines=True)
+        if len(worker_nodes) == len(worker_list):
+            if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == \
+                    master_node_list[0].hostname:
+                LOGGER.debug("Master and Worker nodes are matched."
+                             "skipping K8s Cluster deployment")
+                return True
+            LOGGER.error("Input Setup details mismatch with current setup")
+            return False
+        LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
+        return False
