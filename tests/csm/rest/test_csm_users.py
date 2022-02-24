@@ -4379,6 +4379,7 @@ class TestCsmUser():
             self.log.error("Log in with reverted password failed")
             assert False, "Log in with reverted password failed"
 
+    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
