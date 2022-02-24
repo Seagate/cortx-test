@@ -49,26 +49,29 @@ class RestS3user(RestTestLib):
         :param save_new_user: to store newly created user to config
         :return: response of create user
         """
-        # Building request url
-        self.log.debug("Create s3 accounts ...")
-        endpoint = self.config["s3accounts_endpoint"]
-        self.log.debug("Endpoint for s3 accounts is %s", endpoint)
-        # Collecting required payload to be added for request
-        user_data = self.create_payload_for_new_s3_account(user_type)
-        self.log.debug("Payload for s3 accounts is %s", user_data)
-        self.recently_created_s3_account_user = user_data
-        if save_new_user:
-            self.log.debug(
-                "Adding s3 accounts is to config with name : "
-                "new_s3_account_user")
-            self.update_csm_config_for_user(
-                "new_s3_account_user",
-                user_data["account_name"],
-                user_data["password"])
-        #user_data = json.dumps(user_data)
-        # Fetching api response
-        return self.restapi.rest_call(
-            "post", endpoint=endpoint, json_dict=user_data, headers=self.headers)
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            return self.create_s3_basic()
+        else:
+            # Building request url
+            self.log.debug("Create s3 accounts ...")
+            endpoint = self.config["s3accounts_endpoint"]
+            self.log.debug("Endpoint for s3 accounts is %s", endpoint)
+            # Collecting required payload to be added for request
+            user_data = self.create_payload_for_new_s3_account(user_type)
+            self.log.debug("Payload for s3 accounts is %s", user_data)
+            self.recently_created_s3_account_user = user_data
+            if save_new_user:
+                self.log.debug(
+                    "Adding s3 accounts is to config with name : "
+                    "new_s3_account_user")
+                self.update_csm_config_for_user(
+                    "new_s3_account_user",
+                    user_data["account_name"],
+                    user_data["password"])
+            #user_data = json.dumps(user_data)
+            # Fetching api response
+            return self.restapi.rest_call(
+                "post", endpoint=endpoint, json_dict=user_data, headers=self.headers)
 
 
     @RestTestLib.authenticate_and_login
@@ -656,10 +659,13 @@ class RestS3user(RestTestLib):
         self.log.info("Simulating S3 account creation.")
         rest_iam_user = RestIamUser()
         payload_rgw = rest_iam_user.iam_user_payload_rgw(user_type="valid")
-        payload_rgw.update(payload)
+        if payload is not None:
+            payload_rgw.update(payload)
         resp = rest_iam_user.create_iam_user_rgw(payload_rgw)
         s3_response = Response()
-        if resp == HTTPStatus.CREATED:
+        if resp.status_code == HTTPStatus.CREATED:
+            import pdb; pdb.set_trace()
+            resp = resp.json()
             resp_dict = {"account_name": resp["keys"][0]["user"],
                         "account_email": resp["email"],
                         "account_id": resp["user_id"],
@@ -667,8 +673,9 @@ class RestS3user(RestTestLib):
                         "access_key": resp["keys"][0]["access_key"],
                         "secret_key": resp["keys"][0]["secret_key"]}
             s3_response.status_code = 201
-            s3_response._content = json.dumps(resp_dict)
+            s3_response._content = json.dumps(resp_dict).encode("utf-8")
         else:
             s3_response.status_code = 400
-            s3_response._content = json.dumps({"error":"Failed to create S3 account."})
+            s3_response._content = json.dumps(
+                {"error":"Failed to create S3 account."}).encode("utf-8")
         return s3_response

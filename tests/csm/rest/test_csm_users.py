@@ -4880,6 +4880,7 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_32180"]
         resp_error_code = test_cfg["error_code"]
+        msg = test_cfg["message"]
         resp_msg_id = test_cfg["message_id"]
         self.log.info("Step 1: Creating csm admin users")
         for _ in range(2):
