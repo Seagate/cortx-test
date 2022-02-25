@@ -59,6 +59,7 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
+        self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -282,6 +283,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Pull Cortx image on all worker nodes.")
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
+            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -321,6 +323,10 @@ class ProvDeployK8sCortxLib:
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         master_node_list[0].copy_file_to_local(remote_path, local_path)
+        pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+                                                     read_lines=True)
+        LOGGER.debug("\n=== POD STATUS ===\n")
+        LOGGER.debug(pod_status)
         if not resp[0]:
             with open(local_path, 'r') as file:
                 lines = file.read()
@@ -364,6 +370,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: third_party_image: dict of third party image
         :Keyword: log_path: to provide custom log path
         :Keyword: setup_size: to provide custom size large/small/medium
+        :Keyword: cortx_server_image: to provide cortx server image
         returns the status, filepath and system reserved disk
         """
         cvg_count = kwargs.get("cvg_count", 2)
@@ -380,6 +387,7 @@ class ProvDeployK8sCortxLib:
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
+        cortx_server_image = kwargs.get("cortx_server_image")
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
         data_devices = list()  # empty list for data disk
@@ -445,7 +453,8 @@ class ProvDeployK8sCortxLib:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
-                                                        third_party_images_dict)
+                                                        third_party_images_dict,
+                                                        cortx_server_image)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -580,12 +589,14 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict):
+    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict,
+                                      cortx_server_image):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
         cortx_image: this is cortx image name
         third_party_image: dict of third party image
+        cortx_server_image: cortx_server image name
         :returns the status, filepath
         """
         cortx_im = dict()
@@ -593,7 +604,10 @@ class ProvDeployK8sCortxLib:
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            cortx_im[image_key] = cortx_image
+            if image_key == "cortxserver":
+                cortx_im[image_key] = cortx_server_image
+            else:
+                cortx_im[image_key] = cortx_image
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -1077,7 +1091,7 @@ class ProvDeployK8sCortxLib:
                                         cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
                                         size_data_disk=data_disk_size,
                                         size_metadata=metadata_disk_size,
-                                        log_path=log_path)
+                                        log_path=log_path, cortx_server_image=cortx_server_image)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
@@ -1090,10 +1104,6 @@ class ProvDeployK8sCortxLib:
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
-            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                                         read_lines=True)
-            LOGGER.debug("\n=== POD STATUS ===\n")
-            LOGGER.debug(pod_status)
             LOGGER.info("Step to Check  ALL service status")
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
