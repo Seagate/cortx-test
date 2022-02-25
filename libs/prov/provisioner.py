@@ -58,6 +58,7 @@ class Provisioner:
         try:
             jenkins_server_obj = jenkins.Jenkins(
                 jen_url, username=username, password=password)
+            jenkins_server_obj.session.verify = False
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
             completed_build_number = jenkins_server_obj.get_job_info(
                 job_name)['lastCompletedBuild']['number']
