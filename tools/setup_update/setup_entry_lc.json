@@ -6,7 +6,7 @@
 "parallel_client_cnt": 0,
 "is_setup_free": true,
 "product_family": "LC",
-"s3_engine": 2,
+"s3_engine": 1,
 "product_type": "k8s",
 "lb": "FQDN without protocol(http/s)",
 "nodes":[
