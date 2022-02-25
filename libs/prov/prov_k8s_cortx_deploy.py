@@ -249,7 +249,12 @@ class ProvDeployK8sCortxLib:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=7200)
             LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
             return True, resp
-        except BaseException as error:
+        except TimeoutError as error:
+            LOGGER.error(error, "7200")
+            node_obj.kill_remote_process(cmd)
+
+        except Exception as error:
+            LOGGER.exception(error)
             return False, error
 
     @staticmethod
@@ -328,6 +333,7 @@ class ProvDeployK8sCortxLib:
             with open(local_path, 'r') as file:
                 lines = file.read()
                 LOGGER.debug(lines)
+
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
@@ -724,7 +730,7 @@ class ProvDeployK8sCortxLib:
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
-            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True, timeout=1200)
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True, timeout=900)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
                 resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
