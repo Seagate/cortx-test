@@ -58,7 +58,7 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=R0902
 # pylint: disable=R0904
-class TestPodFailure:
+class TestMultiPodFailure:
     """
     Test suite for Pod Failure
     """
@@ -389,6 +389,8 @@ class TestPodFailure:
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
                     "data pods fail.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35790")
@@ -409,7 +411,7 @@ class TestPodFailure:
         event = threading.Event()
         output = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 10, 'skipcleanup': False, 'output': output}
+                'nclients': 1, 'nsamples': 3, 'skipcleanup': False, 'output': output}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -491,6 +493,8 @@ class TestPodFailure:
 
         LOGGER.info("ENDED: Test to verify continuous IOs while k data pods are failing one by one")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35791")
@@ -511,7 +515,7 @@ class TestPodFailure:
         event = threading.Event()
         output = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 10, 'skipcleanup': False, 'output': output}
+                'nclients': 1, 'nsamples': 5, 'skipcleanup': False, 'output': output}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
