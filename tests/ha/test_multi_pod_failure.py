@@ -438,7 +438,7 @@ class TestMultiPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_SCALE_REPLICAS
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s pod %s by making replicas=0 (safe)", count, pod_name)
             event.clear()
         LOGGER.info("Step 2: Successfully deleted %s data pods", self.kvalue)
 
@@ -466,7 +466,7 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Verify status for In-flight WRITEs-READs-verify while data pods are "
+        LOGGER.info("Step 6: Verify status for In-flight WRITEs-READs-verify while data pods are "
                     "down")
         thread.join()
         responses = dict()
@@ -481,15 +481,15 @@ class TestMultiPodFailure:
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
-        LOGGER.info("Step 1: Successfully completed WRITEs-READs-verify in background")
+        LOGGER.info("Step 6: Successfully completed WRITEs-READs-verify in background")
 
-        LOGGER.info("Step 6: Create multiple buckets and run IOs")
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
         self.test_prefix = 'test-35790-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=2,
                                                     nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify continuous IOs while k data pods are failing one by one")
 
@@ -499,7 +499,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35791")
     @CTFailOn(error_handler)
-    def test_cont_ios_during_server_kpods_down_unsafe(self):
+    def test_cont_ios_during_server_kpods_down(self):
         """
         Test to verify continuous IOs while k server pods are failing one by one by delete
         deployment
@@ -571,7 +571,7 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Verify status for In-flight WRITEs-READs-verify while server pods are "
+        LOGGER.info("Step 6: Verify status for In-flight WRITEs-READs-verify while server pods are "
                     "down")
         thread.join()
         responses = dict()
@@ -586,15 +586,15 @@ class TestMultiPodFailure:
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
-        LOGGER.info("Step 1: Successfully completed WRITEs-READs-verify in background")
+        LOGGER.info("Step 6: Successfully completed WRITEs-READs-verify in background")
 
-        LOGGER.info("Step 6: Create multiple buckets and run IOs")
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
         self.test_prefix = 'test-35791-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=2,
                                                     nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify continuous IOs while k server pods are failing one "
                     "by one")
