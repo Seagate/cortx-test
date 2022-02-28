@@ -212,6 +212,8 @@ class JiraTask:
 
         # labels = test_plan_details.fields.labels
         labels = [tp_info['setup_type']]
+        for l in tp_info['tp_labels']:
+            labels.append(l)
 
         fix_versions = []
         fix_dict = dict()
