@@ -852,7 +852,7 @@ class TestR2SupportBundle:
                             assert_utils.assert_true(False, "No utils log file "
                                                             "found in support bundle")
                     if comp == "csm":
-                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/csm", "csm")
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path, "csm")
                         if resp:
                             self.LOGGER.info("csm logs are present in support Bundle")
                         else:
