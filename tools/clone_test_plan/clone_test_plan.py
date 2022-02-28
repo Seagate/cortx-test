@@ -106,8 +106,9 @@ def main(args):
         te_keys = [te for te in te_keys if te not in args.skip_te_clone]
 
     if args.tes_to_clone:
-        new_te_keys = [te for te in te_keys if te in args.tes_to_clone]
-        te_keys = new_te_keys
+        if args.tes_to_clone[0] != "optional":
+            new_te_keys = [te for te in te_keys if te in args.tes_to_clone]
+            te_keys = new_te_keys
 
     print("test executions of existing test plan {}".format(te_keys))
 
