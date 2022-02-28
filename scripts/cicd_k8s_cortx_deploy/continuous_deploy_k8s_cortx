@@ -72,6 +72,7 @@ pipeline {
                 script {
                     try {
                        sh label: '', script: ''' source venv/bin/activate
+                        export PYTHONHTTPSVERIFY='0'
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
                         TARGET_ENTRY="target_entry.txt"
                         cat $ALL_SETUP_ENTRY
