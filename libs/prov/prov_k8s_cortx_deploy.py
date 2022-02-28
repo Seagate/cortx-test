@@ -1108,6 +1108,9 @@ class ProvDeployK8sCortxLib:
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
+            resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
+                                              self.deploy_cfg["rgw_rpm"])
+            assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
@@ -1327,3 +1330,18 @@ class ProvDeployK8sCortxLib:
             return False
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
+
+    def verfiy_installed_rpms(self, master_node_list, container_name, rpm_name):
+        """
+        This method is to verify the installed rpms in the pods.
+        param: master_node_list: master node obj.
+        param: rpm_name: rpm which need to be verify if its
+        installed or not
+        returns True
+        """
+        server_pods_list = LogicalNode.get_all_pods(common_const.SERVER_POD_NAME_PREFIX)
+        for server_pod in server_pods_list:
+            resp = master_node_list[0].execute_cmd(
+                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name))
+            LOGGER.debug("Installed rpm is %s", resp)
+            return resp
