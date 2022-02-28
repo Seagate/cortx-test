@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 class S3Bucket(S3RestApi):
     """Class for bucket operations."""
 
-    async def create_bucket(self, bucket_name: str) -> object:
+    async def create_bucket(self, bucket_name: str) -> dict:
         """
         Creating Bucket.
 
@@ -50,7 +50,8 @@ class S3Bucket(S3RestApi):
         :return: Response of bucket list.
         """
         async with self.get_client() as client:
-            response = [bucket.name for bucket in client.buckets.all()]
+            buckets = await client.buckets.all()
+            response = [bucket.name for bucket in buckets]
             LOGGER.debug(response)
 
         return response

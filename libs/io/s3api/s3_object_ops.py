@@ -182,10 +182,10 @@ class S3Object(S3RestApi):
         async with self.get_client() as client:
             file_obj = client.Object(bucket_name, object_name).get()['Body']
             file_hash = hashlib.sha256()
-            content = file_obj.read(chunk_size)
+            content = await file_obj.read(chunk_size)
             file_hash.update(content)
             while content:
-                content = file_obj.read(chunk_size)
+                content = await file_obj.read(chunk_size)
                 if content:
                     file_hash.update(content)
 
