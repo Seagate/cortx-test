@@ -511,7 +511,7 @@ class RestS3user(RestTestLib):
                 if key == "account_name":
                     payload.update({"uid":value})
                 if key == "account_email":
-                    payload.update({"email":value})   
+                    payload.update({"email":value})
                 if key == "access_key":
                     payload.update({"access_key":value})
                 if key == "secret_key":
@@ -524,7 +524,7 @@ class RestS3user(RestTestLib):
             user_data = json.dumps(user_data)
             resp = self.restapi.rest_call("post", endpoint=endpoint, data=user_data,
                                         headers=self.headers)
-            
+
         if resp.status_code == HTTPStatus.CREATED.value:
             self.recently_created_s3_account_user = resp.json()
         return resp

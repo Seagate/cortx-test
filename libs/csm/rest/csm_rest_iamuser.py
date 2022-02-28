@@ -532,7 +532,7 @@ class RestIamUser(RestTestLib):
                     self.log.info("Expected response for %s: %s", key,value)
                     if key == "uid":
                         key = "user_id"
-                    if key == "key_type" or key == "access_key" or key == "secret_key" or key == "user_caps" or key == "generate_key":
+                    if key in ('key_type', 'access_key', 'secret_key', 'user_caps', 'generate_key'):
                         continue
 
                     self.log.info("Actual response for %s: %s", key, resp[key])
