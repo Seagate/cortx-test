@@ -1,0 +1,107 @@
+test_1:
+  TEST_ID:
+  object_size:
+    start: 1Kb
+    end: 100Kb
+  result_duration: 1h
+  sessions_per_node: 1
+  tool: s3bench
+
+test_2:
+  TEST_ID:
+  object_size:
+    start: 100Kb
+    end: 1Mb
+  result_duration: 4h
+  sessions_per_node: 2
+  tool: s3bench
+
+test_3:
+  TEST_ID:
+  object_size:
+    start: 1Mb
+    end: 10Mb
+  result_duration: 1d
+  sessions_per_node: 3
+  tool: s3bench
+
+test_4:
+  TEST_ID:
+  object_size:
+    start: 10Mb
+    end: 20Mb
+  result_duration: 1d
+  sessions_per_node: 5
+  tool: s3bench
+
+test_5:
+  TEST_ID:
+  object_size:
+    start: 20Mb
+    end: 100Mb
+  result_duration: 3d
+  sessions_per_node: 8
+  tool: s3bench
+
+test_6:
+  TEST_ID:
+  object_size:
+    start: 100Mb
+    end: 500Mb
+  result_duration: 5d
+  sessions_per_node: 13
+  tool: s3bench
+
+test_7:
+  TEST_ID:
+  object_size:
+    start: 500Mb
+    end: 1Gb
+  result_duration: 7d
+  sessions_per_node: 21
+  tool: s3bench
+
+test_8:
+  TEST_ID:
+  object_size:
+    start: 1Gb
+    end: 2Gb
+  result_duration: 15d
+  sessions_per_node: 34
+  tool: s3bench
+
+test_9:
+  TEST_ID:
+  object_size:
+    start: 2Gb
+    end: 5Gb
+  result_duration: 20d
+  sessions_per_node: 55
+  tool: s3bench
+
+test_10:
+  TEST_ID:
+  object_size:
+    start: 5Gb
+    end: 10Gb
+  result_duration: 25d
+  sessions_per_node: 89
+  tool: s3bench
+
+test_11:
+  TEST_ID:
+  object_size:
+    start: 10Gb
+    end: 20Gb
+  result_duration: 30d
+  sessions_per_node: 144
+  tool: s3bench
+
+test_12:
+  TEST_ID:
+  object_size:
+    start: 20Gb
+    end: 50Gb
+  result_duration: 40d
+  sessions_per_node: 233
+  tool: s3bench

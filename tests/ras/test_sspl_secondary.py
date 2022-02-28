@@ -185,6 +185,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14034")
@@ -294,6 +295,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")
@@ -403,6 +405,7 @@ class TestSSPLSecondary:
             "service on Node)")
 
     @pytest.mark.skip
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14794")

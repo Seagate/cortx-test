@@ -1,0 +1,22 @@
+# CodeSync won't sync the files in the .syncignore. It follows same format as .gitignore.
+*.git
+*.bak
+*.log
+*__pycache__*
+.idea
+*.pyc
+*.swp
+*.ova
+.build
+build
+.eggs
+*.egg-info
+.coverage
+tmp
+venv/
+.vscode/
+robot_gui/reports/
+secrets.json
+setups.json
+log/
+virenv/

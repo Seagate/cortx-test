@@ -1,0 +1,8 @@
+"product_family": "LC"
+"product_type": "k8s"
+"nodes":
+    - "hostname": "ssc-vm-g3-rhev4-2552.colo.seagate.com"
+      "ip": "10.230.250.44"
+      "username": "root"
+      "password": "seagate"
+      "node_type": "master"

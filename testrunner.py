@@ -71,6 +71,14 @@ def parse_args():
                         help="Generates xml format report if set True, default is False")
     parser.add_argument("--stop_on_first_error", "-x", dest="stop_on_first_error",
                         action="store_true", help="Stop test execution on first failure")
+    parser.add_argument("-pf", "--product_family", type=str, default='LC',
+                        help="Product family LR or LC.")
+    parser.add_argument("-c", "--validate_certs", type=str_to_bool, default=True,
+                        help="Validate HTTPS/SSL certificate to S3 endpoint.")
+    parser.add_argument("-s", "--use_ssl", type=str_to_bool, default=True,
+                        help="Use HTTPS/SSL connection for S3 endpoint.")
+    parser.add_argument("-hc", "--health_check", type=str_to_bool, default=True,
+                        help="Decide whether to do health check.")
     return parser.parse_args()
 
 
@@ -177,8 +185,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.stop_on_first_error:
         cmd_line = cmd_line + ["-x"]
 
-    cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
-                           '--tp_ticket=' + args.test_plan]
+    cmd_line = cmd_line + ['--build=' + str(build), '--build_type=' + str(build_type),
+                           '--tp_ticket=' + args.test_plan,
+                           '--product_family=' + args.product_family,
+                           '--validate_certs=' + str(args.validate_certs),
+                           '--use_ssl=' + str(args.use_ssl),
+                           '--health_check=' + str(args.health_check)]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()

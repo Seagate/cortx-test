@@ -40,9 +40,7 @@ def get_config_yaml(fpath: str) -> dict:
     with open(fpath) as fin:
         LOG.debug("Reading details from file : %s", fpath)
         data = yaml.safe_load(fin)
-        data['end'] = 'end'
-        LOG.debug("Decrypting password from file : %s", fpath)
-        pswdmanager.decrypt_all_passwd(data)
+
     return data
 
 
@@ -102,7 +100,7 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
 def get_config_wrapper(**kwargs):
     """Get the configuration from the database as well as yaml and merge.
     It is expected that duplicate data should not be present between DB and yaml
-    :keyword target: if targetis given than it will append the target details to the config.
+    :keyword target: if target is given than it will append the target details to the config.
     :keyword fpath: if fpath is given than it will fetch the details from yaml file
     :keyword target_key : allows us to fetch smaller portion of the complete yaml file
     :keyword config_key : allows us to fetch smaller portion of the complete target details

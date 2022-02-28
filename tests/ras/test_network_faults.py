@@ -291,6 +291,7 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
 
     @pytest.mark.tags("TEST-21493")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_mgmt_network_port_fault_test_21493(self):
@@ -420,6 +421,7 @@ class TestNetworkFault:
                     "fault-resolved scenarios")
 
     @pytest.mark.tags("TEST-21506")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_public_data_network_port_fault_21506(self):
@@ -543,6 +545,7 @@ class TestNetworkFault:
                     "fault-resolved scenarios")
 
     @pytest.mark.tags("TEST-21510")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_nw_prt_flt_persistent_cache_sspl_21510(self):
@@ -770,6 +773,7 @@ class TestNetworkFault:
                     "faults when SSPL is stopped and started in between")
 
     @pytest.mark.tags("TEST-21507")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_mgmt_nw_cable_faults_21507(self):
@@ -889,6 +893,7 @@ class TestNetworkFault:
                     " disconnected/connected")
 
     @pytest.mark.tags("TEST-21508")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_public_data_nw_cable_faults_21508(self):
@@ -1010,6 +1015,7 @@ class TestNetworkFault:
                     " disconnected/connected")
 
     @pytest.mark.tags("TEST-21509")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_nw_prt_flt_persistent_cache_node_reboot_21509(self):
@@ -1177,6 +1183,7 @@ class TestNetworkFault:
                     "faults when SSPL is stopped and started in between")
 
     @pytest.mark.tags("TEST-25292")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_nw_cable_flt_persistent_cache_node_reboot_25292(self):
@@ -1332,6 +1339,7 @@ class TestNetworkFault:
                     "faults when SSPL is stopped and started in between")
 
     @pytest.mark.tags("TEST-25293")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_nw_cable_flt_persistent_cache_sspl_25293(self):

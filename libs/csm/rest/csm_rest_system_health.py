@@ -584,3 +584,46 @@ class SystemHealth(RestTestLib):
         self.log.info("cluster status operation response = %s",
                       response.json())
         return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def cluster_operation_signal(
+            self,
+            operation: str,
+            resource: str,
+            negative_resp=None,
+            expected_response=HTTPStatus.OK):
+        """
+        Helper method to send the cluster operation signal before operation performed.
+        :param operation: Operation to be performed
+        :param resource: resource on which operation needs to be performed
+        :param negative_resp: Invalid data for negative test scenario verification
+        :param expected_response: Expected status code
+        :return: boolean, response for POST
+        """
+        # Building request url to perform cluster operation
+        self.log.info("Performing operation on %s ...", resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info("Endpoint for cluster operation is %s", endpoint)
+        data_val = {"operation": operation, "arguments": {}}
+        copy_auth_token = None
+        if negative_resp:
+            # Update the Authorization token to verify negative test scenario
+            copy_auth_token = headers["Authorization"]
+            headers.update({"Authorization":negative_resp})
+        # Fetching api response
+        response = self.restapi.rest_call("post", endpoint=endpoint,
+                                          data=json.dumps(data_val), headers=headers)
+        if negative_resp:
+            # Update the valid token value for rest logout call
+            headers.update({"Authorization":copy_auth_token})
+        if response.status_code != expected_response:
+            self.log.error("%s operation on %s POST REST API response : %s",
+                           operation, resource, response)
+            return False, response
+        self.log.info("%s operation on %s POST REST API response : %s",
+                      operation, resource, response)
+        return True, response

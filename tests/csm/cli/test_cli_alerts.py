@@ -29,7 +29,7 @@ from commons import cortxlogging
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 
 
-ALERT_OBJ = CortxCliAlerts()
+global ALERT_OBJ
 GENERATE_ALERT_OBJ = GenerateAlertLib()
 LOGGER = logging.getLogger(__name__)
 START_LOG_FORMAT = "##### Test started -  "
@@ -44,6 +44,7 @@ def setup_function():
     """
     LOGGER.info("STARTED : Setup operations for test function")
     LOGGER.info("Login to CORTX CLI using admin")
+    ALERT_OBJ = CortxCliAlerts()
     ALERT_OBJ.open_connection()
     login = ALERT_OBJ.login_cortx_cli()
     assert_utils.assert_equals(

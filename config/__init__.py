@@ -19,92 +19,70 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 """Configs are initialized here."""
-import os
+import os.path
 import sys
-import re
+import ast
 import munch
 from typing import List
 from commons import configmanager
-from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
-from commons.params import S3_OBJ_TEST_CONFIG
-from commons.params import RAS_CONFIG_PATH
-from commons.params import SSPL_TEST_CONFIG_PATH
-from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
-from commons.params import PROV_TEST_CONFIG_PATH
-from commons.params import DI_CONFIG_PATH
-from commons.params import DATA_PATH_CONFIG_PATH
-from commons.params import S3_BKT_TEST_CONFIG
-from commons.params import S3_LDAP_TEST_CONFIG
-from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
-from commons.params import S3CMD_TEST_CONFIG
-from commons.params import HA_TEST_CONFIG_PATH
+from commons.utils import config_utils
+from commons.params import S3_CONFIG
+from commons.params import S3_IO_CFG_PATH
+from commons.params import IO_DRIVER_CFG_PATH
 
 
 def split_args(sys_cmd: List):
     """split args and make it compliant."""
-    eq_splitted = list()
+    _args = list()
     for item in sys_cmd:
         if item.find('=') != -1:
-            eq_splitted.extend(item.split('='))
+            _args.extend(item.split('='))
         else:
-            eq_splitted.extend([item])
-    return eq_splitted
+            _args.extend([item])
+
+    return _args
 
 
-pytest_args = sys.argv
-proc_name = os.path.split(pytest_args[0])[-1]
-target_filter = re.compile(".*--target")
-pytest_args = split_args(pytest_args)  # sanitize
-if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_args:
-    # This condition will execute when args ore in format ['--target','<target name'>]
-    if pytest_args[pytest_args.index("--local") + 1]:
-        target = pytest_args[pytest_args.index("--target") + 1]
-    os.environ["TARGET"] = target
-elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
-    # This condition will execute for non local test runner execution
-    target = pytest_args[pytest_args.index("--target") + 1].lower()
-elif proc_name == 'pytest' and '--target' in pytest_args:
-    # This condition will execute when args ore in format ['--target=<target name'>]
-    target = list(filter(target_filter.match, pytest_args))[0].split("=")[1].lower()
-elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner process
-    # This condition will execute when target is passed from environment
-    target = os.environ["TARGET"]
-elif proc_name not in ["testrunner.py", "testrunner"]:
-    target = os.environ.get("TARGET")
-# Will revisit this once we fix the singleton/s3helper issue
-elif proc_name in ["testrunner.py", "testrunner"]:
-    if '-tg' in pytest_args:
-        target = pytest_args[pytest_args.index("-tg") + 1]
-    elif '--target' in pytest_args:
-        target = pytest_args[pytest_args.index("--target") + 1]
-    else:
-        target = os.environ.get("TARGET") if os.environ.get("TARGET") else None
-else:
-    target = None
+def get_local_aws_keys():
+    """Fetch local aws access secret keys."""
+    path = S3_CFG["aws_path"]
+    section = S3_CFG["aws_cred_section"]
+    if os.path.exists(path):
+        try:
+            aws_access_key = config_utils.get_config(path, section, "aws_access_key_id")
+            aws_secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
+            return aws_access_key, aws_secret_key
+        except KeyError:
+            pass
+    return None, None
 
-CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
-CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
-                                                target=target, target_key="csm")
-JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
-                                                target=target, target_key="csm")
-CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
-S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
-S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
-S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
-S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
-S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target)
-RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
-                                           target=target, target_key="csm")
-CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
-RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
-PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
-S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH)
-HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 
-DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
-DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
+IO_DRIVER_CFG = configmanager.get_config_yaml(IO_DRIVER_CFG_PATH)
+S3_CFG = configmanager.get_config_yaml(fpath=S3_CONFIG)
+CMN_CFG = configmanager.get_config_wrapper(fpath=S3_IO_CFG_PATH)
+
+
+io_driver_args = split_args(sys.argv)
+_use_ssl = '-us' if '-us' in io_driver_args else '--use_ssl' if '--use_ssl' in io_driver_args\
+    else None
+ssl_flg = io_driver_args[io_driver_args.index(_use_ssl) + 1] if _use_ssl else True
+_endpoint = '-ep' if '-ep' in io_driver_args else '--endpoint' if '--endpoint' in io_driver_args\
+    else None
+s3_url = io_driver_args[io_driver_args.index(_endpoint) + 1] if _endpoint else "s3.seagate.com"
+_access_key = "-ak" if '-ak' in io_driver_args else '--access_key' if '--access_key' in\
+                                                                      io_driver_args else None
+access_key = io_driver_args[io_driver_args.index(_access_key) + 1] if _access_key else None
+_secret_key = "-sk" if '-sk' in io_driver_args else '--secret_key' if '--secret_key' in\
+                                                                      io_driver_args else None
+secret_key = io_driver_args[io_driver_args.index(_secret_key) + 1] if _secret_key else None
+use_ssl = ast.literal_eval(str(ssl_flg).title())
+s3_endpoint = f"{'https' if use_ssl else 'http'}://{s3_url}"
+
+
+S3_CFG["access_key"] = access_key if access_key else get_local_aws_keys()[0]
+S3_CFG["secret_key"] = secret_key if secret_key else get_local_aws_keys()[1]
+S3_CFG["use_ssl"] = use_ssl
+S3_CFG["endpoint"] = s3_endpoint
 
 # Munched configs. These can be used by dot "." operator.
-
-di_cfg = munch.munchify(DI_CFG)
-cmn_cfg = munch.munchify(CMN_CFG)
+S3_CFG = munch.munchify(S3_CFG)

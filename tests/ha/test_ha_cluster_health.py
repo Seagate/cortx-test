@@ -162,6 +162,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22893")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_os_shutdown(self):
@@ -268,6 +269,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22895")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe_shutdown(self):
@@ -378,6 +380,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22872")
     @CTFailOn(error_handler)
     def test_two_nodes_down_os_shutdown(self):
@@ -486,6 +489,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22873")
     @CTFailOn(error_handler)
     def test_two_nodes_down_unsafe_shutdown(self):
@@ -592,6 +596,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22897")
     @CTFailOn(error_handler)
     def test_single_node_multiple_os_shutdown(self):
@@ -719,6 +724,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22900")
     @CTFailOn(error_handler)
     def test_single_node_multiple_unsafe_shutdown(self):
@@ -846,6 +852,7 @@ class TestHAClusterHealth:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23383")
     @CTFailOn(error_handler)
     def test_one_by_one_network_port_down(self):

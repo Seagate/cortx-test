@@ -17,3 +17,7 @@ test_22208:
   loop: 10
   delta_cpu_usage: -80
   resource_type: node:os:cpu_usage
+test_32547:
+  threads: 25
+  rampup: 1
+  loop: 10

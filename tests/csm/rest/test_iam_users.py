@@ -19,6 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Tests various operations on IAM users using REST API
+NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
 import pytest
@@ -58,6 +59,7 @@ class TestIamUser():
                 login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10732')
@@ -75,6 +77,7 @@ class TestIamUser():
             self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14749')
@@ -99,6 +102,7 @@ class TestIamUser():
             self.rest_iam_user.config["s3account_user"]["username"], response)
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest

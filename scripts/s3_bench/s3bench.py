@@ -24,52 +24,42 @@
 
 import argparse
 import logging
+import os
 from datetime import datetime, timedelta
 
 from commons.utils import assert_utils
 from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs, remove_dirs
+from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
 cfg_obj = read_yaml("scripts/s3_bench/config.yaml")[1]
 LOG_DIR = cfg_obj["log_dir"]
 S3_BENCH_PATH = cfg_obj["s3bench_path"]
+S3_BENCH_BINARY = cfg_obj["s3bench_binary"]
 
 
-def setup_s3bench(
-        get_cmd=cfg_obj["s3bench_get"]):
+def setup_s3bench():
     """
     Configuring client machine with s3bench dependencies.
-    :param string get_cmd: S3Bench go get command
+    :param get_cmd: S3Bench go get command
     :return bool: True/False
     """
-    LOGGER.debug("Installing go/s3bench.")
-    # Install go
-    ret = run_local_cmd(cfg_obj["cmd_go"])
+    ret = run_local_cmd("s3bench --help")
     if not ret[0]:
-        LOGGER.error("%s", ret[1])
-        return False
-    # Install go get for s3bench
-    ret = run_local_cmd(get_cmd)
-    if not ret[0]:
-        LOGGER.error("%s", ret[1])
-        return False
-    ret = run_local_cmd(cfg_obj["s3bench_trust"])
-    if not ret[0]:
-        LOGGER.error("%s", ret[1])
-        return False
-    # Remove old directory if present
-    if path_exists(S3_BENCH_PATH):
-        resp = remove_dirs(S3_BENCH_PATH)
-        if not resp:
-            LOGGER.error("Unable to remove %s", S3_BENCH_PATH)
+        LOGGER.info("ERROR: s3bench is not installed. Installing s3bench.")
+        ret = os.system(f"wget -O {S3_BENCH_PATH} {S3_BENCH_BINARY}")
+        if ret:
+            LOGGER.error("ERROR: Unable to download s3bench binary from github")
             return False
-    ret = run_local_cmd(cfg_obj["s3bench_git"].format(S3_BENCH_PATH))
-    if not ret[0]:
-        LOGGER.error("%s", ret[1])
-        return False
-
+        ret = run_local_cmd(f"chmod +x {S3_BENCH_PATH}")
+        if not ret[0]:
+            LOGGER.error("ERROR: Unable to add execute permission to s3bench")
+            return False
+        ret = os.system("s3bench --help")
+        if ret:
+            LOGGER.error("ERROR: Unable to install s3bench")
+            return False
     return True
 
 
@@ -120,13 +110,14 @@ def create_json_reps(list_resp):
     return js_res
 
 
-def s3bench_workload(bucket_name, log_prefix, object_size, client, sample,
+# pylint: disable-msg=too-many-arguments
+def s3bench_workload(end_point, bucket_name, log_prefix, object_size, client, sample,
                      access_key=ACCESS_KEY, secret_key=SECRET_KEY):
     """S3bench Workload worker can be used to run multiple workloads in parallel"""
     LOGGER.info("Workload: %s objects of %s with %s parallel clients", sample, object_size, client)
     resp = s3bench(access_key, secret_key, bucket=f"{bucket_name}", num_clients=client,
                    num_sample=sample, obj_name_pref="loadgen_test_", obj_size=object_size,
-                   skip_cleanup=False, log_file_prefix=log_prefix)
+                   skip_cleanup=False, log_file_prefix=log_prefix, end_point=end_point)
     LOGGER.info("Log Path %s", resp[1])
     assert_utils.assert_false(check_log_file_error(resp[1]),
                               f"S3bench workload on bucket {bucket_name} with {client} "
@@ -180,6 +171,7 @@ def s3bench(
         validate=True,
         duration=None,
         verbose=False,
+        region="us-east-1",
         log_file_prefix=""):
     """
     To run s3bench tool
@@ -196,8 +188,9 @@ def s3bench(
     :param skip_write: Skip writing objects
     :param validate: Validate checksum for the objects
         This option will download the object and give error if checksum is wrong
-    :param duration: Execute same ops with defined time. 1h24m|0h22m else None
+    :param duration: Execute same ops with defined time. 1h24m10s|0h22m0s else None
     :param verbose: verbose per thread status write and read
+    :param region: Region name
     :param log_file_prefix: Test number prefix for log file
     :return: tuple with json response and log path
     """
@@ -206,10 +199,11 @@ def s3bench(
     log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
-    cmd = f"go run s3bench -accessKey={access_key} -accessSecret={secret_key} " \
+    cmd = f"s3bench -accessKey={access_key} -accessSecret={secret_key} " \
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
           f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} "
-
+    if region:
+        cmd = cmd + f"-region {region} "
     if skip_write:
         cmd = cmd + "-skipWrite "
     if skip_read:
@@ -220,35 +214,26 @@ def s3bench(
         cmd = cmd + "-validate "
     if verbose:
         cmd = cmd + "-verbose "
-
     cmd = f"{cmd}>> {log_path} 2>&1"
-
-    # In case duration is None
-    if not duration:
-        duration = "0h0m"
-
-    # Calculating execution time based on the duration given
-    hour, mins = duration.lower().replace("h", ":").replace("m", "").split(":")
-    dur_time = str(
-        datetime.now() +
-        timedelta(
-            hours=int(hour),
-            minutes=int(mins)))[11:19]
-
-    # Executing s3bench based on the current time and expected duration time
-    # calculated
-    while str(datetime.now())[11:19] <= dur_time:
+    LOGGER.info("Workload execution started.")
+    if duration:
+        if not duration.lower().endswith("s"):
+            duration += "0s"
+        # Calculating execution time based on the duration given
+        hour, mins, secs = duration.lower().replace(
+            "h", ":").replace("m", ":").replace("s", "").split(":")
+        dur_time = datetime.now() + timedelta(hours=int(hour), minutes=int(mins), seconds=int(secs))
+        # Executing s3bench based on the current time and expected duration time calculated.
+        while datetime.now() <= dur_time:
+            res1 = run_local_cmd(cmd)
+            LOGGER.debug("Response: %s", res1)
+            result.append(res1[1])
+    else:  # In case duration is None
         res1 = run_local_cmd(cmd)
         LOGGER.debug("Response: %s", res1)
         result.append(res1[1])
+    LOGGER.info("Workload execution completed.")
 
-    # with open(log_path, "r") as r_fd:
-    #     r_data = r_fd.readlines()
-    #
-    # for line in r_data:
-    #     LOGGER.debug(line)
-    # Creating log file
-    # log_path = create_log(result)
     # Creating json response this function skips the verbose data
     json_resp = create_json_reps(result)
 

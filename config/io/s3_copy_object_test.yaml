@@ -1,0 +1,107 @@
+test_1:
+  TEST_ID:
+  object_size:
+    start: 0Kib
+    end: 100Kib
+  result_duration: 2h
+  sessions_per_node: 1
+  tool: s3api
+
+test_2:
+  TEST_ID:
+  object_size:
+    start: 100Kib
+    end: 1Mib
+  result_duration: 2h
+  sessions_per_node: 2
+  tool: s3api
+
+test_3:
+  TEST_ID:
+  object_size:
+    start: 1Mib
+    end: 10Mib
+  result_duration: 20h
+  sessions_per_node: 3
+  tool: s3api
+
+test_4:
+  TEST_ID:
+  object_size:
+    start: 10Mib
+    end: 20Mib
+  result_duration: 1d
+  sessions_per_node: 5
+  tool: s3api
+
+test_5:
+  TEST_ID:
+  object_size:
+    start: 20Mib
+    end: 100Mib
+  result_duration: 1d
+  sessions_per_node: 8
+  tool: s3api
+
+test_6:
+  TEST_ID:
+  object_size:
+    start: 100Mib
+    end: 500Mib
+  result_duration: 2d
+  sessions_per_node: 13
+  tool: s3api
+
+test_7:
+  TEST_ID:
+  object_size:
+    start: 500Mib
+    end: 1Gib
+  result_duration: 2d
+  sessions_per_node: 21
+  tool: s3api
+
+test_8:
+  TEST_ID:
+  object_size:
+    start: 1Gib
+    end: 2Gib
+  result_duration: 4d
+  sessions_per_node: 34
+  tool: s3api
+
+test_9:
+  TEST_ID:
+  object_size:
+    start: 2Gib
+    end: 5Gib
+  result_duration: 5d
+  sessions_per_node: 55
+  tool: s3api
+
+test_10:
+  TEST_ID:
+  object_size:
+    start: 5Gib
+    end: 10Gib
+  result_duration: 5d
+  sessions_per_node: 89
+  tool: s3api
+
+test_11:
+  TEST_ID:
+  object_size:
+    start: 10Gib
+    end: 20Gib
+  result_duration: 5d
+  sessions_per_node: 144
+  tool: s3api
+
+test_12:
+  TEST_ID:
+  object_size:
+    start: 20Gib
+    end: 50Gib
+  result_duration: 5d
+  sessions_per_node: 233
+  tool: s3api

@@ -1,0 +1,14 @@
+capture_support_bundle: True
+sb_interval_mins: 60
+max_no_of_sb: 5
+perform_health_check: True
+hc_interval_mins: 60
+terminate_driver_on_failure:
+    support_bundle: False
+    s3bench: True
+    warp: True
+    health_check: True
+driver_log: io_driver.log
+log_size: 524288000
+max_storage: 98.0  # Storage percentage should not exceed for IO to be run on cluster.
+

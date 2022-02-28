@@ -281,6 +281,7 @@ class TestHANodeStartStop:
 
     # pylint: disable=R0915
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25215")
     @CTFailOn(error_handler)
     def test_node_stop_start_one_by_one(self):
@@ -399,6 +400,7 @@ class TestHANodeStartStop:
 
     # pylint: disable=R0915
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25221")
     @CTFailOn(error_handler)
     def test_node_stop_unsafe_shutdown(self):
@@ -580,6 +582,7 @@ class TestHANodeStartStop:
             "Completed: Test to Check Stop services on node from REST and unsafe shutdown")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25444")
     @CTFailOn(error_handler)
     def test_node_poweroff_start_server(self):
@@ -699,6 +702,7 @@ class TestHANodeStartStop:
             "Completed: Test to check poweroff (only server) start operation one by one all nodes.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25217")
     @CTFailOn(error_handler)
     def test_node_poweroff_start_server_storage(self):
@@ -865,6 +869,7 @@ class TestHANodeStartStop:
             "through cortx REST with admin/manage user.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25219")
     @CTFailOn(error_handler)
     def test_node_stop_start_moniter_user(self):
@@ -994,6 +999,7 @@ class TestHANodeStartStop:
             "Completed: Test to Check node Stop/Start operation not supported by monitor user.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25222")
     @CTFailOn(error_handler)
     def test_node_poweroff_external_power_on(self):

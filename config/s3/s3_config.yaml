@@ -1,11 +1,17 @@
 # s3 common parameters.
+s3api_retry: 6
 region: "US"
-s3_url: "https://s3.seagate.com"
+endpoint: "https://s3.seagate.com"
 iam_url: "https://iam.seagate.com:9443"
+https_iam_port: "9443"
+http_iam_port: "9080"
 head_urls: "/auth/health"
 s3_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
 iam_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
+validate_certs: True
+use_ssl: True
 debug: False
+retry: 1
 email_suffix: "@seagate.com"
 create_user_delay: 5
 list_account_delay: 5
@@ -56,7 +62,10 @@ CliConfig:
     password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
 # s3autherver.
 s3auth_endpoint: "http://{}:9080"
-# Workaround for EOS-21382; delay for S3 operations in seconds.
+
+# Workaround for EOS-21382; delay for S3 operations in seconds
+sync_delay: 60
+sync_step: 10
 delay:
   put_bkt_acl: 15
   put_bkt_policy: 10

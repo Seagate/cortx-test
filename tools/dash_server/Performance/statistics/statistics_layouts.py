@@ -21,7 +21,7 @@
 # !/usr/bin/python
 
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab  # , Tabs
-from dash_core_components import Dropdown, Markdown
+from dash_core_components import Dropdown, Markdown, Loading
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
     style_sub_label, style_perf_captions, style_workload_captions,\
@@ -29,24 +29,27 @@ from Performance.styles import style_sub_tab, style_table_caption,\
 
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LC-K8S-CentOS-7.9',
+        'value': 'LC_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': 'LR2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': 'LR1_RHEL'},
+
 ]
 
 
 statistics_layout = Card(
     CardBody([
-        html.P(html.U("Performance Metrics Statistics Summary"),
-               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data. \
-            Data is displayed for the builds on which PerfPro has run.",
-               style={"font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-        html.P("Run Details", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
-        html.P(id="statistics_workload",
-               style=style_workload_captions),
+        html.P(["Note: Each data point is PER CLUSTER. \
+                Red colored row(s) highlight error(s) encountered during that test."],
+               style={'font-size': '20px', 'color': '#3131b0'}),
+        # html.P(id="statistics_workload", style=style_workload_captions),
+        # html.I(className="fa fa-info-circle"),
+
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -54,11 +57,11 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=style_table_caption),
-        html.Div(id="statistics_s3bench_table"),
+        Loading(html.Div(id="statistics_s3bench_table")),
 
         html.P("Metadata Operations Latency (captured with 1KB object)",
                style=style_table_caption),
-        html.Div(id="statistics_metadata_table"),
+        Loading(html.Div(id="statistics_metadata_table")),
 
         html.Br(),
         html.P("COSBench", style=style_perf_captions),
@@ -68,7 +71,7 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics (Mixed IO - Read 50%, Write 50%)",
                style=style_table_caption),
-        html.Div(id="statistics_cosbench_table"),
+        Loading(html.Div(id="statistics_cosbench_table")),
 
         html.Br(),
         html.P("HSBench", style=style_perf_captions),
@@ -78,7 +81,7 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=style_table_caption),
-        html.Div(id="statistics_hsbench_table"),
+        Loading(html.Div(id="statistics_hsbench_table")),
 
         html.P("Bucket Operations Statistics",
                style=style_table_caption),
@@ -88,8 +91,8 @@ statistics_layout = Card(
                 placeholder="Select Object Size",
                 style=dict_Style_Stats_input_options
             ), justify='center'),
-        html.Div(id="statistics_bucketops_table",
-                 style={'margin-top': '20px'}),
+        Loading(html.Div(id="statistics_bucketops_table",
+                 style={'margin-top': '20px'})),
     ]
     ),
     className="flex-sm-fill nav-link"
@@ -121,6 +124,11 @@ stats_input_options = [
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
+                id='perf_clients_dropdown',
+                placeholder="Select Clients",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
                 id='perf_pfull_dropdown',
                 placeholder="Select Cluster % Fill",
                 style=dict_Style_Stats_input_options
@@ -149,7 +157,7 @@ stats_input_options = [
             html.P("Benchmark Configuration » ", style=style_filters_captions),
             Dropdown(
                 id='perf_sessions_dropdown',
-                placeholder="Select Sessions",
+                placeholder="Select Concurrency",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
@@ -167,11 +175,10 @@ stats_input_options = [
 
 degraded_read_layout = Card(
     CardBody([
-        html.P(html.U("Read Performance of Degraded Cluster"),
-               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data.",  style={
-            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-
+        html.P(["Note: Each data point is PER CLUSTER. \
+                Red colored row(s) highlight error(s) encountered during that test."],
+               style={'font-size': '20px', 'color': '#3131b0'}),
+        # html.I(className="fa fa-info-circle"),
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -218,7 +225,7 @@ degraded_read_layout = Card(
         html.Div(id="statistics_hsbench_degraded_latency"),
         html.P("IOPS Chart",
                style=style_table_caption),
-        html.Div(id="statistics_hsbench_degraded_iops"),
+        html.Div(id="statistics_hsbench_degraded_iops")
     ]),
     className="flex-sm-fill nav-link"
 )
