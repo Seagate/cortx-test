@@ -426,10 +426,9 @@ MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
-SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
-                                    SERVER_POD_NAME_PREFIX: ["s3", "hare", "utils"],
-                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr", "utils"],
-                                    HA_POD_NAME_PREFIX: ["utils"]}
+SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr"],
+                                    SERVER_POD_NAME_PREFIX: ["s3", "hare"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr"]}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
