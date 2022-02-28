@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class S3MultiParts(S3RestApi):
     """Class for Multipart operations."""
 
-    def create_multipart_upload(self, bucket_name: str, obj_name: str) -> dict:
+    async def create_multipart_upload(self, bucket_name: str, obj_name: str) -> dict:
         """
         Request to initiate a multipart upload.
 
@@ -41,12 +41,13 @@ class S3MultiParts(S3RestApi):
         :param obj_name: Name of the object.
         :return: Response of create multipart upload.
         """
-        response = self.s3_client.create_multipart_upload(Bucket=bucket_name, Key=obj_name)
-        logger.debug("Response: %s", response)
+        async  with self.get_client() as client:
+            response = await client.create_multipart_upload(Bucket=bucket_name, Key=obj_name)
+            logger.debug("Response: %s", response)
 
         return response
 
-    def upload_part(self, body: bytes, bucket_name: str, object_name: str, **kwargs) -> dict:
+    async def upload_part(self, body: bytes, bucket_name: str, object_name: str, **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload.
 
@@ -59,14 +60,15 @@ class S3MultiParts(S3RestApi):
         """
         upload_id = kwargs.get("upload_id")
         part_number = kwargs.get("part_number")
-        response = self.s3_client.upload_part(
-            Body=body, Bucket=bucket_name, Key=object_name,
-            UploadId=upload_id, PartNumber=part_number)
-        logging.debug(response)
+        async with self.get_client() as client:
+            response = await client.upload_part(
+                Body=body, Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number)
+            logging.debug(response)
 
         return response
 
-    def list_parts(self, mpu_id: str, bucket: str, object_name: str) -> dict:
+    async def list_parts(self, mpu_id: str, bucket: str, object_name: str) -> dict:
         """
         list parts of a specific multipart upload.
 
@@ -75,12 +77,13 @@ class S3MultiParts(S3RestApi):
         :param object_name: Name of the object.
         :return: Response of list parts.
         """
-        response = self.s3_client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
-        logger.debug(response)
+        async with self.get_client() as client:
+            response = await client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
+            logger.debug(response)
 
         return response
 
-    def complete_multipart_upload(
+    async def complete_multipart_upload(
             self,
             mpu_id: str,
             parts: list,
@@ -96,28 +99,30 @@ class S3MultiParts(S3RestApi):
         :return: response of complete multipart upload.
         """
         logger.debug("initiated complete multipart upload")
-        response = self.s3_client.complete_multipart_upload(
-            Bucket=bucket,
-            Key=object_name,
-            UploadId=mpu_id,
-            MultipartUpload={"Parts": parts})
-        logger.debug(response)
+        async with self.get_client() as client:
+            response = await client.complete_multipart_upload(
+                Bucket=bucket,
+                Key=object_name,
+                UploadId=mpu_id,
+                MultipartUpload={"Parts": parts})
+            logger.debug(response)
 
         return response
 
-    def list_multipart_uploads(self, bucket: str) -> dict:
+    async def list_multipart_uploads(self, bucket: str) -> dict:
         """
         List all initiated multipart uploads.
 
         :param bucket: Name of the bucket.
         :return: response of list multipart uploads.
         """
-        response = self.s3_client.list_multipart_uploads(Bucket=bucket)
-        logger.debug(response)
+        async with self.get_client() as client:
+            response = await client.list_multipart_uploads(Bucket=bucket)
+            logger.debug(response)
 
         return response
 
-    def abort_multipart_upload(self, bucket: str, object_name: str, upload_id: str) -> dict:
+    async def abort_multipart_upload(self, bucket: str, object_name: str, upload_id: str) -> dict:
         """
         Abort multipart upload for given upload_id.
 
@@ -126,13 +131,14 @@ class S3MultiParts(S3RestApi):
         :param upload_id: Name of the object.
         :return: Response of abort multipart upload.
         """
-        response = self.s3_client.abort_multipart_upload(
-            Bucket=bucket, Key=object_name, UploadId=upload_id)
-        logger.debug(response)
+        async with self.get_client() as client:
+            response = await client.abort_multipart_upload(
+                Bucket=bucket, Key=object_name, UploadId=upload_id)
+            logger.debug(response)
 
         return response
 
-    def upload_part_copy(self, copy_source: str, bucket_name: str,
+    async def upload_part_copy(self, copy_source: str, bucket_name: str,
                          object_name: str, **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload from existing object.
@@ -146,15 +152,16 @@ class S3MultiParts(S3RestApi):
         """
         upload_id = kwargs.get("upload_id")
         part_number = kwargs.get("part_number")
-        response = self.s3_client.upload_part_copy(
-            Bucket=bucket_name, Key=object_name,
-            UploadId=upload_id, PartNumber=part_number,
-            CopySource=copy_source)
-        logging.debug(response)
+        async with self.get_client() as client:
+            response = await client.upload_part_copy(
+                Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                CopySource=copy_source)
+            logging.debug(response)
 
         return response
 
-    def upload_parts(self,
+    async def upload_parts(self,
                      mpu_id: int,
                      bucket_name: str,
                      object_name: str,
@@ -176,14 +183,14 @@ class S3MultiParts(S3RestApi):
             raise IOError("File path '%s' does not exists.", multipart_obj_path)
         multipart_obj_size = os.stat(multipart_obj_path).st_size
         single_part_size = multipart_obj_size // int(total_parts)
-        with open(multipart_obj_path, "rb") as file_pointer:
+        async with open(multipart_obj_path, "rb") as file_pointer:
             i = 1
             while True:
                 data = file_pointer.read(single_part_size)
                 logger.info("data_len %s", str(len(data)))
                 if not data:
                     break
-                part = self.upload_part(
+                part = await self.upload_part(
                     data, bucket_name, object_name, upload_id=mpu_id, part_number=i)
                 logger.debug("Part : %s", str(part))
                 parts.append({"PartNumber": i, "ETag": part["ETag"]})
