@@ -471,7 +471,8 @@ class TestPodFailure:
             LOGGER.info("Step 7: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
             count += 1
             self.kvalue -= 1
-        LOGGER.info("Shutdown %s RC node pods in loop and ran IOs", count)
+        LOGGER.info("Shutdown %s RC node pods in loop and ran IOs", (count - 1))
 
         LOGGER.info("Completed: Test to Verify degraded IOs after RC pod is taken down in loop "
                     "till K pod failures.")
+
