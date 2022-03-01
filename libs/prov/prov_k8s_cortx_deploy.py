@@ -26,6 +26,7 @@ import json
 import logging
 import math
 import os
+import re
 import signal
 import time
 from typing import List
@@ -59,7 +60,7 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
-        self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE")
+        self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -283,7 +284,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Pull Cortx image on all worker nodes.")
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
-            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
+            if self.cortx_server_image:
+                obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -1343,8 +1345,16 @@ class ProvDeployK8sCortxLib:
         """
         server_pods_list = LogicalNode.get_all_pods(master_node_list[0],
                                                     common_const.SERVER_POD_NAME_PREFIX)
+        installed_rpm = []
         for server_pod in server_pods_list:
             resp = master_node_list[0].execute_cmd(
-                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name))
-            LOGGER.debug("Installed rpm is %s", resp)
-            return resp
+                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name),
+                read_lines=True)
+        for element in resp:
+            installed_rpm.append(element.strip())
+        LOGGER.debug("Installed rpm is %s", installed_rpm)
+        result = re.search(rpm_name, installed_rpm[0])
+        if result is not None:
+            LOGGER.debug("RPM is %s", installed_rpm)
+            return True, installed_rpm
+        return False, installed_rpm
