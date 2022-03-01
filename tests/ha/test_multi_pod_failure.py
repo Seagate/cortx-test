@@ -26,7 +26,9 @@ import logging
 import os
 import random
 import secrets
+import threading
 import time
+from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
@@ -383,3 +385,203 @@ class TestPodFailure:
 
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
                     "data pods fail.")
+
+    # pylint: disable=too-many-locals
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-35773")
+    @CTFailOn(error_handler)
+    def test_continuous_reads_during_kpods_down(self):
+        """
+        This test tests continuous READs while pods are failing till K data pods are failed
+        """
+        LOGGER.info("STARTED: Test to verify continuous READs during %s (K) data pods down",
+                    self.kvalue)
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes. (0B - 512MB(VM)/5GB(HW))")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35773'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipread=True,
+                                                    skipcleanup=True, nclients=5, nsamples=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Perform READs/VerifyDI on written data in background")
+        output = Queue()
+        event = threading.Event()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 2: Successfully started READs/VerifyDI on written data in background")
+
+        LOGGER.info("Step 3: Shutdown %s (K) data pods one by one during READs/VerifyDI on"
+                    "written data in background", self.kvalue)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Get pod names to be deleted")
+        self.pod_name_list = random.sample(pod_list, self.kvalue)
+        event.set()
+        for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
+            LOGGER.info("Shutdown %s data pod %s by deleting deployment (unsafe)", count, pod_name)
+            pod_data = list()
+            pod_data.append(
+                self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
+                                               f"deleting deployment (unsafe)")
+            pod_data.append(resp[1])  # deployment_backup
+            pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+            self.pod_dict[pod_name] = pod_data
+            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+        LOGGER.info("Step 3: Sucessfully shutdown %s (K) data pods one by one during "
+                    "READs/VerifyDI on written data in background", self.kvalue)
+        event.clear()
+
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 4: Cluster is in degraded state")
+
+        LOGGER.info("Step 5: Check services status that were running on pods which are deleted.")
+        counter = 0
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname)
+            LOGGER.debug("Services status on %s : %s", pod_name, resp)
+            if not resp[0]:
+                counter += 1
+            pod_list.remove(pod_name)
+        assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
+        LOGGER.info("Step 5: Services of pods are in offline state")
+
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 6: Services of remaining pods are in online state")
+
+        LOGGER.info("Step 7: Verify status for In-flight READs/Verify DI while %s (K) pods going "
+                    "down should be failed/error.", self.kvalue)
+        thread.join()
+        responses = {}
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"Logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 7: Verified status for In-flight READs/Verify DI while %s (K) pods "
+                    "going down.", self.kvalue)
+
+        LOGGER.info("ENDED: Test to verify continuous READs during %s (K) data pods down",
+                    self.kvalue)
+
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-35776")
+    @CTFailOn(error_handler)
+    def test_continuous_writes_during_kpods_down(self):
+        """
+        This test tests continuous WRITEs while pods are failing till K data pods are failed
+        """
+        LOGGER.info("STARTED: Test to verify continuous WRITEs during %s (K) data pods down",
+                    self.kvalue)
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes in background")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35776'
+        self.s3_clean.update(users)
+        output = Queue()
+        event = threading.Event()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'output': output}
+
+        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                  args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 1: Successfully started WRITEs with variable sizes objects in background")
+
+        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one during WRITEs in "
+                    "background", self.kvalue)
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Get pod names to be deleted")
+        self.pod_name_list = random.sample(pod_list, self.kvalue)
+        event.set()
+        for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
+            LOGGER.info("Shutdown %s data pod %s by deleting deployment (unsafe)", count, pod_name)
+            pod_data = list()
+            pod_data.append(
+                self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
+                                               f"deleting deployment (unsafe)")
+            pod_data.append(resp[1])  # deployment_backup
+            pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+            self.pod_dict[pod_name] = pod_data
+            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+        LOGGER.info("Step 2: Sucessfully shutdown %s (K) data pods one by one during WRITEs in "
+                    "background", self.kvalue)
+        event.clear()
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pods which are deleted.")
+        counter = 0
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname)
+            LOGGER.debug("Services status on %s : %s", pod_name, resp)
+            if not resp[0]:
+                counter += 1
+            pod_list.remove(pod_name)
+        assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
+        LOGGER.info("Step 4: Services of pods are in offline state")
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+        LOGGER.info("Step 6: Verify status for In-flight WRITEs while %s (K) pods going "
+                    "down should be failed/error.", self.kvalue)
+        thread.join()
+        responses = {}
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses["pass_res"])
+        fail_logs = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"Logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 6: Verified status for In-flight WRITEs while %s (K) pods "
+                    "going down.", self.kvalue)
+
+        LOGGER.info("ENDED: Test to verify continuous WRITEs during %s (K) data pods down",
+                    self.kvalue)
