@@ -1,20 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# 
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
@@ -50,7 +49,7 @@ class TestS3Bucket():
         cls.log.info("Initiating Rest Client for Alert ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_bucket.yaml")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -63,7 +62,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.SUCCESS_STATUS)
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -77,7 +76,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.BAD_REQUEST, bucket_type="bucket_name_less_than_three_char")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -91,7 +90,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.BAD_REQUEST, bucket_type="bucket_name_more_than_63_char")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -113,7 +112,7 @@ class TestS3Bucket():
             start_with_uppercase)
         assert start_with_uppercase and start_with_underscore
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -173,7 +172,7 @@ class TestS3Bucket():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -187,7 +186,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.BAD_REQUEST, bucket_type="ip_address")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -202,7 +201,7 @@ class TestS3Bucket():
             bucket_type="valid", login_as="csm_admin_user")
         assert const.FORBIDDEN == response.status_code
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -216,7 +215,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.CONFLICT, bucket_type="duplicate")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -230,7 +229,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.BAD_REQUEST, bucket_type="invalid")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -244,7 +243,7 @@ class TestS3Bucket():
             bucket_type="valid", login_as="s3account_user")
         assert self.s3_buckets.list_and_verify_bucket()
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -259,7 +258,7 @@ class TestS3Bucket():
         self.s3_buckets.list_and_verify_bucket(
             expect_no_user=True, login_as="s3account_user")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -274,7 +273,7 @@ class TestS3Bucket():
             login_as="csm_admin_user")
         assert const.FORBIDDEN == response.status_code
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -287,7 +286,7 @@ class TestS3Bucket():
         assert self.s3_buckets.delete_and_verify_new_bucket(
             const.SUCCESS_STATUS)
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -300,7 +299,7 @@ class TestS3Bucket():
         assert self.s3_buckets.delete_and_verify_new_bucket(
             const.METHOD_NOT_FOUND, bucket_type="does-not-exist")
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -315,7 +314,7 @@ class TestS3Bucket():
             bucket_name="any_name", login_as="csm_admin_user")
         assert const.FORBIDDEN == response.status_code
 
-    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
