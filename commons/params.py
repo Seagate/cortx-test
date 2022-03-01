@@ -91,7 +91,7 @@ LOCAL_LOG_PATH = "/root/pytest_logs"
 VM_COLLECTION = "r2_vm_pool"
 
 # Jenkins url for deployment
-JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
+JENKINS_URL = "https://eos-jenkins.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
 SETUP_DEFAULTS = "tools/setup_update/setup_entry.json"
