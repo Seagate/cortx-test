@@ -1339,7 +1339,8 @@ class ProvDeployK8sCortxLib:
         installed or not
         returns True
         """
-        server_pods_list = LogicalNode.get_all_pods(common_const.SERVER_POD_NAME_PREFIX)
+        server_pods_list = LogicalNode.get_all_pods(master_node_list[0],
+                                                    common_const.SERVER_POD_NAME_PREFIX)
         for server_pod in server_pods_list:
             resp = master_node_list[0].execute_cmd(
                 common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name))
