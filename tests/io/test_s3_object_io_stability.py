@@ -31,8 +31,9 @@ class TestS3Object(S3Bucket, S3Object):
     """Class for bucket operations."""
 
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: bool, object_size: dict, duration: timedelta = None):
+                 use_ssl: bool, object_size: dict, seed: int, duration: timedelta = None):
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
+        random.seed(seed)
         self.duration = duration
         self.start_object_size = object_size["start"]
         self.end_object_size = object_size["end"]
@@ -46,7 +47,7 @@ class TestS3Object(S3Bucket, S3Object):
 
     async def execute_object_workload(self):
         """Execute object workload with given parameters"""
-        bucket = f'bucket-op-{time.perf_counter_ns()}'
+        bucket = f'object-op-{self.test_id}-{time.perf_counter_ns()}'.lower()
         logger.info("Create bucket %s", bucket)
         await self.create_bucket(bucket)
         while True:

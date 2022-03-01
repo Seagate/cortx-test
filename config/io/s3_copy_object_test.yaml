@@ -6,6 +6,7 @@ test_1:
   result_duration: 2h
   sessions_per_node: 1
   tool: s3api
+  operation: copy_object
 
 test_2:
   TEST_ID:
@@ -15,6 +16,7 @@ test_2:
   result_duration: 2h
   sessions_per_node: 2
   tool: s3api
+  operation: copy_object
 
 test_3:
   TEST_ID:
@@ -24,6 +26,7 @@ test_3:
   result_duration: 20h
   sessions_per_node: 3
   tool: s3api
+  operation: copy_object
 
 test_4:
   TEST_ID:
@@ -33,6 +36,7 @@ test_4:
   result_duration: 1d
   sessions_per_node: 5
   tool: s3api
+  operation: copy_object
 
 test_5:
   TEST_ID:
@@ -42,6 +46,7 @@ test_5:
   result_duration: 1d
   sessions_per_node: 8
   tool: s3api
+  operation: copy_object
 
 test_6:
   TEST_ID:
@@ -51,6 +56,7 @@ test_6:
   result_duration: 2d
   sessions_per_node: 13
   tool: s3api
+  operation: copy_object
 
 test_7:
   TEST_ID:
@@ -60,6 +66,7 @@ test_7:
   result_duration: 2d
   sessions_per_node: 21
   tool: s3api
+  operation: copy_object
 
 test_8:
   TEST_ID:
@@ -69,6 +76,7 @@ test_8:
   result_duration: 4d
   sessions_per_node: 34
   tool: s3api
+  operation: copy_object
 
 test_9:
   TEST_ID:
@@ -78,6 +86,7 @@ test_9:
   result_duration: 5d
   sessions_per_node: 55
   tool: s3api
+  operation: copy_object
 
 test_10:
   TEST_ID:
@@ -87,6 +96,7 @@ test_10:
   result_duration: 5d
   sessions_per_node: 89
   tool: s3api
+  operation: copy_object
 
 test_11:
   TEST_ID:
@@ -96,6 +106,7 @@ test_11:
   result_duration: 5d
   sessions_per_node: 144
   tool: s3api
+  operation: copy_object
 
 test_12:
   TEST_ID:
@@ -105,3 +116,4 @@ test_12:
   result_duration: 5d
   sessions_per_node: 233
   tool: s3api
+  operation: copy_object
