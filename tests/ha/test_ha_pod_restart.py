@@ -135,12 +135,12 @@ class TestPodRestart:
         LOGGER.info("Precondition: Run IOs on healthy cluster & Verify DI on the same.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = f'ha-pod-restart-{int(perf_counter_ns())}'
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        io_resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                       log_prefix=self.test_prefix,
+                                                       skipcleanup=True)
         resp = self.ha_obj.delete_s3_acc_buckets_objects(users)
         assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(io_resp[0], io_resp[1])
         LOGGER.info("Precondition: Ran IOs on healthy cluster & Verified DI on the same.")
         LOGGER.info("COMPLETED: Setup operations. ")
 
@@ -2824,7 +2824,7 @@ class TestPodRestart:
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, nclients=5, nsamples=5)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs/READs/Verify  with variable sizes objects.")
+        LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
         LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
@@ -2839,7 +2839,7 @@ class TestPodRestart:
                                   f"Failed to delete pod {pod_name} by deleting deployment"
                                   " (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-            pod_name)
+                    pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
         self.restore_pod = True

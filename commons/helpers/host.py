@@ -35,6 +35,7 @@ from typing import Union
 import mdstat
 import paramiko
 import pysftp
+from paramiko.ssh_exception import SSHException
 
 from commons import commands, const
 
@@ -42,7 +43,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AbsHost:
-
     """Abstract class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
@@ -72,18 +72,32 @@ class AbsHost:
             self.host_obj = paramiko.SSHClient()
             self.host_obj.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             LOGGER.debug("Connecting to host: %s", str(self.hostname))
-            self.host_obj.connect(hostname=self.hostname,
-                                  username=self.username,
-                                  password=self.password,
-                                  timeout=timeout,
-                                  **kwargs)
+            count = 0
+            retry_count = 3
+            while count < retry_count:
+                try:
+                    self.host_obj.connect(hostname=self.hostname,
+                                          username=self.username,
+                                          password=self.password,
+                                          timeout=timeout,
+                                          **kwargs)
+                    break
+                except SSHException as error:
+                    LOGGER.exception("Exception in connecting %s", error)
+                    count = count + 1
+                    if count == retry_count:
+                        raise error
+                    LOGGER.debug("Retrying to connect the host")
+
             if shell:
                 self.shell_obj = self.host_obj.invoke_shell()
 
         except socket.timeout as timeout_exception:
             LOGGER.error("Could not establish connection because of timeout: %s",
                          timeout_exception)
-            self.reconnect(retry, shell=shell, timeout=timeout, **kwargs)
+            reconnected = self.reconnect(retry=retry, shell=shell, timeout=timeout, **kwargs)
+            if not reconnected:
+                raise TimeoutError(f'Connection timed out on {self.hostname}') from None
         except Exception as error:
             LOGGER.error(
                 "Exception while connecting to server: Error: %s",
@@ -92,7 +106,7 @@ class AbsHost:
                 self.host_obj.close()
             if shell and self.shell_obj:
                 self.shell_obj.close()
-            raise error
+            raise RuntimeError('Rethrowing the SSH exception') from error
 
     def connect_pysftp(
             self,
@@ -150,6 +164,10 @@ class AbsHost:
                 time.sleep(wait_time)
         return False
 
+
+class Host(AbsHost):
+    """Class for performing system file operation on Host"""
+
     def execute_cmd(self,
                     cmd: str,
                     inputs: str = None,
@@ -160,7 +178,11 @@ class AbsHost:
                                              bytes]]:
         """
         If connection is not established,  it will establish the connection and
-        Execute any command on remote machine/VM
+        Execute any command on remote machine/VM. Timeout is set for SSL handshake.
+        As per request by CFT Deployment team raising the TimeoutError if the timeout is
+        exceeded and the command is still running. This addition of `TimeoutError` has a
+        little performance overhead which might be more for fast commands and can consumes
+        more cpu cycles for larger timeouts.
         :param cmd: command user wants to execute on host.
         :param read_lines: Response will be return using readlines() else using read().
         :param inputs: used to pass yes argument to commands.
@@ -170,14 +192,21 @@ class AbsHost:
         :param read_nbytes: maximum number of bytes to read.
         :return: stdout/strerr.
         """
+        timer = time.time()
         timeout = kwargs.get('timeout', 400)
+        check_recv_ready = kwargs.get('recv_ready', False)
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
-        self.connect(timeout=timeout, **kwargs)
-        stdin, stdout, stderr = self.host_obj.exec_command(
-            cmd, timeout=timeout)
+        self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
+        stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)  # nosec
+        # above is non blocking call and timeout is set for SSL handshake and command
+        if check_recv_ready:
+            while time.time() - timer < timeout and not stdout.channel.exit_status_ready():
+                time.sleep(1)  # to avoid perf impact on other commands
+            if time.time() - timer >= timeout:  # as per request by CFT Deployment team
+                raise TimeoutError('The script or command was not completed within estimated time')
         exit_status = stdout.channel.recv_exit_status()
         LOGGER.debug(exit_status)
         if exit_status != 0:
@@ -202,11 +231,6 @@ class AbsHost:
             return stdout.readlines()
 
         return stdout.read(read_nbytes)
-
-
-class Host(AbsHost):
-
-    """Class for performing system file operation on Host"""
 
     def path_exists(self, path: str) -> bool:
         """
@@ -411,7 +435,7 @@ class Host(AbsHost):
             return False, "String Not Found"
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.is_string_in_remote_file.__name__, error)
+                         Host.is_string_in_remote_file.__name__, error)
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -436,7 +460,7 @@ class Host(AbsHost):
             return False, resp
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.validate_is_dir.__name__, error)
+                         Host.validate_is_dir.__name__, error)
             return False, error
 
     def list_dir(self, remote_path: str) -> list:
@@ -561,7 +585,7 @@ class Host(AbsHost):
             LOGGER.debug(resp)
         except Exception as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
-                      Host.shutdown_node.__name__, error)
+                         Host.shutdown_node.__name__, error)
             return False, error
 
         return True, "Node shutdown successfully"
@@ -620,3 +644,13 @@ class Host(AbsHost):
         self.disconnect()
 
         return not self.path_exists(filename)
+
+
+if __name__ == '__main__':
+    hostobj = Host(hostname='<>',  # nosec
+                   username='<>',  # nosec
+                   password='<>')  # nosec
+    # Test 1
+    print(hostobj.execute_cmd(cmd='ls', read_lines=True))
+    # Test 2 -- term capturing API's are not supported.
+    hostobj.execute_cmd(cmd='top', read_lines=True)
