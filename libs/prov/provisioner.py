@@ -56,6 +56,7 @@ class Provisioner:
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         try:
+            LOGGER.debug("JENKINS URL %s", jen_url)
             jenkins_server_obj = jenkins.Jenkins(
                 jen_url, username=username, password=password)
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
@@ -80,6 +81,7 @@ class Provisioner:
                     job_name, next_build_number)
                 result = build_info['result']
                 expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
+                LOGGER.debug("result is %s::", result)
                 if result in expected_result:
                     break
                 cur_epoch = int(time.time())

@@ -84,6 +84,7 @@ def main(args):
     tp_info['fix_version'] = args.fix_version
     tp_info['product_family'] = args.product_family
     tp_info['core_category'] = args.core_category
+    tp_info['tp_labels'] = args.tp_labels
 
     new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
@@ -103,6 +104,11 @@ def main(args):
 
     if args.skip_te_clone:
         te_keys = [te for te in te_keys if te not in args.skip_te_clone]
+
+    if args.tes_to_clone:
+        if args.tes_to_clone[0] != "optional":
+            new_te_keys = [te for te in te_keys if te in args.tes_to_clone]
+            te_keys = new_te_keys
 
     print("test executions of existing test plan {}".format(te_keys))
 
@@ -180,6 +186,10 @@ def parse_args():
     parser.add_argument("-pf", "--product_family", type=str, default='LR', help="LR or K8")
     parser.add_argument("-sc", "--skip_te_clone", nargs='+', type=str,
                         help="Space separated te tickets to skip from cloning")
+    parser.add_argument("-tc", "--tes_to_clone", nargs='+', type=str,
+                        help="Space separated te tickets to clone")
+    parser.add_argument("-tl", "--tp_labels", nargs='+', type=str,
+                        help="Space separated labels for test plan")
     parser.add_argument("-cc", "--core_category", type=str, default='NA',
                         help="gold/silver")
     return parser.parse_args()
