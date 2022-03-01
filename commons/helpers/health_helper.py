@@ -115,9 +115,6 @@ class Health(Host):
                 command_suffix=f"-c {container_name} -- {cmd}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", cmd, res)
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            res = "0"
         return float(res.replace('\n', ''))
 
     def get_cpu_usage(self, pod_name: str = None,
@@ -149,9 +146,6 @@ class Health(Host):
                 command_suffix=f"-c {container_name} -- {commands.CPU_USAGE_CMD}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.CPU_USAGE_CMD, res)
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            res = "0"
         cpu_usage = float(res.replace('\n', ''))
         return cpu_usage
 
@@ -182,9 +176,6 @@ class Health(Host):
                 command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.MEM_USAGE_CMD, res)
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            res = "0"
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
 
@@ -292,9 +283,6 @@ class Health(Host):
                 if not services:
                     LOG.critical("No service found on pod %s", pod_name)
                     return False
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            pass
         return True
 
     def is_machine_already_configured(self) -> bool:
@@ -338,9 +326,6 @@ class Health(Host):
                 if ('[' and ']') in output:
                     LOG.debug(output)
             LOG.debug("Machine is already configured..!")
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            pass
         return True
 
     def all_cluster_services_online(self, timeout=400) -> Tuple[bool, str]:
@@ -379,9 +364,6 @@ class Health(Host):
             result = self.is_motr_online()
             if not result:
                 return False, "Services are not online"
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            pass
         return True, "Server is Online"
 
     def hctl_status_json(self, pod_name=None):
@@ -418,9 +400,6 @@ class Health(Host):
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
             result = json.loads(out)
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            result = json.loads("{}")
         return result
 
     def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
@@ -450,9 +429,6 @@ class Health(Host):
                     LOG.critical("No %s service found on pod %s", service_name, pod_name)
                     return False, result
             return True, result
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            return True, {}
         LOG.error("Product family: %s Unimplemented method", CMN_CFG.get("product_family"))
         return False, {}
 
@@ -487,9 +463,6 @@ class Health(Host):
                     return False, result
                 fids.extend(pod_fids)
             return True, fids
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            return True, []
         LOG.error("Product family: %s: Unimplemented method", CMN_CFG.get("product_family"))
         return False, []
 
@@ -675,9 +648,6 @@ class Health(Host):
             resp = self.is_motr_online()
             if not resp:
                 return resp, "cluster health is not good"
-        elif const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            # TODO replace this code block with MGW related logic
-            return True, ""
         return True, "cluster on {} up and running.".format(self.hostname)
 
     def reboot_node(self):
