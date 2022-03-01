@@ -11,10 +11,11 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
-# 
+#
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#import time
+#
+import time
 import random
 import logging
 from commons.alerts_simulator.generate_alert_lib import \

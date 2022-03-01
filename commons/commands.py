@@ -11,7 +11,7 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
-# 
+#
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
@@ -23,7 +23,7 @@ LS_CMD = "ls {}"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
-MOTR_START_FIDS = "hctl mero process start --fid�{}"
+MOTR_START_FIDS = "hctl mero process start --fid {}"
 MOTR_STATUS_CMD = "hctl status"
 HA_LOG_CMD = "/bin/bash"
 HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
@@ -38,7 +38,7 @@ MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
-PCS_CLUSTER_STOP = "pcs cluster�stop {}"
+PCS_CLUSTER_STOP = "pcs cluster stop {}"
 PCS_CLUSTER_STATUS = "pcs cluster status"
 PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
 PCS_RESOURCE_SHOW_CMD = "pcs resource show"
