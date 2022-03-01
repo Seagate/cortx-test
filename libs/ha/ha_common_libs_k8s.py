@@ -368,9 +368,9 @@ class HAK8s:
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3b_url"])
-            resp = s3bench.check_log_file_error(resp[1])
-            if resp:
-                return False, f"s3bench operation failed with {resp}"
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
+            if not resp[0]:
+                return False, f"s3bench operation failed: {resp[1]}"
         return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
@@ -821,7 +821,7 @@ class HAK8s:
         return resp
 
     def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
                            output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
@@ -884,10 +884,12 @@ class HAK8s:
         resp = False
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
-            resp = s3bench.check_log_file_error(file_path=log)
-            log_list.append(log) if (pass_logs and resp) or (not pass_logs and not resp) else log
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=log)
+            if not resp[0] and pass_logs:
+                LOGGER.error(resp[1])
+            log_list.append(log) if (pass_logs and not resp) or (not pass_logs and resp) else log
 
-        return not resp, log_list
+        return resp[0], log_list
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches

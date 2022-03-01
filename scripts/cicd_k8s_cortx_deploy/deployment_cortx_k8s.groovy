@@ -90,6 +90,7 @@ else
     fi
 fi
 echo $TEST_TYPES
+export PYTHONHTTPSVERIFY='0'
 ALL_SETUP_ENTRY="all_setup_entry.txt"
 cat $ALL_SETUP_ENTRY
 while IFS=' ' read -r target te
