@@ -80,6 +80,8 @@ class AbsHost:
                                           username=self.username,
                                           password=self.password,
                                           timeout=timeout,
+                                          allow_agent=False,
+                                          look_for_keys=False,
                                           **kwargs)
                     break
                 except SSHException as error:

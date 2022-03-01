@@ -126,6 +126,7 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   setup_size: "small"
+  service_type: "LoadBalancer"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"

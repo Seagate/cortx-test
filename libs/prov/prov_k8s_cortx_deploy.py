@@ -61,6 +61,7 @@ class ProvDeployK8sCortxLib:
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
+        self.service_type = os.getenv("service_type", self.deploy_cfg["service_type"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -373,6 +374,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: log_path: to provide custom log path
         :Keyword: setup_size: to provide custom size large/small/medium
         :Keyword: cortx_server_image: to provide cortx server image
+        :Keyword: service_type: to provide service type as LoadBalancer/NodePort
         returns the status, filepath and system reserved disk
         """
         cvg_count = kwargs.get("cvg_count", 2)
@@ -392,6 +394,8 @@ class ProvDeployK8sCortxLib:
         cortx_server_image = kwargs.get("cortx_server_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
+        service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
+        LOGGER.debug("Service type is %s", service_type)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -450,7 +454,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
         # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath, log_path, size)
+        resp_passwd = self.update_password_sol_file(filepath, log_path, size, service_type)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -631,7 +635,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_password_sol_file(self, filepath, log_path, size):
+    def update_password_sol_file(self, filepath, log_path, size, service_type):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
@@ -642,9 +646,11 @@ class ProvDeployK8sCortxLib:
             parent_key = conf['solution']  # Parent key
             content = parent_key['secrets']['content']
             common = parent_key['common']
+            LOGGER.debug("common is %s", common)
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             common['container_path']['log'] = log_path
             common['setup_size'] = size
+            common['external_services']['type'] = service_type
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
@@ -710,9 +716,12 @@ class ProvDeployK8sCortxLib:
         param: pod_name: Running Data Pod
         return: True/False and success/failure message
         """
-        LOGGER.info("Get Cluster status")
-        cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
-                                              format(pod_name)).decode('UTF-8')
+        try:
+            LOGGER.info("Get Cluster status")
+            cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
+                                                  format(pod_name)).decode('UTF-8')
+        finally:
+            node_obj.disconnect()
         cluster_status = json.loads(cluster_status)
         if cluster_status is not None:
             nodes_data = cluster_status["nodes"]
@@ -1094,7 +1103,8 @@ class ProvDeployK8sCortxLib:
                                         size_data_disk=data_disk_size,
                                         size_metadata=metadata_disk_size,
                                         log_path=log_path,
-                                        cortx_server_image=self.cortx_server_image)
+                                        cortx_server_image=self.cortx_server_image,
+                                        service_type=self.service_type)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
