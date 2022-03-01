@@ -1114,7 +1114,7 @@ class ProvDeployK8sCortxLib:
             if self.cortx_server_image:
                 resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
                                                   self.deploy_cfg["rgw_rpm"])
-            assert_utils.assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
