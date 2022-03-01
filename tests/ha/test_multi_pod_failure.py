@@ -170,7 +170,7 @@ class TestMultiPodFailure:
                                                                "deployment_backup":
                                                                    deployment_backup})
                 LOGGER.debug("Response: %s", resp)
-                assert_utils.assert_true(resp[0], f"Failed to restore pod by "
+                assert_utils.assert_true(resp[0], "Failed to restore pod by "
                                                   f"{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
@@ -262,7 +262,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.restore_pod = self.deploy = True
@@ -348,7 +348,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.restore_pod = self.deploy = True
@@ -537,7 +537,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.restore_pod = self.deploy = True
