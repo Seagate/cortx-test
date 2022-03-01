@@ -1091,7 +1091,8 @@ class ProvDeployK8sCortxLib:
                                         cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
                                         size_data_disk=data_disk_size,
                                         size_metadata=metadata_disk_size,
-                                        log_path=log_path, cortx_server_image=self.cortx_server_image)
+                                        log_path=log_path,
+                                        cortx_server_image=self.cortx_server_image)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
@@ -1331,7 +1332,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
 
-    def verfiy_installed_rpms(self, master_node_list, container_name, rpm_name):
+    @staticmethod
+    def verfiy_installed_rpms(master_node_list, container_name, rpm_name):
         """
         This method is to verify the installed rpms in the pods.
         param: master_node_list: master node obj.
