@@ -93,7 +93,8 @@ def parse_args():
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
                         help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
-
+    parser.add_argument("-nn", "--number-of-nodes", type=int,
+                        help="number of nodes in k8s system", default=3)
     return parser.parse_args()
 
 
@@ -283,7 +284,10 @@ def main(options):
     setup_environment()
 
     test_input = options.test_input
-    test_input = yaml_parser.test_parser(test_input)  # Read test data from test_input yaml.
+    test_input = yaml_parser.test_parser(test_input, options.number_of_nodes)  # Read test data
+    # from
+    # test_input
+    # yaml.
     for key, value in test_input.items():
         logger.info("Test No : %s", key)
         logger.info("Test Values : %s", value)
