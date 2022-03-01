@@ -475,13 +475,13 @@ class TestMultiPodFailure:
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+        assert_utils.assert_false(len(resp[1]), "Expected all pass, But Logs which contain "
                                                 f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
-        LOGGER.info("Step 6: Successfully completed WRITEs-READs-verify in background")
+        LOGGER.info("Step 6: Successfully completed WRITEs-READs-verify running in background")
 
         LOGGER.info("Step 7: Create multiple buckets and run IOs")
         self.test_prefix = 'test-35790-1'
@@ -580,7 +580,7 @@ class TestMultiPodFailure:
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+        assert_utils.assert_false(len(resp[1]), "Expected all pass, But Logs which contain "
                                                 f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
