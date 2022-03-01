@@ -20,10 +20,10 @@
 #
 
 """Python Library to perform object operations using boto3 module."""
-
-import os
-import logging
 import hashlib
+import logging
+import os
+from typing import List
 
 from libs.io.s3api.s3_restapi import S3RestApi
 
@@ -33,160 +33,163 @@ LOGGER = logging.getLogger(__name__)
 class S3Object(S3RestApi):
     """Class for object operations."""
 
-    async def upload_object(self,
-                            bucket_name: str,
-                            object_name: str,
-                            file_path: str) -> dict:
+    async def upload_object(self, bucket: str, key: str, file_path: str) -> dict:
         """
         Uploading object to the Bucket.
 
-        :param bucket_name: Name of the bucket.
-        :param object_name: Name of the object.
+        :param bucket: Name of the bucket.
+        :param key: Name of the object.
         :param file_path: Path of the file.
         :return: Response of the upload s3 object.
         """
-        async with self.get_client() as client:
-            response = await client.meta.client.upload_file(file_path, bucket_name, object_name)
-            LOGGER.debug(response)
+        async with self.get_client() as s3client:
+            with open(file_path, "rb") as body:
+                response = await s3client.put_object(Body=body, Bucket=bucket, Key=key)
+            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.upload_object.__name__, bucket, key,
+                        response)
+            return response
 
-        return response
-
-    async def list_objects(self,
-                           bucket_name: str) -> list:
+    async def list_objects(self, bucket: str) -> list:
         """
         Listing Objects.
 
-        :param bucket_name: Name of the bucket.
+        :param bucket: Name of the bucket.
         :return: Response of the list objects.
         """
-        async with self.get_client() as client:
-            bucket = await client.Bucket(bucket_name)
-            objects = [obj.key for obj in bucket.objects.all()]
-            LOGGER.debug(objects)
+        async with self.get_client() as s3client:
+            paginator = s3client.get_paginator('list_objects')
+            async for result in paginator.paginate(Bucket=bucket):
+                objects = [c for c in result.get('Contents', [])]
+                LOGGER.info("%s s3://%s Objects: %s", S3Object.list_objects.__name__, bucket,
+                            objects)
+                return objects
 
-        return objects
-
-    async def delete_object(self,
-                            bucket_name: str,
-                            obj_name: str) -> dict:
+    async def delete_object(self, bucket: str, key: str) -> dict:
         """
         Deleting object.
 
-        :param bucket_name: Name of the bucket.
-        :param obj_name: Name of object.
+        :param bucket: Name of the bucket.
+        :param key: Name of object.
         :return: Response of delete object.
         """
-        async with self.get_client() as client:
-            response = await client.Object(bucket_name, obj_name).delete()
-            logging.debug(response)
-            LOGGER.debug("Object '%s' deleted Successfully", obj_name)
+        async with self.get_client() as s3client:
+            response = await s3client.delete_object(Bucket=bucket, Key=key)
+            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.delete_object.__name__, bucket,
+                        key, response)
+            return response
 
-        return response
+    async def delete_objects(self, bucket: str, keys: List[str]) -> dict:
+        """
+        Deleting object.
 
-    async def head_object(self,
-                          bucket_name: str,
-                          key: str) -> dict:
+        :param bucket: Name of the bucket.
+        :param keys: List of object names.
+        :return: Response of delete object.
+        """
+        objects = [{'Key': key} for key in keys]
+        LOGGER.info("Deleting %s", keys)
+        async with self.get_client() as s3client:
+            response = await s3client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
+            LOGGER.info("%s s3://%s Response: %s", S3Object.delete_objects.__name__, bucket,
+                        response)
+            return response
+
+    async def head_object(self, bucket: str, key: str) -> dict:
         """
         Retrieve metadata from an object without returning the object itself.
 
-        you must have READ access to the object.
-        :param bucket_name: Name of the bucket.
-        :param key: Key of object.
+        :param bucket: Name of the bucket.
+        :param key: Name of object.
         :return: Response of head object.
         """
-        async with self.get_client() as client:
-            response = await client.meta.client.head_object(Bucket=bucket_name, Key=key)
-            LOGGER.debug(response)
+        async with self.get_client() as s3client:
+            response = await s3client.head_object(Bucket=bucket, Key=key)
+            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.head_object.__name__, bucket, key,
+                        response)
+            return response
 
-        return response
-
-    async def get_object(self,
-                         bucket: str = None,
-                         key: str = None,
-                         ranges: str = None) -> dict:
+    async def get_object(self, bucket: str, key: str, ranges: str = "") -> dict:
         """
         Getting object or byte range of the object.
 
         :param bucket: Name of the bucket.
-        :param key: Key of object.
+        :param key: Name of object.
         :param ranges: Byte range to be retrieved
         :return: response.
         """
-        async with self.get_client() as client:
-            if ranges:
-                response = await client.get_object(Bucket=bucket, Key=key, Range=ranges)
-            else:
-                response = await client.get_object(Bucket=bucket, Key=key)
-            LOGGER.debug(response)
+        async with self.get_client() as s3client:
+            response = await s3client.get_object(Bucket=bucket, Key=key, Range=ranges)
+            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.get_object.__name__, bucket, key,
+                        response)
+            return response
 
-        return response
-
-    async def download_object(self,
-                              bucket_name: str,
-                              obj_name: str,
-                              file_path: str) -> dict:
+    async def download_object(self, bucket: str, key: str, file_path: str,
+                              chunk_size: int = 1024) -> dict:
         """
         Downloading Object of the required Bucket.
 
-        :param bucket_name: Name of the bucket.
-        :param obj_name: Name of the object.
+        :param bucket: Name of the bucket.
+        :param key: Name of object.
         :param file_path: Path of the file.
+        :param chunk_size: Download object in chunk sizes.
         :return: Response of download object.
         """
-        async with self.get_client() as client:
-            response = await client.Bucket(bucket_name).download_file(obj_name, file_path)
-            if os.path.exists(file_path):
-                LOGGER.debug("Object '%s' downloaded successfully on '%s'", obj_name, file_path)
-
+        async with self.get_client() as s3client:
+            response = await s3client.get_object(Bucket=bucket, Key=key)
+            LOGGER.info("%s s3://%s/%s Response %s", S3Object.download_object.__name__, bucket, key,
+                        response)
+            async with response['Body'] as stream:
+                chunk = await stream.read(chunk_size)
+                LOGGER.debug(chunk)
+                while len(chunk) > 0:
+                    with open(file_path, "wb+") as file_obj:
+                        file_obj.write(chunk)
+                    chunk = await stream.read(chunk_size)
+        if os.path.exists(file_path):
+            LOGGER.info("%s s3://%s/%s Path: %s Response %s", S3Object.download_object.__name__,
+                        bucket, key, file_path, response)
         return response
 
-    async def copy_object(self,
-                          source_bucket: str,
-                          source_object: str,
-                          dest_bucket: str,
-                          dest_object: str,
-                          **kwargs) -> tuple:
+    async def copy_object(self, src_bucket: str, src_key: str, des_bucket: str, des_key: str,
+                          **kwargs) -> dict:
         """
-        Copy of an object that is already stored in Seagate S3 with different permissions.
+        Creates a copy of an object that is already stored in S3.
 
-        :param source_bucket: The name of the source bucket.
-        :param source_object: The name of the source object.
-        :param dest_bucket: The name of the destination bucket.
-        :param dest_object: The name of the destination object.
-        :param kwargs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services
-        /s3.html#S3.Client.copy_object
+        :param src_bucket: The name of the source bucket.
+        :param src_key: The name of the source object.
+        :param des_bucket: The name of the destination bucket.
+        :param des_key: The name of the destination object.
         :return: Response of copy object.
         """
-        async with self.get_client() as client:
-            response = await client.copy_object(
-                Bucket=dest_bucket,
-                CopySource='/{}/{}'.format(source_bucket, source_object),
-                Key=dest_object,
-                **kwargs
-            )
-        LOGGER.debug(response)
+        async with self.get_client() as s3client:
+            response = await s3client.copy_object(Bucket=des_bucket,
+                                                  CopySource=f'/{src_bucket}/{src_key}',
+                                                  Key=des_key, **kwargs)
+            LOGGER.info("%s s3://%s/%s to s3://%s/%s Response %s", S3Object.copy_object.__name__,
+                        src_bucket, src_key, des_bucket, des_key, response)
+            return response
 
-        return response
-
-    async def get_s3object_checksum(self,
-                                    bucket_name: str,
-                                    object_name: str,
-                                    chunk_size: int) -> str:
+    async def get_s3object_checksum(self, bucket: str, key: str, chunk_size: int = 1024) -> str:
         """
         Read object in chunk and calculate md5sum.
+        Do not store the object in local storage.
 
-        :param bucket_name: The name of the s3 bucket.
-        :param object_name: The name of the s3 object.
+        :param bucket: The name of the s3 bucket.
+        :param key: Name of object.
         :param chunk_size: size to read the content of s3 object.
         """
-        async with self.get_client() as client:
-            file_obj = client.Object(bucket_name, object_name).get()['Body']
-            file_hash = hashlib.sha256()
-            content = await file_obj.read(chunk_size)
-            file_hash.update(content)
-            while content:
-                content = await file_obj.read(chunk_size)
-                if content:
-                    file_hash.update(content)
-
-        return file_hash.hexdigest()
+        async with self.get_client() as s3client:
+            response = await s3client.get_object(Bucket=bucket, Key=key)
+            LOGGER.info("%s s3://%s/%s Response %s", S3Object.get_s3object_checksum.__name__,
+                        bucket, key, response)
+            async with response['Body'] as stream:
+                chunk = await stream.read(chunk_size)
+                file_hash = hashlib.sha256()
+                LOGGER.debug(chunk)
+                while len(chunk) > 0:
+                    file_hash.update(chunk)
+                    chunk = await stream.read(chunk_size)
+        sha256_digest = file_hash.hexdigest()
+        LOGGER.info("%s s3://%s/%s SHA-256 %s", S3Object.get_s3object_checksum.__name__, bucket,
+                    key, sha256_digest)
+        return sha256_digest
