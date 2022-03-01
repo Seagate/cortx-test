@@ -1111,8 +1111,9 @@ class ProvDeployK8sCortxLib:
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
-            resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
-                                              self.deploy_cfg["rgw_rpm"])
+            if self.cortx_server_image:
+                resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
+                                                  self.deploy_cfg["rgw_rpm"])
             assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
