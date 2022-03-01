@@ -389,7 +389,7 @@ class ProvDeployK8sCortxLib:
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
-        cortx_server_image = kwargs.get("cortx_server_image")
+        cortx_server_image = kwargs.get("cortx_server_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
         data_devices = list()  # empty list for data disk
