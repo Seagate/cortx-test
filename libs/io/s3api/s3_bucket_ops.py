@@ -39,20 +39,21 @@ class S3Bucket(S3RestApi):
         """
         async with self.get_client() as client:
             response = await client.create_bucket(Bucket=bucket_name)
-            LOGGER.debug("Response: %s", str(response))
+            LOGGER.debug("create_bucket:%s, Response: %s", bucket_name, response)
 
         return response
 
-    async def list_bucket(self) -> list:
+    async def list_buckets(self) -> list:
         """
         Listing all the buckets.
 
         :return: Response of bucket list.
         """
         async with self.get_client() as client:
-            buckets = await client.buckets.all()
-            response = [bucket.name for bucket in buckets]
-            LOGGER.debug(response)
+            buckets = await client.list_buckets()
+            LOGGER.debug(buckets)
+            response = [bucket["Name"] for bucket in buckets["Buckets"]]
+            LOGGER.debug("list_buckets: Response: %s", response)
 
         return response
 
@@ -64,8 +65,8 @@ class S3Bucket(S3RestApi):
         :return: Response of head bucket.
         """
         async with self.get_client() as client:
-            response = await client.meta.client.head_bucket(Bucket=bucket_name)
-            LOGGER.debug(response)
+            response = await client.head_bucket(Bucket=bucket_name)
+            LOGGER.debug("head_bucket: %s, Response: %s", bucket_name,response)
 
         return response
 
@@ -78,8 +79,8 @@ class S3Bucket(S3RestApi):
         """
         async with self.get_client() as client:
             LOGGER.debug("BucketName: %s", bucket_name)
-            response = await client.meta.client.get_bucket_location(Bucket=bucket_name)
-            LOGGER.debug(response)
+            response = await client.get_bucket_location(Bucket=bucket_name)
+            LOGGER.debug("get_bucket_location: %s, Response: %s", bucket_name, response)
 
         return response
 
@@ -92,29 +93,16 @@ class S3Bucket(S3RestApi):
         :return: Response of delete bucket.
         """
         async with self.get_client() as client:
-            bucket = await client.Bucket(bucket_name)
             if force:
                 LOGGER.debug("This might cause data loss as you have opted for bucket deletion"
                              " with objects in it")
-                response = bucket.objects.all().delete()
-                LOGGER.debug("Objects deleted successfully. response: %s", response)
-            response = bucket.delete()
+                # list s3 objects using paginator
+                paginator = client.get_paginator('list_objects')
+                async for result in paginator.paginate(Bucket=bucket_name):
+                    for content in result.get('Contents', []):
+                        await client.delete_object(Bucket=bucket_name, Key=content['Key'])
+                LOGGER.debug("All objects deleted successfully.")
+            response = await client.delete_bucket(Bucket=bucket_name)
             LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name, response)
 
         return response
-
-    async def get_bucket_storage(self, bucket_name: str) -> int:
-        """
-        Getting consumed storage of the s3 bucket.
-
-        :param bucket_name: Name of the bucket.
-        :return: storage consumed by s3 bucket.
-        """
-        async with self.get_client() as client:
-            total_size = 0
-            bucket = await client.Bucket(bucket_name)
-            for each_object in bucket.objects.all():
-                total_size += each_object.size
-            LOGGER.debug("Total storage: %s", total_size)
-
-        return total_size

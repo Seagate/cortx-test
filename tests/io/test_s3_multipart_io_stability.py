@@ -24,7 +24,7 @@ import random
 import hashlib
 from datetime import datetime, timedelta
 from time import perf_counter_ns
-from typing import Optional
+from typing import Union
 from botocore.exceptions import ClientError
 from libs.io.s3api.s3_multipart_ops import S3MultiParts
 from libs.io.s3api.s3_object_ops import S3Object
@@ -39,7 +39,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, object_size: Optional[int, dict], part_range: dict,
+                 use_ssl: bool, object_size: Union[dict, int, bytes], part_range: dict,
                  duration: timedelta = None) -> None:
         """
         s3 multipart init class.
@@ -70,14 +70,14 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
         while True:
             logger.info("Iteration %s is started...", self.iteration)
             try:
-                file_size = self.object_size if not isinstance(
-                    self.object_size, dict) else random.randrange(
-                    self.object_size["start"], self.object_size["end"])
+                file_size = random.randrange(
+                    self.object_size["start"], self.object_size["end"]) if isinstance(
+                    self.object_size, dict) else self.object_size
                 number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
                 single_part_size = file_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
                 response = await self.create_bucket(self.mpart_bucket)
-                assert self.mpart_bucket not in response["Location"], \
+                assert response["ResponseMetadata"]["HTTPStatusCode"] == 200, \
                     f"Failed to create bucket: {self.mpart_bucket}"
                 response = await self.create_multipart_upload(
                     self.mpart_bucket, self.s3mpart_object)
@@ -89,7 +89,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                 for i in range(1, number_of_parts + 1):
                     byte_s = os.urandom(single_part_size)
                     response = await self.upload_part(byte_s, self.mpart_bucket,
-                                                      self.object_size, upload_id=mpu_id,
+                                                      self.s3mpart_object, upload_id=mpu_id,
                                                       part_number=i)
                     assert response["ETag"] is not None, f"Failed upload part: {response}"
                     parts.append({"PartNumber": i, "ETag": response["ETag"]})
@@ -117,7 +117,8 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
                     "HTTPStatusCode"] == 204, f"Failed to delete s3 bucket: {self.mpart_bucket}"
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
-                return False, str(err)
+                raise ClientError(
+                    error_response=str(err), operation_name="Execute multipart workload") from err
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:

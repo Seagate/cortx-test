@@ -78,7 +78,7 @@ class TestBucketOps(S3Object, S3Bucket):
                         fout.write(os.urandom(file_size))
                     await self.upload_object(bucket_name, file_name, file_name)
                 logger.info("List all buckets")
-                await self.list_bucket()
+                await self.list_buckets()
                 logger.info("List objects of created %s bucket", bucket_name)
                 await self.list_objects(bucket_name)
                 logger.info("Perform Head bucket")
@@ -87,7 +87,8 @@ class TestBucketOps(S3Object, S3Bucket):
                 await self.delete_bucket(bucket_name, True)
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
-                return False, str(err)
+                raise ClientError(
+                    error_response=str(err), operation_name="Execute bucket workload") from err
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:

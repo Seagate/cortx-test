@@ -41,9 +41,13 @@ class S3MultiParts(S3RestApi):
         :param obj_name: Name of the object.
         :return: Response of create multipart upload.
         """
-        async  with self.get_client() as client:
+        async with self.get_client() as client:
             response = await client.create_multipart_upload(Bucket=bucket_name, Key=obj_name)
-            logger.debug("Response: %s", response)
+            logger.debug(
+                "create_multipart_upload: %s/%s, Response: %s",
+                bucket_name,
+                obj_name,
+                response)
 
         return response
 
@@ -64,24 +68,29 @@ class S3MultiParts(S3RestApi):
             response = await client.upload_part(
                 Body=body, Bucket=bucket_name, Key=object_name,
                 UploadId=upload_id, PartNumber=part_number)
-            logging.debug(response)
+            logging.debug("upload_part: %s/%s", bucket_name, object_name, response)
 
         return response
 
-    async def list_parts(self, mpu_id: str, bucket: str, object_name: str) -> dict:
+    async def list_parts(self, mpu_id: str, bucket_name: str, object_name: str) -> list:
         """
         list parts of a specific multipart upload.
 
         :param mpu_id: Multipart upload ID.
-        :param bucket: Name of the bucket.
+        :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :return: Response of list parts.
         """
+        parts = list()
         async with self.get_client() as client:
-            response = await client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
-            logger.debug(response)
+            paginator = client.get_paginator('list_parts')
+            async for result in paginator.paginate(
+                    Bucket=bucket_name, Key=object_name, UploadId=mpu_id):
+                for content in result.get('Parts', []):
+                    parts.append(content)
+            logger.debug("list_parts: %s/%s, parts: %s", bucket_name, object_name, parts)
 
-        return response
+        return parts
 
     async def complete_multipart_upload(
             self,
@@ -105,41 +114,52 @@ class S3MultiParts(S3RestApi):
                 Key=object_name,
                 UploadId=mpu_id,
                 MultipartUpload={"Parts": parts})
-            logger.debug(response)
+            logger.debug(
+                "complete_multipart_upload: %s/%s, response: %s",
+                bucket,
+                object_name,
+                response)
 
         return response
 
-    async def list_multipart_uploads(self, bucket: str) -> dict:
+    async def list_multipart_uploads(self, bucket_name: str) -> list:
         """
         List all initiated multipart uploads.
 
-        :param bucket: Name of the bucket.
+        :param bucket_name: Name of the bucket.
         :return: response of list multipart uploads.
         """
+        uploads = list()
         async with self.get_client() as client:
-            response = await client.list_multipart_uploads(Bucket=bucket)
-            logger.debug(response)
+            paginator = client.get_paginator('list_multipart_uploads')
+            async for result in paginator.paginate(Bucket=bucket_name):
+                for content in result.get('Uploads', []):
+                    uploads.append(content)
+            logger.debug("list_multipart_uploads: %s, Uploads: %s", bucket_name, uploads)
 
-        return response
+        return uploads
 
-    async def abort_multipart_upload(self, bucket: str, object_name: str, upload_id: str) -> dict:
+    async def abort_multipart_upload(self,
+                                     bucket_name: str,
+                                     object_name: str,
+                                     upload_id: str) -> dict:
         """
         Abort multipart upload for given upload_id.
 
-        :param bucket: Name of the bucket.
+        :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param upload_id: Name of the object.
         :return: Response of abort multipart upload.
         """
         async with self.get_client() as client:
             response = await client.abort_multipart_upload(
-                Bucket=bucket, Key=object_name, UploadId=upload_id)
-            logger.debug(response)
+                Bucket=bucket_name, Key=object_name, UploadId=upload_id)
+            logger.debug("abort_multipart_upload: %s, Response: %s", bucket_name, response)
 
         return response
 
     async def upload_part_copy(self, copy_source: str, bucket_name: str,
-                         object_name: str, **kwargs) -> dict:
+                               object_name: str, **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload from existing object.
 
@@ -157,16 +177,17 @@ class S3MultiParts(S3RestApi):
                 Bucket=bucket_name, Key=object_name,
                 UploadId=upload_id, PartNumber=part_number,
                 CopySource=copy_source)
-            logging.debug(response)
+            logging.debug("upload_part_copy: copy source: %s to %s/%s, Response: %s",
+                          copy_source, bucket_name, object_name, response)
 
         return response
 
     async def upload_parts(self,
-                     mpu_id: int,
-                     bucket_name: str,
-                     object_name: str,
-                     multipart_obj_path: str,
-                     total_parts: int) -> list:
+                           mpu_id: int,
+                           bucket_name: str,
+                           object_name: str,
+                           multipart_obj_path: str,
+                           total_parts: int) -> list:
         """
         Upload parts for a specific multipart upload ID.
 
@@ -205,6 +226,6 @@ class S3MultiParts(S3RestApi):
                             multipart_obj_size *
                             1048576)))
                 i += 1
-        logger.info(parts)
+        logger.info("upload_parts: %s/%s, Parts: %s", bucket_name, object_name, parts)
 
         return parts
