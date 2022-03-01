@@ -22,7 +22,7 @@
 """ Library for csm users operations """
 
 import logging
-from typing import Tuple
+from typing import Tuple, Union
 from libs.csm.cli.cortx_cli import CortxCli
 from commons.commands import CMD_CREATE_CSM_USER
 from commons.commands import CMD_DELETE_CSM_USER
@@ -223,7 +223,7 @@ class CortxCliCsmUser(CortxCli):
             limit: int = None,
             sort_by: str = None,
             sort_dir: str = None,
-            **kwargs) -> Tuple[bool, str]:
+            **kwargs) -> Tuple[bool, Union[dict, str]]:
         """
         This function will verify list of csm users
         :param offset: value for offset parameter

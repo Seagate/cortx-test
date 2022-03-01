@@ -39,7 +39,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 
 
 class TestDataDurability:
@@ -153,7 +153,9 @@ class TestDataDurability:
                 self.bucket_name))
         return chksm_before_put_obj
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8005')
     @pytest.mark.parametrize("service", [const.S3AUTHSERVER])
     def test_no_data_loss_in_case_service_restart_4232(self, service):
@@ -205,7 +207,9 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of service restart- %s", service)
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8006')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_haproxy_restart_4233(self):
@@ -214,6 +218,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Will be taken after F-45H.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8009')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_account_cred_change_4238(self):
@@ -257,7 +262,7 @@ class TestDataDurability:
                 self.bucket_name))
         self.log.info(
             "Step 4: Changing credentials of an account %s", self.account_name)
-        resp = self.iamt_obj.reset_account_access_key_s3iamcli(self.account_name)
+        resp = self.iamt_obj.reset_account_access_key(self.account_name)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["AccessKeyId"]
         secret_key = resp[1]["SecretKey"]
@@ -297,7 +302,9 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of account credentials change")
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8004')
     @CTFailOn(error_handler)
     def test_no_data_loss_corruption_in_case_s3server_restart_4231(self):
@@ -340,6 +347,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Restarting cluster make avalanche effect.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8007')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_motr_restart_4234(self):

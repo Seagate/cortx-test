@@ -210,6 +210,7 @@ class TestHANodeFailure:
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-26435")
     @CTFailOn(error_handler)
     def test_node_poweroff_degraded_reads(self):
@@ -338,6 +339,7 @@ class TestHANodeFailure:
             "Completed: Test to check degraded READs after node down - node poweroff.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-26437")
     @CTFailOn(error_handler)
     def test_node_unsafe_shutdown_degraded_reads(self):
@@ -457,6 +459,7 @@ class TestHANodeFailure:
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-26438")
     @CTFailOn(error_handler)
     def test_node_unsafe_shutdown_continues_degraded_reads(self):

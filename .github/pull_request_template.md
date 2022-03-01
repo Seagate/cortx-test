@@ -13,7 +13,11 @@
   Checklist for Author
 -  [ ] New/Affected tests are executed on Latest Build
 -  [ ] Attach test execution logs
+<<<<<<< HEAD
 -  [ ] Collection tested and no collection error introduced (`pytest --collect_only --local True`)
+=======
+-  [ ] Collection tested and no collection error introduced (`pytest -collect_only --local True`)
+>>>>>>> 8eda3de738ca528dd76a7a25ab0139a3c89d11c0
 
 # Review Checklist 
   Checklist for Author
@@ -28,4 +32,8 @@
 
 # Documentation
   Checklist for Author
+<<<<<<< HEAD
 -  [ ] Changes done to ReadMe
+=======
+-  [ ] Changes done to ReadMe
+>>>>>>> 8eda3de738ca528dd76a7a25ab0139a3c89d11c0

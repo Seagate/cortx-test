@@ -23,6 +23,8 @@
 Python library which have config related operations using package
 like config parser, yaml etc.
 """
+import string
+import random
 import json
 import logging
 import os
@@ -75,7 +77,8 @@ def read_yaml(fpath: str) -> tuple:
 def write_yaml(
         fpath: str,
         write_data: dict or list,
-        backup: bool = True) -> tuple:
+        backup: bool = True,
+        sort_keys = True) -> tuple:
     """
     Function overwrites the content of given yaml file with given data.
 
@@ -83,6 +86,7 @@ def write_yaml(
     :param dict/list write_data: data to be written in yaml file
     :param bool backup: if set False, backup will not be taken before
     overwriting
+    :param bool sort_keys: if set False, order of keys will be preserved
     :return: True/False, yaml file path
     :rtype: boolean, str
     """
@@ -92,7 +96,7 @@ def write_yaml(
             shutil.copy2(fpath, bkup_path)
             LOG.debug("Backup file %s at %s", fpath, bkup_path)
         with open(fpath, 'w') as fobj:
-            yaml.safe_dump(write_data, fobj)
+            yaml.safe_dump(write_data, fobj, sort_keys=sort_keys)
         LOG.debug("Updated yaml file at %s", fpath)
     except FileNotFoundError as error:
         LOG.error(
@@ -487,3 +491,12 @@ def write_csv(fpath:str, fieldnames:list, rows:list):
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+def gen_rand_string(chars:list=string.ascii_uppercase, length:int=10):
+    """
+    Generate the random string on N characters
+    :chars : list of character to generate the random string from
+    :length : lenth of the string
+    """
+    # Bandit=Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+    return ''.join(random.choice(chars) for _ in range(length))

@@ -28,8 +28,8 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config import S3_OBJ_TST
-from config import S3_CFG
+from config.s3 import S3_OBJ_TST
+from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
@@ -104,6 +104,8 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5549")
     @CTFailOn(error_handler)
     def test_verify_putobj_tagging_2457(self):
@@ -131,6 +133,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5557")
     @CTFailOn(error_handler)
     def test_getobj_tagging_2458(self):
@@ -158,6 +161,8 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5561")
     @CTFailOn(error_handler)
     def test_delobj_tagging_2459(self):
@@ -197,6 +202,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5547")
     @CTFailOn(error_handler)
     def test_putobj_taggingsupport_2460(self):
@@ -231,6 +237,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5555")
     @CTFailOn(error_handler)
     def test_getobj_taggingsupport_2461(self):
@@ -272,6 +279,8 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5553")
     @CTFailOn(error_handler)
     def test_multipartupload_taggingsupport_2462(self):
@@ -339,6 +348,8 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5574")
     @CTFailOn(error_handler)
     def test_add_maximum_tags_existing_object_2463(self):
@@ -370,6 +381,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5576")
     @CTFailOn(error_handler)
     def test_add10tags_existingobject_2464(self):
@@ -411,6 +423,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5564")
     @CTFailOn(error_handler)
     def test_unique_tagkeys_2465(self):
@@ -452,6 +465,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5578")
     @CTFailOn(error_handler)
     def test_add_duplicate_tags_2466(self):
@@ -500,6 +514,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5579")
     @CTFailOn(error_handler)
     def test_key_128unicodechars_2467(self):
@@ -529,6 +544,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5570")
     @CTFailOn(error_handler)
     def test_key_with_more_than_128_unichargs_2468(self):
@@ -571,6 +587,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5572")
     @CTFailOn(error_handler)
     def test_tagvalue256chars_2469(self):
@@ -600,6 +617,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5571")
     @CTFailOn(error_handler)
     def test_tag_value_512_unichars_2470(self):
@@ -642,6 +660,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5552")
     @CTFailOn(error_handler)
     def test_tagkeys_labels_2471(self):
@@ -683,6 +702,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5551")
     @CTFailOn(error_handler)
     def test_case_sensitive_labels_2472(self):
@@ -725,6 +745,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5566")
     @CTFailOn(error_handler)
     def test_valid_specialchars_2473(self):
@@ -752,6 +773,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5569")
     @CTFailOn(error_handler)
     def test_invalid_specialchars_2474(self):
@@ -802,6 +824,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5568")
     @CTFailOn(error_handler)
     def test_invalid_specialchars_2475(self):
@@ -852,6 +875,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5567")
     @CTFailOn(error_handler)
     def test_special_chars_2476(self):
@@ -901,6 +925,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5565")
     @CTFailOn(error_handler)
     def test_duplicate_name_object_tag_support_2477(self):
@@ -957,6 +982,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5562")
     @CTFailOn(error_handler)
     def test_max_object_max_tags_2478(self):
@@ -1014,6 +1040,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5573")
     @CTFailOn(error_handler)
     def test_metadata_object_tags_2479(self):
@@ -1056,6 +1083,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5575")
     @CTFailOn(error_handler)
     def test_user_defined_metadata_2480(self):
@@ -1129,6 +1157,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5563")
     @CTFailOn(error_handler)
     def test_user_defined_metadata_2481(self):
@@ -1174,6 +1203,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5577")
     @CTFailOn(error_handler)
     def test_maximum_object_tags_2482(self):
@@ -1219,6 +1249,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5548")
     @CTFailOn(error_handler)
     def test_put_object_tagging_2483(self):
@@ -1247,6 +1278,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5556")
     @CTFailOn(error_handler)
     def test_get_object_tagging_2484(self):
@@ -1273,6 +1305,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5559")
     @CTFailOn(error_handler)
     def test_delobj_tagging_2485(self):
@@ -1299,6 +1332,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5546")
     @CTFailOn(error_handler)
     def test_put_non_existing_object_tagging_2486(self):
@@ -1329,6 +1363,7 @@ class TestObjectTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5554")
     @CTFailOn(error_handler)
     def test_get_non_existing_object_tagging_2487(self):

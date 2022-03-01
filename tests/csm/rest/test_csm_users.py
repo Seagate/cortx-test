@@ -20,32 +20,54 @@
 #
 """Tests various operation on CSM user using REST API
 """
-import time
 import json
 import logging
+import random
+import re
+import time
+from http import HTTPStatus
+
 import pytest
+import yaml
+
+from commons import commands as comm
 from commons import configmanager
-from commons.constants import Rest as const
-from commons.utils import assert_utils, config_utils
+from commons import constants as cons
 from commons import cortxlogging
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from commons.constants import Rest as const
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils, config_utils
+from config import CSM_REST_CFG, CMN_CFG
+from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
-from libs.csm.csm_setup import CSMConfigsCheck
-from config import CSM_REST_CFG
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_cluster import RestCsmCluster
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
 class TestCsmUser():
     """REST API Test cases for CSM users
     """
+
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_user.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
         cls.config = CSMConfigsCheck()
+        cls.csm_cluster = RestCsmCluster()
+        cls.s3user = RestS3user()
+        cls.s3_account_obj = RestS3user()
+        cls.s3auth_obj = S3AuthServerRestAPI()
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.nd_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
         user_already_present = cls.config.check_predefined_csm_user_present()
         if not user_already_present:
             user_already_present = cls.config.setup_csm_users()
@@ -54,10 +76,179 @@ class TestCsmUser():
         if not s3acc_already_present:
             s3acc_already_present = cls.config.setup_csm_s3()
         assert s3acc_already_present
+        cls.created_users = []
+        cls.created_s3_users = []
+        cls.remote_path = cons.CLUSTER_CONF_PATH
+        cls.local_path = cons.LOCAL_CONF_PATH
+        cls.csm_conf_path = cons.CSM_CONF_PATH
+        cls.csm_copy_path = cons.CSM_COPY_PATH
+        cls.local_csm_path = cons.CSM_COPY_PATH
         cls.csm_user = RestCsmUser()
         cls.s3_accounts = RestS3user()
         cls.log.info("Initiating Rest Client ...")
 
+    def teardown_method(self):
+        """"
+        Teardown for deleting any csm user which is not deleted due to test failure.
+        """
+        self.log.info("[STARTED] ######### Teardown #########")
+        self.log.info("Deleting all csm users except predefined ones...")
+        delete_failed = []
+        delete_success = []
+        if self.created_users or self.created_s3_users:
+           time.sleep(3)             #EOS-27030
+        for usr in self.created_users:
+            self.log.info("Sending request to delete csm user %s", usr)
+            try:
+                response = self.csm_user.delete_csm_user(usr)
+                if response.status_code != HTTPStatus.OK:
+                    delete_failed.append(usr)
+                else:
+                    delete_success.append(usr)
+            except BaseException as err:
+                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+        for usr in delete_success:
+            self.created_users.remove(usr)
+        self.log.info("csm delete success list %s", delete_success)
+        self.log.info("csm delete failed list %s", delete_failed)
+        assert len(delete_failed) == 0, "Delete failed for users"
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Deleting all s3 users except predefined ones...")
+        s3_delete_failed = []
+        s3_delete_success = []
+        for usr in self.created_s3_users:
+            self.log.info("Sending request to delete s3 user %s", usr)
+            try:
+                response = self.s3_account_obj.delete_s3_account_user(username=usr)
+                if response.status_code != HTTPStatus.OK:
+                    self.log.error(response.status_code)
+                    s3_delete_failed.append(usr)
+                else:
+                    s3_delete_success.append(usr)
+            except BaseException as err:
+                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+        for usr in s3_delete_success:
+            self.created_s3_users.remove(usr)
+        self.log.info("s3 delete failed list %s", s3_delete_failed)
+        self.log.info("s3 delete success list %s", s3_delete_success)
+        assert len(s3_delete_failed) == 0, "Delete failed for s3 users"
+        self.log.info("s3 users except pre-defined ones deleted.")
+        self.log.info("[COMPLETED] ######### Teardown #########")
+
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-28936")
+    def test_28936(self):
+        """
+        Test S3 account creation returns error 503 service unavailable
+        for wrong values of endpoint and host in csm conf
+        """
+        # Test will fail until EOS-25584 is fixec for returning error code 503
+        self.log.info("Step 1: Edit csm.conf file for incorrect s3 data endpoint")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                            read_lines=False,
+                                            exc=False)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        self.log.info(pod_name)
+        # cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
+        resp_node = self.nd_obj.execute_cmd(
+            cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
+                pod_name, self.csm_conf_path, self.csm_copy_path, cons.CORTX_CSM_POD),
+            read_lines=False,
+            exc=False)
+        resp = self.nd_obj.copy_file_to_local(
+            remote_path=self.csm_copy_path, local_path=self.local_csm_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        stream = open(self.local_csm_path, 'r')
+        data = yaml.load(stream, Loader=yaml.Loader)
+        s3_endpoint = data['S3']['iam']['endpoints']
+        s3_host = data['S3']['iam']['host']
+        data['S3']['iam']['endpoints'] = "https://cortx-io-svc1:9443"
+        data['S3']['iam']['host'] = "cortx-io-svc1"
+        with open(self.local_csm_path, 'w') as yaml_file:
+            yaml_file.write(yaml.dump(data, default_flow_style=False))
+        yaml_file.close()
+        resp = self.nd_obj.copy_file_to_remote(
+            local_path=self.local_csm_path, remote_path=self.csm_copy_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        # cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c cortx-csm-agent
+        resp_node = self.nd_obj.execute_cmd(
+            cmd=comm.K8S_CP_TO_CONTAINER_CMD.format(
+                self.csm_copy_path, pod_name, self.csm_conf_path, cons.CORTX_CSM_POD),
+            read_lines=False,
+            exc=False)
+        self.log.info("Step 2: Delete control pod")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_DELETE_POD.format(pod_name),
+                                            read_lines=False,
+                                            exc=False)
+        self.log.info("Step 3: Check if control pod is re-deployed")
+        pod_up = False
+        for _ in range(3):
+            resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                                read_lines=False,
+                                                exc=False)
+            if cons.CONTROL_POD_NAME_PREFIX in resp_node.decode('UTF-8'):
+                pod_up = True
+                break
+            else:
+                time.sleep(30)
+        if not pod_up:
+            assert pod_up, "Pod is not up so cannot proceed. Test Failed"
+        self.log.info("Step 4: Create s3account s3acc.")
+        response1 = self.s3_accounts.create_s3_account(user_type="valid")
+        self.log.info("Repeating above steps for correct host and endpoint value")
+        self.log.info("Fetch new pod name")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                            read_lines=False,
+                                            exc=False)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        self.log.info("Step 5: Edit csm.conf file for correct s3 data endpoint")
+        stream = open(self.local_csm_path, 'r')
+        data = yaml.load(stream, Loader=yaml.Loader)
+        data['S3']['iam']['endpoints'] = s3_endpoint
+        data['S3']['iam']['host'] = s3_host
+        with open(self.local_csm_path, 'w') as yaml_file:
+            yaml_file.write(yaml.dump(data, default_flow_style=False))
+        yaml_file.close()
+        resp = self.nd_obj.copy_file_to_remote(
+            local_path=self.local_csm_path, remote_path=self.csm_copy_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        # cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c cortx-csm-agent
+        resp_node = self.nd_obj.execute_cmd(
+            cmd=comm.K8S_CP_TO_CONTAINER_CMD.format(
+                self.csm_copy_path, pod_name, self.csm_conf_path, cons.CORTX_CSM_POD),
+            read_lines=False,
+            exc=False)
+        self.log.info("Step 6: Delete control pod")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_DELETE_POD.format(pod_name),
+                                            read_lines=False,
+                                            exc=False)
+        self.log.info("Step 7: Check if control pod is re-deployed")
+        pod_up = False
+        for _ in range(3):
+            resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                                read_lines=False,
+                                                exc=False)
+            if cons.CONTROL_POD_NAME_PREFIX in resp_node.decode('UTF-8'):
+                pod_up = True
+                break
+            else:
+                time.sleep(30)
+        if not pod_up:
+            assert pod_up, "Pod is not up so cannot proceed. Test Failed"
+        assert response1.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
+        self.log.info("Step 8: Create s3account s3acc.")
+        response = self.s3_accounts.create_s3_account(user_type="valid")
+        username = response.json()["account_name"]
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
+        response = self.s3_accounts.delete_s3_account_user(username=username)
+        assert response.status_code == const.SUCCESS_STATUS, "User deleted"
+        self.log.info("################Test Passed##################")
+
+    @pytest.mark.sanity
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -73,6 +264,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -88,6 +281,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -104,6 +299,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -114,11 +311,13 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert(self.csm_user.list_csm_users(expect_status_code=const.BAD_REQUEST, offset='',
-                                            verify_negative_scenario=True))
+        assert (self.csm_user.list_csm_users(expect_status_code=const.BAD_REQUEST, offset='',
+                                             verify_negative_scenario=True))
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -134,6 +333,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -151,6 +352,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10711')
@@ -165,6 +368,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -182,6 +387,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -196,7 +403,11 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         invalid_sortby = self.csm_conf["test_5001"]["invalid_sortby"]
-        resp_msg = self.csm_conf["test_5001"]["response_msg"]
+        test_cfg = self.csm_conf["test_5001"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         response = self.csm_user.list_csm_users(
             expect_status_code=const.BAD_REQUEST,
             sort_by=invalid_sortby,
@@ -209,6 +420,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -220,7 +433,11 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        resp_msg = self.csm_conf["test_5002"]["response_msg"]
+        test_cfg = self.csm_conf["test_5002"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
 
         self.log.info("Fetching csm user with empty sort by string...")
         response = self.csm_user.list_csm_users(
@@ -229,11 +446,19 @@ class TestCsmUser():
             return_actual_response=True)
 
         self.log.info("Verifying error response...")
-        assert response.json(), resp_msg
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17864')
@@ -259,6 +484,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -269,13 +495,14 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert (self.csm_user.create_and_verify_csm_user_creation(
+        assert (self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="valid",
             user_role="manage",
             expect_status_code=const.SUCCESS_STATUS_FOR_POST))
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -286,12 +513,13 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="invalid", user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -303,13 +531,14 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="missing",
             user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -326,6 +555,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -336,7 +566,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_and_verify_csm_user_creation(
+        assert self.csm_user.create_verify_and_delete_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
             expect_status_code=const.CONFLICT)
@@ -344,6 +574,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags('TEST-18802')
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     def test_5000(self):
@@ -367,6 +598,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -391,6 +624,8 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -406,6 +641,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -423,7 +661,9 @@ class TestCsmUser():
             login_as="s3account_user")
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-    
+
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -436,8 +676,11 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        resp_msg = self.csm_conf["test_5005"]["response_msg"]
-
+        test_cfg = self.csm_conf["test_5005"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Fetching the response for empty sort_by parameter with the expected status code")
         response = self.csm_user.list_csm_users_empty_param(
@@ -447,12 +690,20 @@ class TestCsmUser():
 
         self.log.info("Verifying the error response returned status code: %s, response : %s",
                       response.status_code, response.json())
-        assert response.json() == resp_msg
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
+
         self.log.info(
             "Verified that the returned error response is as expected: %s", response.json())
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -473,6 +724,8 @@ class TestCsmUser():
 
         self.log.info("Reading the username")
         username = response.json()["username"]
+        userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Sending the request to user %s", username)
@@ -511,6 +764,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10797')
@@ -538,6 +792,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and "
@@ -587,6 +842,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info(
@@ -626,6 +882,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -646,8 +903,8 @@ class TestCsmUser():
             "Test Purpose 1: Step 1: Logging in as csm user and creating s3 account")
         response = self.s3_accounts.create_s3_account(
             login_as="csm_user_manage")
-        self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verifying response code 201 was returned")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
 
         s3_account_name = response.json()["account_name"]
 
@@ -682,6 +939,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -705,6 +963,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Step 2: Verified User %s got created successfully", username)
 
@@ -734,6 +993,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -754,7 +1014,7 @@ class TestCsmUser():
             "Step 1: Creating s3 account")
         response = self.s3_accounts.create_s3_account()
         self.log.info("Verifying s3 account was successfully created")
-        assert response.status_code == const.SUCCESS_STATUS
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         s3_account_name = response.json()["account_name"]
         self.log.info(
             "Step 2: Verified s3 account %s was successfully created ", s3_account_name)
@@ -779,7 +1039,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12018')
@@ -852,6 +1112,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12024')
@@ -921,6 +1182,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12025')
@@ -947,7 +1209,15 @@ class TestCsmUser():
 
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         actual_response = response.json()
+        created_time = actual_response["created_time"]
+        modified_time_format = self.csm_user.edit_datetime_format(created_time)
+        actual_response["created_time"] = modified_time_format
+        updated_time = actual_response["updated_time"]
+        modified_time = self.csm_user.edit_datetime_format(updated_time)
+        actual_response["updated_time"] = modified_time
+        self.log.info("Printing actual response %s:", actual_response)
         self.log.info(
             "Fetching list of all users")
         response1 = self.csm_user.list_csm_users(
@@ -962,6 +1232,14 @@ class TestCsmUser():
             if item["username"] == username:
                 expected_response = item
                 break
+        self.log.info("expected response is %s:", expected_response)
+        created_time = expected_response["created_time"]
+        modified_time_format = self.csm_user.edit_datetime_format(created_time) 
+        expected_response["created_time"] = modified_time_format
+        updated_time = expected_response["updated_time"]
+        modified_time = self.csm_user.edit_datetime_format(updated_time)
+        expected_response["updated_time"] = modified_time
+        self.log.info("Printing expected response %s:", expected_response)
         self.log.info("Verifying the actual response %s is matching the "
                       "expected response %s", actual_response, expected_response)
         assert (config_utils.verify_json_response(
@@ -1088,6 +1366,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12026')
@@ -1114,6 +1393,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 1: Step 2: Login as csm root user and change"
@@ -1216,6 +1496,7 @@ class TestCsmUser():
                                    const.SUCCESS_STATUS_FOR_POST)
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info("User %s got created successfully", username)
 
         self.log.info("Test Purpose 3: Step 2: Login as csm root user and change "
@@ -1304,6 +1585,7 @@ class TestCsmUser():
                       "updated successfully for csm user %s", user[3], username)
 
     @pytest.mark.skip("Test is invalid for R2")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1322,7 +1604,9 @@ class TestCsmUser():
         username = self.csm_user.config["csm_user_manage"]["username"]
         expected_response_manage = self.csm_conf["test_7422"]["response_manage"]
         expected_response_manage["error_format_args"] = username
-
+        resp_error_code = self.rest_resp_conf["error_codes"]
+        resp_msg = self.rest_resp_conf["messages"]
+        resp_msg_id = self.rest_resp_conf["message_ids"]
         self.log.info(
             "Creating payload for the Patch request")
         payload = self.csm_conf["test_7422"]["payload_manage"]
@@ -1343,7 +1627,13 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
-        assert_utils.assert_equals(response.json(), expected_response_manage)
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code["code_4101"]))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       resp_msg["message_11"])
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id["message_id_1"])
         self.log.info("Step 1: Verified that csm manage user cannot modify its "
                       "role and response returned is %s", response)
 
@@ -1377,8 +1667,9 @@ class TestCsmUser():
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-    
+
     @pytest.mark.skip("Test is invalid for R2")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1480,6 +1771,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1493,8 +1785,11 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         payload = self.csm_conf["test_7408"]["payload"]
-        resp_msg = self.csm_conf["test_7408"]["response_mesg"]
-
+        test_cfg = self.csm_conf["test_7408"]["response_mesg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Step 1: Verifying that csm monitor user should not be able to "
             "modify its username")
@@ -1519,9 +1814,13 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(),
-                                   resp_msg)
-
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info(
             "Step 1: Verified that csm monitor user %s is not able to modify "
             "its username and response returned is %s", username, response)
@@ -1549,7 +1848,14 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(), resp_msg)
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
+
         self.log.info(
             "Step 2: Verified that csm manage user %s is not be able to modify "
             "its username and response returned is %s", username, response)
@@ -1577,7 +1883,13 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(), resp_msg)
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
 
         self.log.info(
             "Step 3: Verified that csm admin user %s is not be able to modify "
@@ -1586,6 +1898,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1600,14 +1913,16 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         data = self.csm_conf["test_6220"]
+        test_cfg = data["response_duplicate_csm_manage_user"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Step 1: Verifying that csm admin user should not be able to create"
             " duplicate csm user")
 
         username = self.csm_user.config["csm_user_manage"]["username"]
-        mesg = data["response_duplicate_csm_manage_user"]["message"]
-        data["response_duplicate_csm_manage_user"]["message"] = f"{mesg} {username}"
-
         self.log.info(
             "Logging in as csm admin user to create duplicate csm user %s",
             username)
@@ -1619,22 +1934,28 @@ class TestCsmUser():
         self.log.info("Verifying response code: %s and response returned: %s",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(
-            response.json(), data["response_duplicate_csm_manage_user"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       (msg + " " + username))
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info("Verified response returned")
 
         self.log.info(
             "Step 1: Verified that csm admin user is not able to create "
             "duplicate csm user")
-
+        test_cfg1 = data["response_duplicate_csm_monitor_user"]
+        resp_error_code = test_cfg1["error_code"]
+        resp_msg_id = test_cfg1["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Step 2: Verifying that csm manage user should not be able to "
             "create duplicate csm user")
 
         username = self.csm_user.config["csm_user_monitor"]["username"]
-        mesg = data["response_duplicate_csm_monitor_user"]["message"]
-        data["response_duplicate_csm_monitor_user"]["message"] = f"{mesg} {username}"
-
         self.log.info(
             "Logging in as csm manage user to create duplicate csm user %s", username)
 
@@ -1646,17 +1967,25 @@ class TestCsmUser():
         self.log.info("Verifying response code: %s and response returned: %s",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(
-            response.json(), data["response_duplicate_csm_monitor_user"])
-
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       (msg + " " + username))
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info("Verified response returned")
 
         self.log.info(
             "Step 2: Verified that csm manage user is not able to create duplicate csm user")
 
+        test_cfg2 = data["response_duplicate_s3_account"]
+        resp_error_code = test_cfg2["error_code"]
+        resp_msg_id = test_cfg2["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         s3account = self.csm_user.config["s3account_user"]["username"]
         data["response_duplicate_s3_account"]["error_format_args"]["account_name"] = s3account
-
         self.log.info(
             "Step 3: Verifying that csm admin user should not be able to create"
             " duplicate s3 account")
@@ -1668,8 +1997,14 @@ class TestCsmUser():
 
         self.log.info("Verifying response")
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(
-            response.json(), data["response_duplicate_s3_account"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   resp_error_code)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
+
         self.log.info("Verified response returned is: %s, %s",
                       response, response.json())
 
@@ -1689,8 +2024,14 @@ class TestCsmUser():
 
         self.log.info("Verifying response")
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(
-            response.json(), data["response_duplicate_s3_account"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   resp_error_code)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
+
         self.log.info("Verified response returned is: %s, %s",
                       response, response.json())
 
@@ -1701,6 +2042,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1718,8 +2060,8 @@ class TestCsmUser():
             "Step 1: Verifying that DELETE API with default argument returns 200 "
             "response code and appropriate json data")
 
-        message = self.csm_conf["test_5021"]["response_message"]
-
+        data = self.csm_conf["test_5021"]["response_message"]
+        message = data["message"]
         self.log.info("Creating csm user")
         response = self.csm_user.create_csm_user()
 
@@ -1744,7 +2086,7 @@ class TestCsmUser():
                       response.status_code)
 
         self.log.info("Verifying proper message is returned")
-        assert_utils.assert_equals(response.json(),
+        assert_utils.assert_equals(response.json()["message"],
                                    message)
         self.log.info(
             "Verified message returned is: %s", response.json())
@@ -1756,6 +2098,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1793,7 +2136,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("EOS-24138")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1808,7 +2151,12 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        data = self.csm_conf["test_5020"]
+        data = self.csm_conf["test_5020"]["response_msg"]
+        resp_error_code = data["error_code"]
+        resp_msg_id = data["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
+
         payload = {}
         self.log.info(
             "Step 1: Verifying that PATCH API returns 400 response code and "
@@ -1830,7 +2178,13 @@ class TestCsmUser():
 
         self.log.info(
             "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json(), data["response_msg"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info(
             "Verified the response message returned")
 
@@ -1841,6 +2195,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1855,11 +2210,13 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        data = self.csm_conf["test_5017"]
-        mesg = data["response_msg"]["message"]
-        userid = data["invalid_user_id"]
-        data["response_msg"]["message"] = f"{mesg} {userid}"
-
+        data_payload = self.csm_conf["test_5017"]
+        data = self.csm_conf["test_5017"]["response_msg"]
+        resp_error_code = data["error_code"]
+        resp_msg_id = data["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
+        userid = self.csm_conf["test_5017"]["invalid_user_id"]
         self.log.info(
             "Step 1: Verifying that PATCH API returns 404 response code and "
             "appropriate json data for user that does not exist")
@@ -1869,7 +2226,7 @@ class TestCsmUser():
             expect_status_code=const.METHOD_NOT_FOUND,
             user=userid,
             data=True,
-            payload=json.dumps(data["payload"]),
+            payload=json.dumps(data_payload["payload"]),
             return_actual_response=True)
 
         self.log.info("Verifying the status code returned : %s",
@@ -1880,7 +2237,13 @@ class TestCsmUser():
 
         self.log.info(
             "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json(), data["response_msg"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       (msg + " " + userid))
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info(
             "Verified the response message returned")
 
@@ -1891,6 +2254,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1905,11 +2269,12 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        data = self.csm_conf["test_5010"]
-        mesg = data["response_msg"]["message"]
-        userid = data["invalid_user_id"]
-        data["response_msg"]["message"] = f"{mesg} {userid}"
-
+        userid = self.csm_conf["test_5010"]["invalid_user_id"]
+        test_cfg = self.csm_conf["test_5010"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Step 1: Verifying that GET API returns 404 response code and appropriate "
             "json data for non-existing username input")
@@ -1928,7 +2293,13 @@ class TestCsmUser():
 
         self.log.info(
             "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json(), data["response_msg"])
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                       (msg + " " + userid))
+        assert_utils.assert_equals(response.json()["message_id"],
+                                   resp_msg_id)
         self.log.info(
             "Verified the response message returned")
 
@@ -1939,6 +2310,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2030,7 +2402,8 @@ class TestCsmUser():
         elif data_new2[1] == "'password'":
             role_passwd_resp = data["invalid_password_role_resp_2"]
 
-        assert_utils.assert_equals(response.json(), role_passwd_resp)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json(), role_passwd_resp)
 
         self.log.info(
             "Step 3: Verified that PATCH API returns 400 response code and "
@@ -2040,6 +2413,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15862')
@@ -2275,6 +2649,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2291,23 +2666,11 @@ class TestCsmUser():
         self.log.info(
             "Verifying CSM user with role manager cannot perform any REST API "
             "request on IAM user")
-
-        self.log.info("Creating IAM user for test verification purpose")
-        rest_iam_user = RestIamUser()
-        new_iam_user = "testiam" + str(int(time.time()))
-        response = rest_iam_user.create_iam_user(
-            user=new_iam_user, login_as="s3account_user")
-
-        self.log.info(
-            "Verifying IAM user %s creation was successful", new_iam_user)
-        assert_utils.assert_equals(response.status_code,
-                                   const.SUCCESS_STATUS)
-        self.log.info(
-            "Verified IAM user %s creation was successful", new_iam_user)
-
         self.log.info(
             "Step 1: Verifying CSM admin user cannot perform GET request on "
             "IAM user")
+        rest_iam_user = RestIamUser()
+        new_iam_user = "testiam" + str(int(time.time()))
         response = rest_iam_user.list_iam_users(login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
@@ -2326,6 +2689,8 @@ class TestCsmUser():
             "Step 2: Verified CSM manage user cannot perform GET request on "
             "IAM user")
 
+        self.log.info("Creating IAM user for test verification purpose")
+        rest_iam_user = RestIamUser()
         self.log.info(
             "Step 3: Verifying CSM admin user cannot perform POST request on "
             "IAM user")
@@ -2341,7 +2706,7 @@ class TestCsmUser():
         self.log.info(
             "Step 4: Verifying CSM manage user cannot perform POST request on "
             "IAM user")
-        new_iam_user2 = "testiam" +  str(int(time.time()))
+        new_iam_user2 = "testiam" + str(int(time.time()))
         response = rest_iam_user.create_iam_user(
             user=new_iam_user2, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
@@ -2354,7 +2719,7 @@ class TestCsmUser():
             "Step 5: Verifying CSM admin user cannot perform DELETE request on "
             "IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_admin_user")
+            user=new_iam_user1, login_as="csm_admin_user")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -2365,7 +2730,7 @@ class TestCsmUser():
             "Step 6: Verifying CSM manage user cannot perform DELETE request on"
             " IAM user")
         response = rest_iam_user.delete_iam_user(
-            user=new_iam_user, login_as="csm_user_manage")
+            user=new_iam_user1, login_as="csm_user_manage")
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
         self.log.info(
@@ -2379,6 +2744,9 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("EOS-27117 Test is not valid anymore")
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2404,6 +2772,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2450,6 +2819,7 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2489,6 +2859,7 @@ class TestCsmUser():
         self.log.info(
             "Verified user was created successfully")
         userid = response.json()["id"]
+        self.created_users.append(userid)
 
         self.log.info(
             "Step 2: Verifying that CSM user with monitor role cannot perform "
@@ -2541,6 +2912,7 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2593,7 +2965,7 @@ class TestCsmUser():
         self.log.info(
             "Step 3: Verifying that root csm user cannot perform DELETE API "
             "request on S3 Account")
-        response = self.s3_accounts. delete_s3_account_user(
+        response = self.s3_accounts.delete_s3_account_user(
             username=username, login_as="csm_admin_user")
 
         self.log.debug("Verifying response returned: %s", response)
@@ -2608,7 +2980,7 @@ class TestCsmUser():
         self.log.info(
             "Step 4: Verifying that CSM user with role manager cannot perform "
             "DELETE API request on S3 Account")
-        response = self.s3_accounts. delete_s3_account_user(
+        response = self.s3_accounts.delete_s3_account_user(
             username=username, login_as="csm_user_manage")
 
         self.log.debug("Verifying response returned : %s", response)
@@ -2627,6 +2999,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2763,6 +3136,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12019')
@@ -2789,6 +3163,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         userid = response.json()["id"]
+        self.created_users.append(userid)
         self.log.info(
             "Verified User %s got created successfully", username)
 
@@ -2827,6 +3202,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25278')
@@ -2838,8 +3214,12 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25278"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info("Step 1: Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Step 2: Verifying if user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
@@ -2847,38 +3227,44 @@ class TestCsmUser():
         self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 3: Verfying edit user functionality for admin user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                                user=CSM_REST_CFG["csm_admin_user"]["username"],
-                                role="manage")
+                                               user=CSM_REST_CFG["csm_admin_user"]["username"],
+                                               role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                            CSM_REST_CFG["csm_admin_user"]["username"]) , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            CSM_REST_CFG["csm_admin_user"][
+                                                                "username"]), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Verfying edit user functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="csm_user_manage",
-                                    role="monitor")
+                                               role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                  "csm_user_manage") , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 5: Verfying edit user functionality for monitor user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
-                                    role="manage")
+                                               role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                               + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                  username) , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            username), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
             "Sending request to delete csm user %s", username)
         response = self.csm_user.delete_csm_user(user_id)
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25280')
@@ -2890,54 +3276,78 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25280"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[1]
         self.log.info("Step 1: Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Step 2: Verifying if user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
+        password = CSM_REST_CFG["csm_user_monitor"]["password"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
+        new_monitor_user = {}
+        new_monitor_user['username'] = username
+        new_monitor_user['password'] = password
         self.log.info("Step 3: Verifying edit user functionality for admin user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                                 user=CSM_REST_CFG["csm_admin_user"]["username"],
-                      password=CSM_REST_CFG["csm_admin_user"]["password"],
-                        current_password=test_cfg["current_password"])
+                                               user=CSM_REST_CFG["csm_admin_user"]["username"],
+                                               password=CSM_REST_CFG["csm_admin_user"]["password"],
+                                               current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                            CSM_REST_CFG["csm_admin_user"]["username"]) , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            CSM_REST_CFG["csm_admin_user"][
+                                                                "username"]), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Verifying edit user functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                                     user=CSM_REST_CFG["csm_user_manage"]["username"],
-                              password=CSM_REST_CFG["csm_user_manage"]["password"],
-                                   current_password=test_cfg["current_password"])
+                                               user=CSM_REST_CFG["csm_user_manage"]["username"],
+                                               password=CSM_REST_CFG["csm_user_manage"]["password"],
+                                               current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                  "csm_user_manage") , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
-        self.log.info("Step 5: Verifying edit user functionality for monitor user")
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 5: Verifying edit user functionality for other monitor user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                                        user=username,
-                                 password=CSM_REST_CFG["csm_user_monitor"]["password"],
-                                    current_password=test_cfg["current_password"])
+                                               user=username,
+                                               password=CSM_REST_CFG["csm_user_monitor"][
+                                                   "password"],
+                                               current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                               + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                 username) , "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_monitor",
+                                                            username), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 6: Verifying edit user functionality for self monitor user")
+        response = self.csm_user.edit_csm_user(login_as=new_monitor_user,
+                                               user=username,
+                                               password=test_cfg["current_password"],
+                                               current_password=password)
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info(
             "Sending request to delete csm user %s", username)
         response = self.csm_user.delete_csm_user(user_id)
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
-    @pytest.mark.skip(reason="Bug EOS-23254")
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25282')
     def test_25282(self):
         """
@@ -2946,72 +3356,132 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_25280"]
-        self.log.info("Step 1: Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
-        self.log.info("Step 2: Verifying if user was created successfully")
+        test_cfg = self.csm_conf["test_25282"]
+        self.log.info("Creating monitor user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
+        self.log.info("Verifying if user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
-        user_id = response.json()["id"]
+        userid = response.json()["id"]
+        password = CSM_REST_CFG["csm_user_manage"]["password"]
+        self.created_users.append(userid)
+        self.log.info("users list is %s", self.created_users)
         self.log.info("Verified User %s got created successfully", username)
-        self.log.info("Step 3: Verifying edit user functionality for admin user")
+        self.log.info("Creating manage user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        user_name = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Verifying edit email functionality for admin user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                      user=CSM_REST_CFG["csm_admin_user"]["username"],
-                       email_id=test_cfg["email_id"])
+                                               user=CSM_REST_CFG["csm_admin_user"]["username"],
+                                               email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                  "admin") , "Message check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                                            "admin"), "Message check failed."
         assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
-        self.log.info("Step 4: Verifying edit user functionality for manage user")
+        self.log.info("Step 4: Verifying edit email functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
-                                        user=CSM_REST_CFG["csm_user_manage"]["username"],
-                                        email_id=test_cfg["email_id"])
+                                               user=CSM_REST_CFG["csm_user_manage"]["username"],
+                                               email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                                  "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                  "csm_user_manage") , "Message check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                                            "csm_user_manage"), "Message check failed."
         assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
-        self.log.info("Step 5: Verifying edit user functionality for monitor user")
+        self.log.info("Step 5: Verifying edit email functionality for monitor user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
-                              email_id=test_cfg["email_id"])
+                                               email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
-                                               + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
-                                                   username) , "Message check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                                            username), "Message check failed."
         assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 6: Verifying edit email functionality for self monitor user")
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = password
+        self.log.info("new user is", new_user)
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=username,
+                                               email=test_cfg["email_id"])
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 7: Verifying edit email functionality for self manage user")
+        new_user = {}
+        new_user['username'] = user_name
+        new_user['password'] = password
+        self.log.info("new user is", new_user)
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=user_name,
+                                               email=test_cfg["email_id"])
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info(
-            "Sending request to delete csm user %s", username)
+            "Sending request to delete csm users %s and %s", username, user_name)
+        response = self.csm_user.delete_csm_user(userid)
+        assert response.status_code == const.SUCCESS_STATUS, "Monitor User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(userid)
         response = self.csm_user.delete_csm_user(user_id)
-        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        assert response.status_code == const.SUCCESS_STATUS, "Manage User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info("##### Test completed -  %s #####", test_case_name)
-  
-    @pytest.mark.csm_rest
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25275')
     def test_25275(self):
         """
-        Test case for verifying Manage user is not able to create admin user
+        Test case for verifying Manage user is not able to create admin user and
+        Manage user should be able to create new Manage and monitor users
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25275"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info("Step 1: Verify create admin user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+        assert response.json()["error_code"] == str(resp_error_code), (
             "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("admin",
-                                                        "admin"), "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin",
+                                                            "admin"), "Message check failed."
+        self.log.info("Step 2: Verify create manage user functionality for manage user")
+        response = self.csm_user.create_csm_user(login_as="csm_user_manage",
+                                                 user_type="valid", user_role="manage")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
+        username = response.json()["username"]
+        self.created_users.append(username)
+        self.log.info("Step 3: Verify create monitor user functionality for manage user")
+        response = self.csm_user.create_csm_user(login_as="csm_user_manage",
+                                                 user_type="valid", user_role="monitor")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
+        username = response.json()["username"]
+        self.created_users.append(username)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
-
-    @pytest.mark.csm_rest
+ 
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25279')
     def test_25279(self):
@@ -3022,22 +3492,30 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25279"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[1]
         self.log.info("Step 1: Verifying edit admin password functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
-                                           user=CSM_REST_CFG["csm_admin_user"]["username"],
-                                           password=CSM_REST_CFG["csm_admin_user"]["password"],
-                                           current_password=test_cfg["current_password"])
+                                               user=CSM_REST_CFG["csm_admin_user"]["username"],
+                                               password=CSM_REST_CFG["csm_admin_user"]["password"],
+                                               current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_manage",
-                           CSM_REST_CFG["csm_admin_user"]["username"]), "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_manage",
+                                                            CSM_REST_CFG["csm_admin_user"][
+                                                                "username"]), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
-    @pytest.mark.skip(reason="Bug EOS-23254")
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25281')
     def test_25281(self):
         """
@@ -3047,20 +3525,56 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25281"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg = self.rest_resp_conf[resp_error_code]["update_not_allowed"][4]
+        resp_msg_id = test_cfg["message_id"]
+        self.log.info("Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        self.log.info("Verified User %s got created successfully", username)
         self.log.info("Step 1: Verifying edit admin email id functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
                                                user=CSM_REST_CFG["csm_admin_user"]["username"],
-                                                   email=test_cfg["email_id"])
+                                               email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("csm_user_manage",
-                                                       "cortxadmin"), "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        assert response.json()["message"] == resp_msg.format("csm_user_manage",
+                                                             "cortxadmin"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 2: Verifying edit monitor user email id functionality for monitor user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
+                                               user=CSM_REST_CFG["csm_user_monitor"]["username"],
+                                               email=test_cfg["email_id"])
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+
+        self.log.info("Step 3: Verifying edit self email id functionality for manage user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
+                                               user=CSM_REST_CFG["csm_user_manage"]["username"],
+                                               email=test_cfg["email_id"])
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 4: Verifying edit email id functionality for other manage user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
+                                               user=username,
+                                               email=test_cfg["email_id"])
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info(
+            "Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25277')
@@ -3072,30 +3586,95 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25277"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[3]
         self.log.info("Step 1: Verify if last admin user"
-                                    "is not able to edit the self role to manage")
+                      "is not able to edit the self role to manage")
         response = self.csm_user.edit_csm_user(user=CSM_REST_CFG["csm_admin_user"]["username"],
-                                           role="manage")
+                                               role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("admin"), (
-                                          "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Verify if last admin user"
-                                    "is not able to edit the self role to monitor")
+                      "is not able to edit the self role to monitor")
         response = self.csm_user.edit_csm_user(user=CSM_REST_CFG["csm_admin_user"]["username"],
-                                                   role="monitor")
+                                               role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("admin"), (
-                                                          "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Creating csm user")
+        password = CSM_REST_CFG["csm_admin_user"]["password"]
+        response = self.csm_user.create_csm_user(user_type="valid",
+                                                 user_role="admin", user_password=password)
+        self.log.info("Verifying if admin user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        userid = response.json()["id"]
+        self.created_users.append(userid)
+        self.log.info("users list is %s", self.created_users)
+        assert response.json()['role'] == 'admin', "User is not created with admin role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = password
+        self.log.info("Step 3: Verify if other admin user"
+                      "is able to edit the self role to manage")
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=username,
+                                               role="manage")
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",
+                                                 user_role="admin", user_password=password)
+        self.log.info("Verifying if admin user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        assert response.json()['role'] == 'admin', "User is not created with admin role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = password
+        self.log.info("Step 4: Verify if other admin user"
+                      "is able to edit the self role to monitor")
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=username,
+                                               role="monitor")
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info(
-                "##### Test completed -  %s #####", test_case_name)
+            "Sending request to delete csm user %s", userid)
+        response = self.csm_user.delete_csm_user(userid)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(userid)
+        self.log.info(
+            "Sending request to delete csm user %s", user_id)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
+        self.log.info(
+            "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25286')
@@ -3106,18 +3685,35 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25286"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[2]
+        self.log.info("Pre-requistile: Checking for admin users")
+        resp = self.csm_user.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        assert resp.status_code == HTTPStatus.OK, "List user failed"
+        for user in resp.json()["users"]:
+            user_id = user['id']
+            if user["role"] == "admin" and user_id != CSM_REST_CFG["csm_admin_user"]["username"]:
+                self.log.info("Deleting extra admin user : %s", user_id)
+                resp = self.csm_user.delete_csm_user(user_id)
+                assert resp.status_code == HTTPStatus.OK, f"Delete user {user_id} failed"
         self.log.info("Step 1: Verify delete last admin user functionality")
         response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("admin"), (
-                                                        "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
-                "##### Test completed -  %s #####", test_case_name)
+            "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25283')
@@ -3128,19 +3724,72 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25283"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[2]
+        msg1 = resp_data[3]
+        self.log.info("Creating manage user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        userid = response.json()["id"]
+        self.created_users.append(userid)
+        self.log.info("users list is %s", self.created_users)
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Creating monitor user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        user_name = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        self.log.info("Verified User %s got created successfully", user_name)
         self.log.info("Step 1: Verify delete admin user functionality for manage user")
         response = self.csm_user.delete_csm_user(login_as="csm_user_manage",
-                                            user_id = CSM_REST_CFG["csm_admin_user"]["username"])
+                                                 user_id=CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message"].format("admin"), (
-                                                      "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 2: Verify delete other monitor user functionality for manage user")
+        response = self.csm_user.delete_csm_user(login_as="csm_user_manage",
+                                                 user_id=user_id)
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg1, (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(userid)
+        self.log.info("Step 3: Verify delete other manage user functionality for manage user")
+        response = self.csm_user.delete_csm_user(login_as="csm_user_manage",
+                                                 user_id=userid)
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg1, (
+                "Message check failed.")
+            self.log.info("Msg check successful!!!!")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info(
-                "##### Test completed -  %s #####", test_case_name)
+            "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25285')
@@ -3152,41 +3801,68 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25285"]
-        self.log.info("Step 1: Creating csm user")
-        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
-        self.log.info("Step 2: Verifying if user was created successfully")
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[2]
+        msg1 = resp_data[3]
+        self.log.info("Step 1: Creating csm manage user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Step 2: Verifying if manage user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        password = CSM_REST_CFG["csm_user_manage"]["password"]
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = password
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
         self.log.info("Verified User %s got created successfully", username)
-        self.log.info("Step 3: Verify create admin user functionality for monitor user")
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 3: Verify delete admin user functionality for monitor user")
         response = self.csm_user.delete_csm_user(login_as="csm_user_monitor",
-                                            user_id = CSM_REST_CFG["csm_admin_user"]["username"])
+                                                 user_id=CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message1"].format("admin"), (
-                                                        "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
-        self.log.info("Step 4: Verify create manage user functionality for monitor user")
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), (
+                "Message check failed.")
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 4: Verify delete manage user functionality for monitor user")
         response = self.csm_user.delete_csm_user(login_as="csm_user_monitor",
-                                            user_id = CSM_REST_CFG["csm_user_manage"]["username"])
+                                                 user_id=CSM_REST_CFG["csm_user_manage"][
+                                                     "username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message2"], "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
-        self.log.info("Step 5: Verify create monitor user functionality for monitor user")
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg1, "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 5: Verify delete monitor user functionality for monitor user")
         response = self.csm_user.delete_csm_user(login_as="csm_user_monitor",
-                                            user_id = username)
+                                                 user_id=username)
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-                + "Error code check failed.")
-        assert response.json()["message"] == test_cfg["message2"], "Message check failed."
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg1, "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 6: Verify delete monitor email functionality for self monitor user")
+        response = self.csm_user.delete_csm_user(login_as=new_user,
+                                                 user_id=username)
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info(
-                "##### Test completed -  %s #####", test_case_name)
+            "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csm_rest
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25276')
@@ -3211,3 +3887,1677 @@ class TestCsmUser():
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28513')
+    def test_28513(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Incorrect
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Incorrect")
+
+        test_cfg = self.csm_conf["test_28513"]
+        incorrect_password = test_cfg["password"]
+        status_code = test_cfg["status_code"]
+        # resp_error_code = test_cfg["error_code"]
+        # msg = test_cfg["message"]
+        # resp_msg_id = test_cfg["message_id"]
+
+        self.log.info("Step 1: Verifying with incorrect password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=incorrect_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with incorrect password")
+        #  TODO check response msg
+        # self.log.info("Step 2: Verifying error response...")
+        # assert_utils.assert_equals(response.json()["error_code"],
+        #                            str(resp_error_code))
+        # if CSM_REST_CFG["msg_check"] == "enable":
+        #     assert_utils.assert_equals(response.json()["message"],
+        #                                msg)
+        # assert_utils.assert_equals(response.json()["message_id"],
+        #                            resp_msg_id)
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Incorrect")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28512')
+    def test_28512(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Incorrect
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Incorrect")
+
+        test_cfg = self.csm_conf["test_28512"]
+        incorrect_username = test_cfg["username"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with incorrect username")
+        response = self.csm_user.custom_rest_login(
+            username=incorrect_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with incorrect username")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Incorrect")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28515')
+    def test_28515(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Invalid
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Invalid")
+
+        test_cfg = self.csm_conf["test_28515"]
+        invalid_password = test_cfg["password"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with invalid password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=invalid_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with invalid password")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Invalid")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28514')
+    def test_28514(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Invalid
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Invalid")
+
+        test_cfg = self.csm_conf["test_28514"]
+        invalid_username = test_cfg["username"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with invalid username")
+        response = self.csm_user.custom_rest_login(
+            username=invalid_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with invalid username")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Invalid")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28511')
+    def test_28511(self):
+        """
+        Test that Login API returns error Response Code 400 if Password in payload is Empty
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 400 "
+            "if Password in payload is Empty")
+
+        empty_password = ""
+        test_cfg = self.csm_conf["test_28511"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with empty password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=empty_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with empty password")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 400 "
+            "if Password in payload is Empty")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28510')
+    def test_28510(self):
+        """
+        Test that Login API returns error Response Code 400 if Username in payload is Empty
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 400 "
+            "if Username in payload is Empty")
+
+        empty_username = ""
+        test_cfg = self.csm_conf["test_28510"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with empty username")
+        response = self.csm_user.custom_rest_login(
+            username=empty_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with empty username")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 400 "
+            "if Username in payload is Empty")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28509')
+    def test_28509(self):
+        """
+        Test that Login API returns error Response Code 400 if Password in payload is Missing
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 400 "
+            "if Password in payload is Missing")
+
+        test_cfg = self.csm_conf["test_28509"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with missing password")
+        response = self.csm_user.custom_rest_login_missing_param(
+            param1=self.csm_user.config["csm_admin_user"]["username"],
+            param1_key="username")
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with missing password")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 400 "
+            "if Password in payload is Missing")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28508')
+    def test_28508(self):
+        """
+        Test that Login API returns error Response Code 400 if Username in payload is Missing
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 400 "
+            "if Username in payload is Missing")
+
+        test_cfg = self.csm_conf["test_28508"]
+        status_code = test_cfg["status_code"]
+
+        self.log.info("Step 1: Verifying with missing username")
+        response = self.csm_user.custom_rest_login_missing_param(
+            param1=self.csm_user.config["csm_admin_user"]["password"],
+            param1_key="password")
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with missing username")
+        #  TODO check response msg
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 400 "
+            "if Username in payload is Missing")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.sanity
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28522')
+    def test_28522(self):
+        """
+        Test that Login API returns success Response Code 200(OK) for Correct Credentials
+        """
+        test_case_name = cortxlogging.get_frame()
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns success Response Code 200(OK) "
+            "for Correct Credentials")
+
+        self.log.info("Step 1: Verifying with Correct Credentials")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.log.info("Expected Response: %s", HTTPStatus.OK)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+        self.log.info("Step 1: Verified with Correct Credentials")
+
+        self.log.info(
+            "Verifying that Login API returns success Response Code 200(OK) "
+            "for Correct Credentials")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.sanity
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28501')
+    def test_28501(self):
+        """
+        Function to test password reset functionality: expect 200 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28501"]["new_password"]
+        reset_password = self.csm_conf["test_28501"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(admin_username, new_password,
+                                                          reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 3: Check login with new password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 4: Reverting user password")
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 4.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password, reset_password,
+                                                     header)
+
+        self.log.info("Step 5: Verify response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 6: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28502')
+    def test_28502(self):
+        """
+        Function to test password reset functionality with empty payload:  expect 400 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = ""
+        reset_password = True
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(admin_username, new_password,
+                                                          reset_password)
+
+        self.log.info("Step 2: Verify response: 400")
+        self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[4099]['invalid parameter msg_id']
+            assert_utils.assert_equals(response.json()["message"], resp_data[0])
+
+        self.log.info("Step 3: Check login with existing password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28505')
+    def test_28505(self):
+        """
+        Function to test password reset functionality: Dont follow password policy
+        Expect 400 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28505"]["new_password"]
+        reset_password = self.csm_conf["test_28505"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(
+            CSM_REST_CFG["csm_admin_user"]["username"], new_password, reset_password)
+
+        self.log.info("Step 2: Verify response 400")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               reset_password, header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
+        self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[4099]['invalid parameter msg_id']
+            assert_utils.assert_equals(response.json()["message"], resp_data[1])
+
+        self.log.info("Step 3: Check login with existing password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.sanity
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28506')
+    def test_28506(self):
+        """
+        Function to test password reset functionality: Try login with old password
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28501"]["new_password"]
+        reset_password = self.csm_conf["test_28501"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(admin_username, new_password,
+                                                          reset_password)
+
+        self.log.info("Step 2: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 3: Check login with new password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 4: Check login with old password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
+
+        self.log.info("Step 5: Reverting user password")
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 5.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password, reset_password,
+                                                     header)
+
+        self.log.info("Step 6: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 7: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Verified log in with reverted password")
+        else:
+            self.log.error("Log in with reverted password failed")
+            assert False, "Log in with reverted password failed"
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28517')
+    def test_28517(self):
+        """
+        Function to test token expire after 1 hr
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28517"]["new_password"]
+        reset_password = self.csm_conf["test_28517"]["reset_password"]
+        token_expire_timeout = self.csm_conf["test_28517"]["token_expire_timeout"]
+        sleep_time = 10 * 60  # 10 min
+
+        self.log.info("Step 1: Get header-1")
+        header1 = self.csm_user.get_headers(admin_username, admin_password)
+
+        self.log.info("Step 2: Get header-2")
+        header2 = self.csm_user.get_headers(admin_username, admin_password)
+
+        self.log.info("Step 3: Get header-3")
+        header3 = self.csm_user.get_headers(admin_username, admin_password)
+
+        headers = [header1, header2, header3]
+        for header in headers:
+            self.log.info("Step 4.1: Changing user password for header {}".format(header))
+            response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                         reset_password, header)
+
+            self.log.info("Step 4.2: Verify success response")
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        time.sleep(sleep_time)
+        self.log.info("Step 5.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header2)
+
+        self.log.info("Step 5.2: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 6: Try resetting user password till token expire timeout")
+        end_time = time.time() + (token_expire_timeout - sleep_time)
+        while time.time() <= end_time:
+            self.log.info("Step 7.1: Changing user password")
+            response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                         reset_password, header3)
+
+            self.log.info("Step 7.2: Verify success response")
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+            time.sleep(sleep_time)
+
+        self.log.info("Step 8: Verify that token expires after timeout")
+        for header, header_num in enumerate(headers):
+            if header_num == 0 or header_num == 1:
+                self.log.info("Step 9.1: Changing user password")
+                response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                             reset_password, header)
+                self.log.info("Step 9.2: Verify response")
+                self.log.info("Verifying response code 200 is not returned")
+                if response.status_code == HTTPStatus.OK:
+                    self.log.info("Revert password")
+                    header = self.csm_user.get_headers(admin_username, new_password)
+                    self.log.info("Step: Changing user password for header {}".format(header))
+                    response_reset = self.csm_user.reset_user_password(admin_username,
+                                                                       admin_password,
+                                                                       reset_password, header)
+                    self.log.info("Step: Verify success response")
+                    self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
+                self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
+                time.sleep(sleep_time)
+
+        # Check session active with activity in last 1 hr
+        self.log.info("Step 10.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header3)
+
+        self.log.info("Step 10.2: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               reset_password, header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.sanity
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28516')
+    def test_28516(self):
+        """
+        Function to test token expire after logout
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28517"]["new_password"]
+        reset_password = self.csm_conf["test_28517"]["reset_password"]
+
+        self.log.info("Step 1: Get header")
+        header = self.csm_user.get_headers(admin_username, admin_password)
+
+        self.log.info("Step 2: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header)
+
+        self.log.info("Step 3: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 4: Logout user session")
+        response = self.csm_user.csm_user_logout(header)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 6: Verify that token expires after logout")
+        self.log.info("Step 6.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header)
+
+        self.log.info("Step 6.2: Verify response")
+        self.log.info("Verifying response code: 401")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               reset_password, header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
+        self.csm_user.check_expected_response(response, HTTPStatus.UNAUTHORIZED)
+
+        self.log.info("Step 7: Reverting user password")
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 7.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                     reset_password, header)
+
+        self.log.info("Step 8: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 9: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+
+        self.log.info("Step 10: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32172')
+    def test_32172(self):
+        """
+        Test that manage user should be able to change role of user with monitor role to manage role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating csm monitor user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
+        self.log.info("Step 2: Verifying if monitor user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(username)
+        assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Verify manage user can change monitor user role")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
+                                               user=username,
+                                               role='manage')
+        assert response.status_code == HTTPStatus.OK, "Status code check failed."
+        response = self.csm_user.list_csm_single_user(
+            request_type="get",
+            expect_status_code=HTTPStatus.OK,
+            user=username,
+            return_actual_response=True)
+        self.log.info("Verifying the status code returned")
+        assert HTTPStatus.OK == response.status_code
+        assert response.json()['role'] == 'manage', "Role update failed"
+        self.log.info("Verified that role is changed to manage")
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.created_users.remove(username)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32179')
+    def test_32179(self):
+        """
+        Test that admin user should able to create users with admin, manage and monitor role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating csm monitor user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
+        self.log.info("Step 2: Verifying if monitor user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(username)
+        assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.created_users.remove(username)
+        self.log.info("Step 3: Creating csm manage user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Step 4: Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(username)
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.created_users.remove(username)
+        self.log.info("Step 5: Creating csm admin user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="admin")
+        self.log.info("Step 6: Verifying if admin user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(username)
+        assert response.json()['role'] == 'admin', "User is not created with admin role"
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.created_users.remove(username)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32173')
+    def test_32173(self):
+        """
+        Test that manage user should NOT be able to change role of self to any other role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating csm manage  user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Step 2: Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(username)
+        password = CSM_REST_CFG["csm_user_manage"]["password"]
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 3: get header")
+        header = self.csm_user.get_headers(username, password)
+        roles = ['monitor', 'admin']
+        for role in roles:
+            self.log.info("Step 4: Verify manage user can not change self role to %s", role)
+            response = self.csm_user.edit_user_with_custom_login(user=username, role=role,
+                                                                 header=header)
+            assert response.status_code == const.FORBIDDEN, "Status code check failed."
+            response = self.csm_user.list_csm_single_user(
+                request_type="get",
+                expect_status_code=HTTPStatus.OK,
+                user=username,
+                return_actual_response=True)
+            self.log.info("Verifying the status code returned")
+            assert HTTPStatus.OK == response.status_code
+            assert response.json()['role'] == 'manage', "Role updated which is not expected"
+            self.log.info("Verified that role is not changed ")
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Not Deleted Successfully."
+        self.created_users.remove(username)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32175')
+    def test_32175(self):
+        """
+        Test that manage user should be able to create and delete users with manage and monitor role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating csm monitor users")
+        for _ in range(5):
+            response = self.csm_user.create_csm_user(login_as="csm_user_manage", user_type="valid",
+                                                     user_role="monitor")
+            self.log.info("Step 2: Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            user_id = response.json()["id"]
+            self.created_users.append(username)
+            assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Sending request to delete csm user %s", username)
+            response = self.csm_user.delete_csm_user(user_id)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.created_users.remove(username)
+        self.log.info("Step 3: Creating csm manage users")
+        for _ in range(5):
+            response = self.csm_user.create_csm_user(login_as="csm_user_manage", user_type="valid",
+                                                     user_role="manage")
+            self.log.info("Step 2: Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            user_id = response.json()["id"]
+            self.created_users.append(username)
+            assert response.json()['role'] == 'manage', "User is not created with manage role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Sending request to delete csm user %s", username)
+            response = self.csm_user.delete_csm_user(user_id)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.created_users.remove(username)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32176')
+    def test_32176(self):
+        """
+        Test that manage and monitor user should able to login
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating csm manage user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Step 2: Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        password = CSM_REST_CFG["csm_user_manage"]["password"]
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 3: Creating csm monitor user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
+        self.log.info("Step 4: Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        password = CSM_REST_CFG["csm_user_monitor"]["password"]
+        assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32171')
+    def test_32171(self):
+        """
+        Test that manage user should be able to change role of other manage role user 
+        (NOT self) from manage role to monitor role and not to admin role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_32171"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
+        users = []
+        self.log.info("Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        self.log.info("Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        csm_username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
+        csm_password = CSM_REST_CFG["csm_user_manage"]["password"]
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
+        self.log.info("Verified User %s got created successfully", csm_username)
+        response = self.csm_user.custom_rest_login(username=csm_username, password=csm_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        new_user = {}
+        new_user['username'] = csm_username
+        new_user['password'] = csm_password
+        self.log.info('New user dict is %s', new_user)
+        self.log.info("Creating 4 manage users")
+        for _ in range(5):
+            response = self.csm_user.create_csm_user(login_as="csm_user_manage", user_type="valid",
+                                                     user_role="manage")
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            user_id = response.json()["id"]
+            self.created_users.append(user_id)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'manage', "User is not created with manager role"
+            self.log.info("Verified User %s got created successfully", username)
+            users.append(username)
+        self.log.info("Step 1: Change role of first manage user from manage to monitor %s",
+                      csm_username)
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=csm_username,
+                                               role="monitor")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_manage",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 2: Change role of second manage user from manage to monitor")
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=users[1],
+                                               role="monitor")
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 3: Change role of third manage user from manage to monitor")
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=users[2],
+                                               role="monitor")
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 4: Change role of fourth manage user from manage to admin")
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=users[3],
+                                               role="admin")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_manage",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 4: Change role of fifth manage user from manage to admin")
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=users[4],
+                                               role="admin")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_manage",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32180')
+    def test_32180(self):
+        """
+        Admin user should be able to delete any user including self if not last admin user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_32180"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        self.log.info("Step 1: Creating csm admin users")
+        for _ in range(2):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="admin")
+            self.log.info("Verifying if admin user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'admin', "User is not created with admin role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Sending request to delete csm admin user %s", username)
+            response = self.csm_user.delete_csm_user(username)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+        self.log.info("Step 2: Creating csm manage users")
+        for _ in range(2):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="manage")
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'manage', "User is not created with manage role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Sending request to delete csm manage user %s", username)
+            response = self.csm_user.delete_csm_user(username)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+        self.log.info("Step 3: Creating csm monitor users")
+        for _ in range(2):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="monitor")
+            self.log.info("Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Sending request to delete csm monitor user %s", username)
+            response = self.csm_user.delete_csm_user(username)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+        self.log.info("Step 4: Sending request to delete self admin user")
+        response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("admin"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("Step 6: Perform GET users operation")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=const.SUCCESS_STATUS,
+            return_actual_response=True,
+            sort_by="role")
+        self.log.info("Response : %s", response)
+        self.log.info("Verifying response code 200 was returned for get users")
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+    
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32182')
+    def test_32182(self):
+        """
+        Test that rest response gives proper code/msg for unavailable search
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: List user for unavailable user")
+        user = "dummy_user" + str(int(time.time()))
+        response = self.csm_user.list_csm_users(expect_status_code=200, username=user,
+                                                return_actual_response=True)
+        if response:
+            assert response.status_code == HTTPStatus.OK, "Status code check failed."
+            assert len(response.json()['users']) == 0, "Unavailable user listed"
+            self.log.info("Unavailable user is not listed")
+        else:
+            self.log.error("Unexpected response received")
+        self.log.info("Verified: List user for unavailable user")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32183')
+    def test_32183(self):
+        """
+        List users with username and role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: List existing csm users")
+        roles = ['manage', 'monitor', 'admin']
+        new_users = [[], [], []]
+        existing_users = [[], [], []]
+        response = self.csm_user.list_csm_users(expect_status_code=HTTPStatus.OK,
+                                                return_actual_response=True)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+        for item in response.json()["users"]:
+            existing_users[roles.index(item["role"])].append(item["username"])
+
+        self.log.info("Step 2: Create csm users")
+        for _ in range(10):
+            self.log.info("Creating csm user")
+            role = roles[random.randrange(0, 3)]
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role=role)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            new_users[roles.index(role)].append(response.json()["username"])
+            self.created_users.append(response.json()["username"])
+
+        self.log.info("Step 3: List users with roles and cross check")
+        for role in roles:
+            response = self.csm_user.list_csm_users(expect_status_code=HTTPStatus.OK, role=role,
+                                                    return_actual_response=True)
+            assert len(response.json()["users"]) == len(existing_users[roles.index(role)]) + \
+                   len(new_users[roles.index(role)]), "users count not matching in list users"
+            for item in response.json()["users"]:
+                if item["username"] not in existing_users[roles.index(role)] and \
+                        (item["username"] not in new_users[roles.index(role)]):
+                    assert False, "Listed user name is not present"
+        self.log.info("Verified: List users with roles and cross check")
+
+        self.log.info("Step 4: List users with username and it should give correct data")
+        for role in roles:
+            user_list = new_users[roles.index(role)]
+            for user in user_list:
+                response = self.csm_user.list_csm_users(expect_status_code=HTTPStatus.OK,
+                                                        username=user, return_actual_response=True)
+                if response:
+                    assert response.status_code == HTTPStatus.OK, "Status code check failed."
+                    assert len(response.json()['users']) == 1, "User not listed"
+                    self.log.info("User is listed")
+                else:
+                    self.log.error("Unexpected response received")
+        self.log.info("Verified: List users with username and it should give correct data")
+
+        self.log.info("Step 5: List users with username & role and it should give correct data")
+        for role in roles:
+            user_list = new_users[roles.index(role)]
+            for user in user_list:
+                response = self.csm_user.list_csm_users(expect_status_code=HTTPStatus.OK,
+                                                        username=user, role=role,
+                                                        return_actual_response=True)
+                if response:
+                    assert response.status_code == HTTPStatus.OK, "Status code check failed."
+                    assert len(response.json()['users']) == 1, \
+                        "User not listed with username & role"
+                    assert response.json()["users"][0]["username"] == user, "Different user listed"
+                    self.log.info("User is listed")
+                else:
+                    self.log.error("Unexpected response received")
+        self.log.info("Verified: List users with username & role and it should give correct data")
+
+        self.log.info("Step 6: List users with substring of username")
+        e_users = [usr for sub in existing_users for usr in sub]
+        n_users = [usr for sub in new_users for usr in sub]
+        for role in roles:
+            user_list = new_users[roles.index(role)]
+            for user in user_list:
+                if len(user) > 3:
+                    user_sub_string = [user[:3], user[-3:]]
+                    for uname in user_sub_string:
+                        response = self.csm_user.list_csm_users(expect_status_code=HTTPStatus.OK,
+                                                                username=uname,
+                                                                return_actual_response=True)
+                        for item in response.json()["users"]:
+                            assert uname in item["username"], "sub string not present in username"
+                        for item in response.json()["users"]:
+                            if item["username"] not in e_users and \
+                                    (item["username"] not in n_users):
+                                assert False, "Listed user name is not present"
+        self.log.info("Verified: List users with substring of username")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32181')
+    def test_32181(self):
+        """
+        Test that any user with any role should be able to delete themselves, change their own password
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_32181"]
+        passwd = test_cfg["current_password"]
+        new_password = CSM_REST_CFG["csm_user_manage"]["password"]
+        self.log.info("Step 1: Creating csm admin users")
+        for _ in range(4):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="admin",user_password=passwd)
+            self.log.info("Verifying if admin user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'admin', "User is not created with admin role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
+            self.log.info("Verify password change for users")
+            response = self.csm_user.edit_user_with_custom_login(user=username,
+                                                   password=new_password,
+                                                   current_password=passwd,header=header)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=username, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("Sending request to delete csm admin user %s", username)
+            response = self.csm_user.delete_user_with_header(username,header)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+        self.log.info("Step 2: Creating csm manage users")
+        for _ in range(4):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="manage",user_password=passwd)
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'manage', "User is not created with manage role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
+            self.log.info("Verify password change for users")
+            response = self.csm_user.edit_user_with_custom_login(user=username,
+                                                   password=new_password,
+                                                   current_password=passwd,header=header)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=username, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("Sending request to delete csm manage user %s", username)
+            response = self.csm_user.delete_user_with_header(username,header)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+        self.log.info("Step 3: Creating csm monitor users")
+        for _ in range(4):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="monitor",user_password=passwd)
+            self.log.info("Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+            self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
+            self.log.info("Verify password change for users")
+            response = self.csm_user.edit_user_with_custom_login(user=username,
+                                                   password=new_password,
+                                                   current_password=passwd,header=header)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=username, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("Sending request to delete csm monitor user %s", username)
+            response = self.csm_user.delete_user_with_header(username,header)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(username)
+            self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest     
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32242')
+    def test_32242(self):
+        """
+        Create users with same email
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating a valid csm user")
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="manage", user_email="manage_user@seagate.com")
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username1 = response.json()["username"]
+        self.created_users.append(username1)
+        self.log.info("Step 2: Creating a valid csm user with existing user email")
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="manage", user_email="manage_user@seagate.com")
+        assert response.status_code == HTTPStatus.CREATED.value, "Status code check failed"
+        username2 = response.json()["username"]
+        self.created_users.append(username2)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32241')
+    def test_32241(self):
+        """
+        Update users email to another users existing email
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating a valid csm user")
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="manage", user_email="manage_user@seagate.com")
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username1 = response.json()["username"]
+        self.created_users.append(username1)
+        self.log.info("Step 2: Creating a valid csm user with unique email")
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="manage", user_email="manage_user1@seagate.com")
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username2 = response.json()["username"]
+        self.created_users.append(username2)
+        response = self.csm_user.edit_csm_user(user=username2,
+                                               email="manage_user@seagate.com")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Verified: Email update working for existing email")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32616')
+    def test_32616(self):
+        """
+        Login and update using deleted user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating a valid csm user: manage")
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="manage")
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username1 = response.json()["username"]
+        self.created_users.append(username1)
+        self.log.info("Step 2: Creating a valid csm user: admin")
+        user_pass = "Testadmin@123"
+        response = self.csm_user.create_csm_user(
+            user_type="valid", user_role="admin", user_password=user_pass)
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username2 = response.json()["username"]
+        self.created_users.append(username2)
+        self.log.info("Step 3: Get header for admin user")
+        header = self.csm_user.get_headers(username2, user_pass)
+        self.log.info("Step 4: Sending request to delete csm user %s", username2)
+        response = self.csm_user.delete_csm_user(username2)
+        assert response.status_code == HTTPStatus.OK, "User Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(username2)
+        self.log.info("Step 5: Try login for deleted user")
+        response = self.csm_user.custom_rest_login(username=username2, password=user_pass)
+        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Login for deleted user worked"
+        self.log.info("Verified: Login with deleted user not working")
+        self.log.info("Step 6: Verify user role can be changed with deleted user header")
+        response = self.csm_user.edit_user_with_custom_login(user=username1, role='monitor',
+                                                             header=header)
+        assert response.status_code == HTTPStatus.UNAUTHORIZED, "Update with deleted user worked"
+        self.log.info("Verified: Update with deleted user not working")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32174')
+    def test_32174(self):
+        """
+        Test that manage user should be able to reset password of users with manage 
+        and monitor roles , S3 Account user and self password also
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_32174"]
+        new_password = test_cfg["new_password"]
+        current_password = CSM_REST_CFG["csm_user_manage"]["password"]
+        self.log.info("Creating a csm manage user and fetch its password for further use")
+        response = self.csm_user.create_csm_user(user_type="valid", 
+                                                 user_role="manage", user_password=current_password)
+        self.log.info("Verifying if manage user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        self.created_users.append(username)
+        self.log.info("users list is %s", self.created_users)
+        assert response.json()['role'] == 'manage', "User is not created with manage role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=current_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        new_user = {}
+        new_user['username'] = username
+        new_user['password'] = current_password
+        self.log.info("Step 1: Creating 2 other csm manage users")
+        for _ in range(2):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="manage",
+                                                     user_password=current_password)
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'manage', "User is not created with manage role"
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 2: Creating 3 csm monitor users")
+        for _ in range(3):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="monitor",
+                                                     user_password=current_password)
+            self.log.info("Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.created_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            assert response.json()['role'] == 'monitor', "User is not created with monitor role"
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Creating 3 s3 account users")
+        for _ in range(3):
+            response = self.s3_accounts.create_s3_account(user_type="valid")
+            self.log.info("Verifying if s3 user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
+            username = response.json()["account_name"]
+            self.created_s3_users.append(username)
+            self.log.info("users list is %s", self.created_users)
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 4: Login with first manage user and change password for second")
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=self.created_users[1],
+                                               password=new_password,
+                                               current_password=current_password)
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        response = self.csm_user.custom_rest_login(username=self.created_users[1], password=new_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 5: Login with first manage user and change password for third")
+        response = self.csm_user.edit_csm_user(login_as=new_user,
+                                               user=self.created_users[2],
+                                               password=new_password,
+                                               current_password=current_password)
+        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        response = self.csm_user.custom_rest_login(username=self.created_users[2], password=new_password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 6: Login with first manage user and change password for all monitor users")
+        for usr in self.created_users[2:6]:
+            response = self.csm_user.edit_csm_user(login_as=new_user,
+                                                   user=usr,
+                                                   password=new_password,
+                                                   current_password=current_password)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=usr, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
+        payload = {"password": new_password, "current_password": current_password}
+        for usr in self.created_s3_users:
+            response = self.s3user.edit_s3_account_user_invalid_password(
+                username=usr,
+                payload=json.dumps(payload),
+                login_as=new_user)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32178')
+    def test_32178(self):
+        """
+        Admin user should able to reset other users role ,email and password
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_usr = manage_usr = monitor_usr = []
+        test_cfg = self.csm_conf["test_32178"]
+        password = test_cfg["current_password"]
+        new_password = CSM_REST_CFG["csm_user_manage"]["password"]
+        self.log.info("Step 1: Creating 5 admin users")
+        for _ in range(5):
+            response = self.csm_user.create_csm_user(user_role="admin",
+                                                     user_type="valid")
+            self.log.info("Verifying if users was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            admin_usr.append(username)
+            self.created_users.append(username)
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 2: Creating 10 manage users")
+        for _ in range(10):
+            response = self.csm_user.create_csm_user(user_role="manage",
+                                                     user_type="valid")
+            self.log.info("Verifying if users was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            manage_usr.append(username)
+            self.created_users.append(username)
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Creating 10 monitor users")
+        for _ in range(10):
+            response = self.csm_user.create_csm_user(user_role="monitor",
+                                                     user_type="valid")
+            self.log.info("Verifying if users was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            monitor_usr.append(username)
+            self.created_users.append(username)
+            self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 4: change role of first 5 manage users to monitor")
+        for usr in manage_usr[0:6]:
+            self.log.info("Editing role for %s manage user", usr)
+            response = self.csm_user.edit_csm_user(user=usr,
+                                                   role="monitor")
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 5: change role of first 5 monitor users to manage")
+        for usr in monitor_usr[0:6]:
+            self.log.info("Editing role for %s monitor user", usr)
+            response = self.csm_user.edit_csm_user(user=usr,
+                                                   role="manage")
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 6: change role of first 2 admin users to manage")
+        self.log.info("Editing role for %s admin user", usr)
+        for usr in admin_usr[0:3]:
+            response = self.csm_user.edit_csm_user(user=usr,
+                                                   role="manage")
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Step 7: Change passwords and emails of all 10 monitor users and try login")
+        for usr in manage_usr:
+            self.log.info("Editing password and email for %s manage user", usr)
+            response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
+                                                   password=new_password, current_password=password)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=usr, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 8: Change passwords and emails of all 10 manage users and try login")
+        for usr in monitor_usr:
+            self.log.info("Editing password and email for %s monitor user", usr)
+            response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
+                                                   password=new_password, current_password=password)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=usr, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Step 9: Change passwords and emails of all 3 admin users and try login")
+        for usr in admin_usr[2:6]:
+            self.log.info("Editing password and email for %s admin user", usr)
+            response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
+                                                   password=new_password, current_password=password)
+            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+            response = self.csm_user.custom_rest_login(username=usr, password=new_password)
+            self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-32177')
+    def test_32177(self):
+        """
+        Verify the limit to create 100 users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        roles = ['monitor', 'admin', 'manage']
+        new_users = [[], [], []]
+        self.log.info("Deleting all csm users except predefined ones...")
+        self.config.delete_csm_users()
+        deleted_users = []
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 1: Listing all csm users")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=const.SUCCESS_STATUS,
+            return_actual_response=True)
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == const.SUCCESS_STATUS
+        user_data = response.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing CSM users count: %s", existing_user)
+        self.log.info("Max csm users : %s", const.MAX_CSM_USERS)
+        user_creation_count = const.MAX_CSM_USERS - existing_user
+        self.log.info("New users to create: %s", user_creation_count)
+        self.log.info("Step 2: Creating users with random role")
+        for count in range(user_creation_count):
+            self.log.info("Creating csm user %s", count)
+            role = roles[random.randrange(0, 3)]
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role=role)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all random csm users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 3: Creating %s admin users and deleting it "
+                      "except last admin", user_creation_count)
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="admin")
+            self.log.info("Verifying if admin user was created successfully")
+            assert response.status_code == HTTPStatus.CREATED.value
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        self.log.info("Deleting all csm admin users except predefined ones...")
+        deleted_users = []
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 4: Creating %s manage users and deleting it except "
+                      "default manage user", user_creation_count)
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="manage")
+            self.log.info("Verifying if manage user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        deleted_users = []
+        self.log.info("Deleting all csm manage users except predefined ones...")
+        for usr in self.created_users:
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("Step 5: Creating %s monitor users and deleting it "
+                      "except default monitor user", user_creation_count)
+        for _ in range(user_creation_count):
+            response = self.csm_user.create_csm_user(user_type="valid",
+                                                     user_role="monitor")
+            self.log.info("Verifying if monitor user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            username = response.json()["username"]
+            self.log.info("Verified User %s got created successfully", username)
+            self.created_users.append(response.json()["username"])
+        deleted_users = []
+        self.log.info("Deleting all csm monitor users except predefined ones...")
+        for usr in self.created_users:
+            self.log.info("Deleting user %s", usr)
+            response = self.csm_user.delete_csm_user(usr)
+            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            deleted_users.append(usr)
+        for usr in deleted_users:
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(usr)
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("##### Test completed -  %s #####", test_case_name)

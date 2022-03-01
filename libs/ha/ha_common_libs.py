@@ -34,7 +34,8 @@ from commons.exceptions import CTException
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
-from config import CMN_CFG, HA_CFG, S3_CFG
+from config import CMN_CFG, HA_CFG
+from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
@@ -58,8 +59,7 @@ class HALibs:
             "QA_VM_POOL_ID", pswdmanager.decrypt(
                 HA_CFG["vm_params"]["uname"]))
         self.vm_password = os.getenv(
-            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["passwd"]))
+            "QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
         self.bmc_user = CMN_CFG["bmc"]["username"]
         self.bmc_pwd = CMN_CFG["bmc"]["password"]
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]
