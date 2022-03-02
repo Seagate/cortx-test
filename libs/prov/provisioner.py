@@ -56,6 +56,7 @@ class Provisioner:
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         try:
+            LOGGER.debug("JENKINS URL %s", jen_url)
             jenkins_server_obj = jenkins.Jenkins(
                 jen_url, username=username, password=password)
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
