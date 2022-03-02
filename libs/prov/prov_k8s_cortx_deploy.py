@@ -61,7 +61,7 @@ class ProvDeployK8sCortxLib:
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
-        self.service_type = os.getenv("service_type", self.deploy_cfg["service_type"])
+        self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -394,7 +394,7 @@ class ProvDeployK8sCortxLib:
         cortx_server_image = kwargs.get("cortx_server_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
-        service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
+        service_type = kwargs.get("SERVICE_TYPE", self.deploy_cfg['service_type'])
         LOGGER.debug("Service type is %s", service_type)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
