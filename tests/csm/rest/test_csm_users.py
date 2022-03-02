@@ -494,7 +494,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert (self.csm_user.create_verify_and_delete_csm_user_creation(
+        assert (self.csm_obj.create_verify_and_delete_csm_user_creation(
             user_type="valid",
             user_role="manage",
             expect_status_code=const.SUCCESS_STATUS_FOR_POST))
@@ -512,7 +512,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_verify_and_delete_csm_user_creation(
+        assert self.csm_obj.create_verify_and_delete_csm_user_creation(
             user_type="invalid", user_role="manage",
             expect_status_code=const.BAD_REQUEST)
         self.log.info(
@@ -530,7 +530,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_verify_and_delete_csm_user_creation(
+        assert self.csm_obj.create_verify_and_delete_csm_user_creation(
             user_type="missing",
             user_role="manage",
             expect_status_code=const.BAD_REQUEST)
@@ -565,7 +565,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        assert self.csm_user.create_verify_and_delete_csm_user_creation(
+        assert self.csm_obj.create_verify_and_delete_csm_user_creation(
             user_type="duplicate",
             user_role="manage",
             expect_status_code=const.CONFLICT)
@@ -3319,7 +3319,7 @@ class TestCsmUser():
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
 
         self.log.info("Step 5: Verifying edit user functionality for other monitor user")
-        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+        response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor",
 
                                                user=username,
                                                password=CSM_REST_CFG["csm_user_monitor"][
@@ -3333,7 +3333,7 @@ class TestCsmUser():
                                                             username), "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 6: Verifying edit user functionality for self monitor user")
-        response = self.csm_user.edit_csm_user(login_as=new_monitor_user,
+        response = self.csm_obj.edit_csm_user(login_as=new_monitor_user,
                                                user=username,
                                                password=test_cfg["current_password"],
                                                current_password=password)
@@ -4805,8 +4805,8 @@ class TestCsmUser():
         assert response.json()['role'] == 'manage', "User is not created with manage role"
 
         self.log.info("Verified User %s got created successfully", csm_username)
-        response = self.csm_user.custom_rest_login(username=csm_username, password=csm_password)
-        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        response = self.csm_obj.custom_rest_login(username=csm_username, password=csm_password)
+        self.csm_obj.check_expected_response(response, HTTPStatus.OK)
 
         new_user = {}
         new_user['username'] = csm_username
@@ -4815,7 +4815,7 @@ class TestCsmUser():
         self.log.info("Creating 4 manage users")
 
         for _ in range(5):
-            response = self.csm_user.create_csm_user(login_as="csm_user_manage", user_type="valid",
+            response = self.csm_obj.create_csm_user(login_as="csm_user_manage", user_type="valid",
 
                                                      user_role="manage")
             self.log.info("Verifying if manage user was created successfully")
@@ -4829,7 +4829,7 @@ class TestCsmUser():
             users.append(username)
         self.log.info("Step 1: Change role of first manage user from manage to monitor %s",
                       csm_username)
-        response = self.csm_user.edit_csm_user(login_as=new_user, user=csm_username,
+        response = self.csm_obj.edit_csm_user(login_as=new_user, user=csm_username,
                                                role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
         assert response.json()["error_code"] == str(resp_error_code), (
