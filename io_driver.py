@@ -1,23 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 #
 """
 IOdriver for scheduling and managing all tests.
@@ -93,7 +90,8 @@ def parse_args():
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
                         help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
-
+    parser.add_argument("-nn", "--number-of-nodes", type=int, default=1,
+                        help="number of nodes in k8s system")
     return parser.parse_args()
 
 
@@ -283,7 +281,10 @@ def main(options):
     setup_environment()
 
     test_input = options.test_input
-    test_input = yaml_parser.test_parser(test_input)  # Read test data from test_input yaml.
+    test_input = yaml_parser.test_parser(test_input, options.number_of_nodes)  # Read test data
+    # from
+    # test_input
+    # yaml.
     for key, value in test_input.items():
         logger.info("Test No : %s", key)
         logger.info("Test Values : %s", value)
