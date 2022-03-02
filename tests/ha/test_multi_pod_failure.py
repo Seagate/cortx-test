@@ -607,7 +607,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35792")
     @CTFailOn(error_handler)
-    def test_cont_ios_during_server_data_kpods_down_unsafe(self):
+    def test_cont_ios_during_server_data_kpods_down(self):
         """
         Test to verify continuous IOs while k server and data pods are failing one by one by delete
         deployment
@@ -623,7 +623,7 @@ class TestMultiPodFailure:
         event = threading.Event()
         output = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 10, 'skipcleanup': False, 'output': output}
+                'nclients': 1, 'nsamples': 7, 'skipcleanup': False, 'output': output}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -632,9 +632,9 @@ class TestMultiPodFailure:
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown the server pods by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_pods = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
-        server_pod_name_list = random.sample(pod_list, self.kvalue)
+        server_pod_name_list = random.sample(server_pods, self.kvalue)
         for count, pod_name in enumerate(server_pod_name_list):
             count += 1
             pod_data = list()
@@ -645,7 +645,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.restore_pod = self.deploy = True
@@ -653,12 +653,12 @@ class TestMultiPodFailure:
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
-        LOGGER.info("Step 2: Successfully deleted %s data pods", self.kvalue)
+        LOGGER.info("Step 2: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 3: Shutdown the data pods by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        data_pods = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
-        data_pod_name_list = random.sample(pod_list, self.kvalue)
+        data_pod_name_list = random.sample(data_pods, self.kvalue)
         for count, pod_name in enumerate(data_pod_name_list):
             count += 1
             pod_data = list()
@@ -669,7 +669,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.pod_dict[pod_name] = pod_data
@@ -677,6 +677,7 @@ class TestMultiPodFailure:
             event.clear()
         LOGGER.info("Step 3: Successfully deleted %s data pods", self.kvalue)
 
+        pod_list = server_pods + data_pods
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
@@ -702,7 +703,7 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of remaining pods are in online state")
 
-        LOGGER.info("Verify status for In-flight WRITEs-READs-verify while server pods are "
+        LOGGER.info("Step 7: Verify status for In-flight WRITEs-READs-verify while server pods are "
                     "down")
         thread.join()
         responses = dict()
@@ -711,21 +712,21 @@ class TestMultiPodFailure:
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Expected all pass, But Logs which contain "
+        assert_utils.assert_false(len(resp[1]), "Expected all pass, But Logs which contain "
                                                 f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
 
-        LOGGER.info("Step 1: Successfully completed WRITEs-READs-verify in background")
+        LOGGER.info("Step 7: Successfully completed WRITEs-READs-verify running in background")
 
-        LOGGER.info("Step 7: Create multiple buckets and run IOs")
+        LOGGER.info("Step 8: Create multiple buckets and run IOs")
         self.test_prefix = 'test-35792-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=2,
                                                     nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify continuous IOs while k server and data pods are failing "
                     "one by one")
@@ -734,7 +735,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35793")
     @CTFailOn(error_handler)
-    def test_chunk_upload_during_data_kpods_down_unsafe(self):
+    def test_chunk_upload_during_data_kpods_down(self):
         """
         Test chunk upload during k data pods going down using delete deployment (using jclient)
         """
@@ -791,7 +792,7 @@ class TestMultiPodFailure:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
             self.restore_pod = self.deploy = True
@@ -875,7 +876,8 @@ class TestMultiPodFailure:
         self.test_prefix = 'test-35793'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, nclients=2, nsamples=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Successfully completed IOs.")
 
