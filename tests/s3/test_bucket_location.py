@@ -24,6 +24,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -32,6 +33,7 @@ from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from config.s3 import S3_CFG
+from config import CMN_CFG
 
 
 class TestBucketLocation:
@@ -101,10 +103,16 @@ class TestBucketLocation:
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equals(
-            resp[1]["LocationConstraint"],
-            "us-west-2",
-            resp[1])
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 2 : Retrieved bucket location on existing bucket")
         self.log.info(
@@ -192,19 +200,31 @@ class TestBucketLocation:
         self.log.info(
             "Step 2: Verifying get bucket location with account1")
         resp = self.s3_test_obj.bucket_location(self.bucket_name)
-        assert_utils.assert_equals(
-            "us-west-2",
-            resp[1]["LocationConstraint"],
-            resp[1])
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 2: Verified get bucket location with account1")
         self.log.info(
             "Step 3 : Verifying get bucket location with account2 login")
         resp = s3_obj_2.bucket_location(self.bucket_name)
-        assert_utils.assert_equals(
-            "us-west-2",
-            resp[1]["LocationConstraint"],
-            resp[1])
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 3 : Verified get bucket location with account2 login")
         self.log.info(
