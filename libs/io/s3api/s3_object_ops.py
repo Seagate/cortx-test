@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,10 +10,8 @@
 # GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
-#
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 #
 
 """Python Library to perform object operations using boto3 module."""
@@ -27,7 +22,7 @@ from typing import List
 
 from libs.io.s3api.s3_restapi import S3RestApi
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class S3Object(S3RestApi):
@@ -45,7 +40,7 @@ class S3Object(S3RestApi):
         async with self.get_client() as s3client:
             with open(file_path, "rb") as body:
                 response = await s3client.put_object(Body=body, Bucket=bucket, Key=key)
-            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.upload_object.__name__, bucket, key,
+            logger.info("%s s3://%s/%s Response: %s", S3Object.upload_object.__name__, bucket, key,
                         response)
             return response
 
@@ -60,7 +55,7 @@ class S3Object(S3RestApi):
             paginator = s3client.get_paginator('list_objects')
             async for result in paginator.paginate(Bucket=bucket):
                 objects = [c for c in result.get('Contents', [])]
-                LOGGER.info("%s s3://%s Objects: %s", S3Object.list_objects.__name__, bucket,
+                logger.info("%s s3://%s Objects: %s", S3Object.list_objects.__name__, bucket,
                             objects)
                 return objects
 
@@ -74,7 +69,7 @@ class S3Object(S3RestApi):
         """
         async with self.get_client() as s3client:
             response = await s3client.delete_object(Bucket=bucket, Key=key)
-            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.delete_object.__name__, bucket,
+            logger.info("%s s3://%s/%s Response: %s", S3Object.delete_object.__name__, bucket,
                         key, response)
             return response
 
@@ -87,10 +82,10 @@ class S3Object(S3RestApi):
         :return: Response of delete object.
         """
         objects = [{'Key': key} for key in keys]
-        LOGGER.info("Deleting %s", keys)
+        logger.info("Deleting %s", keys)
         async with self.get_client() as s3client:
             response = await s3client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
-            LOGGER.info("%s s3://%s Response: %s", S3Object.delete_objects.__name__, bucket,
+            logger.info("%s s3://%s Response: %s", S3Object.delete_objects.__name__, bucket,
                         response)
             return response
 
@@ -104,7 +99,7 @@ class S3Object(S3RestApi):
         """
         async with self.get_client() as s3client:
             response = await s3client.head_object(Bucket=bucket, Key=key)
-            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.head_object.__name__, bucket, key,
+            logger.info("%s s3://%s/%s Response: %s", S3Object.head_object.__name__, bucket, key,
                         response)
             return response
 
@@ -119,7 +114,7 @@ class S3Object(S3RestApi):
         """
         async with self.get_client() as s3client:
             response = await s3client.get_object(Bucket=bucket, Key=key, Range=ranges)
-            LOGGER.info("%s s3://%s/%s Response: %s", S3Object.get_object.__name__, bucket, key,
+            logger.info("%s s3://%s/%s Response: %s", S3Object.get_object.__name__, bucket, key,
                         response)
             return response
 
@@ -136,17 +131,17 @@ class S3Object(S3RestApi):
         """
         async with self.get_client() as s3client:
             response = await s3client.get_object(Bucket=bucket, Key=key)
-            LOGGER.info("%s s3://%s/%s Response %s", S3Object.download_object.__name__, bucket, key,
+            logger.info("%s s3://%s/%s Response %s", S3Object.download_object.__name__, bucket, key,
                         response)
             async with response['Body'] as stream:
                 chunk = await stream.read(chunk_size)
-                LOGGER.debug(chunk)
+                logger.debug(chunk)
                 while len(chunk) > 0:
                     with open(file_path, "wb+") as file_obj:
                         file_obj.write(chunk)
                     chunk = await stream.read(chunk_size)
         if os.path.exists(file_path):
-            LOGGER.info("%s s3://%s/%s Path: %s Response %s", S3Object.download_object.__name__,
+            logger.info("%s s3://%s/%s Path: %s Response %s", S3Object.download_object.__name__,
                         bucket, key, file_path, response)
         return response
 
@@ -165,7 +160,7 @@ class S3Object(S3RestApi):
             response = await s3client.copy_object(Bucket=des_bucket,
                                                   CopySource=f'/{src_bucket}/{src_key}',
                                                   Key=des_key, **kwargs)
-            LOGGER.info("%s s3://%s/%s to s3://%s/%s Response %s", S3Object.copy_object.__name__,
+            logger.info("%s s3://%s/%s to s3://%s/%s Response %s", S3Object.copy_object.__name__,
                         src_bucket, src_key, des_bucket, des_key, response)
             return response
 
@@ -180,16 +175,27 @@ class S3Object(S3RestApi):
         """
         async with self.get_client() as s3client:
             response = await s3client.get_object(Bucket=bucket, Key=key)
-            LOGGER.info("%s s3://%s/%s Response %s", S3Object.get_s3object_checksum.__name__,
+            logger.info("%s s3://%s/%s Response %s", S3Object.get_s3object_checksum.__name__,
                         bucket, key, response)
             async with response['Body'] as stream:
                 chunk = await stream.read(chunk_size)
                 file_hash = hashlib.sha256()
-                LOGGER.debug(chunk)
+                logger.debug(chunk)
                 while len(chunk) > 0:
                     file_hash.update(chunk)
                     chunk = await stream.read(chunk_size)
         sha256_digest = file_hash.hexdigest()
-        LOGGER.info("%s s3://%s/%s SHA-256 %s", S3Object.get_s3object_checksum.__name__, bucket,
+        logger.info("%s s3://%s/%s SHA-256 %s", S3Object.get_s3object_checksum.__name__, bucket,
                     key, sha256_digest)
         return sha256_digest
+
+    @staticmethod
+    def checksum_file(file_path, chunk_size=1024*1024):
+        with open(file_path, 'rb') as f_obj:
+            file_hash = hashlib.sha256()
+            chunk = f_obj.read(chunk_size)
+            logger.debug(chunk)
+            while len(chunk) > 0:
+                file_hash.update(chunk)
+                chunk = f_obj.read(chunk_size)
+        return file_hash.hexdigest()
