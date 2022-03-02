@@ -96,10 +96,11 @@ def convert_to_time_delta(time):
     return datetime_obj
 
 
-def test_parser(yaml_file):
+def test_parser(yaml_file, number_of_nodes):
     """
     parse a test yaml file
     :param yaml_file: accepts and parses a test YAML file
+    :number_of nodes: accepts number of nodes to calculate sessions (default=1)
     :return python dictionary containing file contents
     """
     size_types = ["object_size", "part_size"]
@@ -133,5 +134,7 @@ def test_parser(yaml_file):
             data["part_size"] = {}
             data["part_size"]["start"] = 0
             data["part_size"]["end"] = 0
+        if 'sessions_per_node' in data.keys():
+            data['sessions'] = data['sessions_per_node'] * number_of_nodes
     logger.debug("test object %s: ", s3_io_test)
     return s3_io_test
