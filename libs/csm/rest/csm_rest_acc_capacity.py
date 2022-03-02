@@ -132,7 +132,7 @@ class AccountCapacity(RestTestLib):
 
         return True
 
-    def create_s3_account(self, s3testlib=False, s3acl=False):
+    def create_s3_account_for_capacity(self, s3testlib=False, s3acl=False):
         resp = RestS3user().create_s3_account()
         if resp.status_code == HTTPStatus.CREATED:
             access_key = resp.json()["access_key"]

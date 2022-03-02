@@ -29,6 +29,7 @@ import pytest
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -36,7 +37,7 @@ from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
-from config.s3 import S3_CFG
+from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
@@ -12552,7 +12553,10 @@ _date."""
             "Step 5 & 6: Account switch"
             "Get bucket location - run from account1")
         resp = s3_bkt_tag_obj_1.bucket_location(self.bucket_name)
-        assert resp["LocationConstraint"] == "us-west-2", resp
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert resp["LocationConstraint"] == "default", resp
+        else:
+            assert resp["LocationConstraint"] == "us-west-2", resp
         self.log.info(
             "Step 5 & 6: Account switch"
             "Get bucket location - run from account1")

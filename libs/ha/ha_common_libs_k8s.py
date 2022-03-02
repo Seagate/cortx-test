@@ -1173,10 +1173,11 @@ class HAK8s:
                                                         common_const.CLUSTER_CONF_PATH,
                                                         common_const.LOCAL_CONF_PATH,
                                                         common_const.HAX_CONTAINER_NAME)
-        resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False, exc=False)
-        if not resp_node[0]:
+        try:
+            resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False)
+        except IOError as error:
             LOGGER.error("Error: Not able to get cluster config file")
-            return False, resp_node
+            return False, error
         LOGGER.debug("%s response %s ", conf_cp, resp_node)
         local_conf = os.path.join(os.getcwd(), "cluster.conf")
         if os.path.exists(local_conf):

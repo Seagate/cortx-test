@@ -24,6 +24,7 @@ import json
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons import commands
 from commons.ct_fail_on import CTFailOn
@@ -31,6 +32,7 @@ from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3_CFG
+from config import CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 
 
@@ -206,7 +208,10 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_bucket_location_2335(self):
         """Verification of bucket location using aws."""
-        location = '"LocationConstraint": "US"'
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            location = '"LocationConstraint": "default"'
+        else:
+            location = '"LocationConstraint": "US"'
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.aws_buckets_list.append(self.bucket_name)

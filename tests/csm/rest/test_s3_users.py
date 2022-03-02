@@ -33,8 +33,8 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.params import TEST_DATA_FOLDER
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import s3_misc
+from libs.csm.csm_interface import csm_api_factory
 from config import CSM_REST_CFG
 
 
@@ -57,7 +57,7 @@ class TestS3user():
         cls.buckets_created = []
         cls.account_created = []
         cls.iam_users_created = []
-        cls.s3user = RestS3user()
+        cls.s3user = csm_api_factory("rest")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
         if not system_utils.path_exists(TEST_DATA_FOLDER):
@@ -479,7 +479,7 @@ class TestS3user():
         self.log.info(
             "Providing invalid password for s3 account %s in Patch request", account_name)
 
-        response = self.s3user.edit_s3_account_user_invalid_password(
+        response = self.s3user.edit_s3_account(
             username=account_name,
             payload=json.dumps(payload))
 

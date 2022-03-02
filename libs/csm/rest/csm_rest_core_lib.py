@@ -77,7 +77,7 @@ class RestClient:
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)
         self.log.debug("Parameters : %s", params)
-        self.log.debug("json_dict: %s", json_dict)
+        self.log.debug("json_dict: %s", json.dumps(json_dict))
         # TODO: Need to be verified and fix by CSM team. Temporary fix for s3 failures
         if CMN_CFG.get("product_family") == constants.PROD_FAMILY_LC:
             # To Resolve {'error_code': '4099', 'message': 'Invalid request message received.',
