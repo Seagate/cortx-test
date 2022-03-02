@@ -26,13 +26,14 @@ import random
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config.s3 import S3_CFG
+from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -741,7 +742,10 @@ class TestBucketWorkflowOperations:
         resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert resp[1]["LocationConstraint"] == "default", resp[1]
+        else:
+            assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
         self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Verification of bucket location")
 

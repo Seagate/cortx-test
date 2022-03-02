@@ -71,6 +71,19 @@ aws-configure:
 	aws configure set output "json"
 	@echo "### configured awscli. ###"
 
+aws-configure-rgw:
+
+	@echo "### configure awscli. ###"
+	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
+	aws configure set plugins.endpoint awscli_plugin_endpoint
+	aws configure set s3.endpoint_url $(endpoint)
+	aws configure set s3api.endpoint_url $(endpoint)
+	aws configure set default.ca_bundle $(CA_CRT)
+	aws configure set aws_access_key_id $(ACCESS)
+	aws configure set aws_secret_access_key $(SECRET)
+	aws configure set region "default"
+	aws configure set output "json"
+	@echo "### configured awscli. ###"
 
 s3cmd-install:
 
