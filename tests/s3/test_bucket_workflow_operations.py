@@ -62,7 +62,6 @@ class TestBucketWorkflowOperations:
         if not system_utils.path_exists(self.folder_path):
             system_utils.make_dirs(self.folder_path)
         self.rest_obj = S3AccountOperations()
-        self.revert_acl = False
         self.account_list = []
         self.bucket_list = []
         self.log.info("ENDED: Setup test operations")
@@ -71,8 +70,6 @@ class TestBucketWorkflowOperations:
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
             if bucket_name in bucket_list:
-                if self.revert_acl:
-                    self.acl_obj.put_bucket_acl(bucket_name, acl="private")
                 resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
@@ -949,7 +946,6 @@ class TestBucketWorkflowOperations:
         resp = self.acl_obj.put_bucket_acl(
             self.bucket_name, grant_full_control="id={}".format(
                 create_account[1]["canonical_id"]))
-        self.revert_acl = True
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Full-control permission was successfully assigned to account 2")
