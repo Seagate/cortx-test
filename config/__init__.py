@@ -124,7 +124,6 @@ CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
     S3_CFG["region"] = "default"
 CMN_CFG.update(S3_CFG)
-
 JMETER_CFG = configmanager.get_config_wrapper(
     fpath=CSM_CONFIG, config_key="JMeterConfig", target=target, target_key="csm")
 

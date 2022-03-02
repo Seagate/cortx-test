@@ -105,6 +105,7 @@ class TestAccountUserManagement:
         self.accounts_list = list()
         self.log.info(
             "Delete created user with prefix: %s", self.user_name)
+        # Uncomment later when delete iam user feature is available
         #usr_list = self.iam_obj.list_users()[1]
         #self.log.debug("Listing users: %s", usr_list)
         #all_usrs = [usr["UserName"]
