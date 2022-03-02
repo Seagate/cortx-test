@@ -39,8 +39,8 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, use_ssl: bool, 
-                 object_size: Union[dict, int, bytes], part_range: dict, test_id: str = None,
-                 duration: timedelta = None) -> None:
+                 object_size: Union[dict, int, bytes], part_range: dict, seed: int,
+                 test_id: str = None, duration: timedelta = None) -> None:
         """
         s3 multipart init class.
 
@@ -52,6 +52,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
+        random.seed(seed)
         self.duration = duration
         self.object_size = object_size
         self.part_range = part_range
