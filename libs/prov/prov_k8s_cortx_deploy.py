@@ -610,7 +610,7 @@ class ProvDeployK8sCortxLib:
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            if image_key == "cortxserver":
+            if self.cortx_server_image and image_key == "cortxserver" :
                 cortx_im[image_key] = cortx_server_image
             else:
                 cortx_im[image_key] = cortx_image
