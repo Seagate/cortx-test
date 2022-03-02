@@ -1807,7 +1807,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info(
-            "Step 3: Copy object from bucket1 to bucket2 using wildcard * for source-object.")
+            "Step 3: Copy object to same bucket using wildcard * for source-object.")
         try:
             status, response = self.s3_obj.copy_object(
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)

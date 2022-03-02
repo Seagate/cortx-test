@@ -27,11 +27,12 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from commons import constants as const
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -963,10 +964,15 @@ class TestMultipartUpload:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_equal(
-                mp_config["error_msg"],
-                error.message,
-                error.message)
+            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert_utils.assert_equal("An error occurred (InvalidPart) when calling the "
+                                          "CompleteMultipartUpload operation: Unknown",
+                                          error.message, error.message)
+            else:
+                assert_utils.assert_equal(
+                    mp_config["error_msg"],
+                    error.message,
+                    error.message)
             self.log.info(
                 "Step 4: Failed to complete the multipart with input of wrong json/etag")
         self.log.info("ENDED: Test Multipart upload with invalid json input")

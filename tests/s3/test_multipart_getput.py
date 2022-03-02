@@ -33,6 +33,7 @@ from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from commons import constants as const
 from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -174,8 +175,8 @@ class TestMultipartUploadGetPut:
         client_instance = S3MultipartTestLib()
         self.log.info("uploading parts in client session")
         response = client_instance.upload_parts_parallel(mpu_id, self.bucket_name,
-                                                           self.object_name,
-                                                           parts=parts)
+                                                         self.object_name,
+                                                         parts=parts)
         # response = self.multipart  # To - check field content_md5
         all_parts.append(response[1])
         return all_parts
@@ -252,7 +253,12 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
+            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert_utils.assert_equal("An error occurred (InvalidPart) when calling the "
+                                          "CompleteMultipartUpload operation: Unknown",
+                                          error.message, error.message)
+            else:
+                assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
             self.log.info("Failed to complete the multipart with input of wrong json/etag")
         # DO completeMultipartUpload with correct part details after 30 mins to check
         # background producer does not clean up object due to
@@ -319,11 +325,16 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
+            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert_utils.assert_equal("An error occurred (InvalidPart) when calling the "
+                                          "CompleteMultipartUpload operation: Unknown",
+                                          error.message, error.message)
+            else:
+                assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
             self.log.info("Failed to complete the multipart with incomplete part details ")
         self.log.info("Aborting multipart uploads")
-        res = self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,
-                                                          self.object_name, mpu_id)
+        self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,
+                                                    self.object_name, mpu_id)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -487,7 +498,7 @@ class TestMultipartUploadGetPut:
         for k in response2["Uploads"]:
             mpuids_fromlist1.append(k["UploadId"])
         total_mpuids_listed = [*mpuids_fromlist, *mpuids_fromlist1]
-        assert_utils.assert_list_equal(all_mpuids, total_mpuids_listed)
+        assert_utils.assert_list_items(all_mpuids, total_mpuids_listed)
         self.log.info("Aborting multipart uploads")
         for i in range(100):
             mpu_id = mpu_ids1[i]
@@ -694,7 +705,7 @@ class TestMultipartUploadGetPut:
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
                                           parts_list=sorted_part_list)
-        self.get_obj_compare_checksums(self.bucket_name, self.object_name, res["ETag"])
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
         self.log.info("ENDED: Test multipart upload of 5TB object")
 
     @pytest.mark.s3_ops
