@@ -100,6 +100,7 @@ def test_parser(yaml_file, number_of_nodes):
     """
     parse a test yaml file
     :param yaml_file: accepts and parses a test YAML file
+    :number_of nodes: accepts number of nodes to calculate sessions (default=1)
     :return python dictionary containing file contents
     """
     size_types = ["object_size", "part_size"]

@@ -93,7 +93,7 @@ def parse_args():
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
                         help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
-    parser.add_argument("-nn", "--number-of-nodes", type=int,
+    parser.add_argument("-nn", "--number-of-nodes", type=int, default=1,
                         help="number of nodes in k8s system")
     return parser.parse_args()
 
