@@ -282,9 +282,7 @@ def main(options):
 
     test_input = options.test_input
     test_input = yaml_parser.test_parser(test_input, options.number_of_nodes)  # Read test data
-    # from
-    # test_input
-    # yaml.
+
     for key, value in test_input.items():
         logger.info("Test No : %s", key)
         logger.info("Test Values : %s", value)

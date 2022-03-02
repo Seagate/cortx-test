@@ -25,7 +25,6 @@ test_3:
     end: 10Mib
   result_duration: 20h
   sessions_per_node: 3
-  samples: 300
   tool: s3api
   operation: object
 
@@ -36,7 +35,6 @@ test_4:
     end: 20Mib
   result_duration: 1d
   sessions_per_node: 5
-  samples: 400
   tool: s3api
   operation: object
 
@@ -47,7 +45,6 @@ test_5:
     end: 100Mib
   result_duration: 1d
   sessions_per_node: 8
-  samples: 500
   tool: s3api
   operation: object
 
@@ -58,7 +55,6 @@ test_6:
     end: 500Mib
   result_duration: 2d
   sessions_per_node: 13
-  samples: 600
   tool: s3api
   operation: object
 
@@ -69,7 +65,6 @@ test_7:
     end: 1Gib
   result_duration: 2d
   sessions_per_node: 21
-  samples: 700
   tool: s3api
   operation: object
 
@@ -80,7 +75,6 @@ test_8:
     end: 2Gib
   result_duration: 4d
   sessions_per_node: 34
-  samples: 800
   tool: s3api
   operation: object
 
@@ -91,6 +85,5 @@ test_9:
     end: 5Gib
   result_duration: 5d
   sessions_per_node: 55
-  samples: 900
   tool: s3api
   operation: object

@@ -22,7 +22,7 @@ import os
 import random
 import time
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Union
 
 from botocore.exceptions import ClientError
 
@@ -37,7 +37,7 @@ class TestS3CopyObjects(S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, object_size: Optional[int, dict],
+                 use_ssl: str, object_size: Union[int, dict],seed: int,
                  duration: timedelta = None) -> None:
         """
         s3 Copy Object init class.
@@ -48,9 +48,11 @@ class TestS3CopyObjects(S3Object, S3Bucket):
         :param test_id: Test ID string
         :param use_ssl: To use secure connection
         :param object_size: Object size
+        :param seed: Seed to be used for random data generator
         :param duration: Duration timedelta object, if not given will run for 100 days
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
+        random.seed(seed)
         self.duration = duration
         self.object_size = object_size
         self.test_id = test_id

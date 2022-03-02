@@ -190,7 +190,12 @@ class S3Object(S3RestApi):
         return sha256_digest
 
     @staticmethod
-    def checksum_file(file_path, chunk_size=1024*1024):
+    def checksum_file(file_path: str, chunk_size: int = 1024 * 1024):
+        """
+        Calculate checksum of given file_path by reading file chunk_size at a time.
+        :param file_path: Local file path
+        :param chunk_size: single chunk size to read the content of given file
+        """
         with open(file_path, 'rb') as f_obj:
             file_hash = hashlib.sha256()
             chunk = f_obj.read(chunk_size)
