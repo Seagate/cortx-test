@@ -24,7 +24,7 @@ from commons.io.io_logger import StreamToLogger
 
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 dir_path = os.path.join(os.path.join(os.getcwd(), "log", "unittest"))
 if not os.path.exists(dir_path):
     os.makedirs(dir_path, exist_ok=True)

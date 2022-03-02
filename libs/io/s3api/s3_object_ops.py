@@ -33,7 +33,10 @@ LOGGER = logging.getLogger(__name__)
 class S3Object(S3RestApi):
     """Class for object operations."""
 
-    def upload_object(self, bucket_name: str, object_name: str, file_path: str) -> dict:
+    async def upload_object(self,
+                            bucket_name: str,
+                            object_name: str,
+                            file_path: str) -> dict:
         """
         Uploading object to the Bucket.
 
@@ -42,25 +45,30 @@ class S3Object(S3RestApi):
         :param file_path: Path of the file.
         :return: Response of the upload s3 object.
         """
-        response = self.s3_resource.meta.client.upload_file(file_path, bucket_name, object_name)
-        LOGGER.debug(response)
+        async with self.get_client() as client:
+            response = await client.meta.client.upload_file(file_path, bucket_name, object_name)
+            LOGGER.debug(response)
 
         return response
 
-    def list_objects(self, bucket_name: str) -> list:
+    async def list_objects(self,
+                           bucket_name: str) -> list:
         """
         Listing Objects.
 
         :param bucket_name: Name of the bucket.
         :return: Response of the list objects.
         """
-        bucket = self.s3_resource.Bucket(bucket_name)
-        objects = [obj.key for obj in bucket.objects.all()]
-        LOGGER.debug(objects)
+        async with self.get_client() as client:
+            bucket = await client.Bucket(bucket_name)
+            objects = [obj.key for obj in bucket.objects.all()]
+            LOGGER.debug(objects)
 
         return objects
 
-    def delete_object(self, bucket_name: str, obj_name: str) -> dict:
+    async def delete_object(self,
+                            bucket_name: str,
+                            obj_name: str) -> dict:
         """
         Deleting object.
 
@@ -68,13 +76,16 @@ class S3Object(S3RestApi):
         :param obj_name: Name of object.
         :return: Response of delete object.
         """
-        response = self.s3_resource.Object(bucket_name, obj_name).delete()
-        logging.debug(response)
-        LOGGER.debug("Object '%s' deleted Successfully", obj_name)
+        async with self.get_client() as client:
+            response = await client.Object(bucket_name, obj_name).delete()
+            logging.debug(response)
+            LOGGER.debug("Object '%s' deleted Successfully", obj_name)
 
         return response
 
-    def head_object(self, bucket_name: str, key: str) -> dict:
+    async def head_object(self,
+                          bucket_name: str,
+                          key: str) -> dict:
         """
         Retrieve metadata from an object without returning the object itself.
 
@@ -83,12 +94,16 @@ class S3Object(S3RestApi):
         :param key: Key of object.
         :return: Response of head object.
         """
-        response = self.s3_resource.meta.client.head_object(Bucket=bucket_name, Key=key)
-        LOGGER.debug(response)
+        async with self.get_client() as client:
+            response = await client.meta.client.head_object(Bucket=bucket_name, Key=key)
+            LOGGER.debug(response)
 
         return response
 
-    def get_object(self, bucket: str = None, key: str = None, ranges: str = None) -> dict:
+    async def get_object(self,
+                         bucket: str = None,
+                         key: str = None,
+                         ranges: str = None) -> dict:
         """
         Getting object or byte range of the object.
 
@@ -97,15 +112,19 @@ class S3Object(S3RestApi):
         :param ranges: Byte range to be retrieved
         :return: response.
         """
-        if ranges:
-            response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
-        else:
-            response = self.s3_client.get_object(Bucket=bucket, Key=key)
-        LOGGER.debug(response)
+        async with self.get_client() as client:
+            if ranges:
+                response = await client.get_object(Bucket=bucket, Key=key, Range=ranges)
+            else:
+                response = await client.get_object(Bucket=bucket, Key=key)
+            LOGGER.debug(response)
 
         return response
 
-    def download_object(self, bucket_name: str, obj_name: str, file_path: str) -> dict:
+    async def download_object(self,
+                              bucket_name: str,
+                              obj_name: str,
+                              file_path: str) -> dict:
         """
         Downloading Object of the required Bucket.
 
@@ -114,18 +133,19 @@ class S3Object(S3RestApi):
         :param file_path: Path of the file.
         :return: Response of download object.
         """
-        response = self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
-        if os.path.exists(file_path):
-            LOGGER.debug("Object '%s' downloaded successfully on '%s'", obj_name, file_path)
+        async with self.get_client() as client:
+            response = await client.Bucket(bucket_name).download_file(obj_name, file_path)
+            if os.path.exists(file_path):
+                LOGGER.debug("Object '%s' downloaded successfully on '%s'", obj_name, file_path)
 
         return response
 
-    def copy_object(self,
-                    source_bucket: str,
-                    source_object: str,
-                    dest_bucket: str,
-                    dest_object: str,
-                    **kwargs) -> tuple:
+    async def copy_object(self,
+                          source_bucket: str,
+                          source_object: str,
+                          dest_bucket: str,
+                          dest_object: str,
+                          **kwargs) -> tuple:
         """
         Copy of an object that is already stored in Seagate S3 with different permissions.
 
@@ -137,17 +157,21 @@ class S3Object(S3RestApi):
         /s3.html#S3.Client.copy_object
         :return: Response of copy object.
         """
-        response = self.s3_client.copy_object(
-            Bucket=dest_bucket,
-            CopySource='/{}/{}'.format(source_bucket, source_object),
-            Key=dest_object,
-            **kwargs
-        )
+        async with self.get_client() as client:
+            response = await client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+                **kwargs
+            )
         LOGGER.debug(response)
 
         return response
 
-    def get_s3object_checksum(self, bucket_name: str, object_name: str, chunk_size: int) -> str:
+    async def get_s3object_checksum(self,
+                                    bucket_name: str,
+                                    object_name: str,
+                                    chunk_size: int) -> str:
         """
         Read object in chunk and calculate md5sum.
 
@@ -155,13 +179,14 @@ class S3Object(S3RestApi):
         :param object_name: The name of the s3 object.
         :param chunk_size: size to read the content of s3 object.
         """
-        file_obj = self.s3_resource.Object(bucket_name, object_name).get()['Body']
-        file_hash = hashlib.sha256()
-        content = file_obj.read(chunk_size)
-        file_hash.update(content)
-        while content:
-            content = file_obj.read(chunk_size)
-            if content:
-                file_hash.update(content)
+        async with self.get_client() as client:
+            file_obj = client.Object(bucket_name, object_name).get()['Body']
+            file_hash = hashlib.sha256()
+            content = await file_obj.read(chunk_size)
+            file_hash.update(content)
+            while content:
+                content = await file_obj.read(chunk_size)
+                if content:
+                    file_hash.update(content)
 
         return file_hash.hexdigest()

@@ -57,12 +57,12 @@ class TestBucketOps(S3Object, S3Bucket):
         self.obj_end_size = obj_end_size
         self.test_id = test_id
         self.min_duration = 10  # In seconds
-        self.finish_time = datetime.now() + duration if duration else datetime.now() + \
-                                                                      timedelta(hours=int(100 * 24))
+        self.finish_time = datetime.now() + duration\
+            if duration else datetime.now() + timedelta(hours=int(100 * 24))
         self.object_per_iter = 500
         self.iteration = 1
 
-    def execute_bucket_workload(self):
+    async def execute_bucket_workload(self):
         """Execute bucket operations workload for specific duration."""
         while True:
             logger.info("Iteration %s is started...", self.iteration)
@@ -70,24 +70,25 @@ class TestBucketOps(S3Object, S3Bucket):
                 file_size = random.randrange(self.obj_start_size, self.obj_end_size)
                 bucket_name = f'bucket-op-{time.perf_counter_ns()}'
                 logger.info("Create bucket %s", bucket_name)
-                self.create_bucket(bucket_name)
+                await self.create_bucket(bucket_name)
                 logger.info("Upload %s objects to bucket %s", self.object_per_iter, bucket_name)
                 for _ in range(0, self.object_per_iter):
                     file_name = f'object-bucket-op-{time.perf_counter_ns()}'
                     with open(file_name, 'wb') as fout:
                         fout.write(os.urandom(file_size))
-                    self.upload_object(bucket_name, file_name, file_name)
+                    await self.upload_object(bucket_name, file_name, file_name)
                 logger.info("List all buckets")
-                self.list_bucket()
+                await self.list_buckets()
                 logger.info("List objects of created %s bucket", bucket_name)
-                self.list_objects(bucket_name)
+                await self.list_objects(bucket_name)
                 logger.info("Perform Head bucket")
-                self.head_bucket(bucket_name)
+                await self.head_bucket(bucket_name)
                 logger.info("Delete all objects of bucket %s", bucket_name)
-                self.delete_bucket(bucket_name, True)
+                await self.delete_bucket(bucket_name, True)
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
-                return False, str(err)
+                raise ClientError(
+                    error_response=str(err), operation_name="Execute bucket workload") from err
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:
