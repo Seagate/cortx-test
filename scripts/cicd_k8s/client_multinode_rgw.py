@@ -30,7 +30,6 @@ import os
 
 from commons import commands as com_cmds
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import ext_lbconfig_utils as extlb_utils
 from commons.utils import system_utils as sysutils
 
 CONF_FILE = 'scripts/cicd_k8s/config.ini'
