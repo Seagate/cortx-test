@@ -389,6 +389,7 @@ class TestMultiPodFailure:
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
                     "data pods fail.")
 
+    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35777")
@@ -488,6 +489,7 @@ class TestMultiPodFailure:
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) pods "
                     "were going down.", self.kvalue)
 
+    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35779")
