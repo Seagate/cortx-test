@@ -334,11 +334,11 @@ class ProvDeployK8sCortxLib:
             with open(local_path, 'r') as file:
                 lines = file.read()
                 LOGGER.debug(lines)
-        if resp[0]:
-            LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
-            resp = self.validate_cluster_status(master_node_list[0],
-                                                self.deploy_cfg["k8s_dir"])
-            return resp
+        # if resp[0]:
+        #     LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
+        #     resp = self.validate_cluster_status(master_node_list[0],
+        #                                         self.deploy_cfg["k8s_dir"])
+        #     return resp
         return resp
 
     def checkout_solution_file(self, git_tag):
