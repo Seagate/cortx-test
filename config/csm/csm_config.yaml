@@ -85,6 +85,8 @@ Restcall_LC:
   s3_bucket_endpoint : "/api/v2/s3/bucket"
   IAM_users_endpoint : "/api/v2/iam_users"
   s3_iam_user_endpoint : "/api/v2/s3/iam/users"
+  s3_iam_delete_endpoint: "/api/v2/s3/iam/users/{}"
+  s3_get_iam_endpoint: "/api/v2/s3/iam/users/{}"
   csmuser_endpoint : "/api/v2/csm/users"
   csmuser_permission_endpoint: "/api/v2/permissions"
   bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"

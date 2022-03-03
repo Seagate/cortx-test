@@ -79,7 +79,12 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user(self, user=None):
+    def get_iam_user(self, user):
+        response = self.get_iam_user_rgw(user, self.headers)
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def delete_iam_user(self, user=None, purge_data=False):
         """
         This function will delete payload according to the required type for
         deleting Iam user.
@@ -89,9 +94,7 @@ class RestIamUser(RestTestLib):
         if self.iam_user and (not user):
             user = self.iam_user
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+            response = self.delete_iam_user_rgw(user, self.headers, purge_data)
         else:
             self.log.debug("iam user")
             endpoint = '/'.join((self.config["IAM_users_endpoint"], user))
@@ -486,6 +489,8 @@ class RestIamUser(RestTestLib):
         payload["caps"] = payload.pop("user_caps")
         for key, value in payload.items():
             if key in rest_response:
+                if key == 'caps':
+                    continue
                 if key == "suspended":
                     expected_val = 0
                     if value:
@@ -513,6 +518,31 @@ class RestIamUser(RestTestLib):
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
+        return response
+
+    def delete_iam_user_rgw(self, uid, header, purge_data=False):
+        """
+        Delete IAM user
+        """
+        self.log.info("Delete IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_delete_endpoint"].format(uid)
+        payload = {"purge_data":False}
+        if purge_data:
+            payload = {"purge_data":True}
+        response = self.restapi.rest_call("delete", endpoint=endpoint,data=payload, 
+                                          headers=header)
+        self.log.info("Delete IAM user request successfully sent...")
+        return response
+
+    def get_iam_user_rgw(self, uid, header):
+        """
+        Get IAM user
+        """
+        self.log.info("Get IAM user request....")
+        endpoint = CSM_REST_CFG["s3_get_iam_endpoint"].format(uid)
+        response = self.restapi.rest_call("get", endpoint=endpoint,
+                                          headers=header)
+        self.log.info("Get IAM user request successfully sent...")
         return response
 
     def verify_create_iam_user_rgw(
