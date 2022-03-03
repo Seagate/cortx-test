@@ -744,7 +744,7 @@ class TestIamUserRGW():
         resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=False, tenant=payload["tenant"])
+        resp = self.csm_obj.delete_iam_user(user=uid)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         self.created_iam_users.remove(uid)
@@ -801,7 +801,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(get_resp, payload)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], "Value mismatch found")
-        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True, tenant=payload["tenant"])
+        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         self.created_iam_users.remove(uid)
@@ -831,8 +831,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
         uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
-        resp = self.csm_obj.delete_iam_user(user=uid + "invalid", purge_data=True,
-                                            tenant=payload["tenant"])
+        resp = self.csm_obj.delete_iam_user(user=uid + "invalid", purge_data=True)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.NOT_FOUND, "Invalid user deleted")
         resp = self.csm_obj.get_iam_user(uid)
