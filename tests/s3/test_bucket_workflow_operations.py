@@ -70,7 +70,6 @@ class TestBucketWorkflowOperations:
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
             if bucket_name in bucket_list:
-                self.acl_obj.put_bucket_acl(bucket_name, acl="private")
                 resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
