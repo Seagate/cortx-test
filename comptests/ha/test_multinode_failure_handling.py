@@ -61,9 +61,9 @@ class TestMultiNodeFailureHandling:
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
                                    password=CMN_CFG["nodes"][node]["password"])
-            cls.hlth_master_list.append(
-                Health(hostname=CMN_CFG["nodes"][node]["hostname"], username=CMN_CFG["nodes"][node]["username"],
-                       password=CMN_CFG["nodes"][node]["password"]))
+            cls.hlth_master_list.append(Health(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                               username=CMN_CFG["nodes"][node]["username"],
+                                               password=CMN_CFG["nodes"][node]["password"]))
 
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
@@ -119,8 +119,10 @@ class TestMultiNodeFailureHandling:
                     deployment_backup = self.pod_dict.get(pod_name)[1]
                 resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                                restore_method=self.restore_method,
-                                               restore_params={"deployment_name": deployment_name,
-                                                               "deployment_backup": deployment_backup})
+                                               restore_params={"deployment_name":
+                                                                   deployment_name,
+                                                               "deployment_backup":
+                                                                   deployment_backup})
                 LOGGER.debug("Response: %s", resp)
                 assert_utils.assert_true(resp[0], f"Failed to restore pod by "
                 f"{self.restore_method} way")
@@ -133,6 +135,7 @@ class TestMultiNodeFailureHandling:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
+    @staticmethod
     def verify_ha_prop(self, resp_dict):
         """
         This is a local method to verify the ha logs properties
@@ -141,10 +144,14 @@ class TestMultiNodeFailureHandling:
         resource_type_list = resp_dict['resource_type']
         resource_status_list = resp_dict['resource_status']
         generation_id_list = resp_dict['generation_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list, resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor', f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node', f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed', f"Resource status of {generation_id_list[index]} is not failed")
+        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
+                                                          resource_status_list)):
+            assert_utils.assert_equal(data1, 'monitor', f"Source of {generation_id_list[index]} "
+            f"is not from monitor")
+            assert_utils.assert_equal(data2, 'node', f"Resource of {generation_id_list[index]}"
+            f" is not node")
+            assert_utils.assert_equal(data3, 'failed', f"Resource status of"
+            f" {generation_id_list[index]} is not failed")
 
     @pytest.mark.comp_ha
     @pytest.mark.lc
@@ -179,23 +186,24 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
-        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0], self.kvalue)
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0],
+                                                     self.kvalue)
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 2: Successfully checked pod alert in k8s monitor")
 
         LOGGER.info("Step 3: Check pod alert in fault tolerance")
-        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1], 
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1],
                                                      self.kvalue, fault_tolerance=True)
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        # TODO: Step:4 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+        # TODO: Step:4 System health status should be “Failed”| CORTX-29129 Systemhealth API
 
-        # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type | CORTX-29127
+        # TODO: Step:5 Health monitor log show event for ‘Failed’  event type | CORTX-29127
 
-        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event with source ‘hare’ to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’ event with source ‘hare’ to fault tolerance
 
-        # TODO: Step:7 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+        # TODO: Step:7 System health status should be “Failed”| CORTX-29129 Systemhealth API
 
         LOGGER.info("COMPLETED: Shutdown K server pod from cluster with delete deployment method")
 
@@ -220,7 +228,8 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
+            f"by making replicas=0")
             pod_data.append(resp[1])
             self.restore_pod = True
             self.restore_method = const.RESTORE_SCALE_REPLICAS
@@ -230,23 +239,24 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
-        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0], self.kvalue)
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0],
+                                                     self.kvalue)
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 2: Successfully checked pod alert in k8s monitor")
 
         LOGGER.info("Step 3: Check pod alert in fault tolerance")
-        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1], 
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1],
                                                      self.kvalue, fault_tolerance=True)
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        # TODO: Step:4 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+        # TODO: Step:4 System health status should be “Failed”| CORTX-29129 systemhealth API
 
-        # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type | CORTX-29127
+        # TODO: Step:5 Health monitor log show event for ‘Failed’  event type | CORTX-29127
 
-        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event with source ‘hare’ to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’ event with source ‘hare’ to fault tolerance
 
-        # TODO: Step:7 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+        # TODO: Step:7 System health status should be “Failed”| CORTX-29129 systemhealth API
 
         LOGGER.info("COMPLETED: Shutdown K server pod from cluster with replica down method")
 
@@ -257,7 +267,7 @@ class TestMultiNodeFailureHandling:
         """
         This TC tests the Shutdown till K server pod from cluster using delete deployment method
         """
-        LOGGER.info("STARTED: Shutdown till K server pod from cluster using delete deployment method")
+        LOGGER.info("STARTED: Shutdown till K server pod using delete deployment method")
 
         LOGGER.info("Step 1: Shutdown server pods from cluster with delete deployment method")
         LOGGER.info(" Shutdown the server pod by deleting deployment (unsafe)")
@@ -283,25 +293,26 @@ class TestMultiNodeFailureHandling:
 
             LOGGER.info("Step 2: Check pod alert in k8s monitor")
             node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
-            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0], kvalue=1)
+            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0],
+                                                         kvalue=1)
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 2: Successfully checked pod alert in k8s monitor")
 
             LOGGER.info("Step 3: Check pod alert in fault tolerance")
-            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1], 
+            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1],
                                                          kvalue=1, fault_tolerance=True)
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-            # TODO: Step:4 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+            # TODO: Step:4 System health status should be “Failed” CORTX-29129 SystemHealth API
 
-            # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type | CORTX-29127
+            # TODO: Step:5 Health monitor log show event for ‘Failed’  event type | CORTX-29127
 
-            # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event with source ‘hare’ to fault tolerance
+            # TODO: Step:6 Hare should send ‘Failed’ event with source ‘hare’ to fault tolerance
 
-            # TODO: Step:7 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+            # TODO: Step:7 System health status should be “Failed” CORTX-29129 Systemhealth API
 
-        LOGGER.info("COMPLETED: Shutdown till K server pod from cluster with delete deployment method")
+        LOGGER.info("COMPLETED: Shutdown till K server pod with delete deployment method")
 
     @pytest.mark.comp_ha
     @pytest.mark.lc
@@ -324,7 +335,8 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
+            f"by making replicas=0")
             pod_data.append(resp[1])
             self.restore_pod = True
             self.restore_method = const.RESTORE_SCALE_REPLICAS
@@ -334,22 +346,23 @@ class TestMultiNodeFailureHandling:
 
             LOGGER.info("Step 2: Check pod alert in k8s monitor")
             node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
-            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0], kvalue=1)
+            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[0],
+                                                         kvalue=1)
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 2: Successfully checked pod alert in k8s monitor")
 
             LOGGER.info("Step 3: Check pod alert in fault tolerance")
-            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1], 
+            resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, const.HA_SHUTDOWN_LOGS[1],
                                                          kvalue=1, fault_tolerance=True)
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-            # TODO: Step:4 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+            # TODO: Step:4 System health status should be “Failed” CORTX-29129 SystemHealth API
 
-            # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type | CORTX-29127
+            # TODO: Step:5 Health monitor log show event for ‘Failed’  event type | CORTX-29127
 
-            # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event with source ‘hare’ to fault tolerance
+            # TODO: Step:6 Hare should send ‘Failed’ event with source ‘hare’ to fault tolerance
 
-            # TODO: Step:7 System health status should be “Failed” | CORTX-29129 - Fix get system health API
+            # TODO: Step:7 System health status should be “Failed” CORTX-29129 Systemhealth API
 
         LOGGER.info("COMPLETED: Shutdown till K server pod from cluster with replica down method")
