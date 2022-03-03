@@ -540,8 +540,8 @@ class RestIamUser(RestTestLib):
         payload = {"purge_data": False}
         if purge_data:
             payload = {"purge_data": True}
-            response = self.restapi.rest_call("delete", endpoint=endpoint, data=payload,
-                                              headers=header)
+        response = self.restapi.rest_call("delete", endpoint=endpoint, data=payload,
+                                          headers=header)
         self.log.info("Delete IAM user request successfully sent...")
         return response
 
