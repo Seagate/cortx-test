@@ -16,12 +16,15 @@
 """This file contains s3 multipart partcopy fixed sizes test script for io stability."""
 
 from __future__ import division
+
+import hashlib
 import logging
 import os
 import random
 from datetime import datetime, timedelta
 from time import perf_counter_ns
 from typing import Union
+from botocore.exceptions import ClientError
 from libs.io.s3api.s3_multipart_ops import S3MultiParts
 from libs.io.s3api.s3_object_ops import S3Object
 from libs.io.s3api.s3_bucket_ops import S3Bucket
@@ -66,6 +69,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 s3_object = "s3-obj-{}-{}".format(self.test_id, perf_counter_ns())
                 mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
                 mpart_object = "s3mpart-obj-{}-{}".format(self.test_id, perf_counter_ns())
+                file_down_path = "s3_mp_{}_{}".format(self.test_id,perf_counter_ns())
                 logger.info("Bucket name: %s", bucket)
                 logger.info("Object name: %s", s3_object)
                 logger.info("Multipart Bucket name: %s", mpart_bucket)
@@ -80,25 +84,29 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 resp = await self.create_bucket(mpart_bucket)
                 assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200, \
                     f"Failed to create bucket: {mpart_bucket}"
-                file_name = f'mp-partcopy-op-{perf_counter_ns()}'
-                with open(file_name, 'wb') as fout:
-                    fout.write(os.urandom(single_part_size))
-                resp = self.upload_object(bucket=bucket, key=file_name, file_path=file_name)
-                assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+
                 resp = await self.create_multipart_upload(mpart_bucket, mpart_object)
                 assert resp["UploadId"] is not None, \
                     f"Failed to initiate multipart upload: {resp}"
                 mpu_id = resp["UploadId"]
                 parts = list()
-                resp = await self.upload_part_copy(f"{bucket}/{s3_object}", mpart_bucket,
-                                                   s3_object, part_number=1, upload_id=mpu_id)
-                parts.append({"PartNumber": 1, "ETag": resp[1]["CopyPartResult"]["ETag"]})
-                for i in range(2, number_of_parts + 1):
+                file_hash = hashlib.sha256()
+                random_part = random.randrange(1, number_of_parts + 1)
+                for i in range(1, number_of_parts + 1):
                     byte_s = os.urandom(single_part_size)
-                    resp = await self.upload_part(byte_s, mpart_bucket, mpart_object,
-                                                  upload_id=mpu_id, part_number=i)
-                    assert resp["ETag"] is not None, f"Failed upload part: {resp}"
-                    parts.append({"PartNumber": i, "ETag": resp["ETag"]})
+                    if i == random_part:
+                        resp = self.upload_object(body=byte_s, bucket=bucket, key=s3_object)
+                        assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+                        resp = await self.upload_part_copy(f"{bucket}/{s3_object}", mpart_bucket,
+                                                           s3_object, part_number=i,
+                                                           upload_id=mpu_id)
+                        parts.append({"PartNumber": i, "ETag": resp[1]["CopyPartResult"]["ETag"]})
+                    else:
+                        resp = await self.upload_part(byte_s, mpart_bucket, mpart_object,
+                                                      upload_id=mpu_id, part_number=i)
+                        assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+                        parts.append({"PartNumber": i, "ETag": resp["ETag"]})
+                    file_hash.update()
                 resp = await self.list_parts(mpu_id, mpart_bucket, mpart_object)
                 assert resp, f"Failed to list parts: {resp}"
                 resp = await self.list_multipart_uploads(mpart_bucket)
@@ -108,8 +116,15 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 assert resp, f"Failed to completed multi parts: {resp}"
                 resp = await self.head_object(mpart_bucket, mpart_object)
                 assert resp, f"Failed to do head object on {mpart_object}"
-                resp = await self.get_object(bucket=mpart_bucket, key=mpart_object)
-                assert resp, f"Failed to do get object on {mpart_object}"
+                resp = await self.download_object(bucket=mpart_bucket, key=mpart_object,
+                                                  file_path=file_down_path)
+                assert resp, f"Failed to do download object on {mpart_object}"
+                dnd_obj_csum = self.checksum_file(file_path=file_down_path,
+                                                  chunk_size=os.path.getsize(file_down_path))
+                upd_obj_csum = file_hash.hexdigest()
+                if upd_obj_csum != dnd_obj_csum:
+                    raise ClientError( f"Failed to match checksum: {upd_obj_csum}, "
+                                       f"{dnd_obj_csum}", operation_name="Match checksum")
                 resp = await self.delete_bucket(mpart_bucket, force=True)
                 assert resp["ResponseMetadata"]["HTTPStatusCode"] == 204, \
                     f"Failed to delete s3 bucket: {mpart_bucket}"
