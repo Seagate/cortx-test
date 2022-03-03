@@ -47,7 +47,7 @@ def execute_cmd(cmd) -> tuple:
 
 
 # pylint: disable-msg=too-many-locals
-def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
+def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine) -> str:
     """
     Create setup entry in Database
     hosts: Multiple Hosts string received input from jenkins
@@ -85,6 +85,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
 
     json_data["setupname"] = setup_name
     json_data["product_family"] = "LC"
+    json_data["s3_engine"] = s3_engine
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
     json_data["nodes"] = host_list
@@ -106,6 +107,7 @@ def main():
     """
     try:
         hosts = os.getenv("HOSTS")
+        s3_engine = os.getenv("S3_ENGINE")
         admin_user = os.getenv("ADMIN_USER")
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         test_exe_no = os.getenv("TEST_EXECUTION_NUMBER", None)
@@ -123,7 +125,7 @@ def main():
         cfg = ""
         with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
             cfg = yaml.safe_load(file)
-        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt)
+        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine)
 
         print(f"target_name: {setupname}")
         with open("secrets.json", 'r') as file:
