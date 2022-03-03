@@ -44,7 +44,7 @@ from tests.io import test_s3_obj_range_read_io_stability
 nfs_dir = NFS_SERVER_DIR
 mount_dir = MOUNT_DIR
 function_mapping = {
-    'object_range_read': [test_s3_obj_range_read_io_stability.TestOjbectRangeReadOps, 'execute_object_range_read_workload']
+    'range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps, 'execute_object_range_read_workload']
 }
 
 

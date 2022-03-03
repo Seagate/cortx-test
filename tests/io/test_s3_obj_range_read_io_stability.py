@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-few-public-methods, too-many-statements
-class TestOjbectRangeReadOps(S3Object, S3Bucket):
+class TestObjectRangeReadOps(S3Object, S3Bucket):
     """S3 Object range read operations class for executing given io stability workload"""
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
