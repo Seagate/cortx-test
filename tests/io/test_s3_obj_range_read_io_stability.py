@@ -24,6 +24,7 @@ import os
 import random
 import time
 from datetime import datetime, timedelta
+from typing import Union
 
 from botocore.exceptions import ClientError
 
@@ -39,7 +40,7 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, object_size: Union[int, dict], obj_end_size: int, range_read,
+                 use_ssl: str, object_size: Union[int, dict], seed: int, range_read,
                  duration: timedelta = None) -> None:
         """
         s3 object operations init class.
@@ -104,13 +105,9 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
                 assert checksum1 == checksum4, "part checksum is not matching for first part"
                 assert checksum2 == checksum5, "part checksum is not matching for second part"
                 assert checksum3 == checksum6, "part checksum is not matching for third part"
-
-                               
-                 # Delete object
+                # Delete object
                 logger.info("Delete %s object of bucket %s", file_name, bucket_name)
                 self.delete_object(bucket_name, file_name)
-                
-                #azahar
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
                 return False, str(err)
