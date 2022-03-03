@@ -165,9 +165,21 @@ class TestIamUserRGW():
         """Teardown method which run after each function.
         """
         self.log.info("Teardown started")
+        delete_failed = []
+        delete_success = []
         for user in self.created_iam_users:
-            # TODO delete iam user
             self.log.info("deleting iam user %s", user)
+            resp = self.csm_obj.delete_iam_user(user=user, purge_data=True)
+            self.log.debug("Verify Response : %s", resp)
+            if resp.status_code != HTTPStatus.OK:
+                delete_failed.append(usr)
+            else:
+                delete_success.append(usr)
+        for usr in delete_success:
+            self.created_iam_users.remove(usr)
+        self.log.info("IAM delete success list %s", delete_success)
+        self.log.info("IAM delete failed list %s", delete_failed)
+        assert len(delete_failed) == 0, "Delete failed for IAM users"
         self.log.info("Teardown ended")
 
     @pytest.mark.csmrest
