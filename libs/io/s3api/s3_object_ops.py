@@ -164,7 +164,7 @@ class S3Object(S3RestApi):
                         src_bucket, src_key, des_bucket, des_key, response)
             return response
 
-    async def get_s3object_checksum(self, bucket: str, key: str, chunk_size: int = 1024) -> str:
+    async def get_s3object_checksum(self, bucket: str, key: str, chunk_size: int = 1024, ranges: str = '') -> str:
         """
         Read object in chunk and calculate md5sum.
         Do not store the object in local storage.
@@ -203,4 +203,13 @@ class S3Object(S3RestApi):
             while len(chunk) > 0:
                 file_hash.update(chunk)
                 chunk = f_obj.read(chunk_size)
+        return file_hash.hexdigest()
+
+    @staticmethod
+    def calculate_checksum(file_path, offset_byte, size):
+        with open(file_path, 'rb') as fout:
+            fout.seek(offset_byte - 1)
+            content = fout.read(size)
+        file_hash = hashlib.sha256()
+        file_hash.update(content)
         return file_hash.hexdigest()

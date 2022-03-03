@@ -39,7 +39,7 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, obj_start_size: int, obj_end_size: int, range_read,
+                 use_ssl: str, object_size: Union[int, dict], obj_end_size: int, range_read,
                  duration: timedelta = None) -> None:
         """
         s3 object operations init class.
@@ -55,8 +55,7 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
         self.duration = duration
-        self.obj_start_size = obj_start_size
-        self.obj_end_size = obj_end_size
+        self.object_size = object_size
         self.test_id = test_id
         self.min_duration = 10  # In seconds
         self.finish_time = datetime.now() + duration if duration else datetime.now() + \
@@ -70,8 +69,10 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
         while True:
             logger.info("Iteration %s is started...", self.iteration)
             try:
-                file_size = random.randrange(self.obj_start_size, self.obj_end_size)
-                bucket_name = f'bucket-op-{time.perf_counter_ns()}'
+                file_size = self.object_size if not isinstance(
+                    self.object_size, dict) else random.randrange(
+                    self.object_size["start"], self.object_size["end"])
+                bucket_name = f'bucket-op-{self.test_id}-{time.perf_counter_ns()}'.lower()
                 logger.info("Create bucket %s", bucket_name)
                 self.create_bucket(bucket_name)
                 # Put object in bucket1
@@ -84,25 +85,25 @@ class TestOjbectRangeReadOps(S3Object, S3Bucket):
                 logger.info("Perform Head object")
                 self.head_object(bucket_name, file_name)
                 # Consider three logical parts, select random offset, read given number of bytes and compare checksum for each part
-                # part = int(file_size/3)
-                # first_part_start = 0
-                # first_part_end = part
-                # second_part_start = part + 1
-                # second_part_end = part * 2
-                # third_part_start = second_part_end + 1
-                # third_part_end = file_size
-                # byte_range_loc_1 = random.randrange(first_part_start, first_part_end)
-                # byte_range_loc_2 = random.randrange(second_part_start, second_part_end)
-                # byte_range_loc_3 = random.randrange(third_part_start, third_part_end)
-                # checksum1 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_1}-{byte_range_loc_1 + self.range_read}')
-                # checksum2 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_2}-{byte_range_loc_1 + self.range_read}')
-                # checksum3 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_3}-{byte_range_loc_1 + self.range_read}')
-                # checksum4 = self.calculate_checksum(file_name, byte_range_loc_1, self.range_read)
-                # checksum5 = self.calculate_checksum(file_name, byte_range_loc_2, self.range_read)
-                # checksum6 = self.calculate_checksum(file_name, byte_range_loc_3, self.range_read)
-                # assert checksum1 == checksum4, "part checksum is not matching for first part"
-                # assert checksum2 == checksum5, "part checksum is not matching for second part"
-                # assert checksum3 == checksum6, "part checksum is not matching for third part"
+                part = int(file_size/3)
+                first_part_start = 0
+                first_part_end = part
+                second_part_start = part + 1
+                second_part_end = part * 2
+                third_part_start = second_part_end + 1
+                third_part_end = file_size
+                byte_range_loc_1 = random.randrange(first_part_start, first_part_end)
+                byte_range_loc_2 = random.randrange(second_part_start, second_part_end)
+                byte_range_loc_3 = random.randrange(third_part_start, third_part_end)
+                checksum1 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_1}-{byte_range_loc_1 + self.range_read}')
+                checksum2 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_2}-{byte_range_loc_1 + self.range_read}')
+                checksum3 = self.get_s3object_checksum(bucket_name, file_name, 1024, f'byte={byte_range_loc_3}-{byte_range_loc_1 + self.range_read}')
+                checksum4 = self.calculate_checksum(file_name, byte_range_loc_1, self.range_read)
+                checksum5 = self.calculate_checksum(file_name, byte_range_loc_2, self.range_read)
+                checksum6 = self.calculate_checksum(file_name, byte_range_loc_3, self.range_read)
+                assert checksum1 == checksum4, "part checksum is not matching for first part"
+                assert checksum2 == checksum5, "part checksum is not matching for second part"
+                assert checksum3 == checksum6, "part checksum is not matching for third part"
 
                                
                  # Delete object
