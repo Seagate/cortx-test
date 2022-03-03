@@ -113,8 +113,6 @@ class S3AccountOperationsRestAPI(RestS3user):
         """
         try:
             LOGGER.debug("delete s3accounts user : %s", user_name)
-            endpoint = "{}/{}".format(self.endpoint, user_name)
-            LOGGER.debug("Endpoint for s3 accounts is %s", endpoint)
             # Fetching api response
             response = self.delete_s3_account_user(user_name)
             status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
