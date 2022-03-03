@@ -85,7 +85,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine) ->
 
     json_data["setupname"] = setup_name
     json_data["product_family"] = "LC"
-    json_data["s3_engine"] = s3_engine
+    json_data["s3_engine"] = int(s3_engine)
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
     json_data["nodes"] = host_list
