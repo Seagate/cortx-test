@@ -106,7 +106,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                                                       upload_id=mpu_id, part_number=i)
                         assert resp["ETag"] is not None, f"Failed upload part: {resp}"
                         parts.append({"PartNumber": i, "ETag": resp["ETag"]})
-                    file_hash.update()
+                    file_hash.update(byte_s)
                 resp = await self.list_parts(mpu_id, mpart_bucket, mpart_object)
                 assert resp, f"Failed to list parts: {resp}"
                 resp = await self.list_multipart_uploads(mpart_bucket)
