@@ -15,6 +15,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Library for running teardown after alert is resolved by Cortx."""
 import logging
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node

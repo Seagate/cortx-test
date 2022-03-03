@@ -15,14 +15,17 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""
+A MongoDb instance can have multiple databases in it.
+Each database can have multiple collections(tables) in it.
+Each collection can have multiple documents(row) in it.
+"""
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 import configparser
 from urllib.parse import quote_plus
 
-# A MongoDb instance can have multiple databases in it.
-# Each database can have multiple collections(tables) in it.
-# Each collection can have multiple documents(row) in it.
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 hostname = config["PERF_DB"]["hostname"]

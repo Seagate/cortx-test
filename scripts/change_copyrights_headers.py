@@ -425,6 +425,7 @@ NEW_COPYRIGHT_FOR_BLANK = """#
 
 
 def main():
+    """Changes copyright header or places it for modules which don't have headers at all."""
     for filename in FILES:
         if os.path.exists(filename):
             try:
@@ -439,9 +440,9 @@ def main():
                         data = NEW_COPYRIGHT_FOR_BLANK + data[:]
                         new = filename + ".new"
                         backup = filename + ".bak"
-                        f = open(new, "w")
-                        f.write(data)
-                        f.close()
+                        fptr = open(new, "w")
+                        fptr.write(data)
+                        fptr.close()
                         os.rename(filename, backup)
                         os.rename(new, filename)
                         os.remove(backup)
@@ -451,9 +452,9 @@ def main():
                 data = data[:index] + NEW_COPYRIGHT + data[index + len(OLD_COPYRIGHT):]
                 new = filename + ".new"
                 backup = filename + ".bak"
-                f = open(new, "w")
-                f.write(data)
-                f.close()
+                fptr = open(new, "w")
+                fptr.write(data)
+                fptr.close()
                 os.rename(filename, backup)
                 os.rename(new, filename)
                 os.remove(backup)
