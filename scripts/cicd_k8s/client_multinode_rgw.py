@@ -78,7 +78,7 @@ def create_db_entry(m_node, username: str, password: str,
     json_data["product_family"] = "LC"
     json_data["product_type"] = "k8s"
     json_data["lb"] = ext_ip
-    json_data["s3_engine"] = "2"
+    json_data["s3_engine"] = 2
     nodes = list()
     node_info = {
         "host": "srv-node-1",
@@ -124,10 +124,10 @@ def main():
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
-    node_obj = LogicalNode(hostname=master_node, username=username, password=admin_passwd)
+    node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
 
-    resp = node_obj.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
-    ext_ip = resp[1].strip("'\\n'b'")
+    resp = node_obj.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+    ext_ip = resp[0].strip("\n")
     print("External LB IP: {}".format(ext_ip))
     resp = node_obj.execute_cmd(cmd=com_cmds.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     resp = json.loads(resp)
