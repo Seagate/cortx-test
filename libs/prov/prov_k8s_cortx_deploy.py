@@ -1129,13 +1129,13 @@ class ProvDeployK8sCortxLib:
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
-            LOGGER.info("Configure HAproxy on client")
-            ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
-                                                    master_node_list[0].username,
-                                                    master_node_list[0].password,
-                                                    eth1_ip)
-            LOGGER.info("Kill residue haproxy -f process if any")
-            self.kill_all_process_instance("haproxy -f")
+            # LOGGER.info("Configure HAproxy on client")
+            # ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
+            #                                         master_node_list[0].username,
+            #                                         master_node_list[0].password,
+            #                                         eth1_ip)
+            # LOGGER.info("Kill residue haproxy -f process if any")
+            # self.kill_all_process_instance("haproxy -f")
             LOGGER.info("Step to Create S3 account and configure credentials")
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
