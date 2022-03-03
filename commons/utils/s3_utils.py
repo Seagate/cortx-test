@@ -120,7 +120,7 @@ def get_v4_signature_key(key, date_stamp, region_name, service_name):
 def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None, **kwargs):
     """Create aws signature from data string."""
     service = kwargs.get("service", "s3")
-    region = kwargs.get("region", "US")
+    region = kwargs.get("region", S3_CFG["region"])
     host = kwargs.get("host")
     algorithm = kwargs.get("algorithm", 'AWS4-HMAC-SHA256')
     canonical_request = create_canonical_request(method, canonical_uri, body, epoch_t, host)
@@ -140,7 +140,7 @@ def sign_request_v4(method=None, canonical_uri='/', body='',
     algorithm = 'AWS4-HMAC-SHA256'
     """
     service = kwargs.get("service", "s3")
-    region = kwargs.get("region", "US")
+    region = kwargs.get("region", S3_CFG["region"])
     access_key = kwargs.get("access_key")
     secret_key = kwargs.get("secret_key")
     credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
@@ -160,7 +160,7 @@ def get_headers(request=None, endpoint=None, payload=None, **kwargs) -> dict:
     """Get the aws s3 rest headers."""
     # Get host value from url https://iam.seagate.com:9443
     service = kwargs.get("service", "s3")
-    region = kwargs.get("region", "US")
+    region = kwargs.get("region", S3_CFG["region"])
     access_key = kwargs.get("access_key")
     secret_key = kwargs.get("secret_key")
     if request is None:
