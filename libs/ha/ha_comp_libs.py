@@ -132,3 +132,53 @@ class HAK8SCompLib:
             if common_const.HA_PROCESS not in res:
                 return False
         return True
+
+    @staticmethod
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance=False, health_monitor=False) -> dict:
+        '''
+        Helper function to get k8s monitor log properties.
+        :param node_obj: Master node(Logical Node object)
+        :param log_name: Name of the ha log
+        :param kvalue: Number of lines required from 'tail' output
+        :param fault_tolerance: Bool/If made true, checks fault_tolerance.log
+        :param health_monitor: Bool/If made true, checks health_monitor.log
+        :return: ha prop data dictionary
+        '''
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        ha_pvc = None
+        log_list = []
+        for ha_pvc in pvc_list:
+            if common_const.HA_POD_NAME_PREFIX in ha_pvc:
+                ha_pvc = ha_pvc.replace("\n", "")
+                LOGGER.info("ha pvc: %s", ha_pvc)
+                break
+        if fault_tolerance:
+            kvalue *= 9
+        if health_monitor:
+            kvalue *= 4
+        cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
+        output = node_obj.execute_cmd(cmd_halog)
+        if isinstance(output, bytes):
+            output = str(output, 'UTF-8')
+        output = output.splitlines()
+        if fault_tolerance:
+            for line in output:
+                if 'Received the message from message bus' in line:
+                    log_list.append(line)
+            output = log_list
+        if health_monitor:
+            for line in output:
+                if 'to component hare' in line:
+                    log_list.append(line)
+            output = log_list
+        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': []}
+        for line in output:
+            source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
+            resource_type = line.split("{")[4].split(",")[6].split(":")[1].strip().replace("'", '')
+            resource_status = line.split("{")[4].split(",")[8].split(":")[1].strip().replace("'", '')
+            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().replace("'", '').replace('}', '')
+            resp_dict['source'].append(source)
+            resp_dict['resource_status'].append(resource_status)
+            resp_dict['resource_type'].append(resource_type)
+            resp_dict['generation_id'].append(generation_id)
+        return resp_dict
