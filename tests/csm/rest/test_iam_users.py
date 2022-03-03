@@ -711,6 +711,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         resp = resp.json()
         self.log.info("Create bucket and perform IO")
@@ -743,7 +744,7 @@ class TestIamUserRGW():
         resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.csm_obj.delete_iam_user(user=uid)
+        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=False, tenant=payload["tenant"])
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         self.created_iam_users.remove(uid)
@@ -770,6 +771,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         resp = resp.json()
         self.log.info("Create bucket and perform IO")
@@ -799,13 +801,13 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(get_resp, payload)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], "Value mismatch found")
-        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True, tenant=payload["tenant"])
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         self.created_iam_users.remove(uid)
         resp = self.csm_obj.get_iam_user(uid)
         assert_utils.assert_true(resp.status_code == HTTPStatus.NOT_FOUND, "Deleted user exists")
-        # Cortx-XXXXX Need to add Check for buckets and objects created by users are deleted
+        # CORTX-29180 Need to add Check for buckets and objects created by users are deleted
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
@@ -827,8 +829,10 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
-        resp = self.csm_obj.delete_iam_user(user=uid + "invalid")
+        resp = self.csm_obj.delete_iam_user(user=uid + "invalid", purge_data=True,
+                                            tenant=payload["tenant"])
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.NOT_FOUND, "Invalid user deleted")
         resp = self.csm_obj.get_iam_user(uid)
@@ -854,6 +858,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         get_resp = self.csm_obj.get_iam_user(uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
@@ -881,6 +886,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         get_resp = self.csm_obj.get_iam_user(uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
@@ -915,6 +921,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         mon_usr = CSM_REST_CFG["csm_user_monitor"]["username"]
         mon_pwd = CSM_REST_CFG["csm_user_monitor"]["password"]
