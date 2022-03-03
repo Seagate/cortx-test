@@ -152,10 +152,10 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
             break
     else:
         LOGGER.error("Timeout while generating support bundle")
-        return False, bundle_id
+        return False, bundle_dir
 
     LOGGER.info("Support bundle generated successfully.")
-    return True, bundle_id
+    return True, bundle_dir
 
 
 def collect_crash_files(local_dir):
@@ -224,10 +224,10 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
     if flg:
         LOGGER.info("Support bundle %s generated and copied to %s path.",
                     file, local_dir_path)
-        return True
+        return True, local_path
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
-        return False
+        return False, f"Support bundles not generated. Response: {resp}"
 
 
 def collect_crash_files_k8s(local_dir_path: str):
