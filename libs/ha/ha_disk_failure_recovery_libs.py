@@ -70,7 +70,6 @@ class DiskFailureRecoveryLib:
                                    command_suffix=f"-c {self.hax_container}"
                                                   f" -- {cmd}",
                                    decode=True)
-
         return json.loads(out)
 
     def start_sns_repair(self, pod_obj, pod_name: str = None):
@@ -88,5 +87,4 @@ class DiskFailureRecoveryLib:
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
                                     f" -- {common_cmd.START_SNS_REPAIR}", decode=True)
-
         return out
