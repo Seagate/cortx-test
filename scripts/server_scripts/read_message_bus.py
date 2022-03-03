@@ -15,6 +15,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Read Messages from Message bus for alerts testing."""
 import time
 # from cortx.utils.message_bus import MessageConsumer
 try:

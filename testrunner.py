@@ -17,7 +17,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-
+"""Test bot or worker which filters the tests based on Jira Test Plan or Kafka Message.
+Runs test sequentially or in parallel and report the results to DB and Jira.
+"""
 import os
 import sys
 import subprocess

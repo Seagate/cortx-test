@@ -16,6 +16,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""
+This library contains methods for resource operations using CORTX CLI
+"""
 import logging
 from commons import commands
 from commons.helpers import node_helper

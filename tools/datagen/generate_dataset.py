@@ -16,6 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Data generator by honouring the data distribution."""
 import random
 import os
 import sys

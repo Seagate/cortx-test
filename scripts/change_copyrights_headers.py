@@ -16,13 +16,12 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-""" Script to change copyright headers"""
-import os
+""" Script to change copyright headers.
 
-"""
 Find files with following command
 
-cd $project_root; find . -type f -name "*.py" -exec egrep -l '# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+cd $project_root; find . -type f -name "*.py" -exec egrep -l \
+'# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +39,9 @@ cd $project_root; find . -type f -name "*.py" -exec egrep -l '# Copyright (c) 20
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #' {} \;
 """
-files = [
+import os
+
+FILES = [
     './cortx-test/tests/blackbox/test_minio_client.py',
     './cortx-test/tests/blackbox/test_s3fs.py',
     './cortx-test/tests/blackbox/test_cortxcli.py',
@@ -365,7 +366,7 @@ files = [
     './cortx-test/tools/dash_server/R1_callbacks/r1_exe_report_callbacks.py'
 ]
 
-new_copyright = """# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+NEW_COPYRIGHT = """# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -381,7 +382,8 @@ new_copyright = """# Copyright (c) 2022 Seagate Technology LLC and/or its Affili
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """
-old_copyright = """# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+
+OLD_COPYRIGHT = """# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -399,9 +401,9 @@ old_copyright = """# Copyright (c) 2020 Seagate Technology LLC and/or its Affili
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """
 
-check_headr = "# Copyright (c)"
+CHECK_HEADR = "# Copyright (c)"
 
-new_copyright_for_blank = """#
+NEW_COPYRIGHT_FOR_BLANK = """#
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
@@ -421,19 +423,20 @@ new_copyright_for_blank = """#
 
 """
 
+
 def main():
-    for filename in files:
+    for filename in FILES:
         if os.path.exists(filename):
             try:
-                f = open(filename, encoding='utf-8')
-                data = f.read()
-                f.close()
-                i = data.find(old_copyright)
-                if i < 0:
+                fptr = open(filename, encoding='utf-8')
+                data = fptr.read()
+                fptr.close()
+                index = data.find(OLD_COPYRIGHT)
+                if index < 0:
                     print('no change needed:', filename)
-                    i = data.find(check_headr)
-                    if i < 0:
-                        data = new_copyright_for_blank + data[:]
+                    index = data.find(CHECK_HEADR)
+                    if index < 0:
+                        data = NEW_COPYRIGHT_FOR_BLANK + data[:]
                         new = filename + ".new"
                         backup = filename + ".bak"
                         f = open(new, "w")
@@ -445,7 +448,7 @@ def main():
                         print('Copyright message added for file with copyright %s' % (filename,))
                     continue
 
-                data = data[:i] + new_copyright + data[i + len(old_copyright):]
+                data = data[:index] + NEW_COPYRIGHT + data[index + len(OLD_COPYRIGHT):]
                 new = filename + ".new"
                 backup = filename + ".bak"
                 f = open(new, "w")
@@ -455,7 +458,7 @@ def main():
                 os.rename(new, filename)
                 os.remove(backup)
                 print('Copyright message added for %s' % (filename,))
-            except Exception as fault:
+            except OSError as fault:
                 print(fault)
 
 
