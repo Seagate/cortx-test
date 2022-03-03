@@ -166,12 +166,4 @@ class S3Object(S3RestApi):
                 file_hash.update(content)
 
         return file_hash.hexdigest()
-
-    @staticmethod
-    def calculate_checksum(file_path, offset_byte, size):
-        with open(file_path, 'rb') as fout:
-            fout.seek(offset_byte - 1)
-            content = fout.read(size)
-        file_hash = hashlib.sha256()
-        file_hash.update(content)
-        return file_hash.hexdigest()
+        
