@@ -368,10 +368,10 @@ class HAK8s:
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3b_url"])
-            resp = s3bench.check_log_file_error(resp[1])
-            if resp:
-                return False, f"s3bench operation failed with {resp}"
-        return True, "Sucessfully completed s3bench operation"
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
+            if not resp[0]:
+                return False, f"s3bench operation failed: {resp[1]}"
+        return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
         """
@@ -821,7 +821,7 @@ class HAK8s:
         return resp
 
     def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
                            output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
@@ -842,7 +842,8 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-
+        # Flag to store next workload status after/while event gets clear from test function
+        event_clear_flg = False
         resp = s3bench.setup_s3bench()
         if not resp:
             status = (resp, "Couldn't setup s3bench on client machine.")
@@ -858,9 +859,13 @@ class HAK8s:
                 end_point=S3_CFG["s3b_url"])
             if event.is_set():
                 fail_res.append(resp)
+                event_clear_flg = True
             else:
+                if event_clear_flg:
+                    fail_res.append(resp)
+                    event_clear_flg = False
+                    continue
                 pass_res.append(resp)
-
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
 
@@ -879,10 +884,12 @@ class HAK8s:
         resp = False
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
-            resp = s3bench.check_log_file_error(file_path=log)
-            log_list.append(log) if (pass_logs and resp) or (not pass_logs and not resp) else log
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=log)
+            if not resp[0] and pass_logs:
+                LOGGER.error(resp[1])
+            log_list.append(log) if (pass_logs and not resp) or (not pass_logs and resp) else log
 
-        return not resp, log_list
+        return resp[0], log_list
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
@@ -1029,7 +1036,7 @@ class HAK8s:
         LOGGER.info("Get the data pod running on %s node and %s node",
                     control_node_fqdn, ha_node_fqdn)
         data_pods = pod_obj.get_pods_node_fqdn(common_const.POD_NAME_PREFIX)
-        data_pod_name2 = data_pod_name1 = None
+        data_pod_name2 = data_pod_name1 = server_pod_name = None
         for pod_name, node in data_pods.items():
             if node == control_node_fqdn:
                 data_pod_name1 = pod_name
@@ -1167,10 +1174,11 @@ class HAK8s:
                                                         common_const.CLUSTER_CONF_PATH,
                                                         common_const.LOCAL_CONF_PATH,
                                                         common_const.HAX_CONTAINER_NAME)
-        resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False, exc=False)
-        if not resp_node[0]:
+        try:
+            resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False)
+        except IOError as error:
             LOGGER.error("Error: Not able to get cluster config file")
-            return False, resp_node
+            return False, error
         LOGGER.debug("%s response %s ", conf_cp, resp_node)
         local_conf = os.path.join(os.getcwd(), "cluster.conf")
         if os.path.exists(local_conf):

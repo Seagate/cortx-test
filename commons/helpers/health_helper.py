@@ -114,7 +114,6 @@ class Health(Host):
                 command_suffix=f"-c {container_name} -- {cmd}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", cmd, res)
-
         return float(res.replace('\n', ''))
 
     def get_cpu_usage(self, pod_name: str = None,
@@ -283,7 +282,6 @@ class Health(Host):
                 if not services:
                     LOG.critical("No service found on pod %s", pod_name)
                     return False
-
         return True
 
     def is_machine_already_configured(self) -> bool:
@@ -327,7 +325,6 @@ class Health(Host):
                 if ('[' and ']') in output:
                     LOG.debug(output)
             LOG.debug("Machine is already configured..!")
-
         return True
 
     def all_cluster_services_online(self, timeout=400) -> Tuple[bool, str]:
@@ -366,7 +363,6 @@ class Health(Host):
             result = self.is_motr_online()
             if not result:
                 return False, "Services are not online"
-
         return True, "Server is Online"
 
     def hctl_status_json(self, pod_name=None):
@@ -403,7 +399,6 @@ class Health(Host):
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
             result = json.loads(out)
-
         return result
 
     def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
@@ -652,7 +647,6 @@ class Health(Host):
             resp = self.is_motr_online()
             if not resp:
                 return resp, "cluster health is not good"
-
         return True, "cluster on {} up and running.".format(self.hostname)
 
     def reboot_node(self):

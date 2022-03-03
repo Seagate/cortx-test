@@ -41,6 +41,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# S3 Engine Type and versions
+S3_ENGINE = "MGW"
+S3_ENGINE_CORTX = 1
+S3_ENGINE_RGW = 2
+
 # K8s for cortx
 POD_NAME_PREFIX = "cortx-data"
 SERVER_POD_NAME_PREFIX = "cortx-server"
@@ -57,6 +62,7 @@ HA_CONSUL_VERIFY = "cortx/ha/v1/cluster_stop_key:1"
 HA_CONSUL_NOKEY = "NotFound"
 HA_TMP = "/root"
 HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
+HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
 
 # RAS Paths
 BYTES_TO_READ = 8000

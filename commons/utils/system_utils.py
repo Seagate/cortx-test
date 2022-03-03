@@ -31,6 +31,7 @@ import socket
 import builtins
 import errno
 import string
+import glob
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -1251,22 +1252,23 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     return file_path_list
 
 
-def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+def validate_s3bench_parallel_execution(log_dir=None, log_prefix=None, log_path=None) -> tuple:
     """
     Validate the s3bench parallel execution log file for failure.
 
     :param log_dir: Log directory path.
     :param log_prefix: s3 bench log prefix.
+    :param log_path: s3 bench log path.
     :return: bool, response.
     """
-    LOGGER.info("S3 parallel ios log validation started.")
-    log_file_list = list_dir(log_dir)
-    log_path = None
-    for filename in log_file_list:
-        if filename.startswith(log_prefix):
-            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("S3 parallel ios log validation started...")
+    if log_dir and os.path.isdir(log_dir):
+        log_path = [filepath for filepath in sorted(
+            glob.glob(os.path.abspath(log_dir) + '/**'),
+            key=os.path.getctime)
+            if os.path.basename(filepath).startswith(log_prefix)][-1]
     LOGGER.info("IO log path: %s", log_path)
-    if not log_path:
+    if not os.path.isfile(log_path):
         return False, f"failed to generate logs for parallel run: {log_prefix}."
     lines = open(log_path).readlines()
     resp_filtered = [
@@ -1288,7 +1290,7 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
             return False, f"{error} Found in S3Bench Run."
     LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
     # remove_file(log_path)  # Keeping logs for FA/Debugging.
-    LOGGER.info("S3 parallel ios log validation completed.")
+    LOGGER.info("S3 parallel ios log validation completed...")
 
     return True, "S3 parallel ios completed successfully."
 
