@@ -546,3 +546,9 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
               "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
+
+# SNS repair
+START_SNS_REPAIR = "hctl repair start"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
+                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
+                               "\"state\" : \"status_val\"}'"
