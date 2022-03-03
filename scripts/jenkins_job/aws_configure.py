@@ -114,9 +114,14 @@ def test_create_acc_aws_conf():
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
     endpoint = CMN_CFG["lb"]
+    s3_engine = CMN_CFG["s3_engine"]
     print("Installing s3 tools")
-    resp = run_cmd("make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
+    if s3_engine == 2: # for RGW
+        resp = run_cmd("make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
                    "endpoint={}".format(access_key, secret_key, endpoint))
+    else:
+        resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
+                       "endpoint={}".format(access_key, secret_key, endpoint))
     print("Response for tools install: {}".format(resp))
 
 
