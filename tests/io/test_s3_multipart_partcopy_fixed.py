@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-few-public-methods, too-many-statements
-class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
+class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     """S3 multipart class for executing given io stability workload"""
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
@@ -57,7 +57,7 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
         self.finish_time = datetime.now() + duration if duration else datetime.now() + \
             timedelta(hours=int(100 * 24))
 
-    async def execute_multipart_workload(self):
+    async def execute_multipart_partcopy_workload(self):
         """Execute multipart workload for specific duration."""
         while True:
             logger.info("Iteration %s is started...", self.iteration)
