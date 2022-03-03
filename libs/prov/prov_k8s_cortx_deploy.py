@@ -406,7 +406,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
             # The condition to validate the config.
             if not skip_disk_count_check and valid_disk_count > \
-                    (data_disk_per_cvg * cvg_count * node_list):
+                    (cvg_count * node_list):
                 return False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
 

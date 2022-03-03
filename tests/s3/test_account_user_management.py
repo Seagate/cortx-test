@@ -105,12 +105,13 @@ class TestAccountUserManagement:
         self.accounts_list = list()
         self.log.info(
             "Delete created user with prefix: %s", self.user_name)
-        usr_list = self.iam_obj.list_users()[1]
-        self.log.debug("Listing users: %s", usr_list)
-        all_usrs = [usr["UserName"]
-                    for usr in usr_list if self.user_name in usr["UserName"]]
-        if all_usrs:
-            self.iam_obj.delete_users_with_access_key(all_usrs)
+        # Uncomment later when delete iam user feature is available
+        #usr_list = self.iam_obj.list_users()[1]
+        #self.log.debug("Listing users: %s", usr_list)
+        #all_usrs = [usr["UserName"]
+        #            for usr in usr_list if self.user_name in usr["UserName"]]
+        #if all_usrs:
+        #    self.iam_obj.delete_users_with_access_key(all_usrs)
 
     def teardown_method(self):
         """
@@ -124,12 +125,12 @@ class TestAccountUserManagement:
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
             self.log.info("Cleaned test directory: %s", self.test_dir_path)
-        usr_list = self.iam_obj.list_users()[1]
-        all_users = [usr["UserName"]
-                     for usr in usr_list if self.user_name in usr["UserName"]]
-        if all_users:
-            resp = self.iam_obj.delete_users_with_access_key(all_users)
-            assert resp, "Failed to Delete IAM users"
+        #usr_list = self.iam_obj.list_users()[1]
+        #all_users = [usr["UserName"]
+        #             for usr in usr_list if self.user_name in usr["UserName"]]
+        #if all_users:
+        #    resp = self.iam_obj.delete_users_with_access_key(all_users)
+        #    assert resp, "Failed to Delete IAM users"
         for acc in self.accounts_list:
             self.s3acc_obj.delete_s3_account(acc)
         self.log.info("ENDED: Test teardown Operations.")
@@ -302,21 +303,21 @@ class TestAccountUserManagement:
             str(self.user_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
+        user_access_key= access_key = resp[1]["access_key"]
+        user_secret_key = secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        iam_obj.create_user(self.user_name)
-        self.log.info(resp)
-        assert resp[0], resp[1]
-        self.log.info("Created new account and new user in it")
-        self.log.info("Step 2: Create access key for newly created user")
-        resp = iam_obj.create_access_key(self.user_name)
-        self.log.info(resp)
-        assert resp[0], resp[1]
-        user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
-        user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
+        #iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        #iam_obj.create_user(self.user_name)
+        #self.log.info(resp)
+        #assert resp[0], resp[1]
+        #self.log.info("Created new account and new user in it")
+        #self.log.info("Step 2: Create access key for newly created user")
+        #resp = iam_obj.create_access_key(self.user_name)
+        #self.log.info(resp)
+        #assert resp[0], resp[1]
+        #user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
+        #user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         s3_user_obj = S3TestLib(
             access_key=user_access_key,
             secret_key=user_secret_key)
@@ -353,9 +354,9 @@ class TestAccountUserManagement:
         self.log.info(resp)
         assert resp[0], resp[1]
         self.accounts_list.append(self.account_name)
-        iam_obj.delete_access_key(user_name=self.user_name, access_key_id=user_access_key)
-        iam_obj.delete_user(self.user_name)
-        del iam_obj
+        #iam_obj.delete_access_key(user_name=self.user_name, access_key_id=user_access_key)
+        #iam_obj.delete_user(self.user_name)
+        #del iam_obj
         self.log.info(
             "END: Tested CRUD operations with valid login credentials")
 
