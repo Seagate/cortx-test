@@ -28,8 +28,8 @@ from typing import Union
 from botocore.config import Config
 
 import boto3
-from config.s3 import S3_CFG
-
+from config import S3_CFG, CMN_CFG
+from commons.constants import S3_ENGINE_RGW
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +58,10 @@ class S3Rest:
         :param debug: debug mode.
         """
         init_s3_connection = kwargs.get("init_s3_connection", True)
-        region = kwargs.get("region", None)
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            region = kwargs.get("region", "default")
+        else:
+            region = kwargs.get("region", None)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
