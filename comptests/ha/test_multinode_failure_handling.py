@@ -52,7 +52,6 @@ class TestMultiNodeFailureHandling:
         cls.node_master_list = []
         cls.host_list = []
         cls.hlth_master_list = []
-        cls.hlth_master_list = []
         cls.pod_name_list = []
         cls.ha_obj = HAK8s()
         cls.ha_comp_obj = HAK8SCompLib()
@@ -95,7 +94,6 @@ class TestMultiNodeFailureHandling:
         else:
             LOGGER.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
-        print(self.kvalue)
         LOGGER.info("The cluster has %s parity pods", self.kvalue)
         LOGGER.info("Checking if all the ha services are up and running")
         resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
