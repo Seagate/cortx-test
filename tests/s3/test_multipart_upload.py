@@ -966,12 +966,11 @@ class TestMultipartUpload:
         except CTException as error:
             self.log.error(error)
             if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert_utils.assert_equal("An error occurred (InvalidPart) when calling the "
-                                          "CompleteMultipartUpload operation: Unknown",
+                assert_utils.assert_equal(mp_config["error_msg_rgw"],
                                           error.message, error.message)
             else:
                 assert_utils.assert_equal(
-                    mp_config["error_msg"],
+                    mp_config["error_msg_cortx"],
                     error.message,
                     error.message)
             self.log.info(
