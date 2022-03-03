@@ -86,8 +86,6 @@ class TestObjectMetadataOperations:
         :param obj_name: Name of an object to be put to the bucket
         :param file_path: Path of the file to be created and uploaded to bucket
         :param mb_count: Size of file in MBs
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
@@ -285,10 +283,11 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-             if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"] :
-                assert "InvalidObjectName" in error.message, error.message
-             else :
-                assert S3_OBJ_TST["test_8550"]["error_message"] in error.message, error.message
+            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert S3_OBJ_TST["test_8550"]["error_message_rgw"] in error.message, error.message
+            else:
+                assert S3_OBJ_TST["test_8550"]["error_message_cortx"] in error.message, \
+                    error.message
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel

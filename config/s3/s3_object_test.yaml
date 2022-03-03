@@ -418,7 +418,8 @@ test_8550:
   bucket_name: "obj-metadata8550"
   start_range: 1025
   stop_range: 2000
-  error_message: "KeyTooLongError"
+  error_message_cortx: "KeyTooLongError"
+  error_message_rgw: "InvalidObjectName"
 test_8551:
   bucket_name: "obj-metadata8551"
   obj_name: "my_obj/abc_obj/def_obj"
