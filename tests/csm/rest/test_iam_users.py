@@ -172,9 +172,9 @@ class TestIamUserRGW():
             resp = self.csm_obj.delete_iam_user(user=user, purge_data=True)
             self.log.debug("Verify Response : %s", resp)
             if resp.status_code != HTTPStatus.OK:
-                delete_failed.append(usr)
+                delete_failed.append(user)
             else:
-                delete_success.append(usr)
+                delete_success.append(user)
         for usr in delete_success:
             self.created_iam_users.remove(usr)
         self.log.info("IAM delete success list %s", delete_success)
@@ -771,10 +771,13 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
         self.created_iam_users.add(uid)
+        resp = resp.json()
         self.log.info("Create bucket and perform IO")
         s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
                            secret_key=resp["keys"][0]["secret_key"])
         self.log.info("Step: Verify create bucket")
+        bucket_name = "user1" + str(int(time.time()))
+        bucket_name = bucket_name.replace("_", "-")
         status, resp = s3_obj.create_bucket(bucket_name)
         assert_utils.assert_true(status, resp)
         test_file = "test-object.txt"
