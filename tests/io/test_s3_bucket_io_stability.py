@@ -22,6 +22,7 @@ import os
 import random
 import time
 from datetime import datetime, timedelta
+from typing import Union
 
 from botocore.exceptions import ClientError
 
@@ -37,7 +38,7 @@ class TestBucketOps(S3Object, S3Bucket):
 
     # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, test_id: str,
-                 use_ssl: str, obj_start_size: int, obj_end_size: int,
+                 use_ssl: str, object_size: Union[int, dict], seed: int,
                  duration: timedelta = None) -> None:
         """
         s3 bucket operations init class.
@@ -49,12 +50,13 @@ class TestBucketOps(S3Object, S3Bucket):
         :param use_ssl: To use secure connection.
         :param obj_start_size: Object size start range
         :param obj_end_size: Object size end range
+        :param seed: Seed to be used for random data generator
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)
+        random.seed(seed)
         self.duration = duration
-        self.obj_start_size = obj_start_size
-        self.obj_end_size = obj_end_size
+        self.object_size = object_size
         self.test_id = test_id
         self.min_duration = 10  # In seconds
         self.finish_time = datetime.now() + duration\
@@ -67,8 +69,10 @@ class TestBucketOps(S3Object, S3Bucket):
         while True:
             logger.info("Iteration %s is started...", self.iteration)
             try:
-                file_size = random.randrange(self.obj_start_size, self.obj_end_size)
-                bucket_name = f'bucket-op-{time.perf_counter_ns()}'
+                file_size = self.object_size if not isinstance(
+                    self.object_size, dict) else random.randrange(
+                    self.object_size["start"], self.object_size["end"])
+                bucket_name = f'bucket-op-{self.test_id}-{time.perf_counter_ns()}'.lower()
                 logger.info("Create bucket %s", bucket_name)
                 await self.create_bucket(bucket_name)
                 logger.info("Upload %s objects to bucket %s", self.object_per_iter, bucket_name)
