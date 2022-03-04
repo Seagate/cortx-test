@@ -164,8 +164,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown K data pods from cluster with delete deployment method")
         LOGGER.info(" Shutdown the data pod by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -174,8 +174,8 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-            f"deleting deployment (unsafe)")
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} "
+                                               "by deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
             self.pod_dict[pod_name] = pod_data
@@ -222,8 +222,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown K data pods from cluster with replias method")
         LOGGER.info(" Shutdown the data pod by replias method")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -232,8 +232,8 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
-            f"by making replicas=0")
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} "
+                                               "by making replicas=0")
             pod_data.append(resp[1])
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by making replicas=0", count, pod_name)
@@ -279,8 +279,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown data pods from cluster with delete deployment method")
         LOGGER.info(" Shutdown the data pod by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -289,8 +289,8 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-            f"deleting deployment (unsafe)")
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} "
+                                               "by deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
             self.restore_pod = True
@@ -338,8 +338,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown till K data pods from cluster with replias method")
         LOGGER.info(" Shutdown the data pod by replias method")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -349,7 +349,7 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
-            f"by making replicas=0")
+                                               "by making replicas=0")
             pod_data.append(resp[1])
             self.restore_pod = True
             self.restore_method = const.RESTORE_SCALE_REPLICAS
@@ -398,12 +398,12 @@ class TestMultiNodeFailureHandling:
         LOGGER.info("Step 1: Shutdown K data pods and server pods from cluster with "
                     "delete deployment method")
         LOGGER.info(" Shutdown the data pod and server pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod names to be deleted")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.SERVER_POD_NAME_PREFIX)
         data_pod_list = random.sample(data_pod_list, self.kvalue)
         server_pod_list = random.sample(server_pod_list, self.kvalue)
-        LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = data_pod_list + server_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -413,7 +413,7 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-            f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
             self.pod_dict[pod_name] = pod_data
@@ -464,12 +464,12 @@ class TestMultiNodeFailureHandling:
         LOGGER.info("Step 1: Shutdown K data pod and server pods from cluster with "
                     "replica down method")
         LOGGER.info(" Shutdown the data pod and serverpod by replica down")
+        LOGGER.info("Get pod names to be deleted")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.SERVER_POD_NAME_PREFIX)
         data_pod_list = random.sample(data_pod_list, self.kvalue)
         server_pod_list = random.sample(server_pod_list, self.kvalue)
-        LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = data_pod_list + server_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -479,7 +479,7 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
-            f"by making replicas=0")
+                                               "by making replicas=0")
             pod_data.append(resp[1])
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by making replicas=0", count, pod_name)

@@ -134,7 +134,7 @@ class HAK8SCompLib:
         return True
 
     @staticmethod
-    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance=False: bool, health_monitor=False: bool) -> dict:
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool=False, health_monitor: bool=False) -> dict:
         '''
         Helper function to get ha log properties.
         :param node_obj: Master node(Logical Node object)
