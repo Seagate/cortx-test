@@ -693,6 +693,7 @@ class TestIamUserRGW():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37016')
@@ -753,6 +754,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37017')
@@ -811,6 +813,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37019')
@@ -839,6 +842,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37014')
@@ -867,6 +871,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37015')
@@ -902,6 +907,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37020')
