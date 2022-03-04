@@ -122,7 +122,7 @@ def test_create_acc_aws_conf():
                    "endpoint={}".format(access_key, secret_key, endpoint))
     else:
         resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
-                       "endpoint={}".format(access_key, secret_key, endpoint))
+                       .format(access_key, secret_key))
     print("Response for tools install: {}".format(resp))
 
 
