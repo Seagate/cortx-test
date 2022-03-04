@@ -412,6 +412,7 @@ class LogicalNode(Host):
         :return: list
         """
         pods_list = []
+        log.debug("Executing : %s", commands.KUBECTL_GET_POD_NAMES)
         output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_NAMES, read_lines=True)
         pods = [line.strip().replace("\n", "") for line in output]
         if pod_prefix is not None:

@@ -217,12 +217,14 @@ class SystemCapacity(RestTestLib):
         data_pod = random.choice(list(data_pods.keys()))
         self.log.info("Reading the stats from data pod : %s , Container: %s", data_pod,
                       constants.HAX_CONTAINER_NAME)
-        cmd_suffix = f"-c {constants.HAX_CONTAINER_NAME} -- {commands.GET_STATS}"
+        cmd_suffix = f"-c {constants.HAX_CONTAINER_NAME} -- {commands.GET_BYTECOUNT}"
         resp = node_obj.send_k8s_cmd(operation="exec", pod=data_pod, namespace=constants.NAMESPACE,
                                      command_suffix=cmd_suffix,
                                      decode=True)
         self.log.info("Response : %s", resp)
-        return json.loads(resp[resp.find("{"):resp.rfind("}")+1])
+        resp = "{\"" + resp.replace("bytecount/","").replace("\n" , ",\"").replace(":", "\":")+"}"
+        self.log.info("Parsed response : %s", resp)
+        return json.loads(resp)
 
     def get_dataframe_all(self, num_nodes: int):
         """

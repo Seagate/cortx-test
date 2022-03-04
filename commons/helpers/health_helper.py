@@ -377,6 +377,7 @@ class Health(Host):
         result = {}
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
                 CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            LOG.info("Executing command for LR product family....")
             hctl_command = commands.HCTL_STATUS_CMD_JSON
             LOG.info("Executing Command %s on node %s",
                      hctl_command, self.hostname)
@@ -386,6 +387,7 @@ class Health(Host):
             #          hctl_command, result)
             result = json.loads(result)
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            LOG.info("Executing command for LC product family....")
             container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
