@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com
 
 """
-HA component test suit for multi pod failure
+HA component test suite for multi pod failure
 """
 
 import random
@@ -55,7 +55,6 @@ class TestMultiNodeFailureHandling:
         cls.pod_name_list = []
         cls.ha_obj = HAK8s()
         cls.ha_comp_obj = HAK8SCompLib()
-        cls.restored = True
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.kvalue = None
         cls.pod_dict = {}
@@ -99,8 +98,8 @@ class TestMultiNodeFailureHandling:
         resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
         assert_utils.assert_true(resp, "HA services are not running")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.info("Check if hare hax service is running in %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("HAX services of pod are in online state")
@@ -199,16 +198,16 @@ class TestMultiNodeFailureHandling:
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        #TODO: Step:4 System health status should be “Failed”
+        # TODO: Step:4 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
-        #TODO: Step:5 Health monitor log should show action event for ‘Failed’
+        # TODO: Step:5 Health monitor log should show action event for ‘Failed’
         # event type | CORTX-29127
 
-        #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
         # Currently not supported
 
-        #TODO: Step:7 System health status should be “Failed”
+        # TODO: Step:7 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown K data pod from cluster with delete deployment method")
@@ -256,16 +255,16 @@ class TestMultiNodeFailureHandling:
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        #TODO: Step:4 System health status should be “Failed”
+        # TODO: Step:4 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
-        #TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
+        # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
         # CORTX-29127
 
-        #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
         # Currently not supported
 
-        #TODO: Step:7 System health status should be “Failed”
+        # TODO: Step:7 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown K data pod from cluster with replica down method")
@@ -314,16 +313,16 @@ class TestMultiNodeFailureHandling:
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-            #TODO: Step:4 System health status should be “Failed”
+            # TODO: Step:4 System health status should be “Failed”
             # CORTX-29129 - Fix get system health API
 
-            #TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
+            # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
             # CORTX-29127
 
-            #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+            # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
             # Currently not supported
 
-            #TODO: Step:7 System health status should be “Failed”
+            # TODO: Step:7 System health status should be “Failed”
             # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown till K data pod from cluster with delete "
@@ -372,16 +371,16 @@ class TestMultiNodeFailureHandling:
             self.verify_ha_prop(resp_dict)
             LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-            #TODO: Step:4 System health status should be “Failed”
+            # TODO: Step:4 System health status should be “Failed”
             # CORTX-29129 - Fix get system health API
 
-            #TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
+            # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
             # CORTX-29127
 
-            #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+            # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
             # Currently not supported
 
-            #TODO: Step:7 System health status should be “Failed”
+            # TODO: Step:7 System health status should be “Failed”
             # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown till K data pod from cluster with replica down method")
@@ -436,16 +435,16 @@ class TestMultiNodeFailureHandling:
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        #TODO: Step:4 System health status should be “Failed”
+        # TODO: Step:4 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
-        #TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
+        # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
         # CORTX-29127
 
-        #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
         # Currently not supported
 
-        #TODO: Step:7 System health status should be “Failed”
+        # TODO: Step:7 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown K data pod and server pod from cluster with "
@@ -500,16 +499,16 @@ class TestMultiNodeFailureHandling:
         self.verify_ha_prop(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod alert in fault tolerance")
 
-        #TODO: Step:4 System health status should be “Failed”
+        # TODO: Step:4 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
-        #TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
+        # TODO: Step:5 Health monitor log should show action event for ‘Failed’  event type
         # CORTX-29127
 
-        #TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
+        # TODO: Step:6 Hare should send ‘Failed’/'Degraded' event to fault tolerance
         # Currently not supported
 
-        #TODO: Step:7 System health status should be “Failed”
+        # TODO: Step:7 System health status should be “Failed”
         # CORTX-29129 - Fix get system health API
 
         LOGGER.info("COMPLETED: Shutdown K data pod and server pod from cluster with "
