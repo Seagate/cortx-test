@@ -1124,8 +1124,9 @@ class ProvDeployK8sCortxLib:
                                         size_metadata=metadata_disk_size,
                                         log_path=log_path,
                                         cortx_server_image=self.cortx_server_image,
-                                        https_port='', http_port='',
-                                        control_https_port='')
+                                        https_port=self.nodeport_https,
+                                        http_port=self.nodeport_http,
+                                        control_https_port=self.control_nodeport_https)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")

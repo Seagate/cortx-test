@@ -126,8 +126,8 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   setup_size: "small"
-  https_port: "31111"
-  http_port: "31000"
+  https_port: "30443"
+  http_port: "30080"
   control_port_https: "31169"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
