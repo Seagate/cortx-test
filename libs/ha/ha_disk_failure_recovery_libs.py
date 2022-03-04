@@ -52,20 +52,18 @@ class DiskFailureRecoveryLib:
         temp = resp['byte_count'][0]
         return temp[byte_count_type]
 
-    def change_disk_status_hctl(self, pod_obj: LogicalNode, node_name: str,
+    def change_disk_status_hctl(self, pod_obj: LogicalNode, pod_name: str, node_name: str,
                                 device: str, status: str):
         """
-            This function is used to change the disk status(online, offline etc)
-            using hctl command
-            :param pod_obj: Object for master nodes
-            :param node_name: name of the node from which status of the disk will be changed
-            :param device: name of disk of which status will be changed
-            :param status: status of the disk
-            :rtype Json response of hctl command
+        This function is used to change the disk status(online, offline etc)
+        using hctl command
+        :param pod_obj: Object for master nodes
+        :param pod_name: name of the pod
+        :param node_name: name of the node from which status of the disk will be changed
+        :param device: name of disk of which status will be changed
+        :param status: status of the disk
+        :rtype Json response of hctl command
         """
-        resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
-        pod_name = resp[1]
         cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace("node_val", str(node_name)). \
             replace("device_val", str(device)).replace("status_val", str(status))
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
@@ -75,18 +73,14 @@ class DiskFailureRecoveryLib:
                                    decode=True)
         return json.loads(out)
 
-    def sns_repair(self, pod_obj: LogicalNode, option: str, pod_name: str = None):
+    def sns_repair(self, pod_obj: LogicalNode, option: str, pod_name: str):
         """
-            This function will start the sns repair
-            :param pod_obj: Object for master nodes
-            :param option: Options supported in sns repair cmd, start stop etc
-            :param pod_name: name of the pod in which sns repair will start
-            :rtype response of sns repair command
+        This function will start the sns repair
+        :param pod_obj: Object for master nodes
+        :param option: Options supported in sns repair cmd, start stop etc
+        :param pod_name: name of the pod in which sns repair will start
+        :rtype response of sns repair command
         """
-        if pod_name is None:
-            resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-            assert_utils.assert_true(resp[0], resp[1])
-            pod_name = resp[0]
         cmd = common_cmd.SNS_REPAIR_CMD.format(option)
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
