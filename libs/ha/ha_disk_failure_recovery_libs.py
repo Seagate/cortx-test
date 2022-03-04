@@ -25,6 +25,7 @@ import json
 
 from commons import commands as common_cmd
 from commons import constants as common_const
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class DiskFailureRecoveryLib:
                                    decode=True)
         return json.loads(out)
 
-    def sns_repair(self, pod_obj, option: str, pod_name: str = None):
+    def sns_repair(self, pod_obj: LogicalNode, option: str, pod_name: str = None):
         """
             This function will start the sns repair
             :param pod_obj: Object for master nodes
