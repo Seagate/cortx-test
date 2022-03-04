@@ -653,7 +653,6 @@ class TestMultiPodFailure:
                     del_bucket)
         bucket_list = list(s3_data.keys())
         get_random_buck = random.sample(bucket_list, del_bucket)
-        remain_buck = list(set(bucket_list) - set(get_random_buck))
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': del_output}
         thread = threading.Thread(target=self.ha_obj.put_get_delete,
@@ -749,10 +748,10 @@ class TestMultiPodFailure:
         LOGGER.info("Step 8: Successfully performed DELETEs on remaining FailedToDelete buckets "
                     "when pods were going down, on degraded cluster.")
 
-        LOGGER.info("Step 9: Verify read on the remaining %s buckets.", len(remain_buck))
+        LOGGER.info("Step 9: Verify read on the remaining %s buckets.", len(rem_bkts_aftr_del))
         rd_output = Queue()
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipdel': True, 'bkt_list': remain_buck, 'di_check': True,
+                'skipput': True, 'skipdel': True, 'bkt_list': rem_bkts_aftr_del, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
@@ -769,7 +768,7 @@ class TestMultiPodFailure:
                                   f"in READ: {fail_bkt_get} {event_bkt_get}"
                                   f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Step 9: Successfully verified READs & DI check for remaining buckets: %s",
-                    len(remain_buck))
+                    len(rem_bkts_aftr_del))
         LOGGER.info("ENDED: Test to verify continuous DELETEs while pods are failing till K "
                     "data pods are failed.")
 
