@@ -394,15 +394,15 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35777")
     @CTFailOn(error_handler)
-    def test_continuous_reads_writes_during_kpods_down(self):
+    def test_reads_writes_during_kpods_down(self):
         """
         This test tests continuous READs/WRITEs while pods are failing till K data pods are failed
         """
         LOGGER.info("STARTED: Test to verify continuous READs/WRITEs while %s (K) pods "
                     "were going down.", self.kvalue)
 
-        LOGGER.info("Step 1: Perform Continuous READs/WRITEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) during %s (K) data pods down by delete deployment.", self.kvalue)
+        LOGGER.info("Step 1: Perform Continuous IOs with variable object sizes during %s (K) "
+                    "data pods down by delete deployment.", self.kvalue)
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35777'
         self.s3_clean = users
