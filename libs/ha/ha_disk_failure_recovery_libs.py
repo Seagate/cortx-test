@@ -51,7 +51,8 @@ class DiskFailureRecoveryLib:
         temp = resp['byte_count'][0]
         return temp[byte_count_type]
 
-    def fail_disk_using_hctl(self, pod_obj, node_name: str, device: str, status: str):
+    def change_disk_status_hctl(self, pod_obj: LogicalNode, node_name: str,
+                                device: str, status: str):
         """
             This function is used to change the disk status(online, offline etc)
             using hctl command
