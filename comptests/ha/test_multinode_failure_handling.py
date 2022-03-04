@@ -122,8 +122,8 @@ class TestMultiNodeFailureHandling:
                                                restore_params={"deployment_name": deployment_name,
                                                "deployment_backup": deployment_backup})
                 LOGGER.debug("Response: %s", resp)
-                assert_utils.assert_true(resp[0], f"Failed to restore pod by "
-                                                  "{self.restore_method} way")
+                assert_utils.assert_true(resp[0], "Failed to restore pod by "
+                                                  f"{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
