@@ -536,7 +536,7 @@ class RestIamUser(RestTestLib):
         :return: response
         """
         self.log.info("Delete IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_delete_endpoint"].format(uid)
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
         payload = {"purge_data": False}
         if purge_data:
             payload = {"purge_data": True}
@@ -553,7 +553,7 @@ class RestIamUser(RestTestLib):
         :return: response
         """
         self.log.info("Get IAM user request....")
-        endpoint = CSM_REST_CFG["s3_get_iam_endpoint"].format(uid)
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
         response = self.restapi.rest_call("get", endpoint=endpoint,
                                           headers=header)
         self.log.info("Get IAM user request successfully sent...")
