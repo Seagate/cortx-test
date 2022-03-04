@@ -61,7 +61,7 @@ class DiskFailureRecoveryLib:
             :param node_name: name of the node from which status of the disk will be changed
             :param device: name of disk of which status will be changed
             :param status: status of the disk
-            :rtype bool
+            :rtype Json response of hctl command
         """
         resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
@@ -81,7 +81,7 @@ class DiskFailureRecoveryLib:
             :param pod_obj: Object for master nodes
             :param option: Options supported in sns repair cmd, start stop etc
             :param pod_name: name of the pod in which sns repair will start
-            :rtype bool
+            :rtype response of sns repair command
         """
         if pod_name is None:
             resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
