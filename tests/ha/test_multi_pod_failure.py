@@ -828,7 +828,7 @@ class TestMultiPodFailure:
                     del_bucket)
         bucket_list = list(s3_data.keys())
         get_random_buck = random.sample(bucket_list, del_bucket)
-        args = {'test_prefix': self.test_prefix_del, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': del_output}
         thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
                                   args=(event, s3_test_obj,), kwargs=args)
@@ -850,7 +850,7 @@ class TestMultiPodFailure:
 
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
-        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix_read,
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
                 'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
                 'output': output_rd}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation,
