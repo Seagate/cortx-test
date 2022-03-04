@@ -40,11 +40,11 @@ from tests.io import test_s3_multipart_io_stability
 from tests.io import test_s3_object_io_stability
 from tests.io import test_s3_obj_range_read_io_stability
 
-
 nfs_dir = NFS_SERVER_DIR
 mount_dir = MOUNT_DIR
 function_mapping = {
-    'range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps, 'execute_object_range_read_workload']
+    'range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps,
+                   'execute_object_range_read_workload']
 }
 
 
@@ -117,6 +117,8 @@ async def schedule_sessions(test_plan: str, test_plan_value: dict, common_params
                   'object_size': each['object_size']}
         if 'part_range' in each.keys():
             params['part_range'] = each['part_range']
+        if 'range_read' in each.keys():
+            params['range_read'] = each['range_read']
         params.update(common_params)
         for i in range(int(each['sessions'])):
             tasks.append(create_session(funct=each['operation'],

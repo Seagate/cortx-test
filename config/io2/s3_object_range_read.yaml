@@ -5,7 +5,7 @@ test_1:
     end: 100Kb
   result_duration: 2h
   sessions_per_node: 1
-  range_read: 100b
+  range_read: 100bytes
   tool: s3api
   operation: range_read
 
@@ -16,7 +16,7 @@ test_2:
     end: 1Mb
   result_duration: 2h
   sessions_per_node: 2
-  range_read: 200b
+  range_read: 200bytes
   tool: s3api
   operation: range_read
 
@@ -27,7 +27,7 @@ test_3:
     end: 10Mb
   result_duration: 20h
   sessions_per_node: 3
-  range_read: 500b
+  range_read: 500bytes
   tool: s3api
   operation: range_read
 
@@ -38,7 +38,7 @@ test_4:
     end: 20Mb
   result_duration: 1d
   sessions_per_node: 5
-  range_read: 1000b
+  range_read: 1000bytes
   tool: s3api
   operation: range_read
 
