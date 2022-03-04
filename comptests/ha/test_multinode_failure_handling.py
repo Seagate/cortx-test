@@ -80,7 +80,6 @@ class TestMultiNodeFailureHandling:
         """
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
-        self.restored = True
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
