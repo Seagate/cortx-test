@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 class DiskFailureRecoveryLib:
     """
-    This class common utility methods for disk failure recovery.
+    This class contains common utility methods for disk failure recovery.
     """
 
     def __init__(self):
