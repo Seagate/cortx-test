@@ -61,7 +61,10 @@ class ProvDeployK8sCortxLib:
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
-        self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
+        self.nodeport_http = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
+        self.nodeport_https = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
+        self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
+                                                self.deploy_cfg["control_port_https"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -394,8 +397,12 @@ class ProvDeployK8sCortxLib:
         cortx_server_image = kwargs.get("cortx_server_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
-        service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
-        LOGGER.debug("Service type is %s", service_type)
+        nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
+        nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
+        control_nodeport_https = kwargs.get("control_https_port",
+                                            self.deploy_cfg['control_port_https'])
+        LOGGER.debug("Ports are %s\n%s\n%s", nodeport_http,
+                     nodeport_https, control_nodeport_https)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -454,7 +461,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
         # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath, log_path, size, service_type)
+        resp_passwd = self.update_password_sol_file(filepath, log_path, size,
+                                                    nodeport_http, nodeport_https,
+                                                    control_nodeport_https)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -635,10 +644,17 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_password_sol_file(self, filepath, log_path, size, service_type):
+    def update_password_sol_file(self, filepath, log_path, size,
+                                 nodeport_http, nodeport_https,
+                                 control_nodeport_https):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
+        Param: log_path: to change the log path inside pods
+        Param: size: to change the disk size to be used for data and metadata
+        Param: nodeport_http: http Port for node port service for s3
+        Param: nodeport_https: https Port for node port service for s3
+        Param: control_nodeport_https: https Port for node port service for control
         :returns the status, filepath
         """
         with open(filepath) as soln:
@@ -650,7 +666,11 @@ class ProvDeployK8sCortxLib:
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             common['container_path']['log'] = log_path
             common['setup_size'] = size
-            common['external_services']['type'] = service_type
+            s3_service = common['external_services']['s3']
+            control_service = common['external_services']['control']
+            s3_service['nodePorts']['http'] = nodeport_http
+            s3_service['nodePorts']['https'] = nodeport_https
+            control_service['nodePorts']['https'] = control_nodeport_https
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
@@ -1104,7 +1124,8 @@ class ProvDeployK8sCortxLib:
                                         size_metadata=metadata_disk_size,
                                         log_path=log_path,
                                         cortx_server_image=self.cortx_server_image,
-                                        service_type=self.service_type)
+                                        https_port='', http_port='',
+                                        control_https_port='')
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
@@ -1127,8 +1148,21 @@ class ProvDeployK8sCortxLib:
                 assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
-            resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
-            eth1_ip = resp[1].strip("'\\n'b'")
+            node_obj = LogicalNode(master_node_list[0].hostname, master_node_list[0].username,
+                                   master_node_list[0].password)
+            resp = node_obj.execute_cmd(cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+            ext_ip = resp[0].strip("\n")
+            LOGGER.debug("External LB IP: {}".format(ext_ip))
+            resp = node_obj.execute_cmd(cmd=common_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+            resp = json.loads(resp)
+            for item_data in resp["items"]:
+                if item_data['metadata']["name"] == "cortx-io-svc-0":
+                    for item in item_data['spec']['ports']:
+                        if item['name'] == 'cortx-rgw-https':
+                            port = item["nodePort"]
+                            print("Port for IO is: {}".format(port))
+            ext_port_ip = "{}:{}".format(ext_ip, port)
+            # Will revisit this code again in future to have external lb
             # LOGGER.info("Configure HAproxy on client")
             # ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
             #                                         master_node_list[0].username,
@@ -1140,7 +1174,7 @@ class ProvDeployK8sCortxLib:
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
             access_key, secret_key = S3H_OBJ.get_local_keys()
-            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key, endpoint_url=ext_port_ip)
             if run_basic_s3_io_flag:
                 LOGGER.info("Step to Perform basic IO operations")
                 bucket_name = "bucket-" + str(int(time.time()))
