@@ -117,13 +117,11 @@ class TestMultiNodeFailureHandling:
                     deployment_backup = self.pod_dict.get(pod_name)[1]
                 resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                                restore_method=self.restore_method,
-                                               restore_params={"deployment_name":
-                                                                   deployment_name,
-                                                               "deployment_backup":
-                                                                   deployment_backup})
+                                               restore_params={"deployment_name": deployment_name,
+                                               "deployment_backup": deployment_backup})
                 LOGGER.debug("Response: %s", resp)
-                assert_utils.assert_true(resp[0], f"Failed to restore pod by "
-                f"{self.restore_method} way")
+                assert_utils.assert_true(resp[0], "Failed to restore pod by "
+                                                  f"{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
@@ -144,12 +142,13 @@ class TestMultiNodeFailureHandling:
         generation_id_list = resp_dict['generation_id']
         for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
                                                           resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor', f"Source of {generation_id_list[index]} "
-            f"is not from monitor")
-            assert_utils.assert_equal(data2, 'node', f"Resource of {generation_id_list[index]}"
-            f" is not node")
-            assert_utils.assert_equal(data3, 'failed', f"Resource status of"
-            f" {generation_id_list[index]} is not failed")
+            assert_utils.assert_equal(data1, 'monitor',
+                                      f"Source of {generation_id_list[index]} is not from monitor")
+            assert_utils.assert_equal(data2, 'node',
+                                      f"Resource of {generation_id_list[index]} is not node")
+            assert_utils.assert_equal(data3, 'failed',
+                                      f"Resource status of {generation_id_list[index]} "
+                                      "is not failed")
 
     @pytest.mark.comp_ha
     @pytest.mark.lc
@@ -162,8 +161,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown K server pods from cluster with delete deployment method")
         LOGGER.info(" Shutdown the server pod by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -172,14 +171,14 @@ class TestMultiNodeFailureHandling:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-            f"deleting deployment (unsafe)")
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} "
+                                               "by deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("Step 1: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
@@ -216,8 +215,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown K server pods from cluster with replias method")
         LOGGER.info(" Shutdown the server pod by replias method")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -227,12 +226,12 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
-            f"by making replicas=0")
+                                               "by making replicas=0")
             pod_data.append(resp[1])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_SCALE_REPLICAS
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by making replicas=0", count, pod_name)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
         LOGGER.info("Step 1: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
@@ -269,8 +268,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown server pods from cluster with delete deployment method")
         LOGGER.info(" Shutdown the server pod by deleting deployment (unsafe)")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -280,7 +279,7 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-            f"deleting deployment (unsafe)")
+                                               "deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
             self.restore_pod = True
@@ -323,8 +322,8 @@ class TestMultiNodeFailureHandling:
 
         LOGGER.info("Step 1: Shutdown till K server pods from cluster with replias method")
         LOGGER.info(" Shutdown the server pod by replias method")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -334,7 +333,7 @@ class TestMultiNodeFailureHandling:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
-            f"by making replicas=0")
+                                               "by making replicas=0")
             pod_data.append(resp[1])
             self.restore_pod = True
             self.restore_method = const.RESTORE_SCALE_REPLICAS

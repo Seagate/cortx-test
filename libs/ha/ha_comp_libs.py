@@ -134,9 +134,9 @@ class HAK8SCompLib:
         return True
 
     @staticmethod
-    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance=False, health_monitor=False) -> dict:
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool=False, health_monitor: bool=False) -> dict:
         '''
-        Helper function to get k8s monitor log properties.
+        Helper function to get ha log properties.
         :param node_obj: Master node(Logical Node object)
         :param log_name: Name of the ha log
         :param kvalue: Number of lines required from 'tail' output
@@ -182,4 +182,3 @@ class HAK8SCompLib:
             resp_dict['resource_type'].append(resource_type)
             resp_dict['generation_id'].append(generation_id)
         return resp_dict
-        
