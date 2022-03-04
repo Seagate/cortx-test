@@ -36,9 +36,9 @@ logger = logging.getLogger(__name__)
 class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     """S3 multipart class for executing given io stability workload"""
 
-    # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, use_ssl: bool,
-                 object_size: Union[dict, int, bytes], part_range: dict, seed: int,
+                 object_size: Union[dict, int, bytes], part_number_range: dict, seed: int,
                  test_id: str = None, duration: timedelta = None) -> None:
         """
         s3 multipart init class.
@@ -53,7 +53,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
         random.seed(seed)
         self.duration = duration
         self.object_size = object_size
-        self.part_range = part_range
+        self.part_number_range = part_number_range
         self.iteration = 1
         self.min_duration = 10  # In seconds
         self.test_id = test_id if test_id else random.randrange(24, 240)
@@ -75,7 +75,8 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 logger.info("Multipart Bucket name: %s", mpart_bucket)
                 logger.info("Multipart Object name: %s", mpart_object)
                 file_size = self.object_size
-                number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
+                number_of_parts = random.randrange(self.part_number_range["start"],
+                                                   self.part_number_range["end"])
                 single_part_size = file_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
                 resp = await self.create_bucket(bucket)
