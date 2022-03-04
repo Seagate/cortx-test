@@ -65,8 +65,11 @@ class HAK8s:
         self.vm_username = os.getenv(
             "QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         self.vm_password = os.getenv("QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
-        self.bmc_user = CMN_CFG["bmc"]["username"]
-        self.bmc_pwd = CMN_CFG["bmc"]["password"]
+        if CMN_CFG.get("bmc", None):
+            self.bmc_pwd = CMN_CFG["bmc"]["password"]
+            self.bmc_user = CMN_CFG["bmc"]["username"]
+        else:
+            self.bmc_user = self.bmc_pwd = None
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]
         self.t_power_off = HA_CFG["common_params"]["power_off_time"]
         self.mgnt_ops = ManagementOPs()
