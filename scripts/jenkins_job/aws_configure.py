@@ -30,6 +30,7 @@ from time import perf_counter_ns
 from multiprocessing import Process
 from commons import pswdmanager
 from commons.utils import support_bundle_utils as sb
+from commons import constants as const
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -116,7 +117,7 @@ def test_create_acc_aws_conf():
     endpoint = CMN_CFG["lb"]
     s3_engine = CMN_CFG["s3_engine"]
     print("Installing s3 tools")
-    if s3_engine == 2: # for RGW
+    if s3_engine == const.S3_ENGINE_RGW: # for RGW
         resp = run_cmd("make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
                    "endpoint={}".format(access_key, secret_key, endpoint))
     else:
