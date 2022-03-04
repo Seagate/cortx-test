@@ -83,8 +83,9 @@ class DiskFailureRecoveryLib:
             resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
             assert_utils.assert_true(resp[0], resp[1])
             pod_name = resp[0]
+        cmd = common_cmd.START_SNS_REPAIR.format("start")
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
-                                    f" -- {common_cmd.START_SNS_REPAIR}", decode=True)
+                                    f" -- {cmd}", decode=True)
         return out
