@@ -949,8 +949,7 @@ class TestMultiPodFailure:
                     "going down.", self.kvalue)
 
         LOGGER.info("Step 10.3: Verify status for In-flight READs/Verify DI while %s (K) pods "
-                    "going "
-                    "down should be failed/error.", self.kvalue)
+                    "going down should be failed/error.", self.kvalue)
         responses_rd = {}
         while len(responses_rd) != 2:
             responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
