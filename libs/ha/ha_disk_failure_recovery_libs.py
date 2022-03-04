@@ -26,6 +26,7 @@ import json
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.pods_helper import LogicalNode
+from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class DiskFailureRecoveryLib:
         self.hax_container = common_const.HAX_CONTAINER_NAME
 
     @staticmethod
-    def get_byte_count_hctl(health_obj, byte_count_type: str):
+    def get_byte_count_hctl(health_obj: Health, byte_count_type: str):
         """
         This function is used to get different byte counts using hctl status command
         :param health_obj: Health object for master nodes
