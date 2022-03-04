@@ -53,7 +53,6 @@ class TestMultiNodeFailureHandling:
         cls.pod_name_list = []
         cls.ha_obj = HAK8s()
         cls.ha_comp_obj = HAK8SCompLib()
-        cls.restored = True
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.kvalue = None
         cls.pod_dict = {}
@@ -78,7 +77,6 @@ class TestMultiNodeFailureHandling:
         """
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
-        self.restored = True
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -97,8 +95,8 @@ class TestMultiNodeFailureHandling:
         resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
         assert_utils.assert_true(resp, "HA services are not running")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.info("Check if hare hax service is running in %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("HAX services of pod are in online state")
