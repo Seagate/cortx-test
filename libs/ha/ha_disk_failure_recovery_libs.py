@@ -72,10 +72,11 @@ class DiskFailureRecoveryLib:
                                    decode=True)
         return json.loads(out)
 
-    def start_sns_repair(self, pod_obj, pod_name: str = None):
+    def sns_repair(self, pod_obj, option: str, pod_name: str = None):
         """
             This function will start the sns repair
             :param pod_obj: Object for master nodes
+            :param option: Options supported in sns repair cmd, start stop etc
             :param pod_name: name of the pod in which sns repair will start
             :rtype bool
         """
@@ -83,7 +84,7 @@ class DiskFailureRecoveryLib:
             resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
             assert_utils.assert_true(resp[0], resp[1])
             pod_name = resp[0]
-        cmd = common_cmd.SNS_REPAIR_CMD.format("start")
+        cmd = common_cmd.SNS_REPAIR_CMD.format(option)
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
