@@ -27,7 +27,6 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
-from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
