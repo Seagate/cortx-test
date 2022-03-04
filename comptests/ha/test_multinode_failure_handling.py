@@ -178,10 +178,10 @@ class TestMultiNodeFailureHandling:
             f"deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("Step 1: Successfully deleted %s data pods", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
@@ -235,10 +235,10 @@ class TestMultiNodeFailureHandling:
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
             f"by making replicas=0")
             pod_data.append(resp[1])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_SCALE_REPLICAS
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by making replicas=0", count, pod_name)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
         LOGGER.info("Step 1: Successfully deleted %s data pods", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
@@ -401,9 +401,10 @@ class TestMultiNodeFailureHandling:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        pod_list = data_pod_list + server_pod_list
+        data_pod_list = random.sample(data_pod_list, self.kvalue)
+        server_pod_list = random.sample(server_pod_list, self.kvalue)
         LOGGER.info("Get pod names to be deleted")
-        self.pod_name_list = random.sample(pod_list, self.kvalue)
+        self.pod_name_list = data_pod_list + server_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
@@ -415,11 +416,11 @@ class TestMultiNodeFailureHandling:
             f"deleting deployment (unsafe)")
             pod_data.append(resp[1])
             pod_data.append(resp[2])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 1: Successfully deleted %s  pods", self.kvalue)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+        LOGGER.info("Step 1: Successfully deleted %s pods", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
@@ -466,9 +467,10 @@ class TestMultiNodeFailureHandling:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        pod_list = data_pod_list + server_pod_list
+        data_pod_list = random.sample(data_pod_list, self.kvalue)
+        server_pod_list = random.sample(server_pod_list, self.kvalue)
         LOGGER.info("Get pod names to be deleted")
-        self.pod_name_list = random.sample(pod_list, self.kvalue)
+        self.pod_name_list = data_pod_list + server_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
@@ -479,10 +481,10 @@ class TestMultiNodeFailureHandling:
             assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} "
             f"by making replicas=0")
             pod_data.append(resp[1])
-            self.restore_pod = True
-            self.restore_method = const.RESTORE_SCALE_REPLICAS
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by making replicas=0", count, pod_name)
+        self.restore_pod = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
         LOGGER.info("Step 1: Successfully deleted %s data pod", self.kvalue)
 
         LOGGER.info("Step 2: Check pod alert in k8s monitor")
