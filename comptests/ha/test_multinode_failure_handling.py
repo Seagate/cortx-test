@@ -119,9 +119,8 @@ class TestMultiNodeFailureHandling:
                     deployment_backup = self.pod_dict.get(pod_name)[1]
                 resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                                restore_method=self.restore_method,
-                                               restore_params=
-                                               {"deployment_name": deployment_name,
-                                                "deployment_backup": deployment_backup})
+                                               restore_params={"deployment_name": deployment_name,
+                                               "deployment_backup": deployment_backup})
                 LOGGER.debug("Response: %s", resp)
                 assert_utils.assert_true(resp[0], f"Failed to restore pod by "
                 f"{self.restore_method} way")
