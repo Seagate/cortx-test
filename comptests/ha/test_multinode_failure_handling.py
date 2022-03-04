@@ -123,7 +123,7 @@ class TestMultiNodeFailureHandling:
                                                "deployment_backup": deployment_backup})
                 LOGGER.debug("Response: %s", resp)
                 assert_utils.assert_true(resp[0], f"Failed to restore pod by "
-                f"{self.restore_method} way")
+                                                  "{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
@@ -150,7 +150,7 @@ class TestMultiNodeFailureHandling:
                                       f"Resource of {generation_id_list[index]} is not node")
             assert_utils.assert_equal(data3, 'failed',
                                       f"Resource status of {generation_id_list[index]} "
-                                      f"is not failed")
+                                      "is not failed")
 
     @pytest.mark.comp_ha
     @pytest.mark.lc
