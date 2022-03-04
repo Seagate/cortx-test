@@ -33,10 +33,11 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 from commons import constants as const
-from config import CMN_CFG
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
+from libs.s3 import S3H_OBJ
+
 
 
 class TestObjectMetadataOperations:
@@ -284,11 +285,8 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert S3_OBJ_TST["test_8550"]["error_message_rgw"] in error.message, error.message
-            else:
-                assert S3_OBJ_TST["test_8550"]["error_message_cortx"] in error.message, \
-                    error.message
+            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
+                                      error)
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
