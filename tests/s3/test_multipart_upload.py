@@ -32,11 +32,11 @@ from commons.utils.system_utils import backup_or_restore_files, split_file, make
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from commons import constants as const
-from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3 import S3H_OBJ
 
 
 class TestMultipartUpload:
@@ -964,14 +964,7 @@ class TestMultipartUpload:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert_utils.assert_equal(mp_config["error_msg_rgw"],
-                                          error.message, error.message)
-            else:
-                assert_utils.assert_equal(
-                    mp_config["error_msg_cortx"],
-                    error.message,
-                    error.message)
+            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info(
                 "Step 4: Failed to complete the multipart with input of wrong json/etag")
         self.log.info("ENDED: Test Multipart upload with invalid json input")

@@ -33,12 +33,12 @@ from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from commons import constants as const
 from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import S3_CFG, S3H_OBJ, CMN_CFG
+from commons import constants as const
 
 
 class TestMultipartUploadGetPut:
@@ -253,12 +253,7 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert_utils.assert_equal(mp_config["error_msg_rgw"],
-                                          error.message, error.message)
-            else:
-                assert_utils.assert_equal(mp_config["error_msg_cortx"], error.message,
-                                          error.message)
+            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info("Failed to complete the multipart with input of wrong json/etag")
         # DO completeMultipartUpload with correct part details after 30 mins to check
         # background producer does not clean up object due to
@@ -275,7 +270,7 @@ class TestMultipartUploadGetPut:
             # TO: Check above if parts is sequential or random order
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
+            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info(
                 "Failed to complete the multipart upload after 30 mins of failure mpu with wrong "
                 "json ")
@@ -325,12 +320,7 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert_utils.assert_equal("An error occurred (InvalidPart) when calling the "
-                                          "CompleteMultipartUpload operation: Unknown",
-                                          error.message, error.message)
-            else:
-                assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
+            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info("Failed to complete the multipart with incomplete part details ")
         self.log.info("Aborting multipart uploads")
         self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,

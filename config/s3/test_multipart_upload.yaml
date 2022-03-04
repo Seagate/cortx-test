@@ -99,12 +99,6 @@ test_8929:
     default_multipart_threshold: "8MB"
 
 test_631:
-    error_msg_cortx: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload
-    operation:
-    One or more of the specified parts could not be found. The part might not have been uploaded,
-    or the specified entity tag might not have matched the part's entity tag."
-    error_msg_rgw: "An error occurred (InvalidPart) when calling the "
-    "CompleteMultipartUpload operation: Unknown"
     wrong_json:
         -   ETag: d41d8cd98f00b204e9800998ecf8427e
             PartNumber: 1
@@ -112,9 +106,6 @@ test_631:
             PartNumber: 2
 
 test_28532:
-    error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
-    One or more of the specified parts could not be found. The part might not have been uploaded,
-    or the specified entity tag might not have matched the part's entity tag."
     file_size: 200
     chunk_size: 1048576
     part_sizes:
@@ -140,9 +131,6 @@ test_28538:
           count: 1
         - part_size: 79.5
           count: 1
-    error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
-    One or more of the specified parts could not be found. The part might not have been uploaded,
-    or the specified entity tag might not have matched the part's entity tag."
 
 test_28539:
     file_size: 150
