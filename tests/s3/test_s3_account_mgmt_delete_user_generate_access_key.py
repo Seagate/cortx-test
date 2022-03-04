@@ -306,7 +306,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         resp = s3_test_obj.delete_bucket(self.bucket_name1, force=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]
@@ -371,7 +371,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         del self.resources_dict[s3_test_obj]
         self.log.info("Step 9. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]
@@ -432,7 +432,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         del self.resources_dict[s3_test_obj]
         self.log.info("Step 9. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]
