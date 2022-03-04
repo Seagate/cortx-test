@@ -612,8 +612,7 @@ class TestMultiPodFailure:
         LOGGER.info("STARTED: Test to verify continuous READs/WRITEs while %s (K) pods "
                     "were going down.", self.kvalue)
 
-        LOGGER.info("Step 1: Perform Continuous IOs with variable object sizes during %s (K) "
-                    "data pods down by delete deployment.", self.kvalue)
+        LOGGER.info("Step 1: Start continuous IOs with variable object sizes in background")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35777'
         self.s3_clean = users
@@ -626,9 +625,10 @@ class TestMultiPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 1: Successfully started READs/WRITES in background")
+        LOGGER.info("Step 1: Successfully started continuous IOs with variable object sizes in "
+                    "background")
 
-        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one while continuous READs/WRITEs "
+        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one while continuous IOs"
                     "in background", self.kvalue)
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
@@ -650,7 +650,7 @@ class TestMultiPodFailure:
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one while continuous READs/WRITEs in "
+        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one while continuous IOs in "
                     "background", self.kvalue)
         event.clear()
 
@@ -684,7 +684,7 @@ class TestMultiPodFailure:
         responses = {}
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        LOGGER.info("Step 6: Verify status for In-flight READs/WRITEs while %s (K) pods going "
+        LOGGER.info("Step 6: Verify status for In-flight IOs while %s (K) pods going "
                     "down should be failed/error.", self.kvalue)
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
@@ -694,7 +694,7 @@ class TestMultiPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
-        LOGGER.info("Step 6: Verified status for In-flight READs/WRITEs while %s (K) pods going "
+        LOGGER.info("Step 6: Verified status for In-flight IOs while %s (K) pods going "
                     "down should be failed/error.", self.kvalue)
 
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) pods "
