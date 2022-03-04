@@ -131,7 +131,7 @@ def main():
     resp = node_obj.execute_cmd(cmd=com_cmds.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     resp = json.loads(resp)
     for item_data in resp["items"]:
-        if item_data['metadata']["name"] == "cortx-io-svc":
+        if item_data['metadata']["name"] == "cortx-io-svc-0":
             for item in item_data['spec']['ports']:
                 if item['name'] == 'cortx-rgw-https':
                     port = item["nodePort"]
