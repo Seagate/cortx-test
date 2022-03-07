@@ -164,8 +164,12 @@ class TestMultiPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
         if self.restore_pod:
             for pod_name in self.pod_name_list:
-                deployment_name = self.pod_dict.get(pod_name)[2]
-                deployment_backup = self.pod_dict.get(pod_name)[1]
+                if len(self.pod_dict.get(pod_name)) == 2:
+                    deployment_name = self.pod_dict.get(pod_name)[1]
+                    deployment_backup = None
+                else:
+                    deployment_name = self.pod_dict.get(pod_name)[2]
+                    deployment_backup = self.pod_dict.get(pod_name)[1]
                 resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                                restore_method=self.restore_method,
                                                restore_params={"deployment_name": deployment_name,
@@ -607,7 +611,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35792")
     @CTFailOn(error_handler)
-    def test_cont_ios_during_server_data_kpods_down(self):
+    def test_server_data_kpods_fail_during_ios(self):
         """
         Test to verify continuous IOs while k server and data pods are failing one by one by delete
         deployment
@@ -631,11 +635,16 @@ class TestMultiPodFailure:
         LOGGER.info("Step 1: Successfully started WRITEs-READs-verify in background")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown the server pods by deleting deployment (unsafe)")
+        LOGGER.info("Step 2: Shutdown the server pods and data pods randomly by deleting "
+                    "deployment (unsafe)")
         server_pods = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        LOGGER.info("Get pod names to be deleted")
         server_pod_name_list = random.sample(server_pods, self.kvalue)
-        for count, pod_name in enumerate(server_pod_name_list):
+        data_pods = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        data_pod_name_list = random.sample(data_pods, self.kvalue)
+        LOGGER.info("Get pod names to be deleted")
+        all_pod_list = server_pod_name_list + data_pod_name_list
+        random.shuffle(all_pod_list)
+        for count, pod_name in enumerate(all_pod_list):
             count += 1
             pod_data = list()
             pod_data.append(
@@ -655,28 +664,6 @@ class TestMultiPodFailure:
             event.clear()
         LOGGER.info("Step 2: Successfully deleted %s server pods", self.kvalue)
 
-        LOGGER.info("Step 3: Shutdown the data pods by deleting deployment (unsafe)")
-        data_pods = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        LOGGER.info("Get pod names to be deleted")
-        data_pod_name_list = random.sample(data_pods, self.kvalue)
-        for count, pod_name in enumerate(data_pod_name_list):
-            count += 1
-            pod_data = list()
-            pod_data.append(
-                self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
-            LOGGER.info("Deleting %s pod %s", count, pod_name)
-            event.set()
-            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], f"Failed to delete {count} pod {pod_name} by "
-                                               "deleting deployment (unsafe)")
-            pod_data.append(resp[1])  # deployment_backup
-            pod_data.append(resp[2])  # deployment_name
-            self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-            event.clear()
-        LOGGER.info("Step 3: Successfully deleted %s data pods", self.kvalue)
-
         pod_list = server_pods + data_pods
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -684,9 +671,8 @@ class TestMultiPodFailure:
         LOGGER.info("Step 4: Cluster is in degraded state")
 
         LOGGER.info("Step 5: Check services status that were running on pods which are deleted.")
-        self.pod_name_list = server_pod_name_list + data_pod_name_list
         counter = 0
-        for pod_name in self.pod_name_list:
+        for pod_name in all_pod_list:
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
