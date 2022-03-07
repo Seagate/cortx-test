@@ -1161,7 +1161,7 @@ class ProvDeployK8sCortxLib:
         if setup_client_config_flag:
             resp = system_utils.execute_cmd(
                 common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
-            eth1_ip = resp[0].strip("'\\n'b'")
+            eth1_ip = resp[1].strip("'\\n'b'")
             if self.service_type == "NodePort":
                 resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
                                                                 self.deploy_cfg['iface'])
