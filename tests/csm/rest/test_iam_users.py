@@ -361,6 +361,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with basic parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -387,7 +388,8 @@ class TestIamUserRGW():
         self.log.info("Verified Response")
         self.log.info("[END]Creating IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
-
+    
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -612,7 +614,9 @@ class TestIamUserRGW():
         self.log.info("Creating new iam user")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
         payload.update({"generate_key": False})
+        self.log.info(payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("printing resp %s:",resp.json())
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
                      "IAM user creation failed")
         self.created_iam_users.add(payload["uid"])
@@ -623,6 +627,8 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Bug in create bucket")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-36446')
@@ -651,6 +657,7 @@ class TestIamUserRGW():
         self.log.info("Create bucket failed for user")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-36447')
@@ -670,6 +677,7 @@ class TestIamUserRGW():
             "Status code check failed for user"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-36448')
