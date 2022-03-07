@@ -20,13 +20,14 @@
 """
 HA disk failure recovery utility methods
 """
-import logging
 import json
+import logging
 
 from commons import commands as common_cmd
 from commons import constants as common_const
-from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
+from commons.helpers.pods_helper import LogicalNode
+from libs.ha.ha_common_libs_k8s import HAK8s
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,5 +85,54 @@ class DiskFailureRecoveryLib:
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
-                                    f" -- {cmd}", decode=True)
+                                                  f" -- {cmd}", decode=True)
         return out
+
+    @staticmethod
+    def retrieve_durability_values(master_obj: LogicalNode, ec_type: str) -> tuple:
+        """
+        Return the durability Configuration for Data/Metadata (SNS/DIX) for the cluster
+        :param master_obj: Node Object of Master
+        :param ec_type: sns/dix
+        :return : tuple(bool,dict)
+                  dict of format { 'data': '1','parity': '4','spare': '0'}
+        """
+        resp = HAK8s.get_config_value(master_obj)
+        if not resp[0]:
+            return resp
+        config_data = resp[1]
+        try:
+            ret = config_data['cluster']['storage_set'][0]['durability'][ec_type.lower()]
+            return True, ret
+        except KeyError as err:
+            LOGGER.error("Exception while retrieving Durability config : %s", err)
+            return False, err
+
+    @staticmethod
+    def retrieve_cvg_from_node(master_obj: LogicalNode, worker_node: LogicalNode) -> tuple:
+        """
+        Return the cvg details of the given worker node.
+        :param master_obj: Node Object of Master
+        :param worker_node: Return the CVG details for this worker node
+        :return : tuple(bool,dict)
+                 dict of format
+                 {'cvg-01': {'data': ['/dev/sde', '/dev/sdf'], 'metadata': ['/dev/sdc'],
+                            'num_data': 2, 'num_metadata': 1},
+                 'cvg-02': {'data': ['/dev/sdg', '/dev/sdh'], 'metadata': ['/dev/sdd'],
+                            'num_data': 2, 'num_metadata': 1}}
+        """
+        resp = HAK8s.get_config_value(master_obj)
+        if not resp[0]:
+            return resp
+        config_data = resp[1]
+        return_dict = {}
+        try:
+            for key, values in config_data['node'].items():
+                hostname = str(values['hostname'].split('svc')[1]).replace('-', '', 1)
+                if hostname in worker_node.hostname:
+                    for cvg in values['storage']['cvg']:
+                        return_dict[cvg['name']] = cvg['devices']
+            return True, return_dict
+        except KeyError as err:
+            LOGGER.error("Exception while retrieving CVG details : %s", err)
+            return False, err
