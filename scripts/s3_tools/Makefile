@@ -76,8 +76,8 @@ aws-configure-rgw:
 	@echo "### configure awscli. ###"
 	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
 	aws configure set plugins.endpoint awscli_plugin_endpoint
-	aws configure set s3.endpoint_url $(endpoint)
-	aws configure set s3api.endpoint_url $(endpoint)
+	aws configure set s3.endpoint_url https://$(endpoint)
+	aws configure set s3api.endpoint_url https://$(endpoint)
 	aws configure set default.ca_bundle $(CA_CRT)
 	aws configure set aws_access_key_id $(ACCESS)
 	aws configure set aws_secret_access_key $(SECRET)
@@ -189,6 +189,8 @@ bashrc-configure:
 aws: aws-install aws-configure
 	@echo "### Installed & configured aws tool. ###"
 
+aws-rgw: aws-install aws-configure-rgw
+	@echo "### Installed & configured aws tool. ###"
 
 s3fs: s3fs-install s3fs-configure
 	@echo "### Installed & configured s3fs tool. ###"
@@ -223,6 +225,9 @@ apache-jmeter-install:
 all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install warp-install apache-jmeter-install bashrc-configure
 	@echo "### All tools are installed & configured. ###"
 
+all-rgw: clean aws-rgw s3fs s3cmd minio jcloud-client-install s3bench-install warp-install apache-jmeter-install bashrc-configure
+	@echo "### All tools are installed & configured. ###"
+
 
 clean:
 
@@ -241,10 +246,12 @@ clean:
 help :
 
 	@echo "all: Install & configure tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make all --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "all-rgw: Install & configure tools like aws-rgw, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make all --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey> endpoint=<IP:PORT>"
 	@echo "clean: Remove installed tools like s3fs, s3cmd, minio, jclientcloud, s3bench. Eg: make clean --makefile=<makefile_path>"
 	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make install-tools --makefile=<makefile_path>"
 	@echo "configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "aws: Install & configure aws tool. Eg: make aws --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "aws-rgw: Install & configure aws tool. Eg: make aws --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey> endpoint=<IP:PORT>"
 	@echo "s3fs: Install & configure s3fs tool. Eg: make s3fs --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3cmd: Install & configure s3cmd tool. Eg: make s3cmd --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "jcloud-client-install: Setup jcloud-client. Eg: make jcloud-client --makefile=<makefile_path>"
