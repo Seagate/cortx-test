@@ -25,14 +25,18 @@ import logging
 import pytest
 
 from commons.constants import S3_ENGINE_RGW
+from commons.constants import CORTX_DUPLICATE_BUCKET_MSG
+from commons.constants import RGW_DUPLICATE_BUCKET_MSG
 from commons.params import TEST_DATA_FOLDER
 from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3_CFG
 from config import CMN_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 
 
@@ -228,13 +232,16 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_create_duplicate_bucket_2336(self):
         """create bucket using existing bucket name using aws cli."""
-        error_msg = "BucketAlreadyOwnedByYou"
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.aws_buckets_list.append(self.bucket_name)
-        resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
-        assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], error_msg)
+        try:
+            resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
+            assert_utils.assert_false(resp[0], resp[1])
+        except CTException as error:
+            self.log.error(error.message)
+            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG, 
+                                    CORTX_DUPLICATE_BUCKET_MSG, error)
         self.log.info("Failed to create bucket using existing bucket name")
 
     @pytest.mark.parallel

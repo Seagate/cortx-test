@@ -36,8 +36,10 @@ from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
+from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -612,3 +614,10 @@ class S3Helper:
         nobj.disconnect()
 
         return status, (parameter, value, old_value)
+
+    def s3_engine_asserts(self, rgw_error, cortx_error, error):
+        """Checks the s3 engine type and asserts accordingly """
+        if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_in(rgw_error, error.message, error.message)
+        else:
+            assert_utils.assert_in(cortx_error, error.message, error.message)

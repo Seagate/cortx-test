@@ -33,13 +33,17 @@ import pytest
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
 from commons.utils import system_utils
+from commons.constants import CORTX_DUPLICATE_BUCKET_MSG
+from commons.constants import RGW_DUPLICATE_BUCKET_MSG
 from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3 import S3H_OBJ
 
 
 class TestS3cmdClient:
@@ -283,10 +287,15 @@ class TestS3cmdClient:
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Creating bucket with existing bucket name")
-        command = self.s3cmd_test_obj.command_formatter(
-            S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
-        resp = system_utils.run_local_cmd(command, chk_stderr=True)
-        assert_in("BucketAlreadyOwnedByYou", str(resp[1]), resp)
+        try:
+            command = self.s3cmd_test_obj.command_formatter(
+                    S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
+            resp = system_utils.run_local_cmd(command, chk_stderr=True)
+        except CTException as error:
+            #assert_in("BucketAlreadyOwnedByYou", str(resp[1]), resp)
+            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG, 
+                                  CORTX_DUPLICATE_BUCKET_MSG, error)
+        
         self.log.info(
             "STEP: 2 Creating bucket failed with existing bucket name")
         self.log.info(

@@ -30,6 +30,8 @@ from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from commons.utils.assert_utils import assert_true, assert_in
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
+from commons.constants import S3_ENGINE_RGW
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,6 +98,12 @@ class JCloudClient:
                 # Skip certificate validation with https/ssl is unsupported option in jcloud/jclient
                 prop_dict['use_https'] = 'true' if S3_CFG['validate_certs'] else 'false'
 
+                if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                    prop_dict['s3_endpoint'] = s3_endpoint.split(':')[0]
+                    if S3_CFG['use_ssl'] and S3_CFG['validate_certs']:
+                        prop_dict['s3_https_port'] = s3_endpoint.split(':')[1] 
+                    else:
+                        prop_dict['s3_http_port'] = s3_endpoint.split(':')[1]
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
@@ -359,7 +367,7 @@ class S3CMD:
         self.s3cf_path = S3_CFG["s3cfg_path"]
         self.use_ssl = S3_CFG['use_ssl']
         self.validate_certs = S3_CFG['validate_certs']
-        self.endpoint = S3_CFG['s3_url'].strip('https://').strip('http://')
+        self.endpoint = CMN_CFG["s3_url"].split('//')[1]
 
     def configure_s3cfg(self, access: str = None, secret: str = None) -> bool:
         """

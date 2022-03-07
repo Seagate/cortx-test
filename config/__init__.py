@@ -102,11 +102,18 @@ def build_s3_endpoints() -> dict:
     ssl_flg = ast.literal_eval(str(os.environ.get("USE_SSL")).title())
     cert_flg = ast.literal_eval(str(os.environ.get("VALIDATE_CERTS")).title())
     s3_conf["host_port"] = s3_url  # may be of LB/Host Entry/Node.
-    s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
-    if ssl_flg:
+    s3_engine = setup_details.get('s3_engine')
+
+    if ssl_flg: 
+        s3_conf["s3_url"] = f"https://{s3_url}"
         s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
     else:
+        if S3_ENGINE_RGW == s3_engine:
+            s3_conf["s3_url"] = f"http://{s3_url.split(':')[0]}:{setup_details.get('s3_http')}"
+        else:
+            s3_conf["s3_url"] = f"http://{s3_url}"
         s3_conf["iam_url"] = f"http://{iam_url}:{s3_conf['http_iam_port']}"
+
     s3_conf["s3b_url"] = f"{'https' if cert_flg else 'http'}://{s3_url}"
     s3_conf["use_ssl"] = ssl_flg
     s3_conf["validate_certs"] = cert_flg

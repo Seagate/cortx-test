@@ -32,11 +32,13 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.constants import CORTX_DUPLICATE_BUCKET_MSG
+from commons.constants import RGW_DUPLICATE_BUCKET_MSG
 from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-
+from libs.s3 import S3H_OBJ
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
@@ -372,7 +374,9 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "BucketAlreadyOwnedByYou" in error.message, error.message
+            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG, 
+                                      CORTX_DUPLICATE_BUCKET_MSG, error)
+
         self.log.info(
             "Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
