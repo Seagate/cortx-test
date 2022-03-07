@@ -127,9 +127,12 @@ def main():
     node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
 
     resp = ext_lb.configure_nodeport_lb(node_obj)
+    if not resp[0]:
+        print("Did not get expected response: {}".format(resp))
     ext_ip = resp[1]
     port = resp[2]
     ext_port_ip = "{}:{}".format(ext_ip, port)
+    print("External LB value, ip and port will be: {}".format(ext_port_ip))
 
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 admin_user=admin_user, admin_passwd=admin_passwd,

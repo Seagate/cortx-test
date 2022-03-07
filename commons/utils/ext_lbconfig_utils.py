@@ -218,16 +218,20 @@ def configure_nodeport_lb(node_obj: LogicalNode):
     if not resp[0]:
         return False, "Not getting expected response for kubectl get svc command"
     resp = json.loads(resp)
+    flag = False
     for item_data in resp["items"]:
         if item_data['metadata']["name"] == "cortx-io-svc-0":
             for item in item_data['spec']['ports']:
                 if item['name'] == 'cortx-rgw-https':
                     port_https = item["nodePort"]
+                    flag = True
                     LOGGER.info("HTTPS Port for IO is: {}".format(port_https))
                 if item['name'] == 'cortx-rgw-http':
                     port_http = item["nodePort"]
+                    flag = True
                     LOGGER.info("HTTP Port for IO is: {}".format(port_http))
-        else:
-            return False, "Did not get expected service info."
 
-    return True, ext_ip, port_https, port_http
+    if flag:
+        return True, ext_ip, port_https, port_http
+    else:
+        return False, "Did not get expected port numbers."
