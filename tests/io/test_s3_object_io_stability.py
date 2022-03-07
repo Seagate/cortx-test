@@ -58,7 +58,7 @@ class TestS3Object(S3Bucket, S3Object):
                 with open(file_name, 'wb') as fout:
                     fout.write(os.urandom(file_size))
                 checksum_in = self.checksum_file(file_name)
-                logger.info("Checksum IN = %s", checksum_in)
+                logger.debug("Checksum IN = %s", checksum_in)
                 await self.upload_object(bucket, file_name, file_name)
                 logger.info("Uploaded s3://%s/%s", bucket, file_name)
                 logger.info("Perform Head bucket")
@@ -66,7 +66,7 @@ class TestS3Object(S3Bucket, S3Object):
                 logger.info("Get Object")
                 checksum_out = await self.get_s3object_checksum(bucket, file_name)
                 assert checksum_in == checksum_out, "Checksum are not equal"
-                logger.info("Checksum Out = %s", checksum_out)
+                logger.debug("Checksum Out = %s", checksum_out)
                 logger.info("Delete object")
                 await self.delete_object(bucket, file_name)
                 os.remove(file_name)
