@@ -7,7 +7,7 @@ test_1:
     result_duration: 4h
     sessions: 5
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_2:
     TEST_ID: TEST-36549
@@ -18,7 +18,7 @@ test_2:
     result_duration: 8h
     sessions: 5
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_3:
     TEST_ID: TEST-36550
@@ -29,7 +29,7 @@ test_3:
     result_duration: 4h
     sessions: 10
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_4:
     TEST_ID: TEST-36551
@@ -40,7 +40,7 @@ test_4:
     result_duration: 1d
     sessions: 10
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_5:
     TEST_ID: TEST-36552
@@ -51,7 +51,7 @@ test_5:
     result_duration: 1d
     sessions: 15
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_6:
     TEST_ID: TEST-36553
@@ -62,7 +62,7 @@ test_6:
     result_duration: 2d
     sessions: 15
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_7:
     TEST_ID: TEST-36554
@@ -73,7 +73,7 @@ test_7:
     result_duration: 2d
     sessions: 20
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_8:
     TEST_ID: TEST-36555
@@ -84,7 +84,7 @@ test_8:
     result_duration: 3d
     sessions: 20
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_9:
     TEST_ID: TEST-36556
@@ -95,7 +95,7 @@ test_9:
     result_duration: 3d
     sessions: 25
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_10:
     TEST_ID: TEST-36557
@@ -106,7 +106,7 @@ test_10:
     result_duration: 5d
     sessions: 25
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_11:
     TEST_ID: TEST-36558
@@ -117,7 +117,7 @@ test_11:
     result_duration: 5d
     sessions: 30
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy
 
 test_12:
     TEST_ID: TEST-36559
@@ -128,4 +128,4 @@ test_12:
     result_duration: 7d
     sessions: 30
     tool: s3api
-    operation: multipart_partcopy_fixed
+    operation: multipart_partcopy

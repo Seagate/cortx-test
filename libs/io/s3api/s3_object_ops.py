@@ -28,24 +28,18 @@ logger = logging.getLogger(__name__)
 class S3Object(S3RestApi):
     """Class for object operations."""
 
-    async def upload_object(self, bucket: str, key: str, **kwargs) -> dict:
+    async def upload_object(self, bucket: str, key: str, file_path: str) -> dict:
         """
         Uploading object to the Bucket.
 
         :param bucket: Name of the bucket.
         :param key: Name of the object.
-        :keyword file_path: Path of the file.
-        :keyword body: Content of Object
+        :param file_path: Path of the file.
         :return: Response of the upload s3 object.
         """
-        body = kwargs.get("body", False)
-        file_path = kwargs.get("file_path", False)
         async with self.get_client() as s3client:
-            if body:
+            with open(file_path, "rb") as body:
                 response = await s3client.put_object(Body=body, Bucket=bucket, Key=key)
-            else:
-                with open(file_path, "rb") as body:
-                    response = await s3client.put_object(Body=body, Bucket=bucket, Key=key)
             logger.info("%s s3://%s/%s Response: %s", S3Object.upload_object.__name__, bucket, key,
                         response)
             return response
