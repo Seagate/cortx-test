@@ -927,3 +927,26 @@ class TestMultiPodFailure:
         LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.", remain_bkt)
 
         LOGGER.info("ENDED: Test to verify DELETEs after %s (K) data pods down.", self.kvalue)
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
+    @pytest.mark.tags("TEST-35787")
+    @CTFailOn(error_handler)
+    def test_kpods_fail_node_down(self):
+        """
+        Test to Verify degraded IOs after multiple (max K) pods (data and server) failures with node
+        hosting them going down.
+        """
+        LOGGER.info("Test to Verify degraded IOs after multiple (max K) pods (data and server) failures with node "
+                    "hosting them going down.")
+
+        LOGGER.info("STEP 1: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35787'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
+
