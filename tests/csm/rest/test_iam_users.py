@@ -599,7 +599,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -627,7 +627,6 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Bug in create bucket")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
