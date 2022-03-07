@@ -29,7 +29,7 @@ class S3Object(S3RestApi):
 
     async def upload_object(self, bucket: str, key: str, **kwargs) -> dict:
         """
-        Uploading object to the Bucket.
+        Uploading object to the Bucket, file_path or body is compulsory.
 
         :param bucket: Name of the bucket.
         :param key: Name of the object.

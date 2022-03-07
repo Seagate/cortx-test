@@ -24,7 +24,6 @@ import random
 from datetime import datetime, timedelta
 from time import perf_counter_ns
 from typing import Union
-from botocore.exceptions import ClientError
 from libs.io.s3api.s3_multipart_ops import S3MultiParts
 from libs.io.s3api.s3_object_ops import S3Object
 from libs.io.s3api.s3_bucket_ops import S3Bucket
@@ -39,7 +38,8 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, use_ssl: bool,
                  object_size: Union[dict, int, bytes], part_range: dict, seed: int,
-                 test_id: str = None, range_read: bytes = None, duration: timedelta = None) -> None:
+                 test_id: str = None, range_read: Union[dict, bytes] = None,
+                 duration: timedelta = None) -> None:
         """
         s3 multipart init class.
         :param access_key: access key.
@@ -64,11 +64,13 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     # pylint: disable=too-many-locals
     async def execute_multipart_partcopy_workload(self):
         """Execute multipart workload for specific duration."""
+        mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
+        logger.info("Create s3 bucket: %s", mpart_bucket)
+        await self.create_bucket(mpart_bucket)
         while True:
             logger.info("Iteration %s is started...", self.iteration)
             try:
                 s3_object = "s3-obj-{}-{}".format(self.test_id, perf_counter_ns())
-                mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
                 mpart_object = "s3mpart-obj-{}-{}".format(self.test_id, perf_counter_ns())
                 logger.info("Multipart Bucket name: %s", mpart_bucket)
                 logger.info("Object name: %s", s3_object)
@@ -80,10 +82,6 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
                 assert single_part_size > 5120,\
                     "Single part size should be within range and should not be greater than 5GB."
-                logger.info("Create s3 bucket: %s", mpart_bucket)
-                resp = await self.create_bucket(mpart_bucket)
-                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200, \
-                    f"Failed to create bucket: {mpart_bucket}"
                 logger.info("Create multipart upload: s3://%s/%s", mpart_bucket, mpart_object)
                 resp = await self.create_multipart_upload(mpart_bucket, mpart_object)
                 assert resp["UploadId"] is not None, f"Failed to initiate multipart upload: {resp}"
@@ -128,28 +126,25 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 download_obj_checksum = await self.get_s3object_checksum(
                     mpart_bucket, mpart_object, single_part_size)
                 logger.info("Checksum of s3 object: %s", download_obj_checksum)
-                if upload_obj_checksum != download_obj_checksum:
-                    raise ClientError(
-                        f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}",
-                        operation_name="Match checksum")
+                assert upload_obj_checksum != download_obj_checksum,\
+                    f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}"
                 if self.range_read:
                     logger.info("Get object using suggested range read '%s'.", self.range_read)
                     resp = await self.get_object(bucket=mpart_bucket,
                                                  key=mpart_object,
-                                                 ranges=f"'bytes=0-{self.range_read}'")
+                                                 ranges=f"'bytes={self.range_read['start']}"
+                                                        f"-{self.range_read['end']}'")
                     assert resp['Body'].read() is not None, f"Failed to read bytes " \
                                                             f"{self.range_read} from " \
                                                             f"s3://{mpart_bucket}/{mpart_object}"
-                logger.info("Delete bucket: s3://%s", mpart_bucket)
-                resp = await self.delete_bucket(mpart_bucket, force=True)
-                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 204, \
-                    f"Failed to delete s3 bucket: {mpart_bucket}"
             except Exception as err:
                 logger.exception(err)
                 raise err
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:
+                logger.info("Delete s3 bucket: s3://%s", mpart_bucket)
+                await self.delete_bucket(mpart_bucket, force=True)
                 return True, "Multipart execution completed successfully."
             logger.info("Iteration %s is completed...", self.iteration)
             self.iteration += 1

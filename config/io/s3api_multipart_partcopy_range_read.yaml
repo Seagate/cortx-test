@@ -6,7 +6,9 @@ test_1:
         end: 25
     result_duration: 4h
     sessions: 5
-    range_read: 100b
+    range_read:
+        start: 1byte
+        end: 100byte
     tool: s3api
     operation: multipart_partcopy
 
@@ -18,7 +20,9 @@ test_2:
         end: 50
     result_duration: 8h
     sessions: 5
-    range_read: 200b
+    range_read:
+        start: 100byte
+        end: 200byte
     tool: s3api
     operation: multipart_partcopy
 
@@ -31,7 +35,9 @@ test_3:
     result_duration: 4h
     sessions: 10
     tool: s3api
-    range_read: 500b
+    range_read:
+        start: 200byte
+        end: 500byte
     operation: multipart_partcopy
 
 test_4:
@@ -42,7 +48,9 @@ test_4:
         end: 100
     result_duration: 1d
     sessions: 10
-    range_read: 1000b
+    range_read:
+        start: 500byte
+        end: 1Kb
     tool: s3api
     operation: multipart_partcopy
 
@@ -54,7 +62,9 @@ test_5:
         end: 150
     result_duration: 1d
     sessions: 15
-    range_read: 10Kb
+    range_read:
+        start: 1Kb
+        end: 10Kb
     tool: s3api
     operation: multipart_partcopy
 
@@ -66,7 +76,9 @@ test_6:
         end: 200
     result_duration: 2d
     sessions: 15
-    range_read: 100Kb
+    range_read:
+        start: 10Kb
+        end: 100Kb
     tool: s3api
     operation: multipart_partcopy
 
@@ -78,7 +90,9 @@ test_7:
         end: 250
     result_duration: 2d
     sessions: 20
-    range_read: 1Mb
+    range_read:
+        start: 100Kb
+        end: 1Mb
     tool: s3api
     operation: multipart_partcopy
 
@@ -90,7 +104,9 @@ test_8:
         end: 300
     result_duration: 3d
     sessions: 20
-    range_read: 10Mb
+    range_read:
+        start: 1Mb
+        end: 10Mb
     tool: s3api
     operation: multipart_partcopy
 
@@ -102,7 +118,9 @@ test_9:
         end: 350
     result_duration: 3d
     sessions: 25
-    range_read: 100Mb
+    range_read:
+        start: 10Mb
+        end: 100Mb
     tool: s3api
     operation: multipart_partcopy
 
@@ -114,7 +132,9 @@ test_10:
         end: 400
     result_duration: 5d
     sessions: 25
-    range_read: 150Mb
+    range_read:
+        start: 100Mb
+        end: 150Mb
     tool: s3api
     operation: multipart_partcopy
 
@@ -126,7 +146,9 @@ test_11:
         end: 500
     result_duration: 5d
     sessions: 30
-    range_read: 200Mb
+    range_read:
+        start: 150Mb
+        end: 200Mb
     tool: s3api
     operation: multipart_partcopy
 
@@ -138,6 +160,8 @@ test_12:
         end: 600
     result_duration: 7d
     sessions: 30
-    range_read: 1Gb
+    range_read:
+        start: 200Mb
+        end: 1Gb
     tool: s3api
     operation: multipart_partcopy
