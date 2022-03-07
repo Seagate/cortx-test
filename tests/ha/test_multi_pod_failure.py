@@ -468,12 +468,12 @@ class TestMultiPodFailure:
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Step 6: Services of pod are in online state")
+            LOGGER.info("Step 6: Services of pods are in online state")
 
             LOGGER.info("STEP 7: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-35789-{}'.format(count)
-            self.s3_clean = users
+            self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
                                                         nsamples=2, nclients=2)
