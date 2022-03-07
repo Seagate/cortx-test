@@ -47,6 +47,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
         :param endpoint_url: endpoint with http or https.
         :param test_id: Test ID string.
         :param use_ssl: To use secure connection.
+        :param seed: Seed to be used for random data generator.
         :param duration: Duration timedelta object, if not given will run for 100 days.
         """
         super().__init__(access_key, secret_key, endpoint_url=endpoint_url, use_ssl=use_ssl)

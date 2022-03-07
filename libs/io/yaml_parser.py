@@ -123,6 +123,13 @@ def test_parser(yaml_file, number_of_nodes):
                     data[size_type] = {}
                     data[size_type]["start"] = convert_to_bytes(size)
                     data[size_type]["end"] = convert_to_bytes(size) + 1
+        if "range_read" in data:
+            if isinstance(data["range_read"], dict):
+                if "start" not in data["range_read"] or "end" not in data["range_read"]:
+                    logger.error("Please define range using start and end keys")
+                    return False
+                data["range_read"]["start"] = convert_to_bytes(data["range_read"]["start"])
+                data["range_read"]["end"] = convert_to_bytes(data["range_read"]["end"])
         if test == "test_1":
             data['start_time'] = datetime.timedelta(hours=00, minutes=00, seconds=00)
             delta_list.append(convert_to_time_delta(data['result_duration']))
@@ -137,4 +144,5 @@ def test_parser(yaml_file, number_of_nodes):
         if 'sessions_per_node' in data.keys():
             data['sessions'] = data['sessions_per_node'] * number_of_nodes
     logger.debug("test object %s: ", s3_io_test)
+
     return s3_io_test
