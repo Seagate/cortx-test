@@ -644,6 +644,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
+    # pylint: disable=too-many-arguments,too-many-locals
     def update_password_sol_file(self, filepath, log_path, size,
                                  nodeport_http, nodeport_https,
                                  control_nodeport_https):
