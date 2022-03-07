@@ -89,7 +89,6 @@ class TestMultipodFailureHandling:
         else:
             LOGGER.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
-        LOGGER.info(self.kvalue)
         LOGGER.info("The cluster has %s parity pods", self.kvalue)
         LOGGER.info("Checking if all the ha services are up and running")
         resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
@@ -124,11 +123,11 @@ class TestMultipodFailureHandling:
                                                   f"{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Cluster status checked successfully")
+
         LOGGER.info("Done: Teardown completed.")
 
     @staticmethod
