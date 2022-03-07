@@ -292,10 +292,9 @@ class TestS3cmdClient:
                     S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
             resp = system_utils.run_local_cmd(command, chk_stderr=True)
         except CTException as error:
-            #assert_in("BucketAlreadyOwnedByYou", str(resp[1]), resp)
-            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG, 
+            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG,
                                   CORTX_DUPLICATE_BUCKET_MSG, error)
-        
+
         self.log.info(
             "STEP: 2 Creating bucket failed with existing bucket name")
         self.log.info(

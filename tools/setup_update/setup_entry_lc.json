@@ -9,7 +9,7 @@
 "s3_engine": 1,
 "product_type": "k8s",
 "lb": "FQDN without protocol(http/s)",
-"s3_http:" ":80"
+"s3_http": "80",
 "nodes":[
     {
         "host": "srv-node-0",

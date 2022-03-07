@@ -374,7 +374,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG, 
+            S3H_OBJ.s3_engine_asserts(RGW_DUPLICATE_BUCKET_MSG,
                                       CORTX_DUPLICATE_BUCKET_MSG, error)
 
         self.log.info(

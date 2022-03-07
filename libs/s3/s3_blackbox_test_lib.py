@@ -25,13 +25,15 @@ import time
 from commons import commands
 from commons.utils import config_utils, system_utils, assert_utils
 from commons.utils.system_utils import run_local_cmd, execute_cmd
-from config.s3 import S3_CFG, S3_BLKBOX_CFG
-from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from commons.utils.assert_utils import assert_true, assert_in
-from libs.s3 import ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_test_lib import S3TestLib
 from commons.constants import S3_ENGINE_RGW
 from config import CMN_CFG
+from config.s3 import S3_CFG, S3_BLKBOX_CFG
+from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
+
+
 
 LOGGER = logging.getLogger(__name__)
 
