@@ -213,7 +213,7 @@ def configure_nodeport_lb(node_obj: LogicalNode):
     """
     resp = node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
     ext_ip = resp[0].strip("\n")
-    LOGGER.info("Data IP from master node: {}".format(ext_ip))
+    LOGGER.info("Data IP from master node: %s", ext_ip)
     resp = node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     if not resp[0]:
         return False, "Not getting expected response for kubectl get svc command"
@@ -225,11 +225,11 @@ def configure_nodeport_lb(node_obj: LogicalNode):
                 if item['name'] == 'cortx-rgw-https':
                     port_https = item["nodePort"]
                     flag = True
-                    LOGGER.info("HTTPS Port for IO is: {}".format(port_https))
+                    LOGGER.info("HTTPS Port for IO is: %s", port_https)
                 if item['name'] == 'cortx-rgw-http':
                     port_http = item["nodePort"]
                     flag = True
-                    LOGGER.info("HTTP Port for IO is: {}".format(port_http))
+                    LOGGER.info("HTTP Port for IO is: %s", port_http)
 
     if flag:
         return True, ext_ip, port_https, port_http
