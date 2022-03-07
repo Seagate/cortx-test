@@ -103,7 +103,7 @@ class JCloudClient:
                 if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
                     prop_dict['s3_endpoint'] = s3_endpoint.split(':')[0]
                     if S3_CFG['use_ssl'] and S3_CFG['validate_certs']:
-                        prop_dict['s3_https_port'] = s3_endpoint.split(':')[1] 
+                        prop_dict['s3_https_port'] = s3_endpoint.split(':')[1]
                     else:
                         prop_dict['s3_http_port'] = s3_endpoint.split(':')[1]
                 resp = config_utils.write_properties_file(prop_path, prop_dict)

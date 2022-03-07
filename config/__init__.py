@@ -104,7 +104,7 @@ def build_s3_endpoints() -> dict:
     s3_conf["host_port"] = s3_url  # may be of LB/Host Entry/Node.
     s3_engine = setup_details.get('s3_engine')
 
-    if ssl_flg: 
+    if ssl_flg:
         s3_conf["s3_url"] = f"https://{s3_url}"
         s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
     else:
