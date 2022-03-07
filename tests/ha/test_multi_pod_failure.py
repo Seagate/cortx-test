@@ -81,12 +81,15 @@ class TestMultiPodFailure:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.pod_name_list = []
+        cls.node_name_list = []
+        cls.srv_pod_host_list = []
+        cls.data_pod_host_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
+        cls.restore_node =  cls.deploy = cls.kvalue = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.pod_dict = {}
         cls.mgnt_ops = ManagementOPs()
@@ -176,12 +179,13 @@ class TestMultiPodFailure:
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
         if self.restore_node:
-            LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
-            resp = self.ha_obj.host_power_on(host=self.node_name)
-            assert_utils.assert_true(resp, "Host is not powered on")
-            LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
-                        " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
-            time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
+            for node_name in self.node_name_list:
+                LOGGER.info("Cleanup: Power on the %s down node.", node_name)
+                resp = self.ha_obj.host_power_on(host=node_name)
+                assert_utils.assert_true(resp, "Host is not powered on")
+                LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
+                            " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
+                time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
         if self.restore_ip:
             LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
             self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
@@ -938,10 +942,10 @@ class TestMultiPodFailure:
         Test to Verify degraded IOs after multiple (max K) pods (data and server) failures with node
         hosting them going down.
         """
-        LOGGER.info("Test to Verify degraded IOs after multiple (max K) pods (data and server) failures with node "
-                    "hosting them going down.")
+        LOGGER.info("Started: Test to Verify degraded IOs after multiple (max K) pods "
+                    "(data and server) failures with node hosting them going down.")
 
-        LOGGER.info("STEP 1: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
+        LOGGER.info("Step 1: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35787'
         self.s3_clean = users
@@ -950,3 +954,74 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
 
+        LOGGER.info("Step 2: Delete data and server pods by shutting down node they are"
+                    "hosted on.")
+        count = 1
+        data_pod_list = remain_pod_list1 = \
+            self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        server_pod_list = remain_pod_list2 = \
+            self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        while count < self.kvalue:
+            resp = self.ha_obj.get_data_pod_no_ha_control(remain_pod_list1,
+                                                          self.node_master_list[0])
+            data_pod_name = resp[0]
+            server_pod_name = resp[1]
+            data_node_fqdn = resp[2]
+            self.srv_pod_host_list.append(self.node_master_list[0].get_pod_hostname
+                                         (pod_name=server_pod_name))
+            self.data_pod_host_list.append(self.node_master_list[0].get_pod_hostname
+                                           (pod_name=data_pod_name))
+            self.node_name_list.append(data_node_fqdn)
+            self.pod_name_list.append(data_pod_name)
+            self.pod_name_list.append(server_pod_name)
+            LOGGER.info("Shutdown the node: %s", data_node_fqdn)
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=data_node_fqdn)
+            assert_utils.assert_true(resp, "Host is not powered off")
+            remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
+            remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
+            count += 1
+            self.pod_dict[data_pod_name] = self.data_pod_host_list
+            self.pod_dict[server_pod_name] = self.srv_pod_host_list
+            LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
+                "pod_eviction_time"])
+            time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
+
+        LOGGER.info("Step 2: Deleted %s data and server pods byt shutting down the node"
+                    "hosting them.", count)
+        remain_pod_list = remain_pod_list1 + remain_pod_list2
+        self.restore_node = self.deploy = True
+        running_pod = random.sample(remain_pod_list1, 1)[0]
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0],
+                                                pod_list=remain_pod_list1)
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on data and server pod")
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname, pod_name=running_pod)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of data and server pods are in offline state")
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False,
+                                                           pod_name=running_pod)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services status on remaining pod are in online state")
+
+        LOGGER.info("Step 6: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35787-1'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
+
+        LOGGER.info("Completed: Test to Verify degraded IOs after multiple (max K) pods "
+                    "(data and server) failures with node hosting them going down.")
