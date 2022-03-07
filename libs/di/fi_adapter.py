@@ -207,17 +207,25 @@ class S3FailureInjection(EnableFailureInjection):
                                                                               "cortx-s3-0")
                 s3_instance = len(s3_containers)
                 for each in range(0, s3_instance):
-                    retries = 2
+                    retries = 3
                     s3_port = 28070 + each + 1
                     cmd = f'curl -X PUT -H "x-seagate-faultinjection: ' \
                           f'{fault_op},always,{fault_type},0,0" {pod_ip}:{s3_port}'
                     while retries > 0:
-                        resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                        LOGGER.debug("http server resp : %s", resp)
-                        if not resp:
-                            break
-                        retries -= 1
-
+                        try:
+                            resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
+                            LOGGER.debug("http server resp : %s", resp)
+                            if "not allowed against this resource" in str(resp):
+                                return False
+                            if not resp:
+                                break
+                        except IOError as ex:
+                            LOGGER.error("Exception: %s", ex)
+                            LOGGER.error("remaining retrying: %s", retries)
+                            retries -= 1
+                            time.sleep(2)
+                    if retries == 0:
+                        return False
             return True
         except IOError as ex:
             LOGGER.error("Exception: %s", ex)
