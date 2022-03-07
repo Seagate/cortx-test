@@ -100,7 +100,7 @@ class TestSystemCapacity():
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
         self.s3_user = resp.json()["account_name"]
-        self.bucket = f"bucket{self.s3_user}"
+        self.bucket = "iam-user-bucket-" + str(int(time.time()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
@@ -1810,16 +1810,11 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to True in csm config")
-        # TODO : change variable in csm config file to true
-        self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.master)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Modify header to invalid key")
+        self.log.info("Step 2: Modify header to invalid key")
         header['Authorization1'] = header.pop('Authorization')
-        self.log.info("Step 5: Call degraded capacity api with invalid key in header")
+        self.log.info("Step 3: Call degraded capacity api with invalid key in header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed for invalid key access")
@@ -1838,17 +1833,12 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to True in csm config")
-        # TODO : change variable in csm config file to true
-        self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Modify header for missing params")
+        self.log.info("Step 2: Modify header for missing params")
         header[''] = header.pop('Authorization')
         header[''] = ''
-        self.log.info("Step 5: Call degraded capacity api with missing params in header")
+        self.log.info("Step 3: Call degraded capacity api with missing params in header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
@@ -1857,6 +1847,7 @@ class TestSystemCapacity():
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_perf_stats
@@ -1895,14 +1886,9 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to False in csm config")
-        # TODO : change variable in csm config file to False
-        self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Call degraded capacity api with valid header")
+        self.log.info("Step 2: Call degraded capacity api with valid header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
@@ -1911,6 +1897,7 @@ class TestSystemCapacity():
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_perf_stats
@@ -1949,16 +1936,11 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to True in csm config")
-        # TODO : change variable in csm config file to true
-        self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Modify header for invalid value")
+        self.log.info("Step 2: Modify header for invalid value")
         header['Authorization'] = 'abc'
-        self.log.info("Step 5: Call degraded capacity api with invalid header")
+        self.log.info("Step 3: Call degraded capacity api with invalid header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
@@ -1977,25 +1959,20 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to True in csm config")
-        # TODO : change variable in csm config file to true
-        self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Call degraded capacity api with valid header")
+        self.log.info("Step 2: Call degraded capacity api with valid header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
-        self.log.info("Step 5: Check all variables are present in rest response")
+        self.log.info("Step 3: Check all variables are present in rest response")
         resp = self.system_capacity.validate_metrics(response.json())
         assert_utils.assert_true(resp, "Rest data metrics check failed")
-        self.log.info("Step 6: Verified metric data for bytecount")
+        self.log.info("Step 4: Verified metric data for bytecount")
         response = self.system_capacity.get_degraded_capacity('full')
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
-        self.log.info("Step 7: Check all variables are present in rest response")
+        self.log.info("Step 5: Check all variables are present in rest response")
         resp = self.system_capacity.validate_metrics(response.json(), 'full')
         assert_utils.assert_true(resp, "Rest data metrics check failed in full mode")
         self.log.info("##### Test ended -  %s #####", test_case_name)
