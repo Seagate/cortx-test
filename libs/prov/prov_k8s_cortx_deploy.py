@@ -1159,16 +1159,18 @@ class ProvDeployK8sCortxLib:
                 assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
-            resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
-            eth1_ip = resp[1].strip("'\\n'b'")
+            resp = system_utils.execute_cmd(
+                common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+            eth1_ip = resp[0].strip("'\\n'b'")
             if self.service_type == "NodePort":
-                resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0], eth1_ip)
+                resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
+                                                                self.deploy_cfg['iface'])
                 if not resp[0]:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
                 port = resp[2]
                 ext_port_ip = "{}:{}".format(ext_ip, port)
-                LOGGER.debug("External LB value, ip and port will be: %s",ext_port_ip)
+                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
                 ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
