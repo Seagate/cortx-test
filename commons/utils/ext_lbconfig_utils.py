@@ -204,3 +204,30 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
                    "localhost6.localdomain6\n")
         file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com "
                    "sts.cloud.seagate.com\n".format(ext_ip))
+
+def configure_nodeport_lb(node_obj: LogicalNode):
+    """
+    Helper function to get node port ports and external IP from master node.
+    :param node_obj: Master node object
+    :return: boolean, external ip, http port, https port
+    """
+    resp = node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+    ext_ip = resp[0].strip("\n")
+    LOGGER.info("Data IP from master node: {}".format(ext_ip))
+    resp = node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+    if not resp[0]:
+        return False, "Not getting expected response for kubectl get svc command"
+    resp = json.loads(resp)
+    for item_data in resp["items"]:
+        if item_data['metadata']["name"] == "cortx-io-svc-0":
+            for item in item_data['spec']['ports']:
+                if item['name'] == 'cortx-rgw-https':
+                    port_https = item["nodePort"]
+                    LOGGER.info("HTTPS Port for IO is: {}".format(port_https))
+                if item['name'] == 'cortx-rgw-http':
+                    port_http = item["nodePort"]
+                    LOGGER.info("HTTP Port for IO is: {}".format(port_http))
+        else:
+            return False, "Did not get expected service info."
+
+    return True, ext_ip, port_https, port_http

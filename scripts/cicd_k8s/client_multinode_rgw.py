@@ -31,6 +31,7 @@ import os
 from commons import commands as com_cmds
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils as sysutils
+from commons.utils import ext_lbconfig_utils as ext_lb
 
 CONF_FILE = 'scripts/cicd_k8s/config.ini'
 config = configparser.ConfigParser()
@@ -125,17 +126,9 @@ def main():
     admin_passwd = os.getenv("ADMIN_PWD")
     node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
 
-    resp = node_obj.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-    ext_ip = resp[0].strip("\n")
-    print("External LB IP: {}".format(ext_ip))
-    resp = node_obj.execute_cmd(cmd=com_cmds.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
-    resp = json.loads(resp)
-    for item_data in resp["items"]:
-        if item_data['metadata']["name"] == "cortx-io-svc-0":
-            for item in item_data['spec']['ports']:
-                if item['name'] == 'cortx-rgw-https':
-                    port = item["nodePort"]
-                    print("Port for IO is: {}".format(port))
+    resp = ext_lb.configure_nodeport_lb(node_obj)
+    ext_ip = resp[1]
+    port = resp[2]
     ext_port_ip = "{}:{}".format(ext_ip, port)
 
     setupname = create_db_entry(master_node, username=username, password=args.password,
