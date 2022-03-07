@@ -61,6 +61,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
         self.finish_time = datetime.now() + duration if duration else datetime.now() + \
             timedelta(hours=int(100 * 24))
 
+    # pylint: disable=too-many-locals
     async def execute_multipart_partcopy_workload(self):
         """Execute multipart workload for specific duration."""
         while True:
@@ -74,14 +75,16 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 logger.info("Multipart Object name: %s", mpart_object)
                 number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
                 logger.info("Number of parts: %s", number_of_parts)
-                assert number_of_parts > 10000, f"Number of parts should be less than 10k"
+                assert number_of_parts > 10000, "Number of parts should be equal/less than 10k"
                 single_part_size = self.object_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
+                assert single_part_size > 5120,\
+                    "Single part size should be within range and should not be greater than 5GB."
                 logger.info("Create s3 bucket: %s", mpart_bucket)
                 resp = await self.create_bucket(mpart_bucket)
                 assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200, \
                     f"Failed to create bucket: {mpart_bucket}"
-                logger.info("Create multipart upload: s3://{}/{}", mpart_bucket, mpart_object)
+                logger.info("Create multipart upload: s3://%s/%s", mpart_bucket, mpart_object)
                 resp = await self.create_multipart_upload(mpart_bucket, mpart_object)
                 assert resp["UploadId"] is not None, f"Failed to initiate multipart upload: {resp}"
                 mpu_id = resp["UploadId"]
@@ -114,14 +117,14 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 logger.info("List multipart uploads: s3://%s", mpart_bucket)
                 resp = await self.list_multipart_uploads(mpart_bucket)
                 assert resp, f"Failed to list multipart uploads: {resp}"
-                logger.info("Complete multipart uploads: s3://{}/{}", mpart_bucket, mpart_object)
+                logger.info("Complete multipart uploads: s3://%s/%s", mpart_bucket, mpart_object)
                 resp = await self.complete_multipart_upload(mpu_id, parts, mpart_bucket,
                                                             mpart_object)
                 assert resp, f"Failed to completed multi parts: {resp}"
-                logger.info("Check object '{}' uploaded using head object operation.", mpart_object)
+                logger.info("Check object '%s' uploaded using head object operation.", mpart_object)
                 resp = await self.head_object(mpart_bucket, mpart_object)
                 assert resp, f"Failed to do head object on {mpart_object}"
-                logger.info("Get s3 object '{}' and calculate checksum.", mpart_object)
+                logger.info("Get s3 object '%s' and calculate checksum.", mpart_object)
                 download_obj_checksum = await self.get_s3object_checksum(
                     mpart_bucket, mpart_object, single_part_size)
                 logger.info("Checksum of s3 object: %s", download_obj_checksum)
