@@ -204,3 +204,36 @@ class S3Object(S3RestApi):
                 file_hash.update(chunk)
                 chunk = f_obj.read(chunk_size)
         return file_hash.hexdigest()
+
+    @staticmethod
+    def checksum_part_file(file_path: str, offset: int, read_size: int,
+                           chunk_size: int = 1024 * 1024):
+        """
+        Calculate checksum of read_size bytes starting from offset in given file_path
+        Uses chunk_size=1MB if read_size > 1MB
+
+        :param: file_path: File location
+        :param: offset: Offset to start reading from
+        :param: read_size: Size in bytes to read from offset
+        :param: chunk_size: Single chunk size in bytes to read
+        """
+        file_size = os.path.getsize(file_path)
+        if file_size < offset + read_size:
+            raise IOError(f"{offset + read_size} is less than file size {file_size} ")
+        if read_size < chunk_size:
+            logger.debug(f"Reading less than {chunk_size}")
+            chunk_size = read_size
+        else:
+            logger.debug(f"Reading more than {chunk_size}")
+            chunk_size = chunk_size
+        file_hash = hashlib.sha256()
+        read_length = read_size
+        with open(file_path, 'rb') as fp:
+            fp.seek(offset)
+            while read_length:
+                current_read_length = chunk_size if read_length >= chunk_size else read_length
+                logger.debug(f"Reading {current_read_length} from starting offset {fp.tell()}")
+                content = fp.read(current_read_length)
+                file_hash.update(content)
+                read_length -= len(content)
+        return file_hash.hexdigest()
