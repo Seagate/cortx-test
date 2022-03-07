@@ -205,13 +205,14 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
         file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com "
                    "sts.cloud.seagate.com\n".format(ext_ip))
 
-def configure_nodeport_lb(node_obj: LogicalNode):
+def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
     """
     Helper function to get node port ports and external IP from master node.
     :param node_obj: Master node object
+    :param iface: interface name
     :return: boolean, external ip, http port, https port
     """
-    resp = node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+    resp = node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
     ext_ip = resp[0].strip("\n")
     LOGGER.info("Data IP from master node: %s", ext_ip)
     resp = node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")

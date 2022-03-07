@@ -126,7 +126,7 @@ def main():
     admin_passwd = os.getenv("ADMIN_PWD")
     node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
 
-    resp = ext_lb.configure_nodeport_lb(node_obj)
+    resp = ext_lb.configure_nodeport_lb(node_obj, "eth1")
     if not resp[0]:
         print("Did not get expected response: {}".format(resp))
     ext_ip = resp[1]
