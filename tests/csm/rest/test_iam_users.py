@@ -375,9 +375,12 @@ class TestIamUserRGW():
         optional_payload = self.csm_obj.iam_user_payload_rgw("random")
         resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp1)
-        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED.value, \
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
                            "IAM user creation failed")
-        self.created_iam_users.add(optional_payload['uid'])
+        uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
+        self.created_iam_users.add(uid)
+        self.log.info("Printing resp1 %s:", resp1)
+        self.log.info("Printing optional payload %s:", optional_payload)
         resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
         self.log.info("compare payload response is: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -401,11 +404,16 @@ class TestIamUserRGW():
             self.log.info("Creating IAM user number %s with random selection of optional "
                           "parameters", cnt)
             optional_payload = self.csm_obj.iam_user_payload_rgw("random")
-            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
-            self.log.info("Verify Response : %s", resp)
-            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, "IAM user creation failed")
-            self.created_iam_users.add(optional_payload['uid'])
-            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp1)
+            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
+                       "IAM user creation failed")
+            uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
+            self.created_iam_users.add(uid)
+            self.log.info("Printing resp %s:", resp1)
+            self.log.info("Printing optional payload %s:", optional_payload)
+            resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
+            self.log.info("Printing response %s:", resp)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -589,7 +597,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    #@pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -602,14 +610,15 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user with generate-keys=false")
         self.log.info("Creating new iam user")
-        payload = self.csm_obj.iam_user_payload_rgw("loaded")
-        payload.update({"generate-keys": False})
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload.update({"generate_key": False})
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
+                     "IAM user creation failed")
         self.created_iam_users.add(payload["uid"])
-        if resp["keys"][0]["access_key"] != "":
+        if resp.json()["keys"][0]["access_key"] != "":
             assert_utils.assert_true(False, "access key is available in response")
-        elif resp["keys"][0]["secret_key"] != "":
+        elif resp.json()["keys"][0]["secret_key"] != "":
             assert_utils.assert_true(False, "secret key is available in response")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -630,7 +639,7 @@ class TestIamUserRGW():
         payload.update({"user_caps":user_cap})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.CREATED.value, \
+        assert resp.status_code == HTTPStatus.CREATED, \
             "User could not be created"
         self.created_iam_users.add(payload["uid"])
         self.log.info("Step 2: Create bucket and perform IO")
@@ -638,7 +647,7 @@ class TestIamUserRGW():
         s3_obj = S3TestLib(access_key=resp.json()["keys"][0]["access_key"],
                            secret_key=resp.json()["keys"][0]["secret_key"])
         status, resp = s3_obj.create_bucket(bucket_name)
-        assert status, resp
+        assert_utils.assert_false(status, resp)
         self.log.info("Create bucket failed for user")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -684,7 +693,7 @@ class TestIamUserRGW():
         payload.update({"access_key": valid_key})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.CREATED.value
+        assert resp.status_code == HTTPStatus.CREATED
         self.created_iam_users.add(payload["uid"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 

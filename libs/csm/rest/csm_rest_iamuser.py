@@ -490,7 +490,8 @@ class RestIamUser(RestTestLib):
             Compare rest response with expected response
         """
         payload["user_id"] = payload.pop("uid")
-        #payload["caps"] = payload.pop("user_caps")
+        if "user_caps" in payload:
+            payload["caps"] = payload.pop("user_caps")
         for key, value in payload.items():
             if key in rest_response:
                 if key == 'caps':
