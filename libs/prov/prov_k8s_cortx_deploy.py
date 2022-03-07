@@ -60,6 +60,7 @@ class ProvDeployK8sCortxLib:
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
+        self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
         self.nodeport_http = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
         self.nodeport_https = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
@@ -396,6 +397,7 @@ class ProvDeployK8sCortxLib:
         cortx_server_image = kwargs.get("cortx_server_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
+        service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
         nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
@@ -462,7 +464,7 @@ class ProvDeployK8sCortxLib:
         # Update the solution yaml file with password
         resp_passwd = self.update_password_sol_file(filepath, log_path, size,
                                                     nodeport_http, nodeport_https,
-                                                    control_nodeport_https)
+                                                    control_nodeport_https, service_type)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -646,7 +648,7 @@ class ProvDeployK8sCortxLib:
     # pylint: disable=too-many-arguments,too-many-locals
     def update_password_sol_file(self, filepath, log_path, size,
                                  nodeport_http, nodeport_https,
-                                 control_nodeport_https):
+                                 control_nodeport_https, service_type):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
@@ -668,6 +670,8 @@ class ProvDeployK8sCortxLib:
             common['setup_size'] = size
             s3_service = common['external_services']['s3']
             control_service = common['external_services']['control']
+            s3_service['type'] = service_type
+            control_service['type'] = service_type
             s3_service['nodePorts']['http'] = nodeport_http
             s3_service['nodePorts']['https'] = nodeport_https
             control_service['nodePorts']['https'] = control_nodeport_https
@@ -1149,33 +1153,40 @@ class ProvDeployK8sCortxLib:
                 assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
         if setup_client_config_flag:
-            node_obj = LogicalNode(master_node_list[0].hostname, master_node_list[0].username,
-                                   master_node_list[0].password)
-            resp = node_obj.execute_cmd(cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-            ext_ip = resp[0].strip("\n")
-            LOGGER.debug("External LB IP: {}".format(ext_ip))
-            resp = node_obj.execute_cmd(cmd=common_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
-            resp = json.loads(resp)
-            for item_data in resp["items"]:
-                if item_data['metadata']["name"] == "cortx-io-svc-0":
-                    for item in item_data['spec']['ports']:
-                        if item['name'] == 'cortx-rgw-https':
-                            port = item["nodePort"]
-                            print("Port for IO is: {}".format(port))
-            ext_port_ip = "{}:{}".format(ext_ip, port)
-            # Will revisit this code again in future to have external lb
-            # LOGGER.info("Configure HAproxy on client")
-            # ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
-            #                                         master_node_list[0].username,
-            #                                         master_node_list[0].password,
-            #                                         eth1_ip)
-            # LOGGER.info("Kill residue haproxy -f process if any")
-            # self.kill_all_process_instance("haproxy -f")
+            if self.service_type == "NodePort":
+                node_obj = LogicalNode(master_node_list[0].hostname, master_node_list[0].username,
+                                       master_node_list[0].password)
+                resp = node_obj.execute_cmd(cmd=common_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+                ext_ip = resp[0].strip("\n")
+                LOGGER.debug("External LB IP: {}".format(ext_ip))
+                resp = node_obj.execute_cmd(cmd=common_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+                resp = json.loads(resp)
+                for item_data in resp["items"]:
+                    if item_data['metadata']["name"] == "cortx-io-svc-0":
+                        for item in item_data['spec']['ports']:
+                            if item['name'] == 'cortx-rgw-https':
+                                port = item["nodePort"]
+                                print("Port for IO is: {}".format(port))
+                ext_port_ip = "{}:{}".format(ext_ip, port)
+            else:
+                resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
+                eth1_ip = resp[1].strip("'\\n'b'")
+                LOGGER.info("Configure HAproxy on client")
+                ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
+                                                        master_node_list[0].username,
+                                                        master_node_list[0].password,
+                                                        eth1_ip)
+                LOGGER.info("Kill residue haproxy -f process if any")
+                self.kill_all_process_instance("haproxy -f")
             LOGGER.info("Step to Create S3 account and configure credentials")
             resp = self.post_deployment_steps_lc()
             assert_utils.assert_true(resp[0], resp[1])
             access_key, secret_key = S3H_OBJ.get_local_keys()
-            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key, endpoint_url=ext_port_ip)
+            if self.service_type == "NodePort":
+                s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                    endpoint_url=ext_port_ip)
+            else:
+                s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             if run_basic_s3_io_flag:
                 LOGGER.info("Step to Perform basic IO operations")
                 bucket_name = "bucket-" + str(int(time.time()))
