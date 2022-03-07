@@ -34,16 +34,15 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-few-public-methods, too-many-statements
-class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
+class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     """S3 multipart class for executing given io stability workload"""
 
-    # pylint: disable=too-many-arguments, too-many-locals, too-many-instance-attributes
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self, access_key: str, secret_key: str, endpoint_url: str, use_ssl: bool,
-                 object_size: Union[dict, int, bytes], part_range: dict, seed: int,
+                 object_size: Union[dict, int, bytes], part_number_range: dict, seed: int,
                  test_id: str = None, duration: timedelta = None) -> None:
         """
         s3 multipart init class.
-
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint with http or https.
@@ -55,73 +54,96 @@ class TestMultiParts(S3MultiParts, S3Object, S3Bucket):
         random.seed(seed)
         self.duration = duration
         self.object_size = object_size
-        self.part_range = part_range
+        self.part_number_range = part_number_range
         self.iteration = 1
         self.min_duration = 10  # In seconds
         self.test_id = test_id if test_id else random.randrange(24, 240)
         self.finish_time = datetime.now() + duration if duration else datetime.now() + \
             timedelta(hours=int(100 * 24))
 
-    async def execute_multipart_workload(self):
+    async def execute_multipart_partcopy_workload(self):
         """Execute multipart workload for specific duration."""
+        bucket = "s3-bkt-{}-{}".format(self.test_id, perf_counter_ns())
+        mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
+        logger.info("Bucket name: %s", bucket)
+        logger.info("Multipart Bucket name: %s", mpart_bucket)
+        resp = await self.create_bucket(bucket)
+        assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200, \
+            f"Failed to create bucket: {bucket}"
         while True:
             logger.info("Iteration %s is started...", self.iteration)
             try:
-                mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
-                s3mpart_object = "s3mpart-obj-{}-{}".format(self.test_id, perf_counter_ns())
-                logger.info("Bucket name: %s", mpart_bucket)
-                logger.info("Object name: %s", s3mpart_object)
-                file_size = random.randrange(
-                    self.object_size["start"], self.object_size["end"]) if isinstance(
-                    self.object_size, dict) else self.object_size
+                s3_object = "s3-obj-{}-{}".format(self.test_id, perf_counter_ns())
+                mpart_object = "s3mpart-obj-{}-{}".format(self.test_id, perf_counter_ns())
+                file_down_path = "s3_mp_{}_{}".format(self.test_id,perf_counter_ns())
+                logger.info("Object name: %s", s3_object)
+                logger.info("Multipart Object name: %s", mpart_object)
+                file_size = self.object_size
+                number_of_parts = random.randrange(self.part_number_range["start"],
+                                                   self.part_number_range["end"])
+                logger.info("Number of parts: %s", number_of_parts)
+                assert number_of_parts > 10000, "Number of parts should be equal/less than 10k"
                 number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
                 single_part_size = file_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
-                response = await self.create_bucket(mpart_bucket)
-                assert response["ResponseMetadata"]["HTTPStatusCode"] == 200, \
+                assert single_part_size > 5120, \
+                    "Single part size should be within range and should not be greater than 5GB."
+                resp = await self.create_bucket(mpart_bucket)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200, \
                     f"Failed to create bucket: {mpart_bucket}"
-                response = await self.create_multipart_upload(
-                    mpart_bucket, s3mpart_object)
-                assert response["UploadId"] is not None, \
-                    f"Failed to initiate multipart upload: {response}"
-                mpu_id = response["UploadId"]
+                resp = await self.create_multipart_upload(mpart_bucket, mpart_object)
+                assert resp["UploadId"] is not None, \
+                    f"Failed to initiate multipart upload: {resp}"
+                mpu_id = resp["UploadId"]
                 parts = list()
                 file_hash = hashlib.sha256()
+                random_part = random.randrange(1, number_of_parts + 1)
                 for i in range(1, number_of_parts + 1):
                     byte_s = os.urandom(single_part_size)
-                    response = await self.upload_part(byte_s, mpart_bucket,
-                                                      s3mpart_object, upload_id=mpu_id,
-                                                      part_number=i)
-                    assert response["ETag"] is not None, f"Failed upload part: {response}"
-                    parts.append({"PartNumber": i, "ETag": response["ETag"]})
+                    if i == random_part:
+                        resp = self.upload_object(body=byte_s, bucket=bucket, key=s3_object)
+                        assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+                        resp = await self.upload_part_copy(f"{bucket}/{s3_object}", mpart_bucket,
+                                                           s3_object, part_number=i,
+                                                           upload_id=mpu_id)
+                        parts.append({"PartNumber": i, "ETag": resp[1]["CopyPartResult"]["ETag"]})
+                    else:
+                        resp = await self.upload_part(byte_s, mpart_bucket, mpart_object,
+                                                      upload_id=mpu_id, part_number=i)
+                        assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+                        parts.append({"PartNumber": i, "ETag": resp["ETag"]})
                     file_hash.update(byte_s)
-                upload_obj_checksum = file_hash.hexdigest()
-                logger.info("Checksum of uploaded object: %s", upload_obj_checksum)
-                response = await self.list_parts(mpu_id, mpart_bucket, s3mpart_object)
-                assert response, f"Failed to list parts: {response}"
-                response = await self.list_multipart_uploads(mpart_bucket)
-                assert response, f"Failed to list multipart uploads: {response}"
-                response = await self.complete_multipart_upload(
-                    mpu_id, parts, mpart_bucket, s3mpart_object)
-                assert response, f"Failed to completed multi parts: {response}"
-                response = await self.head_object(mpart_bucket, s3mpart_object)
-                assert response, f"Failed to do head object on {s3mpart_object}"
-                download_obj_checksum = await self.get_s3object_checksum(
-                    mpart_bucket, s3mpart_object, single_part_size)
-                logger.info("Checksum of s3 object: %s", download_obj_checksum)
-                if upload_obj_checksum != download_obj_checksum:
-                    raise ClientError(
-                        f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}",
-                        operation_name="Match checksum")
-                response = await self.delete_bucket(mpart_bucket, force=True)
-                assert response["ResponseMetadata"][
-                    "HTTPStatusCode"] == 204, f"Failed to delete s3 bucket: {mpart_bucket}"
-            except Exception as err:
+                    resp = await self.list_parts(mpu_id, mpart_bucket, mpart_object)
+                    assert resp, f"Failed to list parts: {resp}"
+                    resp = await self.list_multipart_uploads(mpart_bucket)
+                    assert resp, f"Failed to list multipart uploads: {resp}"
+                    resp = await self.complete_multipart_upload(mpu_id, parts, mpart_bucket,
+                                                                mpart_object)
+                    assert resp, f"Failed to completed multi parts: {resp}"
+                    resp = await self.head_object(mpart_bucket, mpart_object)
+                    assert resp, f"Failed to do head object on {mpart_object}"
+                    resp = await self.download_object(bucket=mpart_bucket, key=mpart_object,
+                                                      file_path=file_down_path)
+                    assert resp, f"Failed to do download object on {mpart_object}"
+                    dnd_obj_csum = self.checksum_file(file_path=file_down_path,
+                                                      chunk_size=os.path.getsize(file_down_path))
+                    upd_obj_csum = file_hash.hexdigest()
+                    if upd_obj_csum != dnd_obj_csum:
+                        raise ClientError(f"Failed to match checksum: {upd_obj_csum}, "
+                                          f"{dnd_obj_csum}", operation_name="Match checksum")
+                except Exception as err:
                 logger.exception(err)
                 raise err
+
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:
+                resp = await self.delete_bucket(bucket_name=bucket, force=True)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 204, \
+                    f"Failed to delete s3 bucket: {bucket}"
+                resp = await self.delete_bucket(mpart_bucket, force=True)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 204, \
+                    f"Failed to delete s3 bucket: {mpart_bucket}"
                 return True, "Multipart execution completed successfully."
             logger.info("Iteration %s is completed...", self.iteration)
             self.iteration += 1
