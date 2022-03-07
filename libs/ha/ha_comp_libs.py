@@ -153,8 +153,10 @@ class HAK8SCompLib:
                 LOGGER.info("ha pvc: %s", ha_pvc)
                 break
         if fault_tolerance:
+            # For one pod operation there will 9 lines of log
             kvalue *= 9
         if health_monitor:
+            # For one pod operation there will 4 lines of log
             kvalue *= 4
         cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
         output = node_obj.execute_cmd(cmd_halog)
