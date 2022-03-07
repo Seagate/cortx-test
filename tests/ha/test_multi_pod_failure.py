@@ -89,7 +89,7 @@ class TestMultiPodFailure:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node =  cls.deploy = cls.kvalue = None
+        cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.pod_dict = {}
         cls.mgnt_ops = ManagementOPs()
