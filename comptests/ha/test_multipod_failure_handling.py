@@ -38,7 +38,7 @@ from commons import constants as const
 LOGGER = logging.getLogger(__name__)
 
 
-class TestMultiNodeFailureHandling:
+class TestMultipodFailureHandling:
     """
     Test suite for Multi node failure handling
     """
