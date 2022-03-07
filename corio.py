@@ -47,7 +47,7 @@ function_mapping = {
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
     'multipart': [test_s3_multipart_io_stability.TestMultiParts, 'execute_multipart_workload'],
     'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload']
-    'range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps,
+    'object_range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps,
                    'execute_object_range_read_workload']
 }
 
