@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """All the constants are alphabetically arranged."""
 CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
@@ -6,13 +23,22 @@ LS_CMD = "ls {}"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
-MOTR_START_FIDS = "hctl mero process start --fid {}"
+MOTR_START_FIDS = "hctl mero process start --fid {}"
 MOTR_STATUS_CMD = "hctl status"
+HA_LOG_CMD = "/bin/bash"
+HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
+SERVICE_HA_STATUS = "ps -aux"
+HA_COPY_CMD = "kubectl cp {} {}:{}"
+HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
+HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
+HA_CONSUL_STR = "consul kv get " \
+                "-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 " \
+                "--recurse cortx/ha/v1/cluster_stop_key"
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
-PCS_CLUSTER_STOP = "pcs cluster stop {}"
+PCS_CLUSTER_STOP = "pcs cluster stop {}"
 PCS_CLUSTER_STATUS = "pcs cluster status"
 PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
 PCS_RESOURCE_SHOW_CMD = "pcs resource show"
@@ -202,6 +228,7 @@ CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
 CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
@@ -299,10 +326,6 @@ CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts
 # ca.crt path.
 CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
 
-# S3 bench
-CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
-              "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
-
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
 CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"
@@ -320,6 +343,8 @@ CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
 CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
@@ -353,6 +378,7 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
+M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
 DIFF = "diff {} {}"
 MD5SUM = "md5sum {} {}"
 GETRPM = "rpm -qa| grep {}"
@@ -449,11 +475,13 @@ K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_GET_MGNT = "kubectl get pods -o wide"
 K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- hctl status --json"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
+K8S_MASTER_NODE = "kubectl get nodes -l node-role.kubernetes.io/master | awk '{print $1}'"
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
-K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
+K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
@@ -467,7 +495,7 @@ KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
 KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
-KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
@@ -489,8 +517,8 @@ CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
-DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh"
-DESTROY_CLUSTER_CMD = "cd {}; sh destroy-cortx-cloud.sh"
+DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
+DESTROY_CLUSTER_CMD = "cd {}; sh destroy-cortx-cloud.sh --force"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -503,6 +531,7 @@ CMD_CURL = "curl -o {} {}"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CLONE_D = "git clone {} {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
 # docker commands
@@ -534,3 +563,9 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
               "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
+
+# SNS repair
+SNS_REPAIR_CMD = "hctl repair {}"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
+                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
+                               "\"state\" : \"status_val\"}'"

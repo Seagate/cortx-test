@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -132,12 +131,11 @@ class TestS3IOSystemLimits:
         csm_users = []
         for _ in range(count):
             self.log.info("Creating new CSM user...")
-            res = self.csm_user_obj.create_and_verify_csm_user_creation(
-                user_type="valid",
-                user_role="manage",
-                expect_status_code=Const.SUCCESS_STATUS_FOR_POST,
-            )
-            assert res, "Unable to create CSM account"
+            time.sleep(1)
+            response = self.csm_user_obj.create_csm_user(user_type="valid", user_role="manage")
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                "Unable to create CSM account"
             self.log.info(f"Response : {self.csm_user_obj.recently_created_csm_user}")
             csm_users.append(self.csm_user_obj.recently_created_csm_user)
             self.log.info("CSM Manage user created ...")
@@ -243,7 +241,7 @@ class TestS3IOSystemLimits:
         response = rep.json()
         created_csm_users = []
         for each in response['users']:
-            if each['username'].startswith("test"):
+            if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
         self.log.info(
             f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")

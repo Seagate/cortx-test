@@ -46,9 +46,9 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'cortxadmin', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
 
                 sh label: '', script: ''' source venv/bin/activate
+                    export PYTHONPATH="$PWD"
                     SETUP_FILE="cicd_setup_name.txt"
                     ALL_SETUP_ENTRY="all_setup_entry.txt"
-
                     for each in $(echo ${WORKER_NODE_CONFIG})
                     do
                         export NODES_COUNT=$each
@@ -72,9 +72,13 @@ pipeline {
                 script {
                     try {
                        sh label: '', script: ''' source venv/bin/activate
+                        export PYTHONHTTPSVERIFY='0'
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
+                        TARGET_ENTRY="target_entry.txt"
                         cat $ALL_SETUP_ENTRY
                         while IFS= read -r line; do
+                           rm -rf $TARGET_ENTRY
+                           echo $line > "$TARGET_ENTRY"
                            pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line
                         done < $ALL_SETUP_ENTRY
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
@@ -88,8 +92,15 @@ pipeline {
                         currentBuild.result = "FAILURE"
                         sh label: '', script: '''source venv/bin/activate
                         var_true="true"
+                        TARGET_ENTRY="target_entry.txt"
                         if [ "${collect_support_bundle}" = "$var_true" ]; then
                             echo "Collect support bundle"
+                            cat $TARGET_ENTRY
+                            while IFS= read -r line; do
+                               pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target $line
+                               pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --health_check False --target $line
+                            done < $TARGET_ENTRY
+
                         fi
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
                         . ./scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
@@ -108,6 +119,7 @@ pipeline {
     }
 	post {
         always {
+            archiveArtifacts artifacts: 'log/latest/*.csv, support_bundle/*.tar, crash_files/*.gz'
             echo "End of jenkins job"
         }
     }

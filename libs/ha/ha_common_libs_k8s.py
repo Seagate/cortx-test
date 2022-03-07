@@ -1,19 +1,18 @@
 #!/usr/bin/python  # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -23,20 +22,22 @@ HA common utility methods
 """
 import logging
 import os
-import time
-from multiprocessing import Process
-import sys
 import random
+import sys
+import time
+import copy
+from multiprocessing import Process
 from time import perf_counter_ns
+import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
-from commons.utils import system_utils as sysutils
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
-from commons.utils import system_utils
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import system_utils
+from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -46,7 +47,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from commons.utils.system_utils import run_local_cmd
+from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,6 +94,10 @@ class HAK8s:
             resp = system_utils.check_ping(host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
+                LOGGER.info("Refreshing %s", vm_name)
+                system_utils.execute_cmd(
+                    common_cmd.CMD_VM_REFRESH.format(
+                        self.vm_username, self.vm_password, vm_name))
                 vm_info = system_utils.execute_cmd(
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
@@ -331,7 +336,7 @@ class HAK8s:
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
-            nsamples: int = 20,
+            nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False):
         """
@@ -347,7 +352,7 @@ class HAK8s:
         :param large_workload: Flag to start large workload IOs
         :return: bool/operation response
         """
-        workloads = HA_CFG["s3_bench_workloads"]
+        workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
@@ -362,10 +367,10 @@ class HAK8s:
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3b_url"])
-            resp = s3bench.check_log_file_error(resp[1])
-            if resp:
-                return resp, f"s3bench operation failed with {resp}"
-        return True, "Sucessfully completed s3bench operation"
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
+            if not resp[0]:
+                return False, f"s3bench operation failed: {resp[1]}"
+        return True, "Successfully completed s3bench operation"
 
     def cortx_start_cluster(self, pod_obj):
         """
@@ -395,7 +400,7 @@ class HAK8s:
             return True, resp
         return False, resp
 
-    def restart_cluster(self, pod_obj, sync=True):
+    def restart_cluster(self, pod_obj, sync=False):
         """
         Restart the cluster and check all nodes health.
         :param pod_obj: pod object for stop/start cluster
@@ -403,7 +408,7 @@ class HAK8s:
         """
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command("cortx-data-pod")
+            resp = pod_obj.send_sync_command(common_const.POD_NAME_PREFIX)
             if not resp:
                 LOGGER.info("Cluster is restarting without sync")
         LOGGER.info("Stop the cluster")
@@ -424,7 +429,7 @@ class HAK8s:
             return False, "Cluster is not started"
         if sync:
             LOGGER.info("Send sync command")
-            resp = pod_obj.send_sync_command("cortx-data-pod")
+            resp = pod_obj.send_sync_command(common_const.POD_NAME_PREFIX)
             if not resp:
                 LOGGER.info("Sync command is not executed")
         return True, resp
@@ -509,7 +514,6 @@ class HAK8s:
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param part_numbers: List of parts to be uploaded
-        :param parts_etag: List containing uploaded part number with its ETag
         :return: response
         """
         try:
@@ -631,9 +635,12 @@ class HAK8s:
             if not resp[0] or object_name not in resp[1]:
                 return resp if not background else sys.exit(1)
 
+        # Delay added to sync this operation with main thread to achieve expected scenario
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Copy object to different bucket with different object name.")
         for bkt_name, obj_name in bkt_obj_dict.items():
             resp, bktlist = s3_test_obj.bucket_list()
+            LOGGER.info("Bucket list: %s", bktlist)
             if bkt_name not in bktlist:
                 resp = s3_test_obj.create_bucket(bkt_name)
                 LOGGER.info("Response: %s", resp)
@@ -656,10 +663,11 @@ class HAK8s:
         return True, put_etag if not background else output.put((True, put_etag))
 
     # pylint: disable-msg=too-many-locals
-    def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
+    def start_random_mpu(self, event, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
         """
         Helper function to start mpu (To start mpu in background, this function needs to be used)
+        :param event: Thread event to be sent in case of parallel IOs
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -673,7 +681,8 @@ class HAK8s:
         """
         access_key = s3_data["s3_acc"]["accesskey"]
         secret_key = s3_data["s3_acc"]["secretkey"]
-        failed_parts = {}
+        failed_parts = []
+        exp_failed_parts = []
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
@@ -700,8 +709,7 @@ class HAK8s:
         parts = self.create_multiple_data_parts(multipart_obj_size=file_size,
                                                 multipart_obj_path=multipart_obj_path,
                                                 total_parts=total_parts)
-        LOGGER.debug("Created parts of data: %s", parts)
-        LOGGER.info("Uploading parts into bucket")
+        LOGGER.info("Uploading parts into bucket: %s", part_numbers)
         for i in part_numbers:
             try:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
@@ -711,17 +719,22 @@ class HAK8s:
                 p_tag = resp[1]
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
-                res = (parts_etag, mpu_id)
-            except (Exception, CTException) as error:
+                LOGGER.info("Uploaded part %s", i)
+            except BaseException as error:
                 LOGGER.error("Error: %s", error)
-                failed_parts[i] = parts[i]
-                res = (failed_parts, parts_etag, mpu_id)
+                if event.is_set():
+                    exp_failed_parts.append(i)
+                else:
+                    failed_parts.append(i)
+                LOGGER.info("Failed to upload part %s", i)
 
+        res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
-    def check_cluster_status(self, pod_obj):
+    def check_cluster_status(self, pod_obj, pod_list=None):
         """
         :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the hctl status
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
@@ -729,21 +742,20 @@ class HAK8s:
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
             if "FAILED" in line:
-                LOGGER.info("Response for K8s cluster status:")
-                LOGGER.debug(line)
-                return False, resp
-        resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        pod_name = resp[1]
-        res = pod_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
-            decode=True)
-        for line in res.split("\n"):
-            if "failed" in line or "offline" in line:
-                LOGGER.info("Response for cortx cluster status: %s", res)
-                return False, res
-
-        return True, "K8s and cortx both cluster up."
+                LOGGER.error("Response for K8s cluster status: %s", resp)
+                return False, "K8S cluster status has Failures"
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        for pod_name in pod_list:
+            res = pod_obj.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
+                               f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
+            for line in res.split("\n"):
+                if "failed" in line or "offline" in line or "unknown" in line:
+                    LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
+                    return False, f"Cortx HCTL status has Failures in pod {pod_name}"
+        return True, "K8s and cortx both cluster up and clean."
 
     @staticmethod
     def cal_compare_checksum(file_list, compare=False):
@@ -808,7 +820,7 @@ class HAK8s:
         return resp
 
     def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=20, nclients=10,
+                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
                            output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
@@ -829,7 +841,8 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-
+        # Flag to store next workload status after/while event gets clear from test function
+        event_clear_flg = False
         resp = s3bench.setup_s3bench()
         if not resp:
             status = (resp, "Couldn't setup s3bench on client machine.")
@@ -845,9 +858,13 @@ class HAK8s:
                 end_point=S3_CFG["s3b_url"])
             if event.is_set():
                 fail_res.append(resp)
+                event_clear_flg = True
             else:
+                if event_clear_flg:
+                    fail_res.append(resp)
+                    event_clear_flg = False
+                    continue
                 pass_res.append(resp)
-
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
 
@@ -863,12 +880,15 @@ class HAK8s:
         :rtype: Boolean, list
         """
         log_list = []
+        resp = False
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
-            resp = s3bench.check_log_file_error(file_path=log)
-            log_list.append(log) if (pass_logs and resp) or (not pass_logs and not resp) else log
+            resp = system_utils.validate_s3bench_parallel_execution(log_path=log)
+            if not resp[0] and pass_logs:
+                LOGGER.error(resp[1])
+            log_list.append(log) if (pass_logs and not resp) or (not pass_logs and resp) else log
 
-        return not resp, log_list
+        return resp[0], log_list
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
@@ -981,8 +1001,12 @@ class HAK8s:
                     if count >= bkts_to_del:
                         break
                     elif not bkt_list and not bucket_list:
-                        time.sleep(HA_CFG["common_params"]["10sec_delay"])
-                        bucket_list = s3_test_obj.bucket_list()[1]
+                        while True:
+                            time.sleep(HA_CFG["common_params"]["5sec_delay"])
+                            bucket_list = s3_test_obj.bucket_list()[1]
+                            if len(bucket_list) > 0:
+                                time.sleep(HA_CFG["common_params"]["10sec_delay"])
+                                break
 
             LOGGER.info("Deleted %s number of buckets.", count)
 
@@ -1011,7 +1035,7 @@ class HAK8s:
         LOGGER.info("Get the data pod running on %s node and %s node",
                     control_node_fqdn, ha_node_fqdn)
         data_pods = pod_obj.get_pods_node_fqdn(common_const.POD_NAME_PREFIX)
-        data_pod_name2 = data_pod_name1 = None
+        data_pod_name2 = data_pod_name1 = server_pod_name = None
         for pod_name, node in data_pods.items():
             if node == control_node_fqdn:
                 data_pod_name1 = pod_name
@@ -1059,8 +1083,111 @@ class HAK8s:
                 LOGGER.info("Make %s interface down for %s node", node_iface, host)
                 new_worker_obj.execute_cmd(
                     cmd=common_cmd.IP_LINK_CMD.format(node_iface, "down"), read_lines=True)
-                resp = sysutils.check_ping(host=node_ip)
+                resp = system_utils.check_ping(host=node_ip)
                 if not resp:
                     return False, node_ip, node_iface, new_worker_obj
                 else:
                     return True, node_ip, node_iface, new_worker_obj
+
+    @staticmethod
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
+                                   bkt_op=True):
+        """
+        Helper function to do chunk upload.
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param file_size: Size of the file to be created to upload
+        :param chunk_obj_path: Path of the file to be uploaded
+        :param output: Queue used to fill output
+        :param bkt_op: Flag to create bucket and object
+        :return: response
+        """
+        jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        if bkt_op:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                output.put(False)
+                sys.exit(1)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
+
+            LOGGER.info("Creating object file of 5GB")
+            resp = system_utils.create_file(chunk_obj_path, file_size)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                output.put(False)
+                sys.exit(1)
+
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
+        put_cmd = f"{java_cmd} -c {jclient_prop} put {chunk_obj_path} s3://{bucket_name} " \
+                  f"--access_key {access_key} --secret_key {secret_key}"
+        LOGGER.info("Running command %s", put_cmd)
+        resp = system_utils.execute_cmd(put_cmd)
+        if not resp:
+            output.put(False)
+            sys.exit(1)
+
+        output.put(True)
+        sys.exit(0)
+
+    @staticmethod
+    def setup_jclient(jc_obj):
+        """
+        Helper function to setup jclient
+        :param jc_obj: Object for jclient
+        :return: response
+        """
+        LOGGER.info("Setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            LOGGER.info(res)
+            if not res:
+                LOGGER.error("Error: jcloudclient.jar or jclient.jar file does not exists")
+                return res
+        resp = jc_obj.update_jclient_jcloud_properties()
+        return resp
+
+    @staticmethod
+    def get_config_value(pod_obj, pod_list=None):
+        """
+        :param pod_obj: Object for master node
+        :param pod_list: Data pod name list to get the cluster.conf File
+        :return: (bool, response)
+        """
+        if pod_list is None:
+            pod_list = pod_obj.get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        conf_cp = common_cmd.K8S_CP_TO_LOCAL_CMD.format(pod_name,
+                                                        common_const.CLUSTER_CONF_PATH,
+                                                        common_const.LOCAL_CONF_PATH,
+                                                        common_const.HAX_CONTAINER_NAME)
+        try:
+            resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False)
+        except IOError as error:
+            LOGGER.error("Error: Not able to get cluster config file")
+            return False, error
+        LOGGER.debug("%s response %s ", conf_cp, resp_node)
+        local_conf = os.path.join(os.getcwd(), "cluster.conf")
+        if os.path.exists(local_conf):
+            os.remove(local_conf)
+        resp = pod_obj.copy_file_to_local(
+            remote_path=common_const.LOCAL_CONF_PATH, local_path=local_conf)
+        if not resp[0]:
+            LOGGER.error("Error: Failed to copy cluster.conf to local")
+            return False, resp
+        conf_fd = open(local_conf, 'r')
+        data = yaml.safe_load(conf_fd)
+
+        return True, data

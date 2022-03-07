@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -23,11 +22,13 @@ from __future__ import absolute_import
 
 import os
 import logging
+import shutil
 import time
 from multiprocessing import Process
 import pytest
 
 from commons import constants
+from commons import commands as comm
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -217,9 +218,14 @@ class TestR2SupportBundle:
         sb_identifier = system_utils.random_string_generator(10)
         msg = "TEST-32752"
         self.LOGGER.info("Support Bundle identifier of : %s ", sb_identifier)
-        generate_sb_process = Process(
-            target=sb.generate_sb_lc,
-            args=(dest_dir, sb_identifier, None, msg))
+        pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
+
+        output = self.node_obj.execute_cmd(cmd=comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
+                                      read_lines=True)
+        container_list = output[0].split()
+
+        generate_sb_process = Process(target=sb.generate_sb_lc,
+            args=(dest_dir, sb_identifier, pod_list[0], msg, container_list[0]))
 
         generate_sb_process.start()
         time.sleep(2)
@@ -740,3 +746,119 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("Successfully validated Motr rotating log files are as per "
                          "frequency configured for all pods")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.lc
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-35001")
+    def test_35001(self):
+        """
+        Validate support bundle contains component logs
+        """
+        self.LOGGER.info("STARTED: Test to validate support bundle contains component logs")
+
+        self.LOGGER.info("Step 1: Generate support bundle")
+        #pod_to_check = [constants.POD_NAME_PREFIX, constants.SERVER_POD_NAME_PREFIX]
+        dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
+
+        for pod in constants.SB_POD_PREFIX_AND_COMPONENT_LIST:
+            pod_list = self.node_obj.get_all_pods(pod_prefix=pod)
+            machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
+
+            cmd_get_container_of_pod = comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0])
+            output = self.node_obj.execute_cmd(cmd=cmd_get_container_of_pod, read_lines=True)
+            container_list = output[0].split()
+            container_name = container_list[0]
+
+            self.LOGGER.info("Generating support bundle for pod: %s", pod_list[0])
+            sb_identifier = system_utils.random_string_generator(10)
+            self.LOGGER.info("Support Bundle identifier of : %s", sb_identifier)
+
+            resp = sb.generate_sb_lc(dest_dir, sb_identifier, pod_list[0],
+                                     "TEST-35001", container_name)
+            self.LOGGER.info("response of support bundle generation: %s", resp)
+            sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
+
+            self.LOGGER.info("Step 2: Creating local directory")
+            if os.path.exists(sb_local_path):
+                self.LOGGER.info("Removing existing directory %s", sb_local_path)
+                shutil.rmtree(sb_local_path)
+            os.mkdir(sb_local_path)
+            self.LOGGER.info("sb copy path: %s", sb_local_path)
+
+            self.LOGGER.info("Step 3: Copy support bundle to local directory")
+            copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
+            sb_copy_path = "/root/support_bundle/"
+            copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod_list[0], copy_sb_from_path,
+                                        sb_copy_path, container_name)
+            self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
+
+            sb_copy_full_path = sb_copy_path + sb_identifier + "_" + machine_id + ".tar.gz"
+            sb_local_full_path = sb_local_path + "/" + sb_identifier +".tar.gz"
+            self.node_obj.copy_file_to_local(sb_copy_full_path, sb_local_full_path)
+
+            self.LOGGER.info("Step 4: Extract support bundle tar file")
+            tar_cmd = comm.CMD_TAR.format(sb_local_full_path, sb_local_path)
+            system_utils.run_local_cmd(cmd=tar_cmd)
+            comp_in_sb = os.listdir(sb_local_path + "/" + sb_identifier)
+
+            self.LOGGER.info("Step 5: Checking component log files in collected support bundle")
+            comp_list = constants.SB_POD_PREFIX_AND_COMPONENT_LIST[pod]
+            for comp in comp_list:
+                if comp in comp_in_sb:
+                    comp_dir_path = sb_local_path + "/" + sb_identifier + "/" + comp
+                    comp_tar_files = os.listdir(comp_dir_path)
+                    os.mkdir(comp_dir_path + "/" + comp)
+                    tar_cmd = comm.CMD_TAR.format(comp_dir_path + "/" +
+                                                  comp_tar_files[0], comp_dir_path + "/" + comp)
+                    system_utils.run_local_cmd(cmd=tar_cmd)
+                    comp_dir_path = comp_dir_path + "/" + comp
+
+                    if comp == "hare":
+                        hare_dir = os.listdir(comp_dir_path)
+                        unzip_hare_dir = comp_dir_path + "/" + hare_dir[0]
+                        resp = sb.file_with_prefix_exists_on_path(unzip_hare_dir +
+                                                    constants.SB_EXTRACTED_PATH + "hare/log/"
+                                                                  + machine_id, "hare")
+                        if resp:
+                            self.LOGGER.info("hare logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No hare log file "
+                                                            "found in support bundle")
+                    if comp == "motr":
+                        motr_dir = os.listdir(comp_dir_path)
+                        unzip_motr_dir = comp_dir_path + "/" + motr_dir[0]
+                        resp = sb.file_with_prefix_exists_on_path(unzip_motr_dir, "m0reportbug")
+                        if resp:
+                            self.LOGGER.info("motr logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No motr log file "
+                                                            "found in support bundle")
+                    if comp == "s3":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path +
+                                                    constants.SB_EXTRACTED_PATH + "s3/" +
+                                                                  machine_id, "s3server")
+                        if resp:
+                            self.LOGGER.info("s3server logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No s3server log file "
+                                                            "found in support bundle")
+                    if comp == "utils":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
+                        if resp:
+                            self.LOGGER.info("utils logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No utils log file "
+                                                            "found in support bundle")
+                    if comp == "csm":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path, "csm")
+                        if resp:
+                            self.LOGGER.info("csm logs are present in support Bundle")
+                        else:
+                            assert_utils.assert_true(False, "No csm log file "
+                                                            "found in support bundle")
+                else:
+                    self.LOGGER.info("assert: %s", comp)
+                    assert_utils.assert_true(False, f"No {comp} dir in collected support bundle")
+
+        self.LOGGER.info("ENDED: Test to validate support bundle contains component logs")

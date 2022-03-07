@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -346,10 +345,11 @@ class S3BackgroundIO:
         self.log_prefix = "parallel_io"
         self.parallel_ios = None
         assert_utils.assert_true(path_exists(s3bench.S3_BENCH_PATH),
-                                 f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+                                 f"S3bench tool is not installed: {s3bench.S3_BENCH_PATH}")
         try:
             self.bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
-        except CTException:
+        except CTException as error:
+            LOG.warning(error.message)
             self.bucket_exists = False
 
     @staticmethod
@@ -414,6 +414,7 @@ class S3BackgroundIO:
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             LOG.info("Created IO bucket: %s", self.io_bucket_name)
+            self.bucket_exists = True
         LOG.info("Check s3 bench tool installed.")
         self.parallel_ios = Process(
             target=self.s3_ios,

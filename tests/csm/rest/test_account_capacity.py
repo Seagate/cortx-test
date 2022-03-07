@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -177,7 +176,7 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Creating S3 account")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
         access_key = resp.json()["access_key"]
@@ -229,7 +228,7 @@ class TestAccountCapacity():
         self.log.info("Creating  %s S3 account and buckets", s3acct_cnt)
         for cnt in range(0, s3acct_cnt):
             self.log.info("Create S3 Account : %s", cnt)
-            resp = self.s3user.create_s3_account()
+            resp = self.s3user.create_s3_account_for_capacity()
             assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
             access_key = resp.json()["access_key"]
             secret_key = resp.json()["secret_key"]
@@ -269,7 +268,7 @@ class TestAccountCapacity():
 
         data_all = []
         self.log.info("Create S3 Account")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         access_key = resp.json()["access_key"]
         secret_key = resp.json()["secret_key"]
@@ -317,7 +316,7 @@ class TestAccountCapacity():
 
         data_all = []
         self.log.info("Create S3 Account")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         access_key = resp.json()["access_key"]
         secret_key = resp.json()["secret_key"]
@@ -365,13 +364,13 @@ class TestAccountCapacity():
         user2_bucket1 = "S3user2Bucket1"
         object_name = "S3user1Bucket1_obj"
         self.log.info("Step-1: Creating first S3 account")
-        resp = self.acc_capacity.create_s3_account(True, True)
+        resp = self.acc_capacity.create_s3_account_for_capacity(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]  # [access_key, secret_key, canonical_id, s3_account,
         # s3_obj, s3_acl_obj]
         self.account_created.append(account1_info[3])
         self.log.info("Step-2: Creating second S3 account")
-        resp = self.acc_capacity.create_s3_account(True, True)
+        resp = self.acc_capacity.create_s3_account_for_capacity(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account2_info = resp[1]
         self.account_created.append(account2_info[3])
@@ -459,7 +458,7 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create s3 Account")
-        resp = self.acc_capacity.create_s3_account(True, True)
+        resp = self.acc_capacity.create_s3_account_for_capacity(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]
         self.account_created.append(account1_info[3])
@@ -518,7 +517,7 @@ class TestAccountCapacity():
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         for _ in range(const.MAX_S3_USERS):
             total_cap = 0
-            resp = self.s3user.create_s3_account()
+            resp = self.s3user.create_s3_account_for_capacity()
             self.log.info("s3 account response %s:", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                      "Failed to create S3 account.")
@@ -564,7 +563,7 @@ class TestAccountCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Creating s3 user")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
         access_key = resp.json()["access_key"]
@@ -610,7 +609,7 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Creating s3 user")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "Failed to create S3 account.")
         access_key = resp.json()["access_key"]
@@ -668,7 +667,7 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info("Step 1: Create S3 Account")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         access_key = resp.json()["access_key"]
         secret_key = resp.json()["secret_key"]
@@ -790,7 +789,7 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info("Step 1: Create S3 Account")
-        resp = self.s3user.create_s3_account()
+        resp = self.s3user.create_s3_account_for_capacity()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         access_key = resp.json()["access_key"]
         secret_key = resp.json()["secret_key"]
@@ -849,14 +848,14 @@ class TestAccountCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info("Step-1: Creating first S3 account")
-        resp = self.acc_capacity.create_s3_account(True, True)
+        resp = self.acc_capacity.create_s3_account_for_capacity(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account1_info = resp[1]  # [access_key, secret_key, canonical_id, s3_account,
         # s3_obj, s3_acl_obj]
         self.account_created.append(account1_info[3])
 
         self.log.info("Step-2: Creating second S3 account")
-        resp = self.acc_capacity.create_s3_account(True, True)
+        resp = self.acc_capacity.create_s3_account_for_capacity(True, True)
         assert_utils.assert_true(resp[0], resp[1])
         account2_info = resp[1]
         self.account_created.append(account2_info[3])

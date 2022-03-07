@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -77,7 +76,8 @@ def read_yaml(fpath: str) -> tuple:
 def write_yaml(
         fpath: str,
         write_data: dict or list,
-        backup: bool = True) -> tuple:
+        backup: bool = True,
+        sort_keys = True) -> tuple:
     """
     Function overwrites the content of given yaml file with given data.
 
@@ -85,6 +85,7 @@ def write_yaml(
     :param dict/list write_data: data to be written in yaml file
     :param bool backup: if set False, backup will not be taken before
     overwriting
+    :param bool sort_keys: if set False, order of keys will be preserved
     :return: True/False, yaml file path
     :rtype: boolean, str
     """
@@ -94,7 +95,7 @@ def write_yaml(
             shutil.copy2(fpath, bkup_path)
             LOG.debug("Backup file %s at %s", fpath, bkup_path)
         with open(fpath, 'w') as fobj:
-            yaml.safe_dump(write_data, fobj)
+            yaml.safe_dump(write_data, fobj, sort_keys=sort_keys)
         LOG.debug("Updated yaml file at %s", fpath)
     except FileNotFoundError as error:
         LOG.error(
