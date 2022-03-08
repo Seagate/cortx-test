@@ -386,4 +386,3 @@ def assert_s3_err_msg(rgw_error, cortx_error, error):
         assert_utils.assert_equal(rgw_error, error.message, error.message)
     else:
         assert_utils.assert_equal(cortx_error, error.message, error.message)
-
