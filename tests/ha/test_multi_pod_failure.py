@@ -1028,6 +1028,14 @@ class TestMultiPodFailure:
         LOGGER.info("Step 7: Verified status for In-flight READs/Verify DI while %s (K) pods "
                     "going down.", self.kvalue)
 
+        LOGGER.info("Step 8: Create multiple buckets and run IOs")
+        self.test_prefix = 'test-35773-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, nsamples=2,
+                                                    nclients=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
+
         LOGGER.info("ENDED: Test to verify continuous READs during %s (K) data pods down",
                     self.kvalue)
 
@@ -1125,5 +1133,12 @@ class TestMultiPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while %s (K) pods "
                     "going down.", self.kvalue)
 
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
+        self.test_prefix = 'test-35776-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, nsamples=2,
+                                                    nclients=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
         LOGGER.info("ENDED: Test to verify continuous WRITEs during %s (K) data pods down",
                     self.kvalue)
