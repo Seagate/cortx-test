@@ -404,8 +404,8 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
                                             self.deploy_cfg['control_port_https'])
-        LOGGER.debug("Ports are %s\n%s\n%s", nodeport_http,
-                     nodeport_https, control_nodeport_https)
+        LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
+                     nodeport_http, nodeport_https, control_nodeport_https)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -1143,6 +1143,7 @@ class ProvDeployK8sCortxLib:
                                         size_metadata=metadata_disk_size,
                                         log_path=log_path,
                                         cortx_server_image=self.cortx_server_image,
+                                        service_type=self.service_type,
                                         https_port=self.nodeport_https,
                                         http_port=self.nodeport_http,
                                         control_https_port=self.control_nodeport_https)
