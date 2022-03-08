@@ -615,7 +615,8 @@ class S3Helper:
 
         return status, (parameter, value, old_value)
 
-    def s3_engine_asserts(self, rgw_error, cortx_error, error):
+    @staticmethod
+    def s3_engine_asserts(rgw_error, cortx_error, error):
         """Checks the s3 engine type and asserts accordingly """
         if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             assert_utils.assert_equal(rgw_error, error.message, error.message)
