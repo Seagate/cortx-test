@@ -30,7 +30,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.s3_utils import get_precalculated_parts
+from commons.utils.s3_utils import get_precalculated_parts, assert_s3_err_msg
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
@@ -254,7 +254,7 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
+            assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info("Failed to complete the multipart with input of wrong json/etag")
         # DO completeMultipartUpload with correct part details after 30 mins to check
         # background producer does not clean up object due to
@@ -271,7 +271,7 @@ class TestMultipartUploadGetPut:
             # TO: Check above if parts is sequential or random order
         except CTException as error:
             self.log.error(error)
-            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
+            assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info(
                 "Failed to complete the multipart upload after 30 mins of failure mpu with wrong "
                 "json ")
@@ -321,7 +321,7 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
+            assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info("Failed to complete the multipart with incomplete part details ")
         self.log.info("Aborting multipart uploads")
         self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,
