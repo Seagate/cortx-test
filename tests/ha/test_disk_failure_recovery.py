@@ -96,16 +96,6 @@ class TestDiskFailureRecovery:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
-        if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
-
-        LOGGER.info("Cleanup: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cleanup: Cluster status checked successfully")
-
         LOGGER.info("Cleanup: Make failed disks online")
         resp = self.node_master_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
@@ -116,6 +106,16 @@ class TestDiskFailureRecovery:
                                                             fail_disk[0], fail_disk[2], "online")
             LOGGER.info("disk status change resp: %s", resp)
         LOGGER.info("Cleanup: Made all disks online")
+
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Cleanup: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -156,6 +156,7 @@ class TestDiskFailureRecovery:
 
         resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
                                                     self.node_worker_list)
+        assert_utils.assert_true(resp[0], resp[1])
         all_disks = resp[1]
         LOGGER.info("list of all disks: %s", all_disks)
 
@@ -207,8 +208,8 @@ class TestDiskFailureRecovery:
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
-            LOGGER.error("Degraded byte count after sns repair is greater than "
-                         "or equal to degraded byte count after disk fail")
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -269,6 +270,7 @@ class TestDiskFailureRecovery:
 
         resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
                                                     self.node_worker_list)
+        assert_utils.assert_true(resp[0], resp[1])
         all_disks = resp[1]
         LOGGER.info("list of all disks: %s", all_disks)
 
@@ -292,8 +294,8 @@ class TestDiskFailureRecovery:
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
-            LOGGER.error("Degraded byte count after disk failure less than "
-                         "or equal to degraded byte count before disk fail")
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
         else:
             LOGGER.info("Degraded byte count is more as expected after disk fail")
 
