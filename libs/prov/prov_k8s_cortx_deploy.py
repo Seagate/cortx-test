@@ -63,8 +63,8 @@ class ProvDeployK8sCortxLib:
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
-        self.nodeport_http = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
-        self.nodeport_https = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
+        self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
+        self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
                                                 self.deploy_cfg["control_port_https"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
