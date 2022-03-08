@@ -83,7 +83,7 @@ class TestMultiPodFailure:
         cls.pod_name_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = cls.random_time = cls.test_prefix_new = None
+        cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
@@ -853,6 +853,7 @@ class TestMultiPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35774'
         self.s3_clean = users
+        self.test_prefix_new = None
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=2, nclients=2)
@@ -899,7 +900,7 @@ class TestMultiPodFailure:
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Step 5: Services of pod are in online state")
+            LOGGER.info("Step 5: Services of remaining pods are in online state")
 
             LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created "
                         "bucket")
@@ -994,7 +995,7 @@ class TestMultiPodFailure:
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Services of pod are in online state")
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
 
         LOGGER.info("Step 6: Perform WRITEs-READs-Verify and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1012,7 +1013,8 @@ class TestMultiPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects.")
+        LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects "
+                    "on degraded cluster")
 
         LOGGER.info("Completed: Test to verify degraded WRITEs after all K data pods are failed.")
 
@@ -1060,7 +1062,7 @@ class TestMultiPodFailure:
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
                                                            f"of buckets. Created {len(buckets)} "
-                                                           f"number of buckets")
+                                                           "number of buckets")
         LOGGER.info("Step 1: Successfully created %s buckets & "
                     "perform WRITEs with variable size objects.", wr_bucket)
 
@@ -1123,6 +1125,7 @@ class TestMultiPodFailure:
                                       f"{wr_bucket}. Remaining {len(remain_bkt)} number of "
                                       "buckets")
             LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", del_bucket)
+            wr_bucket = len(remain_bkt)
 
             LOGGER.info("Step 7: Perform READs on the remaining %s buckets", remain_bkt)
             rd_output = Queue()
