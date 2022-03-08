@@ -1316,3 +1316,25 @@ class ProvDeployK8sCortxLib:
             return False
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
+
+    @staticmethod
+    def service_upgrade_software(node_obj, upgrade_image_version: str) -> tuple:
+        """
+        Helper function to upgrade.
+        :param node_obj: Master node(Logical Node object)
+        :param upgrade_image_version: Version Image to Upgrade.
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
+        upgrade_cmd = PROV_CFG['k8s_cortx_deploy']["upgrade_cluster"].format(upgrade_image_version)
+        cmd = "cd {}; {}".format(PROV_CFG['k8s_cortx_deploy']["git_remote_path"], upgrade_cmd)
+        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        LOGGER.debug("".join(resp).replace("\\n", "\n"))
+        resp = "".join(resp).replace("\\n", "\n")
+        if "Error" in resp or "Failed" in resp:
+            return False, resp
+        return True, resp
+
+    
