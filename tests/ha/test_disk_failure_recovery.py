@@ -31,6 +31,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons import constants as common_const
 from config import CMN_CFG
+from config import HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.ha.ha_disk_failure_recovery_libs import DiskFailureRecoveryLib
@@ -62,6 +63,7 @@ class TestDiskFailureRecovery:
         cls.dsk_rec_obj = DiskFailureRecoveryLib()
         cls.s3_clean = None
         cls.mgnt_ops = ManagementOPs()
+        cls.delay_sns_repair = HA_CFG["sns_repair"]["delay_sns_repair"]
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -175,7 +177,7 @@ class TestDiskFailureRecovery:
             LOGGER.info("fail disk resp: %s", resp)
             self.failed_disks.append(selected_disk)
 
-        time.sleep(30)
+        time.sleep(self.delay_sns_repair)
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
@@ -202,7 +204,7 @@ class TestDiskFailureRecovery:
         resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", pod_name)
         LOGGER.info("sns start resp: %s", resp)
 
-        time.sleep(30)
+        time.sleep(self.delay_sns_repair)
         LOGGER.info("Step 8: Check degraded byte counts are zero "
                     "or less than count after disk fail")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
@@ -289,7 +291,7 @@ class TestDiskFailureRecovery:
             LOGGER.info("fail disk resp: %s", resp)
             self.failed_disks.append(selected_disk)
 
-        time.sleep(30)
+        time.sleep(self.delay_sns_repair)
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
@@ -316,7 +318,7 @@ class TestDiskFailureRecovery:
         resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", pod_name)
         LOGGER.info("sns start resp: %s", resp)
 
-        time.sleep(30)
+        time.sleep(self.delay_sns_repair)
         LOGGER.info("Step 8: Check degraded byte counts are zero "
                     "or less than count after disk fail")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
