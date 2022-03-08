@@ -50,6 +50,8 @@ from tests.io import test_s3api_multipart_partcopy_io_stability
 
 function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
+    'copy_object_range_read': [test_s3_copy_object.TestS3CopyObjects,
+                               'execute_copy_object_workload'],
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
     'multipart': [test_s3_multipart_io_stability.TestMultiParts, 'execute_multipart_workload'],
     'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload'],
