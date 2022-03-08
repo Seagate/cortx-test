@@ -1825,7 +1825,7 @@ class TestSystemCapacity():
 
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34717')
     def test_34717(self):
         """
@@ -1836,8 +1836,7 @@ class TestSystemCapacity():
         self.log.info("Step 1: Get header for admin user")
         header = self.csm_user.get_headers(self.username, self.user_pass)
         self.log.info("Step 2: Modify header for missing params")
-        header[''] = header.pop('Authorization')
-        header[''] = ''
+        header['Authorization'] = ''
         self.log.info("Step 3: Call degraded capacity api with missing params in header")
         response = self.system_capacity.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
@@ -1850,7 +1849,7 @@ class TestSystemCapacity():
     @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34718')
     def test_34718(self):
         """
@@ -1878,7 +1877,7 @@ class TestSystemCapacity():
 
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34719')
     def test_34719(self):
         """
@@ -1900,7 +1899,7 @@ class TestSystemCapacity():
     @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34720')
     def test_34720(self):
         """
@@ -1928,7 +1927,7 @@ class TestSystemCapacity():
 
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34722')
     def test_34722(self):
         """
@@ -1951,7 +1950,7 @@ class TestSystemCapacity():
 
     @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_perf_stats
+    @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-34723')
     def test_34723(self):
         """
