@@ -65,17 +65,19 @@ class TestDiskFailureRecovery:
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
+            user_name = CMN_CFG["nodes"][node]["username"]
+            user_pass = CMN_CFG["nodes"][node]["password"]
             if CMN_CFG["nodes"][node]["node_type"] == "master":
                 cls.node_master_list.append(LogicalNode(hostname=cls.host,
-                                                    username=CMN_CFG["nodes"][node]["username"],
-                                                    password=CMN_CFG["nodes"][node]["password"]))
+                                                        username=user_name,
+                                                        password=user_pass))
                 cls.hlth_master_list.append(Health(hostname=cls.host,
-                                                   username=cls.username[node],
-                                                   password=cls.password[node]))
+                                                   username=user_name,
+                                                   password=user_pass))
             else:
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
-                                                        username=cls.username[node],
-                                                        password=cls.password[node]))
+                                                        username=user_name,
+                                                        password=user_pass))
 
     def setup_method(self):
         """
