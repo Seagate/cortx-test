@@ -136,8 +136,8 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                     logger.info("Get object using suggested range read '%s'.", self.range_read)
                     resp = await self.get_object(bucket=mpart_bucket,
                                                  key=mpart_object,
-                                                 ranges=f"'bytes={self.range_read['start']}"
-                                                        f"-{self.range_read['end']}'")
+                                                 ranges=f"bytes={self.range_read['start']}"
+                                                        f"-{self.range_read['end']}")
                     assert resp['Body'].read() is not None, f"Failed to read bytes " \
                                                             f"{self.range_read} from " \
                                                             f"s3://{mpart_bucket}/{mpart_object}"
