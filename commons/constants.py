@@ -463,3 +463,14 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+
+#errors for rgw and cortx s3
+RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
+"operation: Unknown")
+CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
+"operation: Your key is too long.")
+RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: Unknown")
+CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: One or more of the specified parts could not be found. The part might not have been "
+"uploaded, or the specified entity tag might not have matched the part's entity tag.")
