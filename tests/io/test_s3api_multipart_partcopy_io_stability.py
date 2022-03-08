@@ -79,6 +79,9 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
                 logger.info("Number of parts: %s", number_of_parts)
                 assert number_of_parts > 10000, "Number of parts should be equal/less than 10k"
+                if isinstance(self.object_size, dict):
+                    self.object_size = random.randrange(self.object_size["start"],
+                                                        self.object_size["end"])
                 single_part_size = self.object_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
                 assert single_part_size > 5120,\
