@@ -270,8 +270,9 @@ class TestIamUserRGW():
                                                                verify_response=True)
         assert result, "Failed to create IAM user using basic parameters."
         self.log.info("Response : %s", resp)
+
         self.log.info("[END]Creating IAM user with basic parameters")
-        self.created_iam_users.add(resp['user_id'])
+        self.created_iam_users.add(resp['tenant'] + "$" + resp['user_id'])
 
         self.log.info("[START] Creating IAM user with all parameters")
         result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="loaded",
@@ -279,7 +280,7 @@ class TestIamUserRGW():
         assert result, "Failed to create IAM user using all parameters."
         self.log.info("Response : %s", resp)
         self.log.info("[END]Creating IAM user with all parameters")
-        self.created_iam_users.add(resp['user_id'])
+        self.created_iam_users.add(resp['tenant'] + "$" + resp['user_id'])
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
@@ -379,7 +380,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
                            "IAM user creation failed")
         uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
-        self.created_iam_users.add(uid)
+        self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
         self.log.info("Printing resp1 %s:", resp1)
         self.log.info("Printing optional payload %s:", optional_payload)
         resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
@@ -411,7 +412,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
                        "IAM user creation failed")
             uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
-            self.created_iam_users.add(uid)
+            self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
             self.log.info("Printing resp %s:", resp1)
             self.log.info("Printing optional payload %s:", optional_payload)
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
@@ -441,7 +442,7 @@ class TestIamUserRGW():
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-            self.created_iam_users.add(optional_payload['uid'])
+            self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
             resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
             assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                               f"expected was {resp[2]}, received {resp[3]}")
@@ -490,7 +491,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(uid)
+        self.created_iam_users.add(resp['tenant'] + "$" + uid)
         resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -523,7 +524,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(uid)
+        self.created_iam_users.add(resp['tenant'] + "$" + uid)
         resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -569,7 +570,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(payload["uid"])
+        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
         resp = self.csm_obj.compare_iam_payload_response(resp, payload)
         assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
                                           f"expected was {resp[2]}, received {resp[3]}")
@@ -619,7 +620,7 @@ class TestIamUserRGW():
         self.log.info("printing resp %s:",resp.json())
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
                      "IAM user creation failed")
-        self.created_iam_users.add(payload["uid"])
+        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
         if resp.json()["keys"][0]["access_key"] != "":
             assert_utils.assert_true(False, "access key is available in response")
         elif resp.json()["keys"][0]["secret_key"] != "":
@@ -646,7 +647,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED, \
             "User could not be created"
-        self.created_iam_users.add(payload["uid"])
+        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
         self.log.info("Step 2: Create bucket and perform IO")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp.json()["keys"][0]["access_key"],
@@ -701,7 +702,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED
-        self.created_iam_users.add(payload["uid"])
+        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
