@@ -76,6 +76,7 @@ class TestSystemCapacity():
                                           password=node["password"]))
                 host = node["hostname"]
                 cls.host_list.append(host)
+        cls.num_worker = len(cls.host_list)
         cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
                                  username=CMN_CFG["nodes"][0]["username"],
                                  password=CMN_CFG["nodes"][0]["password"])
@@ -196,7 +197,7 @@ class TestSystemCapacity():
         self.log.info("[Start] Fetch degraded capacity on CSM")
         resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()["byte_count"]
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
@@ -206,7 +207,7 @@ class TestSystemCapacity():
                 critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             """ Commented for Happy path testing
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
@@ -234,7 +235,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s Node failure",
                             self.host_list[node])
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -284,7 +285,7 @@ class TestSystemCapacity():
             self.log.info("[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -308,7 +309,7 @@ class TestSystemCapacity():
                         critical=0, damaged=0, err_margin=test_cfg["err_margin"],
                         total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
-
+            import pdb;pdb.set_trace()
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
         assert self.csm_obj.verify_degraded_capacity_all(
             cap_df, self.num_nodes), "Overall check failed."
@@ -357,7 +358,7 @@ class TestSystemCapacity():
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -427,7 +428,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s Node failure",
                             self.host_list[node])
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -476,7 +477,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -549,7 +550,7 @@ class TestSystemCapacity():
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -637,7 +638,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -688,7 +689,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -764,7 +765,7 @@ class TestSystemCapacity():
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -820,7 +821,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -871,7 +872,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -948,7 +949,7 @@ class TestSystemCapacity():
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -1018,7 +1019,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1069,7 +1070,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1161,7 +1162,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
             cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
             cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -1219,7 +1220,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 1 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1271,7 +1272,7 @@ class TestSystemCapacity():
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1340,7 +1341,7 @@ class TestSystemCapacity():
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Pod failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -1424,7 +1425,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s pod failure", pod_name)
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1475,7 +1476,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 pod failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1543,7 +1544,7 @@ class TestSystemCapacity():
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with no Node failure")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
@@ -1592,7 +1593,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1638,7 +1639,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with no Node failure")
             # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.health_helper.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1705,7 +1706,7 @@ class TestSystemCapacity():
 
         self.log.info("[Start] Fetch degraded capacity on HCTL before cluster restart")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
         cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
         cap_df.loc[index]["hctl_critical"] = resp["critical"]
@@ -1764,7 +1765,7 @@ class TestSystemCapacity():
 
         self.log.info("[Start] Fetch degraded capacity on HCTL after cluster restart")
         # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.health_helper.hctl_status_json()["bytecount"]
         cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
         cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
         cap_df.loc[index]["hctl_critical"] = resp["critical"]
