@@ -47,7 +47,7 @@ function_mapping = {
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
     'multipart': [test_s3_multipart_io_stability.TestMultiParts, 'execute_multipart_workload'],
     'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload'],
-    'multipart_partcopy': [test_s3api_multipart_partcopy_io_stability,
+    'multipart_partcopy': [test_s3api_multipart_partcopy_io_stability.TestMultiPartsPartCopy,
                            'execute_multipart_partcopy_workload']
 }
 

@@ -65,7 +65,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
     # pylint: disable=too-many-locals
     async def execute_multipart_partcopy_workload(self):
         """Execute multipart workload for specific duration."""
-        mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns())
+        mpart_bucket = "s3mpart-bkt-{}-{}".format(self.test_id, perf_counter_ns()).lower()
         logger.info("Create s3 bucket: %s", mpart_bucket)
         await self.create_bucket(mpart_bucket)
         while True:
@@ -78,13 +78,13 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 logger.info("Multipart Object name: %s", mpart_object)
                 number_of_parts = random.randrange(self.part_range["start"], self.part_range["end"])
                 logger.info("Number of parts: %s", number_of_parts)
-                assert number_of_parts > 10000, "Number of parts should be equal/less than 10k"
+                assert number_of_parts <= 10000, "Number of parts should be equal/less than 10k"
                 if isinstance(self.object_size, dict):
                     self.object_size = random.randrange(self.object_size["start"],
                                                         self.object_size["end"])
                 single_part_size = self.object_size // number_of_parts
                 logger.info("single part size: %s MB", single_part_size / (1024 ** 2))
-                assert single_part_size > 5120,\
+                assert (single_part_size / (1024 ** 2)) <= 5120,\
                     "Single part size should be within range and should not be greater than 5GB."
                 logger.info("Create multipart upload: s3://%s/%s", mpart_bucket, mpart_object)
                 resp = await self.create_multipart_upload(mpart_bucket, mpart_object)
@@ -100,7 +100,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                     if i == random_part:
                         resp = await self.upload_object(body=byte_s, bucket=mpart_bucket,
                                                         key=s3_object)
-                        assert resp["ETag"] is not None, f"Failed upload part: {resp}"
+                        assert resp["ETag"] is not None, f"Failed upload object: {resp}"
                         resp = await self.upload_part_copy(f"{mpart_bucket}/{s3_object}",
                                                            mpart_bucket, s3_object, part_number=i,
                                                            upload_id=mpu_id)
@@ -130,7 +130,7 @@ class TestMultiPartsPartCopy(S3MultiParts, S3Object, S3Bucket):
                 download_obj_checksum = await self.get_s3object_checksum(
                     mpart_bucket, mpart_object, single_part_size)
                 logger.info("Checksum of s3 object: %s", download_obj_checksum)
-                assert upload_obj_checksum != download_obj_checksum,\
+                assert upload_obj_checksum == download_obj_checksum,\
                     f"Failed to match checksum: {upload_obj_checksum}, {download_obj_checksum}"
                 if self.range_read:
                     logger.info("Get object using suggested range read '%s'.", self.range_read)
