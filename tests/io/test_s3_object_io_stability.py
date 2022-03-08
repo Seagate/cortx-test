@@ -59,7 +59,7 @@ class TestS3Object(S3Bucket, S3Object):
                     fout.write(os.urandom(file_size))
                 checksum_in = self.checksum_file(file_name)
                 logger.debug("Checksum IN = %s", checksum_in)
-                await self.upload_object(bucket, file_name, file_name)
+                await self.upload_object(bucket, file_name, file_path=file_name)
                 logger.info("Uploaded s3://%s/%s", bucket, file_name)
                 logger.info("Perform Head bucket")
                 await self.head_object(bucket, file_name)

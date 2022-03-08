@@ -59,7 +59,7 @@ class TestBucketOps(S3Object, S3Bucket):
         self.object_size = object_size
         self.test_id = test_id
         self.min_duration = 10  # In seconds
-        self.finish_time = datetime.now() + duration\
+        self.finish_time = datetime.now() + duration \
             if duration else datetime.now() + timedelta(hours=int(100 * 24))
         self.object_per_iter = 500
         self.iteration = 1
@@ -80,7 +80,9 @@ class TestBucketOps(S3Object, S3Bucket):
                     file_name = f'object-bucket-op-{time.perf_counter_ns()}'
                     with open(file_name, 'wb') as fout:
                         fout.write(os.urandom(file_size))
-                    await self.upload_object(bucket_name, file_name, file_name)
+                    await self.upload_object(bucket_name, file_name, file_path=file_name)
+                    logger.info("Delete generated file")
+                    os.remove(file_name)
                 logger.info("List all buckets")
                 await self.list_buckets()
                 logger.info("List objects of created %s bucket", bucket_name)

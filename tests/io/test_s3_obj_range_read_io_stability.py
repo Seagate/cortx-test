@@ -25,7 +25,9 @@ import random
 import time
 from datetime import datetime, timedelta
 from typing import Union
+
 from botocore.exceptions import ClientError
+
 from libs.io.s3api.s3_bucket_ops import S3Bucket
 from libs.io.s3api.s3_object_ops import S3Object
 
@@ -86,7 +88,7 @@ class TestObjectRangeReadOps(S3Object, S3Bucket):
                 file_name = f'object-range-op-{time.perf_counter_ns()}'
                 with open(file_name, 'wb') as fout:
                     fout.write(os.urandom(file_size))
-                await self.upload_object(bucket_name, file_name, file_name)
+                await self.upload_object(bucket_name, file_name, file_path=file_name)
                 # Head object
                 logger.info("Perform Head object")
                 await self.head_object(bucket_name, file_name)
