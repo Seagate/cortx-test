@@ -23,8 +23,8 @@ Test suite for disk failure recovery
 
 import logging
 import time
-import pytest
 import random
+import pytest
 
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
@@ -52,25 +52,22 @@ class TestDiskFailureRecovery:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.username = []
-        cls.password = []
+        cls.test_prefix = []
+        cls.failed_disks = []
         cls.node_master_list = []
         cls.hlth_master_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.dsk_rec_obj = DiskFailureRecoveryLib()
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = None
         cls.mgnt_ops = ManagementOPs()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
-            cls.username.append(CMN_CFG["nodes"][node]["username"])
-            cls.password.append(CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"] == "master":
                 cls.node_master_list.append(LogicalNode(hostname=cls.host,
-                                                        username=cls.username[node],
-                                                        password=cls.password[node]))
+                                                    username=CMN_CFG["nodes"][node]["username"],
+                                                    password=CMN_CFG["nodes"][node]["password"]))
                 cls.hlth_master_list.append(Health(hostname=cls.host,
                                                    username=cls.username[node],
                                                    password=cls.password[node]))
@@ -85,8 +82,6 @@ class TestDiskFailureRecovery:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.s3_clean = {}
-        self.test_prefix = []
-        self.failed_disks = []
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -144,10 +139,11 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 2: Get degraded byte count before failing the disk")
         degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
                                                                         "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_before)
+        LOGGER.info("degraded byte count", degraded_byte_cnt_before)
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
         resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
+        assert_utils.assert_true(resp[0], resp[1])
         parity_units = resp[1]['parity']
         LOGGER.info("No of parity units (K): %s", parity_units)
 
@@ -177,8 +173,8 @@ class TestDiskFailureRecovery:
 
         time.sleep(30)
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
-        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
-                                                                            "degraded_byte_count")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
+            (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
@@ -205,8 +201,8 @@ class TestDiskFailureRecovery:
         time.sleep(30)
         LOGGER.info("Step 8: Check degraded byte counts are zero "
                     "or less than count after disk fail")
-        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
-                                                                              "degraded_byte_count")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
+            (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
@@ -263,6 +259,7 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
         resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
+        assert_utils.assert_true(resp[0], resp[1])
         parity_units = resp[1]['parity']
         LOGGER.info("No of parity units (K): %s", parity_units)
 
@@ -289,8 +286,8 @@ class TestDiskFailureRecovery:
 
         time.sleep(30)
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
-        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
-                                                                            "degraded_byte_count")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
+            (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
@@ -317,8 +314,8 @@ class TestDiskFailureRecovery:
         time.sleep(30)
         LOGGER.info("Step 8: Check degraded byte counts are zero "
                     "or less than count after disk fail")
-        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
-                                                                              "degraded_byte_count")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
+            (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
