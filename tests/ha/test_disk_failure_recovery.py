@@ -34,7 +34,6 @@ from config import CMN_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.ha.ha_disk_failure_recovery_libs import DiskFailureRecoveryLib
-from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -52,6 +51,8 @@ class TestDiskFailureRecovery:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.username = []
+        cls.password = []
         cls.test_prefix = []
         cls.failed_disks = []
         cls.node_master_list = []
