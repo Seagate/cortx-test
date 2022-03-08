@@ -33,11 +33,11 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 from commons import constants as const
+from config import CMN_CFG
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ
-
 
 
 class TestObjectMetadataOperations:
