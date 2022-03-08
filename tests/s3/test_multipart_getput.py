@@ -33,12 +33,13 @@ from commons.utils.s3_utils import get_precalculated_parts, assert_s3_err_msg
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from commons import constants as const
+
 from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import S3_CFG, S3H_OBJ, CMN_CFG
-from commons import constants as const
 
 
 class TestMultipartUploadGetPut:

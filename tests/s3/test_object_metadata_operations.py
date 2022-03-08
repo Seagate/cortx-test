@@ -38,7 +38,6 @@ from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib, CMN_CFG
 
 
-
 class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
 
