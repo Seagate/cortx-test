@@ -96,12 +96,12 @@ class TestS3CopyObjects(S3Object, S3Bucket):
                     else:
                         range_read = random.randrange(self.range_read["start"],
                                                       self.range_read["end"])
-                    logger.info("Get object using suggested range read '%s'.", self.range_read)
+                    logger.info("Get object using suggested range read '%s'.", range_read)
                     offset = random.randrange(file_size - range_read)
                     checksum1 = await self.get_s3object_checksum(
-                        bucket=bucket1, key=object1, ranges=f"'bytes={offset}-{range_read}'")
+                        bucket=bucket1, key=object1, ranges=f'bytes={offset}-{range_read + offset}')
                     checksum2 = await self.get_s3object_checksum(
-                        bucket=bucket2, key=object2, ranges=f"'bytes={offset}-{range_read}'")
+                        bucket=bucket2, key=object2, ranges=f'bytes={offset}-{range_read + offset}')
                     assert checksum1 == checksum2, f"SHA256 of original range = {checksum1}\n" \
                                                    f"SHA256 of copied range = {checksum2}"
                 else:
@@ -116,6 +116,7 @@ class TestS3CopyObjects(S3Object, S3Bucket):
                 await self.head_object(bucket2, object2)
                 # Delete destination object from bucket-2
                 await self.delete_object(bucket2, object2)
+                os.remove(object1)
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
                 raise err
