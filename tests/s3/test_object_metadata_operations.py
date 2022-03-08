@@ -284,7 +284,7 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
+            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
                                       error)
         self.log.info("Create object key greater than 1024 byte long")
 
