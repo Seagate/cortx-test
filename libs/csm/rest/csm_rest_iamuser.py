@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -79,19 +78,27 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user(self, user=None):
+    def get_iam_user(self, user):
         """
-        This function will delete payload according to the required type for
-        deleting Iam user.
-        :param user: type of user to create payload.
-        :return: payload
+        This function will get iam user details
+        :param user: userid.
+        :return: response
+        """
+        response = self.get_iam_user_rgw(user, self.headers)
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def delete_iam_user(self, user=None, purge_data=False):
+        """
+        This function will delete user
+        :param user: userid of user
+        :param purge_data: if True, deletes user created data.
+        :return: response
         """
         if self.iam_user and (not user):
             user = self.iam_user
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+            response = self.delete_iam_user_rgw(user, self.headers, purge_data)
         else:
             self.log.debug("iam user")
             endpoint = '/'.join((self.config["IAM_users_endpoint"], user))
@@ -483,9 +490,12 @@ class RestIamUser(RestTestLib):
             Compare rest response with expected response
         """
         payload["user_id"] = payload.pop("uid")
-        payload["caps"] = payload.pop("user_caps")
+        if "user_caps" in payload:
+            payload["caps"] = payload.pop("user_caps")
         for key, value in payload.items():
             if key in rest_response:
+                if key == 'caps':
+                    continue
                 if key == "suspended":
                     expected_val = 0
                     if value:
@@ -507,12 +517,46 @@ class RestIamUser(RestTestLib):
     def create_iam_user_rgw(self, payload: dict):
         """
         Creates IAM user for given payload.
+        :param payload: payload for user creation
+        :return: response
         """
         self.log.info("Creating IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
+        return response
+
+    def delete_iam_user_rgw(self, uid, header, purge_data=False):
+        """
+        Delete IAM user
+        :param uid: userid
+        :param header: header for api authentication
+        :param purge_data: If true, delete users data
+        :return: response
+        """
+        self.log.info("Delete IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        payload = {"purge_data": False}
+        if purge_data:
+            payload = {"purge_data": True}
+        response = self.restapi.rest_call("delete", endpoint=endpoint, data=payload,
+                                          headers=header)
+        self.log.info("Delete IAM user request successfully sent...")
+        return response
+
+    def get_iam_user_rgw(self, uid, header):
+        """
+        Get IAM user
+        :param uid: userid
+        :param header: header for api authentication
+        :return: response
+        """
+        self.log.info("Get IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        response = self.restapi.rest_call("get", endpoint=endpoint,
+                                          headers=header)
+        self.log.info("Get IAM user request successfully sent...")
         return response
 
     def verify_create_iam_user_rgw(
@@ -528,8 +572,8 @@ class RestIamUser(RestTestLib):
             result = True
             if verify_response:
                 self.log.info("Checking response...")
-                for key,value in payload.items():
-                    self.log.info("Expected response for %s: %s", key,value)
+                for key, value in payload.items():
+                    self.log.info("Expected response for %s: %s", key, value)
                     if key == "uid":
                         key = "user_id"
                     if key in ('key_type', 'access_key', 'secret_key', 'user_caps', 'generate_key'):

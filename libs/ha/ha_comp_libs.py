@@ -1,19 +1,18 @@
 #!/usr/bin/python  # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -132,3 +131,55 @@ class HAK8SCompLib:
             if common_const.HA_PROCESS not in res:
                 return False
         return True
+
+    @staticmethod
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool=False, health_monitor: bool=False) -> dict:
+        '''
+        Helper function to get ha log properties.
+        :param node_obj: Master node(Logical Node object)
+        :param log_name: Name of the ha log
+        :param kvalue: Number of lines required from 'tail' output
+        :param fault_tolerance: Bool/If made true, checks fault_tolerance.log
+        :param health_monitor: Bool/If made true, checks health_monitor.log
+        :return: ha prop data dictionary
+        '''
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        ha_pvc = None
+        log_list = []
+        for ha_pvc in pvc_list:
+            if common_const.HA_POD_NAME_PREFIX in ha_pvc:
+                ha_pvc = ha_pvc.replace("\n", "")
+                LOGGER.info("ha pvc: %s", ha_pvc)
+                break
+        if fault_tolerance:
+            # For one pod operation there will 9 lines of log
+            kvalue *= 9
+        if health_monitor:
+            # For one pod operation there will 4 lines of log
+            kvalue *= 4
+        cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
+        output = node_obj.execute_cmd(cmd_halog)
+        if isinstance(output, bytes):
+            output = str(output, 'UTF-8')
+        output = output.splitlines()
+        if fault_tolerance:
+            for line in output:
+                if 'Received the message from message bus' in line:
+                    log_list.append(line)
+            output = log_list
+        if health_monitor:
+            for line in output:
+                if 'to component hare' in line:
+                    log_list.append(line)
+            output = log_list
+        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': []}
+        for line in output:
+            source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
+            resource_type = line.split("{")[4].split(",")[6].split(":")[1].strip().replace("'", '')
+            resource_status = line.split("{")[4].split(",")[8].split(":")[1].strip().replace("'", '')
+            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().replace("'", '').replace('}', '')
+            resp_dict['source'].append(source)
+            resp_dict['resource_status'].append(resource_status)
+            resp_dict['resource_type'].append(resource_type)
+            resp_dict['generation_id'].append(generation_id)
+        return resp_dict
