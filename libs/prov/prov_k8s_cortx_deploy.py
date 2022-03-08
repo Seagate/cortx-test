@@ -30,6 +30,7 @@ import signal
 import time
 from typing import List
 
+import requests.exceptions
 import yaml
 
 from commons import commands as common_cmd
@@ -863,15 +864,23 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Configure AWS on Client")
             resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
             LOGGER.debug("resp : %s", resp)
-            LOGGER.info("Configure AWS keys on Client")
-            if s3_engine == common_const.S3_ENGINE_RGW:
+            if int(s3_engine) == common_const.S3_ENGINE_RGW:
+                LOGGER.info("Configure AWS keys on Client %s", s3_engine)
                 resp = system_utils.execute_cmd(
                     common_cmd.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
                 LOGGER.debug("resp : %s", resp)
             else:
+                LOGGER.info("Configure AWS keys on Client %s")
                 resp = system_utils.execute_cmd(
                     common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
                 LOGGER.debug("resp : %s", resp)
+        # workaround till we have solution for minio configure error
+        # URL `192.168.54.66:30443` for MinIO Client should be of the
+        # form scheme://host[:port]/ without resource component.
+        # \nmake: *** [minio-configure] Error 1\n'
+        except requests.exceptions.InvalidURL as error:
+            LOGGER.exception(error)
+            return True, resp
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -1186,7 +1195,7 @@ class ProvDeployK8sCortxLib:
                 access_key, secret_key = S3H_OBJ.get_local_keys()
                 if self.service_type == "NodePort":
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                        endpoint_url=ext_port_ip)
+                                        endpoint_url="http://"+ext_port_ip)
                 else:
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             if run_basic_s3_io_flag:

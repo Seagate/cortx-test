@@ -46,7 +46,7 @@ def execute_cmd(cmd) -> tuple:
     return True, str(output)
 
 
-# pylint: disable-msg=too-many-locals
+# pylint: disable=too-many-arguments,too-many-locals
 def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine) -> str:
     """
     Create setup entry in Database
