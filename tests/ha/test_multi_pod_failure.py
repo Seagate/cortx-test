@@ -375,7 +375,7 @@ class TestMultiPodFailure:
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Step 6: Services of pod are in online state")
+            LOGGER.info("Step 6: Services of remaining pods are in online state")
 
             LOGGER.info("Step 7: Perform READs and verify DI on the written data")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1453,7 +1453,7 @@ class TestMultiPodFailure:
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 9: Services of pod are in online state")
+        LOGGER.info("Step 9: Services of remaining pods are in online state")
 
         LOGGER.info("Step 10: Verify status for In-flight READs/WRITEs/DELETEs while %s (K) pods "
                     "were going down.", self.kvalue)
