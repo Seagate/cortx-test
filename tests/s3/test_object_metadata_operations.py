@@ -36,7 +36,7 @@ from commons.utils.s3_utils import assert_s3_err_msg
 from commons import constants as const
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
-from libs.s3 import s3_test_lib
+from libs.s3 import s3_test_lib, CMN_CFG
 
 
 class TestObjectMetadataOperations:
@@ -285,7 +285,7 @@ class TestObjectMetadataOperations:
                 self.file_path)
         except CTException as error:
             assert_s3_err_msg(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
-                              error)
+                              CMN_CFG["s3_engine"], error)
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
