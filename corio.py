@@ -47,8 +47,7 @@ from tests.io import test_s3_obj_range_read_io_stability
 from tests.io import test_s3_object_io_stability
 from tests.io import test_s3api_multipart_partcopy_io_stability
 
-nfs_dir = NFS_SERVER_DIR
-mount_dir = MOUNT_DIR
+
 function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
@@ -71,8 +70,7 @@ def initialize_loghandler(level=logging.INFO):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
     name = os.path.splitext(os.path.basename(__file__))[0]
-    now = datetime.now()
-    dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
+    dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     name = os.path.join(dir_path, f"{name}_{dt_string}_console.log")
     StreamToLogger(name, logger)
 
@@ -172,13 +170,16 @@ def setup_environment():
     """
     Tool installations for test execution
     """
-    ret = mount_nfs_server(nfs_dir, mount_dir)
+    ret = mount_nfs_server(NFS_SERVER_DIR, MOUNT_DIR)
     assert ret, "Error while Mounting NFS directory"
 
 
 def log_status(parsed_input: dict, corio_start_time: datetime.time, test_failed):
     """
     Log execution status into log file
+    :param parsed_input: Dict for all the input yaml files
+    :param corio_start_time: Start time for main process
+    :param test_failed: Reason for failure is any
     """
     logger.info("Logging current status to corio_status.log")
     with open('corio_status.log', 'w') as status_file:
@@ -296,11 +297,11 @@ def main(options):
     logger.info(processes)
 
     # TODO: Add support to schedule support bundle and health check periodically
-    sched_job = schedule.every(1).minutes.do(log_status, parsed_input=parsed_input,
+    sched_job = schedule.every(30).minutes.do(log_status, parsed_input=parsed_input,
                                              corio_start_time=corio_start_time, test_failed=None)
 
     try:
-        for _, process in processes.items():
+        for process in processes.values():
             process.start()
         terminate = False
         terminated_tp = None
