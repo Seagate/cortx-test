@@ -389,7 +389,6 @@ class TestIamUserRGW():
         self.log.info("Verified Response")
         self.log.info("[END]Creating IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
- 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
