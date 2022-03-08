@@ -388,7 +388,7 @@ class TestIamUserRGW():
         self.log.info("Verified Response")
         self.log.info("[END]Creating IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
-    
+ 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -689,12 +689,12 @@ class TestIamUserRGW():
         self.log.info("Step 1: Login using csm user")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
         #Uncomment this code when invalid access key combination is found
-        '''self.log.info("Step 1: Create a user with invalid access key")
-        invalid_key = self.csm_conf["test_36448"]["invalid_key"]
-        payload.update({"access_key": invalid_key})
-        self.log.info("payload :  %s", payload)
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST'''
+        #self.log.info("Step 1: Create a user with invalid access key")
+        #invalid_key = self.csm_conf["test_36448"]["invalid_key"]
+        #payload.update({"access_key": invalid_key})
+        #self.log.info("payload :  %s", payload)
+        #resp = self.csm_obj.create_iam_user_rgw(payload)
+        #assert resp.status_code == HTTPStatus.BAD_REQUEST
         self.log.info("Step 2: create user with valid access key")
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         payload.update({"access_key": valid_key})
