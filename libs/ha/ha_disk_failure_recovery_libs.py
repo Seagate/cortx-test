@@ -143,7 +143,7 @@ class DiskFailureRecoveryLib:
         """
         Return the unique list of disks available on all worker nodes.
         :param master_obj: Node Object of Master
-        :param worker_obj: Node Object of Worker
+        :param worker_obj: list of worker node object
         :return : tuple(bool,list)
                  list of format 'host_name$cvg$disk'
                  ['ssc-vm-g4-rhev4-1059.colo.seagate.com$cvg-02$/dev/sdh']

@@ -242,7 +242,7 @@ class TestDiskFailureRecovery:
     @pytest.mark.tags("TEST-36581")
     def test_36581(self):
         """
-        Validate SNS repair works fine with failed disks are less than K(parity units)
+        Validate SNS repair works fine with failed disks are equal to K(parity units)
         """
         LOGGER.info("STARTED: Validate SNS repair works fine with failed disks "
                     "are equal to K(parity units)")
