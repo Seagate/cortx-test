@@ -117,8 +117,8 @@ class TestDiskFailureRecovery:
         for select_disk in self.failed_disks:
             fail_disk = select_disk.split('$')
             resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
-                                                            fail_disk[0], fail_disk[2], "failed")
-            LOGGER.info("fail disk resp: %s", resp)
+                                                            fail_disk[0], fail_disk[2], "online")
+            LOGGER.info("disk status change resp: %s", resp)
         LOGGER.info("Cleanup: Made all disks online")
         LOGGER.info("Done: Teardown completed.")
 
