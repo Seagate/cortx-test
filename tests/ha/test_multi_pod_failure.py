@@ -182,7 +182,7 @@ class TestMultiPodFailure:
             for node_name in self.node_name_list:
                 LOGGER.info("Cleanup: Power on the %s down node.", node_name)
                 resp = self.ha_obj.host_power_on(host=node_name)
-                assert_utils.assert_true(resp, "Host is not powered on")
+                assert_utils.assert_true(resp, "Host f{node_name} is not powered on")
                 LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                             " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
                 time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
@@ -976,7 +976,7 @@ class TestMultiPodFailure:
             self.pod_name_list.append(server_pod_name)
             LOGGER.info("Shutdown the node: %s", data_node_fqdn)
             resp = self.ha_obj.host_safe_unsafe_power_off(host=data_node_fqdn)
-            assert_utils.assert_true(resp, "Host is not powered off")
+            assert_utils.assert_true(resp, f"Host f{data_node_fqdn} is not powered off")
             remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
             remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
             count += 1
@@ -986,7 +986,7 @@ class TestMultiPodFailure:
                 "pod_eviction_time"])
             time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
 
-        LOGGER.info("Step 2: Deleted %s data and server pods byt shutting down the node"
+        LOGGER.info("Step 2: Deleted %s data and server pods by shutting down the node"
                     "hosting them.", count)
         remain_pod_list = remain_pod_list1 + remain_pod_list2
         self.restore_node = self.deploy = True
@@ -1017,9 +1017,10 @@ class TestMultiPodFailure:
         LOGGER.info("Step 6: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35787-1'
-        self.s3_clean = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    nclients=2, nsamples=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
 
