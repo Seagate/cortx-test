@@ -965,7 +965,7 @@ class TestMultipartUpload:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            S3H_OBJ.s3_engine_asserts(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
+            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON, error)
             self.log.info(
                 "Step 4: Failed to complete the multipart with input of wrong json/etag")
         self.log.info("ENDED: Test Multipart upload with invalid json input")
