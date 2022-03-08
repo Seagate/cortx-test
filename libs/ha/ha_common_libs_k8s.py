@@ -1154,7 +1154,7 @@ class HAK8s:
             )
             LOGGER.info(res)
             if not res:
-                LOGGER.error("Error: jcloudclient.jar or jclient.jar file does not exists")
+                LOGGER.error("Error: jcloudclient.jar or jclient.jar file does not exist")
                 return res
         resp = jc_obj.update_jclient_jcloud_properties()
         return resp
