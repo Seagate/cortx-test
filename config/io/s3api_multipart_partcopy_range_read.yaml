@@ -1,0 +1,167 @@
+test_1:
+    TEST_ID: TEST-36536
+    object_size: 128Mb
+    part_range:
+        start: 20
+        end: 25
+    result_duration: 4h
+    sessions: 5
+    range_read:
+        start: 1byte
+        end: 100byte
+    tool: s3api
+    operation: multipart_partcopy
+
+test_2:
+    TEST_ID: TEST-36537
+    object_size: 256Mb
+    part_range:
+        start: 25
+        end: 50
+    result_duration: 8h
+    sessions: 5
+    range_read:
+        start: 100byte
+        end: 200byte
+    tool: s3api
+    operation: multipart_partcopy
+
+test_3:
+    TEST_ID: TEST-36538
+    object_size: 512Mb
+    part_range:
+        start: 50
+        end: 75
+    result_duration: 4h
+    sessions: 10
+    tool: s3api
+    range_read:
+        start: 200byte
+        end: 500byte
+    operation: multipart_partcopy
+
+test_4:
+    TEST_ID: TEST-36539
+    object_size: 1Gb
+    part_range:
+        start: 75
+        end: 100
+    result_duration: 1d
+    sessions: 10
+    range_read:
+        start: 500byte
+        end: 1Kb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_5:
+    TEST_ID: TEST-36540
+    object_size: 4Gb
+    part_range:
+        start: 100
+        end: 150
+    result_duration: 1d
+    sessions: 15
+    range_read:
+        start: 1Kb
+        end: 10Kb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_6:
+    TEST_ID: TEST-36541
+    object_size: 8Gb
+    part_range:
+        start: 150
+        end: 200
+    result_duration: 2d
+    sessions: 15
+    range_read:
+        start: 10Kb
+        end: 100Kb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_7:
+    TEST_ID: TEST-36542
+    object_size: 16Gb
+    part_range:
+        start: 200
+        end: 250
+    result_duration: 2d
+    sessions: 20
+    range_read:
+        start: 100Kb
+        end: 1Mb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_8:
+    TEST_ID: TEST-36543
+    object_size: 32Gb
+    part_range:
+        start: 250
+        end: 300
+    result_duration: 3d
+    sessions: 20
+    range_read:
+        start: 1Mb
+        end: 10Mb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_9:
+    TEST_ID: TEST-36544
+    object_size: 64Gb
+    part_range:
+        start: 300
+        end: 350
+    result_duration: 3d
+    sessions: 25
+    range_read:
+        start: 10Mb
+        end: 100Mb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_10:
+    TEST_ID: TEST-36545
+    object_size: 128Gb
+    part_range:
+        start: 350
+        end: 400
+    result_duration: 5d
+    sessions: 25
+    range_read:
+        start: 100Mb
+        end: 150Mb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_11:
+    TEST_ID: TEST-36546
+    object_size: 256Gb
+    part_range:
+        start: 400
+        end: 500
+    result_duration: 5d
+    sessions: 30
+    range_read:
+        start: 150Mb
+        end: 200Mb
+    tool: s3api
+    operation: multipart_partcopy
+
+test_12:
+    TEST_ID: TEST-36547
+    object_size: 512Gb
+    part_range:
+        start: 500
+        end: 600
+    result_duration: 7d
+    sessions: 30
+    range_read:
+        start: 200Mb
+        end: 1Gb
+    tool: s3api
+    operation: multipart_partcopy

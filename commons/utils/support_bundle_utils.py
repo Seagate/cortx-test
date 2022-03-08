@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -152,10 +151,10 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
             break
     else:
         LOGGER.error("Timeout while generating support bundle")
-        return False, bundle_id
+        return False, bundle_dir
 
     LOGGER.info("Support bundle generated successfully.")
-    return True, bundle_id
+    return True, bundle_dir
 
 
 def collect_crash_files(local_dir):
@@ -224,10 +223,10 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
     if flg:
         LOGGER.info("Support bundle %s generated and copied to %s path.",
                     file, local_dir_path)
-        return True
+        return True, local_path
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
-        return False
+        return False, f"Support bundles not generated. Response: {resp}"
 
 
 def collect_crash_files_k8s(local_dir_path: str):

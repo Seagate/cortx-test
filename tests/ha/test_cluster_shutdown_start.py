@@ -1,22 +1,22 @@
 #!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 
 """
 HA test suite for Cluster Shutdown: Immediate.
@@ -1314,54 +1314,37 @@ class TestClusterShutdownStart:
         This test verifies CSM REST API responses - negative scenario (REST API options validation)
         """
         LOGGER.info("Started: Test to check CSM REST API responses - REST API options validation.")
-        LOGGER.info("STEP 1: Start IOs (create s3 acc, buckets and upload objects).")
-        io_resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29481', nusers=1)
-        assert_utils.assert_true(io_resp[0], io_resp[1])
-        di_check_data = (io_resp[1], io_resp[2])
-        self.s3_clean.update(io_resp[2])
-        resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop(list(io_resp[2].keys())[0])
-        LOGGER.info("Step 1: IOs completed successfully.")
-        LOGGER.info("Step 2: Verify REST API cluster shutdown signal with bad request body")
+        LOGGER.info("Step 1: Verify REST API cluster shutdown signal with bad request body")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="xyz_signal", resource="cluster", expected_response=HTTPStatus.BAD_REQUEST)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Verified REST API cluster shutdown signal with bad request body.")
-        LOGGER.info("Step 3: Verify REST API cluster shutdown signal with unauthorized request")
+        LOGGER.info("Step 1: Verified REST API cluster shutdown signal with bad request body.")
+        LOGGER.info("Step 2: Verify REST API cluster shutdown signal with unauthorized request")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal",
             resource="cluster",
             expected_response=HTTPStatus.UNAUTHORIZED,
             negative_resp="Bearer 1232sdfsdf34#232")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Verified REST API cluster shutdown signal with unauthorized request")
-        LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 2: Verified REST API cluster shutdown signal with unauthorized request")
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(
             operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Successfully sent the cluster shutdown signal through CSM REST.")
-        LOGGER.info("Step 5: Shutdown the cluster and make it unavailable.")
+        LOGGER.info("Step 3: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 4: Shutdown the cluster and make it unavailable.")
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp[1])
-        LOGGER.info("Step 5: Sucessfully shutdown the cluster.")
-        LOGGER.info("Step 6: Verify REST API cluster shutdown signal to unavailable resource")
-        resp = self.rest_hlt_obj.cluster_operation_signal(
-            operation="shutdown_signal",
-            resource="cluster",
-            expected_response=HTTPStatus.INTERNAL_SERVER_ERROR)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Verified REST API cluster shutdown signal with unavailable resource")
-        LOGGER.info("Step 7: Start the cluster and verify all pods are running.")
+        LOGGER.info("Step 4: Successfully shutdown the cluster and verified all pods are offline.")
+        LOGGER.info("Step 5: Start the cluster and verify all pods are running.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Check the overall status of the cluster.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=300)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Successfully started the cluster and verified all pods are running.")
 
         LOGGER.info("Completed: Test to check CSM REST API responses - "
                     "REST API options validation.")

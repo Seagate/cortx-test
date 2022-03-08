@@ -37,8 +37,10 @@ from libs.io import yaml_parser
 from tests.io import test_s3_bucket_io_stability
 from tests.io import test_s3_copy_object
 from tests.io import test_s3_multipart_io_stability
-from tests.io import test_s3_object_io_stability
 from tests.io import test_s3_obj_range_read_io_stability
+from tests.io import test_s3_object_io_stability
+from tests.io import test_s3api_multipart_partcopy_io_stability
+
 
 nfs_dir = NFS_SERVER_DIR
 mount_dir = MOUNT_DIR
@@ -49,6 +51,8 @@ function_mapping = {
     'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload']
     'object_range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps,
                    'execute_object_range_read_workload']
+    'multipart_partcopy': [test_s3api_multipart_partcopy_io_stability.TestMultiPartsPartCopy,
+                           'execute_multipart_partcopy_workload']
 }
 
 
