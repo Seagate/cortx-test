@@ -122,9 +122,9 @@ class SystemCapacity(RestTestLib):
         :return : Rest output response
         """
         self.log.info("Reading System Capacity...")
-        endpoint = self.config["degraded_cap_complete_endpoint"]
-        if endpoint_param == 'bytecount':
-            endpoint = self.config["degraded_cap_endpoint"]
+        endpoint = self.config["degraded_cap_endpoint"]
+        if endpoint_param is not None:
+            endpoint = self.config["degraded_cap_endpoint"] + "/" + endpoint_param
         self.log.info("Endpoint for reading capacity is %s", endpoint)
         # Fetching api response
         response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
@@ -139,9 +139,9 @@ class SystemCapacity(RestTestLib):
         :return : Rest output response
         """
         self.log.info("Reading System Capacity...")
-        endpoint = self.config["degraded_cap_complete_endpoint"]
-        if endpoint_param == 'bytecount':
-            endpoint = self.config["degraded_cap_endpoint"]
+        endpoint = self.config["degraded_cap_endpoint"]
+        if endpoint_param is not None:
+            endpoint = self.config["degraded_cap_endpoint"] + "/" + endpoint_param
         self.log.info("Endpoint for reading capacity is %s", endpoint)
         # Fetching api response
         response = self.restapi.rest_call(request_type="get", endpoint=endpoint,

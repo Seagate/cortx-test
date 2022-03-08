@@ -57,8 +57,8 @@ class TestSystemCapacity():
         #cls.csm_user = RestCsmUser()
         #cls.s3user_obj = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
-        cls.username = cls.csm_user.config["csm_admin_user"]["username"]
-        cls.user_pass = cls.csm_user.config["csm_admin_user"]["password"]
+        cls.username = cls.csm_obj.config["csm_admin_user"]["username"]
+        cls.user_pass = cls.csm_obj.config["csm_admin_user"]["password"]
         cls.akey = ""
         cls.skey = ""
         cls.s3_user = ""
@@ -98,12 +98,13 @@ class TestSystemCapacity():
         Setup method for creating s3 user
         """
         self.log.info("Creating S3 account")
-        resp = self.s3user_obj.create_s3_account()
+        resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
         self.s3_user = resp.json()["account_name"]
-        self.bucket = f"bucket{self.s3_user}"
+        self.bucket = "iam-user-bucket-" + str(int(time.time()))
+        #self.bucket = f"bucket{self.s3_user}".replace("_", "-")
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
@@ -116,7 +117,7 @@ class TestSystemCapacity():
         assert s3_misc.delete_objects_bucket(
             self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Deleting S3 account %s created in setup", self.s3_user)
-        resp = self.s3user_obj.delete_s3_account_user(self.s3_user)
+        resp = self.csm_obj.delete_s3_account_user(self.s3_user)
         assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
         if self.restore_pod:
             self.log.info("Restore deleted pods.")
@@ -156,7 +157,7 @@ class TestSystemCapacity():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -174,9 +175,9 @@ class TestSystemCapacity():
         total_written = 0
 
         self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.csm_obj.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
+        # TBD : Command is not updated on TDS yet. 
+        #total_cap, _, _, _, _ = self.csm_obj.parse_capacity_usage()
+        #assert total_cap > 0, "Total capacity is less or equal to Zero."
         self.log.info("[End] Checking cluster capacity")
 
         self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
@@ -201,11 +202,10 @@ class TestSystemCapacity():
         assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
                 critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL with 0 Node failure")
-
         self.log.info("[Start] Fetch degraded capacity on CSM")
         resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()["bytecount"]
+        resp = resp.json()["byte_count"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
@@ -214,6 +214,8 @@ class TestSystemCapacity():
         assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
                 critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
+
+
 
         for node in range(self.num_nodes+1):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
@@ -599,8 +601,8 @@ class TestSystemCapacity():
             self.log.info("[Start] Start some IOs on %s", node)
 
             self.log.info("Creating custom S3 account...")
-            user_data = self.s3user_obj.create_custom_s3_payload("valid")
-            resp = self.s3user_obj.create_custom_s3_user(user_data)
+            user_data = self.csm_obj.create_custom_s3_payload("valid")
+            resp = self.csm_obj.create_custom_s3_user(user_data)
             self.log.info("Verify Status code of the Create user operation.")
             assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
 
