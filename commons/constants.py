@@ -53,6 +53,7 @@ HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
+RGW_CONTAINER_NAME = "cortx-rgw"
 HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
