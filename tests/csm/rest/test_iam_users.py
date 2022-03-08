@@ -380,7 +380,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
                            "IAM user creation failed")
         uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
-        self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
+        self.created_iam_users.add(uid)
         self.log.info("Printing resp1 %s:", resp1)
         self.log.info("Printing optional payload %s:", optional_payload)
         resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
@@ -412,7 +412,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, \
                        "IAM user creation failed")
             uid = resp1.json()["tenant"] + "$" + optional_payload['uid']
-            self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
+            self.created_iam_users.add(uid)
             self.log.info("Printing resp %s:", resp1)
             self.log.info("Printing optional payload %s:", optional_payload)
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
