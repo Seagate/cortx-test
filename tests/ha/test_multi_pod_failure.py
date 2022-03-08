@@ -757,7 +757,7 @@ class TestMultiPodFailure:
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
-        LOGGER.info("Step 2: Successfully deleted %s server pods", self.kvalue)
+        LOGGER.info("Step 2: Successfully deleted %s server and data pods", self.kvalue)
 
         pod_list = server_pods + data_pods
         LOGGER.info("Step 4: Check cluster status")
@@ -784,8 +784,8 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 7: Verify status for In-flight WRITEs-READs-verify while server pods are "
-                    "down")
+        LOGGER.info("Step 7: Verify status for In-flight WRITEs-READs-verify while %s server and "
+                    "data pods are down", self.kvalue)
         thread.join()
         responses = dict()
         while len(responses) != 2:
