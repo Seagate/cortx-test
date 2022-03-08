@@ -91,10 +91,11 @@ def collect_support_bundle():
             shutil.rmtree(bundle_dir)
         os.mkdir(bundle_dir)
         if CMN_CFG["product_family"] == "LC":
-            sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
+            status, bundle_fpath = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
         else:
-            sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
-        bundle_fpath = os.path.join(bundle_dir, os.listdir(bundle_dir)[-1])
+            status, bundle_fpath = sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+        if not status:
+            raise IOError(f"Failed to generated SB. Response:{bundle_fpath}")
     except OSError as error:
         LOGGER.error("An error occurred in collect_support_bundle: %s", error)
         return False, error
@@ -137,8 +138,12 @@ def rotate_logs(dpath: str, max_count: int = 0):
     if len(files) > max_count:
         for fpath in files[max_count:]:
             if os.path.exists(fpath):
-                os.remove(fpath)
-                LOGGER.info("Removed: Old log file: %s", fpath)
+                if os.path.isfile(fpath):
+                    os.remove(fpath)
+                    LOGGER.info("Removed: Old log file: %s", fpath)
+                if os.path.isdir(fpath):
+                    shutil.rmtree(fpath)
+                    LOGGER.info("Removed: Old log directory: %s", fpath)
 
     if len(os.listdir(dpath)) > max_count:
         raise IOError(f"Failed to rotate SB logs: {os.listdir(dpath)}")
