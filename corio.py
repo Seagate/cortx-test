@@ -21,12 +21,18 @@ import argparse
 import asyncio
 import glob
 import logging
+import math
 import multiprocessing
 import os
 import random
 import sys
+import time
+from datetime import datetime
 from distutils.util import strtobool
 from pprint import pformat
+
+import pandas as pd
+import schedule
 
 from commons.io.io_logger import StreamToLogger
 from commons.params import NFS_SERVER_DIR, MOUNT_DIR
@@ -41,8 +47,7 @@ from tests.io import test_s3_obj_range_read_io_stability
 from tests.io import test_s3_object_io_stability
 from tests.io import test_s3api_multipart_partcopy_io_stability
 
-nfs_dir = NFS_SERVER_DIR
-mount_dir = MOUNT_DIR
+
 function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
     'copy_object_range_read': [test_s3_copy_object.TestS3CopyObjects,
@@ -67,7 +72,8 @@ def initialize_loghandler(level=logging.INFO):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
     name = os.path.splitext(os.path.basename(__file__))[0]
-    name = os.path.join(dir_path, f"{name}_console.log")
+    dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    name = os.path.join(dir_path, f"{name}_{dt_string}_console.log")
     StreamToLogger(name, logger)
 
 
@@ -166,8 +172,83 @@ def setup_environment():
     """
     Tool installations for test execution
     """
-    ret = mount_nfs_server(nfs_dir, mount_dir)
+    ret = mount_nfs_server(NFS_SERVER_DIR, MOUNT_DIR)
     assert ret, "Error while Mounting NFS directory"
+
+
+def log_status(parsed_input: dict, corio_start_time: datetime.time, test_failed):
+    """
+    Log execution status into log file
+    :param parsed_input: Dict for all the input yaml files
+    :param corio_start_time: Start time for main process
+    :param test_failed: Reason for failure is any
+    """
+    logger.info("Logging current status to corio_status.log")
+    with open('corio_status.log', 'w') as status_file:
+        status_file.write(f"\nLogging Status at {datetime.now()}")
+        if test_failed == 'KeyboardInterrupt':
+            status_file.write("\nTest Execution stopped due to Keyboard interrupt")
+        elif test_failed is None:
+            status_file.write('\nTest Execution still in progress')
+        else:
+            status_file.write(f'\nTest Execution terminated due to error in {test_failed}')
+
+        status_file.write(f'\nTotal Execution Duration : {datetime.now() - corio_start_time}')
+
+        status_file.write("\nTestWise Execution Details:")
+        date_format = '%Y-%m-%d %H:%M:%S'
+        for k, v in parsed_input.items():
+            df = pd.DataFrame()
+            for k1, v1 in v.items():
+                input_dict = {"TEST_NO": k1,
+                              "TEST_ID": v1['TEST_ID'],
+                              "OBJECT_SIZE_START": convert_size(v1['object_size']['start']),
+                              "OBJECT_SIZE_END": convert_size(v1['object_size']['end']),
+                              "SESSIONS": int(v1['sessions']),
+                              }
+                test_start_time = corio_start_time + v1['start_time']
+                if datetime.now() > test_start_time:
+                    input_dict["START_TIME"] = f"Started at {test_start_time.strftime(date_format)}"
+                    if datetime.now() > (test_start_time + v1['result_duration']):
+                        input_dict[
+                            "RESULT_UPDATE"] = f"Passed at " \
+                                f"{(test_start_time + v1['result_duration']).strftime(date_format)}"
+                    else:
+                        input_dict["RESULT_UPDATE"] = f"In Progress"
+                    input_dict["TOTAL_TEST_EXECUTION"] = datetime.now() - test_start_time
+                else:
+                    input_dict[
+                        "START_TIME"] = f"Scheduled at {test_start_time.strftime(date_format)}"
+                    input_dict["RESULT_UPDATE"] = f"Not Triggered"
+                    input_dict["TOTAL_TEST_EXECUTION"] = "NA"
+
+                df = df.append(input_dict, ignore_index=True)
+            status_file.write(f"\n\nTEST YAML FILE : {k}")
+            status_file.write(f'\n{df}')
+
+
+def terminate_processes(process_list):
+    """
+    Terminate Process on failure
+    :param process_list: Terminate the given list of process
+    """
+    for process in process_list:
+        process.terminate()
+        process.join()
+
+
+def convert_size(size_bytes):
+    """
+    Convert size to KiB, MiB etc
+    :param size_bytes: Size in bytes
+    """
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 
 def main(options):
@@ -205,23 +286,45 @@ def main(options):
                                           args=(test_plan, test_plan_value, commons_params))
         processes.append(process)
     # TODO: Add support to schedule support bundle and health check periodically
+    corio_start_time = datetime.now()
+    logger.info("Parsed input files : ")
+    logger.info(pformat(parsed_input))
+    processes = {}
+
+    for test_plan, test_plan_value in parsed_input.items():
+        process = multiprocessing.Process(target=schedule_test_plan,
+                                          args=(test_plan, test_plan_value, commons_params))
+        processes[test_plan] = process
+
+    logger.info(processes)
+
+    # TODO: Add support to schedule support bundle and health check periodically
+    sched_job = schedule.every(30).minutes.do(log_status, parsed_input=parsed_input,
+                                             corio_start_time=corio_start_time, test_failed=None)
 
     try:
-        for process in processes:
+        for process in processes.values():
             process.start()
         terminate = False
+        terminated_tp = None
         while True:
-            for process in processes:
+            time.sleep(1)
+            schedule.run_pending()
+            for key, process in processes.items():
                 if not process.is_alive():
                     logger.info("Process with PID %s Name %s exited. Stopping other Process.",
                                 process.pid, process.name)
                     terminate = True
+                    terminated_tp = key
             if terminate:
-                raise KeyboardInterrupt
+                terminate_processes(processes.values())
+                log_status(parsed_input, corio_start_time, terminated_tp)
+                schedule.cancel_job(sched_job)
+                break
     except KeyboardInterrupt:
-        for process in processes:
-            process.terminate()
-            process.join()
+        terminate_processes(processes.values())
+        log_status(parsed_input, corio_start_time, 'KeyboardInterrupt')
+        schedule.cancel_job(sched_job)
         # TODO: cleanup object files created
         sys.exit()
 
