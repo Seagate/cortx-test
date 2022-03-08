@@ -380,7 +380,6 @@ def create_multipart_json(json_path, parts_list) -> tuple:
 
     return os.path.exists(json_path), json_path
 
-@staticmethod
 def assert_s3_err_msg(rgw_error, cortx_error, cmn_cfg, error):
     """Checks the s3 engine type and asserts accordingly """
     if const.S3_ENGINE_RGW == cmn_cfg:
