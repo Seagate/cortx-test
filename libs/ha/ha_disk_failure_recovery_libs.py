@@ -128,11 +128,37 @@ class DiskFailureRecoveryLib:
         return_dict = {}
         try:
             for key, values in config_data['node'].items():
-                hostname = str(values['hostname'].split('svc')[1]).replace('-', '', 1)
-                if hostname in worker_node.hostname:
-                    for cvg in values['storage']['cvg']:
-                        return_dict[cvg['name']] = cvg['devices']
+                if values['type'] == 'data_node':
+                    hostname = str(values['hostname'].split('svc')[1]).replace('-', '', 1)
+                    if hostname in worker_node.hostname:
+                        for cvg in values['storage']['cvg']:
+                            return_dict[cvg['name']] = cvg['devices']
+                        break
             return True, return_dict
         except KeyError as err:
             LOGGER.error("Exception while retrieving CVG details : %s", err)
             return False, err
+
+    def get_all_nodes_disks(self, master_obj: LogicalNode, worker_obj: list) -> tuple:
+        """
+        Return the unique list of disks available on all worker nodes.
+        :param master_obj: Node Object of Master
+        :param worker_obj: Node Object of Worker
+        :return : tuple(bool,list)
+                 list of format 'host_name$cvg$disk'
+                 ['ssc-vm-g4-rhev4-1059.colo.seagate.com$cvg-02$/dev/sdh']
+        """
+        unique_disk_list = []
+        for node in worker_obj:
+            resp = self.retrieve_cvg_from_node(master_obj, node)
+            if not resp[0]:
+                return resp
+            try:
+                for cvg in resp[1]:
+                    disk_list = resp[1][cvg]['data']
+                    for disk in disk_list:
+                        unique_disk_list.append(node.hostname + '$' + cvg + '$' + disk)
+            except KeyError as err:
+                LOGGER.error("Exception while retrieving disk details : %s", err)
+                return False, err
+        return True, unique_disk_list
