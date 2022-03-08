@@ -176,7 +176,8 @@ class S3Object(S3RestApi):
 
         return response
 
-    async def get_s3object_checksum(self, bucket: str, key: str, chunk_size: int = 1024) -> str:
+    async def get_s3object_checksum(self, bucket: str, key: str, chunk_size: int = 1024,
+                                    ranges: str = '') -> str:
         """
         Read object in chunk and calculate md5sum.
         Do not store the object in local storage.
@@ -184,9 +185,10 @@ class S3Object(S3RestApi):
         :param bucket: The name of the s3 bucket.
         :param key: Name of object.
         :param chunk_size: size to read the content of s3 object.
+        :param ranges: number of bytes to be read
         """
         async with self.get_client() as s3client:
-            response = await s3client.get_object(Bucket=bucket, Key=key)
+            response = await s3client.get_object(Bucket=bucket, Key=key, Range=ranges)
             logger.info("%s s3://%s/%s Response %s", S3Object.get_s3object_checksum.__name__,
                         bucket, key, response)
             async with response['Body'] as stream:
@@ -251,3 +253,4 @@ class S3Object(S3RestApi):
                 file_hash.update(content)
                 read_length -= len(content)
         return file_hash.hexdigest()
+    

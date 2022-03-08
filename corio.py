@@ -37,8 +37,10 @@ from libs.io import yaml_parser
 from tests.io import test_s3_bucket_io_stability
 from tests.io import test_s3_copy_object
 from tests.io import test_s3_multipart_io_stability
+from tests.io import test_s3_obj_range_read_io_stability
 from tests.io import test_s3_object_io_stability
 from tests.io import test_s3api_multipart_partcopy_io_stability
+
 
 nfs_dir = NFS_SERVER_DIR
 mount_dir = MOUNT_DIR
@@ -46,7 +48,9 @@ function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
     'multipart': [test_s3_multipart_io_stability.TestMultiParts, 'execute_multipart_workload'],
-    'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload'],
+    'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload']
+    'object_range_read': [test_s3_obj_range_read_io_stability.TestObjectRangeReadOps,
+                   'execute_object_range_read_workload']
     'multipart_partcopy': [test_s3api_multipart_partcopy_io_stability.TestMultiPartsPartCopy,
                            'execute_multipart_partcopy_workload']
 }
@@ -121,6 +125,8 @@ async def schedule_sessions(test_plan: str, test_plan_value: dict, common_params
                   'object_size': each['object_size']}
         if 'part_range' in each.keys():
             params['part_range'] = each['part_range']
+        if 'range_read' in each.keys():
+            params['range_read'] = each['range_read']
         params.update(common_params)
         for i in range(int(each['sessions'])):
             tasks.append(create_session(funct=each['operation'],
