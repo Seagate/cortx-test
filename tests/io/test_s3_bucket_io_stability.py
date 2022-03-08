@@ -91,8 +91,7 @@ class TestBucketOps(S3Object, S3Bucket):
                 await self.delete_bucket(bucket_name, True)
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
-                raise ClientError(
-                    error_response=str(err), operation_name="Execute bucket workload") from err
+                raise err
             timedelta_v = (self.finish_time - datetime.now())
             timedelta_sec = timedelta_v.total_seconds()
             if timedelta_sec < self.min_duration:
