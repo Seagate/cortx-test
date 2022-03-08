@@ -38,7 +38,6 @@ from tests.io import test_s3_bucket_io_stability
 from tests.io import test_s3_copy_object
 from tests.io import test_s3_multipart_io_stability
 from tests.io import test_s3_object_io_stability
-from tests.io import test_s3_multipart_partcopy_fixed
 
 nfs_dir = NFS_SERVER_DIR
 mount_dir = MOUNT_DIR
@@ -46,9 +45,7 @@ function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
     'bucket': [test_s3_bucket_io_stability.TestBucketOps, 'execute_bucket_workload'],
     'multipart': [test_s3_multipart_io_stability.TestMultiParts, 'execute_multipart_workload'],
-    'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload'],
-    'multipart_partcopy': [test_s3_multipart_partcopy_fixed.TestMultiPartsPartCopy, 
-                           'execute_multipart_partcopy_workload']
+    'object': [test_s3_object_io_stability.TestS3Object, 'execute_object_workload']
 }
 
 
