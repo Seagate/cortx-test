@@ -1177,7 +1177,7 @@ class ProvDeployK8sCortxLib:
                 if not resp[0]:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
-                port = resp[2]
+                port = resp[3]
                 ext_port_ip = "{}:{}".format(ext_ip, port)
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
