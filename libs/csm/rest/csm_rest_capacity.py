@@ -234,7 +234,7 @@ class SystemCapacity(RestTestLib):
                "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
                "csm_repaired"]
         row = ["No failure"]
-        for node in range(1, num_nodes+1):
+        for node in range(0, num_nodes+1):
             row.append(self.row_temp.format(node))
         cap_df = pd.DataFrame(columns=col, index=row)
         return cap_df
