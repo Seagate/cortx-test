@@ -27,11 +27,13 @@ import hashlib
 import logging
 import json
 import xmltodict
-from config import S3_CFG
 from hashlib import md5
 from random import shuffle
 from typing import Any
+from config import S3_CFG, CMN_CFG
 
+from commons.utils import assert_utils
+from commons import constants as const
 
 
 LOGGER = logging.getLogger(__name__)
@@ -376,3 +378,12 @@ def create_multipart_json(json_path, parts_list) -> tuple:
         json.dump(parts, file_obj)
 
     return os.path.exists(json_path), json_path
+
+@staticmethod
+def assert_s3_err_msg(rgw_error, cortx_error, error):
+    """Checks the s3 engine type and asserts accordingly """
+    if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+        assert_utils.assert_equal(rgw_error, error.message, error.message)
+    else:
+        assert_utils.assert_equal(cortx_error, error.message, error.message)
+

@@ -31,11 +31,11 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
+from commons.utils.s3_utils import assert_s3_err_msg
 from commons import constants as const
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
-from libs.s3 import S3H_OBJ
 
 
 
@@ -284,8 +284,8 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-            S3H_OBJ.assert_s3_err_msg(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
-                                      error)
+            assert_s3_err_msg(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
+                              error)
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
