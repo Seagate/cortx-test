@@ -32,6 +32,8 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.s3_utils import assert_s3_err_msg
+from commons import constants as const
 from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
@@ -372,12 +374,12 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "BucketAlreadyOwnedByYou" in error.message, error.message
-        self.log.info(
-            "Creating a bucket with existing bucket name is failed")
+            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
+                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+                              CMN_CFG["s3_engine"], error)
+        self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
-        self.log.info(
-            "ENDED: Create bucket with same bucket name already present")
+        self.log.info("ENDED: Create bucket with same bucket name already present")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
