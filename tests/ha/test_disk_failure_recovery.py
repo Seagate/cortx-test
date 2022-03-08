@@ -140,7 +140,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 2: Get degraded byte count before failing the disk")
         degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
                                                                         "degraded_byte_count")
-        LOGGER.info("degraded byte count", degraded_byte_cnt_before)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
         resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
