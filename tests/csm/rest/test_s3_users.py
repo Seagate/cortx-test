@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -34,8 +33,8 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.params import TEST_DATA_FOLDER
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import s3_misc
+from libs.csm.csm_interface import csm_api_factory
 from config import CSM_REST_CFG
 
 
@@ -58,7 +57,7 @@ class TestS3user():
         cls.buckets_created = []
         cls.account_created = []
         cls.iam_users_created = []
-        cls.s3user = RestS3user()
+        cls.s3user = csm_api_factory("rest")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
         if not system_utils.path_exists(TEST_DATA_FOLDER):
@@ -480,7 +479,7 @@ class TestS3user():
         self.log.info(
             "Providing invalid password for s3 account %s in Patch request", account_name)
 
-        response = self.s3user.edit_s3_account_user_invalid_password(
+        response = self.s3user.edit_s3_account(
             username=account_name,
             payload=json.dumps(payload))
 
