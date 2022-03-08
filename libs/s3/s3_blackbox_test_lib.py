@@ -23,7 +23,9 @@ import logging
 import time
 
 from commons import commands
-from commons.utils import config_utils, system_utils, assert_utils
+from commons.utils import config_utils
+from commons.utils import system_utils
+from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true

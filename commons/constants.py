@@ -473,7 +473,8 @@ RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the Complete
 CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
 "operation: One or more of the specified parts could not be found. The part might not have been "
 "uploaded, or the specified entity tag might not have matched the part's entity tag.")
-RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the CreateBucket "
-"operation: Unknown")
-CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling the CreateBucket"
-"operation: Your previous request to create the named bucket succeeded and you already own it.")
+RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
+"CreateBucket operation: Unknown")
+CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
+"the CreateBucket operation: Your previous request to create the named bucket succeeded and "
+"you already own it.")

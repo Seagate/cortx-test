@@ -35,7 +35,6 @@ from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_true
-from commons.utils.assert_utils import assert_false
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_not_in
 from commons.utils.s3_utils import assert_s3_err_msg
