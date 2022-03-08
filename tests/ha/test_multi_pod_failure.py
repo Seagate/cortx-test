@@ -720,7 +720,6 @@ class TestMultiPodFailure:
         LOGGER.info("ENDED: Test to verify continuous IOs while k server and data pods are failing "
                     "one by one")
 
-
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35793")
