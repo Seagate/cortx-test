@@ -28,7 +28,6 @@ from commons import params
 from commons.utils import system_utils
 from commons.utils.jira_utils import JiraTask
 
-# TODO - clean all TODOs, and cleanup docstrings, line lengths, review line by line, indentation and whitespace
 
 LOGGER = logging.getLogger(__name__)
 S3TESTS_DIR = "s3-tests"
