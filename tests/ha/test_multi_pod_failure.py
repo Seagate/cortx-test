@@ -1256,7 +1256,7 @@ class TestMultiPodFailure:
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 3: Sucessfully shutdown %s (K) data pods one by one during "
+        LOGGER.info("Step 3: Successfully shutdown %s (K) data pods one by one during "
                     "READs/VerifyDI on written data in background", self.kvalue)
         event.clear()
 
@@ -1361,7 +1361,7 @@ class TestMultiPodFailure:
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 2: Sucessfully shutdown %s (K) data pods one by one during WRITEs in "
+        LOGGER.info("Step 2: Successfully shutdown %s (K) data pods one by one during WRITEs in "
                     "background", self.kvalue)
         event.clear()
 
