@@ -1,0 +1,155 @@
+test_1:
+    TEST_ID: TEST-36524
+    object_size:
+        start: 128Mb
+        end: 256Mb
+    part_range:
+        start: 20
+        end: 25
+    result_duration: 4h
+    sessions: 5
+    tool: s3api
+    operation: multipart_partcopy
+
+test_2:
+    TEST_ID: TEST-36525
+    object_size:
+        start: 256Mb
+        end: 512Mb
+    part_range:
+        start: 25
+        end: 50
+    result_duration: 8h
+    sessions: 5
+    tool: s3api
+    operation: multipart_partcopy
+
+test_3:
+    TEST_ID: TEST-36526
+    object_size:
+        start: 512Mb
+        end: 1Gb
+    part_range:
+        start: 50
+        end: 75
+    result_duration: 4h
+    sessions: 10
+    tool: s3api
+    operation: multipart_partcopy
+
+test_4:
+    TEST_ID: TEST-36527
+    object_size:
+        start: 1Gb
+        end: 4Gb
+    part_range:
+        start: 75
+        end: 100
+    result_duration: 1d
+    sessions: 10
+    tool: s3api
+    operation: multipart_partcopy
+
+test_5:
+    TEST_ID: TEST-36528
+    object_size:
+        start: 4Gb
+        end: 8Gb
+    part_range:
+        start: 100
+        end: 150
+    result_duration: 1d
+    sessions: 15
+    tool: s3api
+    operation: multipart_partcopy
+
+test_6:
+    TEST_ID: TEST-36529
+    object_size:
+        start: 8Gb
+        end: 32Gb
+    part_range:
+        start: 150
+        end: 200
+    result_duration: 2d
+    sessions: 15
+    tool: s3api
+    operation: multipart_partcopy
+
+test_7:
+    TEST_ID: TEST-36530
+    object_size:
+        start: 32Gb
+        end: 64Gb
+    part_range:
+        start: 200
+        end: 250
+    result_duration: 2d
+    sessions: 20
+    tool: s3api
+    operation: multipart_partcopy
+
+test_8:
+    TEST_ID: TEST-36531
+    object_size:
+        start: 64Gb
+        end: 128Gb
+    part_range:
+        start: 250
+        end: 300
+    result_duration: 3d
+    sessions: 20
+    tool: s3api
+    operation: multipart_partcopy
+
+test_9:
+    TEST_ID: TEST-36532
+    object_size:
+        start: 128Gb
+        end: 256Gb
+    part_range:
+        start: 300
+        end: 350
+    result_duration: 3d
+    sessions: 25
+    tool: s3api
+    operation: multipart_partcopy
+
+test_10:
+    TEST_ID: TEST-36533
+    object_size:
+        start: 256Gb
+        end: 512Gb
+    part_range:
+        start: 350
+        end: 400
+    result_duration: 5d
+    sessions: 25
+    tool: s3api
+    operation: multipart_partcopy
+
+test_11:
+    TEST_ID: TEST-36534
+    object_size:
+        start: 512Gb
+        end: 1Tb
+    part_range:
+        start: 400
+        end: 500
+    result_duration: 5d
+    sessions: 30
+    tool: s3api
+    operation: multipart_partcopy
+
+test_12:
+    TEST_ID: TEST-36535
+    object_size:
+        start: 1Tb
+        end: 2Tb
+    part_range:
+        start: 500
+        end: 600
+    result_duration: 7d
+    sessions: 30
+    tool: s3api
+    operation: multipart_partcopy
