@@ -294,7 +294,7 @@ class TestMultiPodFailure:
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 6: Services of pod are in online state")
+        LOGGER.info("Step 6: Services of remaining pods are in online state")
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1149,7 +1149,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35780")
     @CTFailOn(error_handler)
-    def test_continuous_deletes_during_kpods_down(self):
+    def test_deletes_during_kpods_down(self):
         """
         This test tests continuous DELETEs while pods are failing till K data pods are failed
         """
@@ -1256,7 +1256,7 @@ class TestMultiPodFailure:
 
         LOGGER.info("Step 7: Verify status for In-flight DELETEs while %s (K) pods were"
                     "going down", self.kvalue)
-        LOGGER.info("Joining background DELETEs thread & clearing event. Waiting for %s seconds to "
+        LOGGER.info("Waiting for background DELETEs thread to join. Waiting for %s seconds to "
                     "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
         thread.join()
         del_resp = ()
@@ -1321,7 +1321,7 @@ class TestMultiPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35781")
     @CTFailOn(error_handler)
-    def test_continuous_ios_during_kpods_down(self):
+    def test_ios_during_kpods_down(self):
         """
         This test tests continuous READs/WRITEs/DELETEs while pods are failing till K
         data pods are failed
@@ -1367,6 +1367,7 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed WRITEs with variable sizes objects for parallel READs.")
 
+        LOGGER.info("Starting three independent background threads for READs, WRITEs & DELETEs.")
         LOGGER.info("Step 3: Start Continuous DELETEs in background on random %s buckets",
                     del_bucket)
         bucket_list = list(s3_data.keys())
