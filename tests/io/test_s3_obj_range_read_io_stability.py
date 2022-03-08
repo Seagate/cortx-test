@@ -125,6 +125,7 @@ class TestObjectRangeReadOps(S3Object, S3Bucket):
                 # Delete object
                 logger.info("Delete %s object of bucket %s", file_name, bucket_name)
                 await self.delete_object(bucket_name, file_name)
+                os.remove(file_name)
             except (ClientError, IOError, AssertionError) as err:
                 logger.exception(err)
                 raise err
