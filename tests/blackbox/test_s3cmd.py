@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -33,10 +32,16 @@ import pytest
 
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
+from commons.exceptions import CTException
 from commons.errorcodes import error_handler
-from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
+from commons.utils.assert_utils import assert_true
+from commons.utils.assert_utils import assert_in
+from commons.utils.assert_utils import assert_not_in
+from commons.utils.s3_utils import assert_s3_err_msg
 from commons.utils import system_utils
+from commons import constants as const
 from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
+from config import CMN_CFG
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_blackbox_test_lib import S3CMD
@@ -284,10 +289,14 @@ class TestS3cmdClient:
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Creating bucket with existing bucket name")
-        command = self.s3cmd_test_obj.command_formatter(
-            S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
-        resp = system_utils.run_local_cmd(command, chk_stderr=True)
-        assert_in("BucketAlreadyOwnedByYou", str(resp[1]), resp)
+        try:
+            command = self.s3cmd_test_obj.command_formatter(
+                S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
+            resp = system_utils.run_local_cmd(command, chk_stderr=True)
+        except CTException as error:
+            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
+                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+                              CMN_CFG["s3_engine"], error)
         self.log.info(
             "STEP: 2 Creating bucket failed with existing bucket name")
         self.log.info(

@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -26,13 +25,16 @@ import random
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config.s3 import S3_CFG
+from commons.utils.s3_utils import assert_s3_err_msg
+from commons import constants as const
+from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -70,7 +72,6 @@ class TestBucketWorkflowOperations:
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
             if bucket_name in bucket_list:
-                self.acl_obj.put_bucket_acl(bucket_name, acl="private")
                 resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
@@ -373,12 +374,12 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "BucketAlreadyOwnedByYou" in error.message, error.message
-        self.log.info(
-            "Creating a bucket with existing bucket name is failed")
+            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
+                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+                              CMN_CFG["s3_engine"], error)
+        self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
-        self.log.info(
-            "ENDED: Create bucket with same bucket name already present")
+        self.log.info("ENDED: Create bucket with same bucket name already present")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -742,7 +743,10 @@ class TestBucketWorkflowOperations:
         resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert resp[1]["LocationConstraint"] == "default", resp[1]
+        else:
+            assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
         self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Verification of bucket location")
 

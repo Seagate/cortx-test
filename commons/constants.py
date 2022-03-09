@@ -1,19 +1,18 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -41,6 +40,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# S3 Engine Type and versions
+S3_ENGINE = "MGW"
+S3_ENGINE_CORTX = 1
+S3_ENGINE_RGW = 2
+
 # K8s for cortx
 POD_NAME_PREFIX = "cortx-data"
 SERVER_POD_NAME_PREFIX = "cortx-server"
@@ -49,6 +53,7 @@ HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
+RGW_CONTAINER_NAME = "cortx-rgw"
 HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
@@ -57,6 +62,7 @@ HA_CONSUL_VERIFY = "cortx/ha/v1/cluster_stop_key:1"
 HA_CONSUL_NOKEY = "NotFound"
 HA_TMP = "/root"
 HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
+HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -457,3 +463,19 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+
+#errors for rgw and cortx s3
+RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
+"operation: Unknown")
+CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
+"operation: Your key is too long.")
+RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: Unknown")
+CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: One or more of the specified parts could not be found. The part might not have been "
+"uploaded, or the specified entity tag might not have matched the part's entity tag.")
+RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
+"CreateBucket operation: Unknown")
+CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
+"the CreateBucket operation: Your previous request to create the named bucket succeeded and "
+"you already own it.")

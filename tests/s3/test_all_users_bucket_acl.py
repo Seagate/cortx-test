@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -262,15 +261,12 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = self.acl_obj.get_bucket_acl(self.bucket_name)
+        resp = s3_utils.poll(self.acl_obj.get_bucket_acl,
+                             self.bucket_name, condition='{}[1][1][0]["Permission"]=="READ"')
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(
-            resp[1][1][0]["Permission"],
-            "READ",
-            resp[1])
+        assert_utils.assert_equal(resp[1][1][0]["Permission"], "READ", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
-        self.log.info(
-            "Step 4: Trying to read an object's ACL from other unsigned user")
+        self.log.info("Step 4: Trying to read an object's ACL from other unsigned user")
         try:
             resp = self.no_auth_obj.get_object_acl(
                 self.bucket_name, self.obj_name
@@ -414,14 +410,10 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = self.acl_obj.get_bucket_acl(
-            self.bucket_name
-        )
+        resp = s3_utils.poll(self.acl_obj.get_bucket_acl,
+                             self.bucket_name, condition='{}[1][1][0]["Permission"]=="READ"')
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(
-            resp[1][1][0]["Permission"],
-            "READ",
-            resp[1])
+        assert_utils.assert_equal(resp[1][1][0]["Permission"], "READ", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating object's ACL from other unsigned user")
@@ -467,14 +459,10 @@ class TestAllUsersBucketAcl:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = self.acl_obj.get_bucket_acl(
-            self.bucket_name
-        )
+        resp = s3_utils.poll(self.acl_obj.get_bucket_acl,
+                             self.bucket_name, condition='{}[1][1][0]["Permission"]=="WRITE"')
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(
-            resp[1][1][0]["Permission"],
-            "WRITE",
-            resp[1])
+        assert_utils.assert_equal(resp[1][1][0]["Permission"], "WRITE", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Listing objects in bucket from other unsigned user")
@@ -1517,12 +1505,9 @@ class TestAllUsersBucketAcl:
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
-        resp = self.acl_obj.get_bucket_acl(
-            self.bucket_name)
-        assert_utils.assert_equal(
-            resp[1][1][0]["Permission"],
-            "WRITE_ACP",
-            resp[1])
+        resp = s3_utils.poll(self.acl_obj.get_bucket_acl,
+                             self.bucket_name, condition='{}[1][1][0]["Permission"]=="WRITE_ACP"')
+        assert_utils.assert_equal(resp[1][1][0]["Permission"], "WRITE_ACP", resp[1])
         self.log.info("Step 3: Verified bucket permission is changed")
         self.log.info(
             "Step 4: Updating object ACL through other unsigned account")

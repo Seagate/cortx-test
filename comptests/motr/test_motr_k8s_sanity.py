@@ -1,22 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 
 """
 Test class that contains MOTR K8s tests.
@@ -27,12 +27,13 @@ import csv
 import logging
 from random import SystemRandom
 import pytest
+from commons.utils import assert_utils
 from commons.utils import config_utils
+from commons import constants as common_const
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
-
 
 M0CRATE_WORKLOAD_YML = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
 M0CRATE_TEST_CSV = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
@@ -58,6 +59,7 @@ class TestExecuteK8Sanity:
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
         cls.system_random = SystemRandom()
+        cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
@@ -108,7 +110,7 @@ class TestExecuteK8Sanity:
         logger.info(m0cfg['MOTR_CONFIG'])
         logger.info(m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'])
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
-        count = self.motr_obj.byte_conversion(file_size)//self.motr_obj.byte_conversion(b_size)
+        count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(M0CRATE_WORKLOAD_YML, m0cfg, backup=False, sort_keys=False)
         self.motr_obj.m0crate_run(M0CRATE_WORKLOAD_YML, remote_file, node)
@@ -144,3 +146,39 @@ class TestExecuteK8Sanity:
                     self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
+
+    @pytest.mark.tags("TEST-14921")
+    @pytest.mark.motr_sanity
+    def test_m0kv_utility(self):
+        """
+        This is to run the m0kv utility tests.
+        Verify different options of m0kv utility
+        """
+        logger.info("Running m0kv tests")
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
+        node = self.system_random.choice(list(node_pod_dict.keys()))
+        m0kv_tests = self.m0kv_cfg[1]
+        for test in m0kv_tests:
+            logger.info("RUNNING TEST: %s", test)
+            cmd_batch = m0kv_tests[test]["batch"]
+            for index, cnt in enumerate(cmd_batch):
+                logger.info("Command number: %s", index)
+                cmd = cnt["cmnd"]
+                param = cnt["params"]
+                logger.info("CMD: %s, PARAMS: %s", cmd, param)
+                if cmd == "m0kv":
+                    self.motr_obj.kv_cmd(cnt["params"], node, 0)
+                else:
+                    cmd = f'{cmd} {param}'
+                    resp = self.motr_obj.node_obj.send_k8s_cmd(
+                                                           operation="exec",
+                                                           pod=node_pod_dict[node],
+                                                           namespace=common_const.NAMESPACE,
+                                                           command_suffix=
+                                                           f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                           f"-- {cmd}", decode=True)
+                    logger.info("Resp: %s", resp)
+                    assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                               f'"{cmd}" Failed, Please check the log')
+
+        logger.info("Stop: Verified multiple m0kv operations")
