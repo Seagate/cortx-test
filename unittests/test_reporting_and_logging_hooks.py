@@ -150,8 +150,12 @@ def test_max4(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):
-    """A test function."""
-    values = (2, 3, 1, 4, 6)
-    val = max(values)
-    logger.info("max is %s" % val)
-    assert val == 6
+    """
+    dummy ptest skip test
+    """
+    logger.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
+                  "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+    anyway_skip = True
+    if anyway_skip:
+        pytest.skip()
+
