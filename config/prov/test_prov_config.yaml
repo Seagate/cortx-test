@@ -1,7 +1,0 @@
-k8s_prov_cortx_deploy:
-  deploy_cluster: "sh deploy.sh -i {} -r"
-  git_prov_k8_repo: "https://github.com/Seagate/cortx-prvsnr -b kubernetes"
-  git_remote_path: "/root/cortx-prvsnr/test/deploy/kubernetes"
-  deploy_services: "sh reimage.sh"
-  upgrade_cluster: "sh upgrade.sh -i {} -r"
-  destroy_cluster: "sh destroy.sh"

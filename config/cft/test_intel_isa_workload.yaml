@@ -1,4 +1,0 @@
-cluster_start_delay: 30
-test_bucket_prefix: 'test-intel-isa'
-test_basic_io:
-  parity_check_flag: S3_MOTR_IS_READ_VERIFY
