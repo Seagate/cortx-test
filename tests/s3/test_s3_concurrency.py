@@ -510,7 +510,7 @@ class TestS3Concurrency:
             )
         self.start_concurrent_clients(client_lst, self.resp_lst)
         self.log.info(
-            "Step 2: Delete bucket operation will get passed and Get object operation"
+            "Step 3: Delete bucket operation will get passed and Get object operation"
             " will fail in between")
         self.log.info(
             "ENDED: Upload an object to the bucket from one s3 client and in parallel "
@@ -574,7 +574,7 @@ class TestS3Concurrency:
             )
         self.start_concurrent_clients(client_lst, self.resp_lst)
         self.log.info(
-            "Step 2: Remove object operation get run successfully if called after put else fail"
+            "Step 2: Remove object operation get run successfully if called after put else fail "
             "and put object operation will also get passed")
         self.log.info(
             "ENDED: Put object through one s3 client and try deleting it from other s3 client")
