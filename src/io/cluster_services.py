@@ -1,0 +1,176 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+"""IO cluster services module."""
+
+import os
+import glob
+import shutil
+import logging
+from datetime import datetime
+
+from config.s3 import CMN_CFG
+from config import IO_DRIVER_CFG
+from src.commons.helpers.health_helper import Health
+from src.commons.utils import support_bundle_utils as sb
+
+LOGGER = logging.getLogger(__name__)
+NODES = CMN_CFG["nodes"]
+
+
+def check_cluster_services():
+    """Check the cluster services."""
+    LOGGER.info("Check cluster status for all nodes.")
+    response = False, None
+    try:
+        for node in NODES:
+            if node.get("node_type", None).lower() != "master":
+                continue
+            hostname = node['hostname']
+            health = Health(hostname=hostname, username=node['username'], password=node['password'])
+            response = health.check_node_health()
+            health.disconnect()
+            if not response[0]:
+                LOGGER.critical(
+                    'Cluster Node {%s} failed in health check. Reason: {%s}', hostname, response)
+                raise IOError(response[1])
+        resp = check_cluster_space()
+        LOGGER.info(resp)
+        LOGGER.info("Cluster status is healthy.")
+    except OSError as error:
+        LOGGER.error("An error occurred in check_cluster_services: %s", str(error))
+        response = False, error
+
+    return response
+
+
+def check_cluster_space():
+    """Check nodes space and accepts till 98 % occupancy."""
+    LOGGER.info("Check cluster storage for all nodes.")
+    ha_used_percent = 0.0
+    for node in NODES:
+        if node.get("node_type", None).lower() != "master":
+            continue
+        hostname = node['hostname']
+        health = Health(hostname=hostname, username=node['username'], password=node['password'])
+        ha_total, ha_avail, ha_used = health.get_sys_capacity()
+        LOGGER.info("Total capacity: %s GB", ha_total / (1024**3))
+        LOGGER.info("Available capacity: %s GB", ha_avail / (1024**3))
+        LOGGER.info("Used capacity: %s GB", ha_used / (1024**3))
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        health.disconnect()
+        if ha_used_percent > IO_DRIVER_CFG['max_storage']:
+            raise IOError(f'Cluster Node {hostname} failed space check: {ha_used_percent}%.')
+
+    return ha_used_percent < IO_DRIVER_CFG['max_storage'], f"Used capacity: {ha_used_percent}%"
+
+
+def collect_support_bundle():
+    """Collect support bundles from various components using support bundle cmd."""
+    try:
+        bundle_dir = os.path.join(os.getcwd(), "support_bundle")
+        bundle_name = "s3-stability"
+        if os.path.exists(bundle_dir):
+            LOGGER.info("Removing existing directory %s", bundle_dir)
+            shutil.rmtree(bundle_dir)
+        os.mkdir(bundle_dir)
+        if CMN_CFG["product_family"] == "LC":
+            status, bundle_fpath = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir)
+        else:
+            status, bundle_fpath = sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+        if not status:
+            raise IOError(f"Failed to generated SB. Response:{bundle_fpath}")
+    except OSError as error:
+        LOGGER.error("An error occurred in collect_support_bundle: %s", error)
+        return False, error
+
+    return os.path.exists(bundle_fpath), bundle_fpath
+
+
+def collect_crash_files():
+    """Collect crash files from existing locations."""
+    try:
+        crash_dir = os.path.join(os.getcwd(), "crash_files")
+        if os.path.exists(crash_dir):
+            LOGGER.info("Removing existing directory %s", crash_dir)
+            shutil.rmtree(crash_dir)
+        os.mkdir(crash_dir)
+        if CMN_CFG["product_family"] == "LC":
+            sb.collect_crash_files_k8s(local_dir_path=crash_dir)
+        else:
+            sb.collect_crash_files(crash_dir)
+        crash_fpath = os.path.join(crash_dir, os.listdir(crash_dir)[-1])
+    except OSError as error:
+        LOGGER.error("An error occurred in collect_support_bundle: %s", error)
+        return False, error
+
+    return os.path.exists(crash_fpath), crash_fpath
+
+
+def rotate_logs(dpath: str, max_count: int = 0):
+    """
+    Remove old logs based on creation time and keep as per max log count, default is 5.
+
+    :param: dpath: Directory path of log files.
+    :param: max_count: Maximum count of log files to keep.
+    """
+    max_count = max_count if max_count else IO_DRIVER_CFG.get("max_sb", 5)
+    if not os.path.exists(dpath):
+        raise IOError(f"Directory '{dpath}' path does not exists.")
+    files = sorted(glob.glob(dpath + '/**'), key=os.path.getctime, reverse=True)
+    LOGGER.info(files)
+    if len(files) > max_count:
+        for fpath in files[max_count:]:
+            if os.path.exists(fpath):
+                if os.path.isfile(fpath):
+                    os.remove(fpath)
+                    LOGGER.info("Removed: Old log file: %s", fpath)
+                if os.path.isdir(fpath):
+                    shutil.rmtree(fpath)
+                    LOGGER.info("Removed: Old log directory: %s", fpath)
+
+    if len(os.listdir(dpath)) > max_count:
+        raise IOError(f"Failed to rotate SB logs: {os.listdir(dpath)}")
+
+
+def collect_upload_sb_to_nfs_server(mount_path: str, run_id: str, max_sb: int = 0):
+    """
+    Collect SB and copy to NFS server log and keep SB logs as per max_sb count.
+
+    :param mount_path: Path of mounted directory.
+    :param run_id: Unique id for each run.
+    :param max_sb: maximum sb count to keep on nfs server.
+    """
+    try:
+        sb_dir = os.path.join(mount_path, "CorIO-Execution", str(run_id), str(datetime.now().year),
+                              str(datetime.now().month), "Support_Bundles")
+        if not os.path.ismount(mount_path):
+            raise IOError(f"Incorrect mount path: {mount_path}")
+        if not os.path.exists(sb_dir):
+            os.makedirs(sb_dir)
+        status, fpath = collect_support_bundle()
+        shutil.copy2(fpath, sb_dir)
+        rotate_logs(sb_dir, max_sb)
+        sb_files = os.listdir(sb_dir)
+        LOGGER.info("SB list: %s", sb_files)
+    except IOError as error:
+        LOGGER.error(error)
+        return False, error
+
+    return status, sb_files

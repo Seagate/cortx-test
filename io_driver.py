@@ -35,15 +35,15 @@ from multiprocessing import Process, Manager
 
 import psutil
 
-from commons.io.io_logger import StreamToLogger
-from commons.params import NFS_SERVER_DIR, MOUNT_DIR
-from commons.utils import assert_utils
-from commons.utils.system_utils import mount_nfs_server
+from src.commons.io.io_logger import StreamToLogger
+from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
+from src.commons.utils import assert_utils
+from src.commons import mount_nfs_server
 from config import IO_DRIVER_CFG
 from config import S3_CFG
-from libs.io import yaml_parser
-from libs.io.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
-from libs.io.tools.s3bench import S3bench
+from src.io import yaml_parser
+from src.io.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
+from src.io.tools.s3bench import S3bench
 
 logger = logging.getLogger()
 
@@ -57,7 +57,7 @@ mount_dir = MOUNT_DIR
 
 def initialize_loghandler(level=logging.DEBUG):
     """
-    Initialize io driver runner logging with stream and file handlers.
+    Initialize s3 driver runner logging with stream and file handlers.
     param level: logging level used in CorIO tool.
     """
     logger.setLevel(level)
@@ -89,7 +89,7 @@ def parse_args():
     parser.add_argument("-sk", "--secret-key", type=str, help="s3 secret Key.")
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
-                        help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
+                        help="fqdn of s3 endpoint for s3 operations.", default="s3.seagate.com")
     parser.add_argument("-nn", "--number-of-nodes", type=int, default=1,
                         help="number of nodes in k8s system")
     return parser.parse_args()
