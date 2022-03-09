@@ -53,6 +53,7 @@ HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
+RGW_CONTAINER_NAME = "cortx-rgw"
 HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
@@ -473,3 +474,8 @@ RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the Complete
 CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
 "operation: One or more of the specified parts could not be found. The part might not have been "
 "uploaded, or the specified entity tag might not have matched the part's entity tag.")
+RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
+"CreateBucket operation: Unknown")
+CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
+"the CreateBucket operation: Your previous request to create the named bucket succeeded and "
+"you already own it.")
