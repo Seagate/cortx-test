@@ -26,9 +26,9 @@ import xmltodict
 import re
 from typing import Tuple, List, Any, Union
 from src.commons import constants as const
-from src.commons import Host
+from src.commons.helpers.host import Host
 from src.commons import commands
-from src.commons import LogicalNode
+from src.commons.helpers.pods_helper import LogicalNode
 from src.commons.utils.system_utils import check_ping
 from src.commons.utils.system_utils import run_remote_cmd
 from src.commons.utils.assert_utils import assert_true

@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """
-IOdriver for scheduling and managing all tests.
+IO driver for scheduling and managing all tests.
 Consists of Schedular which parses yaml based inputs and schedules, monitor jobs accordingly.
 IO driver will also be responsible for performing health checks and
 support bundle collection on regular intervals.
@@ -38,7 +38,7 @@ import psutil
 from src.commons.io.io_logger import StreamToLogger
 from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
 from src.commons.utils import assert_utils
-from src.commons import mount_nfs_server
+from src.commons.utils.system_utils import mount_nfs_server
 from config import IO_DRIVER_CFG
 from config import S3_CFG
 from src.io import yaml_parser

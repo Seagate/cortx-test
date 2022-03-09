@@ -36,7 +36,7 @@ import schedule
 
 from src.commons.io.io_logger import StreamToLogger
 from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
-from src.commons import mount_nfs_server
+from src.commons.utils.system_utils import mount_nfs_server
 from config import S3_CFG
 from io_driver import logger
 from src.io import yaml_parser
