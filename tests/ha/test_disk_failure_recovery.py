@@ -62,6 +62,7 @@ class TestDiskFailureRecovery:
         cls.ha_obj = HAK8s()
         cls.dsk_rec_obj = DiskFailureRecoveryLib()
         cls.s3_clean = None
+        cls.parity_units = None
         cls.mgnt_ops = ManagementOPs()
         cls.delay_sns_repair = HA_CFG["sns_repair"]["delay_sns_repair"]
 
