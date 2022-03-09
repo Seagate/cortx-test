@@ -81,7 +81,8 @@ def parse_args():
     """Commandline arguments for CORIO Driver."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-ti", "--test_input", type=str,
-                        help="Directory path containing test data input yaml files.")
+                        help="Directory path containing test data input yaml files or "
+                             "input yaml file path.")
     parser.add_argument("-ll", "--logging-level", type=int, default=20,
                         help="log level value as defined below: " +
                              "CRITICAL=50 " +
@@ -212,7 +213,7 @@ def log_status(parsed_input: dict, corio_start_time: datetime.time, test_failed)
                     if datetime.now() > (test_start_time + v1['result_duration']):
                         input_dict[
                             "RESULT_UPDATE"] = f"Passed at " \
-                                f"{(test_start_time + v1['result_duration']).strftime(date_format)}"
+                            f"{(test_start_time + v1['result_duration']).strftime(date_format)}"
                     else:
                         input_dict["RESULT_UPDATE"] = f"In Progress"
                     input_dict["TOTAL_TEST_EXECUTION"] = datetime.now() - test_start_time
@@ -265,7 +266,12 @@ def main(options):
                       'use_ssl': S3_CFG["use_ssl"],
                       'seed': options.seed
                       }
-    file_list = glob.glob(options.test_input + "/*")
+    if os.path.isdir(options.test_input):
+        file_list = glob.glob(options.test_input + "/*")
+    elif os.path.isfile(options.test_input):
+        file_list = [os.path.abspath(options.test_input)]
+    else:
+        raise IOError(f"Incorrect test input: {options.test_input}")
     logger.info("Test YAML Files to be executed : %s", file_list)
     parsed_input = {}
     for each in file_list:
@@ -300,7 +306,7 @@ def main(options):
 
     # TODO: Add support to schedule support bundle and health check periodically
     sched_job = schedule.every(30).minutes.do(log_status, parsed_input=parsed_input,
-                                             corio_start_time=corio_start_time, test_failed=None)
+                                              corio_start_time=corio_start_time, test_failed=None)
 
     try:
         for process in processes.values():

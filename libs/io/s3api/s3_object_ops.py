@@ -41,7 +41,7 @@ class S3Object(S3RestApi):
         file_path = kwargs.get("file_path", None)
         if file_path:
             with open(file_path, "rb") as f_obj:
-                body = f_obj
+                body = f_obj.read()
         async with self.get_client() as s3client:
             response = await s3client.put_object(Body=body, Bucket=bucket, Key=key)
             logger.info("%s s3://%s/%s Response: %s", S3Object.upload_object.__name__, bucket, key,
