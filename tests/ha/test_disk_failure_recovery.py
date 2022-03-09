@@ -93,6 +93,11 @@ class TestDiskFailureRecovery:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
+
+        LOGGER.info("Getting parity units count.")
+        resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.parity_units = resp[1]['parity']
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -147,15 +152,12 @@ class TestDiskFailureRecovery:
         LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
-        resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
-        assert_utils.assert_true(resp[0], resp[1])
-        parity_units = resp[1]['parity']
-        LOGGER.info("No of parity units (K): %s", parity_units)
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
 
-        if parity_units == 1:
+        if self.parity_units == 1:
             disk_fail_cnt = 1
         else:
-            disk_fail_cnt = random.randint(1, parity_units-1)
+            disk_fail_cnt = random.randint(1, self.parity_units-1)
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
 
         resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
@@ -264,12 +266,9 @@ class TestDiskFailureRecovery:
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_before)
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
-        resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
-        assert_utils.assert_true(resp[0], resp[1])
-        parity_units = resp[1]['parity']
-        LOGGER.info("No of parity units (K): %s", parity_units)
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
 
-        disk_fail_cnt = parity_units
+        disk_fail_cnt = self.parity_units
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
 
         resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
