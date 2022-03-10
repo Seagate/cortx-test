@@ -309,7 +309,6 @@ class TestSystemCapacity():
                         critical=0, damaged=0, err_margin=test_cfg["err_margin"],
                         total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
-            import pdb;pdb.set_trace()
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
         assert self.csm_obj.verify_degraded_capacity_all(
             cap_df, self.num_nodes), "Overall check failed."
