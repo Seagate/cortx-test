@@ -256,6 +256,7 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.sanity
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-35605')
@@ -705,6 +706,7 @@ class TestIamUserRGW():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
