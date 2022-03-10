@@ -45,7 +45,6 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
-from libs.ras.ras_test_lib import RASTestLib
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
