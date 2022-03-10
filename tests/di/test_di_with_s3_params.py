@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -123,6 +122,7 @@ class TestDIWithChangingS3Params:
         cls.log.info("ENDED: Teardown class operations.")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
     def test_29273(self):
@@ -130,13 +130,11 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
-        valid,skipmark = self.di_err_lib.validate_disabled_config()
-        if not valid or not skipmark:
-            self.log.info("Skipping test DI flags are not enabled" )
+        valid, skipmark = self.di_err_lib.validate_enabled_config()
+        if not valid or skipmark:
+            self.log.info("Skipping test DI flags are not enabled")
             pytest.skip()
-
         self.log.info("STARTED: Normal File upload with DI flag enable for read and write")
-
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
         self.s3obj.create_bucket(bucket_name=bucket_name)
@@ -144,27 +142,23 @@ class TestDIWithChangingS3Params:
         for size in NORMAL_UPLOAD_SIZES:
             self.log.info("Step 1: create a file of size %s MB", size)
 
-            file_path_upload = self.F_PATH + "TEST_29173_"+ str(size) +"_upload"
+            file_path_upload = self.F_PATH + "TEST_29173_" + str(size) + "_upload"
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
-
             buff, csm = self.data_gen.generate(size=size,
                                                seed=self.data_gen.get_random_seed())
-            location = self.data_gen.create_file_from_buf(fbuf=buff,
-                                                          name=file_path_upload,
+            location = self.data_gen.create_file_from_buf(fbuf=buff, name=file_path_upload,
                                                           size=size)
             self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name,
                                   file_path=location)
             self.log.debug("Step 1: Checksum of uploaded file is %s",csm)
             self.log.info("Step 1: Created a bucket and upload object of %s.", size)
-            self.log.info("Step 2: Download chunk uploaded object of size %s.",size)
-
-            file_path_download = self.F_PATH + "TEST_29173_"+ str(size) +"_download"
+            self.log.info("Step 2: Download chunk uploaded object of size %s.", size)
+            file_path_download = self.F_PATH + "TEST_29173_"+ str(size) + "_download"
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
             res = self.s3obj.object_download(bucket_name, obj_name, file_path_download)
             assert_utils.assert_true(res[0], res)
-
             self.log.info("Step 2: Download chunk uploaded object is successful.")
             self.log.info("Step 3: Validate checksum of both uploaded and downloaded file.")
             self.s3obj.delete_object(bucket_name=bucket_name, obj_name=obj_name)
@@ -174,7 +168,6 @@ class TestDIWithChangingS3Params:
                 self.log.info("Step 3: Checksum validation failed.")
                 break
             self.log.info("Step 3: Checksum validation is successful.")
-
         self.s3obj.delete_bucket(bucket_name, force=True)
         if result:
             assert True
@@ -183,6 +176,7 @@ class TestDIWithChangingS3Params:
         self.log.info("ENDED:Normal File upload with DI flag enable for read and write")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
     def test_29276(self):
@@ -221,7 +215,6 @@ class TestDIWithChangingS3Params:
         res = self.s3obj.object_list(bucket_name)
         if obj_name_2 not in res[1]:
             assert_utils.assert_true(False, "object not listed in bucket")
-
         self.s3obj.object_download(bucket_name=bucket_name,
                                    obj_name=obj_name_2, file_path=self.F_PATH_COPY)
         self.log.info("Step 4:: Validate ETAG and checksum")
@@ -236,7 +229,9 @@ class TestDIWithChangingS3Params:
         self.log.info("ENDED: With DI flag  Disabled, copy object to the same bucket with "
                       "different name")
 
+    @pytest.mark.skip(reason="Not yet automated")
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29277')
     @CTFailOn(error_handler)
     def test_29277(self):
@@ -292,6 +287,7 @@ class TestDIWithChangingS3Params:
                       "different name")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
     def test_29281(self):
@@ -305,8 +301,6 @@ class TestDIWithChangingS3Params:
             pytest.skip()
         self.log.info("STARTED: Test to verify copy object to different bucket with same object "
                       "name with Data Integrity disabled.")
-
-        # to do verify configs
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
         obj_name = self.get_object_name()
@@ -314,13 +308,10 @@ class TestDIWithChangingS3Params:
                       bucket_name_1, bucket_name_2)
         self.s3obj.create_bucket(bucket_name=bucket_name_1)
         self.s3obj.create_bucket(bucket_name=bucket_name_2)
-
         self.log.info("Step 1: create a file ")
         if os.path.exists(self.F_PATH):
             os.remove(self.F_PATH)
-
         sys_util.create_file(fpath=self.F_PATH, count=1)
-
         self.log.info("Step 2: Upload file to a bucket = %s",bucket_name_1)
         resp = self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name,
                                      file_path=self.F_PATH)
@@ -329,22 +320,18 @@ class TestDIWithChangingS3Params:
         res = self.s3obj.object_list(bucket_name_1)
         if obj_name not in res[1]:
             return res, "object not listed in bucket {bucket_name_1}"
-
         self.log.info("Step 3: Copy object to different bucket = {bucket_name_2}")
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name,
                                          dest_bucket=bucket_name_2, dest_object=obj_name)
         self.log.info(resp_cp)
         assert_utils.assert_true(resp_cp[0], resp_cp)
-
         self.log.info("Step 3: Copy object to different bucket is successful.")
         res = self.s3obj.object_list(bucket_name_2)
         if obj_name not in res[1]:
             return res, "object not listed in bucket"
         self.s3obj.delete_bucket(bucket_name_1, force=True)
         self.s3obj.delete_bucket(bucket_name_2, force=True)
-
         self.log.info("Step 4: Validate Etag of source and copied object.")
-
         assert_utils.assert_equals(resp[1]['ETag'], resp_cp[1]['CopyObjectResult']['ETag'],
                                    "ETAG validation failed:")
         self.log.info("Step 4: Etag validation is successful.")
@@ -352,6 +339,7 @@ class TestDIWithChangingS3Params:
                       "name with Data Integrity disabled.")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
     def test_29282(self):
@@ -363,7 +351,7 @@ class TestDIWithChangingS3Params:
                       "with Data Integrity flag ON for write and OFF for read")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -410,6 +398,7 @@ class TestDIWithChangingS3Params:
                       "with Data Integrity flag ON for write and OFF for read")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
     def test_29286(self):
@@ -421,7 +410,7 @@ class TestDIWithChangingS3Params:
                       "Integrity flag ON for write and OFF for read")
         failed_file_sizes = []
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -437,7 +426,7 @@ class TestDIWithChangingS3Params:
             self.log.debug("location: %s, csm: %s", location, csm)
             try:
                 self.s3obj.put_object(bucket_name=bucket_name_1, object_name=obj_name_1,
-                                      file_path=self.F_PATH)
+                                      file_path=location)
                 self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name_1,
                                        dest_bucket=bucket_name_2, dest_object=obj_name_1)
                 self.s3obj.copy_object(source_bucket=bucket_name_2, source_object=obj_name_1,
@@ -459,6 +448,7 @@ class TestDIWithChangingS3Params:
                       "Integrity flag ON for write and OFF for read")
 
     @pytest.mark.data_integrity
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
     def test_29288(self):
@@ -467,7 +457,7 @@ class TestDIWithChangingS3Params:
         with Data Integrity flag ON for write and OFF for read
         """
         self.log.debug("Checking setup status")
-        valid, skip_mark = self.di_err_lib.validate_default_config()
+        valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
             pytest.skip()
@@ -489,7 +479,7 @@ class TestDIWithChangingS3Params:
                 data = file_pointer.read()
             resp = self.s3_mp_test_obj.upload_part(body=data, bucket_name=bucket_name,
                                                    object_name=obj_name, upload_id=mpu_id,
-                                                   part_number=i+1)
+                                                   part_number=i + 1)
             parts.append({"PartNumber": i+1, "ETag": resp[1]["ETag"]})
             if not di_lib.restart_s3_processes_k8s():
                 assert False
@@ -506,4 +496,3 @@ class TestDIWithChangingS3Params:
             assert True, "Checksum matched"
         else:
             assert False, "Checksum not matched"
-

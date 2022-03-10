@@ -1,3 +1,21 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""Cortx Cluster health."""
 import os
 import secrets
 import time
@@ -26,7 +44,7 @@ from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
-S3_OBJ = s3_test_lib.S3TestLib()
+
 
 class TestNodeHealth:
     """
@@ -37,6 +55,7 @@ class TestNodeHealth:
         """  Setup module  """
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.node_cnt = len(CMN_CFG["nodes"])
+        cls.S3_OBJ = s3_test_lib.S3TestLib()
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
         cls.list1 = []
         for index in range(1, cls.node_cnt):
@@ -188,7 +207,7 @@ class TestNodeHealth:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         LOGGER.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.S3_OBJ.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -486,7 +505,7 @@ class TestNodeHealth:
         LOGGER.info("Step 6: Create bucket to verify s3 account got deleted")
         bucket = "test-26848-post-reset-{}".format(perf_counter_ns())
         try:
-            S3_OBJ.create_bucket(bucket)
+            self.S3_OBJ.create_bucket(bucket)
         except CTException as response:
             LOGGER.info("Response = %s", response)
             if "InvalidAccessKeyId" in str(response):

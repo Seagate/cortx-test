@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """All the constants are alphabetically arranged."""
 CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
@@ -6,7 +23,7 @@ LS_CMD = "ls {}"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
-MOTR_START_FIDS = "hctl mero process start --fid {}"
+MOTR_START_FIDS = "hctl mero process start --fid {}"
 MOTR_STATUS_CMD = "hctl status"
 HA_LOG_CMD = "/bin/bash"
 HA_LOG_FOLDER = "cat /etc/cortx/log/ha/*/health_monitor.log"
@@ -21,7 +38,7 @@ MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
-PCS_CLUSTER_STOP = "pcs cluster stop {}"
+PCS_CLUSTER_STOP = "pcs cluster stop {}"
 PCS_CLUSTER_STATUS = "pcs cluster status"
 PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
 PCS_RESOURCE_SHOW_CMD = "pcs resource show"
@@ -298,6 +315,8 @@ CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
 CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
+CMD_AWS_CONF_KEYS_RGW = "make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
+                        "endpoint={}"
 CMD_AWSCLI_CONF = "aws configure"
 # Upload directory recursively to s3.
 CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
@@ -485,6 +504,7 @@ KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata
 KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
+KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -546,3 +566,9 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
               "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
+
+# SNS repair
+SNS_REPAIR_CMD = "hctl repair {}"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
+                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
+                               "\"state\" : \"status_val\"}'"
