@@ -167,6 +167,11 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+  timeout:
+    pre-req: 120
+    deploy: 7200
+    destroy: 900
+    status: 120
 test_basic_io:
   io_upper_limits:
     Kb: 130

@@ -563,7 +563,7 @@ class Host(AbsHost):
 
         :param process_name: Name of the process to be killed
         """
-        return self.execute_cmd(commands.PKIL_CMD.format(process_name))
+        return self.execute_cmd(commands.KILL_PROCESS_CMD.format(process_name))
 
     def pgrep(self, process: str):
         """

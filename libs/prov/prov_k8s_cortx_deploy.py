@@ -218,7 +218,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Execute prereq script")
         cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log". \
             format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
-        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=60)
+        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                    timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
         LOGGER.info("\n %s", resp1)
@@ -255,13 +256,13 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Deploy Cortx cloud")
         cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
         try:
-            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=7200)
+            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                        timeout=self.deploy_cfg['timeout']['deploy'])
             LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
             return True, resp
         except TimeoutError as error:
-            LOGGER.error(error, "7200")
-            RASTestLib(node_obj.hostname,
-                       node_obj.username, node_obj.password).kill_remote_process(cmd)
+            LOGGER.error(error, self.deploy_cfg['timeout']['deploy'])
+            node_obj.kill_remote_process(cmd)
         except IOError as error:
             LOGGER.exception("The exception occurred is %s", error)
             return False, error
@@ -277,7 +278,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Validate Cluster status")
         status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
         cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
-        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=120)
+        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                    timeout=PROV_CFG['k8s_cortx_deploy']['timeout']['status'])
+        LOGGER.debug(resp[0])
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
         remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
         LOGGER.debug("COPY status file to local")
@@ -659,6 +662,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
+    # pylint: disable-msg=too-many-locals
     def update_miscellaneous_param(self, filepath, log_path, size,
                                    **kwargs):
         """
@@ -788,7 +792,7 @@ class ProvDeployK8sCortxLib:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
             resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True,
-                                               timeout=900)
+                                               timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
                 resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
@@ -945,16 +949,18 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Removing local file from client and downloading object")
         system_utils.remove_file(file_path)
         resp = s3t_obj.get_object(bucket=bucket_name, key=test_file)
+        with open(file_path, "wb") as data:
+            data.write(resp['Body'].read())
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Verifying checksum of downloaded file with old file should be same")
-        resp = system_utils.get_file_checksum(test_file)
+        resp = system_utils.get_file_checksum(file_path)
         assert_utils.assert_true(resp[0], resp[1])
         chksm_after_dwnld_obj = resp[1]
         assert_utils.assert_equal(chksm_before_put_obj, chksm_after_dwnld_obj)
 
         LOGGER.info("Delete the file from the bucket")
-        resp = s3t_obj.delete_object(bucket_name, test_file)
+        resp = s3t_obj.delete_object(bucket_name, file_path)
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Delete downloaded file")

@@ -383,8 +383,6 @@ class S3Lib(S3Rest):
             response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
         else:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
-            with open(key, "wb") as data:
-                data.write(response['Body'].read())
         LOGGER.debug(response)
 
         return response
