@@ -1244,6 +1244,8 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(server_pod_list)
             LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
+        if len(response) == 0:
+            return False, "All Services are not started."
         return response
 
     def check_service_status(self, master_node_obj: LogicalNode):
@@ -1345,22 +1347,26 @@ class ProvDeployK8sCortxLib:
 
         return config_list
 
-    @staticmethod
-    def upgrade_software(node_obj, upgrade_image_version: str,
-                         git_remote_path: str, **kwargs) -> tuple:
+    def upgrade_software(self, node_obj: LogicalNode, git_remote_path: str,
+                         upgrade_type: str = "rolling", granular_type: str = "all",
+                         **kwargs) -> tuple:
         """
-        Helper function to upgrade.
+        Helper function to Upgrade CORTX stack.
         :param node_obj: Master node(Logical Node object)
-        :param upgrade_image_version: Version Image to Upgrade.
         :param git_remote_path: Remote path of repo.
+        :param upgrade_type: Type of upgrade (rolling or cold).
+        :param granular_type: Type to upgrade all or particular pod.
         :param exc: Flag to disable/enable exception raising
         :return: True/False
         """
-        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
+        LOGGER.info("Upgrading CORTX image version.")
         exc = kwargs.get('exc', True)
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)
-        cmd = "cd {}; {}".format(git_remote_path, upgrade_cmd)
+        if upgrade_type == "rolling":
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+        else:
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -1368,6 +1374,7 @@ class ProvDeployK8sCortxLib:
         resp = "".join(resp).replace("\\n", "\n")
         if "Error" in resp or "Failed" in resp:
             return False, resp
+        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
         return True, resp
 
     @staticmethod
@@ -1427,3 +1434,31 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("RPM is %s", installed_rpm)
             return True, installed_rpm
         return False, installed_rpm
+
+    @staticmethod
+    def get_installed_version(master_node_obj: LogicalNode, local_conf_path: str) -> tuple:
+        """
+        Helper function to get cortx installed version.
+        :param master_node_obj: Master node(Logical Node object)
+        :param local_conf_path: Local conf file path.
+        :return: True/False and installed version/error
+        """
+        pvc_list = master_node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        data_pvc = None
+        for data_pvc in pvc_list:
+            if common_const.POD_NAME_PREFIX in data_pvc:
+                data_pvc = data_pvc.replace("\n", "")
+                LOGGER.info("Data PVC: %s", data_pvc)
+                break
+
+        remote_path = common_const.HA_LOG + data_pvc + "/cluster.conf"
+        master_node_obj.copy_file_to_local(remote_path=remote_path, local_path=local_conf_path)
+        stream = open(local_conf_path, 'r')
+        data = yaml.safe_load(stream)
+        try:
+            installed_version = data['cortx']['common']['release']['version']
+            LOGGER.debug("Installed CORTX Image Version: %s", installed_version)
+        except KeyError as error:
+            LOGGER.error("Version missing in cluster.conf")
+            return False, error
+        return True, installed_version
