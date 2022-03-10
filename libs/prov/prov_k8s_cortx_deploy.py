@@ -279,7 +279,7 @@ class ProvDeployK8sCortxLib:
         cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
         resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                     timeout=PROV_CFG['k8s_cortx_deploy']['timeout']['status'])
-        LOGGER.debug(resp[0])
+        LOGGER.debug(resp)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
         remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
         LOGGER.debug("COPY status file to local")
