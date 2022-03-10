@@ -24,7 +24,7 @@ from io import BytesIO
 from unittest import mock
 from unittest.mock import patch
 
-from src.io.s3api.s3_object_ops import S3Object
+from src.libs.s3api.s3_object_ops import S3Object
 
 KIB = 1024
 MIB = KIB * KIB

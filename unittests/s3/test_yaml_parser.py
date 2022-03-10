@@ -24,7 +24,7 @@ import json
 import unittest
 from unittest import mock
 
-from src.io import yaml_parser
+from src.libs import yaml_parser
 
 KIB = 1024
 MIB = KIB ** 2

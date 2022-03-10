@@ -22,7 +22,7 @@ import unittest
 from src.commons import params
 from src.commons import mount_nfs_server
 from src.commons import umount_nfs_server
-from src.io import cluster_services
+from src.libs import cluster_services
 from unittests.s3 import logger
 
 

@@ -19,20 +19,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import logging
 import json
-import time
-import xmltodict
+import logging
 import re
+import time
 from typing import Tuple, List, Any, Union
+
+import xmltodict
+
+from config import CMN_CFG
+from src.commons import commands
 from src.commons import constants as const
 from src.commons.helpers.host import Host
-from src.commons import commands
 from src.commons.helpers.pods_helper import LogicalNode
+from src.commons.utils.assert_utils import assert_true
 from src.commons.utils.system_utils import check_ping
 from src.commons.utils.system_utils import run_remote_cmd
-from src.commons.utils.assert_utils import assert_true
-from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -78,8 +80,8 @@ class Health(Host):
         return ports
 
     def get_disk_usage(self, dir_path: str, field_val: int = 3,
-                       pod_name: str = None,
-                       container_name: str = const.HAX_CONTAINER_NAME) -> float:
+            pod_name: str = None,
+            container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function will return disk usage associated with given path.
 
@@ -116,7 +118,7 @@ class Health(Host):
         return float(res.replace('\n', ''))
 
     def get_cpu_usage(self, pod_name: str = None,
-                      container_name: str = const.HAX_CONTAINER_NAME) -> float:
+            container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
 
@@ -338,7 +340,7 @@ class Health(Host):
         LOG.debug("command :%s", mero_status_cmd)
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
                 CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
-            cmd_output = self.execute_cmd(mero_status_cmd,\
+            cmd_output = self.execute_cmd(mero_status_cmd, \
                                           timeout=timeout, read_lines=True)
             if not cmd_output[0]:
                 LOG.error("Command %s failed..!", mero_status_cmd)
@@ -833,7 +835,7 @@ class Health(Host):
         return response
 
     def pcs_resource_ops_cmd(self, command: str, resources: list, srvnode: str = "",
-                             wait_time: int = 30) -> bool:
+            wait_time: int = 30) -> bool:
         """
         Perform given operation on pcs resource using pcs resource command
 

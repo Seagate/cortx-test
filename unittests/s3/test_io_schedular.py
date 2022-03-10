@@ -20,7 +20,7 @@
 import time
 from multiprocessing import cpu_count
 
-from src.io.io_schedular import main
+from src.libs.io_schedular import main
 
 
 test_results = {}

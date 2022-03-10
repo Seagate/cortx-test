@@ -21,8 +21,8 @@ import random
 import time
 from datetime import timedelta, datetime
 
-from src.io.s3api.s3_bucket_ops import S3Bucket
-from src.io.s3api.s3_object_ops import S3Object
+from src.libs.s3api.s3_bucket_ops import S3Bucket
+from src.libs.s3api.s3_object_ops import S3Object
 
 logger = logging.getLogger()
 

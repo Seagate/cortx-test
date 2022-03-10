@@ -24,9 +24,9 @@ import random
 from datetime import datetime, timedelta
 from time import perf_counter_ns
 from typing import Union
-from src.io.s3api.s3_multipart_ops import S3MultiParts
-from src.io.s3api.s3_object_ops import S3Object
-from src.io.s3api.s3_bucket_ops import S3Bucket
+from src.libs.s3api.s3_multipart_ops import S3MultiParts
+from src.libs.s3api.s3_object_ops import S3Object
+from src.libs.s3api.s3_bucket_ops import S3Bucket
 
 logger = logging.getLogger(__name__)
 

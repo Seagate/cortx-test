@@ -26,9 +26,9 @@ from time import perf_counter_ns
 from config import S3_CFG
 from unittests.s3 import logger
 from src.commons import create_file
-from src.io.s3api.s3_bucket_ops import S3Bucket
-from src.io.s3api.s3_object_ops import S3Object
-from src.io.s3api.s3_multipart_ops import S3MultiParts
+from src.libs.s3api.s3_bucket_ops import S3Bucket
+from src.libs.s3api.s3_object_ops import S3Object
+from src.libs.s3api.s3_multipart_ops import S3MultiParts
 
 
 # pylint: disable-msg=too-many-instance-attributes

@@ -26,7 +26,7 @@ from io import StringIO
 
 from unittest import mock
 
-from src.io.tools.s3bench import S3bench
+from src.libs.tools.s3bench import S3bench
 
 
 class S3benchTestCase(unittest.TestCase):

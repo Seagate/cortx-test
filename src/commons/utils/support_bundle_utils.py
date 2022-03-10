@@ -21,15 +21,16 @@
 Module to maintain support bundle utils
 """
 
-import os
 import logging
+import os
 import time
-from src.commons.helpers.node_helper import Node
+
+from config import CMN_CFG
 from src.commons import commands as cm_cmd
 from src.commons import constants as cm_const
-from src.commons.utils import assert_utils
-from config import CMN_CFG
+from src.commons.helpers.node_helper import Node
 from src.commons.helpers.pods_helper import LogicalNode
+from src.commons.utils import assert_utils
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 # pylint: disable=max-args
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
-                                     size=None, services=None):
+        size=None, services=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param local_dir: Local directory where support bundles will be copied
@@ -272,7 +273,7 @@ def collect_crash_files_k8s(local_dir_path: str):
 
 
 def generate_sb_lc(dest_dir: str, sb_identifier: str,
-                   pod_name: str = None, msg: str = "SB", container_name: str = None):
+        pod_name: str = None, msg: str = "SB", container_name: str = None):
     """
     This function is used to generate support bundle
     :param dest_dir: target directory to create support bundle into

@@ -16,11 +16,11 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Unittest init file."""
+"""Unittest s3 init file."""
 
 import os
 import logging
-from src.commons.io.io_logger import StreamToLogger
+from src.commons.logger import StreamToLogger
 
 
 logger = logging.getLogger()

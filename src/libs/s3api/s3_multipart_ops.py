@@ -25,7 +25,7 @@ import logging
 import os
 
 from src.commons import cal_percent
-from src.io.s3api.s3_restapi import S3RestApi
+from src.libs.s3api.s3_restapi import S3RestApi
 
 logger = logging.getLogger(__name__)
 

@@ -35,15 +35,15 @@ from multiprocessing import Process, Manager
 
 import psutil
 
-from src.commons.io.io_logger import StreamToLogger
+from config import IO_DRIVER_CFG
+from config import S3_CFG
+from src.commons.logger import StreamToLogger
 from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
 from src.commons.utils import assert_utils
 from src.commons.utils.system_utils import mount_nfs_server
-from config import IO_DRIVER_CFG
-from config import S3_CFG
-from src.io import yaml_parser
-from src.io.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
-from src.io.tools.s3bench import S3bench
+from src.libs import yaml_parser
+from src.libs.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
+from src.libs.tools.s3bench import S3bench
 
 logger = logging.getLogger()
 
@@ -149,7 +149,7 @@ def update_process_termination(return_status):
 
 # pylint: disable=too-many-arguments
 def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low,
-                size_high, seed, part_low, part_high, duration=None):
+        size_high, seed, part_low, part_high, duration=None):
     """Execute S3bench tool and update error code if any, to process_state on termination."""
     logger.info("Start S3bench run ")
     s3bench = S3bench(access=access, secret=secret, endpoint=endpoint, test_id=test_id,

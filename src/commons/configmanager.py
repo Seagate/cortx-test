@@ -23,9 +23,9 @@ import logging
 from urllib.parse import quote_plus
 import yaml
 from pymongo import MongoClient
-from commons.utils import config_utils
-from commons import pswdmanager
-from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION, SETUP_DEFAULTS
+from src.commons.utils import config_utils
+from src.commons import pswdmanager
+from src.commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION, SETUP_DEFAULTS
 
 LOG = logging.getLogger(__name__)
 

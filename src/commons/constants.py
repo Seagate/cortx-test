@@ -374,7 +374,7 @@ class SwAlerts:
         # "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-        # "lnet.service", brings down motr-io service
+        # "lnet.service", brings down motr-libs service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",

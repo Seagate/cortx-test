@@ -18,19 +18,19 @@
 """
 JIRA Access Utility Class
 """
-import json
-import sys
-import traceback
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 import datetime
+import json
 import logging
+import sys
 import time
+from http import HTTPStatus
+
+import requests
+from jira import Issue
 from jira import JIRA
 from jira import JIRAError
-from jira import Issue
-from http import HTTPStatus
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,13 +43,13 @@ class JiraTask:
         self.headers = {
             'content-type': "application/json",
             'accept': "application/json",
-        }
+            }
         self.retry_strategy = Retry(
             total=10,
             backoff_factor=2,
             status_forcelist=[429, 500, 502, 503, 504, 400, 404, 408],
             method_whitelist=["HEAD", "GET", "OPTIONS"]
-        )
+            )
         self.adapter = HTTPAdapter(max_retries=self.retry_strategy)
         self.http = requests.Session()
         self.http.mount("https://", self.adapter)
@@ -208,7 +208,7 @@ class JiraTask:
                 break
             else:
                 LOGGER.info("get_test_list GET on %s failed", jira_url)
-                LOGGER.info("RESPONSE=%s\n",response.text)
+                LOGGER.info("RESPONSE=%s\n", response.text)
                 LOGGER.info("HEADERS=%s\n", response.request.headers)
                 LOGGER.info("BODY=%s", response.request.body)
                 sys.exit(1)
@@ -323,7 +323,7 @@ class JiraTask:
             return test_info
 
     def update_execution_details(self, test_run_id: str, test_id: str,
-                                 comment: str) -> bool:
+            comment: str) -> bool:
         """
         Add comment to the mentioned jira id.
         """

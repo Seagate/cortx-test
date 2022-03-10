@@ -19,7 +19,7 @@ import os
 import hashlib
 import logging
 from typing import List
-from src.io.s3api.s3_restapi import S3RestApi
+from src.libs.s3api.s3_restapi import S3RestApi
 
 logger = logging.getLogger(__name__)
 

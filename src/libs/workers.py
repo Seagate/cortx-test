@@ -28,12 +28,12 @@ make_sessions  is a decorator method and be used to spawn sessions
 """
 
 import concurrent.futures
-import os
 import logging
+import os
+import timeit
 from functools import wraps
 
 import psutil
-import timeit
 
 logger = logging.getLogger(__name__)
 

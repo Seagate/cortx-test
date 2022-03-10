@@ -54,8 +54,8 @@ DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
 IAM_POLICY_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
 S3_VER_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_versioning.yaml")
 PROV_CONFIG_PATH = "config/prov/test_prov_config.yaml"
-S3_IO_CFG_PATH = os.path.join(CONFIG_DIR, "io", "io_config.yaml")
-IO_DRIVER_CFG_PATH = os.path.join(CONFIG_DIR, "io", "io_driver_config.yaml")
+S3_IO_CFG_PATH = os.path.join(CONFIG_DIR, "libs", "io_config.yaml")
+IO_DRIVER_CFG_PATH = os.path.join(CONFIG_DIR, "libs", "io_driver_config.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'

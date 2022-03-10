@@ -22,7 +22,7 @@
 """Python Library to perform bucket operations using boto3 module."""
 
 import logging
-from src.io.s3api.s3_restapi import S3RestApi
+from src.libs.s3api.s3_restapi import S3RestApi
 
 LOGGER = logging.getLogger(__name__)
 

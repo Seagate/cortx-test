@@ -25,8 +25,8 @@ from typing import Union
 
 from botocore.exceptions import ClientError
 
-from src.io.s3api.s3_bucket_ops import S3Bucket
-from src.io.s3api.s3_object_ops import S3Object
+from src.libs.s3api.s3_bucket_ops import S3Bucket
+from src.libs.s3api.s3_object_ops import S3Object
 
 logger = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@
 import unittest
 import requests
 
-from src.io.workers import make_sessions
+from src.libs.workers import make_sessions
 from unittests.s3 import logger
 
 
