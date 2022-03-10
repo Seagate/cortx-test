@@ -173,7 +173,8 @@ def s3bench(
         duration=None,
         verbose=False,
         region="us-east-1",
-        log_file_prefix=""):
+        log_file_prefix="",
+        validate_certs=True):
     """
     To run s3bench tool
     :param access_key: S3 access key
@@ -193,6 +194,7 @@ def s3bench(
     :param verbose: verbose per thread status write and read
     :param region: Region name
     :param log_file_prefix: Test number prefix for log file
+    :param validate_certs: Validate SSL certificates
     :return: tuple with json response and log path
     """
     result = []
@@ -202,7 +204,8 @@ def s3bench(
     # GO command formatter
     cmd = f"s3bench -accessKey={access_key} -accessSecret={secret_key} " \
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
-          f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} "
+          f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} " \
+          f"-insecureSkipVerify={not validate_certs}"
     if region:
         cmd = cmd + f"-region {region} "
     if skip_write:

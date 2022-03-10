@@ -151,7 +151,8 @@ class TestDataPathValidation:
             num_sample=100,
             obj_name_pref=obj_prefix,
             obj_size="4Kb",
-            log_file_prefix=obj_prefix)
+            log_file_prefix=obj_prefix,
+            validate_certs=S3_CFG['validate_certs'])
         self.log.debug(res)
         self.log_file.append(res[1])
         resp = system_utils.validate_s3bench_parallel_execution(
