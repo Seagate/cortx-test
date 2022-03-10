@@ -646,7 +646,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED, \
             "User could not be created"
-        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
         self.log.info("Step 2: Create bucket and perform IO")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp.json()["keys"][0]["access_key"],
@@ -701,7 +701,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED
-        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
