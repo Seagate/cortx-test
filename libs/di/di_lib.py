@@ -33,9 +33,9 @@ from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
+from commons.exceptions import CortxTestException
 from commons.constants import MB
 from commons.constants import POD_NAME_PREFIX, PROD_FAMILY_LC, PROD_TYPE_K8S
-from commons.exceptions import CortxTestException
 from commons import params
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -275,7 +275,7 @@ def kill_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace)
                     retry_count -= 1
             if retry_count <= 0:
                 return False
-        return True
+    return True
 
 
 def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace):
@@ -288,7 +288,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
         for s3_container in s3_containers:
             counter = 0
             resp = None
-            while counter < 30:
+            while counter < 5:
                 try:
                     cmd = "pgrep s3server 2> /dev/null"
                     resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
@@ -303,7 +303,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
                 except IOError as err:
                     LOGGER.info("err: %s ", err)
                     counter = counter + 1
-                    time.sleep(1)
+                    time.sleep(30)
             if not resp:
                 return False
     return True
