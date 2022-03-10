@@ -630,7 +630,7 @@ class TestJcloudAndJclient:
         self.log.info("STARTED: max no of buckets supported using jcloudclient")
         common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
         self.log.info("Step 1 : Delete all buckets exist for the user")
-        resp = self.s3t_obj.delete_all_buckets()
+        resp = self.s3_test_obj.delete_all_buckets()
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Step 1 : Deleted all buckets exist for the user")
