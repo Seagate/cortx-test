@@ -1,17 +1,16 @@
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -28,11 +27,13 @@ import hashlib
 import logging
 import json
 import xmltodict
-from config import S3_CFG
 from hashlib import md5
 from random import shuffle
 from typing import Any
+from config import S3_CFG, CMN_CFG
 
+from commons.utils import assert_utils
+from commons import constants as const
 
 
 LOGGER = logging.getLogger(__name__)
@@ -377,3 +378,10 @@ def create_multipart_json(json_path, parts_list) -> tuple:
         json.dump(parts, file_obj)
 
     return os.path.exists(json_path), json_path
+
+def assert_s3_err_msg(rgw_error, cortx_error, cmn_cfg, error):
+    """Checks the s3 engine type and asserts accordingly """
+    if const.S3_ENGINE_RGW == cmn_cfg:
+        assert_utils.assert_equal(rgw_error, error.message, error.message)
+    else:
+        assert_utils.assert_equal(cortx_error, error.message, error.message)

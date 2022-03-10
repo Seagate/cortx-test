@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -34,9 +33,9 @@ from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
+from commons.exceptions import CortxTestException
 from commons.constants import MB
 from commons.constants import POD_NAME_PREFIX, PROD_FAMILY_LC, PROD_TYPE_K8S
-from commons.exceptions import CortxTestException
 from commons import params
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -276,7 +275,7 @@ def kill_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace)
                     retry_count -= 1
             if retry_count <= 0:
                 return False
-        return True
+    return True
 
 
 def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace):
@@ -289,7 +288,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
         for s3_container in s3_containers:
             counter = 0
             resp = None
-            while counter < 30:
+            while counter < 5:
                 try:
                     cmd = "pgrep s3server 2> /dev/null"
                     resp = master_node.send_k8s_cmd(operation="exec", pod=pod, namespace=namespace,
@@ -304,7 +303,7 @@ def check_s3_process_in_k8s(master_node: LogicalNode, data_pods: list, namespace
                 except IOError as err:
                     LOGGER.info("err: %s ", err)
                     counter = counter + 1
-                    time.sleep(1)
+                    time.sleep(30)
             if not resp:
                 return False
     return True

@@ -1,3 +1,25 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""Test bot or worker which filters the tests based on Jira Test Plan or Kafka Message.
+Runs test sequentially or in parallel and report the results to DB and Jira.
+"""
 import os
 import sys
 import subprocess
@@ -134,23 +156,25 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         te_id = str(args.te_ticket) + "_"
     if re_execution:
         te_tag = None
-        report_name = "--html=log/re_non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')\
-                      + args.html_report
+        report_name = "--html=log/re_non_parallel_" + te_id +\
+                      datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
     else:
         if parallel_exe and not args.force_serial_run:
-            report_name = "--html=log/parallel_" + te_id + args.html_report
+            report_name = "--html=log/parallel_" + te_id + \
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, '-d', "--tx",
                         prc_cnt, force_serial_run]
         elif parallel_exe and args.force_serial_run:
-            report_name = "--html=log/parallel_" + te_id + args.html_report
+            report_name = "--html=log/parallel_" + te_id + \
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
         else:
-            report_name = "--html=log/non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f') \
-                          + args.html_report
+            report_name = "--html=log/non_parallel_" + te_id +\
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
 
