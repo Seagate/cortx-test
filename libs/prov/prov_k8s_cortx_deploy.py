@@ -949,7 +949,7 @@ class ProvDeployK8sCortxLib:
         system_utils.remove_file(file_path)
         resp = s3t_obj.get_object(bucket=bucket_name, key=test_file)
         with open(file_path, "wb") as data:
-            data.write(resp['Body'].read())
+            data.write(resp[1]['Body'].read())
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Verifying checksum of downloaded file with old file should be same")
