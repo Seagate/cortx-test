@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -38,6 +39,7 @@ from libs.csm.csm_interface import csm_api_factory
 from config import CSM_REST_CFG
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestS3user():
     """S3 user test class"""
 
