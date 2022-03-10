@@ -959,7 +959,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_equal(chksm_before_put_obj, chksm_after_dwnld_obj)
 
         LOGGER.info("Delete the file from the bucket")
-        resp = s3t_obj.delete_object(bucket_name, file_path)
+        resp = s3t_obj.delete_object(bucket_name, test_file)
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Delete downloaded file")
