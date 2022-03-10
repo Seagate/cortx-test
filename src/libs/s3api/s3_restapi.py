@@ -26,7 +26,7 @@ import logging
 from aiobotocore.config import AioConfig
 from aiobotocore.session import get_session
 
-from config.s3 import S3_CFG
+from config import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 

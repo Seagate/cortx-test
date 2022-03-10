@@ -92,7 +92,7 @@ class Warp:
                    f"--obj.size {self.size_high}b --benchdata {self.log} " \
                    f"--disable-multipart --analyze.v "
         if self.random_size:
-            self.cmd = self.cmd + " --obj.randsize"
+            self.cmd += " --obj.randsize"
         self.execute_command(self.cmd)
         return self.check_errors()
 

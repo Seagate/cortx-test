@@ -47,7 +47,7 @@ from src.libs.tools.s3bench import S3bench
 
 logger = logging.getLogger()
 
-sched_obj = sched.scheduler(time.time, time.sleep)
+sched_obj = sched.scheduler(time.time)
 manager = Manager()
 process_states = manager.dict()
 event_list = list()

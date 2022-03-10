@@ -129,7 +129,7 @@ class S3bench:
         counter = 0
         # Poll for either process completion or for timeout
         while counter < duration and proc.poll() is None:
-            counter = counter + 5
+            counter += 5
             time.sleep(5)
         if proc.poll() is None:
             LOGGER.info("S3bench workload still running, Terminating.")
@@ -155,7 +155,7 @@ class S3bench:
         """
         i = 0
         while True:
-            i = i + 1
+            i += 1
             LOGGER.info("Iteration %s", i)
             iter_del = i - 5  # Iteration logs to be deleted
             if iter_del > 0:  # Delete logs
@@ -178,15 +178,15 @@ class S3bench:
                   f"-objectNamePrefix={self.object_prefix} -multipartSize={part_size}b -t json "
 
             if self.head:
-                cmd = cmd + "-headObj "
+                cmd += "-headObj "
             if self.skip_write:
-                cmd = cmd + "-skipWrite "
+                cmd += "-skipWrite "
             if self.skip_read:
-                cmd = cmd + "-skipRead "
+                cmd += "-skipRead "
             if self.skip_cleanup:
-                cmd = cmd + "-skipCleanup "
+                cmd += "-skipCleanup "
             if self.validate:
-                cmd = cmd + "-validate"
+                cmd += "-validate"
 
             report = f"{self.report_file}-{i}.log"
             cli_log = f"{self.cli_log}-{i}.log"

@@ -66,7 +66,7 @@ class S3Bucket(S3RestApi):
         """
         async with self.get_client() as client:
             response = await client.head_bucket(Bucket=bucket_name)
-            LOGGER.debug("head_bucket: %s, Response: %s", bucket_name,response)
+            LOGGER.debug("head_bucket: %s, Response: %s", bucket_name, response)
 
         return response
 
