@@ -963,7 +963,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Delete downloaded file")
-        resp = system_utils.remove_file(test_file)
+        resp = system_utils.remove_file(file_path)
         assert_utils.assert_true(resp[0], resp[1])
 
     def basic_io_write_read_validate(self, s3t_obj: S3TestLib, bucket_name: str):
