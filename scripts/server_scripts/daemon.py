@@ -6,6 +6,7 @@ import atexit
 from signal import SIGTERM
 import shlex
 
+
 class Daemon:
     """
     A generic daemon class.
@@ -60,7 +61,7 @@ class Daemon:
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        open(self.pidfile,'w+').write("%s\n" % pid)
+        open(self.pidfile, 'w+').write("%s\n" % pid)
 
     def delpid(self):
         os.remove(self.pidfile)
@@ -71,7 +72,7 @@ class Daemon:
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pf = open(self.pidfile,'r')
+            pf = open(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -92,7 +93,7 @@ class Daemon:
         """
         # Get the pid from the pidfile
         try:
-            pf = open(self.pidfile,'r')
+            pf = open(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -101,7 +102,7 @@ class Daemon:
         if not pid:
             message = "pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
-            return # not an error in a restart
+            return  # not an error in a restart
 
         # Try killing the daemon process
         try:
@@ -114,8 +115,8 @@ class Daemon:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
                 else:
-                     print(str(err))
-                     sys.exit(1)
+                    print(str(err))
+                    sys.exit(1)
 
     def restart(self):
         """
@@ -126,10 +127,11 @@ class Daemon:
 
     def run(self):
         """
-        You should override this method when you subclass Daemon. It will be called after the process has been
-        daemonized by start() or restart().
+        You should override this method when you subclass Daemon. It will be called after the
+        process has been daemonized by start() or restart().
         """
         pass
+
 
 class DaemonSub(Daemon, object):
     def __init__(self, prg_args, pidfile):
@@ -142,9 +144,9 @@ class DaemonSub(Daemon, object):
         try:
             os.execvp(self.prg, self.prg_args)
         except Exception as excp:
-            syslog.syslog("pysnas: Daemon. run exited for %s with %s\n" % \
-                          (self.prg, str(excp)))
+            syslog.syslog("pysnas: Daemon. run exited for %s with %s\n" % (self.prg, str(excp)))
             raise excp
+
 
 if __name__ == "__main__":
     worker_loop_cmd = "/usr/bin/python3 /root/test_receiver.py"
