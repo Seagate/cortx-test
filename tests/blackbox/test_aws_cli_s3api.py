@@ -39,7 +39,6 @@ from config import CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 
 
-
 class TestAwsCliS3Api:
     """Blackbox AWS CLI S3API Testsuite"""
 
@@ -147,6 +146,11 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_create_max_buckets_2331(self):
         """max no(1000) of buckets supported using aws cli."""
+        self.log.info("Step 1 : Delete all buckets exist for the user")
+        resp = self.s3t_obj.delete_all_buckets()
+        self.log.info(resp)
+        assert resp[0], resp[1]
+        self.log.info("Step 2 : Start creating buckets:")
         for i in range(1000):
             bucket_name = "blackboxs3bkt-{}-{}".format(i, time.perf_counter_ns())
             resp = self.s3t_obj.create_bucket_awscli(bucket_name=bucket_name)
