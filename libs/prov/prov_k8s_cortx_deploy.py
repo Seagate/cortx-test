@@ -1347,9 +1347,10 @@ class ProvDeployK8sCortxLib:
 
         return config_list
 
-    def upgrade_software(self, node_obj: LogicalNode, git_remote_path: str,
+    @staticmethod
+    def upgrade_software(node_obj: LogicalNode, git_remote_path: str,
                          upgrade_type: str = "rolling", granular_type: str = "all",
-                         **kwargs) -> tuple:
+                         exc: bool = True) -> tuple:
         """
         Helper function to Upgrade CORTX stack.
         :param node_obj: Master node(Logical Node object)
@@ -1360,7 +1361,6 @@ class ProvDeployK8sCortxLib:
         :return: True/False
         """
         LOGGER.info("Upgrading CORTX image version.")
-        exc = kwargs.get('exc', True)
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         if upgrade_type == "rolling":
             cmd = "cd {}; {}".format(git_remote_path,

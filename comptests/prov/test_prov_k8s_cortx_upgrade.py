@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,11 +73,6 @@ class TestProvK8CortxRollingUpgrade:
             else:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
-
-    @classmethod
-    def teardown_class(cls):
-        """Test teardown class."""
-        pass
 
     def perform_upgrade(self, exc: bool = True):
         """Function calls upgrade and put return value in queue object."""
