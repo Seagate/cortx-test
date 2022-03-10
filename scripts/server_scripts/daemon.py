@@ -5,6 +5,7 @@ import time
 import atexit
 from signal import SIGTERM
 import shlex
+import syslog
 
 
 class Daemon:

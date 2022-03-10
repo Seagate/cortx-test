@@ -31,7 +31,7 @@ echo -n "Waiting for new s3 processes to start"
 for i in "${cortx_data_pod_array[@]}"
 do
   s3_containers=()
-  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods $i -o jsonpath='{.spec.containers[*].name}' | grep -o "cortx-s3-[0-9]*[0-9]")
+  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods "$i" -o jsonpath='{.spec.containers[*].name}' | grep -o "cortx-s3-[0-9]*[0-9]")
   for j in "${s3_containers[@]}"; do
     for k in $(seq 1 30)
     do
