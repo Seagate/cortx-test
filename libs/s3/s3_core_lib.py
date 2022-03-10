@@ -324,10 +324,9 @@ class S3Lib(S3Rest):
         :return: response.
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
-        LOGGER.debug(
-            "The %s has been downloaded successfully at mentioned file path %s",
-            obj_name,
-            file_path)
+        LOGGER.debug("The %s has been downloaded successfully at mentioned file path %s",
+                     obj_name,
+                     file_path)
 
         return file_path
 
@@ -384,6 +383,8 @@ class S3Lib(S3Rest):
             response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
         else:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
+            with open(key, "wb") as data:
+                data.write(response['Body'].read())
         LOGGER.debug(response)
 
         return response

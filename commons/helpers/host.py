@@ -187,7 +187,6 @@ class Host(AbsHost):
         :param cmd: command user wants to execute on host.
         :param read_lines: Response will be return using readlines() else using read().
         :param inputs: used to pass yes argument to commands.
-        :param nbytes: nbytes returns string buffer.
         :param timeout: command and connect timeout.
         :param exc: Flag to disable/enable exception raising
         :param read_nbytes: maximum number of bytes to read.
@@ -196,11 +195,13 @@ class Host(AbsHost):
         timer = time.time()
         timeout = kwargs.get('timeout', 400)
         check_recv_ready = kwargs.get('recv_ready', False)
+        if 'recv_ready' in kwargs.keys():
+            kwargs.pop('recv_ready')
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
         LOGGER.debug(f"Executing {cmd}")
-        self.connect(timeout=timeout, **kwargs)  # fn will raise an exception
+        self.connect(**kwargs)  # fn will raise an exception
         stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)  # nosec
         # above is non blocking call and timeout is set for SSL handshake and command
         if check_recv_ready:
