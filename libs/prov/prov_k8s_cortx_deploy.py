@@ -45,6 +45,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
+from libs.ras.ras_test_lib import RASTestLib
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -253,9 +254,16 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Deploy Cortx cloud")
         cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        return True, resp
+        try:
+            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True, timeout=7200)
+            LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+            return True, resp
+        except TimeoutError as error:
+            LOGGER.error(error, "7200")
+            RASTestLib(node_obj.hostname,
+                       node_obj.username, node_obj.password).kill_remote_process(cmd)
+        except IOError as error:
+            return False, error
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
@@ -463,10 +471,13 @@ class ProvDeployK8sCortxLib:
             sys_disk_pernode.update(schema)
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
-        # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath, log_path, size,
-                                                    nodeport_http, nodeport_https,
-                                                    control_nodeport_https, service_type)
+        # Update the solution yaml file with password,service_type and ports
+        resp_passwd = self.update_miscellaneous_param(filepath, log_path, size,
+                                                      nodeport_http=self.nodeport_http,
+                                                      nodeport_https=self.nodeport_https,
+                                                      control_nodeport_https=
+                                                      self.control_nodeport_https,
+                                                      service_type=self.service_type)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -647,10 +658,8 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    # pylint: disable=too-many-arguments,too-many-locals
-    def update_password_sol_file(self, filepath, log_path, size,
-                                 nodeport_http, nodeport_https,
-                                 control_nodeport_https, service_type):
+    def update_miscellaneous_param(self, filepath, log_path, size,
+                                   **kwargs):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
@@ -661,6 +670,11 @@ class ProvDeployK8sCortxLib:
         Param: control_nodeport_https: https Port for node port service for control
         :returns the status, filepath
         """
+        service_type = kwargs.get('service_type', self.deploy_cfg['service_type'])
+        nodeport_http = kwargs.get('nodeport_http', self.deploy_cfg['http_port'])
+        nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
+        control_nodeport_https = kwargs.get('control_nodeport_https',
+                                            self.deploy_cfg['control_port_https'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -772,7 +786,8 @@ class ProvDeployK8sCortxLib:
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
-            resp = master_node_obj.execute_cmd(cmd=destroy_cmd)
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True,
+                                               timeout=900)
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
                 resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
@@ -928,7 +943,7 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("Removing local file from client and downloading object")
         system_utils.remove_file(file_path)
-        resp = s3t_obj.object_download(bucket_name, test_file, file_path)
+        resp = s3t_obj.get_object(bucket=bucket_name, key=test_file)
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Verifying checksum of downloaded file with old file should be same")
@@ -974,14 +989,17 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Basic IO Completed")
 
     @staticmethod
-    def io_workload(access_key, secret_key, bucket_prefix, clients=5):
+    def io_workload(access_key, secret_key, bucket_prefix, clients=5,
+                    **kwargs):
         """
         S3 bench workload test executed for each of Erasure coding config
         param: access_key: s3 user access key
         param: secret_key: s3 user secret keys
         param: bucket_prefix: bucket prefix
         param: client: no clients request
+        param: endpoint_url: endpoint url
         """
+        endpoint_url = kwargs.get('endpoint_url', "s3.seagate.com")
         LOGGER.info("STARTED: S3 bench workload test")
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
@@ -1001,7 +1019,8 @@ class ProvDeployK8sCortxLib:
                                    num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
                                    obj_size=workload,
-                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
+                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix,
+                                   end_point=endpoint_url)
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -1207,7 +1226,7 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name)
+                                 bucket_prefix=bucket_name, endpoint_url="http://"+ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
