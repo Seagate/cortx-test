@@ -5,7 +5,7 @@ import time
 import atexit
 from signal import SIGTERM
 import shlex
-import syslog
+import logging
 
 
 class Daemon:
@@ -145,7 +145,7 @@ class DaemonSub(Daemon, object):
         try:
             os.execvp(self.prg, self.prg_args)
         except Exception as excp:
-            syslog.syslog("pysnas: Daemon. run exited for %s with %s\n" % (self.prg, str(excp)))
+            logging.info("pysnas: Daemon. run exited for %s with %s\n" % (self.prg, str(excp)))
             raise excp
 
 
