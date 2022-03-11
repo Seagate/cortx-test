@@ -738,7 +738,11 @@ class HAK8s:
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+        try:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+        except IOError as error:
+            LOGGER.error("Error: Not able to get cluster config file")
+            return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
             if "FAILED" in line:
