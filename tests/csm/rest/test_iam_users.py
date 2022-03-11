@@ -421,7 +421,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -441,7 +441,8 @@ class TestIamUserRGW():
             optional_payload.update({"tenant": tenant})
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
-            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, 
+                                   "IAM user creation failed")
             self.created_iam_users.add(resp1.json()['tenant'] + "$" + optional_payload['uid'])
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
             self.log.info("Printing response %s", resp)
@@ -470,13 +471,12 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
             resp = s3_obj.get_object(bucket_name, test_file)
-            self.log.info("printing resp[0] %s",resp[0])
-            self.log.info("printing resp %s", resp)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    # pylint: disable=broad-except
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -508,13 +508,12 @@ class TestIamUserRGW():
             status, resp = s3_obj.create_bucket(bucket_name)
             self.log.info("Printing response %s", resp.json())
             assert_utils.assert_false(status, resp)
-        except Exception as e:
-            self.log.info("print exception name %s", type(e).__name__)
-            self.log.info("Expected exception received %s", e)
+        except Exception as error:
+            self.log.info("Expected exception received %s", error)
         self.log.info("[END]Creating IAM user with suspended")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -564,16 +563,15 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp[0], resp)
             else:
                 try:
-                   status, resp = s3_obj.create_bucket(bucket_name)
-                   self.log.info("Printing response %s", resp.json())
-                   assert_utils.assert_false(status, resp)
-                except Exception as e:
-                   self.log.info("print exception name %s", type(e).__name__)
-                   self.log.info("Expected exception received %s", e)
+                    status, resp = s3_obj.create_bucket(bucket_name)
+                    self.log.info("Printing response %s", resp.json())
+                    assert_utils.assert_false(status, resp)
+                except Exception as error:
+                    self.log.info("Expected exception received %s", error)
         self.log.info("[END]Creating IAM user with max bucket 1")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -593,7 +591,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
-        for bucket_cnt in range(10):
+        for bucket_cnt in range(1001):
             bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
             # Create bucket with bucket_name and perform IO
             s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
@@ -622,7 +620,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -644,8 +642,8 @@ class TestIamUserRGW():
                      "IAM user creation failed")
         self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
         self.log.info("Printing keys %s", resp.json()["keys"])
-        for el in resp.json()["keys"]:
-            if "access_key" in el or "secret_key" in el:
+        for key in resp.json()["keys"]:
+            if "access_key" in key or "secret_key" in key:
                 assert_utils.assert_true(False, "access and secret keys available in response")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
