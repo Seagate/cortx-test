@@ -187,15 +187,20 @@ class TestMinioClient:
     def test_max_bucket_2348(self):
         """Max no of buckets supported using Minion Client."""
         self.log.info("STARTED: Max no of buckets supported using Minion Client")
-        self.log.info("Step 1: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
+        self.log.info("Step 1 : Delete all existing buckets for the user")
+        resp = self.s3t_obj.delete_all_buckets()
+        self.log.info(resp)
+        assert resp[0], resp[1]
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
+        self.log.info("Step 2: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
             cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name) + self.minio_obj.validate_cert
             resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
             self.minio_bucket_list.append(bkt_name)
-        self.log.info("Step 1: Created %s buckets using minio", self.minio_cnf["no_of_buckets"])
-        self.log.info("Step 2: Verifying buckets are created")
+        self.log.info("Step 2: Created %s buckets using minio", self.minio_cnf["no_of_buckets"])
+        self.log.info("Step 3: Verifying buckets are created")
         bucket_list = self.s3t_obj.bucket_list()[1]
         for each_bucket in self.minio_bucket_list:
             assert_utils.assert_in(each_bucket, bucket_list)
@@ -205,7 +210,7 @@ class TestMinioClient:
             self.minio_bucket_list = list()
         else:
             self.log.info("Buckets are not deleted: %s", output)
-        self.log.info("Step 2: Verified that buckets are created")
+        self.log.info("Step 3: Verified that buckets are created")
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
     @pytest.mark.parallel
