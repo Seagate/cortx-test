@@ -187,11 +187,11 @@ class TestMinioClient:
     def test_max_bucket_2348(self):
         """Max no of buckets supported using Minion Client."""
         self.log.info("STARTED: Max no of buckets supported using Minion Client")
-        self.log.info("Step 1 : Delete all existing buckets exist for the user")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
         resp = self.s3t_obj.delete_all_buckets()
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Step 1 : Deleted all existing buckets exist for the user")
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
         self.log.info("Step 2: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))

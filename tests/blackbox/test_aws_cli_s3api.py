@@ -146,7 +146,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_create_max_buckets_2331(self):
         """max no(1000) of buckets supported using aws cli."""
-        self.log.info("Step 1 : Delete all existing buckets exist for the user")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
         resp = self.s3t_obj.delete_all_buckets()
         self.log.info(resp)
         assert resp[0], resp[1]

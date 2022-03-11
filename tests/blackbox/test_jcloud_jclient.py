@@ -629,11 +629,11 @@ class TestJcloudAndJclient:
         """max no of buckets supported using jcloudclient."""
         self.log.info("STARTED: max no of buckets supported using jcloudclient")
         common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
-        self.log.info("Step 1 : Delete all existing buckets exist for the user")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
         resp = self.s3_test_obj.delete_all_buckets()
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Step 1 : Deleted all existing buckets exist for the user")
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
         self.log.info("STEP 2: Creating n buckets")
         for bkt in range(1000):
             bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
@@ -707,11 +707,11 @@ class TestJcloudAndJclient:
         """max no of buckets supported using Jclient."""
         self.log.info("STARTED: max no of buckets supported using Jclient")
         common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
-        self.log.info("Step 1 : Delete all existing buckets exist for the user")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
         resp = self.s3_test_obj.delete_all_buckets()
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Step 1 : Deleted all existing buckets exist for the user")
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
         self.log.info("STEP 2: Creating n buckets")
         for bkt in range(1000):
             bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
