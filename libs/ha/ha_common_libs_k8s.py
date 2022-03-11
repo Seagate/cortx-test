@@ -741,7 +741,7 @@ class HAK8s:
         try:
             resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         except IOError as error:
-            LOGGER.error("Error: Not able to get cluster config file")
+            LOGGER.error("Error: Cluster status has some failures.")
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
