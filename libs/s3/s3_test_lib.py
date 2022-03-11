@@ -327,7 +327,7 @@ class S3TestLib(S3Lib):
             file_path: str = None,
             **kwargs) -> tuple:
         """
-        Downloading Object of the required Bucket.
+        Downloading Object of the required Bucket using range read
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
@@ -338,6 +338,7 @@ class S3TestLib(S3Lib):
             if os.path.exists(file_path):
                 os.remove(file_path)
             LOGGER.info("Starting downloading the object")
+
             response = super().object_download(bucket_name, obj_name, file_path, **kwargs)
             LOGGER.debug(
                 "The %s has been downloaded successfully at mentioned file path %s",
