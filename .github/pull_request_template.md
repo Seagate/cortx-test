@@ -28,4 +28,4 @@
 
 # Documentation
   Checklist for Author
-- [ ] Changes done to ReadMe / WIKI / Confluence page / Quick Start Guide
+-  [ ] Changes done to ReadMe / WIKI / Confluence page / Quick Start Guide
