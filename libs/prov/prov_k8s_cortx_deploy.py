@@ -1434,31 +1434,3 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("RPM is %s", installed_rpm)
             return True, installed_rpm
         return False, installed_rpm
-
-    @staticmethod
-    def get_installed_version(master_node_obj: LogicalNode, local_conf_path: str) -> tuple:
-        """
-        Helper function to get cortx installed version.
-        :param master_node_obj: Master node(Logical Node object)
-        :param local_conf_path: Local conf file path.
-        :return: True/False and installed version/error
-        """
-        pvc_list = master_node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        data_pvc = None
-        for data_pvc in pvc_list:
-            if common_const.POD_NAME_PREFIX in data_pvc:
-                data_pvc = data_pvc.replace("\n", "")
-                LOGGER.info("Data PVC: %s", data_pvc)
-                break
-
-        remote_path = common_const.HA_LOG + data_pvc + "/cluster.conf"
-        master_node_obj.copy_file_to_local(remote_path=remote_path, local_path=local_conf_path)
-        stream = open(local_conf_path, 'r')
-        data = yaml.safe_load(stream)
-        try:
-            installed_version = data['cortx']['common']['release']['version']
-            LOGGER.debug("Installed CORTX Image Version: %s", installed_version)
-        except KeyError as error:
-            LOGGER.error("Version missing in cluster.conf")
-            return False, error
-        return True, installed_version

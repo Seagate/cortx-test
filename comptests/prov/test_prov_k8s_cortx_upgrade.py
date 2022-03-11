@@ -33,6 +33,7 @@ from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +61,6 @@ class TestProvK8CortxRollingUpgrade:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
-        cls.local_path = cons.LOCAL_CONF_PATH
         cls.local_sol_path = cons.LOCAL_SOLUTION_PATH
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
@@ -92,9 +92,9 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = self.deploy_lc_obj.get_installed_version(self.master_node_obj, self.local_path)
+        resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        installed_version = resp[1]
+        installed_version = resp[1]['cortx']['common']['release']['version']
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -152,9 +152,9 @@ class TestProvK8CortxRollingUpgrade:
         LOGGER.info("Step 6: Done.")
 
         LOGGER.info("Step 7: Check if installed version is equals to installing version.")
-        resp = self.deploy_lc_obj.get_installed_version(self.master_node_obj, self.local_path)
+        resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]
+        new_installed_version = resp[1]['cortx']['common']['release']['version']
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
                                    "Installing version is not equal to new installed version.")
@@ -236,9 +236,9 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = self.deploy_lc_obj.get_installed_version(self.master_node_obj, self.local_path)
+        resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        installed_version = resp[1]
+        installed_version = resp[1]['cortx']['common']['release']['version']
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
