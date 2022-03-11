@@ -94,6 +94,7 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
+  gateway: "0.0.0.0"
   per_step_delay: 30
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"

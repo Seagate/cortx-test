@@ -711,6 +711,8 @@ def pytest_runtest_makereport(item, call):
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
                              str(exception), test_id)
     if report.when == 'teardown':
+        mode = "a"  # defaults
+        current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
         if item.rep_setup.failed or item.rep_teardown.failed:
             current_file = fail_file
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
@@ -724,6 +726,9 @@ def pytest_runtest_makereport(item, call):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+        elif item.rep_setup.skipped or item.rep_call.skipped or item.rep_teardown.skipped:
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         with open(current_file, mode) as f:
