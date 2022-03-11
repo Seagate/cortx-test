@@ -441,8 +441,8 @@ class TestIamUserRGW():
             optional_payload.update({"tenant": tenant})
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
-            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, 
-                                   "IAM user creation failed")
+            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                            "IAM user creation failed")
             self.created_iam_users.add(resp1.json()['tenant'] + "$" + optional_payload['uid'])
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
             self.log.info("Printing response %s", resp)
@@ -497,7 +497,8 @@ class TestIamUserRGW():
         payload.update({"suspended": True})
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp1)
-        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                      "IAM user creation failed")
         self.created_iam_users.add(resp1.json()['tenant'] + "$" + uid)
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         assert_utils.assert_true(resp[0], resp[1])
