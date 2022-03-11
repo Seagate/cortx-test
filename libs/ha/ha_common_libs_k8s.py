@@ -53,6 +53,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
+# pylint: disable=R0904
 class HAK8s:
     """
     This class contains common utility methods for HA related operations.
