@@ -121,11 +121,11 @@ class TestProvK8CortxRollingUpgrade:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']
             soln.close()
-        parent_key['images']['cortxcontrol'] = self.cortx_all_image
-        parent_key['images']['cortxdata'] = self.cortx_all_image
-        parent_key['images']['cortxserver'] = self.cortx_rgw_image
-        parent_key['images']['cortxha'] = self.cortx_all_image
-        parent_key['images']['cortxclient'] = self.cortx_all_image
+        for image in self.prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = self.cortx_rgw_image
+            else:
+                parent_key['images'][image] = self.cortx_all_image
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(self.local_sol_path, 'w') as pointer:
@@ -184,7 +184,8 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check Cluster health and services.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="cortx-data")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
+                                                  pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
         LOGGER.info("Test Completed.")
@@ -198,7 +199,7 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
-        pod_name = self.master_node_obj.get_pod_name(pod_prefix="cortx-data")
+        pod_name = self.master_node_obj.get_pod_name(pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(pod_name[0], pod_name[1])
         LOGGER.info("Step 1: Done.")
 
@@ -252,7 +253,8 @@ class TestProvK8CortxRollingUpgrade:
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix="cortx-data")
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
+                                                  pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
 
@@ -265,11 +267,11 @@ class TestProvK8CortxRollingUpgrade:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']
             soln.close()
-        parent_key['images']['cortxcontrol'] = self.cortx_all_parallel_image
-        parent_key['images']['cortxdata'] = self.cortx_all_parallel_image
-        parent_key['images']['cortxserver'] = self.cortx_rgw_parallel_image
-        parent_key['images']['cortxha'] = self.cortx_all_parallel_image
-        parent_key['images']['cortxclient'] = self.cortx_all_parallel_image
+        for image in self.prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = self.cortx_rgw_image
+            else:
+                parent_key['images'][image] = self.cortx_all_image
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(self.local_sol_path, 'w') as pointer:
