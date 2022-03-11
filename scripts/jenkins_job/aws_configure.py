@@ -114,6 +114,7 @@ def test_create_acc_aws_conf():
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
     endpoint = CMN_CFG["lb"]
+    endpoint = "http://{}".format(endpoint)
     s3_engine = CMN_CFG["s3_engine"]
     print("Installing s3 tools")
     if s3_engine == const.S3_ENGINE_RGW: # for RGW
