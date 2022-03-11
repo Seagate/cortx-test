@@ -145,7 +145,7 @@ class DaemonSub(Daemon, object):
         try:
             os.execvp(self.prg, self.prg_args)
         except Exception as excp:
-            logging.info("pysnas: Daemon. run exited for %s with %s\n" % (self.prg, str(excp)))
+            logging.info("pysnas: Daemon. run exited for %s with %s", self.prg, str(excp))
             raise excp
 
 
