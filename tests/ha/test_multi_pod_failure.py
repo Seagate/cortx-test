@@ -83,6 +83,7 @@ class TestMultiPodFailure:
         cls.node_worker_list = []
         cls.pod_name_list = []
         cls.node_name_list = []
+        cls.node_ip_list = []
         cls.srv_pod_host_list = []
         cls.data_pod_host_list = []
         cls.ha_obj = HAK8s()
@@ -93,6 +94,7 @@ class TestMultiPodFailure:
         cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.pod_dict = {}
+        cls.ip_dict = {}
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.motr_obj = MotrCoreK8s()
@@ -192,11 +194,14 @@ class TestMultiPodFailure:
                             " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
                 time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
         if self.restore_ip:
-            LOGGER.info("Cleanup: Get the network interface up for %s ip", self.node_ip)
-            self.new_worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(self.node_iface, "up"),
+            for node_ip in self.node_ip_list:
+                LOGGER.info("Cleanup: Get the network interface up for %s ip", node_ip)
+                node_iface = self.ip_dict.get(node_ip)[0]
+                worker_obj = self.ip_dict.get(node_ip)[1]
+                worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(node_iface, "up"),
                                             read_lines=True)
-            resp = sysutils.check_ping(host=self.node_ip)
-            assert_utils.assert_true(resp, "Interface is still not up.")
+                resp = sysutils.check_ping(host=node_ip)
+                assert_utils.assert_true(resp, "Interface is still not up.")
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
         # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
@@ -2206,3 +2211,102 @@ class TestMultiPodFailure:
 
         LOGGER.info("Completed: Test to verify degraded DELETEs after each pod failure till K "
                     "data pods fail.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
+    @pytest.mark.tags("TEST-35788")
+    @CTFailOn(error_handler)
+    def test_kpods_fail_node_down(self):
+        """
+        Test to Verify degraded IOs after multiple (max K) pods (data and server) failures
+        with network of node hosting them going down.
+        """
+        LOGGER.info("Started: Test to Verify degraded IOs after multiple (max K) pods "
+                    "(data and server) failures with network of node hosting them going down.")
+
+        LOGGER.info("Step 1: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35788'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Delete data and server pods by shutting down network on node they "
+                    "are hosted on.")
+        count = 1
+        data_pod_list = remain_pod_list1 = \
+            self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        server_pod_list = remain_pod_list2 = \
+            self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        while count < self.kvalue:
+            pod_data = []
+            ip_data = []
+            resp = self.ha_obj.get_data_pod_no_ha_control(remain_pod_list1,
+                                                          self.node_master_list[0])
+            data_pod_name = resp[0]
+            server_pod_name = resp[1]
+            data_node_fqdn = resp[2]
+            self.pod_name_list.append(data_pod_name)
+            self.pod_name_list.append(server_pod_name)
+            pod_data.append(self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name))
+            LOGGER.info("Get the ip of the host from the node %s", data_node_fqdn)
+            resp = self.ha_obj.get_nw_iface_node_down(host_list=self.host_worker_list,
+                                                      node_list=self.node_worker_list,
+                                                      node_fqdn=data_node_fqdn)
+            node_ip = resp[1]
+            ip_data.append(resp[2]) # node_iface
+            ip_data.append(resp[3]) # new_worker_obj
+            self.node_ip_list.append(node_ip) # node_ip_list
+            assert_utils.assert_true(resp[0], "Node network is still up")
+            LOGGER.info("Step 2: %s Node's network is down.", data_node_fqdn)
+            remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
+            remain_pod_list2 = list(filter(lambda x: x != server_pod_name, server_pod_list))
+            count += 1
+            self.pod_dict[data_pod_name] = pod_data
+            self.pod_dict[server_pod_name] = pod_data
+            self.ip_dict[node_ip] = ip_data
+
+        LOGGER.info("Step 2: Deleted %s data and server pods by shutting down network of "
+                    "the node hosting them.", count)
+        remain_pod_list = remain_pod_list1 + remain_pod_list2
+        self.restore_ip = self.deploy = True
+        running_pod = random.sample(remain_pod_list1, 1)[0]
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0],
+                                                pod_list=remain_pod_list1)
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on data and server pod")
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname,
+                                                               pod_name=running_pod)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of data and server pods are in offline state")
+
+        LOGGER.info("Step 5: Check services status on remaining pods %s", remain_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False,
+                                                           pod_name=running_pod)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services status on remaining pod are in online state")
+
+        LOGGER.info("Step 6: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-35788-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    nclients=2, nsamples=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
+
+        LOGGER.info("Completed: Test to Verify degraded IOs after multiple (max K) pods "
+                    "(data and server) failures with network of node hosting them going down.")
