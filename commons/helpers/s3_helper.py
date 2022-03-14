@@ -36,8 +36,8 @@ from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
-from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
+
 
 LOGGER = logging.getLogger(__name__)
 
