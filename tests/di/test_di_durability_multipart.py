@@ -49,11 +49,9 @@ from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.s3 import s3_multipart
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3 import cortxcli_test_lib
 from libs.s3 import s3_s3cmd
 from libs.s3.s3_blackbox_test_lib import MinIOClient
 
@@ -336,7 +334,7 @@ class TestDICheckMultiPart:
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -404,7 +402,7 @@ class TestDICheckMultiPart:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
                                                ranges='bytes=0-7340032')
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -429,7 +427,7 @@ class TestDICheckMultiPart:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
                                                ranges='bytes=7340032-22020094')
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -519,6 +517,7 @@ class TestDICheckMultiPart:
             else:
                 assert False, 'Download of corrupted file passed'
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.usefixtures('setup_minio')
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -528,14 +527,14 @@ class TestDICheckMultiPart:
          and verify read (Get). ( SZ in range 100 MB -256 MB)."""
         size = 81 * MB
         self.log.info("STARTED: upload object of 151 MB using Minion Client")
-        upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
+        upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name) \
                          + self.minio.validate_cert
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
                        + self.minio.validate_cert
         object_name = os.path.split(self.file_path)[-1]
         download_obj_cmd = self.minio_cnf["download_obj_cmd"].\
                                format(self.bucket_name, object_name, self.file_path)\
-                           + self.minio.validate_cert  #nosec
+                           + self.minio.validate_cert  # nosec
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
