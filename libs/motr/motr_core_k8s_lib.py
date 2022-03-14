@@ -133,7 +133,7 @@ class MotrCoreK8s():
                     "Node must be one of %r." % str(self.cortx_node_list))
         else:
             cortx_node = self.get_primary_cortx_node()
-        for key in self.node_dict():
+        for key in self.node_dict:
             if key == cortx_node:
                 return self.node_dict[key]
         return None
