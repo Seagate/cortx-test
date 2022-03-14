@@ -650,6 +650,7 @@ class TestClusterShutdownStart:
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-29473")
     @CTFailOn(error_handler)
     def test_mpu_during_cluster_restart_29473(self):
@@ -860,6 +861,7 @@ class TestClusterShutdownStart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-29476")
     @CTFailOn(error_handler)
     def test_copy_obj_during_clstr_rstrt_29476(self):
@@ -1238,6 +1240,7 @@ class TestClusterShutdownStart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-29478")
     @CTFailOn(error_handler)
     def test_ios_during_cluster_restart(self):
