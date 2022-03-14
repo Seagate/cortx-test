@@ -20,14 +20,14 @@
 """
 Python file to maintain all constant msg, error, commands for data integrity tests
 """
-#DI feature control flags
+# DI feature control flags
 s3_range_read_flag = "S3_RANGED_READ_ENABLED"  # enable ranged reads
 s3_md5_check_flag = "S3_READ_MD5_CHECK_ENABLED"  # enable data integrity checksum check on S3 GET
 s3_disable_data_corr_iem = "S3_DI_DISABLE_DATA_CORRUPTION_IEM"  # disable IEM in case of data integrity checksum fails
 s3_disable_metadata_corr_iem = "S3_DI_DISABLE_METADATA_CORRUPTION_IEM"  # disable IEM in case if metadata corruption is detected
 
-#DI fault injection flags
-#ref : https://github.com/Seagate/cortx-s3server/blob/cortx-1.0/docs/object-protection-testing.md
+# DI fault injection flags
+# ref : https://github.com/Seagate/cortx-s3server/blob/cortx-1.0/docs/object-protection-testing.md
 di_data_corrupted_on_write = "di_data_corrupted_on_write"
 di_data_corrupted_on_read = "di_data_corrupted_on_read"
 di_obj_md5_corrupted = "di_obj_md5_corrupted"
