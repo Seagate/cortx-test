@@ -42,6 +42,7 @@ class SearchSystems(Resource):
        For performing search operation on r2_systems collection.
     """
 
+    # pylint-disable-message=too-many-return-statements
     @staticmethod
     def get():
         """Get for systems"""
@@ -53,7 +54,7 @@ class SearchSystems(Resource):
             return flask.Response(status=HTTPStatus.BAD_REQUEST,
                                   response="db_username/db_password missing in request body")
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -120,7 +121,7 @@ class CreateSystems(Resource):
                                   response="db_username/db_password missing in request body")
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -164,7 +165,7 @@ class UpdateSystems(Resource):
                                   response="db_username/db_password missing in request body")
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
