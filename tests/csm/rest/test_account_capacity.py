@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import random
+from random import SystemRandom
 import time
 from http import HTTPStatus
 from multiprocessing import Pool
@@ -107,6 +108,7 @@ class TestAccountCapacity():
         if not os.path.exists(TEST_DATA_FOLDER):
             os.mkdir(TEST_DATA_FOLDER)
 
+    # pylint: disable-msg=too-many-branches
     def teardown_method(self):
         """
         Teardown for deleting any account and buckets created during tests
@@ -194,7 +196,7 @@ class TestAccountCapacity():
             self.buckets_created.append([bucket, access_key, secret_key])
             self.log.info("Start: Put operations")
             obj = f"object{s3_user}.txt"
-            write_bytes_mb = random.randint(10, 100)
+            write_bytes_mb = SystemRandom().randrange(10, 100)
             total_cap = total_cap + write_bytes_mb
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                           bucket)
@@ -387,7 +389,7 @@ class TestAccountCapacity():
         self.buckets_created.append([user2_bucket1, account2_info[0], account2_info[1]])
         self.log.info("Step-5: put object in first bucket of account-1")
         obj = f"object{account1_info[3]}.txt"
-        write_bytes_mb = random.randint(10, 100)
+        write_bytes_mb = SystemRandom().randrange(10, 100)
         total_cap = write_bytes_mb
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                       user1_bucket1)
@@ -486,7 +488,7 @@ class TestAccountCapacity():
             iam_users.append(iam_user)
             self.log.info("Start: Put operations")
             obj = f"object{iam_user}" + str(cnt) + ".txt"
-            write_bytes_mb = random.randint(10, 100)
+            write_bytes_mb = SystemRandom().randrange(10, 100)
             total_cap = total_cap + write_bytes_mb
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                           bucket)
@@ -535,7 +537,7 @@ class TestAccountCapacity():
             self.log.info("bucket created successfully")
             self.buckets_created.append([bucket, access_key, secret_key])
             self.log.info("Step 3: Putting object of size zero to some specific size in bucket")
-            ran_number = random.randint(10, 100)
+            ran_number = SystemRandom().randrange(10, 100)
             for i in [0, ran_number]:
                 obj = f"object{i}{s3_user}.txt"
                 object_size = i
@@ -583,7 +585,7 @@ class TestAccountCapacity():
             self.buckets_created.append([bucket, access_key, secret_key])
             self.log.info("Step 2: Put object of specific size in bucket")
             obj = f"object{s3_user}.txt"
-            write_bytes_mb = random.randint(10, 100)
+            write_bytes_mb = SystemRandom().randrange(10, 100)
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                           bucket)
             resp = s3_misc.create_put_objects(
@@ -640,7 +642,7 @@ class TestAccountCapacity():
         self.log.info("Step 4: Put 1000 objects of specific size in bucket")
         for _ in range(1000):
             obj = f"object{s3_user}.txt"
-            write_bytes_mb = random.randint(10, 100)
+            write_bytes_mb = SystemRandom().randrange(10, 100)
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
                           bucket1)
             resp = s3_misc.create_put_objects(
@@ -806,7 +808,7 @@ class TestAccountCapacity():
         self.buckets_created.append([bucket_name, access_key, secret_key])
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
 
-        size = random.randint(10, 100)
+        size = SystemRandom().randrange(10, 100)
         self.log.info("Step: 3 Create a file of size %sMB", size)
         test_file = "test-33379-{}-MB.txt".format(str(size))
         file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
@@ -919,7 +921,7 @@ class TestAccountCapacity():
 
         self.log.info("Step-7 Put object using %s user into %s", iam_user, user1_bucket1)
         test_file = "test-object.txt"
-        size = random.randint(10, 100)
+        size = SystemRandom().randrange(10, 100)
         file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
         if os.path.exists(file_path_upload):
             os.remove(file_path_upload)

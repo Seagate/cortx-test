@@ -1,7 +1,25 @@
-import pytest
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 import logging
+import pytest
 
 logger = logging.getLogger(__name__)
+
 
 @pytest.fixture(scope="class")
 def setup_multipart_fixture(request):
@@ -20,10 +38,10 @@ def setup_multipart_fixture(request):
     logger.info("Deleting the file created locally for object")
     logger.info(request.cls.hostnames)
 
+# pylint: disable=R0902 disable=no-member
 @pytest.mark.usefixtures("setup_multipart_fixture")
 class TestCheck:
     """DI Test suite for F23B Multipart files."""
-
 
     def setup_method(self):
         """
@@ -32,7 +50,7 @@ class TestCheck:
         part after yield will be invoked after test call i.e as teardown.
         """
         self.log = logging.getLogger(__name__)
-        self.log.info("ENDED: setup test data. %s" % self.hostnames)
+        self.log.info("ENDED: setup test data. %s", self.hostnames)
 
     def teardown_method(self):
         """
@@ -40,7 +58,7 @@ class TestCheck:
         Part before yield will be invoked prior to each test case and
         part after yield will be invoked after test call i.e as teardown.
         """
-        self.log.info("STARTED: Teardown of test data %s" % self.hostnames)
+        self.log.info("STARTED: Teardown of test data %s", self.hostnames)
         self.log.info("Deleting the file created locally for object")
 
     @pytest.mark.data_durability
