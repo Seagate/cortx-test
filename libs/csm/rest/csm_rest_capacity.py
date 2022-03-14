@@ -180,19 +180,23 @@ class SystemCapacity(RestTestLib):
         result_msg = ""
 
         if total is not None:
-            self.log.info("Expected total bytes : %s", total)
+            self.log.info("Min Expected total bytes : %s", total)
+            total_err = total/(1-err_margin/100)
+            self.log.info("Max Expected total bytes : %s", total_err)
             self.log.info("Actual total bytes : %s", sum(resp.values()))
-            result_flag = sum(resp.values()) == total
+            result_flag = total <= sum(resp.values()) <= total_err
             result_msg = "Summation check failed."
 
         for chk in checklist:
             # pylint: disable=eval-used
             expected = eval(chk)
             actual = resp[chk]
-            self.log.info("Expected %s byte count within error margin %s bytes of : %s"
-                          "bytes", chk, err_margin, expected)
-            self.log.info("Actual healthy byte count : %s", actual)
-            flag = expected - err_margin <= actual <= expected + err_margin
+            self.log.info("Actual %s byte count : %s", chk, actual)
+            expected_err = expected/(1-err_margin/100)
+            self.log.info("Error margin : %s percent", err_margin)
+            self.log.info("Min Expected %s byte count : %s", chk, expected)
+            self.log.info("Max Expected %s byte count : %s", chk, expected_err)
+            flag = expected <= actual <= expected_err
             if flag:
                 msg = f"{chk} byte count check passed.\n"
                 self.log.info(msg)
@@ -234,7 +238,7 @@ class SystemCapacity(RestTestLib):
                "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
                "csm_repaired"]
         row = ["No failure"]
-        for node in range(0, num_nodes+1):
+        for node in range(num_nodes):
             row.append(self.row_temp.format(node))
         cap_df = pd.DataFrame(columns=col, index=row)
         return cap_df
@@ -243,6 +247,8 @@ class SystemCapacity(RestTestLib):
         """
         Verify the consistency of degraded, healthy.. bytes for csm, consul, hctl in data frame
         """
+        cap_df = cap_df.fillna(0)
+        self.log.debug("Collected data frame : %s", cap_df.to_string())
         self.log.info(
             "Checking HCTL , CSM and Consul healthy byte response are consistent.")
         cap_df['result'] = ((cap_df['consul_healthy'] == cap_df['hctl_healthy']) &
@@ -272,7 +278,6 @@ class SystemCapacity(RestTestLib):
         cap_df['result'] = ((cap_df['consul_repaired'] == cap_df['hctl_repaired']) &
                             (cap_df['consul_repaired'] == cap_df['csm_repaired']))
         repaired_eq = cap_df["result"].all()
-
         self.log.info("Checking total bytes adds up to data written")
         cap_df["csm_sum"] = cap_df["csm_healthy"] + cap_df["csm_degraded"] + \
             cap_df["csm_critical"] + \
@@ -283,14 +288,14 @@ class SystemCapacity(RestTestLib):
             "Summation check of the healthy bytes from each node failure for csm")
 
         actual_written = 0
-        for node in range(1, num_nodes+1):
+        for node in range(num_nodes):
             node_name = self.row_temp.format(node)
             actual_written = actual_written + cap_df.loc[node_name]["csm_healthy"]
 
         data_written_hchk = data_written == actual_written
 
         actual_written = 0
-        for node in range(1, num_nodes+1):
+        for node in range(num_nodes):
             node_name = self.row_temp.format(node)
             actual_written = actual_written + cap_df.loc[node_name]["csm_damaged"]
 
