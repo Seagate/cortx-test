@@ -67,6 +67,7 @@ def build_bucket_perf_stats_table(data: List[list]):
     return bucket_perf_stats
 
 
+# pylint: disable-msg=too-many-locals
 def main():
     """Generate PDF executive report from csv executive report."""
     build = common_pdf.get_args()
