@@ -52,6 +52,7 @@ def check_log_file(file_path, errors):
     return error_found
 
 
+# pylint: disable=too-many-arguments
 def run_locust(
         test_id: str, host: str, locust_file: str, users: int, hatch_rate: int = 1,
         duration: str = "3m") -> tuple:

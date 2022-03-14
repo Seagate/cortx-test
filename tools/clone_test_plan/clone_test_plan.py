@@ -67,6 +67,7 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
             print("Error while adding tests to TE {} and TP {}".format(new_te_id, new_tp_key))
 
 
+# pylint: disable-msg=too-many-branches
 def main(args):
     """
     main function to clone test plan

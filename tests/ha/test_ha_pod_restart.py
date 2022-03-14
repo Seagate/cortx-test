@@ -185,6 +185,7 @@ class TestPodRestart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34072")
     @CTFailOn(error_handler)
     def test_reads_after_pod_restart(self):
@@ -271,6 +272,7 @@ class TestPodRestart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34074")
     @CTFailOn(error_handler)
     def test_write_after_pod_restart(self):
@@ -368,6 +370,7 @@ class TestPodRestart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34077")
     @CTFailOn(error_handler)
     def test_deletes_after_pod_restart(self):
@@ -575,6 +578,7 @@ class TestPodRestart:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34080")
     @CTFailOn(error_handler)
     def test_mpu_after_pod_restart(self):
@@ -729,6 +733,7 @@ class TestPodRestart:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34082")
     @CTFailOn(error_handler)
     def test_partial_mpu_after_pod_restart(self):
@@ -902,6 +907,7 @@ class TestPodRestart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34083")
     @CTFailOn(error_handler)
     def test_copy_obj_after_pod_restart(self):
@@ -1033,6 +1039,7 @@ class TestPodRestart:
     # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34073")
     @CTFailOn(error_handler)
     def test_continuous_reads_during_pod_restart(self):
@@ -1153,6 +1160,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34086")
     @CTFailOn(error_handler)
     def test_pod_restart_node_down(self):
@@ -1246,6 +1254,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34085")
     @CTFailOn(error_handler)
     def test_pod_restart_node_nw_down(self):
@@ -1348,6 +1357,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34091")
     @CTFailOn(error_handler)
     def test_different_data_pods_restart_loop(self):
@@ -1439,6 +1449,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34090")
     @CTFailOn(error_handler)
     def test_same_data_pod_restart_loop(self):
@@ -1540,6 +1551,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34081")
     @CTFailOn(error_handler)
     def test_mpu_during_pod_restart(self):
@@ -1714,6 +1726,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34084")
     @CTFailOn(error_handler)
     def test_copy_object_during_pod_restart(self):
@@ -1863,6 +1876,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34079")
     @CTFailOn(error_handler)
     def test_ios_during_pod_restart(self):
@@ -1967,6 +1981,7 @@ class TestPodRestart:
     # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34078")
     @CTFailOn(error_handler)
     def test_continuous_deletes_during_pod_restart(self):
@@ -2127,6 +2142,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34075")
     @CTFailOn(error_handler)
     def test_continuous_writes_during_pod_restart(self):
@@ -2238,6 +2254,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34076")
     @CTFailOn(error_handler)
     def test_continuous_read_write_during_pod_restart(self):
@@ -2349,6 +2366,7 @@ class TestPodRestart:
     # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34088")
     @CTFailOn(error_handler)
     def test_ios_rc_node_restart(self):
@@ -2460,6 +2478,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34087")
     @CTFailOn(error_handler)
     def test_ios_safe_shutdown_pod_restart(self):
@@ -2542,6 +2561,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34089")
     @CTFailOn(error_handler)
     def test_io_server_pod_restart(self):
@@ -2627,6 +2647,7 @@ class TestPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34261")
     @CTFailOn(error_handler)
     def test_server_pod_restart_kubectl_delete(self):
