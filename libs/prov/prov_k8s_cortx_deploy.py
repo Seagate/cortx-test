@@ -1204,7 +1204,7 @@ class ProvDeployK8sCortxLib:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
                 port = resp[3]
-                ext_port_ip = "{}:{}".format(ext_ip, port)
+                ext_port_ip = "http://{}:{}".format(ext_ip, port)
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
@@ -1221,7 +1221,7 @@ class ProvDeployK8sCortxLib:
                 access_key, secret_key = S3H_OBJ.get_local_keys()
                 if self.service_type == "NodePort":
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                        endpoint_url="http://"+ext_port_ip)
+                                        endpoint_url=ext_port_ip)
                 else:
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             if run_basic_s3_io_flag:
@@ -1232,7 +1232,7 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name, endpoint_url="http://"+ext_port_ip)
+                                 bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
