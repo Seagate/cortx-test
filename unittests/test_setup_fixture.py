@@ -38,7 +38,7 @@ def setup_multipart_fixture(request):
     logger.info("Deleting the file created locally for object")
     logger.info(request.cls.hostnames)
 
-
+# pylint: disable=R0902 disable=no-member
 @pytest.mark.usefixtures("setup_multipart_fixture")
 class TestCheck:
     """DI Test suite for F23B Multipart files."""

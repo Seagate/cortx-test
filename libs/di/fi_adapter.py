@@ -137,7 +137,7 @@ class S3FailureInjection(EnableFailureInjection):
             for conn in self._connections:
                 start_port = commands.S3_SRV_START_PORT
                 for index in range(s3_instances_per_node):
-                    h_p = f'localhost:{start_port}'
+                    h_p = f'localhost:{start_port + index}'
                     fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                                  f',{f_type},0,0'
                                  f'" {h_p}'

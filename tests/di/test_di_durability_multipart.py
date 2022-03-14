@@ -569,6 +569,7 @@ class TestDICheckMultiPart:
             assert False, f'Download Command failed with error {output}'
 
     def create_file_and_enable_data_corruption(self, size):
+        """Test module helper which creates a file and enable data corruption on s3 server."""
         self.log.info("Step 2a: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='z', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
