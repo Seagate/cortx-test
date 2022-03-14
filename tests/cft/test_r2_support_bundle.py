@@ -37,6 +37,7 @@ from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestR2SupportBundle:
     """Class for R2 Support Bundle testing"""
 
@@ -93,17 +94,17 @@ class TestR2SupportBundle:
         system_utils.execute_cmd(tar_sb_cmd)
         return True
 
-    def size_verify(self,component_dir_name):
+    def size_verify(self, component_dir_name):
         """
         This function which is used to verify component directory has specific size limit logs
         """
-        files=os.listdir(component_dir_name)
-        number=len(files)
+        files = os.listdir(component_dir_name)
+        number = len(files)
         count = 0
         for file in files:
             if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
-                count+=1
-        if count==number:
+                count+= 1
+        if count == number:
             return True
         else:
             return False
