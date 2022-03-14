@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -55,7 +56,7 @@ from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_common_test_lib import perform_s3_io
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
-
+# pylint: disable-msg=too-many-public-methods
 class TestAuditLogs:
     """Audit logs Testsuite"""
 
