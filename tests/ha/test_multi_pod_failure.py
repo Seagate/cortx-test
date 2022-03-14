@@ -2212,12 +2212,13 @@ class TestMultiPodFailure:
         LOGGER.info("Completed: Test to verify degraded DELETEs after each pod failure till K "
                     "data pods fail.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-35788")
     @CTFailOn(error_handler)
-    def test_kpods_fail_node_down(self):
+    def test_kpods_fail_node_nw_down(self):
         """
         Test to Verify degraded IOs after multiple (max K) pods (data and server) failures
         with network of node hosting them going down.
