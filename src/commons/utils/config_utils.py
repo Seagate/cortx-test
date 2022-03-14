@@ -38,7 +38,7 @@ from jsonschema import validate
 from jproperties import Properties
 
 from src import commons as cterr
-from src.commons import CTException
+from src.commons.exceptions import CTException
 
 LOG = logging.getLogger(__name__)
 MAIN_CONFIG_PATH = "config/main_config.yaml"
