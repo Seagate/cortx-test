@@ -1459,3 +1459,19 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("RPM is %s", installed_rpm)
             return True, installed_rpm
         return False, installed_rpm
+
+    @staticmethod
+    def pull_image(node_obj: LogicalNode, image: str) -> tuple:
+        """
+        Helper function to pull cortx image.
+        :param: node_obj: node object(Logical Node object)
+        :param: image: cortx image to pull
+        :return: True/False and success/failure message
+        """
+        LOGGER.info("Pull Cortx image.")
+        try:
+            node_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(image))
+        except IOError as err:
+            LOGGER.error("An error occurred in %s:", ProvDeployK8sCortxLib.pull_image.__name__)
+            return False, err
+        return True, "Image pulled."
