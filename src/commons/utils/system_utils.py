@@ -39,7 +39,7 @@ from botocore.response import StreamingBody
 from paramiko import SSHClient, AutoAddPolicy
 from src.commons import commands
 from src.commons import params
-from src.commons import AWS_CLI_ERROR
+from src.commons.constants import AWS_CLI_ERROR
 
 if sys.platform == 'win32':
     try:
