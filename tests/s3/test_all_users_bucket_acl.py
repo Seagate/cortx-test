@@ -18,6 +18,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """All User Bucket ACL test module."""
 
+# pylint: disable=too-many-lines
+
 import os
 import logging
 import time
@@ -39,6 +41,7 @@ from libs.s3.s3_acl_test_lib import S3AclTestLib
 class TestAllUsersBucketAcl:
     """All Users bucket Acl Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """

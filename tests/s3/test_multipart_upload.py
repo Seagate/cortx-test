@@ -40,6 +40,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import CMN_CFG
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestMultipartUpload:
     """Multipart Upload Test Suite."""
 
@@ -80,6 +81,7 @@ class TestMultipartUpload:
         cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
         cls.log.info("ENDED: teardown test suite operations.")
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
