@@ -546,30 +546,19 @@ class TestDICheckMultiPart:
         self.log.info("Step 2: Put and object with checksum algo or ETAG.")
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
-        self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
-        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
-        self.log.info("Step 2: enabling data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if not status:
-            self.log.info("Step 2: failed to enable data corruption")
-            assert False
-        else:
-            self.log.info("Step 2: enabled data corruption")
-            self.data_corruption_status = True
+        self.create_file_and_enable_data_corruption(size)
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
-        self.log.info("Step 3: Uploading an object to a bucket %s", self.bucket_name)
+        self.log.info("Step 3a: Uploading an object to a bucket %s", self.bucket_name)
         resp = system_utils.run_local_cmd(upload_obj_cmd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Object is uploaded to a bucket %s", self.bucket_name)
-        self.log.info("Step 4: Verifying that object is uploaded to a bucket")
+        self.log.info("Step 3b: Object is uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Step 4a: Verifying that object is uploaded to a bucket")
         resp = system_utils.run_local_cmd(list_obj_cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
-        self.log.info("Step 4: Verified that object is uploaded to a bucket")
-        self.log.info("Step 4: Download object using Minion Client")
+        self.log.info("Step 4b: Verified that object is uploaded to a bucket")
+        self.log.info("Step 5: Download object using Minion Client")
         cmd_status, output = system_utils.run_local_cmd(download_obj_cmd)
         pat = re.compile('(Failed to copy|internal\s+error)', re.I)
         match = pat.search(output)
@@ -578,3 +567,17 @@ class TestDICheckMultiPart:
             self.log.error(f'Download Command output is {output}')
         else:
             assert False, f'Download Command failed with error {output}'
+
+    def create_file_and_enable_data_corruption(self, size):
+        self.log.info("Step 2a: Create a corrupted file.")
+        self.edtl.create_file(size, first_byte='z', name=self.file_path)
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 2a: created a file with corrupted flag at location %s", self.file_path)
+        self.log.info("Step 2b: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2b: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2b: enabled data corruption")
+            self.data_corruption_status = True

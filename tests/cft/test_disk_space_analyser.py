@@ -21,9 +21,9 @@ import signal
 import os
 import sys
 import argparse
-#import getpass
+# import getpass
 import logging
-#import socket
+# import socket
 import re
 import base64
 import paramiko
@@ -38,10 +38,12 @@ from fabric import ThreadingGroup, SerialGroup
 from fabric import runners
 from fabric.exceptions import GroupException
 
-#TODO: Part of automation and script validation is covered in
+# TODO: Part of automation and script validation is covered in
 # EOS-24721
 
 """Disk Space Analyser test script"""
+
+
 def parse_args():
     """
     Argument parser
@@ -54,6 +56,7 @@ def parse_args():
     parser.add_argument("-np", "--node_pass", type=str,
                         default='', help="node password")
     return parser.parse_args()
+
 
 def read_yaml(fpath):
     """Read yaml file and return dictionary/list of the content"""
@@ -71,7 +74,7 @@ def read_yaml(fpath):
                     raise YamlError(fpath, 'YAML file syntax error')
 
     else:
-        #err_msg = "Specified file doesn't exist: {}".format(fpath)
+        # err_msg = "Specified file doesn't exist: {}".format(fpath)
         raise YamlError(fpath, 'YAML file missing')
     return data
 
@@ -168,6 +171,7 @@ def sigint_handler(signum, frame):
 
 class YamlError(Exception):
     """Check for yaml file format"""
+
     def __init__(self, name, message=""):
         self.message = message
         self.name = name
@@ -179,6 +183,7 @@ class YamlError(Exception):
 
 class StatsException(Exception):
     """Exception handler"""
+
     def __init__(self, message=""):
         self.message = message
         super().__init__(self.message)
@@ -186,12 +191,12 @@ class StatsException(Exception):
 
 class LogAnalyser(TestCase):
     """Analysis Log on shared POD container"""
-    logdir = "/shared/var/log" #shared POD address /shared
+    logdir = "/shared/var/log"  # shared POD address /shared
 
     def __init__(self):
         """Initialize variables"""
         self.stats = dict()
-        #processes = LOG_CFG.keys()
+        # processes = LOG_CFG.keys()
         self.szmap = dict()
         self.svc_log_sz = dict()
         self.series = dict()
@@ -200,10 +205,12 @@ class LogAnalyser(TestCase):
         """Connection Initialization"""
         global USER
 
-        self.connections = [Connection(host, user=USER, connect_kwargs={'password': passwords[host]},
-                            config=Config(overrides={'sudo': {'password': passwords[host]}}))
-                            for host in core_hosts]
-        self.connections[:] = [c for c in self.connections if 'Linux' in c.run('uname -s', pty=False).stdout]
+        self.connections = [
+            Connection(host, user=USER, connect_kwargs={'password': passwords[host]},
+                       config=Config(overrides={'sudo': {'password': passwords[host]}}))
+            for host in core_hosts]
+        self.connections[:] = [c for c in self.connections if
+                               'Linux' in c.run('uname -s', pty=False).stdout]
         self.ctg = SerialGroup.from_connections(self.connections)
 
     def build_command(self, path=None):
@@ -230,12 +237,12 @@ class LogAnalyser(TestCase):
             for cd, runner in ge.result.items():
                 if isinstance(runner, runners.Result):
                     log.info("Successfully executed cmd on {} and output is {}"
-                                    .format(cd.host, runner.stdout.strip()))
+                             .format(cd.host, runner.stdout.strip()))
                     if cd.host not in stats:
                         stats.update({cd.host: runner.stdout})
                 elif isinstance(runner, OSError):
                     log.error("Error in executing cmd on {}, output is {}"
-                                 .format(cd.host, runner.stdout.strip()))
+                              .format(cd.host, runner.stdout.strip()))
                 elif isinstance(runner, paramiko.ssh_exception.AuthenticationException):
                     log.error("Authentication exception on {}".format(cd.host, ))
                 else:
@@ -272,7 +279,8 @@ class LogAnalyser(TestCase):
                         _, ig, tb = sys.exc_info()
                         tb_info = traceback.extract_tb(tb)
                         filename, line, func, text = tb_info[-1]
-                        log.debug("Assertion Error occurred on line {} in statement {}".format(line, text))
+                        log.debug("Assertion Error occurred on line {} in statement {}".format(line,
+                                                                                               text))
 
                     total_sz += szmap.get(log_file, 0)
                     if szmap.get(log_file) is None:
@@ -287,7 +295,8 @@ class LogAnalyser(TestCase):
                     _, ig, tb = sys.exc_info()
                     tb_info = traceback.extract_tb(tb)
                     filename, line, func, text = tb_info[-1]
-                    log.debug("Assertion Error occured on line {} in statement {}".format(line, text))
+                    log.debug(
+                        "Assertion Error occured on line {} in statement {}".format(line, text))
                 total_sz += szmap.get(log_file, 0)
                 if szmap.get(log_file) is None:
                     continue
@@ -295,7 +304,8 @@ class LogAnalyser(TestCase):
         log.info("For Host {} Cortx Logs size in MBs group by service are:".format(host))
         self.roundoff_MB(svc_log_sz)
         log.info(svc_log_sz)
-        log.info("For node {}, Total size of component log files is {} MB".format(host, str(total_sz / 1024)))
+        log.info("For node {}, Total size of component log files is {} MB".format(host, str(
+            total_sz / 1024)))
 
     def roundoff_MB(self, svc_log_sz):
         for svc in svc_log_sz:
@@ -347,7 +357,8 @@ class LogAnalyser(TestCase):
                     sz = str(self.svc_log_sz[host][svc])
                     s = svc + ' ' * (27 - len(svc)) + \
                         sz + ' ' * (16 - len(sz)) + \
-                        str(Max_Size_Component.get(svc)) + ' ' * (11 - len(str(Max_Size_Component.get(svc)))) + \
+                        str(Max_Size_Component.get(svc)) + ' ' * (
+                                    11 - len(str(Max_Size_Component.get(svc)))) + \
                         now
                     hndl.write(s + '\n')
                     log.info(s)
@@ -356,14 +367,16 @@ class LogAnalyser(TestCase):
         st = self.collect_basedir_usage()
         if not st:
             raise StatsException('Stats not collected due to an exception')
-        ul = self.collect_basedir_usage("df -h " + LogAnalyser.logdir + " | tail -n1 | awk '{print $3}'")
+        ul = self.collect_basedir_usage(
+            "df -h " + LogAnalyser.logdir + " | tail -n1 | awk '{print $3}'")
         assertions = list()
         for k, v in st.items():
             if k in core_hosts:
                 # soft assert
                 try:
                     v = v[:-2] if v.endswith('\n') else v[:-1]
-                    msg = "/shared/var/log disk usage percent limit exceeded on POD container {}".format(k)
+                    msg = "/shared/var/log disk usage percent limit exceeded on POD container {}".format(
+                        k)
                     self.assertTrue(int(v) < LOG_CFG['limits']['total_per_limit'], msg)
                     log.info("/shared/var/log disk usage is {} %".format(str(v)))
                 except AssertionError as fault:
@@ -447,7 +460,8 @@ class LogAnalyser(TestCase):
                         self.init_Connections()
                         break
                     except Exception as e:
-                        log.warning("The Nodes can't be connected, they might be restarting or halted")
+                        log.warning(
+                            "The Nodes can't be connected, they might be restarting or halted")
                         retries -= 1
                         time.sleep(60)
 
@@ -472,7 +486,6 @@ def send_mail(smtpsrv, fromlist, tolist, msg, hosts):
         log.info("Alert email sent to users {}".format(tolist))
     except Exception as fault:
         log.info("failed to send the log analyser mail to intended recipient: {}".format(fault))
-
 
 # if __name__ == "__main__":
 #     la = LogAnalyser()

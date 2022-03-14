@@ -113,6 +113,8 @@ class S3FailureInjection(EnableFailureInjection):
         """
         stdout = list()
         status = list()
+        if s3_instances_per_node < 1:
+            return status, stdout
         f_type = fault_type if not fault_type else commands.DI_DATA_CORRUPT_ON_WRITE
         start_port = commands.S3_SRV_START_PORT
         if s3_instances_per_node == 1:
@@ -134,7 +136,7 @@ class S3FailureInjection(EnableFailureInjection):
         elif s3_instances_per_node > 1:
             for conn in self._connections:
                 start_port = commands.S3_SRV_START_PORT
-                for ix in range(s3_instances_per_node):
+                for index in range(s3_instances_per_node):
                     h_p = f'localhost:{start_port}'
                     fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                                  f',{f_type},0,0'
@@ -175,7 +177,7 @@ class S3FailureInjection(EnableFailureInjection):
 
             if "Host key verification failed" not in result or "ssh exited" not in result \
                     or "pdsh: command not found" not in result or "Permission denied" not in result:
-                LOGGER.info(f"Fault {fault_type} : {fault_op}")
+                LOGGER.info("Fault %s : %s", fault_type, fault_op)
                 return True
             else:
                 LOGGER.error(f"Error during Fault {fault_type} : {fault_op}")
