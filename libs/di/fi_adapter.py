@@ -113,8 +113,6 @@ class S3FailureInjection(EnableFailureInjection):
         """
         stdout = list()
         status = list()
-        if s3_instances_per_node < 1:
-            return status, stdout
         f_type = fault_type if not fault_type else commands.DI_DATA_CORRUPT_ON_WRITE
         start_port = commands.S3_SRV_START_PORT
         if s3_instances_per_node == 1:
@@ -146,12 +144,13 @@ class S3FailureInjection(EnableFailureInjection):
                         out = conn.run(fault_cmd, pty=False).stdout
                         stdout.append(out)
                     except Exception as fault:
-                        LOGGER.warning("Connections to node was broken %s. Retrying..." % fault)
+                        LOGGER.warning("Connections to node was broken %s. Retrying...", fault)
                         out = conn.run(fault_cmd, pty=False).stdout
                         stdout.append(out)
                     status.append(True)
                     start_port += 1
             return status, stdout
+        return status, stdout
 
     def _set_fault(self, fault_type: str, fault_operation: bool, use_script: bool = False):
         """
@@ -174,19 +173,20 @@ class S3FailureInjection(EnableFailureInjection):
             cmd = f'NINST={s3_instances_per_node} {self.nodes_str} FIS="{fault_type}" ' \
                   f'sh {DI_CFG["fault_injection_script"]} {fault_op}'
             result = self.connections[0].execute_cmd(cmd)
-
             if "Host key verification failed" not in result or "ssh exited" not in result \
                     or "pdsh: command not found" not in result or "Permission denied" not in result:
                 LOGGER.info("Fault %s : %s", fault_type, fault_op)
                 return True
             else:
-                LOGGER.error(f"Error during Fault {fault_type} : {fault_op}")
+                LOGGER.error("Error during Fault %s : %s", fault_type, fault_op)
                 LOGGER.error(result)
                 return False
         else:
-            self._inject_fault(fault_type=fault_type, fault_operation=fault_op,
-                               s3_instances_per_node=s3_instances_per_node)
+            status, stdout = self._inject_fault(fault_type=fault_type, fault_operation=fault_op,
+                                                s3_instances_per_node=s3_instances_per_node)
+            return True if all(status) else False
 
+    # pylint: disable=too-many-nested-blocks
     def _set_fault_k8s(self, fault_type: str, fault_operation: bool):
         """
         sets the following faults
