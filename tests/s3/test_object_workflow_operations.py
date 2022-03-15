@@ -63,6 +63,7 @@ class TestObjectWorkflowOperations:
         self.log.info("ENDED: setup method")
 
     def teardown_method(self):
+        """ this is called after each test in this class finishes its execution """
         self.log.info("STARTED: teardown method")
         self.log.info("Clean : %s", self.folder_path)
         if system_utils.path_exists(self.file_path):
