@@ -217,7 +217,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Execute prereq script")
         cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log". \
             format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                    timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
         LOGGER.info("\n %s", resp1)
@@ -253,9 +254,17 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Deploy Cortx cloud")
         cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        return True, resp
+        try:
+            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                        timeout=self.deploy_cfg['timeout']['deploy'])
+            LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+            return True, resp
+        except TimeoutError as error:
+            LOGGER.error(error, self.deploy_cfg['timeout']['deploy'])
+            node_obj.kill_remote_process(cmd)
+        except IOError as error:
+            LOGGER.exception("The exception occurred is %s", error)
+            return False, error
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
@@ -268,7 +277,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Validate Cluster status")
         status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
         cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                    timeout=PROV_CFG['k8s_cortx_deploy']['timeout']['status'])
+        LOGGER.debug(resp)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
         remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
         LOGGER.debug("COPY status file to local")
@@ -463,10 +474,13 @@ class ProvDeployK8sCortxLib:
             sys_disk_pernode.update(schema)
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
-        # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath, log_path, size,
-                                                    nodeport_http, nodeport_https,
-                                                    control_nodeport_https, service_type)
+        # Update the solution yaml file with password,service_type and ports
+        resp_passwd = self.update_miscellaneous_param(filepath, log_path, size,
+                                                      nodeport_http=self.nodeport_http,
+                                                      nodeport_https=self.nodeport_https,
+                                                      control_nodeport_https=
+                                                      self.control_nodeport_https,
+                                                      service_type=self.service_type)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -647,10 +661,9 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    # pylint: disable=too-many-arguments,too-many-locals
-    def update_password_sol_file(self, filepath, log_path, size,
-                                 nodeport_http, nodeport_https,
-                                 control_nodeport_https, service_type):
+    # pylint: disable-msg=too-many-locals
+    def update_miscellaneous_param(self, filepath, log_path, size,
+                                   **kwargs):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
@@ -661,6 +674,11 @@ class ProvDeployK8sCortxLib:
         Param: control_nodeport_https: https Port for node port service for control
         :returns the status, filepath
         """
+        service_type = kwargs.get('service_type', self.deploy_cfg['service_type'])
+        nodeport_http = kwargs.get('nodeport_http', self.deploy_cfg['http_port'])
+        nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
+        control_nodeport_https = kwargs.get('control_nodeport_https',
+                                            self.deploy_cfg['control_port_https'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -772,7 +790,8 @@ class ProvDeployK8sCortxLib:
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
-            resp = master_node_obj.execute_cmd(cmd=destroy_cmd)
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True,
+                                               timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
                 resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
@@ -928,7 +947,9 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("Removing local file from client and downloading object")
         system_utils.remove_file(file_path)
-        resp = s3t_obj.object_download(bucket_name, test_file, file_path)
+        resp = s3t_obj.get_object(bucket=bucket_name, key=test_file)
+        with open(file_path, "wb") as data:
+            data.write(resp[1]['Body'].read())
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Verifying checksum of downloaded file with old file should be same")
@@ -974,14 +995,17 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Basic IO Completed")
 
     @staticmethod
-    def io_workload(access_key, secret_key, bucket_prefix, clients=5):
+    def io_workload(access_key, secret_key, bucket_prefix, clients=5,
+                    **kwargs):
         """
         S3 bench workload test executed for each of Erasure coding config
         param: access_key: s3 user access key
         param: secret_key: s3 user secret keys
         param: bucket_prefix: bucket prefix
         param: client: no clients request
+        param: endpoint_url: endpoint url
         """
+        endpoint_url = kwargs.get('endpoint_url', "s3.seagate.com")
         LOGGER.info("STARTED: S3 bench workload test")
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
@@ -1001,7 +1025,8 @@ class ProvDeployK8sCortxLib:
                                    num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
                                    obj_size=workload,
-                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
+                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix,
+                                   end_point=endpoint_url)
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -1179,7 +1204,7 @@ class ProvDeployK8sCortxLib:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
                 port = resp[3]
-                ext_port_ip = "{}:{}".format(ext_ip, port)
+                ext_port_ip = self.deploy_cfg['protocol'].format(ext_ip, port)
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
@@ -1196,7 +1221,7 @@ class ProvDeployK8sCortxLib:
                 access_key, secret_key = S3H_OBJ.get_local_keys()
                 if self.service_type == "NodePort":
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                        endpoint_url="http://"+ext_port_ip)
+                                        endpoint_url=ext_port_ip)
                 else:
                     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             if run_basic_s3_io_flag:
@@ -1207,7 +1232,7 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name)
+                                 bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
@@ -1244,6 +1269,8 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(server_pod_list)
             LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
+        if len(response) == 0:
+            return False, "All Services are not started."
         return response
 
     def check_service_status(self, master_node_obj: LogicalNode):
@@ -1346,21 +1373,25 @@ class ProvDeployK8sCortxLib:
         return config_list
 
     @staticmethod
-    def upgrade_software(node_obj, upgrade_image_version: str,
-                         git_remote_path: str, **kwargs) -> tuple:
+    def upgrade_software(node_obj: LogicalNode, git_remote_path: str,
+                         upgrade_type: str = "rolling", granular_type: str = "all",
+                         exc: bool = True) -> tuple:
         """
-        Helper function to upgrade.
+        Helper function to Upgrade CORTX stack.
         :param node_obj: Master node(Logical Node object)
-        :param upgrade_image_version: Version Image to Upgrade.
         :param git_remote_path: Remote path of repo.
+        :param upgrade_type: Type of upgrade (rolling or cold).
+        :param granular_type: Type to upgrade all or particular pod.
         :param exc: Flag to disable/enable exception raising
         :return: True/False
         """
-        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
-        exc = kwargs.get('exc', True)
+        LOGGER.info("Upgrading CORTX image version.")
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)
-        cmd = "cd {}; {}".format(git_remote_path, upgrade_cmd)
+        if upgrade_type == "rolling":
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+        else:
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -1368,6 +1399,7 @@ class ProvDeployK8sCortxLib:
         resp = "".join(resp).replace("\\n", "\n")
         if "Error" in resp or "Failed" in resp:
             return False, resp
+        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
         return True, resp
 
     @staticmethod
@@ -1427,3 +1459,46 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("RPM is %s", installed_rpm)
             return True, installed_rpm
         return False, installed_rpm
+
+    @staticmethod
+    def pull_image(node_obj: LogicalNode, image: str) -> tuple:
+        """
+        Helper function to pull cortx image.
+        :param: node_obj: node object(Logical Node object)
+        :param: image: cortx image to pull
+        :return: True/False and success/failure message
+        """
+        LOGGER.info("Pull Cortx image.")
+        try:
+            node_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(image))
+        except IOError as err:
+            LOGGER.error("An error occurred in %s:", ProvDeployK8sCortxLib.pull_image.__name__)
+            return False, err
+        return True, "Image pulled."
+
+    @staticmethod
+    def update_sol_with_image(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = image_dict['rgw_image']
+            else:
+                parent_key['images'][image] = image_dict['all_image']
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path

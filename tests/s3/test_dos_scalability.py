@@ -19,16 +19,14 @@
 
 """DOS Scalability Test Module."""
 
-import os
 import time
 import logging
 import pytest
 from commons import commands
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.utils import system_utils
-from commons.utils.system_utils import remove_file, run_remote_cmd
-from commons.utils.assert_utils import assert_true, assert_not_in
+from commons.utils.system_utils import run_remote_cmd
+from commons.utils.assert_utils import assert_not_in
+from commons.utils.assert_utils import assert_true
 from commons.helpers.health_helper import Health
 from scripts.s3_bench import s3bench as s3b_obj
 from config import CMN_CFG as CM_CFG
@@ -67,6 +65,7 @@ class TestDosScalability:
         cls.log.info("Step: Successfully installed S3bench tool: %s.", res)
         cls.log.info("ENDED: setup test suite operations.")
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked before each test case execution.
@@ -135,7 +134,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 400)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
