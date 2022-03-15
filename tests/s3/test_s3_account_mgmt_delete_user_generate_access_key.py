@@ -49,6 +49,7 @@ from scripts.s3_bench import s3bench
 class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     """S3 Account User Management delete/view s3 account,create/regenerate access key test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
