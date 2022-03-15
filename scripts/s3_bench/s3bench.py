@@ -41,7 +41,7 @@ S3_BENCH_BINARY = cfg_obj["s3bench_binary"]
 def setup_s3bench():
     """
     Configuring client machine with s3bench dependencies.
-    :param get_cmd: S3Bench go get command
+
     :return bool: True/False
     """
     ret = run_local_cmd("s3bench --help")
@@ -135,14 +135,14 @@ def check_log_file_error(file_path, errors=None):
         errors = ["with error ", "panic", "status code",
                   "flag provided but not defined", "InternalError", "ServiceUnavailable"]
     error_found = False
-    LOGGER.info("Debug: Log File Path {}".format(file_path))
+    LOGGER.info("Debug: Log File Path %s", file_path)
     resp_filtered = []
-    with open(file_path, "r") as s3LogFile:
-        for line in s3LogFile:
+    with open(file_path, "r") as s3blog_obj:
+        for line in s3blog_obj:
             for error in errors:
                 if error.lower() in line.lower():
                     error_found = True
-                    LOGGER.error(f"{error} Found in S3Bench Run : {line}")
+                    LOGGER.error("%s Found in S3Bench Run: %s", error, line)
                     return error_found
             if 'Errors Count:' in line and "reportFormat" not in line:
                 resp_filtered.append(line)
@@ -155,6 +155,8 @@ def check_log_file_error(file_path, errors=None):
     return error_found
 
 
+# pylint: disable=too-many-arguments
+# pylint: disable-msg=too-many-locals
 def s3bench(
         access_key,
         secret_key,
@@ -342,5 +344,5 @@ if __name__ == "__main__":
         s3arg.skipCleanup,
         s3arg.duration,
         s3arg.verbose)
-    print("\n Detailed log file path: {}".format(res[1]))
+    LOGGER.info("Detailed log file path: %s", res[1])
     LOGGER.info("S3bench run ended.")
