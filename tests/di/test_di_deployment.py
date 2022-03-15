@@ -27,6 +27,7 @@ import random
 import time
 
 import pytest
+from botocore.exceptions import BotoCoreError
 
 from commons.constants import MB, \
     MULTIPART_UPLOAD_SIZES_IN_MB, NORMAL_UPLOAD_SIZES_IN_MB
@@ -208,7 +209,7 @@ class TestDIDeployment:
                                      bucket_name=bucket_name,
                                      object_name=obj_name, object_size=each)
 
-            self.log.info(f'Download the object and expect error response')
+            self.log.info('Download the object and expect error response')
 
             try:
                 resp = s3t_obj.get_object(bucket_name, obj_name)
@@ -216,7 +217,7 @@ class TestDIDeployment:
                 self.log.error("Exception : %s", exc)
                 assert_utils.assert_in("InternalError", str(exc.message))
             else:
-                self.log.info(f'Check the uploaded and downloaded object size')
+                self.log.info('Check the uploaded and downloaded object size')
                 uploaded_obj_size = resp[1]["ContentLength"]
                 self.log.info('size of uploaded object %s is: %s bytes', obj_name,
                               uploaded_obj_size)
@@ -224,7 +225,7 @@ class TestDIDeployment:
                     content = resp[1]["Body"].read()
                     self.log.info('size of downloaded object %s is: %s bytes', obj_name,
                                   len(content))
-                except Exception as error:
+                except (BotoCoreError, Exception) as error:
                     self.log.error('downloaded object is not complete: %s', error)
                 else:
                     if uploaded_obj_size == len(content):
