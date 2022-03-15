@@ -37,7 +37,7 @@ from defusedxml.cElementTree import parse
 from jsonschema import validate
 from jproperties import Properties
 
-from src import commons as cterr
+from src.commons.errorcodes import CTError as cterr
 from src.commons.exceptions import CTException
 
 LOG = logging.getLogger(__name__)
