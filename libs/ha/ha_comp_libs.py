@@ -37,12 +37,13 @@ class HAK8SCompLib:
     """
 
     @staticmethod
-    def check_string_in_log_file(ha_node_obj, sub_str: str, log_file: str) -> tuple:
+    def check_string_in_log_file(ha_node_obj, sub_str: str, log_file: str, lines: int=10) -> tuple:
         """
         Helper function to check sub string in log file.
         :param ha_node_obj: HA node(Logical Node object)
         :param sub_str: Sub string to match.
         :param log_file: Log file.
+        :param lines: No of lines needed from 'tail'(Default given as 10)
         :return: True/False and message
         """
         LOGGER.info("Get HA log pvc from pvc list.")
@@ -54,7 +55,7 @@ class HAK8SCompLib:
                 LOGGER.info("ha pvc: %s", ha_pvc)
                 break
         LOGGER.info("Check sub string in log file: %s.", log_file)
-        cmd_halog = f"tail -10 {common_const.HA_LOG}{ha_pvc}/log/ha/*/" \
+        cmd_halog = f"tail -{lines} {common_const.HA_LOG}{ha_pvc}/log/ha/*/" \
             f"{log_file} | grep '{sub_str}'"
         output = ha_node_obj.execute_cmd(cmd_halog)
         if isinstance(output, bytes):
@@ -133,7 +134,9 @@ class HAK8SCompLib:
         return True
 
     @staticmethod
-    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool=False, health_monitor: bool=False) -> dict:
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool = False, 
+                        health_monitor: bool = False, kubectl_delete: bool = False, 
+                        status: str = 'online') -> dict:
         '''
         Helper function to get ha log properties.
         :param node_obj: Master node(Logical Node object)
@@ -141,6 +144,8 @@ class HAK8SCompLib:
         :param kvalue: Number of lines required from 'tail' output
         :param fault_tolerance: Bool/If made true, checks fault_tolerance.log
         :param health_monitor: Bool/If made true, checks health_monitor.log
+        :param kubectl_delete: Bool/If made true, checks log for 'kubectl delete'
+        :param status: failed/online(Checks for particular alert)
         :return: ha prop data dictionary
         '''
         pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
@@ -152,16 +157,24 @@ class HAK8SCompLib:
                 LOGGER.info("ha pvc: %s", ha_pvc)
                 break
         if fault_tolerance:
-            # For one pod operation there will 9 lines of log
+            # For one pod operation there will be 9 lines of log
             kvalue *= 9
         if health_monitor:
-            # For one pod operation there will 4 lines of log
-            kvalue *= 4
+            # For one pod operation there will be 4 lines of log
+            if kubectl_delete:
+                kvalue*=8
+            else:
+                kvalue*=4
         cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
         output = node_obj.execute_cmd(cmd_halog)
         if isinstance(output, bytes):
             output = str(output, 'UTF-8')
         output = output.splitlines()
+        if kubectl_delete:
+            if status == 'failed':
+                output = output[:kvalue//2]
+            else:
+                output = output[kvalue//2:]
         if fault_tolerance:
             for line in output:
                 if 'Received the message from message bus' in line:
@@ -172,14 +185,21 @@ class HAK8SCompLib:
                 if 'to component hare' in line:
                     log_list.append(line)
             output = log_list
-        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': []}
+        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [], 
+                     'node_id': [], 'resource_id': []}
         for line in output:
             source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
             resource_type = line.split("{")[4].split(",")[6].split(":")[1].strip().replace("'", '')
-            resource_status = line.split("{")[4].split(",")[8].split(":")[1].strip().replace("'", '')
-            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().replace("'", '').replace('}', '')
+            resource_status = line.split("{")[4].split(",")[8].split(":")[1].\
+                strip().replace("'", '')
+            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().\
+                replace("'", '').replace('}', '')
+            node_id = line.split("{")[4].split(",")[5].split(":")[1].strip().replace("'", '')
+            resource_id = line.split("{")[4].split(",")[7].split(":")[1].strip().replace("'", '')
             resp_dict['source'].append(source)
             resp_dict['resource_status'].append(resource_status)
             resp_dict['resource_type'].append(resource_type)
             resp_dict['generation_id'].append(generation_id)
+            resp_dict['node_id'].append(node_id)
+            resp_dict['resource_id'].append(resource_id)
         return resp_dict
