@@ -23,12 +23,15 @@ import time
 import logging
 import pytest
 from libs.s3 import iam_test_lib
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from libs.s3 import LDAP_USERNAME
+from libs.s3 import LDAP_PASSWD
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.assert_utils import assert_true, assert_in
-from commons.utils.assert_utils import assert_is_not_none, assert_not_in
+from commons.utils.assert_utils import assert_true
+from commons.utils.assert_utils import assert_in
+from commons.utils.assert_utils import assert_is_not_none
+from commons.utils.assert_utils import assert_not_in
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
@@ -37,6 +40,7 @@ LOGGER = logging.getLogger(__name__)
 class TestAccountLoginProfile:
     """Account Login Profile Test Suite."""
 
+    # pylint: disable= line-too-long
     def setup_method(self):
         """
         It will perform all the pre-reqs and is invoked prior to each test case.
@@ -56,8 +60,7 @@ class TestAccountLoginProfile:
         Function to perform the clean up for each test.
         """
         LOGGER.info("STARTED: Teardown Operations")
-        LOGGER.info("Deleting account starts with: {}".format(
-            self.account_name))
+        LOGGER.info("Deleting account starts with: %s", self.account_name)
         acc_list = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)[1]
         LOGGER.info(acc_list)
@@ -72,10 +75,8 @@ class TestAccountLoginProfile:
             self,
             acc_name,
             email,
-            pwd,
-            pwd_reset,
-            ldap_user,
-            ldap_pwd):
+            **kwargs
+            ):
         """
         Helper method to create account and login profile for the same account.
         :param acc_name: Name of the account
@@ -86,6 +87,10 @@ class TestAccountLoginProfile:
         :param ldap_pwd: ldap password
         :return: None
         """
+        pwd = kwargs.get("pwd")
+        pwd_reset = kwargs.get("pwd_reset")
+        ldap_user = kwargs.get("ldap_user")
+        ldap_pwd = kwargs.get("ldap_pwd")
         LOGGER.info("Step 1: Creating an account %s", acc_name)
         acc_res = self.iam_obj.create_account(acc_name, email,
                                                   ldap_user, ldap_pwd)
@@ -319,10 +324,10 @@ class TestAccountLoginProfile:
             res = self.create_account_n_login_profile(
                 acc_name,
                 email,
-                self.test_cfg["test_9786"]["list_of_passwords"][each_pwd],
-                False,
-                self.ldap_user,
-                self.ldap_pwd)
+                pwd=self.test_cfg["test_9786"]["list_of_passwords"][each_pwd],
+                pwd_reset=False,
+                ldap_user=self.ldap_user,
+                ldap_pwd=self.ldap_pwd)
             LOGGER.debug(res)
         LOGGER.info(
             "ENDED: Create account login profile with password of possible combinations")
@@ -344,10 +349,10 @@ class TestAccountLoginProfile:
             res = self.create_account_n_login_profile(
                 acc_name,
                 email,
-                pwd,
-                False,
-                self.ldap_user,
-                self.ldap_pwd)
+                pwd=pwd,
+                pwd_reset=False,
+                ldap_user=self.ldap_user,
+                ldap_pwd=self.ldap_pwd)
             LOGGER.debug(res)
         LOGGER.info(
             "Create account login profile with password using invalid characters")
@@ -364,10 +369,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Create account login profile with --no-password-reset-required option.")
@@ -384,10 +389,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Create account login profile with --password-reset-required option.")
@@ -549,10 +554,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -636,10 +641,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
         LOGGER.debug(res)
@@ -746,10 +751,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -803,10 +808,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -857,10 +862,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -918,10 +923,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -974,10 +979,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1026,10 +1031,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1149,10 +1154,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1202,10 +1207,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1260,10 +1265,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            True,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=True,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1379,10 +1384,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
@@ -1442,8 +1447,8 @@ class TestAccountLoginProfile:
         assert_true(res[0], res[1])
         LOGGER.info("Step 2: Deleted recently created account")
         LOGGER.info(
-            "Step 3: Getting temp auth credentials for account {} which is"
-            "recently got deleted".format(self.account_name))
+            "Step 3: Getting temp auth credentials for account %s which is"
+            "recently got deleted", self.account_name)
         try:
             self.iam_obj.get_temp_auth_credentials_account(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
@@ -1469,10 +1474,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
@@ -1513,10 +1518,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
@@ -1590,10 +1595,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
@@ -1620,10 +1625,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         duration = 1200
         LOGGER.info(
@@ -1677,10 +1682,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         duration = 800
         LOGGER.info(
@@ -1713,10 +1718,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s with"
@@ -1748,10 +1753,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1800,10 +1805,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         user_name = "seagate_user"
         LOGGER.info(
@@ -1836,10 +1841,10 @@ class TestAccountLoginProfile:
         res = self.create_account_n_login_profile(
             self.account_name,
             self.email_id,
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            False,
-            self.ldap_user,
-            self.ldap_pwd)
+            pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            pwd_reset=False,
+            ldap_user=self.ldap_user,
+            ldap_pwd=self.ldap_pwd)
         LOGGER.debug(res)
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
@@ -1915,8 +1920,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Created user login profile for user %s", user_name)
         LOGGER.info(
-            "Step 5: Get temp auth credentials for existing user {} with time duration".format(
-                user_name))
+            "Step 5: Get temp auth credentials for existing user %s with time duration", user_name)
         res = self.iam_obj.get_temp_auth_credentials_user(
             self.account_name,
             user_name,
