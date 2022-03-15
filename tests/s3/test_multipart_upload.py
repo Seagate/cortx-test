@@ -383,12 +383,10 @@ class TestMultipartUpload:
         mp_config = MPART_CFG["test_8670"]
         self.log.info(
             "Configuring AWS S3 CLI custom settings for multipart upload ")
-        mp_s3_config_list = zip(
-            mp_config["s3_configs"],
-            mp_config["multipart_s3_config_values"])
-        default_s3_config_list = zip(
-            mp_config["s3_configs"],
-            mp_config["default_s3_config_values"])
+        mp_s3_config_list = list(
+            zip(mp_config["s3_configs"], mp_config["multipart_s3_config_values"]))
+        default_s3_config_list = list(
+            zip(mp_config["s3_configs"], mp_config["default_s3_config_values"]))
         self.log.info("Setting aws s3 configurations for multipart upload")
         for cfg, value in mp_s3_config_list:
             run_local_cmd("{0} {1} {2}".format(self.aws_set_cmd, cfg, value))
