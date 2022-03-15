@@ -39,8 +39,7 @@ class TestBucketLocation:
     """Bucket Location Test suite."""
 
     # pylint: disable=attribute-defined-outside-init
-    @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup_method(self):
         """
         Summary: Function will be invoked prior to each test case.
 
@@ -58,7 +57,9 @@ class TestBucketLocation:
         self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.log.info("ENDED : Setup test operations.")
-        yield
+
+    def teardown_method(self):
+        """ this is called after each test execution is over """
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
         resp = self.s3_test_obj.bucket_list()[1]
