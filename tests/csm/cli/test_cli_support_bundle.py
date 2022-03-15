@@ -30,11 +30,11 @@ from commons.errorcodes import error_handler
 from commons.ct_fail_on import CTFailOn
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli_support_bundle import CortxCliSupportBundle
-from libs.s3 import S3H_OBJ
 
 
 class TestCliSupportBundle:
     """CORTX CLI Test suite for support bundle operations"""
+    # pylint:disable=attribute-defined-outside-init
 
     @classmethod
     def setup_class(cls):
@@ -68,7 +68,7 @@ class TestCliSupportBundle:
         """
         self.LOGGER.info(
             "STARTED : Teardown operations at test function level")
-        remove_cmd = commands.CMD_REMOVE_DIR.format("/tmp/csm_support_bundle/")
+        remove_cmd = commands.CMD_REMOVE_DIR.format(constants.SUPPORT_BUNDLE_DIR_PATH)
         for each_node in self.node_list:
             node_obj = Node(hostname=each_node,
                             username=CMN_CFG["csm"]["admin_user"],
@@ -159,7 +159,7 @@ class TestCliSupportBundle:
             "Step 2: Verifying os logs are generated on each node")
         for each_node in self.node_list:
             resp = self.support_bundle_obj.extract_support_bundle(
-                bundle_id, each_node, "/tmp/csm_support_bundle/", host=each_node)
+                   bundle_id, each_node,constants.SUPPORT_BUNDLE_DIR_PATH , host=each_node)
             assert_utils.assert_equals(True, resp[0], resp[1])
             new_dict[each_node] = resp[1]
         time.sleep(1000)
@@ -168,7 +168,7 @@ class TestCliSupportBundle:
             "Step 3: Verifying os logs are generated for each component")
         for each in new_dict:
             for each_dir in new_dict[each]:
-                path = "{0}{1}/{2}/".format("/tmp/csm_support_bundle/",
+                path = "{0}{1}/{2}/".format(constants.SUPPORT_BUNDLE_DIR_PATH,
                                             bundle_id, each_dir)
                 obj = Node(hostname=each,
                            username=CMN_CFG["csm"]["admin_user"],

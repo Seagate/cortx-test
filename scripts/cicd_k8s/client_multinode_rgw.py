@@ -130,7 +130,7 @@ def main():
     if not resp[0]:
         print("Did not get expected response: {}".format(resp))
     ext_ip = resp[1]
-    port = resp[2]
+    port = resp[3]
     ext_port_ip = "{}:{}".format(ext_ip, port)
     print("External LB value, ip and port will be: {}".format(ext_port_ip))
 

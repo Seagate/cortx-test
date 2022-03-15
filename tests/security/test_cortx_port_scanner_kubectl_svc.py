@@ -22,7 +22,6 @@ import logging
 import os
 import pytest
 from kubernetes import client, config
-from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,27 +85,30 @@ def test_cortx_port_scanner_kubectl_svc():
             req_port_list.append(int(req_ports.rstrip()))
 
     req_port_list.sort()
-
-    LOGGER.info("------------------------------")
-    LOGGER.info("List of ports opened in cluster - scanned using kubectl get svc")
-    LOGGER.info("------------------------------")
-    actual_ports.sort()
-    to_log_actual_ports=list(set(actual_ports))
-    to_log_actual_ports.sort()
-    LOGGER.info(to_log_actual_ports)
-
-    LOGGER.info("------------------------------")
-    LOGGER.info("List of ports as per - specification")
-    LOGGER.info("------------------------------")
-    LOGGER.info(req_port_list)
-
-    LOGGER.info("------------------------------")
-    LOGGER.info("List of ports which should not be opened...")
-    LOGGER.info("------------------------------")
-    final_list_of_fault_ports=list(set(to_log_actual_ports) - set(req_port_list))
-    final_list_of_fault_ports.sort()
-    LOGGER.info(final_list_of_fault_ports)
+    final_list_of_fault_ports = verify_ports(actual_ports, req_port_list)
     if final_list_of_fault_ports:
         LOGGER.error(" Test Failed!!")
     else:
         LOGGER.info(" Test Case successful!!")
+
+
+def verify_ports(actual_ports, req_port_list):
+    """Ports verification will be added once ports are frozen."""
+    LOGGER.info("------------------------------")
+    LOGGER.info("List of ports opened in cluster - scanned using kubectl get svc")
+    LOGGER.info("------------------------------")
+    actual_ports.sort()
+    to_log_actual_ports = list(set(actual_ports))
+    to_log_actual_ports.sort()
+    LOGGER.info(to_log_actual_ports)
+    LOGGER.info("------------------------------")
+    LOGGER.info("List of ports as per - specification")
+    LOGGER.info("------------------------------")
+    LOGGER.info(req_port_list)
+    LOGGER.info("------------------------------")
+    LOGGER.info("List of ports which should not be opened...")
+    LOGGER.info("------------------------------")
+    final_list_of_fault_ports = list(set(to_log_actual_ports) - set(req_port_list))
+    final_list_of_fault_ports.sort()
+    LOGGER.info(final_list_of_fault_ports)
+    return final_list_of_fault_ports
