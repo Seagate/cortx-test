@@ -19,21 +19,22 @@
 
 """AuthServer HealthCheck API test module."""
 
-import os
 import logging
+import os
+
 import pytest
 
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils.web_utils import http_head_request
-from commons.utils.assert_utils import assert_equal
-from commons.utils.assert_utils import assert_true
-from commons.utils.system_utils import path_exists
-from commons.utils.system_utils import remove_file
-from commons.utils.system_utils import make_dirs
 from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
+from commons.utils.assert_utils import assert_equal
+from commons.utils.assert_utils import assert_true
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import remove_file
+from commons.utils.web_utils import http_head_request
 from config import CMN_CFG as CM_CFG
 from config.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
@@ -58,6 +59,7 @@ class TestAuthServerHealthCheckAPI:
         cls.auth_log_path = const.AUTHSERVER_LOG_PATH
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "AuthServerHealthCheck")
         cls.local_file = os.path.join(cls.test_dir_path, "haproxy.cfg")
+        cls.head_url = None
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
