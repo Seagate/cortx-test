@@ -41,8 +41,11 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 
+#pylint: disable-msg=too-many-public-methods
 class TestAuditLogs:
     """Audit logs test suite."""
+
+    # pylint: disable-msg=attribute-defined-outside-init
 
     @classmethod
     def setup_class(cls):
