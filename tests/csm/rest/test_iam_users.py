@@ -447,8 +447,6 @@ class TestIamUserRGW():
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
             self.log.info("Printing response %s", resp)
             assert_utils.assert_true(resp[0], resp[1])
-            #assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
-            #                                  f"expected was {resp[2]}, received {resp[3]}")
             self.log.info("Create bucket and perform IO")
             s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
                                secret_key=resp1.json()["keys"][0]["secret_key"])
@@ -594,13 +592,13 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
-        for bucket_cnt in range(1001):
+        for bucket_cnt in range(const.MAX_BUCKETS+1):
             bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
             # Create bucket with bucket_name and perform IO
             s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
                                secret_key=resp1.json()["keys"][0]["secret_key"])
             status, resp = s3_obj.create_bucket(bucket_name)
-            if bucket_cnt < 1000:
+            if bucket_cnt < const.MAX_BUCKETS:
                 assert_utils.assert_true(status, resp)
                 test_file = "test-object.txt"
                 file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
