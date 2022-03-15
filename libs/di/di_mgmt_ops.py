@@ -271,6 +271,8 @@ class ManagementOPs:
 
     @classmethod
     def create_s3_user_csm_rest(cls, user_name, passwd):
+        """Function creates s3 user using REST API.
+        """
         udict = dict()
         s3acc_obj = RestS3user()
         resp = s3acc_obj.create_an_account(user_name, passwd)

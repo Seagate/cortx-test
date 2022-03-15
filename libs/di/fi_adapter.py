@@ -44,26 +44,30 @@ LOGGER = logging.getLogger(__name__)
 
 
 class EnableFailureInjection(ABC):
-
+    """Abstract class to enable failure injection."""
     @abstractmethod
     def enable_checksum_failure(self):
+        """Enable Checksum failure."""
         pass
 
     @abstractmethod
     def enable_data_block_corruption(self):
+        """Enable data block corruption."""
         pass
 
     @abstractmethod
     def enable_meta_data_failure(self):
+        """Enable metadata corruption."""
         pass
 
     @abstractmethod
     def enable_s3_meta_data_failure(self):
+        """Enable s3 metadata corruption."""
         pass
 
 
 class S3FailureInjection(EnableFailureInjection):
-
+    """Implements EnableFailureInjection interface to perform FI on S3."""
     def __init__(self, cmn_cfg):
         """Initialize connection to Nodes or Pods."""
         self.cmn_cfg = cmn_cfg
@@ -95,6 +99,7 @@ class S3FailureInjection(EnableFailureInjection):
         self.nodes_str = 'NODES="{}"'.format(nodes_str)
 
     def create_nodes_connection(self):
+        """Create LogicalNode connections to Target Nodes."""
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
             self._connections = [Connection(node["hostname"], user=node["username"],
@@ -261,9 +266,14 @@ class S3FailureInjection(EnableFailureInjection):
                 return False, ex
 
     def enable_checksum_failure(self):
+        """This essentially means data corruption with Legacy S3 Srv Impl."""
         raise NotImplementedError('S3 team does not support checksum failure')
 
     def enable_data_block_corruption(self) -> bool:
+        """
+        enable data block corruption
+        :return: Bool
+        """
         fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
         status = False
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
@@ -306,12 +316,16 @@ class S3FailureInjection(EnableFailureInjection):
         return status
 
     def enable_meta_data_failure(self):
+        """Not supported.
+        """
         raise NotImplementedError('Motr team does not support Meta data failure')
 
     def enable_s3_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Motr team does not support Meta data failure')
 
     def close_connections(self):
+        """Close connections to target nodes."""
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
             for conn in self.connections:
@@ -330,13 +344,17 @@ class MotrFailureInjectionAdapter(EnableFailureInjection):
         self.dc_tool = dc_tool  # delegates task to DC tool
 
     def enable_checksum_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_data_block_corruption(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_s3_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
