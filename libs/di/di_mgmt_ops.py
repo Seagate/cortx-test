@@ -25,10 +25,6 @@ import logging
 import json
 from http import HTTPStatus
 
-import boto3
-from config import CMN_CFG
-from config import CSM_CFG
-from config import S3_CFG
 from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl

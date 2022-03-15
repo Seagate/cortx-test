@@ -157,6 +157,7 @@ class S3FailureInjection(EnableFailureInjection):
             return status, stdout
         return status, stdout
 
+    # pylint: disable-msg=too-many-nested-blocks
     def _set_fault(self, fault_type: str, fault_operation: bool, use_script: bool = False):
         """
         sets the following faults
