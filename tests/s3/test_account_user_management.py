@@ -90,7 +90,8 @@ class TestAccountUserManagement:
             self.log.info("Created path: %s", self.test_dir_path)
         self.log.info("Test file path: %s", self.test_file_path)
         self.timestamp = time.time()
-        self.account_name = f"{self.account_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
+        self.account_name = f"{self.account_name_prefix}" \
+                            f"{str(time.perf_counter_ns()).replace('.', '_')}"
         self.user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
         self.bucket_name = f"testbucket{str(time.perf_counter_ns())}"
         self.obj_name = f"testobj{str(time.perf_counter_ns())}"
