@@ -100,6 +100,7 @@ def build_defect_table(data: List[list]):
     return defect_table
 
 
+# pylint: disable-msg=too-many-locals
 def main():
     """Generate PDF engineering report from csv executive report."""
     build = common_pdf.get_args()
