@@ -130,7 +130,8 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5336")
+                log_file_prefix="TEST-5336",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -176,7 +177,8 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5337")
+                log_file_prefix="TEST-5337",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -273,7 +275,8 @@ class TestDosScalability:
                     obj_name_pref=self.obj_name,
                     obj_size=obj_size,
                     skip_cleanup=True,
-                    log_file_prefix="TEST-5340")
+                    log_file_prefix="TEST-5340",
+                    validate_certs=S3_CFG["validate_certs"])
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
@@ -325,7 +328,8 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5341")
+                log_file_prefix="TEST-5341",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -374,7 +378,8 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5308")
+                log_file_prefix="TEST-5308",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(

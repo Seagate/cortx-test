@@ -150,7 +150,8 @@ class TestAccountUserManagementResetPassword:
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.info(resp)
         assert_utils.assert_true(os.path.exists(resp[1]), f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")

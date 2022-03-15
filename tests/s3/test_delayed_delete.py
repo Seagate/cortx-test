@@ -628,7 +628,8 @@ class TestDelayedDelete:
         resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=clients,
                                num_sample=samples, obj_name_pref="test-object-",
                                obj_size=object_size, skip_cleanup=False, duration=None,
-                               log_file_prefix="TEST-28990", end_point=S3_CFG["s3b_url"])
+                               log_file_prefix="TEST-28990", end_point=S3_CFG["s3b_url"],
+                               validate_certs=S3_CFG["validate_certs"])
         self.log.info("Log Path %s", resp[1])
         assert_utils.assert_false(s3bench.check_log_file_error(resp[1]),
                                   f"S3bench workload for object size {object_size} failed."

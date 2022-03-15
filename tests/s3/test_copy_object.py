@@ -159,7 +159,8 @@ class TestCopyObjects:
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         LOGGER.info(resp)
         assert_utils.assert_true(
             os.path.exists(

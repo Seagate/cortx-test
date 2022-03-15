@@ -152,7 +152,7 @@ class TestDataPathValidation:
             obj_name_pref=obj_prefix,
             obj_size="4Kb",
             log_file_prefix=obj_prefix,
-            validate_certs=S3_CFG['validate_certs'])
+            validate_certs=S3_CFG["validate_certs"])
         self.log.debug(res)
         self.log_file.append(res[1])
         resp = system_utils.validate_s3bench_parallel_execution(
@@ -342,7 +342,8 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8731_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8731_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8731_s3bench_{request_load}")
@@ -401,7 +402,8 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8732_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8732_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8732_s3bench_{request_load}")
@@ -469,7 +471,8 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8733_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8733_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8733_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
@@ -536,7 +539,8 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8734_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8734_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8734_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
