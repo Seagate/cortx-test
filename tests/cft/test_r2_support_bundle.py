@@ -28,6 +28,7 @@ from multiprocessing import Process
 import pytest
 
 from commons import constants
+from commons.constants import const
 from commons import commands as comm
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
@@ -37,6 +38,7 @@ from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestR2SupportBundle:
     """Class for R2 Support Bundle testing"""
 
@@ -93,20 +95,20 @@ class TestR2SupportBundle:
         system_utils.execute_cmd(tar_sb_cmd)
         return True
 
-    def size_verify(self,component_dir_name):
+    def size_verify(self, component_dir_name):
         """
         This function which is used to verify component directory has specific size limit logs
         """
-        files=os.listdir(component_dir_name)
-        number=len(files)
+        files = os.listdir(component_dir_name)
+        number = len(files)
         count = 0
+        flg = False
         for file in files:
             if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
-                count+=1
-        if count==number:
-            return True
-        else:
-            return False
+                count+= 1
+        if count == number:
+            flg = True
+        return flg
 
     def r2_verify_support_bundle(self, bundle_id, test_comp_list, size=None, services=None):
         """
@@ -149,14 +151,16 @@ class TestR2SupportBundle:
                 if size is not None:
                     resp=self.size_verify(component_dir_name)
                     if resp:
-                        self.LOGGER.info("Component dir %s is with limited size logs",component_dir_name)
+                        self.LOGGER.info("Component dir %s is with limited size logs",
+                                         component_dir_name)
                     else:
-                        self.LOGGER.error("Component dir %s is not with limited size logs",component_dir_name)
+                        self.LOGGER.error("Component dir %s is not with limited size logs",
+                                          component_dir_name)
                 if services is not None:
-                     auth_services= os.path.isfile(constants.AUTHSERVER_LOG_PATH)
-                     if auth_services:
+                    auth_services = os.path.isfile(const.AUTHSERVER_LOG_PATH)
+                    if auth_services:
                         self.LOGGER.info("specified Authserver files are generated")
-                     else:
+                    else:
                         self.LOGGER.info("specified Autthserver files are not generated")
             self.LOGGER.debug(
                 "Verified logs are generated for each component for this node")
@@ -221,15 +225,16 @@ class TestR2SupportBundle:
         pod_list = self.node_obj.get_all_pods(pod_prefix=constants.POD_NAME_PREFIX)
 
         output = self.node_obj.execute_cmd(cmd=comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
-                                      read_lines=True)
+                                           read_lines=True)
         container_list = output[0].split()
 
         generate_sb_process = Process(target=sb.generate_sb_lc,
-            args=(dest_dir, sb_identifier, pod_list[0], msg, container_list[0]))
+                                      args=(dest_dir, sb_identifier, pod_list[0],
+                                            msg, container_list[0]))
 
         generate_sb_process.start()
         time.sleep(2)
-        self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
+        self.LOGGER.info("Step 2: checking In progress status of support bundle")
         resp = sb.sb_status_lc(sb_identifier)
         if "In-Progress" in resp:
             self.LOGGER.info("support bundle generation is In-progress status")
@@ -247,7 +252,7 @@ class TestR2SupportBundle:
             self.LOGGER.info("support bundle generation completed")
         elif "In-Progress" in resp:
             assert_utils.assert_true(False, f"Support bundle is In-progress state, "
-                              f"which is unexpected: {resp}")
+                                            f"which is unexpected: {resp}")
         else:
             assert_utils.assert_true(False, f"Support bundle is not generated: {resp}")
 
@@ -259,14 +264,15 @@ class TestR2SupportBundle:
         Validate  support bundle size limit filter for each log
         """
         self.LOGGER.info("Step 1: Generating support bundle through cli")
-        resp = sb.create_support_bundle_single_cmd(
-            self.bundle_dir, bundle_name="test_32603", comp_list="'s3server;csm;provisioner'", size='1M')
+        resp = sb.create_support_bundle_single_cmd(self.bundle_dir, bundle_name="test_32603",
+                                                   comp_list="'s3server;csm;provisioner'",
+                                                   size='1M')
         assert_utils.assert_true(resp[0], resp[1])
         self.LOGGER.info("Step 1: Generated support bundle through cli")
         size='1M'
         test_comp_list = ["csm", "s3", "provisioner"]
         self.LOGGER.info(
-            "Step 2: Verifying logs are generated with speicified size limit")
+            "Step 2: Verifying logs are generated with specified size limit")
         self.r2_verify_support_bundle(resp[1], test_comp_list,size)
         self.LOGGER.info(
             "Step 2: Verified logs are generated with specific size limit")
@@ -280,13 +286,14 @@ class TestR2SupportBundle:
         """
         self.LOGGER.info("Step 1: Generating support bundle through cli")
         resp = sb.create_support_bundle_single_cmd(
-            self.bundle_dir, bundle_name="test_32606", comp_list="'s3server'",services="S3:Authserver")
+            self.bundle_dir, bundle_name="test_32606", comp_list="'s3server'",
+            services="S3:Authserver")
         assert_utils.assert_true(resp[0], resp[1])
         self.LOGGER.info("Step 1: Generated support bundle through cli")
-        services=['Authserver']
+        services = ['Authserver']
         test_comp_list = ["s3"]
         self.LOGGER.info(
-            "Step 2: Verifying logs are generated with speicified services")
+            "Step 2: Verifying logs are generated with specified services")
         self.r2_verify_support_bundle(resp[1], test_comp_list, services)
         self.LOGGER.info(
             "Step 2: Verified logs are generated with specified services")
@@ -305,7 +312,7 @@ class TestR2SupportBundle:
             resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
             if "No such file" in resp:
                 assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
-                            f"does not exist on pod: {pod} resp: {resp}")
+                                                f"does not exist on pod: {pod} resp: {resp}")
             self.LOGGER.info("CSM log files: %s", resp)
         self.LOGGER.info("Successfully validated CSM log path")
 
@@ -323,7 +330,7 @@ class TestR2SupportBundle:
             resp = sb.log_file_size_on_path(pod, constants.LOG_PATH_CSM)
             if "No such file" in resp:
                 assert_utils.assert_true(False, f"Log path {constants.LOG_PATH_CSM} "
-                                               f"does not exist on pod: {pod} resp: {resp}")
+                                                f"does not exist on pod: {pod} resp: {resp}")
             lines = resp.splitlines()
             for count in range(1,len(lines)):
                 line = lines[count].split()
@@ -378,7 +385,7 @@ class TestR2SupportBundle:
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
-                                                   f"does not exist on pod: {pod} resp: {resp}")
+                                                    f"does not exist on pod: {pod} resp: {resp}")
                 self.LOGGER.info("S3 log files: %s", resp)
         self.LOGGER.info("Successfully validated S3 log file paths for all pods")
 
@@ -409,10 +416,10 @@ class TestR2SupportBundle:
                     file_size = int(line[4][:-2])
                     if file_size > constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]:
                         assert_utils.assert_true(False, f"S3 max file size is: "
-                            f"{constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]}MB "
-                                f"and actual file size is: {file_size}MB for file:{line[-1]}")
+                                    f"{constants.LOG_PATH_FILE_SIZE_MB_S3[file_path]}MB"
+                                    f" and actual file size is: {file_size}MB for file:{line[-1]}")
         self.LOGGER.info("Successfully validated S3 log files size, "
-                             "all files are within max limit")
+                         "all files are within max limit")
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
@@ -432,8 +439,8 @@ class TestR2SupportBundle:
                 self.LOGGER.info("log path: %s", log_path)
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
-                    assert_utils.assert_true(False, f"Log path {log_path} "
-                                                   f"does not exist on pod: {pod} resp: {resp}")
+                    assert_utils.assert_true(False, f"Log path {log_path} does not exist "
+                                                    f"on pod: {pod} resp: {resp}")
                 self.LOGGER.info("Utils log files: %s", resp)
         self.LOGGER.info("Successfully validated Utils log file paths for all pods")
 
@@ -493,8 +500,8 @@ class TestR2SupportBundle:
                 self.LOGGER.info("Utils log files on path %s: %s", log_path, resp)
                 if constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils'] < (len(lines) - 1):
                     assert_utils.assert_true(False, f"Max rotating Utils log files "
-                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']} "
-                                            f"and actual no of files are: {len(lines) - 1}")
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Utils']}"
+                                        f"and actual no of files are: {len(lines) - 1}")
         self.LOGGER.info("Successfully validated Utils rotating log files are as per "
                          "frequency configured for all pods")
 
@@ -517,7 +524,7 @@ class TestR2SupportBundle:
                 resp = sb.log_file_size_on_path(pod, log_path)
                 if "No such file" in resp:
                     assert_utils.assert_true(False, f"Log path {log_path} "
-                                                   f"does not exist on pod: {pod} resp: {resp}")
+                                                    f"does not exist on pod: {pod} resp: {resp}")
                 self.LOGGER.info("HARE log files: %s", resp)
         self.LOGGER.info("Successfully validated HARE log file paths for all pods")
 
@@ -551,7 +558,7 @@ class TestR2SupportBundle:
                             f"{constants.LOG_PATH_FILE_SIZE_MB_HARE[file_path]}MB "
                                 f"and actual file size is: {file_size}MB for file:{line[-1]}")
         self.LOGGER.info("Successfully validated HARE log files size, "
-                             "all files are within max limit")
+                         "all files are within max limit")
 
     @pytest.mark.lc
     @pytest.mark.log_rotation
@@ -577,8 +584,8 @@ class TestR2SupportBundle:
                 self.LOGGER.info("HARE log files on path %s: %s", log_path, resp)
                 if constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare'] < (len(lines) - 1):
                     assert_utils.assert_true(False, f"Max rotating HARE log files "
-                                            f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} "
-                                            f"and actual no of files are: {len(lines) - 1}")
+                                        f"are:{constants.MAX_NO_OF_ROTATED_LOG_FILES['Hare']} "
+                                        f"and actual no of files are: {len(lines) - 1}")
         self.LOGGER.info("Successfully validated HARE rotating log files are as per "
                          "frequency configured for all pods")
 
@@ -758,7 +765,6 @@ class TestR2SupportBundle:
         self.LOGGER.info("STARTED: Test to validate support bundle contains component logs")
 
         self.LOGGER.info("Step 1: Generate support bundle")
-        #pod_to_check = [constants.POD_NAME_PREFIX, constants.SERVER_POD_NAME_PREFIX]
         dest_dir = "file://" + constants.R2_SUPPORT_BUNDLE_PATH
 
         for pod in constants.SB_POD_PREFIX_AND_COMPONENT_LIST:
@@ -818,8 +824,8 @@ class TestR2SupportBundle:
                         hare_dir = os.listdir(comp_dir_path)
                         unzip_hare_dir = comp_dir_path + "/" + hare_dir[0]
                         resp = sb.file_with_prefix_exists_on_path(unzip_hare_dir +
-                                                    constants.SB_EXTRACTED_PATH + "hare/log/"
-                                                                  + machine_id, "hare")
+                                                                  constants.SB_EXTRACTED_PATH +
+                                                                  "hare/log/" + machine_id, "hare")
                         if resp:
                             self.LOGGER.info("hare logs are present in support Bundle")
                         else:
@@ -836,8 +842,8 @@ class TestR2SupportBundle:
                                                             "found in support bundle")
                     if comp == "s3":
                         resp = sb.file_with_prefix_exists_on_path(comp_dir_path +
-                                                    constants.SB_EXTRACTED_PATH + "s3/" +
-                                                                  machine_id, "s3server")
+                                                                  constants.SB_EXTRACTED_PATH +
+                                                                  "s3/" + machine_id, "s3server")
                         if resp:
                             self.LOGGER.info("s3server logs are present in support Bundle")
                         else:

@@ -27,17 +27,20 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
+from commons.utils.s3_utils import assert_s3_err_msg
 from commons.params import TEST_DATA_FOLDER
+from commons import constants as const
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3 import CMN_CFG
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestMultipartUpload:
     """Multipart Upload Test Suite."""
 
@@ -78,6 +81,7 @@ class TestMultipartUpload:
         cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
         cls.log.info("ENDED: teardown test suite operations.")
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -963,10 +967,8 @@ class TestMultipartUpload:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_equal(
-                mp_config["error_msg"],
-                error.message,
-                error.message)
+            assert_s3_err_msg(const.RGW_ERR_WRONG_JSON, const.CORTX_ERR_WRONG_JSON,
+                              CMN_CFG["s3_engine"], error)
             self.log.info(
                 "Step 4: Failed to complete the multipart with input of wrong json/etag")
         self.log.info("ENDED: Test Multipart upload with invalid json input")

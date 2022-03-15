@@ -19,35 +19,33 @@
 
 """Bucket Workflow Operations Test Module."""
 
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
+
 import pytest
 
+from commons import constants as const
 from commons.constants import S3_ENGINE_RGW
-from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.s3_utils import assert_s3_err_msg
 from config import S3_CFG, CMN_CFG
-from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """
-        Summary: Function will be invoked prior to each test case.
-
-        Description: It will perform all prerequisite and cleanup test.
-        """
+    def setup_method(self):
+        """Function to perform the setup ops for each test."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup test operations.")
         self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
@@ -65,7 +63,9 @@ class TestBucketWorkflowOperations:
         self.account_list = []
         self.bucket_list = []
         self.log.info("ENDED: Setup test operations")
-        yield
+
+    def teardown_method(self):
+        """Function to perform the clean up for each test."""
         self.log.info("STARTED: Setup test operations.")
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
@@ -372,12 +372,12 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "BucketAlreadyOwnedByYou" in error.message, error.message
-        self.log.info(
-            "Creating a bucket with existing bucket name is failed")
+            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
+                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+                              CMN_CFG["s3_engine"], error)
+        self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
-        self.log.info(
-            "ENDED: Create bucket with same bucket name already present")
+        self.log.info("ENDED: Create bucket with same bucket name already present")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops

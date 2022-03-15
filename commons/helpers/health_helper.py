@@ -1,7 +1,5 @@
 #!/usr/bin/python
-
 """File consists methods related to the health of the cluster."""
-
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
@@ -151,7 +149,6 @@ class Health(Host):
     def get_memory_usage(self):
         """
         Function with fetch the system memory usage percentage from remote host
-
         :return: system memory usage in percent
         """
         LOG.debug(
@@ -182,7 +179,6 @@ class Health(Host):
         """
         Function to return pcs service systemd service name.
         This function will be usefull when service is not under systemctl
-
         :param service: Name of the pcs resource service
         :return: name of the service mentioned in systemd
         """
@@ -207,7 +203,6 @@ class Health(Host):
         """
         This function Gracefully shutdown the given node using pcs cluster
         stop command
-
         :param node_name: Name of the node
         :param stop_flag: Shutdown if flag is True else Start the node
         """
@@ -225,7 +220,6 @@ class Health(Host):
     def pcs_status_grep(self, service: str) -> str or None:
         """
         Function to return grepped pcs status services.
-
         :param str service: Name of the pcs resource service
         :return: pcs staus str response)
         """
@@ -239,7 +233,6 @@ class Health(Host):
     def pcs_resource_cleanup(self, options: str = None) -> str or None:
         """
         Perform pcs resource cleanup
-
         :param options: option supported in resource cleanup
         eg: [<resource id>] [--node <node>]
         :return:  pcs str response
@@ -258,7 +251,6 @@ class Health(Host):
     def is_motr_online(self) -> bool:
         """
         Check whether all services are online in motr cluster.
-
         :return: hctl response.
         """
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
@@ -287,7 +279,6 @@ class Health(Host):
     def is_machine_already_configured(self) -> bool:
         """
         This method checks that machine is already configured or not.
-
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
@@ -331,7 +322,6 @@ class Health(Host):
         """
         Function will verify hctl status commands output. Check for
         all cluster services are online using hctl mero status command.
-
         ex - mero_status_cmd = "hctl status"
         :return: boolean
         """
@@ -469,7 +459,6 @@ class Health(Host):
 
     def get_sys_capacity(self):
         """Parse the hctl response to extract used, available and total capacity
-
         :return [tuple]: total_cap,avail_cap,used_cap
         """
         response = self.hctl_status_json()
@@ -486,7 +475,6 @@ class Health(Host):
             -> Tuple[bool, str]:
         """
         Restart given resource using pcs resource command
-
         :param resource: resource name from pcs resource
         :param wait_time: Wait time in sec after restart
         :return: tuple with boolean and response/error
@@ -508,7 +496,6 @@ class Health(Host):
     def pcs_service_status(self, resource: str = None) -> Tuple[bool, str]:
         """
         Get status of given resource using pcs resource command
-
         :param resource: resource name from pcs resource
         :return: tuple with boolean and response/error
         :rtype: tuple
@@ -812,7 +799,6 @@ class Health(Host):
     def pcs_restart_cluster(self):
         """
         Function starts and stops the cluster using the pcs command.
-
         command used:
             pcs cluster stop --all
             pcs cluster start --all
@@ -839,7 +825,6 @@ class Health(Host):
                              wait_time: int = 30) -> bool:
         """
         Perform given operation on pcs resource using pcs resource command
-
         :param command: pcs operation to be performed on resource
         :param resources: list of resource names from pcs resource
         :param srvnode: Name of the server on which command to be performed
@@ -907,7 +892,6 @@ class Health(Host):
             -> Tuple[bool, str]:
         """
         Disable given resource using pcs resource command
-
         :param resource: resource name from pcs resource
         :param wait_time: Wait time in sec after restart
         :return: tuple with boolean and response/error
@@ -925,7 +909,6 @@ class Health(Host):
             -> Tuple[bool, str]:
         """
         Enable given resource using pcs resource command
-
         :param resource: resource name from pcs resource
         :param wait_time: Wait time in sec after restart
         :return: tuple with boolean and response/error

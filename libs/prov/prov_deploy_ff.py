@@ -31,12 +31,11 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable-msg=too-many-public-methods
 class ProvDeployFFLib:
     """
     This class contains utility methods for all the operations related
@@ -411,9 +410,10 @@ class ProvDeployFFLib:
             for network_type, ip_addr in ips.items():
                 netmask = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETMASK.format(ip_addr))
                 netmask = netmask.strip().decode("utf-8")
-                gateway = "0.0.0.0"
                 if network_type == "management":
                     gateway = deploy_ff_cfg["gateway_lco"]
+                else:
+                    gateway = deploy_ff_cfg["gateway"]
                 nd_obj.execute_cmd(cmd=common_cmd.PREPARE_NETWORK_TYPE.format(network_type,
                                                                               ip_addr, netmask,
                                                                               gateway),
@@ -466,11 +466,14 @@ class ProvDeployFFLib:
             if len(CMN_CFG["nodes"]) > 1:
                 if field_user:
                     cmd = "".join(
-                        [common_cmd.FIELD_CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
+                        [common_cmd.FIELD_CLUSTER_CREATE.format(hostnames,
+                                                                CMN_CFG["csm"]["mgmt_vip"],
+                                                                build_url),
                          "\n"])
                 else:
                     cmd = "".join(
-                        [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
+                        [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"],
+                                                          build_url),
                          "\n"])
             else:
                 if field_user:
@@ -498,11 +501,13 @@ class ProvDeployFFLib:
                     passwd_counter += 1
                 elif "Enter nodeadmin user password for srvnode" in current_output \
                         and passwd_counter < len(CMN_CFG["nodes"]):
-                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
+                    pswd = "".join(
+                        [CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
                     channel.send(pswd)
                     passwd_counter += 1
                 elif "Enter nodeadmin user password for current node:" in current_output:
-                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
+                    pswd = "".join(
+                        [CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
                     channel.send(pswd)
                 elif "command Failed" in output:
                     LOGGER.error(current_output)
@@ -631,6 +636,7 @@ class ProvDeployFFLib:
 
         return True, "Deployment Completed"
 
+    # pylint: disable=too-many-arguments
     def field_deployment_cluster(self, nd1_obj: Node, hostnames: str, srvnodes: str,
                                  deploy_cfg: ConfigParser, build_url: str):
         """
@@ -744,7 +750,6 @@ class ProvDeployFFLib:
             return False, error
 
         return True
-
 
     @staticmethod
     def check_status(nd1_obj: Node):
@@ -929,7 +934,7 @@ class ProvDeployFFLib:
                                                  post_deploy_cfg["s3user_email"],
                                                  s3user_pswd)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Response for account creation: %s",resp)
+        LOGGER.info("Response for account creation: %s", resp)
         cortx_obj.close_connection()
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -961,7 +966,7 @@ class ProvDeployFFLib:
         try:
             node_obj.connect(shell=True)
             channel = node_obj.shell_obj
-            LOGGER.debug(f"Executing command: {cmd}")
+            LOGGER.debug("Executing command: %s",cmd)
             cmd = "".join([cmd, "\n"])
             channel.send(cmd)
             output = ""
@@ -972,10 +977,7 @@ class ProvDeployFFLib:
                     output = channel.recv(9999).decode("utf-8")
                     output += output
                     LOGGER.info(output)
-                if "command failed" in output:
-                    LOGGER.error(output)
-                    break
-                elif "Error" in output:
+                if "command failed" in output or "Error" in output:
                     LOGGER.error(output)
                     break
             if "command failed" in output or "Error" in output:

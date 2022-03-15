@@ -49,7 +49,12 @@ LOGGER = logging.getLogger(__name__)
 class TestCopyObjects:
     """S3 copy object class."""
 
+    # pylint: disable=too-many-instance-attributes
     # pylint: disable=attribute-defined-outside-init
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-locals
+
     @pytest.yield_fixture(autouse=True)
     def setup(self):
         """
@@ -1685,7 +1690,7 @@ class TestCopyObjects:
         LOGGER.info("4. List object for the bucket1.")
         resp = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_true(any([object_name in obj for obj in resp[1]]),
+        assert_utils.assert_true(any(object_name in obj for obj in resp[1]),
                                  f"{object_name} not present in {resp[1]}")
         LOGGER.info("5. Copy object from bucket1 to bucket2.")
         resp = self.s3_obj.copy_object(
@@ -1725,7 +1730,7 @@ class TestCopyObjects:
             " structure as source object.")
         resp = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_true(any([self.object_name2 in obj for obj in resp[1]]),
+        assert_utils.assert_true(any(self.object_name2 in obj for obj in resp[1]),
                                  f"{self.object_name2} not present in {resp[1]}")
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -1807,7 +1812,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info(
-            "Step 3: Copy object from bucket1 to bucket2 using wildcard * for source-object.")
+            "Step 3: Copy object to same bucket using wildcard * for source-object.")
         try:
             status, response = self.s3_obj.copy_object(
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)

@@ -27,16 +27,23 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import remove_file
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
-from commons.params import TEST_DATA_FOLDER
-from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
+from libs.s3 import s3_test_lib
+from libs.s3 import s3_tagging_test_lib
+from libs.s3 import s3_multipart_test_lib
 
 
+# pylint: disable-msg=too-many-instance-attributes
 class TestObjectTagging:
     """Object Tagging Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.

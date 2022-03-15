@@ -53,6 +53,7 @@ HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
 HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
+RGW_CONTAINER_NAME = "cortx-rgw"
 HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
 NAMESPACE = "default"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
@@ -138,11 +139,13 @@ CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir() + "/authserver.properties"
 LOCAL_CONF_PATH = tempfile.gettempdir() + "/cluster.conf"
+LOCAL_SOLUTION_PATH = tempfile.gettempdir() + "/solution.yaml"
 CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
+SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -462,3 +465,19 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+
+#errors for rgw and cortx s3
+RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
+"operation: Unknown")
+CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
+"operation: Your key is too long.")
+RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: Unknown")
+CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
+"operation: One or more of the specified parts could not be found. The part might not have been "
+"uploaded, or the specified entity tag might not have matched the part's entity tag.")
+RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
+"CreateBucket operation: Unknown")
+CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
+"the CreateBucket operation: Your previous request to create the named bucket succeeded and "
+"you already own it.")

@@ -94,6 +94,7 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
+  gateway: "0.0.0.0"
   per_step_delay: 30
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"
@@ -126,6 +127,12 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   setup_size: "small"
+  protocol: "http://{}:{}"
+  https_port: 30443
+  http_port: 30080
+  control_port_https: 31169
+  iface: "eth1"
+  service_type: "LoadBalancer"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
@@ -135,6 +142,7 @@ k8s_cortx_deploy:
   new_file_path: "solution.yaml"
   report_file: "deployment_report.csv"
   log_file: "deployment.log"
+  rgw_rpm: "cortx-rgw"
   status_log_file: "status.log"
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
@@ -161,6 +169,11 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+  timeout:
+    pre-req: 120
+    deploy: 7200
+    destroy: 900
+    status: 120
 test_basic_io:
   io_upper_limits:
     Kb: 130
