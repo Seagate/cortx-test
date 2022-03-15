@@ -36,24 +36,26 @@ from libs.s3.s3_test_lib import S3TestLib
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """
-        Summary: Function will be invoked prior to each test case.
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.no_auth_obj = None
+        cls.no_auth_obj_without_cert = None
 
-        Description: It will perform all prerequisite and cleanup test.
-        """
+    def setup_method(self):
+        """Function to perform the setup ops for each test."""
         self.log = logging.getLogger(__name__)
         self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.no_auth_obj = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"],
-            s3_cert_path=S3_CFG["s3_cert_path"])
-        self.no_auth_obj_without_cert = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"], s3_cert_path=None)
+        self.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                       s3_cert_path=S3_CFG["s3_cert_path"])
+        self.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                                    s3_cert_path=None)
         self.log.info("STARTED: setup test operations.")
         self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
         self.log.info("ENDED: setup test operations.")
-        yield
+
+    def teardown_method(self):
+        """Function to perform the clean up for each test."""
         self.log.info("STARTED: Test teardown operations.")
         status, bktlist = self.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
