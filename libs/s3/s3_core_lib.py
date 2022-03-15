@@ -324,10 +324,9 @@ class S3Lib(S3Rest):
         :return: response.
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
-        LOGGER.debug(
-            "The %s has been downloaded successfully at mentioned file path %s",
-            obj_name,
-            file_path)
+        LOGGER.debug("The %s has been downloaded successfully at mentioned file path %s",
+                     obj_name,
+                     file_path)
 
         return file_path
 

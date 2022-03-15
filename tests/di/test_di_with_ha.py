@@ -30,7 +30,6 @@ from time import perf_counter_ns
 
 import pytest
 from commons.constants import MB
-from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
@@ -104,7 +103,7 @@ class TestDICheckHA:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DITestMultipartUpload")
         if not os.path.exists(cls.test_dir_path):
             resp = make_dirs(cls.test_dir_path)
-            LOGGER.info("Created dir %s", cls.test_dir_path)
+            LOGGER.info("Created dir %s", resp)
 
     def setup_method(self):
         """

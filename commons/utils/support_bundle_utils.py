@@ -25,11 +25,11 @@ import os
 import logging
 import time
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons import commands as cm_cmd
 from commons import constants as cm_const
 from commons.utils import assert_utils
 from config import CMN_CFG
-from commons.helpers.pods_helper import LogicalNode
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -83,6 +83,8 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 
 # pylint: disable=max-args
+# pylint: disable-msg=too-many-statements
+# pylint: disable-msg=too-many-locals
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
                                      size=None, services=None):
     """
@@ -223,12 +225,12 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
     if flg:
         LOGGER.info("Support bundle %s generated and copied to %s path.",
                     file, local_dir_path)
-        return True
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
-        return False
+    return flg
 
 
+# pylint: disable-msg=too-many-locals
 def collect_crash_files_k8s(local_dir_path: str):
     """
     Collect all the crash files created at predefined locations.
