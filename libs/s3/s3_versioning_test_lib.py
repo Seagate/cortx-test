@@ -28,7 +28,8 @@ from commons.exceptions import CTException
 
 from config.s3 import S3_CFG
 from commons.utils import assert_utils
-from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 from libs.s3.s3_versioning import Versioning
 
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.put_bucket_versioning.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -104,7 +105,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.get_bucket_versioning.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -124,7 +125,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.list_object_versions.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -149,7 +150,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.get_object_version.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -174,7 +175,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.head_object_version.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -199,91 +200,7 @@ class S3VersioningTestLib(Versioning):
             LOGGER.error("Error in %s: %s",
                          S3VersioningTestLib.delete_object_version.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def check_list_object_versions(self,
-                                   bucket_name: str = None,
-                                   expected_versions: dict = None) -> None:
-        """
-        List all the versions and delete markers present in a bucket and verify the output
-
-        :param bucket_name: Bucket name for calling List Object Versions
-        :param expected_versions: dict containing list of version tuples, ordered from the latest
-            to oldest version created i.e. latest version is at index 0 and oldest at index n-1
-            for an object having n versions.
-
-            Expected format of the dict -
-                dict keys should be the object name
-                tuple for version should have the format (<VersionId>, "version", <ETag>)
-                tuple for delete marker should have the format (<VersionId>, "deletemarker", None)
-
-            For eg.
-                {"object1": [(<obj1-version-id-2>, 'deletemarker', None),
-                             (<obj1-version-id-1>, 'version', <etag1>)],
-                 "object2": [(<obj2-version-id-1>, 'version', <etag2>)]}
-        """
-        LOGGER.info("Fetching bucket object versions list")
-        try:
-            list_response = super().list_object_versions(bucket_name=bucket_name)
-            LOGGER.info("Successfully fetched bucket object versions list: %s", list_response)
-        except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3VersioningTestLib.check_list_object_versions.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-        LOGGER.info("Verifying bucket object versions list for expected contents")
-        assert_utils.assert_true(list_response[0], list_response[1])
-        actual_versions = list_response["Versions"]
-        actual_deletemarkers = list_response["DeleteMarkers"]
-        ver_idx = 0
-        dm_idx = 0
-        for key in sorted(expected_versions.keys()):
-            expected_islatest = True
-            for expected_version in expected_versions[key]:
-                if expected_version[1] == "version":
-                    actual_version = actual_versions[ver_idx]
-                    assert_utils.assert_equal(
-                        actual_version["ETag"], expected_version[2], "Version ETag mismatch")
-                    ver_idx = ver_idx + 1
-                else:
-                    actual_version = actual_deletemarkers[dm_idx]
-                    dm_idx = dm_idx + 1
-                assert_utils.assert_equal(
-                    actual_version["IsLatest"], expected_islatest, "Version IsLatest mismatch")
-                assert_utils.assert_equal(
-                    actual_version["VersionId"], expected_version[0], "Version VersionId mismatch")
-                if expected_islatest:
-                    expected_islatest = False
-        assert_utils.assert_equal(
-            len(actual_versions), ver_idx, "Unexpected Version entry count in the response")
-        assert_utils.assert_equal(
-            len(actual_deletemarkers), dm_idx, "Unexpected DeleteMarker entry count in the response")
-        LOGGER.info("Completed verifying bucket object versions list for expected contents")
-
-    def check_list_objects(self,
-                           bucket_name: str = None,
-                           expected_objects: list = None) -> None:
-        """
-        List bucket and verify there are single entries for each versioned object
-
-        :param bucket_name: Bucket name for calling List Object Versions
-        :param expected_objects: list containing versioned objects that should be present in
-            List Objects output
-        """
-        LOGGER.info("Fetching bucket object list")
-        try:
-            list_response = super().list_objects_with_prefix(bucket_name=bucket_name, maxkeys=1000)
-            LOGGER.info("Successfully fetched object list: %s", list_response)
-        except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3VersioningTestLib.check_list_objects.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-        LOGGER.info("Verifying bucket object versions list for expected contents")
-        assert_utils.assert_true(list_response[0], list_response[1])
-        actual_objects = [o["Key"] for o in list_response[1]["Contents"]]
-        assert_utils.assert_equal(sorted(actual_objects),
-                                  sorted(expected_objects),
-                                  "List Objects response does not contain expected object names")

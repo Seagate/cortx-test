@@ -36,4 +36,4 @@ except KeyError:
     print("Could not start REST server. Please verify config.ini file")
     sys.exit(1)
 
-mongodb_uri = "mongodb://{0}:{1}@{2}"
+MONGODB_URI = "mongodb://{0}:{1}@{2}"

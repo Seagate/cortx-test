@@ -39,12 +39,9 @@ from libs.s3 import s3_multipart_test_lib
 class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
-    # pylint: disable=attribute-defined-outside-init
-    @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup_method(self):
         """
         Summary: Function will be invoked prior to each test case.
-
         Description: It will perform all prerequisite and cleanup test.
         """
         self.log = logging.getLogger(__name__)
@@ -64,7 +61,9 @@ class TestObjectWorkflowOperations:
             resp = system_utils.make_dirs(self.folder_path)
             self.log.info("Created path: %s", resp)
         self.log.info("ENDED: setup method")
-        yield
+
+    def teardown_method(self):
+        """ this is called after each test in this class finishes its execution """
         self.log.info("STARTED: teardown method")
         self.log.info("Clean : %s", self.folder_path)
         if system_utils.path_exists(self.file_path):

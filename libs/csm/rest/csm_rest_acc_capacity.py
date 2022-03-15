@@ -111,16 +111,16 @@ class AccountCapacity(RestTestLib):
         bucket_name = user_data[3]
         s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
         total_cap = 0
-        for sz in workload_in_mb:
-            test_file = f"file-io-{sz}-{int(time.time())}"
+        for workload in workload_in_mb:
+            test_file = f"file-io-{workload}-{int(time.time())}"
             file_path = os.path.join(TEST_DATA_FOLDER, test_file)
             self.log.info("Creating a file with name %s", test_file)
-            system_utils.create_file(file_path, sz, "/dev/urandom")
+            system_utils.create_file(file_path, workload, "/dev/urandom")
 
             self.log.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
             s3t_obj.put_object(bucket_name, test_file, file_path)
             system_utils.remove_file(file_path)
-            total_cap = total_cap + sz
+            total_cap = total_cap + workload
 
             if validate_data_usage:
                 self.log.info("Verify capacity of account after put operations")
@@ -129,18 +129,25 @@ class AccountCapacity(RestTestLib):
                 if not resp[0]:
                     self.log.error("Account capacity did not match for account : %s", resp[1])
                     return False
-
         return True
 
-    def create_s3_account_for_capacity(self, s3testlib=False, s3acl=False):
+    @staticmethod
+    def create_s3_account_for_capacity(s3testlib=False, s3acl=False):
+        """
+          Create s3 account with testlib and acl lib objects
+          param: s3testlib - Is s3testlib object required
+          param: s3acl - Is s3acl object required
+          return : Created account details
+        """
+        account_created = False
         resp = RestS3user().create_s3_account()
+        access_key = secret_key = canonical_id = s3_account = s3_obj = s3_acl_obj = None
         if resp.status_code == HTTPStatus.CREATED:
+            account_created = True
             access_key = resp.json()["access_key"]
             secret_key = resp.json()["secret_key"]
             canonical_id = resp.json()["canonical_id"]
             s3_account = resp.json()["account_name"]
-            s3_obj = None
-            s3_acl_obj = None
             if s3testlib:
                 s3_obj = s3_test_lib.S3TestLib(access_key, secret_key,
                                                endpoint_url=S3_CFG["s3_url"],
@@ -148,7 +155,5 @@ class AccountCapacity(RestTestLib):
                                                region=S3_CFG["region"])
             if s3acl:
                 s3_acl_obj = S3AclTestLib(access_key=access_key, secret_key=secret_key)
-            return True, [access_key, secret_key, canonical_id, s3_account, s3_obj, s3_acl_obj]
-        else:
-            self.log.error("Failed to create S3 account.")
-            return False, "Failed to create S3 account"
+        return (True, [access_key, secret_key, canonical_id, s3_account, s3_obj, s3_acl_obj]) \
+            if account_created else (False, "Failed to create S3 account")
