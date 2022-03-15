@@ -59,6 +59,7 @@ class TestBucketLocation:
         self.log.info("ENDED : Setup test operations.")
 
     def teardown_method(self):
+        """ this is called after each test execution is over """
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
         resp = self.s3_test_obj.bucket_list()[1]
