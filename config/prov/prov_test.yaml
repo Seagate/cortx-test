@@ -11,37 +11,37 @@ services:
     - "rsyslog.service"
     - "haproxy.service"
     - "slapd.service"
-    - "glusterd.service"
     - "kafka-zookeeper.service"
     - "salt-master.service"
     - "salt-minion.service"
     - "lnet.service"
+  multinode:
+    - "glusterd.service"
   hw_specific:
     - "multipathd.service"
     - "scsi-network-relay.service"
 service_ports:
-  csm: ["28100"]
-  dns: ["53"]
-  elasticsearch: ["9200", "9300"]
-  https: ["443"]
-  ntp: ["123"]
-  ldap: ["389"]
-  redis: ["6379"]
-  salt-master: ["4505", "4506"]
-  smtp: ["25"]
-  s3: ["9443"]
-  uds: ["5000"]
-build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
-build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso"
-build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso.sig"
-build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/cortx_iso/RPM-GPG-KEY-Seagate"
+  csm: [ "28100" ]
+  dns: [ "53" ]
+  elasticsearch: [ "9200", "9300" ]
+  https: [ "443" ]
+  ntp: [ "123" ]
+  ldap: [ "389" ]
+  redis: [ "6379" ]
+  salt-master: [ "4505", "4506" ]
+  smtp: [ "25" ]
+  s3: [ "9443" ]
+build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/"
+build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso"
+build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso.sig"
+build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/cortx_iso/RPM-GPG-KEY-Seagate"
 iso_repo: "cortx-2.0.0-{}-upgrade.iso"
 sig_repo: "cortx-2.0.0-{}-upgrade.iso.sig"
 key_repo: "RPM-GPG-KEY-Seagate"
 key1_repo: "RPM-GPG-KEY-Seagate.gpg"
 build_def: "last_successful_prod"
 cluster_start_msg: "Cluster start operation performed"
-confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
+confstore_list: [ "host", "enclosure_id", "machine_id", "cluster_id" ]
 
 single-node:
   prereq:
@@ -67,17 +67,17 @@ single-node:
   cluster_start_delay: 180
 
 system_ntp:
-    ntp_data: ['time_server:', 'time_zone:']
-    timeserver: ['10.30.127.102', 'time.seagate.com']
-    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
+  ntp_data: [ 'time_server:', 'time_zone:' ]
+  timeserver: [ '10.30.127.102', 'time.seagate.com' ]
+  timezone: [ 'Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam' ]
 
 deploy_ff:
   deployment_template: "config/prov/three_node_config.ini"
   build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
   prereq:
     min_disks: 4
-    os_release: ["CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)"]
-    kernel: ["3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64"]
+    os_release: [ "CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)" ]
+    kernel: [ "3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64" ]
     cpu_cores: 4
     memory: 8
   network_trans: "lnet"
@@ -94,4 +94,101 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
+  gateway: "0.0.0.0"
+  per_step_delay: 30
+  encl_name: "enclosure1"
+  lr_sign: "HP1_5U84"
+  bmc_username: "admin"
+  bmc_password: "admin"
 
+post_deployment_steps:
+  csm_default_user_name: "cortxadmin"
+  csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
+  s3user_name: 's3user'
+  s3user_email: 's3user@seagate.com'
+  s3user_pswd: 'xPUfs2X7OhXgirxG6au/T9FHd+q7mWHYo3P2OS7KlWs='
+
+k8s_cluster_deploy:
+  job_name: "setup-kubernetes-cluster"
+  cortx_job_name: "deploy-cortx-k8-cluster"
+  jenkins_url: "https://eos-jenkins.colo.seagate.com/job/Cortx-kubernetes/"
+  auth_token: "$eagate@123"
+
+k8s_cortx_deploy:
+  prereq:
+    min_disks: 8
+    os_release: [ "CentOS Linux release 7.9.2009 (Core)" ]
+    kernel: [ "3.10.0-1160.el7.x86_64" ]
+    cpu_cores: 8
+    memory: 16
+  clone_dir: "deploy-scripts"
+  local_path_prov: "/mnt/fs-local-volume"
+  log_path: "/etc/cortx/log"
+  custom_log_path: "/etc/cortx/custom/log"
+  s3_max_start_timeout: 240
+  setup_size: "small"
+  protocol: "http://{}:{}"
+  https_port: 30443
+  http_port: 30080
+  control_port_https: 31169
+  iface: "eth1"
+  service_type: "LoadBalancer"
+  data_disk_size: "20Gi"
+  metadata_disk_size: "20Gi"
+  git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
+  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
+  exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
+  k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
+  new_file_path: "solution.yaml"
+  report_file: "deployment_report.csv"
+  log_file: "deployment.log"
+  rgw_rpm: "cortx-rgw"
+  status_log_file: "status.log"
+  cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
+  cluster_conf_path: "/etc/cortx/cluster.conf"
+  third_party_images:
+    openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
+    consul: 'ghcr.io/seagate/consul:1.10.0'
+    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
+    zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
+    rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
+    busybox: 'ghcr.io/seagate/busybox:latest'
+  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata',
+                      'cortxserver', 'cortxha', 'cortxclient' ]
+  password:
+    openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
+    kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
+    csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
+    csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
+  setup_k8s_cluster_flag: "True"
+  setup_client_config_flag: "True"
+  run_basic_s3_io_flag: "True"
+  run_s3bench_workload_flag: "True"
+  destroy_setup_flag: "True"
+  cortx_cluster_deploy_flag: "True"
+  timeout:
+    pre-req: 120
+    deploy: 7200
+    destroy: 900
+    status: 120
+test_basic_io:
+  io_upper_limits:
+    Kb: 130
+    Mb: 50
+config_metallb:
+  check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                    sed -e "s/strictARP: false/strictARP: true/" | \
+                    kubectl diff -f - -n kube-system'
+  enable_strict_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                  sed -e "s/strictARP: false/strictARP: true/" | \
+                  kubectl apply -f - -n kube-system'
+  apply_manifest_namespace: 'kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml'
+  apply_manifest_metallb: 'kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml'
+  check_namespace: 'kubectl get all -n metallb-system'
+  config_path: 'config/prov/metallb_config.yaml'
+  new_config_file: 'metallb_config.yaml'
+  remote_path: '/root/metallb_config.yaml'
+  apply_config: 'kubectl apply -f metallb_config.yaml'

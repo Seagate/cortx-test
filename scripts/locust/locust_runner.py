@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -21,56 +20,45 @@
 """
 Locust runner file
 """
-
-import os
 import argparse
-import subprocess
+import logging
 import time
+
+from commons.utils.system_utils import run_local_cmd
 from scripts.locust import LOCUST_CFG
 
-
-def run_cmd(cmd):
-    """
-    Execute Shell command
-    :param str cmd: cmd to be executed
-    :return: output of command from console
-    :rtype: str
-    """
-    os.write(1, str.encode(cmd))
-    proc = subprocess.Popen(cmd, shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    result = proc.communicate()
-    return result
+LOGGER = logging.getLogger(__name__)
 
 
-def check_log_file(file_path, error):
+def check_log_file(file_path, errors):
     """
     Function to find out error is reported in given file or not
     :param str file_path: the file in which error is to be searched
-    :param str error: error sting to be searched for
+    :param list errors: error strings to be searched for
     :return: errorFound: True (if error is seen) else False
     :rtype: Boolean
     """
     error_found = False
-    os.write(1, str.encode("Debug: Log File Path {}".format(file_path)))
+    LOGGER.info("Debug: Log File Path %s", file_path)
     with open(file_path, "r") as log_file:
         for line in log_file:
-            if error in line:
-                error_found = True
-                os.write(1, str.encode(
-                    "checkLogFileError: Error Found in S3Bench Run : {}".format(line)))
-                return error_found
+            for error in errors:
+                if error.lower() in line.lower():
+                    error_found = True
+                    LOGGER.info("checkLogFileError: Error Found in Locust Run : %s", line)
+                    return error_found
 
-    os.write(1, str.encode("No Error Found"))
+    LOGGER.info("No Error Found")
     return error_found
 
 
+# pylint: disable=too-many-arguments
 def run_locust(
-        host: str, locust_file: str, users: int, hatch_rate: int = 1,
+        test_id: str, host: str, locust_file: str, users: int, hatch_rate: int = 1,
         duration: str = "3m") -> tuple:
     """
     Function to run locust.
+    :param test_id: test number
     :param host: host FQDN
     :param locust_file: path to the locust file
     :param users: number of concurrent users
@@ -79,13 +67,13 @@ def run_locust(
     :return: tupple resp with over all execution and log and html file path
     """
     upper_limit_cmd = "ulimit -n 100000"
-    log_file = "".join([LOCUST_CFG['default']['LOGFILE'],
-                        str(time.strftime("-%Y%m%d-%H%M%S")), ".log"])
-    html_file = "".join([LOCUST_CFG['default']['HTMLFILE'], str(
-        time.strftime("-%Y%m%d-%H%M%S")), ".html"])
+    log_dir = "log/latest/"
+    time_str = str(time.strftime("%Y%m%d-%H%M%S"))
+    log_file = f"{log_dir}{test_id}-{LOCUST_CFG['default']['LOGFILE']}-{time_str}.log"
+    html_file = f"{log_dir}{test_id}-{LOCUST_CFG['default']['HTMLFILE']}-{time_str}.html"
     locust_run_cmd = \
         "locust --host={} -f {} --headless -u {} -r {} --run-time {} --html {} --logfile {}"
-    os.write(1, str.encode("Setting ulimit for locust\n"))
+    LOGGER.info("Setting ulimit for locust\n")
     locust_run_cmd = locust_run_cmd.format(
         host,
         locust_file,
@@ -95,8 +83,8 @@ def run_locust(
         html_file,
         log_file)
     cmd = "{}; {}\n".format(upper_limit_cmd, locust_run_cmd)
-    res = run_cmd(cmd)
-    os.write(1, str.encode("Locust run completed."))
+    res = run_local_cmd(cmd)
+    LOGGER.info("Locust run completed.")
     res1 = {"log-file": log_file, "html-file": html_file}
 
     return res, res1
@@ -132,7 +120,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    os.write(1, str.encode("Setting ulimit for locust\n"))
+    LOGGER.info("Setting ulimit for locust\n")
     LOCUST_RUN_CMD = LOCUST_RUN_CMD.format(
         args.host_url,
         args.file_path,
@@ -142,5 +130,5 @@ if __name__ == '__main__':
         HTML_FILE,
         args.log_file)
     CMD = "{}; {}\n".format(ULIMIT_CMD, LOCUST_RUN_CMD)
-    run_cmd(CMD)
-    os.write(1, str.encode("Locust run completed."))
+    run_local_cmd(CMD)
+    LOGGER.info("Locust run completed.")

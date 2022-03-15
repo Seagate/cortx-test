@@ -1,11 +1,30 @@
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""
+A MongoDb instance can have multiple databases in it.
+Each database can have multiple collections(tables) in it.
+Each collection can have multiple documents(row) in it.
+"""
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 import configparser
 from urllib.parse import quote_plus
 
-# A MongoDb instance can have multiple databases in it.
-# Each database can have multiple collections(tables) in it.
-# Each collection can have multiple documents(row) in it.
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 hostname = config["PERF_DB"]["hostname"]

@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -42,7 +41,6 @@ class ControllerLib:
                  enclosure_pwd: str = None) -> None:
         """
         Method to initialize members of ControllerLib class.
-
         :param host: IP of the remote host
         :type: str
         :param h_user: User of the remote host
@@ -79,13 +77,23 @@ class ControllerLib:
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                           remote_path=runner_path)
 
+        runner_path = cons.REMOTE_DAEMON_PATH
+        local_path = cons.DAEMON_OP_PATH
+        LOGGER.info("Copying file %s to %s", local_path, runner_path)
+        self.node_obj.copy_file_to_remote(local_path=local_path,
+                                          remote_path=runner_path)
+
+        runner_path = cons.REMOTE_RECEIVER_PATH
+        local_path = cons.RECEIVER_OP_PATH
+        LOGGER.info("Copying file %s to %s", local_path, runner_path)
+        self.node_obj.copy_file_to_remote(local_path=local_path,
+                                          remote_path=runner_path)
         if not self.node_obj.path_exists(path=runner_path):
             self.copy = False
 
     def get_mc_ver_sr(self) -> Tuple[str, str, str]:
         """
         Function to get the version and serial number of the management controller.
-
         :return: version and serial number of the management controller
         """
         if self.copy:
@@ -100,8 +108,7 @@ class ControllerLib:
                           f"cmd=\"{cmd}\")'"
 
                 LOGGER.info("Running command %s", command)
-                response = self.node_obj.execute_cmd(cmd=command,
-                                                     read_lines=True)
+                response = self.node_obj.execute_cmd(cmd=command, read_lines=True)
                 response = response[0].split()
 
                 status = os.popen(
@@ -114,8 +121,7 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[2])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_mc_ver_sr.__name__, error)
+                LOGGER.error("Error in %s: %s", ControllerLib.get_mc_ver_sr.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, mc_ver, mc_sr
@@ -126,7 +132,6 @@ class ControllerLib:
     def get_mc_debug_pswd(mc_ver: str, mc_sr: str) -> str:
         """
         Function to get the password for management controller debug console.
-
         :param mc_ver: Management controller version
         :type: str
         :param mc_sr: Management controller serial number
@@ -154,7 +159,6 @@ class ControllerLib:
             Tuple[str, str]:
         """
         Function to simulate faults on the controller.
-
         :param mc_deb_password: Password of Management controller debug console
         :type: str
         :param enclid: Enclosure ID
@@ -208,7 +212,6 @@ class ControllerLib:
     def show_disks(self, telnet_file: str) -> Tuple[str, str]:
         """
         Show disk.
-
         :param telnet_file: File path to save response of telnet command
         :type: str
         :return: Boolean, file path
@@ -251,7 +254,6 @@ class ControllerLib:
     def get_total_drive_count(self, telnet_file: str) -> Tuple[str, int or str]:
         """
         Get total number of drives mapped.
-
         :param telnet_file: File path to save response of telnet command
         :type: str
         :return: (Boolean, Number of drives)
@@ -280,8 +282,7 @@ class ControllerLib:
                 drive_dict = resp[1]
             except BaseException as error:
                 LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_total_drive_count.__name__,
-                             error)
+                             ControllerLib.get_total_drive_count.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], len(drive_dict)
@@ -292,7 +293,6 @@ class ControllerLib:
                                                                         str]:
         """
         Check health of the phy.
-
         :param phy_num: number of the phy to be disabled
         :type: int
         :param telnet_file: File path to save response of telnet command
@@ -340,7 +340,6 @@ class ControllerLib:
                                                                          str]:
         """
         Enable or Disable drive status from disk group.
-
         :param enclosure_id: Enclosure ID of the machine
         :type: str
         :param controller_name: Server controller name
@@ -364,8 +363,7 @@ class ControllerLib:
                           f"status=\"{status}\", cmd=\"{cmd}\")'"
 
                 LOGGER.info("Running command %s", command)
-                response = self.node_obj.execute_cmd(cmd=command,
-                                                     read_lines=True)
+                response = self.node_obj.execute_cmd(cmd=command, read_lines=True)
 
                 response = response[0].split()
 
@@ -389,7 +387,6 @@ class ControllerLib:
             Tuple[bool, dict or str]:
         """
         Execute "show volumes" command on primary enclosure.
-
         Parse output file.
         Return response dict: {key: disk-group, {Values: key: volume,
         {values: "storage-pool-name", "volume-name",
@@ -488,7 +485,6 @@ class ControllerLib:
             -> Tuple[bool, dict or str]:
         """
         Get "show expander-status" output from enclosure.
-
         Parse the output files.
         Return response dict: {key: controller, {Values: key: wide-port-index,
          {values: "enclosure-id", "controller",
@@ -504,7 +500,7 @@ class ControllerLib:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
                 LOGGER.debug(cmd)
                 expander_param = CMN_DESTRUCTIVE_CFG.get("show_expander_"
-                                                            "status")
+                                                         "status")
                 LOGGER.debug(expander_param)
                 if not isinstance(expander_param, dict):
                     raise Exception(f"Failed to get show_expander_status: "
@@ -591,7 +587,6 @@ class ControllerLib:
             -> Tuple[bool, dict or str]:
         """
         Execute "show disk-groups" command on primary controller.
-
         Parse output xml.
         Get response dict: key-"disk group" and values dict of "name, size,
         health, health-reason, health-recommendation".
@@ -672,7 +667,6 @@ class ControllerLib:
             Tuple[bool, dict or str]:
         """
         Execute "show disks" command on primary controller.
-
         Parse output xml.
         Get response dict: key-"disks" and values dict of "durable-id",
         "location", "serial-number", "vendor",
@@ -752,7 +746,6 @@ class ControllerLib:
     def clear_drive_metadata(self, drive_num: str) -> str:
         """
         Execute "clear metadata" command on primary controller.
-
         :param drive_num: Drive of which metadata is to be cleared
         :type: str
         :return: (Boolean, disks dict).
@@ -799,7 +792,6 @@ class ControllerLib:
                          drive_number: list, operation: str) -> Tuple[str, str]:
         """
         Enable or Disable drive status from disk group.
-
         :param enclosure_id: Enclosure ID of the machine
         :type: str
         :param controller_name: Server controller name
@@ -850,7 +842,6 @@ class ControllerLib:
     def add_spares_dg(self, drives: list, disk_group: str) -> Tuple[bool, str]:
         """
         Function to add spare drives in disk group
-
         :param drives: List of drives to be added
         :type: list
         :param disk_group: Disk group in which drives to be added
@@ -881,8 +872,7 @@ class ControllerLib:
 
                         LOGGER.info("Successfully cleared drive metadata of %s", key)
 
-                    LOGGER.info("Adding spare drive %s to disk group %s", key,
-                                disk_group)
+                    LOGGER.info("Adding spare drive %s to disk group %s", key, disk_group)
                     cmd = common_cmd.ADD_SPARES_CMD.format(key, disk_group)
                     command = f"python3 /root/telnet_operations.py " \
                               f"--telnet_op='set_drive_status_telnet(" \
@@ -892,8 +882,7 @@ class ControllerLib:
                               f"status=\"{status}\", cmd=\"{cmd}\")'"
 
                     LOGGER.info("Running command %s", command)
-                    response = self.node_obj.execute_cmd(cmd=command,
-                                                         read_lines=True)
+                    response = self.node_obj.execute_cmd(cmd=command, read_lines=True)
 
                     LOGGER.info("Response: %s", response)
                     response = response[0].split()
@@ -916,7 +905,6 @@ class ControllerLib:
     def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, any]:
         """
         Function to get drives in disk group
-
         :param disk_group: Disk group name
         :type: str
         :return: status, drive_list
@@ -942,7 +930,6 @@ class ControllerLib:
     def get_drive_usage(self, phy_num: list) -> Tuple[bool, dict]:
         """
         Function to get usage of drives
-
         :param phy_num: List of drives
         :type: list
         :return: status, dict of usages
@@ -970,7 +957,6 @@ class ControllerLib:
             -> Tuple[str, str, int]:
         """
         Function to poll disk group reconstruction progress
-
         :param disk_group: Disk group in which drives to be added
         :type: str
         :param percent: Upto which percent status shpuld be polled

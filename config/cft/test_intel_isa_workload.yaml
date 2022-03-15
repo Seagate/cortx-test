@@ -1,10 +1,4 @@
 cluster_start_delay: 30
 test_bucket_prefix: 'test-intel-isa'
 test_basic_io:
-  io_upper_limits:
-    Kb: 130
-    Mb: 50
-  s3config_path: '/opt/seagate/cortx/s3/conf/s3config.yaml'
   parity_check_flag: S3_MOTR_IS_READ_VERIFY
-test_io_workload:
-  clients: 5

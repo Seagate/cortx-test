@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -325,6 +324,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23606")
@@ -510,6 +510,7 @@ class TestServerFruAlerts:
             "step.")
         LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23622")
@@ -732,6 +733,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23624")
@@ -1012,6 +1014,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "sspl stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23715")
@@ -1112,6 +1115,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23723")
@@ -1291,6 +1295,7 @@ class TestServerFruAlerts:
             "ENDED: Test alerts for failing drive, removing drive"
             "from RAID array and adding drive in RAID array")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23724")
@@ -1481,6 +1486,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test alert persistence of RAID array alerts across node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23725")
@@ -1713,6 +1719,7 @@ class TestServerFruAlerts:
             "ENDED: Test alert persistence of RAID array alerts across sspl "
             "stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23679")
@@ -1908,6 +1915,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23682")
@@ -2007,6 +2015,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test alerts for server psu faults")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23685")
@@ -2110,6 +2119,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23686")
@@ -2290,6 +2300,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across sspl stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23633")

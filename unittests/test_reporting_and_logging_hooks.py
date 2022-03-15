@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """Sample module to be referred while writing tests."""
 import os
 import logging
@@ -133,8 +150,12 @@ def test_max4(logger):
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):
-    """A test function."""
-    values = (2, 3, 1, 4, 6)
-    val = max(values)
-    logger.info("max is %s" % val)
-    assert val == 6
+    """
+    dummy ptest skip test
+    """
+    logger.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
+                  "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+    anyway_skip = True
+    if anyway_skip:
+        pytest.skip()
+

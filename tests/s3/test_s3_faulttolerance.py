@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -35,9 +34,6 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_multipart_test_lib
 
-S3_OBJ = s3_test_lib.S3TestLib()
-S3_M_Obj = s3_multipart_test_lib.S3MultipartTestLib()
-
 
 class TestS3FaultTolerance:
     """S3 FaultTolerance test class."""
@@ -46,9 +42,11 @@ class TestS3FaultTolerance:
     def setup(self):
         """Fixture: perform test setup and teardown."""
         self.log = logging.getLogger(__name__)
+        self.s3_obj = s3_test_lib.S3TestLib()
+        self.s3_m_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.fault_flg = False
-        self.bucket_name = "bkt-faulttolerance-{}".format(perf_counter_ns())
-        self.object_name = "obj-faulttolerance-{}".format(perf_counter_ns())
+        self.bucket_name = f"bkt-faulttolerance-{perf_counter_ns()}"
+        self.object_name = f"obj-faulttolerance-{perf_counter_ns()}"
         self.test_directory = os.path.join(TEST_DATA_FOLDER, "TestS3FaultTolerance")
         if not system_utils.path_exists(self.test_directory):
             system_utils.make_dirs(self.test_directory)
@@ -67,9 +65,9 @@ class TestS3FaultTolerance:
         resp = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=response[-1])
         assert_utils.assert_true(resp[0], resp[1])
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         if bucket_list:
-            resp = S3_OBJ.delete_multiple_buckets(bucket_list)
+            resp = self.s3_obj.delete_multiple_buckets(bucket_list)
             assert_utils.assert_true(resp[0], resp[1])
         if system_utils.path_exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
@@ -79,6 +77,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18838")
     @pytest.mark.parametrize("object_size", ["50k"])
     def test_18838(self, object_size):
@@ -95,9 +94,9 @@ class TestS3FaultTolerance:
             self.test_file_path, size=object_size)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Create a new bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info(
             "Step 3: Using curl ,inject fault injection so that upload of object fails"
@@ -108,12 +107,12 @@ class TestS3FaultTolerance:
         self.log.info(
             "Step 4: Upload the %s file to the bucket created.",
             object_size)
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info(
@@ -129,6 +128,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18839")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_18839(self, object_size):
@@ -144,6 +144,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18840")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_18840(self, object_size):
@@ -156,6 +157,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18841")
     @pytest.mark.parametrize("object_size", ["6MB"])
     def test_18841(self, object_size):
@@ -168,6 +170,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18842")
     @CTFailOn(error_handler)
     def test_18842(self):
@@ -182,9 +185,9 @@ class TestS3FaultTolerance:
         resp = system_utils.create_file_fallocate(self.test_file_path, "4MB")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2. Create a new bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.object_list(self.bucket_name)
+        bktlist = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info(
             "Step 3. Using curl, Disable fault injection so that upload of object is "
@@ -193,12 +196,12 @@ class TestS3FaultTolerance:
         assert_utils.assert_true(resp[0], resp[1])
         self.fault_flg = True
         self.log.info("Step 4. Upload the 6MB file to the bucket created.")
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info(
@@ -212,6 +215,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18843")
     @CTFailOn(error_handler)
     def test_18843(self):
@@ -238,17 +242,17 @@ class TestS3FaultTolerance:
             "and results in motr failure.")
         resp = S3H_OBJ.s3server_inject_faulttolerance(enable=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4. Upload a 6MB filesize object to a bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        self.log.info("Step 4. Upload a 6MB file size object to a bucket.")
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file_fallocate(self.test_file_path, "6MB")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, resp[1])
         resp = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=response[-1])
@@ -259,6 +263,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19497")
     @pytest.mark.parametrize("object_size", ["50k"])
     def test_19497(self, object_size):
@@ -272,9 +277,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: Created a %s file using fallocate cmd", object_size)
 
         self.log.info("STEP 2: Create a bucket with name %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: Created a bucket with name %s", self.bucket_name)
 
@@ -289,12 +294,12 @@ class TestS3FaultTolerance:
 
         self.log.info("STEP 4: Uploading an object %s to a bucket %s",
                       self.object_name, self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded an object to a bucket")
 
         self.log.info("Verifying object is successfully uploaded")
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info("Verified that object is uploaded successfully")
@@ -310,7 +315,7 @@ class TestS3FaultTolerance:
 
         self.log.info("STEP 6: Verify getobject and getobject with "
                       "read range and verify the size and range ouput")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verify getobject and getobject with "
                       "read range and verify the size and range ouput")
@@ -319,6 +324,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19499")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_19499(self, object_size):
@@ -328,6 +334,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19501")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_19501(self, object_size):
@@ -337,6 +344,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19504")
     @pytest.mark.parametrize("object_size", ["8MB"])
     def test_19504(self, object_size):
@@ -346,6 +354,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19505")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_19505(self, object_size):
@@ -359,9 +368,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: Created a 4MB file using fallocate cmd.")
 
         self.log.info("SETP 2: Create a New Bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: New bucket created %s", self.bucket_name)
 
@@ -371,7 +380,7 @@ class TestS3FaultTolerance:
         self.log.info("STEP 3: Fault Injection Disabled")
 
         self.log.info("STEP 4: Upload the 4MB file to the bucket %s", self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded the 4MB file to the bucket %s", self.bucket_name)
 
@@ -381,7 +390,7 @@ class TestS3FaultTolerance:
         self.log.info("STEP 5: Verified that No fragmented entries should be listed")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 
@@ -389,6 +398,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19506")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_19506(self, object_size):
@@ -402,9 +412,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: 33k file using fallocate cmd is created.")
 
         self.log.info("SETP 2: Create a New Bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: New bucket created %s", self.bucket_name)
 
@@ -417,7 +427,7 @@ class TestS3FaultTolerance:
                       "object fails and results in motr failure.")
 
         self.log.info("STEP 4: Upload the 33k file to the bucket %s", self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded the 33k file to the bucket %s", self.bucket_name)
 
@@ -431,9 +441,11 @@ class TestS3FaultTolerance:
                       "object list index contains extended entries using m0kv")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        resp = S3_M_Obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
+        resp = self.s3_m_obj.get_object(self.bucket_name,
+                                        self.test_file_path,
+                                        ranges="1048576-3145728")
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 

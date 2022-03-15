@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -24,6 +23,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -31,14 +31,15 @@ from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from config import S3_CFG
+from config.s3 import S3_CFG
+from config import CMN_CFG
 
 
 class TestBucketLocation:
     """Bucket Location Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
+    # pylint: disable=attribute-defined-outside-init
+    def setup_method(self):
         """
         Summary: Function will be invoked prior to each test case.
 
@@ -56,21 +57,26 @@ class TestBucketLocation:
         self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.log.info("ENDED : Setup test operations.")
-        yield
+
+    def teardown_method(self):
+        """ this is called after each test execution is over """
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
         resp = self.s3_test_obj.bucket_list()[1]
         self.log.info("Bucket list: %s", resp)
-        if self.bucket_name in resp:
-            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
+        for bucket_name in resp:
+            resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
-            self.rest_obj.delete_s3_account(acc)
+            resp = self.rest_obj.delete_s3_account(acc)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Teardown test operations.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_valid_bkt_272(self):
@@ -97,10 +103,16 @@ class TestBucketLocation:
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equals(
-            resp[1]["LocationConstraint"],
-            "us-west-2",
-            resp[1])
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 2 : Retrieved bucket location on existing bucket")
         self.log.info(
@@ -108,6 +120,7 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5311")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_bkt_not_present_273(self):
@@ -133,6 +146,8 @@ class TestBucketLocation:
 
     # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_with_permission_274(self):
@@ -156,7 +171,7 @@ class TestBucketLocation:
             endpoint_url=S3_CFG['s3_url'],
             access_key=acc1_resp[1]["access_key"],
             secret_key=acc1_resp[1]["secret_key"])
-        s3_obj_1 = s3_test_lib.S3TestLib(
+        self.s3_test_obj = s3_test_lib.S3TestLib(
             access_key=acc1_resp[1]["access_key"],
             secret_key=acc1_resp[1]["secret_key"])
         self.account_list.append(self.account_name1)
@@ -184,34 +199,41 @@ class TestBucketLocation:
                       "permission to account2", self.bucket_name)
         self.log.info(
             "Step 2: Verifying get bucket location with account1")
-        resp = s3_obj_1.bucket_location(self.bucket_name)
-        assert_utils.assert_equals(
-            "us-west-2",
-            resp[1]["LocationConstraint"],
-            resp[1])
+        resp = self.s3_test_obj.bucket_location(self.bucket_name)
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 2: Verified get bucket location with account1")
         self.log.info(
             "Step 3 : Verifying get bucket location with account2 login")
         resp = s3_obj_2.bucket_location(self.bucket_name)
-        assert_utils.assert_equals(
-            "us-west-2",
-            resp[1]["LocationConstraint"],
-            resp[1])
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "default",
+                resp[1])
+        else:
+            assert_utils.assert_equals(
+                resp[1]["LocationConstraint"],
+                "us-west-2",
+                resp[1])
         self.log.info(
             "Step 3 : Verified get bucket location with account2 login")
-        # Cleanup activity
-        self.log.info("Step 4: Performing cleanup.")
-        if s3_obj_1:
-            res_bkt = s3_obj_1.bucket_list()
-            for bkt in res_bkt[1]:
-                s3_obj_1.delete_bucket(bkt)
         self.log.info(
             "ENDED: Verify for the bucket which is present in account1 and give read"
             "permissions to account2 and check get bucket location")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5312")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_275(self):

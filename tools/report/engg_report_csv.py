@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 """Script used to generate engineering csv report."""
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -79,6 +78,7 @@ def get_component_issue_summary(test_plans: list, username: str, password: str):
     return data
 
 
+# pylint: disable-msg=too-many-locals
 def get_single_bucket_perf_stats(build, branch, uri, db_name, db_collection):
     """Get single bucket performance data for engineering report"""
     row_2 = deepcopy(OBJECTS_SIZES)
@@ -107,7 +107,7 @@ def get_single_bucket_perf_stats(build, branch, uri, db_name, db_collection):
                     else:
                         temp_data.append("-")
                 else:
-                    if count > 0 and common.keys_exists(db_data[0], stat)\
+                    if count > 0 and common.keys_exists(db_data[0], stat) \
                             and "Count_of_Servers" in db_data[0]:
                         temp_data.append(
                             common.round_off(db_data[0][stat] / db_data[0]["Count_of_Servers"]))
@@ -117,41 +117,50 @@ def get_single_bucket_perf_stats(build, branch, uri, db_name, db_collection):
     return data
 
 
+def get_tool_data(build, db_data, tool):
+    """Get data for given tool."""
+    temp_data = []
+    for configs in CONFIG:
+        row_num = 0
+        for operation in OPERATIONS:
+            for stat in STATS:
+                row_num += 1
+                head = ""
+                if row_num == 2:
+                    head = tool
+                elif row_num == 3:
+                    head = f"{configs[0]} Buckets"
+                elif row_num == 4:
+                    head = f"{configs[1]} Sessions"
+                temp_data = [head, f"{operation.capitalize()} {stat}"]
+                for obj_size in OBJECTS_SIZES:
+                    query = {'Build': build, 'Name': tool, 'Operation': operation,
+                             'Object_Size': obj_size, 'Buckets': configs[0],
+                             'Sessions': configs[1], "Branch": db_data['branch']}
+                    count = mongodb_api.count_documents(query=query, uri=db_data['uri'],
+                                                        db_name=db_data['db_name'],
+                                                        collection=db_data['db_collection'])
+                    db_data = mongodb_api.find_documents(query=query, uri=db_data['uri'],
+                                                         db_name=db_data['db_name'],
+                                                         collection=db_data['db_collection'])
+
+                    if count > 0 and stat == "Throughput" and common.keys_exists(db_data[0],
+                                                                                 stat):
+                        temp_data.append(
+                            common.round_off(db_data[0][stat] / db_data[0]["Count_of_Servers"]))
+                    elif count > 0 and common.keys_exists(db_data[0], stat):
+                        temp_data.append(common.round_off(db_data[0][stat]))
+                    else:
+                        temp_data.append("-")
+    return temp_data
+
+
 def get_bench_data(build, uri, db_name, db_collection, branch):
     """Read Hsbench data from DB"""
     data = []
+    db_data = {'uri': uri, 'db_name': db_name, 'db_collection': db_collection, 'branch': branch}
     for tool in ["Hsbench", "Cosbench"]:
-        for configs in CONFIG:
-            row_num = 0
-            for operation in OPERATIONS:
-                for stat in STATS:
-                    row_num += 1
-                    head = ""
-                    if row_num == 2:
-                        head = tool
-                    elif row_num == 3:
-                        head = f"{configs[0]} Buckets"
-                    elif row_num == 4:
-                        head = f"{configs[1]} Sessions"
-                    temp_data = [head, f"{operation.capitalize()} {stat}"]
-                    for obj_size in OBJECTS_SIZES:
-                        query = {'Build': build, 'Name': tool, 'Operation': operation,
-                                 'Object_Size': obj_size, 'Buckets': configs[0],
-                                 'Sessions': configs[1], "Branch": branch}
-                        count = mongodb_api.count_documents(query=query, uri=uri, db_name=db_name,
-                                                            collection=db_collection)
-                        db_data = mongodb_api.find_documents(query=query, uri=uri, db_name=db_name,
-                                                             collection=db_collection)
-
-                        if count > 0 and stat == "Throughput" and common.keys_exists(db_data[0],
-                                                                                     stat):
-                            temp_data.append(
-                                common.round_off(db_data[0][stat] / db_data[0]["Count_of_Servers"]))
-                        elif count > 0 and common.keys_exists(db_data[0], stat):
-                            temp_data.append(common.round_off(db_data[0][stat]))
-                        else:
-                            temp_data.append("-")
-                    data.append(temp_data)
+        data.append(get_tool_data(build, db_data, tool))
     return data
 
 

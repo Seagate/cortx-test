@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -29,7 +28,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3LibNoAuth
 from libs.s3.s3_test_lib import S3TestLib
 
@@ -37,31 +36,31 @@ from libs.s3.s3_test_lib import S3TestLib
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """
-        Summary: Function will be invoked prior to each test case.
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.no_auth_obj = None
+        cls.no_auth_obj_without_cert = None
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test operations.")
+        cls.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                      s3_cert_path=S3_CFG["s3_cert_path"])
+        cls.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                                   s3_cert_path=None)
+        cls.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
+        cls.log.info("ENDED: setup test operations.")
 
-        Description: It will perform all prerequisite and cleanup test.
-        """
-        self.log = logging.getLogger(__name__)
-        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.no_auth_obj = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"],
-            s3_cert_path=S3_CFG["s3_cert_path"])
-        self.no_auth_obj_without_cert = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"], s3_cert_path=None)
-        self.log.info("STARTED: setup test operations.")
-        self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
-        self.log.info("ENDED: setup test operations.")
-        yield
-        self.log.info("STARTED: Test teardown operations.")
-        status, bktlist = self.s3t_obj.bucket_list()
+    @classmethod
+    def teardown_class(cls):
+        """Function to perform the cleanup for each test."""
+        cls.log.info("STARTED: Test teardown operations.")
+        status, bktlist = cls.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
-        if self.bucket_name in bktlist:
-            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
+        if cls.bucket_name in bktlist:
+            resp = cls.s3t_obj.delete_bucket(cls.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("ENDED: Test teardown operations.")
+        cls.log.info("ENDED: Test teardown operations.")
 
     def create_and_list_buckets_without_auth(self, bucket_name, err_message):
         """
@@ -99,6 +98,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5838')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_authorization_header_missing_412(self):
@@ -112,6 +112,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5839')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_ip_address_format_authorization_header_missing_415(
@@ -127,6 +128,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5840')
     @CTFailOn(error_handler)
     def test_create_multiple_buckets_authorization_header_missing_416(self):
@@ -140,6 +142,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5841')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_without_giving_cacert_417(self):

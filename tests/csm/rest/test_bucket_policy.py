@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -71,6 +70,7 @@ class TestBucketPolicy():
                 login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10783')
@@ -82,6 +82,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.create_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10784')
@@ -95,6 +96,7 @@ class TestBucketPolicy():
             operation='update_policy')
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10785')
@@ -108,6 +110,7 @@ class TestBucketPolicy():
                                                                   validate_expected_response=False)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10779')
@@ -121,6 +124,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10788')
@@ -135,6 +139,7 @@ class TestBucketPolicy():
             validate_expected_response=False)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10781')
@@ -150,6 +155,7 @@ class TestBucketPolicy():
             invalid_bucket=True)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10780')
@@ -162,6 +168,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.delete_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10786')
@@ -174,6 +181,7 @@ class TestBucketPolicy():
             expected_status_code=404)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10792')
@@ -196,6 +204,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10794')
@@ -219,6 +228,7 @@ class TestBucketPolicy():
         assert self.bucket_policy.get_and_verify_bucket_policy()
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10793')

@@ -1,76 +1,76 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """Bucket Workflow Operations Test Module."""
 
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
+from commons import constants as const
+from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import S3_CFG
-from libs.s3 import s3_test_lib
+from commons.utils.s3_utils import assert_s3_err_msg
+from config import S3_CFG, CMN_CFG
 from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """
-        Summary: Function will be invoked prior to each test case.
+    @classmethod
+    def setup_class(cls):
+        """Function to perform the setup ops for each test."""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup test operations.")
+        cls.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
+        cls.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
+        cls.email_id = "{}@seagate.com".format(cls.account_name)
+        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
+        cls.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        cls.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
+        cls.file_path = os.path.join(cls.folder_path, cls.filename)
+        if not system_utils.path_exists(cls.folder_path):
+            system_utils.make_dirs(cls.folder_path)
+        cls.rest_obj = S3AccountOperations()
+        cls.account_list = []
+        cls.bucket_list = []
+        cls.log.info("ENDED: Setup test operations")
 
-        Description: It will perform all prerequisite and cleanup test.
-        """
-        self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup test operations.")
-        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
-        self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
-        self.email_id = "{}@seagate.com".format(self.account_name)
-        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
-        self.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
-        self.file_path = os.path.join(self.folder_path, self.filename)
-        if not system_utils.path_exists(self.folder_path):
-            system_utils.make_dirs(self.folder_path)
-        self.rest_obj = S3AccountOperations()
-        self.account_list = []
-        self.bucket_list = []
-        self.log.info("ENDED: Setup test operations")
-        yield
-        self.log.info("STARTED: Setup test operations.")
+    def teardown_method(self):
+        """Function to perform the clean up for each test."""
+        self.log.info("STARTED: Cleanup test operations.")
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
             if bucket_name in bucket_list:
-                self.acl_obj.put_bucket_acl(bucket_name, acl="private")
                 resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
@@ -80,6 +80,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5463")
     @CTFailOn(error_handler)
     def test_name_lowercase_letters_1975(self):
@@ -104,6 +105,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5469")
     @CTFailOn(error_handler)
     def test_name_constains_alphanumeric_1976(self):
@@ -127,6 +129,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5467")
     @CTFailOn(error_handler)
     def test_bucketname_2to63_chars_long_1977(self):
@@ -163,6 +166,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5468")
     @CTFailOn(error_handler)
     def test_name_lessthan3chars_morethan63chars_1978(self):
@@ -190,6 +194,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5464")
     @CTFailOn(error_handler)
     def test_name_nouppercase_1979(self):
@@ -213,6 +218,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5465")
     @CTFailOn(error_handler)
     def test_name_with_underscores_1980(self):
@@ -234,6 +240,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5462")
     @CTFailOn(error_handler)
     def test_name_special_characters_1981(self):
@@ -267,6 +274,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5466")
     @CTFailOn(error_handler)
     def test_name_formatting_1982(self):
@@ -290,7 +298,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5459")
     @CTFailOn(error_handler)
@@ -317,6 +325,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5460")
     @CTFailOn(error_handler)
     def test_create_multiple_buckets_2040(self):
@@ -342,6 +351,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5461")
     @CTFailOn(error_handler)
     def test_duplicate_name_2043(self):
@@ -363,15 +373,16 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "BucketAlreadyOwnedByYou" in error.message, error.message
-        self.log.info(
-            "Creating a bucket with existing bucket name is failed")
+            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
+                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+                              CMN_CFG["s3_engine"], error)
+        self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
-        self.log.info(
-            "ENDED: Create bucket with same bucket name already present")
+        self.log.info("ENDED: Create bucket with same bucket name already present")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5447")
     @CTFailOn(error_handler)
     def test_max_bucket_creation_2044(self):
@@ -403,8 +414,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5457")
     @CTFailOn(error_handler)
     def test_delete_bucket_with_objects_2045(self):
@@ -445,6 +456,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5458")
     @CTFailOn(error_handler)
     def test_forcefully_delete_objects_2046(self):
@@ -478,7 +490,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5455")
     @CTFailOn(error_handler)
@@ -504,6 +516,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5454")
     @CTFailOn(error_handler)
     def test_delete_multiple_buckets_2048(self):
@@ -532,6 +545,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5456")
     @CTFailOn(error_handler)
     def test_delete_non_existing_bucket_2049(self):
@@ -552,8 +566,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5452")
     @CTFailOn(error_handler)
     def test_list_all_buckets_2050(self):
@@ -595,6 +609,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5448")
     @CTFailOn(error_handler)
     def test_disk_usages_verification_2051(self):
@@ -632,6 +647,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5453")
     @CTFailOn(error_handler)
     def test_head_non_existing_bucket_2055(self):
@@ -650,6 +666,8 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5445")
     @CTFailOn(error_handler)
     def test_verify_head_bucket_2056(self):
@@ -680,6 +698,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5446")
     @CTFailOn(error_handler)
     def test_verify_list_bucket_2057(self):
@@ -707,6 +726,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-5450")
     @CTFailOn(error_handler)
     def test_bucket_location_verification_2059(self):
@@ -722,12 +742,16 @@ class TestBucketWorkflowOperations:
         resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         assert resp[0], resp[1]
-        assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            assert resp[1]["LocationConstraint"] == "default", resp[1]
+        else:
+            assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
         self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Verification of bucket location")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8031")
     @CTFailOn(error_handler)
     def test_delete_multiobjects_432(self):
@@ -771,6 +795,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8032")
     @CTFailOn(error_handler)
     def test_delete_non_existing_multibuckets_433(self):
@@ -805,6 +830,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8033")
     @CTFailOn(error_handler)
     def test_delete_object_without_permission_434(self):
@@ -869,6 +895,7 @@ class TestBucketWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_ops
     @pytest.mark.tags("TEST-8035")
     @CTFailOn(error_handler)
     def test_delete_multiple_objects_without_permission_435(self):

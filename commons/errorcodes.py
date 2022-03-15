@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -228,3 +227,8 @@ S3_DELETE_BUCKET_REQUEST_FAILED = CTError(9004, "S3-CLI Delete Bucket Request Fa
 S3_LOGGING_FAILED = CTError(9005, "S3-CLI Account Logging Failed")
 S3_LOGOUT_FAILED = CTError(9006, "S3-CLI Account Logout Failed")
 S3_START_IO_FAILED = CTError(9007, "S3-CLI IO Start Operation Failed")
+
+# DI
+S3_SET_FLAG = CTError(9008, "Unable to set flag in s3server config")
+MAINTENANCE_MODE = CTError(9009, "Unable to enable maintenance mode using hctl")
+UNMAINTENANCE_MODE = CTError(9010, "Unable to disable maintenance mode using hctl")

@@ -1,5 +1,7 @@
 # Configurations for Rest API
 Restcall:
+  secure: True
+  msg_check: "enable"    #Set msg check to enable or disable
   port : 443
   jsonfile : 'rest_call.json'
   csm_user_manage:
@@ -23,6 +25,7 @@ Restcall:
   s3accounts_endpoint : "/api/v2/s3_accounts"
   s3_bucket_endpoint : "/api/v2/s3/bucket"
   IAM_users_endpoint : "/api/v2/iam_users"
+  s3_iam_user_endpoint : "/api/v2/s3/iam/users"
   csmuser_endpoint : "/api/v2/csm/users"
   csmuser_permission_endpoint: "/api/v2/permissions"
   bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"
@@ -50,7 +53,47 @@ CliConfig:
   csm_conf_file: "/etc/csm/csm.conf"
 
 JMeterConfig:
-  jmeter_path: "/root/apache-jmeter-5.4/bin"
+  jmeter_path: "/usr/apachejmeter/bin"
   jmx_path: "scripts/jmx_files"
   jtl_log_path: "log/jmeter/"
   test_data_csv: "test_config.csv"
+
+Restcall_LC:
+  secure: True
+  msg_check: "disable"    #Set msg check to enable or disable
+  port : 31169
+  jsonfile : 'rest_call.json'
+  csm_user_manage:
+    username: "csm_user_manage"
+    password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
+  csm_user_monitor:
+    username: "csm_user_monitor"
+    password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
+  s3account_user:
+    username: "s3user3"
+    password: "yqI7PYuCer0alJlTPJtaOJLejOIrg4ymC+Y8gUxMJAU="
+    email: "accounts323.admin@seagate.com"
+    access_key: "abcdefghijkl123456"
+    secret_key: "abcdefgh"
+  Login_headers:
+    Content-Type: 'application/json'
+  test_s3account_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
+  test_csmuser_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
+  rest_login_endpoint : "/api/v2/login"
+  rest_logout_endpoint : "/api/v2/logout"
+  s3accounts_endpoint : "/api/v2/s3_accounts"
+  s3_bucket_endpoint : "/api/v2/s3/bucket"
+  IAM_users_endpoint : "/api/v2/iam_users"
+  s3_iam_user_endpoint : "/api/v2/s3/iam/users"
+  csmuser_endpoint : "/api/v2/csm/users"
+  csmuser_permission_endpoint: "/api/v2/permissions"
+  bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"
+  perf_stats_endpoint: "/api/v2/metrics/perf"
+  accounts_capacity_endpoint: "/api/v2/metrics/capacity/account"
+  account_capacity_endpoint: "/api/v2/metrics/capacity/account/{}"
+  degraded_cap_endpoint: "/api/v2/capacity/status/bytecount"
+  degraded_cap_complete_endpoint: "/api/v2/capacity/status"
+  degraded_cap_keys: [['healthy', 'degraded', 'critical', 'damaged'],
+                       ['stats','timestamp','date']]
+  percentage_compare: 10
+  cluster_operation_endpoint: "/api/v2/system/management"

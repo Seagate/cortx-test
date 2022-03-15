@@ -1,18 +1,17 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -31,11 +30,11 @@ from commons.errorcodes import error_handler
 from commons.ct_fail_on import CTFailOn
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli_support_bundle import CortxCliSupportBundle
-from libs.s3 import S3H_OBJ
 
 
 class TestCliSupportBundle:
     """CORTX CLI Test suite for support bundle operations"""
+    # pylint:disable=attribute-defined-outside-init
 
     @classmethod
     def setup_class(cls):
@@ -69,14 +68,13 @@ class TestCliSupportBundle:
         """
         self.LOGGER.info(
             "STARTED : Teardown operations at test function level")
-        remove_cmd = commands.CMD_REMOVE_DIR.format("/tmp/csm_support_bundle/")
+        remove_cmd = commands.CMD_REMOVE_DIR.format(constants.SUPPORT_BUNDLE_DIR_PATH)
         for each_node in self.node_list:
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                "/tmp/csm_support_bundle/",
-                each_node,
-                CMN_CFG["csm"]["admin_user"],
-                CMN_CFG["csm"]["admin_pass"])
-            if resp[0]:
+            node_obj = Node(hostname=each_node,
+                            username=CMN_CFG["csm"]["admin_user"],
+                            password=CMN_CFG["csm"]["admin_pass"])
+            resp = node_obj.path_exists("/tmp/csm_support_bundle/")
+            if resp:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,
@@ -161,7 +159,7 @@ class TestCliSupportBundle:
             "Step 2: Verifying os logs are generated on each node")
         for each_node in self.node_list:
             resp = self.support_bundle_obj.extract_support_bundle(
-                bundle_id, each_node, "/tmp/csm_support_bundle/", host=each_node)
+                   bundle_id, each_node,constants.SUPPORT_BUNDLE_DIR_PATH , host=each_node)
             assert_utils.assert_equals(True, resp[0], resp[1])
             new_dict[each_node] = resp[1]
         time.sleep(1000)
@@ -170,7 +168,7 @@ class TestCliSupportBundle:
             "Step 3: Verifying os logs are generated for each component")
         for each in new_dict:
             for each_dir in new_dict[each]:
-                path = "{0}{1}/{2}/".format("/tmp/csm_support_bundle/",
+                path = "{0}{1}/{2}/".format(constants.SUPPORT_BUNDLE_DIR_PATH,
                                             bundle_id, each_dir)
                 obj = Node(hostname=each,
                            username=CMN_CFG["csm"]["admin_user"],

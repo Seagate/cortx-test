@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -56,6 +55,7 @@ class Provisioner:
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         try:
+            LOGGER.debug("JENKINS URL %s", jen_url)
             jenkins_server_obj = jenkins.Jenkins(
                 jen_url, username=username, password=password)
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
@@ -80,6 +80,7 @@ class Provisioner:
                     job_name, next_build_number)
                 result = build_info['result']
                 expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
+                LOGGER.debug("result is %s::", result)
                 if result in expected_result:
                     break
                 cur_epoch = int(time.time())
@@ -668,3 +669,50 @@ class Provisioner:
                 LOGGER.error(error.args[0])
             return False, error
         return True, config_file
+
+    @staticmethod
+    def change_field_user_password(node_obj,
+                                   new_password: str) -> tuple:
+        """
+        Change the field user password during first time login.
+        :param node_obj: node object for remote execution.
+        :param new_password: Password to set for user.
+        :return: True/False and message
+        """
+        try:
+            node_obj.connect(shell=True)
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            output = output.split('\n')[-1]
+            if output.strip() == '(current) UNIX password:':
+                node_obj.shell_obj.send(node_obj.password + '\n')
+                LOGGER.debug("Old password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output.strip() == 'New password:':
+                node_obj.shell_obj.send(new_password + '\n')
+                LOGGER.debug("New password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output.strip() == 'Retype new password:':
+                node_obj.shell_obj.send(new_password + '\n')
+                LOGGER.debug("Re-enter new password when prompted was entered successfully")
+
+            output = ''
+            time.sleep(1)
+            output += node_obj.shell_obj.recv(2048).decode("utf-8")
+            if output:
+                LOGGER.debug("Confirmation after setting new password is - {}".format(output))
+
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.change_field_user_password.__name__)
+            LOGGER.error("Unable to set new password due to - {}".format(str(error)))
+            return False, error
+        return True, "Password change Successful!!"

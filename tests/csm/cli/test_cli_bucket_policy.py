@@ -1,18 +1,17 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -132,13 +131,12 @@ class TestCliBucketPolicy:
         self.log.info("Removing policy files")
         remove_cmd = commands.CMD_REMOVE_DIR.format(self.remote_file_path)
 
-        for each_node in self.node_list:
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                self.remote_file_path,
-                each_node,
-                CMN_CFG["nodes"][0]["username"],
-                CMN_CFG["nodes"][0]["password"])
-            if resp[0]:
+        for node_id, each_node in enumerate(self.node_list):
+            node_obj = Node(hostname=each_node,
+                            username=CMN_CFG["nodes"][node_id]["username"],
+                            password=CMN_CFG["nodes"][node_id]["password"])
+            resp = node_obj.path_exists(self.remote_file_path)
+            if resp:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,
@@ -187,6 +185,7 @@ class TestCliBucketPolicy:
         bkt_list = [each["name"] for each in json_data["buckets"]]
         assert_utils.assert_list_item(bkt_list, bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10798")
@@ -234,6 +233,7 @@ class TestCliBucketPolicy:
             "Step 5: Verified policy is uploaded on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10799")
@@ -260,6 +260,7 @@ class TestCliBucketPolicy:
             "%s is failed with error %s",
             self.bucket_name, resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -283,6 +284,9 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
+        self.log.debug("Bucket policy file content : %s", self.bkt_policy)
+        self.log.debug("Bucket policy local file path : %s", self.policy_file_path)
+        self.log.debug("Bucket policy remote file path : %s", self.remote_file_path)
         self.s3bkt_plc_obj.create_copy_json_file(self.bkt_policy,
                                                  self.policy_file_path,
                                                  self.remote_file_path)
@@ -317,6 +321,7 @@ class TestCliBucketPolicy:
             "Step 6: Deleted policy on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10802")
@@ -354,6 +359,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10801")
@@ -374,6 +380,7 @@ class TestCliBucketPolicy:
             "Step 1: Deleting policy with invalid bucket name %s is failed with error",
             self.bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10803")
@@ -422,6 +429,7 @@ class TestCliBucketPolicy:
             "Step 5: Verified policy is uploaded on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10982")
@@ -494,7 +502,10 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 7: Deleting bucket policy with csm user is failed with error %s",
             resp[1])
+        # delete created CSM user
+        self.csm_user_obj.delete_csm_user(self.user_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10980")
@@ -535,6 +546,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 4: Uploaded invalid policy is failed with error %s", resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10983")
@@ -605,6 +617,7 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 7: Deleting bucket policy with another account is failed")
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10981")
@@ -648,6 +661,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11226")
@@ -736,6 +750,7 @@ class TestCliBucketPolicy:
             "Step 9: Verified new bucket policy is updated on a bucket %s",
             self.bucket_name)
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11227")
@@ -780,6 +795,7 @@ class TestCliBucketPolicy:
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified policy in json format")
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12028")
@@ -850,6 +866,7 @@ class TestCliBucketPolicy:
             "Step 7: Listing bucket policy with another account is failed with error %s",
             resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11228")
@@ -893,6 +910,7 @@ class TestCliBucketPolicy:
         assert json_data['Statement'][0] == self.bkt_policy[0]
         self.log.info("Step 5: Verified s3 account can see bucket policy")
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12033")
@@ -918,6 +936,7 @@ class TestCliBucketPolicy:
             self.bucket_name,
             resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13137")

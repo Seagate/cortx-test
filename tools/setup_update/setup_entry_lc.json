@@ -1,0 +1,160 @@
+{
+"setupname":"LC_Setup",
+"setup_type":"VM",
+"setup_in_useby": "",
+"in_use_for_parallel": false,
+"parallel_client_cnt": 0,
+"is_setup_free": true,
+"product_family": "LC",
+"s3_engine": 1,
+"product_type": "k8s",
+"lb": "FQDN without protocol(http/s)",
+"nodes":[
+    {
+        "host": "srv-node-0",
+        "hostname": "node 0 hostname",
+        "ip": "node 0 ip",
+        "fqdn": "node 0 fqdn",
+        "username": "node 0 username",
+        "password": "node 0 password",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"master",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
+    },
+    {
+        "host": "srv-node-1",
+        "hostname": "node 1 hostname",
+        "ip": "node 1 ip address",
+        "fqdn": "node 0 fqdn",
+        "username": "node 1 username",
+        "password": "node 1 password",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"worker",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
+    },
+    {
+        "host": "srv-node-2",
+        "hostname": "node 2 hostname",
+        "ip": "node 2 ip address",
+        "fqdn": "node 0 fqdn",
+        "username": "node 2 username",
+        "password": "node 2 password",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"worker",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+        }
+    }
+],
+
+"csm":
+{
+  "mgmt_vip": "fqdn",
+  "port": "31169",
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
+  }
+},
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+"s3endpoints":
+{
+    "s3_io": "fqdn:port",
+    "s3_auth": "fqdn:port"
+}
+}

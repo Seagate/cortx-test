@@ -1,22 +1,23 @@
 """ Test Plan clone utility."""
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
+
 # -*- coding: utf-8 -*-
 
 import os
@@ -39,17 +40,18 @@ ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19
 vm_hw_skip_tes = ['TEST-19713']
 
 
-def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes):
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes,
+               product_family):
     """
     Process existing te and create new te
     """
     # create new te
     jt = JiraTask()
-    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes)
+    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes,
+                                                                 product_family)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
-        response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
-                                                tp_info['platform'], test_list)
+        response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info, test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
@@ -65,6 +67,7 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
             print("Error while adding tests to TE {} and TP {}".format(new_te_id, new_tp_key))
 
 
+# pylint: disable-msg=too-many-branches
 def main(args):
     """
     main function to clone test plan
@@ -81,6 +84,9 @@ def main(args):
     tp_info['enclosure_type'] = args.enclosure_type
     tp_info['affect_version'] = args.affect_version
     tp_info['fix_version'] = args.fix_version
+    tp_info['product_family'] = args.product_family
+    tp_info['core_category'] = args.core_category
+    tp_info['tp_labels'] = args.tp_labels
 
     new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
@@ -97,6 +103,15 @@ def main(args):
         tp_info['platform'] = 'VM'
     else:
         te_keys = [te for te in te_keys_all if te not in vm_hw_skip_tes]
+
+    if args.skip_te_clone:
+        te_keys = [te for te in te_keys if te not in args.skip_te_clone]
+
+    if args.tes_to_clone:
+        if args.tes_to_clone[0] != "optional":
+            new_te_keys = [te for te in te_keys if te in args.tes_to_clone]
+            te_keys = new_te_keys
+
     print("test executions of existing test plan {}".format(te_keys))
 
     skip_tes = []
@@ -115,7 +130,8 @@ def main(args):
         old_tes = manager.list()
         for te in te_keys:
             p = Process(target=process_te, args=(te, tp_info, skip_tes, new_tp_key,
-                                                 new_skipped_te, new_te_keys, old_tes))
+                                                 new_skipped_te, new_te_keys, old_tes,
+                                                 args.product_family))
             p.start()
             prcs.append(p)
 
@@ -160,7 +176,7 @@ def parse_args():
     parser.add_argument("-p", "--platform", type=str, default='VM_HW',
                         help="For which environment test plan needs to be created: VM/HW/OVA")
     parser.add_argument("-n", "--nodes", type=str,
-                        help="Number of nodes in target: 1/3/N", required=True)
+                        help="Number of nodes in target: 1/3/N", default='', required=True)
     parser.add_argument("-sr", "--server_type", type=str,
                         help="Server type: HPC/DELL/SMC", required=True)
     parser.add_argument("-e", "--enclosure_type", type=str, default='5U84',
@@ -169,6 +185,15 @@ def parse_args():
                         help="Affects Versions: LR-R2 or LR1.0 or LR1.0.1​")
     parser.add_argument("-f", "--fix_version", type=str, default='LR-R2',
                         help="Fix Versions: LR-R2 or LR1.0 or LR1.0.1​")
+    parser.add_argument("-pf", "--product_family", type=str, default='LR', help="LR or K8")
+    parser.add_argument("-sc", "--skip_te_clone", nargs='+', type=str,
+                        help="Space separated te tickets to skip from cloning")
+    parser.add_argument("-tc", "--tes_to_clone", nargs='+', type=str,
+                        help="Space separated te tickets to clone")
+    parser.add_argument("-tl", "--tp_labels", nargs='+', type=str,
+                        help="Space separated labels for test plan")
+    parser.add_argument("-cc", "--core_category", type=str, default='NA',
+                        help="gold/silver")
     return parser.parse_args()
 
 
