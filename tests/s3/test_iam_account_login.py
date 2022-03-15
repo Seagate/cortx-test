@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 class TestAccountLoginProfile:
     """Account Login Profile Test Suite."""
 
-    # pylint: disable= C0302
+    # pylint: disable = C0302
     def setup_method(self):
         """
         It will perform all the pre-reqs and is invoked prior to each test case.
