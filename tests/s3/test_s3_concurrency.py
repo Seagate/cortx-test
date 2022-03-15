@@ -22,7 +22,8 @@
 import logging
 import os
 import time
-from multiprocessing import Process, Manager
+from multiprocessing import Manager
+from multiprocessing import Process
 
 import pytest
 from commons.ct_fail_on import CTFailOn
@@ -32,15 +33,19 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3CMD_CNF
 from config.s3 import S3_CFG
-from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
 
+# pylint: disable-msg=too-many-instance-attributes
+# pylint: disable-msg=too-many-public-methods
 class TestS3Concurrency:
     """S3 Concurrency Operations Test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -50,7 +55,7 @@ class TestS3Concurrency:
         s3cmd_obj = S3CMD(ACCESS_KEY, SECRET_KEY)
         cls.log.info("Setting access and secret key & other options in s3cfg.")
         resp = s3cmd_obj.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
-        assert_utils.assert_true(resp, f"Failed to update s3cfg.")
+        assert_utils.assert_true(resp, "Failed to update s3cfg.")
         cls.manager = Manager()
         cls.log.info("ENDED: Setup suite level operation.")
 

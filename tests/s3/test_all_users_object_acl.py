@@ -40,6 +40,7 @@ from libs.s3 import s3_acl_test_lib
 class TestAllUsersObjectAcl:
     """All Users Object ACL Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked before running each test case.
