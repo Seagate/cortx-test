@@ -38,6 +38,9 @@ class TestAccountLoginProfile:
     """Account Login Profile Test Suite."""
 
     def setup_method(self):
+        """
+        It will perform all the pre-reqs and is invoked prior to each test case.
+        """
         LOGGER.info("STARTED: Setup Operation")
         self.iam_obj = iam_test_lib.IamTestLib()
         self.account_name = "iamAccount"
