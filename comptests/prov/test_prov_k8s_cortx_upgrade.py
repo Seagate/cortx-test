@@ -25,7 +25,6 @@ import os
 import time
 import queue
 from threading import Thread
-import yaml
 import pytest
 
 from commons import commands
@@ -117,32 +116,19 @@ class TestProvK8CortxRollingUpgrade:
         solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
-        with open(self.local_sol_path) as soln:
-            conf = yaml.safe_load(soln)
-            parent_key = conf['solution']
-            soln.close()
-        for image in self.prov_deploy_cfg["images_key"]:
-            if image == "cortxserver":
-                parent_key['images'][image] = self.cortx_rgw_image
-            else:
-                parent_key['images'][image] = self.cortx_all_image
-        noalias_dumper = yaml.dumper.SafeDumper
-        noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(self.local_sol_path, 'w') as pointer:
-            yaml.dump(conf, pointer, default_flow_style=False,
-                      sort_keys=False, Dumper=noalias_dumper)
-            soln.close()
+        image_dict = {"all_image": self.cortx_all_image, "rgw_image": self.cortx_rgw_image}
+        resp = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
+        assert_utils.assert_true(resp[0], resp[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, self.local_sol_path,
+            resp = self.deploy_lc_obj.copy_sol_file(node_obj, resp[1],
                                                     self.prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
-        image_list = [self.cortx_all_image, self.cortx_rgw_image]
         for node_obj in self.host_list:
-            for image in image_list:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image)
+            for image in image_dict:
+                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
@@ -265,32 +251,20 @@ class TestProvK8CortxRollingUpgrade:
         solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
-        with open(self.local_sol_path) as soln:
-            conf = yaml.safe_load(soln)
-            parent_key = conf['solution']
-            soln.close()
-        for image in self.prov_deploy_cfg["images_key"]:
-            if image == "cortxserver":
-                parent_key['images'][image] = self.cortx_rgw_image
-            else:
-                parent_key['images'][image] = self.cortx_all_image
-        noalias_dumper = yaml.dumper.SafeDumper
-        noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(self.local_sol_path, 'w') as pointer:
-            yaml.dump(conf, pointer, default_flow_style=False,
-                      sort_keys=False, Dumper=noalias_dumper)
-            soln.close()
+        image_dict = {"all_image": self.cortx_all_parallel_image,
+                      "rgw_image": self.cortx_rgw_parallel_image}
+        resp = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
+        assert_utils.assert_true(resp[0], resp[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, self.local_sol_path,
+            resp = self.deploy_lc_obj.copy_sol_file(node_obj, resp[1],
                                                     self.prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
-        image_list = [self.cortx_all_parallel_image, self.cortx_rgw_parallel_image]
         for node_obj in self.host_list:
-            for image in image_list:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image)
+            for image in image_dict:
+                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 

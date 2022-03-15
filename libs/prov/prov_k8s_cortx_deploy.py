@@ -1475,3 +1475,30 @@ class ProvDeployK8sCortxLib:
             LOGGER.error("An error occurred in %s:", ProvDeployK8sCortxLib.pull_image.__name__)
             return False, err
         return True, "Image pulled."
+
+    @staticmethod
+    def update_sol_with_image(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = image_dict['rgw_image']
+            else:
+                parent_key['images'][image] = image_dict['all_image']
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
