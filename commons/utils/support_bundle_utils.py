@@ -84,6 +84,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
 # pylint: disable=max-args
 # pylint: disable-msg=too-many-statements
+# pylint: disable-msg=too-many-locals
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None,
                                      size=None, services=None):
     """
