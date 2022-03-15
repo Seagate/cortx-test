@@ -128,7 +128,6 @@ class TestDiskFailureRecovery:
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
-    @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36580")
     def test_sns_repair_fail_disk_less_than_k(self):
@@ -244,7 +243,6 @@ class TestDiskFailureRecovery:
                     "are less than K(parity units)")
 
     # pylint: disable=too-many-statements
-    @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36581")
     def test_sns_repair_fail_disk_equal_to_k(self):
