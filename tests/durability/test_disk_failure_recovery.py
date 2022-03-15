@@ -157,7 +157,7 @@ class TestDiskFailureRecovery:
         if self.parity_units == 1:
             disk_fail_cnt = 1
         else:
-            disk_fail_cnt = random.randint(1, self.parity_units-1)
+            disk_fail_cnt = random.randint(1, self.parity_units-1)  # nosec
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
 
         resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
@@ -171,10 +171,9 @@ class TestDiskFailureRecovery:
         pod_name = resp[1]
 
         for cnt in range(disk_fail_cnt):
-            LOGGER.info("fail disk loop:: %s", cnt + 1)
-            selected_disk = random.choice(all_disks)
+            selected_disk = random.choice(all_disks)  # nosec
             fail_disk = selected_disk.split('$')
-            LOGGER.info("disk selected for failure: %s", fail_disk)
+            LOGGER.info("disk fail loop: %s, disk selected for failure: %s", cnt + 1, fail_disk)
             resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
                                                             fail_disk[0], fail_disk[2], "failed")
             LOGGER.info("fail disk resp: %s", resp)
@@ -285,7 +284,7 @@ class TestDiskFailureRecovery:
         for cnt in range(disk_fail_cnt):
             selected_disk = random.choice(all_disks)
             fail_disk = selected_disk.split('$')
-            LOGGER.info("disk selected for failure: %s", fail_disk)
+            LOGGER.info("disk fail loop: %s, disk selected for failure: %s", cnt + 1, fail_disk)
             resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
                                                             fail_disk[0], fail_disk[2], "failed")
             LOGGER.info("fail disk resp: %s", resp)
