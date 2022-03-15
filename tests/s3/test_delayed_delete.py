@@ -628,7 +628,7 @@ class TestDelayedDelete:
         resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=clients,
                                num_sample=samples, obj_name_pref="test-object-",
                                obj_size=object_size, skip_cleanup=False, duration=None,
-                               log_file_prefix="TEST-28990", end_point=S3_CFG["s3b_url"],
+                               log_file_prefix="TEST-28990", end_point=S3_CFG["s3_url"],
                                validate_certs=S3_CFG["validate_certs"])
         self.log.info("Log Path %s", resp[1])
         assert_utils.assert_false(s3bench.check_log_file_error(resp[1]),
@@ -656,11 +656,15 @@ class TestDelayedDelete:
         assert_utils.assert_true(resp, "Could not setup s3bench.")
         pool = Pool(processes=3)
         buckets = [f"test-28991-bucket-{i}-{str(int(time.time()))}" for i in range(3)]
-        end_point = S3_CFG["s3b_url"]
+        end_point = S3_CFG["s3_url"]
+        validate_certs = S3_CFG["validate_certs"]
         pool.starmap(s3bench.s3bench_workload,
-                     [(end_point, buckets[0], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY),
-                      (end_point, buckets[1], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY),
-                      (end_point, buckets[2], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY)])
+                     [(end_point, buckets[0], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs),
+                      (end_point, buckets[1], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs),
+                      (end_point, buckets[2], "TEST-28991", "2Mb", 3, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs)])
 
         # Check if entries are getting deleted
         listed_buckets = self.s3_test_obj.bucket_list()[1]

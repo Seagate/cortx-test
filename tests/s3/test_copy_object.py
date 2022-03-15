@@ -153,7 +153,7 @@ class TestCopyObjects:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
