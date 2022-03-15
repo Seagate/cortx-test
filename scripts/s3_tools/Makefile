@@ -161,7 +161,7 @@ jcloud-client-install:
 s3bench-install:
 
 	@echo "###Installing s3bench tool###"
-	wget -O /usr/bin/s3bench https://github.com/Seagate/s3bench/releases/download/v2021-06-28/s3bench.2021-06-28
+	wget -O /usr/bin/s3bench https://github.com/Seagate/s3bench/releases/download/v2022-03-14/s3bench.2022-03-14
 	chmod +x /usr/bin/s3bench
 	@echo "###Installed s3bench tool###"
 
