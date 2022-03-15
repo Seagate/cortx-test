@@ -206,7 +206,7 @@ def s3bench(
     cmd = f"s3bench -accessKey={access_key} -accessSecret={secret_key} " \
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
           f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} " \
-          f"-skipSSLCertVerification={not validate_certs}"
+          f"-skipSSLCertVerification={not validate_certs} "
     if region:
         cmd = cmd + f"-region {region} "
     if skip_write:
