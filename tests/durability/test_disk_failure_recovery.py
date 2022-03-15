@@ -31,7 +31,6 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons import constants as common_const
 from config import CMN_CFG
-from config import HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.durability.durability_disk_failure_recovery_libs import DiskFailureRecoveryLib
@@ -128,6 +127,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36580")
@@ -172,6 +172,7 @@ class TestDiskFailureRecovery:
         pod_name = resp[1]
 
         for cnt in range(disk_fail_cnt):
+            LOGGER.info("fail disk loop:: %s", cnt + 1)
             selected_disk = random.choice(all_disks)
             fail_disk = selected_disk.split('$')
             LOGGER.info("disk selected for failure: %s", fail_disk)
@@ -242,6 +243,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are less than K(parity units)")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36581")
