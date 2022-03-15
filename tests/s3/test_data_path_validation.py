@@ -33,10 +33,13 @@ from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable-msg=too-many-public-methods
 
 class TestDataPathValidation:
     """Data Path Test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
