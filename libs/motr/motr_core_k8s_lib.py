@@ -34,7 +34,9 @@ log = logging.getLogger(__name__)
 
 
 class MotrCoreK8s():
+    """ Motr Kubernetes environment test library """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self.profile_fid = None
         self.cortx_node_list = None
@@ -83,7 +85,7 @@ class MotrCoreK8s():
                         if svc["name"] == "m0_client":
                             node_dict[nodename]['m0client'].append({"ep": svc["ep"],
                                                                     "fid": svc["fid"]})
-            return node_dict
+        return node_dict
 
     def get_node_pod_dict(self):
         """
@@ -101,7 +103,7 @@ class MotrCoreK8s():
         return node_pod_dict
 
     def get_primary_cortx_node(self):
-        """ 
+        """
         To get the primary cortx node name
 
         :returns: Primary(RC) node name in the cluster
@@ -117,7 +119,7 @@ class MotrCoreK8s():
         return primary_cortx_node
 
     def get_cortx_node_endpoints(self, cortx_node=None):
-        """ 
+        """
         To get the endpoints details of the cortx node
         
         :param cortx_node: Name of the cortx node
@@ -131,9 +133,9 @@ class MotrCoreK8s():
                     "Node must be one of %r." % str(self.cortx_node_list))
         else:
             cortx_node = self.get_primary_cortx_node()
-        for node in self.node_dict.keys():
-            if node == cortx_node:
-                return self.node_dict[node]
+        for key in self.node_dict:
+            if key == cortx_node:
+                return self.node_dict[key]
         return None
 
     def get_number_of_m0clients(self, cluster_info_dic=None):
@@ -147,13 +149,11 @@ class MotrCoreK8s():
         """
         if cluster_info_dic is None:
             return len(self.node_dict[self.get_primary_cortx_node()]["m0client"])
-        else:
-            return len(cluster_info_dic[self.get_primary_cortx_node()]["m0client"])
+        return len(cluster_info_dic[self.get_primary_cortx_node()]["m0client"])
 
     def get_node_name_from_pod_name(self, data_pod=None):
         """
         To get Node name from data_pod
-
         :param data_pod: Name of the data pod
         :type: str
         :returns: Corresponding Node name
@@ -168,7 +168,8 @@ class MotrCoreK8s():
         return node_name
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
-        """ To run the m0crate utility on specified cortx_node
+        """
+        To run the m0crate utility on specified cortx_node
         param: local_file_path: Absolute workload file(yaml) path on the client
         param: remote_file_path: Absolute workload file(yaml) path on the master node
         param: cortx_node: Node where the m0crate utility will run
@@ -403,24 +404,6 @@ class MotrCoreK8s():
                 log.error('"%s" failed, please check the log', cmd)
                 assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                            f'"{cmd}" Failed, Please check the log')
-            # Below support verbs for HW is removed from libfabrc code as of now.
-            # ...Commenting the same
-            """
-            log.info('Checking libfabric verbs protocol presence')
-            if CMN_CFG["setup_type"] == "HW":
-                cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                                common_cmd.LIBFAB_VERBS)                                       
-                result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
-                                                                              self.master_uname,
-                                                                              self.master_passwd)                                                           
-                if ret:
-                    log.info('"%s" Failed, Please check the log', cmd)
-                    assert False
-                if (b"ERROR" or b"Error") in error1:
-                    log.error('"%s" failed, please check the log', cmd)
-                    assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                       f'"{cmd}" Failed, Please check the log')
-            """
 
     @staticmethod
     def byte_conversion(size):

@@ -4834,8 +4834,8 @@ class TestCsmUser():
         assert response.json()["error_code"] == str(resp_error_code), (
             + "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert response.json()["message"] == msg.format("csm_user_manage",
-                                                            "csm_user_manage"), "Message check failed."
+            assert response.json()["message"] == msg.format(username,
+                                                            username), "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Change role of second manage user from manage to monitor")
         response = self.csm_obj.edit_csm_user(login_as=new_user,
