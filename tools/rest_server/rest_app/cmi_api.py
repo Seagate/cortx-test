@@ -64,7 +64,7 @@ class CMI(Resource):
                                   response=validate_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -95,7 +95,7 @@ class CMI(Resource):
                                   response="db_username/db_password missing in request body")
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
