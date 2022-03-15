@@ -133,9 +133,12 @@ class HAK8SCompLib:
                 return False
         return True
 
+    # pylint: disable=R0912
+    # pylint: disable=R0913
+    # pylint: disable=R0914
     @staticmethod
-    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool = False, 
-                        health_monitor: bool = False, kubectl_delete: bool = False, 
+    def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool = False,
+                        health_monitor: bool = False, kubectl_delete: bool = False,
                         status: str = 'online') -> dict:
         '''
         Helper function to get ha log properties.
@@ -185,7 +188,7 @@ class HAK8SCompLib:
                 if 'to component hare' in line:
                     log_list.append(line)
             output = log_list
-        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [], 
+        resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [],
                      'node_id': [], 'resource_id': []}
         for line in output:
             source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
