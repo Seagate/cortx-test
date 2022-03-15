@@ -41,7 +41,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ManagementOPs:
-
     email_suffix = "@seagate.com"
     user_prefix = 'di_user'
 
@@ -56,7 +55,7 @@ class ManagementOPs:
         iam_users = dict()
         # Create S3 user
         iam_users.update(
-            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
+            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})  # nosec
         iam_users.update({'emailid': iam_users['user_name'] + cls.email_suffix})
         iam_users.update(
             {'password': DI_CFG["DiUserConfig"]["s3_account"]["password"]})

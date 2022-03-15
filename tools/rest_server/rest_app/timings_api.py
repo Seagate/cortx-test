@@ -67,7 +67,7 @@ class Timings(Resource):
                                   response=valid_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -84,6 +84,7 @@ class Timings(Resource):
             ret = flask.Response(status=add_result[1][0], response=add_result[1][1])
         return ret
 
+    # pylint-disable-message=too-many-return-statements
     @staticmethod
     def get():
         """Get timing entry."""
@@ -98,7 +99,7 @@ class Timings(Resource):
         if not validate_field[0]:
             return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 

@@ -16,6 +16,9 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""
+Telnet Lib used to write wrapper methods
+"""
 
 import socket
 import logging
@@ -78,7 +81,8 @@ class Telnet:
                 return self.login(resp)
         except Exception as error:
             log.error(
-                f"Error in {Telnet.connect.__name__}. Could not establish connection: error: {error}")
+                f"Error in {Telnet.connect.__name__}. Could not establish connection: "
+                f"error: {error}")
 
         return False, "Failed to connect."
 

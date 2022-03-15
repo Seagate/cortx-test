@@ -521,7 +521,7 @@ CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
-DESTROY_CLUSTER_CMD = "cd {}; sh destroy-cortx-cloud.sh --force"
+DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"

@@ -29,6 +29,7 @@ api = Namespace('Test Execution', path="/reportsdb",
                 description='Test execution related operations')
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/search", doc={"description": "Search test execution entries in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -39,6 +40,7 @@ api = Namespace('Test Execution', path="/reportsdb",
 class Search(Resource):
     """Search endpoint"""
 
+    # pylint-disable-message=too-many-return-statements
     @staticmethod
     def get():
         """Get test execution entry."""
@@ -53,7 +55,7 @@ class Search(Resource):
         if not validate_field[0]:
             return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -88,6 +90,7 @@ class Search(Resource):
         return flask.Response(status=query_results[1][0], response=query_results[1][1])
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/create", doc={"description": "Add test execution entry in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -97,6 +100,7 @@ class Search(Resource):
 class Create(Resource):
     """Create endpoint"""
 
+    # pylint-disable-message=too-many-return-statements
     @staticmethod
     def post():
         """Create test execution entry."""
@@ -128,7 +132,7 @@ class Create(Resource):
                                   response=valid_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -154,10 +158,10 @@ class Create(Resource):
             else:
                 ret = flask.Response(status=add_result[1][0], response=add_result[1][1])
             return ret
-        else:
-            return flask.Response(status=update_result[1][0], response=update_result[1][1])
+        return flask.Response(status=update_result[1][0], response=update_result[1][1])
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/update", doc={"description": "Update test execution entries in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -185,7 +189,7 @@ class Update(Resource):
                                   response=validate_result[1][1])
 
         # Build MongoDB URI using username and password
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -203,6 +207,7 @@ class Update(Resource):
         return flask.Response(status=update_result[1][0], response=update_result[1][1])
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/distinct", doc={"description": "Get distinct values for given key"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -227,7 +232,7 @@ class Distinct(Resource):
         if not validate_field[0]:
             return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -250,6 +255,7 @@ class Distinct(Resource):
         return flask.jsonify({'result': count_results[1]})
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/aggregate", doc={"description": "Return aggregate values as per the query "})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -271,7 +277,7 @@ class Aggregate(Resource):
             return flask.Response(status=HTTPStatus.BAD_REQUEST,
                                   response="db_username/db_password missing in request body")
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
@@ -288,6 +294,7 @@ class Aggregate(Resource):
         return flask.jsonify({'result': list(aggregate_results[1])})
 
 
+# pylint-disable-message=too-few-public-methods
 @api.route("/count", doc={"description": "Count test execution entries in MongoDB"})
 @api.response(200, "Success")
 @api.response(400, "Bad Request: Missing parameters. Do not retry.")
@@ -312,7 +319,7 @@ class Count(Resource):
         if not validate_field[0]:
             return flask.Response(status=validate_field[1][0], response=validate_field[1][1])
 
-        uri = read_config.mongodb_uri.format(quote_plus(json_data["db_username"]),
+        uri = read_config.MONGODB_URI.format(quote_plus(json_data["db_username"]),
                                              quote_plus(json_data["db_password"]),
                                              read_config.db_hostname)
 
