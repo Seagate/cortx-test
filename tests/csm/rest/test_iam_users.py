@@ -421,7 +421,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -433,22 +433,23 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM users with different tenant")
-        bucket_name = "iam_user_bucket_" + str(int(time.time()))
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
-            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
-            self.log.info("Verify Response : %s", resp)
-            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-            self.created_iam_users.add(resp['tenant'] + "$" + optional_payload['uid'])
-            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
-            assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
-                                              f"expected was {resp[2]}, received {resp[3]}")
+            resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp1)
+            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                            "IAM user creation failed")
+            self.created_iam_users.add(resp1.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Create bucket and perform IO")
-            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
-                               secret_key=resp["keys"][0]["secret_key"])
+            s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                               secret_key=resp1.json()["keys"][0]["secret_key"])
             self.log.info("Step: Verify create bucket")
             status, resp = s3_obj.create_bucket(bucket_name)
             assert_utils.assert_true(status, resp)
@@ -456,6 +457,9 @@ class TestIamUserRGW():
             file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
             if os.path.exists(file_path_upload):
                 os.remove(file_path_upload)
+            if not os.path.isdir(TEST_DATA_FOLDER):
+                self.log.debug("File path not exists, create a directory")
+                system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
             system_utils.create_file(file_path_upload, self.file_size)
             self.log.info("Step: Verify put object.")
             resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
@@ -465,11 +469,12 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
             resp = s3_obj.get_object(bucket_name, test_file)
-            assert_utils.assert_false(resp[0], resp)
+            assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    # pylint: disable=broad-except
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -482,28 +487,32 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user with suspended")
         uid = "iam_user_1_" + str(int(time.time()))
-        bucket_name = "iam_user_bucket_" + str(int(time.time()))
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
         self.log.info("Creating new iam user  %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
         payload.update({"suspended": True})
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(resp['tenant'] + "$" + uid)
-        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
-        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
-                                          f"expected was {resp[2]}, received {resp[3]}")
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp1)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                      "IAM user creation failed")
+        self.created_iam_users.add(resp1.json()['tenant'] + "$" + uid)
+        resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Verify create bucket")
-        s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
-                           secret_key=resp["keys"][0]["secret_key"])
-        status, resp = s3_obj.create_bucket(bucket_name)
-        assert_utils.assert_false(status, resp)
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        try:
+            status, resp = s3_obj.create_bucket(bucket_name)
+            self.log.info("Printing response %s", resp.json())
+            assert_utils.assert_false(status, resp)
+        except Exception as error:
+            self.log.info("Expected exception received %s", error)
         self.log.info("[END]Creating IAM user with suspended")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -521,25 +530,28 @@ class TestIamUserRGW():
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
         payload.update({"max_buckets": 1})
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(resp['tenant'] + "$" + uid)
-        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
-        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
-                                          f"expected was {resp[2]}, received {resp[3]}")
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp1)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                              "IAM user creation failed")
+        self.created_iam_users.add(resp1.json()['tenant'] + "$" + uid)
+        resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
+        assert_utils.assert_true(resp[0], resp[1])
         for bucket_cnt in range(2):
-            bucket_name = "iam_user_bucket_" + str(bucket_cnt) + str(int(time.time()))
+            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
             # Create bucket with bucket_name and perform IO
-            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
-                               secret_key=resp["keys"][0]["secret_key"])
-            status, resp = s3_obj.create_bucket(bucket_name)
+            s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                               secret_key=resp1.json()["keys"][0]["secret_key"])
             if bucket_cnt == 0:
+                status, resp = s3_obj.create_bucket(bucket_name)
                 assert_utils.assert_true(status, resp)
                 test_file = "test-object.txt"
                 file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
                 if os.path.exists(file_path_upload):
                     os.remove(file_path_upload)
+                if not os.path.isdir(TEST_DATA_FOLDER):
+                    self.log.debug("File path not exists, create a directory")
+                    system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
                 system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
@@ -548,13 +560,18 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
                 resp = s3_obj.get_object(bucket_name, test_file)
-                assert_utils.assert_false(resp[0], resp)
+                assert_utils.assert_true(resp[0], resp)
             else:
-                assert_utils.assert_false(status, resp)
+                try:
+                    status, resp = s3_obj.create_bucket(bucket_name)
+                    self.log.info("Printing response %s", resp.json())
+                    assert_utils.assert_false(status, resp)
+                except Exception as error:
+                    self.log.info("Expected exception received %s", error)
         self.log.info("[END]Creating IAM user with max bucket 1")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -567,25 +584,29 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user with max buckets")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user creation failed")
-        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
-        resp = self.csm_obj.compare_iam_payload_response(resp, payload)
-        assert_utils.assert_true(resp[0], f"Value mismatch found for key {resp[1]} , "
-                                          f"expected was {resp[2]}, received {resp[3]}")
-        for bucket_cnt in range(1001):
-            bucket_name = "iam_user_bucket_" + str(bucket_cnt) + str(int(time.time()))
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp1)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                              "IAM user creation failed")
+        self.created_iam_users.add(resp1.json()['tenant'] + "$" + payload["uid"])
+        resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        for bucket_cnt in range(const.MAX_BUCKETS+1):
+            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
             # Create bucket with bucket_name and perform IO
-            s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
-                               secret_key=resp["keys"][0]["secret_key"])
+            s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                               secret_key=resp1.json()["keys"][0]["secret_key"])
             status, resp = s3_obj.create_bucket(bucket_name)
-            if bucket_cnt < 1000:
+            if bucket_cnt < const.MAX_BUCKETS:
                 assert_utils.assert_true(status, resp)
                 test_file = "test-object.txt"
                 file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
                 if os.path.exists(file_path_upload):
                     os.remove(file_path_upload)
+                if not os.path.isdir(TEST_DATA_FOLDER):
+                    self.log.debug("File path not exists, create a directory")
+                    system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
                 system_utils.create_file(file_path_upload, self.file_size)
                 resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                          file_path=file_path_upload)
@@ -594,13 +615,13 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Step: Verify get object.")
                 resp = s3_obj.get_object(bucket_name, test_file)
-                assert_utils.assert_false(resp[0], resp)
+                assert_utils.assert_true(resp[0], resp)
             else:
                 assert_utils.assert_false(status, resp)
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Not ready")
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -620,11 +641,11 @@ class TestIamUserRGW():
         self.log.info("printing resp %s:",resp.json())
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
                      "IAM user creation failed")
-        self.created_iam_users.add(resp['tenant'] + "$" + payload["uid"])
-        if resp.json()["keys"][0]["access_key"] != "":
-            assert_utils.assert_true(False, "access key is available in response")
-        elif resp.json()["keys"][0]["secret_key"] != "":
-            assert_utils.assert_true(False, "secret key is available in response")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
+        self.log.info("Printing keys %s", resp.json()["keys"])
+        for key in resp.json()["keys"]:
+            if "access_key" in key or "secret_key" in key:
+                assert_utils.assert_true(False, "access and secret keys available in response")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 

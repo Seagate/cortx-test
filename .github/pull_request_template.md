@@ -13,7 +13,7 @@
   Checklist for Author
 -  [ ] New/Affected tests are executed on Latest Build
 -  [ ] Attach test execution logs
--  [ ] Collection tested and no collection error introduced (`pytest -collect_only --local True`)
+-  [ ] Collection tested and no collection error introduced (`pytest --local True --collect-only`)
 
 # Review Checklist 
   Checklist for Author
