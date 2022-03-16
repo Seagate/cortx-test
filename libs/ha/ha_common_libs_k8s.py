@@ -1282,6 +1282,7 @@ class HAK8s:
         for n_cnt in range(node_cnt):
             for d_cnt in range(resource_cnt):
                 count += 1
+                config_dict["events"][f"{count}"] = {}
                 config_dict["events"][f"{count}"]["resource_type"] = resource_type
                 config_dict["events"][f"{count}"]["source"] = source
                 config_dict["events"][f"{count}"]["resource_status"] = resource_status
