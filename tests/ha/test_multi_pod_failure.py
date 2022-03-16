@@ -2220,7 +2220,7 @@ class TestMultiPodFailure:
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
 
-        LOGGER.info("Step 1: Create and list buckets. Perform multipart upload for size %sMB.",
+        LOGGER.info("Step 1: Create bucket and perform multipart upload of size %sMB.",
                     file_size)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -2249,7 +2249,8 @@ class TestMultiPodFailure:
         LOGGER.info("Step 1: Successfully performed multipart upload for size size %sMB.",
                     file_size)
 
-        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Step 2: Shutdown the %s (K) data pods by deleting deployment (unsafe)",
+                    self.kvalue)
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Get pod names to be deleted")
         self.pod_name_list = random.sample(pod_list, self.kvalue)
@@ -2269,7 +2270,7 @@ class TestMultiPodFailure:
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
-        LOGGER.info("Step 2: Successfully deleted %s data pods", self.kvalue)
+        LOGGER.info("Step 2: Successfully shutdown %s (K) data pods", self.kvalue)
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
