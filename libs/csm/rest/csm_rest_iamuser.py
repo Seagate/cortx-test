@@ -561,6 +561,15 @@ class RestIamUser(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     def add_key_to_iam_user(self, **kwargs):
+        """
+        Add keys to the user
+        :keyword access_key: access key which needs to be added to user
+        :keyword secret_key: secret_key key which needs to be added to user
+        :keyword uid : uid of user for which keys need to be added
+        :keyword key_type : type of key to be added
+        :keyword generate_key : whether to generate keys for user
+        :return response of add key rest call
+        """
         self.log.info("Adding key to IAM user request....")
         access_key = kwargs.get("access_key", None)
         secret_key = kwargs.get("secret_key", None)
@@ -579,7 +588,11 @@ class RestIamUser(RestTestLib):
 
     def validate_added_deleted_keys(self, existing_keys, new_keys, added=True):
         """
-            To validate if new keys are added or deleted properly
+        To validate if new keys are added or deleted properly
+        :keyword existing_keys: List of existing keys
+        :keyword new_keys : List of new keys for comparison with existing keys
+        :keyword added : whether keys were added in new keys
+        :return difference of existing and new keys
         """
         self.log.info("Validating keys")
         self.log.debug("Existing keys %s", existing_keys)
@@ -604,6 +617,13 @@ class RestIamUser(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     def remove_key_from_iam_user(self, **kwargs):
+        """
+        Remove keys from the user
+        :keyword access_key: access key which needs to be removed from user
+        :keyword uid : uid of user for which keys need to be removed
+        :keyword key_type : type of key to be removed
+        :return response of remove key rest call
+        """
         self.log.info("Remove key from IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_keys_endpoint"]
         payload = {"uid": kwargs.get("uid", None)}
