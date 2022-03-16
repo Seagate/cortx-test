@@ -972,6 +972,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], "Value mismatch found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -1033,6 +1034,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -1094,6 +1096,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
