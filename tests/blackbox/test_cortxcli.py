@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -117,10 +116,10 @@ class TestCortxcli:
             acc_email,
             acc_password)
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7177")
     @CTFailOn(error_handler)
     def test_2393(self):
@@ -145,10 +144,10 @@ class TestCortxcli:
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: create account using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
@@ -175,6 +174,7 @@ class TestCortxcli:
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: List account using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7179")
@@ -216,6 +216,7 @@ class TestCortxcli:
 
         self.log.info("ENDED: Create 'N' No of Accounts")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7180")
@@ -252,10 +253,10 @@ class TestCortxcli:
         self.log.info(
             "ENDED: create account with existing name using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7181")
     @CTFailOn(error_handler)
     def test_2395(self):
@@ -287,10 +288,9 @@ class TestCortxcli:
         assert_utils.assert_true(logout[0], logout[1])
         self.log.info("ENDED: Delete Account using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7182")
     @CTFailOn(error_handler)
     def test_2430(self):
@@ -367,10 +367,9 @@ class TestCortxcli:
         self.log.info(
             "ENDED: CRUD operations with valid login credentials using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7183")
     @CTFailOn(error_handler)
     def test_2400(self):
@@ -408,10 +407,9 @@ class TestCortxcli:
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: create user using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7184")
     @CTFailOn(error_handler)
     def test_2406(self):
@@ -453,6 +451,7 @@ class TestCortxcli:
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: create access key for user using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7185")
@@ -504,6 +503,7 @@ class TestCortxcli:
         assert_utils.assert_true(logout[0], logout[1])
         self.log.info("ENDED: max num of users supported using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7186")
@@ -554,10 +554,9 @@ class TestCortxcli:
         self.log.info(
             "ENDED: creating user with existing user name using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7187")
     @CTFailOn(error_handler)
     def test_2403(self):
@@ -592,10 +591,9 @@ class TestCortxcli:
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: Delete user using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7190")
     @CTFailOn(error_handler)
     def test_2401(self):
@@ -634,10 +632,9 @@ class TestCortxcli:
         self.s3_accounts_list.append(self.s3acc_name)
         self.log.info("ENDED: list user using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7196")
     @CTFailOn(error_handler)
     def test_2410(self):
@@ -704,6 +701,7 @@ class TestCortxcli:
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: delete accesskey using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7197")
@@ -792,10 +790,9 @@ class TestCortxcli:
         self.log.info(
             "ENDED: update accesskey with inactive mode using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7198")
     @CTFailOn(error_handler)
     def test_2407(self):
@@ -859,6 +856,7 @@ class TestCortxcli:
         self.iam_users_list.append(self.s3user_name)
         self.log.info("ENDED: list accesskey for User using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7192")
@@ -951,6 +949,7 @@ class TestCortxcli:
         self.log.info(
             "ENDED: update accesskey with inactive mode using cortxcli")
 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7193")

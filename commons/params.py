@@ -1,17 +1,16 @@
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -21,6 +20,7 @@
 """Constants
 """
 import os
+import tempfile
 
 LOG_FILE = 'cortx-test.log'
 
@@ -34,7 +34,11 @@ VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
-S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
+S3_MPART_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_multipart_upload.yaml")
+S3_TEMP_CRED_CONFIG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delete_account_temp_cred.yaml")
+S3_BLACK_BOX_CONFIG_PATH = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
+S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(
+    CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
 S3CMD_TEST_CONFIG = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
@@ -46,6 +50,10 @@ COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
+DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
+IAM_POLICY_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
+S3_VER_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_versioning.yaml")
+PROV_CONFIG_PATH = "config/prov/test_prov_config.yaml"
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -83,7 +91,7 @@ LOCAL_LOG_PATH = "/root/pytest_logs"
 VM_COLLECTION = "r2_vm_pool"
 
 # Jenkins url for deployment
-JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
+JENKINS_URL = "https://eos-jenkins.colo.seagate.com/job/QA/"
 
 REPORT_SRV = "http://cftic2.pun.seagate.com:5000/"
 SETUP_DEFAULTS = "tools/setup_update/setup_entry.json"
@@ -110,6 +118,10 @@ DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
+S3_INSTANCES_PER_NODE = 1
+LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
+                                            'test_multiple_config_deploy', 'test_cont_deployment',
+                                            "test_di_deployment"]

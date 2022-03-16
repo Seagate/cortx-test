@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -281,6 +280,7 @@ class TestHANodeStartStop:
 
     # pylint: disable=R0915
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25215")
     @CTFailOn(error_handler)
     def test_node_stop_start_one_by_one(self):
@@ -399,6 +399,7 @@ class TestHANodeStartStop:
 
     # pylint: disable=R0915
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25221")
     @CTFailOn(error_handler)
     def test_node_stop_unsafe_shutdown(self):
@@ -580,6 +581,7 @@ class TestHANodeStartStop:
             "Completed: Test to Check Stop services on node from REST and unsafe shutdown")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25444")
     @CTFailOn(error_handler)
     def test_node_poweroff_start_server(self):
@@ -699,6 +701,7 @@ class TestHANodeStartStop:
             "Completed: Test to check poweroff (only server) start operation one by one all nodes.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25217")
     @CTFailOn(error_handler)
     def test_node_poweroff_start_server_storage(self):
@@ -865,6 +868,7 @@ class TestHANodeStartStop:
             "through cortx REST with admin/manage user.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25219")
     @CTFailOn(error_handler)
     def test_node_stop_start_moniter_user(self):
@@ -994,6 +998,7 @@ class TestHANodeStartStop:
             "Completed: Test to Check node Stop/Start operation not supported by monitor user.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-25222")
     @CTFailOn(error_handler)
     def test_node_poweroff_external_power_on(self):

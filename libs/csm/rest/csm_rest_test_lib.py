@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -72,14 +71,62 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    def custom_rest_login(self, username, password,
-                          username_key="username", password_key="password"):
+    # pylint: disable=too-many-arguments
+    def custom_rest_login(self, username, password, username_key="username",
+                          password_key="password", override_config=False, config_params=None):
         """
         This function tests the invalid login scenarios
         :param str username: username
         :param str password: password
         :param str username_key: key word for json load for username
         :param str password_key: key word for json load for password
+        :param boolean override_config: to enable/disable param override
+        :param dict config_params: params to be override
+        :return [object]: response
+        """
+        try:
+            if override_config and config_params is not None:
+                config = CSM_REST_CFG
+                for key, value in config_params.items():
+                    config.update({key: value})
+                restapi = RestClient(config)
+                # Building response
+                endpoint = config["rest_login_endpoint"]
+                headers = config["Login_headers"]
+                self.log.debug("endpoint %s", endpoint)
+                payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
+                    username_key, username, password_key, password)
+
+                # Fetch and verify response
+                response = restapi.rest_call(
+                    "post", endpoint, headers=headers, data=payload, save_json=False)
+            else:
+                # Building response
+                endpoint = self.config["rest_login_endpoint"]
+                headers = self.config["Login_headers"]
+                self.log.debug("endpoint %s", endpoint)
+                payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
+                    username_key, username, password_key, password)
+
+                # Fetch and verify response
+                response = self.restapi.rest_call(
+                    "post", endpoint, headers=headers, data=payload, save_json=False)
+            self.log.debug("response : %s", response)
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.custom_rest_login.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+        return response
+
+    def custom_rest_login_missing_param(self, param1, param1_key):
+        """
+        This function tests the invalid login scenarios
+        :param str param1: can be username or password
+        :param str param1_key: key word for json load for username or password
         :return [object]: response
         """
         try:
@@ -87,8 +134,8 @@ class RestTestLib:
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
             self.log.debug("endpoint %s", endpoint)
-            payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
-                username_key, username, password_key, password)
+            payload = "{{\"{}\":\"{}\"}}".format(
+                param1_key, param1)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
