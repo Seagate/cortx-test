@@ -101,6 +101,28 @@ class TestRestartPod:
         LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
 
+    @staticmethod
+    def verify_ha_prop(resp_dict, status):
+        """
+        This is a local method to verify the ha logs properties
+        """
+        source_list = resp_dict['source']
+        resource_type_list = resp_dict['resource_type']
+        resource_status_list = resp_dict['resource_status']
+        generation_id_list = resp_dict['generation_id']
+        node_id = resp_dict['node_id']
+        resource_id = resp_dict['resource_id']
+        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
+                                                          resource_status_list)):
+            assert_utils.assert_equal(data1, 'monitor',
+                                      f"Source of {generation_id_list[index]} is not from monitor")
+            assert_utils.assert_equal(data2, 'node',
+                                      f"Resource of {generation_id_list[index]} is not node")
+            assert_utils.assert_equal(data3, status,
+                                      f"Resource status of {generation_id_list[index]} "
+                                      f"is not {status}")
+        return node_id, resource_id
+
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36017")
@@ -128,21 +150,9 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        failed_node_id = resp_dict['node_id']
-        failed_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not failed")
+        resp = self.verify_ha_prop(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -164,24 +174,12 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        online_node_id = resp_dict['node_id']
-        online_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'online',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not online")
-        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are differnt")
+        resp = self.verify_ha_prop(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
-                                                                          "are different")
+                                                                          "are different")                                                              
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
                     "node and resource IDs")
 
@@ -224,21 +222,9 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        failed_node_id = resp_dict['node_id']
-        failed_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not failed")
+        resp = self.verify_ha_prop(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]                             
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -262,22 +248,10 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        online_node_id = resp_dict['node_id']
-        online_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'online',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not online")
-        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are differnt")
+        resp = self.verify_ha_prop(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
                                                                           "are different")
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
@@ -318,21 +292,9 @@ class TestRestartPod:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True, status='failed')
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        failed_node_id = resp_dict['node_id']
-        failed_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not failed")
+        resp = self.verify_ha_prop(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -355,22 +317,10 @@ class TestRestartPod:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        online_node_id = resp_dict['node_id']
-        online_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'online',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not online")
-        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are differnt")
+        resp = self.verify_ha_prop(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
                                                                           "are different")
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
@@ -413,21 +363,9 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        failed_node_id = resp_dict['node_id']
-        failed_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not failed")
+        resp = self.verify_ha_prop(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -451,22 +389,10 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        online_node_id = resp_dict['node_id']
-        online_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'online',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not online")
-        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are differnt")
+        resp = self.verify_ha_prop(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
                                                                           "are different")
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
@@ -511,21 +437,9 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        failed_node_id = resp_dict['node_id']
-        failed_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'failed',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not failed")
+        resp = self.verify_ha_prop(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -547,22 +461,10 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        source_list = resp_dict['source']
-        resource_type_list = resp_dict['resource_type']
-        resource_status_list = resp_dict['resource_status']
-        generation_id_list = resp_dict['generation_id']
-        online_node_id = resp_dict['node_id']
-        online_resource_id = resp_dict['resource_id']
-        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
-                                                          resource_status_list)):
-            assert_utils.assert_equal(data1, 'monitor',
-                                      f"Source of {generation_id_list[index]} is not from monitor")
-            assert_utils.assert_equal(data2, 'node',
-                                      f"Resource of {generation_id_list[index]} is not node")
-            assert_utils.assert_equal(data3, 'online',
-                                      f"Resource status of {generation_id_list[index]} "
-                                      "is not online")
-        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are differnt")
+        resp = self.verify_ha_prop(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
                                                                           "are different")
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
