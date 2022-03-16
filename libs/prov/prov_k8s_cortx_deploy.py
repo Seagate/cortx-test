@@ -28,6 +28,7 @@ import os
 import re
 import signal
 import time
+from threading import Thread
 from typing import List
 
 import requests.exceptions
@@ -292,17 +293,16 @@ class ProvDeployK8sCortxLib:
                     return False, line
         return True, lines
 
-    def pull_cortx_image(self, worker_obj_list: list):
+    def pull_cortx_image(self, worker_obj: LogicalNode ):
         """
         This method pulls  cortx image
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull Cortx image on all worker nodes.")
-        for obj in worker_obj_list:
-            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
-            if self.cortx_server_image:
-                obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
+        LOGGER.info("Pull Cortx image on worker node %s",worker_obj.hostname)
+        worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
+        if self.cortx_server_image:
+            worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -332,7 +332,13 @@ class ProvDeployK8sCortxLib:
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["k8s_dir"], system_disk)
 
-        self.pull_cortx_image(worker_node_list)
+        thread_list = []
+        for each in worker_node_list:
+            t = Thread(target=self.pull_cortx_image,args=(each,))
+            t.start()
+            thread_list.append(t)
+        for each in thread_list:
+            each.join()
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
@@ -355,7 +361,7 @@ class ProvDeployK8sCortxLib:
             resp = self.validate_cluster_status(master_node_list[0],
                                                 self.deploy_cfg["k8s_dir"])
             return resp
-        return resp
+
 
     def checkout_solution_file(self, git_tag):
         """
