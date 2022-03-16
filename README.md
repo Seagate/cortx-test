@@ -1,13 +1,13 @@
 # cortx-test
-CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. 
-Right now, it can be divided into following logical loosely coupled parts 
-* Test framework. 
-* Test execution framework. 
-* Robot framework and 
+CORTX-TEST is a repository for multiple automation projects developed for LDR R2 and future versions. 
+Right now, it can be divided into following parts 
+* Test framework
+* Test execution framework
+* Robot framework and
 * Tools (reporting, DI, clone TP, etc.,).
 
-## Start Here
-Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create a GitHub account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+## Getting Started
+This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to . Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
 
 You may need a separate client vm with any Linux Flavour to install client side pre-requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as client as well.     
 
@@ -32,8 +32,6 @@ git pull upstream dev
 ```
 
 ## Git Commands
-Learn generic Git commands to make yourself comfortable with git. 
-
 Engineers contributing to test framework should understand the review process. We are following the concept of upstreams and downstream where commits happen on your forked repository, and then you can raise a PR to merge it to Seagate Cortx-Test repository. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to check in and raise PR to upstream checkin even when they have read access to Seagate Repositories.   
 
 ## Set up dev environment
@@ -434,15 +432,4 @@ While ordering client on ssc-cloud, make sure
     swapon /dev/mapper/vg_sysvol-lv_swap
     ```
 
-## How to automate component level test cases
-Components level tests can be either pure component level tests which run
-1. Tests run in the same process as code to be tested
-2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)
-3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used.
-
-Some setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests.
-
-* In case 1) Component tests can be automated as a separate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
-* In case 2) Component tests can utilize cortx-test directly and build their own libraries to test components.
-* In case 3) Component tests can be written in cortx-test and utilize all the capabilities of the framework.
 
