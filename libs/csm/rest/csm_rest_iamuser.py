@@ -559,6 +559,61 @@ class RestIamUser(RestTestLib):
         self.log.info("Get IAM user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
+    def add_key_to_iam_user(self, **kwargs):
+        self.log.info("Adding key to IAM user request....")
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
+        endpoint = CSM_REST_CFG["s3_iam_keys_endpoint"]
+        payload = {"uid": kwargs.get("uid", None)}
+        payload.update({"key_type": kwargs.get("key_type", 's3')})
+        payload.update({"generate_key": kwargs.get("generate_key", True)})
+        if access_key is not None:
+            payload.update({"access_key": access_key})
+        if secret_key is not None:
+            payload.update({"secret_key": secret_key})
+        response = self.restapi.rest_call("put", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Adding key to IAM user request successfully sent...")
+        return response
+
+    def validate_added_deleted_keys(self, existing_keys, new_keys, added=True):
+        """
+            To validate if new keys are added or deleted properly
+        """
+        self.log.info("Validating keys")
+        self.log.debug("Existing keys %s", existing_keys)
+        self.log.debug("New keys %s", new_keys)
+        if added:
+            keys_list1 = existing_keys
+            keys_list2 = new_keys
+        else:
+            keys_list2 = existing_keys
+            keys_list1 = new_keys
+        key_match_cnt = 0
+        existing_keys_matching = False
+        diff_key = []
+        for key in keys_list2:
+            if key not in keys_list1:
+                diff_key.append(key)
+            else:
+                key_match_cnt = key_match_cnt + 1
+        if len(diff_key) == 1 and key_match_cnt == len(keys_list1):
+            existing_keys_matching = True
+        return existing_keys_matching, diff_key
+
+    @RestTestLib.authenticate_and_login
+    def remove_key_from_iam_user(self, **kwargs):
+        self.log.info("Remove key from IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_keys_endpoint"]
+        payload = {"uid": kwargs.get("uid", None)}
+        payload.update({"key_type": kwargs.get("key_type", 's3')})
+        payload = {"access_key": kwargs.get("access_key", None)}
+        response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Remove key from IAM user request successfully sent...")
+        return response
+
     def verify_create_iam_user_rgw(
             self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
         """

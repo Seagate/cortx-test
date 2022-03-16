@@ -31,6 +31,10 @@
     - "Invalid parameter for user"
   "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}":
     - "Invalid parameter for user"
+  empty key:
+    - "_schema: Empty value for access_key"
+    - "_schema: Empty value for secret_key"
+    - "Uid: Field may not be null."
 4103:
   users_already_exists:
     - "User already exists:"
