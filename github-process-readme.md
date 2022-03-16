@@ -28,7 +28,7 @@ B) Clone s3server
 
 a) using ssh: `$ git clone git@github.com:Seagate/cortx-s3server.git` 
 
-C) Update the source code:  `$ git submodule-update --init  --recursive` 
+C) Update the source code:  `$ git submodule update --init  --recursive` 
 
 D) Work on feature branch  
 
