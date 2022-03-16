@@ -33,10 +33,13 @@ from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable-msg=too-many-public-methods
 
 class TestDataPathValidation:
     """Data Path Test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
@@ -146,12 +149,13 @@ class TestDataPathValidation:
             access_key=self.access_key,
             secret_key=self.secret_key,
             bucket=bucket,
-            end_point=S3_CFG['s3b_url'],
+            end_point=S3_CFG['s3_url'],
             num_clients=100,
             num_sample=100,
             obj_name_pref=obj_prefix,
             obj_size="4Kb",
-            log_file_prefix=obj_prefix)
+            log_file_prefix=obj_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.debug(res)
         self.log_file.append(res[1])
         resp = system_utils.validate_s3bench_parallel_execution(
@@ -336,12 +340,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=1,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8731_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8731_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8731_s3bench_{request_load}")
@@ -395,12 +400,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8732_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8732_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8732_s3bench_{request_load}")
@@ -463,12 +469,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8733_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8733_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8733_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
@@ -530,12 +537,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8734_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8734_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8734_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])

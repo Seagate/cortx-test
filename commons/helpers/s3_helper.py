@@ -16,19 +16,18 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 
 """
 s3 helper to have s3 services related classes & methods.
-Note: S3 helper is singleton so please import it's object from libs.s3 __init__
- as 'from libs.s3 import S3H_OBJ'.
+
+Note: S3 helper is singleton so please import its object from libs.s3 __init__
+as 'from libs.s3 import S3H_OBJ'.
 """
 
 import logging
 import os
 import time
 from configparser import NoSectionError
-
 from paramiko.ssh_exception import SSHException
 
 from commons import commands
@@ -75,7 +74,8 @@ class S3Helper:
                                 user: str = None,
                                 pwd: str = None) -> tuple:
         """
-        Check whether all s3server services are online using hctl status
+        Check whether all s3server services are online using hctl status.
+
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -84,6 +84,7 @@ class S3Helper:
         host = host if host else self.host
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
+        response = False, "Failed to check s3 service online."
         try:
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                     self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
@@ -103,12 +104,13 @@ class S3Helper:
                         LOGGER.error("S3 service down: %s", s3services)
                         return False, service
                 return status, output
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 health = Health(hostname=host, username=user, password=pwd)
-                return health.hctl_status_service_status(service_name="s3server")
+                response = health.hctl_status_service_status(service_name="s3server")
+
+            return response
         except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
+            LOGGER.error("Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
             return False, error
 
     def get_s3server_service_status(self, service: str = None,
@@ -116,7 +118,7 @@ class S3Helper:
                                     user: str = None,
                                     pwd: str = None) -> tuple:
         """
-        Execute command to get status any system service at remote s3 server using systemctl status
+        Execute command to get status any system service at remote s3 server using systemctl status.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -141,12 +143,15 @@ class S3Helper:
                     return True, result_
 
                 return status, result_
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.get_s3server_service_status.__name__, str(error))
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to get s3server service status."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.get_s3server_service_status.__name__,
+                         str(error))
             return False, error
 
     def start_s3server_service(self,
@@ -180,13 +185,14 @@ class S3Helper:
                     service, host, user, pwd)
 
                 return response
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
+                raise NotImplementedError("TODO: Add LC related calls")
 
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.start_s3server_service.__name__, str(error))
+            return False, "Failed to start s3server service."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.start_s3server_service.__name__, str(error))
             return False, error
 
     def stop_s3server_service(self,
@@ -216,14 +222,15 @@ class S3Helper:
                 status, resp = self.get_s3server_service_status(service, host, user, pwd)
                 # True if service successfully stopped.
                 status = bool('inactive' in str(resp))
-
                 return status, resp
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.stop_s3server_service.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to stop s3server service."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.stop_s3server_service.__name__, error)
             return False, error
 
     def restart_s3server_service(self,
@@ -254,15 +261,15 @@ class S3Helper:
                     return status, result
                 time.sleep(10)
                 response = self.get_s3server_service_status(service, host, user, pwd)
-
                 return response
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-                return True, None
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.restart_s3server_service.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to restart s3server service."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.restart_s3server_service.__name__, error)
             return False, error
 
     def restart_s3server_processes(self,
@@ -274,7 +281,7 @@ class S3Helper:
         Restart all s3server processes using systemctl restart command.
 
         :param host: IP of the host.
-        :param user: user name of the host.
+        :param user: username of the host.
         :param pwd: password for the user.
         :param wait_time: Wait time in sec after restart.
         :return: True if s3server process restarted else False.
@@ -307,12 +314,14 @@ class S3Helper:
                             fail_str in line for fail_str in fail_list) and "s3server" in line:
                         return False, output
                 return status, output
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.restart_s3server_processes.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to restart s3server processes."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.restart_s3server_processes.__name__, error)
             return False, error
 
     def get_s3server_resource(self, host: str = None,
@@ -342,14 +351,15 @@ class S3Helper:
                         fid = line.split()[0]
                         s3_rcs.append(fid)
                 LOGGER.debug(s3_rcs)
-
                 return status, s3_rcs
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.get_s3server_resource.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to get s3server resources."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.get_s3server_resource.__name__, error)
             return False, error
 
     def restart_s3server_resources(self,
@@ -394,12 +404,14 @@ class S3Helper:
                         return False, output
 
                 return status, output
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.restart_s3server_resources.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to restart all s3server resources using pcs command."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.restart_s3server_resources.__name__, error)
             return False, error
 
     def get_s3server_fids(self, host: str = None,
@@ -428,14 +440,14 @@ class S3Helper:
                         fid = "{}@{}".format(line.split()[1], line.split()[2])
                         fids.append(fid)
                 LOGGER.info("Fids: %s", str(fids))
-
                 return status, fids
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 health = Health(hostname=host, username=user, password=pwd)
                 return health.hctl_status_get_service_fids(service_name="s3server")
+
+            return False, "Failed to get s3server fids"
         except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
+            LOGGER.error("Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
             return False, error
 
     def enable_disable_s3server_instances(self,
@@ -495,13 +507,15 @@ class S3Helper:
                 LOGGER.debug("s3server instances: %s", str(resources))
 
                 return status, output
-            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
-                return True, None
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
+                raise NotImplementedError("TODO: Add LC related calls")
+
+            return False, "Failed to enable/disable s3server instances."
+        except (SSHException, OSError, NotImplementedError) as error:
+            LOGGER.error("Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__,
+                         error)
             return False, error
 
     def get_local_keys(
@@ -534,6 +548,7 @@ class S3Helper:
     def s3server_inject_faulttolerance(self, enable=False, **kwargs) -> tuple:
         """
         Inject(enable/disable) fault tolerance in s3server.
+
         TODO: Code will be revised based on F-24A feature availability.
         # :param host: IP of the host.
         # :param user: user name of the host.
@@ -544,22 +559,26 @@ class S3Helper:
         host = kwargs.get("host", self.host)
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
+        error = "Failed to inject fault tolerance in s3server."
         if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
             command = commands.UPDATE_FAULTTOLERANCE.format("enable" if enable else "disable")
             status, response = run_remote_cmd(cmd=command, hostname=host,
                                               username=user, password=password)
             status = True if "200" in response else status
-
             return status, response
-        elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
             LOGGER.critical("Product family: LC")
             # TODO: Add LC related calls
+            error = "TODO: Add LC related calls"
+
+        return False, error
 
     @staticmethod
     def verify_and_validate_created_object_fragement(object_name) -> tuple:
         """
         Verify in m0kv output.
+
         TODO: Code will be revised based on F-24A feature availability.
         Verify the Validate that object list index contains extended entries using m0kv.
         Verify in m0kv output. Main object size and fragment size.

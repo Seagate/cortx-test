@@ -36,31 +36,31 @@ from libs.s3.s3_test_lib import S3TestLib
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """
-        Summary: Function will be invoked prior to each test case.
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.no_auth_obj = None
+        cls.no_auth_obj_without_cert = None
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test operations.")
+        cls.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                      s3_cert_path=S3_CFG["s3_cert_path"])
+        cls.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                                   s3_cert_path=None)
+        cls.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
+        cls.log.info("ENDED: setup test operations.")
 
-        Description: It will perform all prerequisite and cleanup test.
-        """
-        self.log = logging.getLogger(__name__)
-        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.no_auth_obj = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"],
-            s3_cert_path=S3_CFG["s3_cert_path"])
-        self.no_auth_obj_without_cert = S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"], s3_cert_path=None)
-        self.log.info("STARTED: setup test operations.")
-        self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
-        self.log.info("ENDED: setup test operations.")
-        yield
-        self.log.info("STARTED: Test teardown operations.")
-        status, bktlist = self.s3t_obj.bucket_list()
+    @classmethod
+    def teardown_class(cls):
+        """Function to perform the cleanup for each test."""
+        cls.log.info("STARTED: Test teardown operations.")
+        status, bktlist = cls.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
-        if self.bucket_name in bktlist:
-            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
+        if cls.bucket_name in bktlist:
+            resp = cls.s3t_obj.delete_bucket(cls.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("ENDED: Test teardown operations.")
+        cls.log.info("ENDED: Test teardown operations.")
 
     def create_and_list_buckets_without_auth(self, bucket_name, err_message):
         """

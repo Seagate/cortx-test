@@ -48,11 +48,9 @@ from scripts.s3_bench import s3bench
 class TestAccountUserManagementResetPassword:
     """Account user management reset password TestSuite."""
 
-    # pylint: disable-msg=too-many-statements
-    @pytest.yield_fixture(autouse=True)
-    def setup(self):
+    def setup_method(self):
         """
-        Function will be invoked test before and after yield part each test case execution.
+        Function will be invoked test before each test case execution.
 
         1. Create bucket name, object name, account name.
         2. Check cluster status, all services are running.
@@ -89,7 +87,9 @@ class TestAccountUserManagementResetPassword:
         self.csm_passwd = S3_CFG["CliConfig"]["csm_user"]["password"]
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.log.info("ENDED: test setup.")
-        yield
+
+    def teardown_method(self):
+        """ This is invoked after each test finishes its execution in this class """
         self.log.info("STARTED: test teardown.")
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
@@ -144,13 +144,14 @@ class TestAccountUserManagementResetPassword:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.info(resp)
         assert_utils.assert_true(os.path.exists(resp[1]), f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")

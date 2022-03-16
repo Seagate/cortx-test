@@ -45,8 +45,8 @@ class TestS3FaultTolerance:
         self.s3_obj = s3_test_lib.S3TestLib()
         self.s3_m_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.fault_flg = False
-        self.bucket_name = "bkt-faulttolerance-{}".format(perf_counter_ns())
-        self.object_name = "obj-faulttolerance-{}".format(perf_counter_ns())
+        self.bucket_name = f"bkt-faulttolerance-{perf_counter_ns()}"
+        self.object_name = f"obj-faulttolerance-{perf_counter_ns()}"
         self.test_directory = os.path.join(TEST_DATA_FOLDER, "TestS3FaultTolerance")
         if not system_utils.path_exists(self.test_directory):
             system_utils.make_dirs(self.test_directory)
@@ -242,7 +242,7 @@ class TestS3FaultTolerance:
             "and results in motr failure.")
         resp = S3H_OBJ.s3server_inject_faulttolerance(enable=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4. Upload a 6MB filesize object to a bucket.")
+        self.log.info("Step 4. Upload a 6MB file size object to a bucket.")
         resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file_fallocate(self.test_file_path, "6MB")
@@ -443,7 +443,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 6: Run getobject and check the output.")
         resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        resp = self.s3_m_obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
+        resp = self.s3_m_obj.get_object(self.bucket_name,
+                                        self.test_file_path,
+                                        ranges="1048576-3145728")
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 

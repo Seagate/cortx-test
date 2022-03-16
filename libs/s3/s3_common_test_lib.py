@@ -260,7 +260,8 @@ def s3_ios(bucket=None,
     kwargs.setdefault("num_clients", 2)
     kwargs.setdefault("num_sample", 5)
     kwargs.setdefault("obj_name_pref", "load_gen_")
-    kwargs.setdefault("end_point", S3_CFG["s3b_url"])
+    kwargs.setdefault("end_point", S3_CFG["s3_url"])
+    kwargs.setdefault("validate_certs", S3_CFG["validate_certs"])
     LOG.info("STARTED: s3 io's operations.")
     access_key, secret_key = S3H_OBJ.get_local_keys()
     resp = s3bench.s3bench(
@@ -273,7 +274,8 @@ def s3_ios(bucket=None,
         obj_name_pref=kwargs["obj_name_pref"],
         obj_size=obj_size,
         duration=duration,
-        log_file_prefix=log_file_prefix)
+        log_file_prefix=log_file_prefix,
+        validate_certs=kwargs["validate_certs"])
     LOG.info(resp)
     assert_utils.assert_true(
         os.path.exists(
@@ -367,7 +369,8 @@ class S3BackgroundIO:
         kwargs.setdefault("num_clients", 2)
         kwargs.setdefault("num_sample", 5)
         kwargs.setdefault("obj_name_pref", "load_gen_")
-        kwargs.setdefault("end_point", S3_CFG["s3b_url"])
+        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        kwargs.setdefault("validate_certs", S3_CFG["validate_certs"])
         LOG.info("STARTED: s3 io's operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -380,7 +383,8 @@ class S3BackgroundIO:
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=kwargs["validate_certs"])
         LOG.info(resp)
         assert_utils.assert_true(
             os.path.exists(

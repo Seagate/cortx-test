@@ -1267,8 +1267,7 @@ class TestDIDurability:
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
             cmd_status, output = s3_s3cmd.S3CmdFacade. \
-                download_object_s3cmd(bucket_name=self.bucket_name,
-                                      file_path=self.file_path + '.bak', **dodict)
+                download_object_s3cmd( file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.exception(fault, exc_info=True)
         else:

@@ -367,7 +367,7 @@ class HAK8s:
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
-                end_point=S3_CFG["s3b_url"])
+                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
             if not resp[0]:
                 return False, f"s3bench operation failed: {resp[1]}"
@@ -861,7 +861,7 @@ class HAK8s:
                 num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
-                end_point=S3_CFG["s3b_url"])
+                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
             if event.is_set():
                 fail_res.append(resp)
                 event_clear_flg = True
