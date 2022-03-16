@@ -37,6 +37,8 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 class TestAwsIam:
     """Blackbox Testsuite for aws iam tool."""
 
+    log = logging.getLogger(__name__)
+
     @classmethod
     def setup_class(cls):
         """
@@ -44,7 +46,6 @@ class TestAwsIam:
 
         It will perform all prerequisite test suite steps if any.
         """
-        cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.rest_obj = S3AccountOperationsRestAPI()
         cls.iam_obj = iam_test_lib.IamTestLib()
@@ -52,6 +53,7 @@ class TestAwsIam:
         assert_utils.assert_true(
             resp, "config path not exists: {}".format(
                 S3_CFG["aws_config_path"]))
+        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.log.info("ENDED: setup test suite operations.")
 
     # pylint: disable=attribute-defined-outside-init
@@ -62,7 +64,6 @@ class TestAwsIam:
         self.account_name = "seagate_account_{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.user_name = "seagate_user{}".format(time.perf_counter_ns())
-        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.s3_accounts_list = list()
         self.iam_obj_list = list()
         self.log.info("ENDED: setup method operations")
@@ -123,7 +124,7 @@ class TestAwsIam:
     @pytest.mark.tags("TEST-7166")
     @CTFailOn(error_handler)
     def test_update_user_2419(self):
-        """Update User using aws iam. Duplicate of TEST-2077"""
+        """Update User using aws iam. Duplicate of TEST-2077."""
         self.log.info("STARTED: Update User using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
@@ -207,9 +208,7 @@ class TestAwsIam:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        new_iam_obj = iam_test_lib.IamTestLib(
-            access_key=access_key,
-            secret_key=secret_key)
+        new_iam_obj = iam_test_lib.IamTestLib(access_key=access_key, secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.iam_obj_list.append(new_iam_obj)
@@ -222,8 +221,8 @@ class TestAwsIam:
                           for user in all_users if
                           self.user_name == user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        resp = True if self.user_name not in iam_users_list else False
-        assert_utils.assert_true(resp, f"{self.user_name} is not deleted successfully")
+        assert_utils.assert_not_in(self.user_name, iam_users_list,
+                                   f"{self.user_name} is not deleted successfully")
         self.log.info("ENDED: Delete User using aws iam")
 
     @pytest.mark.parallel

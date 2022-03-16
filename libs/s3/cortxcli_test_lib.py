@@ -95,7 +95,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_update_role(self, user_name, password, role):
         """
-        This function will update role of user.
+        Function will update role of user.
 
         :param user_name: Name of a csm user whose role to be updated.
         :param role: Role to be updated.
@@ -167,7 +167,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_show_s3accounts(self, csm_user=None, passwd=None):
         """
-        s3accounts using csm user(default with admin role).
+        Show s3accounts using csm user(default with admin role).
 
         :param csm_user: Name of the csm user.
         :param passwd: password of the csm user.
@@ -194,17 +194,19 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, accounts
 
-    def csm_user_create_s3account(self, s3_user, email, s3_passwd, csm_user=None, passwd=None):
+    def csm_user_create_s3account(self, s3_user, email, s3_passwd, **kwargs):
         """
         Create s3 account user using csm user(default with admin role).
 
-        :param csm_user: Name of the csm user.
-        :param passwd: password of the csm user.
+        # :param csm_user: Name of the csm user.
+        # :param passwd: password of the csm user.
         :param s3_user: Name of the s3 account user.
         :param email: Email id of the s3 account user.
         :param s3_passwd: Password of the s3 account user.
         return True/False, Response.
         """
+        csm_user = kwargs.get("csm_user", None)
+        passwd = kwargs.get("passwd", None)
         try:
             acc_details = dict()
             if csm_user:
@@ -573,8 +575,8 @@ class _IamUser(CortxCliIamUser):
                                         iamuser_name: str,
                                         new_password: str) -> tuple:
         """
-        This function will update password for specified s3
-        iam user to new_password using CORTX CLI.
+        Update iam user password to new password using CORTX CLI.
+
         :param iamuser_name: IAM user name for which password should be updated
         :param new_password: New password for IAM user
         :return: True/False and Response returned by CORTX CLI
