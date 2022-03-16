@@ -2315,6 +2315,7 @@ class TestMultiPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-35785")
     @CTFailOn(error_handler)
     def test_copy_object_kpods_fail(self):
@@ -2441,6 +2442,7 @@ class TestMultiPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-35786")
     @CTFailOn(error_handler)
     def test_copy_object_during_kpods_down(self):
