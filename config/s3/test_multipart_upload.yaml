@@ -281,9 +281,7 @@ test_29167:
     file_size: 300
     chunk_size: 1048576
     total_parts: 5
-    error_msg: "An error occurred (NoSuchUpload) when calling the UploadPart operation:
-    The specified multipart upload does not exist. The upload ID might be invalid, or the
-    multipart upload might have been aborted or completed."
+   
 
 test_29164:
     file_size: 600

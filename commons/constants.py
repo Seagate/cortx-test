@@ -481,3 +481,8 @@ RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when call
 CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
 "the CreateBucket operation: Your previous request to create the named bucket succeeded and "
 "you already own it.")
+RGW_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart operation: Unknown")
+CORTX_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart "
+                            "operation: The specified multipart upload does not exist. The "
+                            "upload ID might be invalid, or the multipart upload might have been "
+                            "aborted or completed.")
