@@ -1290,7 +1290,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
         assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
+        end_time = start_time + 65*(len(data_pod_list)*2)  # 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
