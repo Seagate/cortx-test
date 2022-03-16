@@ -66,7 +66,8 @@ class TestWorkloadS3Bench:
                                        num_clients=clients, num_sample=samples,
                                        obj_name_pref="loadgen_test_", obj_size=size,
                                        skip_cleanup=False, duration=None,
-                                       log_file_prefix="TEST-19658", end_point=S3_CFG["s3b_url"])
+                                       log_file_prefix="TEST-19658", end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"])
                 self.log.info(
                     f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
                     f"clients.")
@@ -91,7 +92,8 @@ class TestWorkloadS3Bench:
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=1,
                                    num_sample=5, obj_name_pref="loadgen_test_", obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix="TEST-19471",
-                                   end_point=S3_CFG["s3b_url"])
+                                   end_point=S3_CFG["s3_url"],
+                                   validate_certs=S3_CFG["validate_certs"])
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -127,8 +129,9 @@ class TestWorkloadS3Bench:
                 samples = samples * 5
             resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name, num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
-                                   obj_size=workload, end_point=S3_CFG["s3b_url"],
-                                   skip_cleanup=False, duration=None, log_file_prefix="TEST-24673")
+                                   obj_size=workload, end_point=S3_CFG["s3_url"],
+                                   skip_cleanup=False, duration=None, log_file_prefix="TEST-24673",
+                                   validate_certs=S3_CFG["validate_certs"])
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -156,7 +159,8 @@ class TestWorkloadS3Bench:
                                num_clients=clients, num_sample=samples,
                                obj_name_pref="test_25016", obj_size=size,
                                skip_cleanup=True, duration=None,
-                               log_file_prefix="test_25016", end_point=S3_CFG["s3b_url"])
+                               log_file_prefix="test_25016", end_point=S3_CFG["s3_url"],
+                               validate_certs=S3_CFG["validate_certs"])
         assert not s3bench.check_log_file_error(resp[1]), f"S3bench write failed for {bucket_name}"
 
         self.log.info("Perform Read Operation in Loop on Bucket :%s", bucket_name)
@@ -171,7 +175,8 @@ class TestWorkloadS3Bench:
                                    num_clients=clients, num_sample=samples,
                                    obj_name_pref="test_25016", obj_size=size, skip_write=True,
                                    skip_cleanup=skip_cleanup, duration=None,
-                                   log_file_prefix="test_25016", end_point=S3_CFG["s3b_url"])
+                                   log_file_prefix="test_25016", end_point=S3_CFG["s3_url"],
+                                   validate_certs=S3_CFG["validate_certs"])
             self.log.info("Log Path %s", resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
@@ -185,11 +190,15 @@ class TestWorkloadS3Bench:
         assert (resp, resp), "Could not setup s3bench."
         pool = Pool(processes=3)
         buckets = [f"test-28991-bucket-{i}-{str(int(time.time()))}" for i in range(3)]
-        e_point = S3_CFG["s3b_url"]
+        e_point = S3_CFG["s3_url"]
+        validate_certs = S3_CFG["validate_certs"]
         pool.starmap(s3bench.s3bench_workload,
-                     [(e_point, buckets[0], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY),
-                      (e_point, buckets[1], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY),
-                      (e_point, buckets[2], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY)])
+                     [(e_point, buckets[0], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs),
+                      (e_point, buckets[1], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs),
+                      (e_point, buckets[2], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY,
+                       validate_certs)])
         self.log.info("Completed: Parallel S3bench workloads on multiple buckets")
 
     @pytest.mark.tags("TEST-28377")
@@ -215,7 +224,8 @@ class TestWorkloadS3Bench:
                                        num_clients=client, num_sample=sample,
                                        obj_name_pref="loadgen_test_", obj_size=object_size,
                                        skip_cleanup=False, duration=None,
-                                       log_file_prefix="TEST-28377", end_point=S3_CFG["s3b_url"])
+                                       log_file_prefix="TEST-28377", end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"])
                 self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
                 assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload for object size {object_size} with client {client} failed." \

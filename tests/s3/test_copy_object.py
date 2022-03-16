@@ -19,6 +19,8 @@
 
 """S3 copy object test module."""
 
+# pylint: disable=too-many-lines
+
 import os
 import json
 from time import perf_counter_ns
@@ -46,10 +48,16 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-public-methods
 class TestCopyObjects:
     """S3 copy object class."""
 
+    # pylint: disable=too-many-instance-attributes
     # pylint: disable=attribute-defined-outside-init
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-locals
+
     @pytest.yield_fixture(autouse=True)
     def setup(self):
         """
@@ -62,9 +70,8 @@ class TestCopyObjects:
         self.s3_obj = s3_test_lib.S3TestLib()
         self.s3_cmd_obj = S3CmdTestLib()
         LOGGER.info("Check s3 bench tool installed.")
-        res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
-        assert_utils.assert_true(
-            res, f"S3bench tool is not installed: {s3bench.S3_BENCH_PATH}")
+        assert_utils.assert_true(system_utils.path_exists(s3bench.S3_BENCH_PATH),
+                                 f"S3bench tool is not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestS3CopyObject")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -148,13 +155,14 @@ class TestCopyObjects:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         LOGGER.info(resp)
         assert_utils.assert_true(
             os.path.exists(
@@ -1685,7 +1693,7 @@ class TestCopyObjects:
         LOGGER.info("4. List object for the bucket1.")
         resp = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_true(any([object_name in obj for obj in resp[1]]),
+        assert_utils.assert_true(any(object_name in obj for obj in resp[1]),
                                  f"{object_name} not present in {resp[1]}")
         LOGGER.info("5. Copy object from bucket1 to bucket2.")
         resp = self.s3_obj.copy_object(
@@ -1725,7 +1733,7 @@ class TestCopyObjects:
             " structure as source object.")
         resp = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_true(any([self.object_name2 in obj for obj in resp[1]]),
+        assert_utils.assert_true(any(self.object_name2 in obj for obj in resp[1]),
                                  f"{self.object_name2} not present in {resp[1]}")
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(

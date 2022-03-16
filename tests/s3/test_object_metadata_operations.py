@@ -37,10 +37,12 @@ from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib, CMN_CFG
 
+# pylint: disable=too-many-instance-attributes
 
 class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -267,10 +269,10 @@ class TestObjectMetadataOperations:
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
-        count_limit = random.choice(
-            range(
+        system_random = random.SystemRandom()
+        count_limit = system_random.randrange(
                 S3_OBJ_TST["test_8550"]["start_range"],
-                S3_OBJ_TST["test_8550"]["stop_range"]))
+                S3_OBJ_TST["test_8550"]["stop_range"])
         obj_key = "".join(
             random.choices(
                 string.ascii_lowercase,

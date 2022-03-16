@@ -21,6 +21,7 @@
 
 import os
 import logging
+import tempfile
 from typing import AnyStr
 from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
@@ -145,8 +146,7 @@ class S3CmdFacade:
         return response
 
     @classmethod
-    def download_object_s3cmd(cls, bucket_name: str = None, file_path: str = None,
-                              **kwargs) -> tuple:
+    def download_object_s3cmd(cls, file_path: str = None, **kwargs) -> tuple:
         """
         Downloading s3 object to a local dir.
 
@@ -168,13 +168,13 @@ class S3CmdFacade:
 
 
 if __name__ == '__main__':
-    odict = dict(access_key='access_key', secret_key='secret_key',
+    odict = dict(access_key='access_key', secret_key='secret_key',  # nosec
                  ssl=True, no_check_certificate=False,
                  host_port='host_port', host_bucket='host-bucket',
                  multipart_chunk_size_mb='15MB')
     S3CmdFacade.upload_object_s3cmd(bucket_name='dummy', file_path='/tmp/tmpobject.db', **odict)
-    dodict = dict(access_key='access_key', secret_key='secret_key',
+    dodict = dict(access_key='access_key', secret_key='secret_key',  # nosec
                   ssl=True, no_check_certificate=False,
                   host_port='host_port', object_uri='s3://host-bucket/tmpobject.db')
-    S3CmdFacade.download_object_s3cmd(bucket_name='host-bucket',
-                                      file_path='/tmp/tmpobject2.db', **dodict)
+    tempf = os.path.join(tempfile.gettempdir(), 'tmpobject2.db')
+    S3CmdFacade.download_object_s3cmd(file_path=tempf, **dodict)

@@ -41,7 +41,7 @@ S3_BENCH_BINARY = cfg_obj["s3bench_binary"]
 def setup_s3bench():
     """
     Configuring client machine with s3bench dependencies.
-    :param get_cmd: S3Bench go get command
+
     :return bool: True/False
     """
     ret = run_local_cmd("s3bench --help")
@@ -111,12 +111,13 @@ def create_json_reps(list_resp):
 
 # pylint: disable-msg=too-many-arguments
 def s3bench_workload(end_point, bucket_name, log_prefix, object_size, client, sample,
-                     access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+                     access_key=ACCESS_KEY, secret_key=SECRET_KEY, validate_certs=True):
     """S3bench Workload worker can be used to run multiple workloads in parallel"""
     LOGGER.info("Workload: %s objects of %s with %s parallel clients", sample, object_size, client)
     resp = s3bench(access_key, secret_key, bucket=f"{bucket_name}", num_clients=client,
                    num_sample=sample, obj_name_pref="loadgen_test_", obj_size=object_size,
-                   skip_cleanup=False, log_file_prefix=log_prefix, end_point=end_point)
+                   skip_cleanup=False, log_file_prefix=log_prefix, end_point=end_point,
+                   validate_certs=validate_certs)
     LOGGER.info("Log Path %s", resp[1])
     assert_utils.assert_false(check_log_file_error(resp[1]),
                               f"S3bench workload on bucket {bucket_name} with {client} "
@@ -135,14 +136,14 @@ def check_log_file_error(file_path, errors=None):
         errors = ["with error ", "panic", "status code",
                   "flag provided but not defined", "InternalError", "ServiceUnavailable"]
     error_found = False
-    LOGGER.info("Debug: Log File Path {}".format(file_path))
+    LOGGER.info("Debug: Log File Path %s", file_path)
     resp_filtered = []
-    with open(file_path, "r") as s3LogFile:
-        for line in s3LogFile:
+    with open(file_path, "r") as s3blog_obj:
+        for line in s3blog_obj:
             for error in errors:
                 if error.lower() in line.lower():
                     error_found = True
-                    LOGGER.error(f"{error} Found in S3Bench Run : {line}")
+                    LOGGER.error("%s Found in S3Bench Run: %s", error, line)
                     return error_found
             if 'Errors Count:' in line and "reportFormat" not in line:
                 resp_filtered.append(line)
@@ -155,6 +156,8 @@ def check_log_file_error(file_path, errors=None):
     return error_found
 
 
+# pylint: disable=too-many-arguments
+# pylint: disable-msg=too-many-locals
 def s3bench(
         access_key,
         secret_key,
@@ -171,7 +174,8 @@ def s3bench(
         duration=None,
         verbose=False,
         region="us-east-1",
-        log_file_prefix=""):
+        log_file_prefix="",
+        validate_certs=True):
     """
     To run s3bench tool
     :param access_key: S3 access key
@@ -191,6 +195,7 @@ def s3bench(
     :param verbose: verbose per thread status write and read
     :param region: Region name
     :param log_file_prefix: Test number prefix for log file
+    :param validate_certs: Validate SSL certificates
     :return: tuple with json response and log path
     """
     result = []
@@ -200,7 +205,8 @@ def s3bench(
     # GO command formatter
     cmd = f"s3bench -accessKey={access_key} -accessSecret={secret_key} " \
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
-          f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} "
+          f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} " \
+          f"-skipSSLCertVerification={not validate_certs} "
     if region:
         cmd = cmd + f"-region {region} "
     if skip_write:
@@ -326,21 +332,28 @@ if __name__ == "__main__":
         help="print verbose per thread status. (default: False)",
         action="store_true",
         default=False)
+    parser.add_argument(
+        "--vc",
+        dest="validateCertificates",
+        help="validate SSL certificate. (default: True)",
+        action="store_true",
+        default=True)
     s3arg = parser.parse_args()
     # Calling s3bench with passed cli options
     LOGGER.info("Starting S3bench run.")
     res = s3bench(
-        s3arg.accessKey,
-        s3arg.accessSecret,
-        s3arg.bucket,
-        s3arg.endpoint,
-        s3arg.nClients,
-        s3arg.numSamples,
-        s3arg.objectNamePrefix,
-        s3arg.objectSize,
-        s3arg.region,
-        s3arg.skipCleanup,
-        s3arg.duration,
-        s3arg.verbose)
-    print("\n Detailed log file path: {}".format(res[1]))
+        access_key=s3arg.accessKey,
+        secret_key=s3arg.accessSecret,
+        bucket=s3arg.bucket,
+        end_point=s3arg.endpoint,
+        num_clients=s3arg.nClients,
+        num_sample=s3arg.numSamples,
+        obj_name_pref=s3arg.objectNamePrefix,
+        obj_size=s3arg.objectSize,
+        region=s3arg.region,
+        skip_cleanup=s3arg.skipCleanup,
+        duration=s3arg.duration,
+        verbose=s3arg.verbose,
+        validate_certs=s3arg.validateCertificates)
+    LOGGER.info("Detailed log file path: %s", res[1])
     LOGGER.info("S3bench run ended.")

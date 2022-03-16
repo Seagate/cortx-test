@@ -12,11 +12,11 @@
 "nodes":[
     {
         "host": "srv-node-0",
-        "hostname": "ssc-vm-g3-rhev4-2587.colo.seagate.com",
+        "hostname": "ssc-vm-g3-rhev4-2587",
         "ip": "192.168.60.166",
-        "fqdn": "ssc-vm-g3-rhev4-2587.colo.seagate.com",
+        "fqdn": "ssc-vm-g3-rhev4-2587.<domain>",
         "username": "root",
-        "password": "seagate",
+        "password": "",
         "public_data_ip":"",
         "private_data_ip":"",
         "node_type":"master",
@@ -54,11 +54,11 @@
     },
     {
         "host": "srv-node-1",
-        "hostname": "ssc-vm-g3-rhev4-2590.colo.seagate.com",
+        "hostname": "ssc-vm-g3-rhev4-2590",
         "ip": "192.168.63.38",
-        "fqdn": "ssc-vm-g3-rhev4-2590.colo.seagate.com",
+        "fqdn": "ssc-vm-g3-rhev4-2590.<domain>",
         "username": "root",
-        "password": "seagate",
+        "password": "",
         "public_data_ip":"",
         "private_data_ip":"",
         "node_type":"worker",
@@ -96,11 +96,11 @@
     },
     {
         "host": "srv-node-2",
-        "hostname": "ssc-vm-g3-rhev4-2591.colo.seagate.com",
+        "hostname": "ssc-vm-g3-rhev4-2591",
         "ip": "192.168.59.106",
-        "fqdn": "ssc-vm-g3-rhev4-2591.colo.seagate.com",
+        "fqdn": "ssc-vm-g3-rhev4-2591.<domain>",
         "username": "root",
-        "password": "seagate",
+        "password": "",
         "public_data_ip":"",
         "private_data_ip":"",
         "node_type":"worker",
@@ -138,11 +138,11 @@
     },
     {
         "host": "srv-node-3",
-        "hostname": "ssc-vm-g3-rhev4-2592.colo.seagate.com",
+        "hostname": "ssc-vm-g3-rhev4-2592",
         "ip": "192.168.52.159",
-        "fqdn": "ssc-vm-g3-rhev4-2592.colo.seagate.com",
+        "fqdn": "ssc-vm-g3-rhev4-2592.<domain>",
         "username": "root",
-        "password": "seagate",
+        "password": "",
         "public_data_ip":"",
         "private_data_ip":"",
         "node_type":"worker",
@@ -186,7 +186,7 @@
   "port": "31169",
   "csm_admin_user":{
     "username": "cortxadmin",
-    "password": "Cortxadmin@123"
+    "password": ""
   }
 },
 "bmc":

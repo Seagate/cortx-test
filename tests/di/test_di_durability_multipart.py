@@ -49,11 +49,9 @@ from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.s3 import s3_multipart
 from libs.s3 import SECRET_KEY, ACCESS_KEY
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3 import cortxcli_test_lib
 from libs.s3 import s3_s3cmd
 from libs.s3.s3_blackbox_test_lib import MinIOClient
 
@@ -336,7 +334,7 @@ class TestDICheckMultiPart:
         try:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name)
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -382,6 +380,7 @@ class TestDICheckMultiPart:
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='f', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1a: %s md5 checksum calculated is %s.", self.file_path, file_checksum)
         with open(self.file_path, 'rb') as file_ptr:
             buf = file_ptr.read()
         good_read_range = buf[7340032:22020095]
@@ -404,7 +403,7 @@ class TestDICheckMultiPart:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
                                                ranges='bytes=0-7340032')
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -429,7 +428,7 @@ class TestDICheckMultiPart:
             resp = self.s3_test_obj.get_object(self.bucket_name, object_name,
                                                ranges='bytes=7340032-22020094')
             content = resp[1]["Body"].read()
-            self.log.info('size of downloaded object %s is: %s bytes', object_name,len(content))
+            self.log.info('size of downloaded object %s is: %s bytes', object_name, len(content))
         except (BotoCoreError, CTException) as error:
             self.log.error('downloaded object is not complete')
             self.log.exception(error, exc_info=True)
@@ -508,8 +507,7 @@ class TestDICheckMultiPart:
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
             cmd_status, output = s3_s3cmd.S3CmdFacade.\
-                download_object_s3cmd(bucket_name=self.bucket_name,
-                                      file_path=self.file_path + '.bak', **dodict)
+                download_object_s3cmd( file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.exception(fault, exc_info=True)
         else:
@@ -519,6 +517,7 @@ class TestDICheckMultiPart:
             else:
                 assert False, 'Download of corrupted file passed'
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.usefixtures('setup_minio')
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -528,14 +527,14 @@ class TestDICheckMultiPart:
          and verify read (Get). ( SZ in range 100 MB -256 MB)."""
         size = 81 * MB
         self.log.info("STARTED: upload object of 151 MB using Minion Client")
-        upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name)\
+        upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(self.file_path, self.bucket_name) \
                          + self.minio.validate_cert
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
                        + self.minio.validate_cert
         object_name = os.path.split(self.file_path)[-1]
         download_obj_cmd = self.minio_cnf["download_obj_cmd"].\
                                format(self.bucket_name, object_name, self.file_path)\
-                           + self.minio.validate_cert  #nosec
+                           + self.minio.validate_cert  # nosec
         valid, skip_mark = self.edtl.validate_valid_config()
         if not valid or skip_mark:
             pytest.skip()
@@ -546,30 +545,19 @@ class TestDICheckMultiPart:
         self.log.info("Step 2: Put and object with checksum algo or ETAG.")
         # simulating checksum corruption with data corruption
         # to do enabling checksum feature
-        self.log.info("Step 1: Create a corrupted file.")
-        self.edtl.create_file(size, first_byte='z', name=self.file_path)
-        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
-        self.log.info("Step 1: created a file with corrupted flag at location %s", self.file_path)
-        self.log.info("Step 2: enabling data corruption")
-        status = self.fi_adapter.enable_data_block_corruption()
-        if not status:
-            self.log.info("Step 2: failed to enable data corruption")
-            assert False
-        else:
-            self.log.info("Step 2: enabled data corruption")
-            self.data_corruption_status = True
+        self.create_file_and_enable_data_corruption(size)
         self.log.info("Step 3: upload a file using s3cmd multipart upload")
 
-        self.log.info("Step 3: Uploading an object to a bucket %s", self.bucket_name)
+        self.log.info("Step 3a: Uploading an object to a bucket %s", self.bucket_name)
         resp = system_utils.run_local_cmd(upload_obj_cmd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Object is uploaded to a bucket %s", self.bucket_name)
-        self.log.info("Step 4: Verifying that object is uploaded to a bucket")
+        self.log.info("Step 3b: Object is uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Step 4a: Verifying that object is uploaded to a bucket")
         resp = system_utils.run_local_cmd(list_obj_cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(os.path.basename(self.file_path), resp[1].split(" ")[-1], resp[1])
-        self.log.info("Step 4: Verified that object is uploaded to a bucket")
-        self.log.info("Step 4: Download object using Minion Client")
+        self.log.info("Step 4b: Verified that object is uploaded to a bucket")
+        self.log.info("Step 5: Download object using Minion Client")
         cmd_status, output = system_utils.run_local_cmd(download_obj_cmd)
         pat = re.compile('(Failed to copy|internal\s+error)', re.I)
         match = pat.search(output)
@@ -578,3 +566,18 @@ class TestDICheckMultiPart:
             self.log.error(f'Download Command output is {output}')
         else:
             assert False, f'Download Command failed with error {output}'
+
+    def create_file_and_enable_data_corruption(self, size):
+        """Test module helper which creates a file and enable data corruption on s3 server."""
+        self.log.info("Step 2a: Create a corrupted file.")
+        self.edtl.create_file(size, first_byte='z', name=self.file_path)
+        file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 2a: created a file with corrupted flag at location %s", self.file_path)
+        self.log.info("Step 2b: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if not status:
+            self.log.info("Step 2b: failed to enable data corruption")
+            assert False
+        else:
+            self.log.info("Step 2b: enabled data corruption")
+            self.data_corruption_status = True

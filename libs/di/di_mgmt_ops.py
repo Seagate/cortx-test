@@ -25,10 +25,6 @@ import logging
 import json
 from http import HTTPStatus
 
-import boto3
-from config import CMN_CFG
-from config import CSM_CFG
-from config import S3_CFG
 from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl
@@ -41,7 +37,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ManagementOPs:
-
     email_suffix = "@seagate.com"
     user_prefix = 'di_user'
 
@@ -56,7 +51,7 @@ class ManagementOPs:
         iam_users = dict()
         # Create S3 user
         iam_users.update(
-            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
+            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})  # nosec
         iam_users.update({'emailid': iam_users['user_name'] + cls.email_suffix})
         iam_users.update(
             {'password': DI_CFG["DiUserConfig"]["s3_account"]["password"]})
@@ -272,6 +267,8 @@ class ManagementOPs:
 
     @classmethod
     def create_s3_user_csm_rest(cls, user_name, passwd):
+        """Function creates s3 user using REST API.
+        """
         udict = dict()
         s3acc_obj = RestS3user()
         resp = s3acc_obj.create_an_account(user_name, passwd)

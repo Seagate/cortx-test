@@ -86,6 +86,79 @@ class TestVersioningPutObject:
             res = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(res[0], res[1])
 
+    def check_list_object_versions(self,
+                                   bucket_name: str = None,
+                                   expected_versions: dict = None) -> None:
+        """
+        List all the versions and delete markers present in a bucket and verify the output
+
+        :param bucket_name: Bucket name for calling List Object Versions
+        :param expected_versions: dict containing list of version tuples, ordered from the latest
+            to oldest version created i.e. latest version is at index 0 and oldest at index n-1
+            for an object having n versions.
+
+            Expected format of the dict -
+                dict keys should be the object name
+                tuple for version should have the format (<VersionId>, "version", <ETag>)
+                tuple for delete marker should have the format (<VersionId>, "deletemarker", None)
+
+            For eg.
+                {"object1": [(<obj1-version-id-2>, 'deletemarker', None),
+                             (<obj1-version-id-1>, 'version', <etag1>)],
+                 "object2": [(<obj2-version-id-1>, 'version', <etag2>)]}
+        """
+        self.log.info("Fetching bucket object versions list")
+        list_response = self.s3_ver_test_obj.list_object_versions(bucket_name=bucket_name)
+        self.log.info("Verifying bucket object versions list for expected contents")
+        assert_utils.assert_true(list_response[0], list_response[1])
+        actual_versions = list_response[1]["Versions"]
+        actual_deletemarkers = list_response[1]["DeleteMarkers"]
+        ver_idx = 0
+        dm_idx = 0
+        for key in sorted(expected_versions.keys()):
+            expected_islatest = True
+            for expected_version in expected_versions[key]:
+                if expected_version[1] == "version":
+                    actual_version = actual_versions[ver_idx]
+                    assert_utils.assert_equal(
+                        actual_version["ETag"], expected_version[2], "Version ETag mismatch")
+                    ver_idx = ver_idx + 1
+                else:
+                    actual_version = actual_deletemarkers[dm_idx]
+                    dm_idx = dm_idx + 1
+                assert_utils.assert_equal(
+                    actual_version["IsLatest"], expected_islatest, "Version IsLatest mismatch")
+                assert_utils.assert_equal(
+                    actual_version["VersionId"], expected_version[0], "Version VersionId mismatch")
+                if expected_islatest:
+                    expected_islatest = False
+        assert_utils.assert_equal(
+            len(actual_versions), ver_idx, "Unexpected Version entry count in the response")
+        assert_utils.assert_equal(
+            len(actual_deletemarkers), dm_idx,
+            "Unexpected DeleteMarker entry count in the response")
+        self.log.info("Completed verifying bucket object versions list for expected contents")
+
+    def check_list_objects(self,
+                           bucket_name: str = None,
+                           expected_objects: list = None) -> None:
+        """
+        List bucket and verify there are single entries for each versioned object
+
+        :param bucket_name: Bucket name for calling List Object Versions
+        :param expected_objects: list containing versioned objects that should be present in
+            List Objects output
+        """
+        self.log.info("Fetching bucket object list")
+        list_response = self.s3_ver_test_obj.list_objects_with_prefix(
+            bucket_name=bucket_name, maxkeys=1000)
+        self.log.info("Verifying bucket object versions list for expected contents")
+        assert_utils.assert_true(list_response[0], list_response[1])
+        actual_objects = [o["Key"] for o in list_response[1]["Contents"]]
+        assert_utils.assert_equal(sorted(actual_objects),
+                                  sorted(expected_objects),
+                                  "List Objects response does not contain expected object names")
+
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32724')
     @CTFailOn(error_handler)
@@ -104,8 +177,7 @@ class TestVersioningPutObject:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 4: Upload a new version for the object")
         res = self.s3_test_obj.put_object(
             bucket_name=self.bucket_name, object_name=self.object_name, file_path=self.file_path)
@@ -113,8 +185,7 @@ class TestVersioningPutObject:
         assert_utils.assert_not_equal(res[1]["VersionId"], "null", "Unexpected VersionId")
         versions[self.object_name].insert(0, (res[1]["VersionId"], "version", res[1]["ETag"]))
         self.log.info("Step 5: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 6: Suspend bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(
             bucket_name=self.bucket_name, status="Suspended")
@@ -127,8 +198,7 @@ class TestVersioningPutObject:
         versions[self.object_name] = [x for x in versions[self.object_name] if x[0] != "null"]
         versions[self.object_name].insert(0, ("null", "version", res[1]["ETag"]))
         self.log.info("Step 8: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 9: Enable bucket versioning again")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -139,11 +209,9 @@ class TestVersioningPutObject:
         assert_utils.assert_not_equal(res[1]["VersionId"], "null", "Unexpected VersionId")
         versions[self.object_name].insert(0, (res[1]["VersionId"], "version", res[1]["ETag"]))
         self.log.info("Step 11: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 12: Verify bucket listing contains a single entry for the object")
-        self.s3_ver_test_obj.check_list_objects(
-            bucket_name=self.bucket_name, expected_objects=[self.object_name])
+        self.check_list_objects(bucket_name=self.bucket_name, expected_objects=[self.object_name])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32728')
@@ -164,8 +232,7 @@ class TestVersioningPutObject:
         assert_utils.assert_not_equal(res[1]["VersionId"], "null", "Unexpected VersionId")
         versions[self.object_name].insert(0, (res[1]["VersionId"], "version", res[1]["ETag"]))
         self.log.info("Step 3: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 4: Suspend bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(
             bucket_name=self.bucket_name, status="Suspended")
@@ -177,8 +244,7 @@ class TestVersioningPutObject:
         assert_utils.assert_equal(res[1]["VersionId"], "null", "Unexpected VersionId returned")
         versions[self.object_name].insert(0, ("null", "version", res[1]["ETag"]))
         self.log.info("Step 6: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 7: Enable bucket versioning again")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -189,11 +255,9 @@ class TestVersioningPutObject:
         assert_utils.assert_not_equal(res[1]["VersionId"], "null", "Unexpected VersionId ")
         versions[self.object_name].insert(0, (res[1]["VersionId"], "version", res[1]["ETag"]))
         self.log.info("Step 9: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 10: Verify bucket listing contains a single entry for the object")
-        self.s3_ver_test_obj.check_list_objects(
-            bucket_name=self.bucket_name, expected_objects=[self.object_name])
+        self.check_list_objects(bucket_name=self.bucket_name, expected_objects=[self.object_name])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32733')
@@ -215,8 +279,7 @@ class TestVersioningPutObject:
         assert_utils.assert_equal(res[1]["VersionId"], "null", "Unexpected VersionId")
         versions[self.object_name].insert(0, ("null", "version", res[1]["ETag"]))
         self.log.info("Step 3: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 4: Enable bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -227,8 +290,6 @@ class TestVersioningPutObject:
         assert_utils.assert_not_equal(res[1]["VersionId"], "null", "Unexpected VersionId")
         versions[self.object_name].insert(0, (res[1]["VersionId"], "version", res[1]["ETag"]))
         self.log.info("Step 6: Verify ListObjectVersions output")
-        self.s3_ver_test_obj.check_list_object_versions(
-            bucket_name=self.bucket_name, expected_versions=versions)
+        self.check_list_object_versions(bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 7: Verify bucket listing contains a single entry for the object")
-        self.s3_ver_test_obj.check_list_objects(
-            bucket_name=self.bucket_name, expected_objects=[self.object_name])
+        self.check_list_objects(bucket_name=self.bucket_name, expected_objects=[self.object_name])
