@@ -380,6 +380,7 @@ class TestDICheckMultiPart:
         self.log.info("Step 1: Create a corrupted file.")
         self.edtl.create_file(size, first_byte='f', name=self.file_path)
         file_checksum = system_utils.calculate_checksum(self.file_path, binary_bz64=False)[1]
+        self.log.info("Step 1a: %s md5 checksum calculated is %s.", self.file_path, file_checksum)
         with open(self.file_path, 'rb') as file_ptr:
             buf = file_ptr.read()
         good_read_range = buf[7340032:22020095]
@@ -506,8 +507,7 @@ class TestDICheckMultiPart:
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
             cmd_status, output = s3_s3cmd.S3CmdFacade.\
-                download_object_s3cmd(bucket_name=self.bucket_name,
-                                      file_path=self.file_path + '.bak', **dodict)
+                download_object_s3cmd( file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.exception(fault, exc_info=True)
         else:
