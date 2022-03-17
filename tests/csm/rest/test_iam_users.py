@@ -1192,6 +1192,10 @@ class TestIamUserRGW():
         self.log.info("Adding key to user")
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uids[0], access_key=access_keys[1])
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.CONFLICT, "Status Failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(add_resp.json()["message"] ==
+                                     self.rest_resp_conf[12288]['EntityAlreadyExists'][1]
+                                     , "Response failed")
         for user in range(2):
             get_resp = self.csm_obj.get_iam_user(user=uids[user])
             assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
@@ -1378,6 +1382,10 @@ class TestIamUserRGW():
                                                          login_as="csm_user_monitor")
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Remove key status failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(add_resp.json()["message"] ==
+                                     self.rest_resp_conf[4101]['Access denied for account'][1]
+                                     , "Response failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == get_resp.json()["keys"][0]['access_key'],
@@ -1411,6 +1419,10 @@ class TestIamUserRGW():
                                                     login_as="csm_user_monitor")
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Add key status failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(add_resp.json()["message"] ==
+                                     self.rest_resp_conf[4101]['Access denied for account'][1]
+                                     , "Response failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == get_resp.json()["keys"][0]['access_key'],
