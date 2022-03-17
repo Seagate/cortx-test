@@ -1383,7 +1383,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Remove key status failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["message"] ==
+            assert_utils.assert_true(rem_resp.json()["message"] ==
                                      self.rest_resp_conf[4101]['Access denied for account'][1]
                                      , "Response failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
