@@ -21,7 +21,9 @@
 HA disk failure recovery utility methods
 """
 import json
+import random
 import logging
+import copy
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -144,11 +146,13 @@ class DiskFailureRecoveryLib:
         Return the unique list of disks available on all worker nodes.
         :param master_obj: Node Object of Master
         :param worker_obj: list of worker node object
-        :return : tuple(bool,list)
+        :return : tuple(bool,dict)
                  list of format 'host_name$cvg$disk'
-                 ['ssc-vm-g4-rhev4-1059.colo.seagate.com$cvg-02$/dev/sdh']
+                 {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
+                  'disk2': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-02', '/dev/sdd']}
         """
-        unique_disk_list = []
+        return_dict = {}
+        cntr = 1
         for node in worker_obj:
             resp = self.retrieve_cvg_from_node(master_obj, node)
             if not resp[0]:
@@ -157,8 +161,47 @@ class DiskFailureRecoveryLib:
                 for cvg in resp[1]:
                     disk_list = resp[1][cvg]['data']
                     for disk in disk_list:
-                        unique_disk_list.append(node.hostname + '$' + cvg + '$' + disk)
+                        val = [node.hostname, cvg, disk]
+                        return_dict['disk' + str(cntr)] = val
+                        cntr += 1
             except KeyError as err:
                 LOGGER.error("Exception while retrieving disk details : %s", err)
                 return False, err
-        return True, unique_disk_list
+        return True, return_dict
+
+    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,
+                  worker_obj: list, pod_name: str, on_diff_cvg: bool = False):
+
+        LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
+        failed_disks_dict = {}
+        resp = self.get_all_nodes_disks(master_obj, worker_obj)
+        if not resp[0]:
+            return resp
+        all_disks = resp[1]
+        LOGGER.info("list of all disks: %s", all_disks)
+
+        if on_diff_cvg:
+            one_disk_per_cvg_dict = {}
+            for disk in all_disks:
+                flg = True
+                for val in one_disk_per_cvg_dict:
+                    if all_disks[disk][0] in one_disk_per_cvg_dict[val] and \
+                            all_disks[disk][1] in one_disk_per_cvg_dict[val]:
+                        flg = False
+                        break
+                if flg:
+                    one_disk_per_cvg_dict[disk] = all_disks[disk]
+            if len(one_disk_per_cvg_dict) < disk_fail_cnt:
+                return False, "Number of cvg are less than disk fail count"
+            all_disks = copy.deepcopy(one_disk_per_cvg_dict)
+
+        for cnt in range(disk_fail_cnt):
+            selected_disk = random.choice(list(all_disks))  # nosec
+            LOGGER.info("disk fail loop: %s, disk selected for failure: %s",
+                        cnt + 1, all_disks[selected_disk])
+            resp = self.change_disk_status_hctl(master_obj, pod_name, all_disks[selected_disk][0],
+                                                all_disks[selected_disk][2], "failed")
+            LOGGER.info("fail disk command resp: %s", resp)
+            failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]
+            all_disks.pop(selected_disk)
+        return True, failed_disks_dict
