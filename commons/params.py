@@ -125,3 +125,10 @@ DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
                                             'test_multiple_config_deploy', 'test_cont_deployment',
                                             "test_di_deployment"]
+
+# Ceph s3-tests Runner Params
+S3TESTS_DIR = "s3-tests"
+VIRTUALENV_DIR = "virtualenv"
+S3TESTS_CONF_ENV = "S3TEST_CONF"
+S3TESTS_CONF_FILE = "s3tests.conf"
+REPORTS_DIR = "reports"

@@ -30,8 +30,6 @@ from commons.utils.jira_utils import JiraTask
 
 
 LOGGER = logging.getLogger(__name__)
-S3TESTS_DIR = "s3-tests"
-VIRTUALENV_DIR = "virtualenv"
 
 def parse_args():
     """Parse command line arguments"""
@@ -47,8 +45,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_tests_from_te(jira_obj, args, test_type='ALL'):
+def get_tests_from_te(jira_obj, args, test_type=None):
     """Get tests from given test execution"""
+    if test_type is None:
+        test_type = ['ALL']
     test_list, _ = jira_obj.get_test_ids_from_te(str(args.te_ticket), test_type)
     if len(test_list) == 0:
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
@@ -59,7 +59,7 @@ def collect_test_info(jira_obj, test):
     """Collect Test information"""
     test_details = jira_obj.get_issue_details(test)
     test_name = test_details.fields.summary
-    test_to_run = test.fields.customfield_20984
+    test_to_run = test_details.fields.customfield_20984
     test_label = ''
     if test_details.fields.labels:
         test_label = test_details.fields.labels[0]
@@ -68,10 +68,10 @@ def collect_test_info(jira_obj, test):
 
 def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
     """Run nosetests command for execution"""
-    cmd_line = f"{VIRTUALENV_DIR}/bin/nosetests {test_to_run}"
+    cmd_line = f"{params.VIRTUALENV_DIR}/bin/nosetests {test_to_run}"
     log = open(log_file, 'a')
     LOGGER.debug('Running nosetests command %s', cmd_line)
-    prc = subprocess.Popen(cmd_line, shell=True, stdout=log, stderr=log, cwd=S3TESTS_DIR)
+    prc = subprocess.Popen(cmd_line, shell=True, stdout=log, stderr=log, cwd=params.S3TESTS_DIR)
     prc.communicate()
     return "PASS" if prc.returncode == 0 else "FAIL"
 
@@ -87,13 +87,15 @@ def trigger_tests_from_te(args):
 
     timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
     reports = "reports_" + str(args.test_plan) + "_" + args.te_ticket + "_" + str(timestamp)
-    reports_dir = os.path.join(S3TESTS_DIR, reports)
+    reports_dir = os.path.join(params.S3TESTS_DIR, params.REPORTS_DIR, reports)
     if not system_utils.path_exists(reports_dir):
         system_utils.make_dirs(reports_dir)
 
     tp_details = jira_obj.get_issue_details(args.test_plan)
     tp_build = tp_details.fields.customfield_22980
     build_number = tp_build[0] if tp_build else 0
+
+    os.environ[params.S3TESTS_CONF_ENV] = params.S3TESTS_CONF
 
     for test in test_list:
         test_id = str(test[0])
