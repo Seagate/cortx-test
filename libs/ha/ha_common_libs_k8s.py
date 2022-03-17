@@ -1211,7 +1211,7 @@ class HAK8s:
         LOGGER.info("Install git inside ha pod %s", ha_pod)
         try:
             node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                                  command_suffix="yum install git", decode=True)
+                                  command_suffix="yum install git -y", decode=True)
         except IOError as error:
             LOGGER.error("Failed to install git inside ha pod %s due to error: %s", ha_pod, error)
             return False
@@ -1237,7 +1237,7 @@ class HAK8s:
         return True
 
     @staticmethod
-    def simulate_disk_cvg_failure(node_obj, source, resource_status, resource_type="disk",
+    def simulate_disk_cvg_failure(node_obj, source, resource_status, resource_type,
                                   resource_cnt=1, node_cnt=1, delay=None):
         """
         :param node_obj: Object for node
@@ -1248,7 +1248,7 @@ class HAK8s:
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
         :param delay: Delay between two events (Optional)
-        Format of even file:
+        Format of events file:
         {
         "events":
             {
