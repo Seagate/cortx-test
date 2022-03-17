@@ -662,3 +662,17 @@ class RestIamUser(RestTestLib):
             self.log.error("Status code check failed.")
             result = False
         return result, resp
+
+    def modify_iam_user_rgw(self, uid, payload: dict):
+        """
+        Creates IAM user for given payload.
+        :param uid: userid
+        :param payload: payload for user creation
+        :return: response
+        """
+        self.log.info("Creating IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("IAM user request successfully sent...")
+        return response

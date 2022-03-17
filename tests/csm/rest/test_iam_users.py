@@ -1430,3 +1430,187 @@ class TestIamUserRGW():
         assert_utils.assert_true(len(get_resp.json()["keys"]) == 1,
                                  "Number of Access keys are not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38087')
+    def test_38087(self):
+        """
+        Update User with display name, correct uid in request.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] STEP 1: Creating IAM user with basic parameters")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = resp.json()["tenant"] + "$" + payload['uid']
+        self.created_iam_users.add(uid)
+        self.log.info("STEP 2: Perform get iam users")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Send patch request to update display name")
+        payload = {}
+        payload.update({"display_name":uid})
+        resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
+        self.log.info("Print resp with new display name")
+        self.log.info("STEP 4: Perform get iam users to verify new display name")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        self.log.info("Print user info %s", get_resp.json())
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Check if update is done successfully")
+        assert_utils.assert_true((get_resp.json()["display_name"] != resp.json()["display_name"]),
+                                 "Display Name not updated")
+        self.log.info("[END]Update User with display name, correct uid in request.")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38088')
+    def test_38088(self):
+        """
+        Update User with display name, non existing uid in request
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_38088"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
+        self.log.info("Print resp_data[0] %s", resp_data[0])
+        self.log.info("[START] STEP 1: Creating IAM user with basic parameters")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = resp.json()["tenant"] + "$" + payload['uid']
+        self.created_iam_users.add(uid)
+        self.log.info("STEP 2: Perform get iam users")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Send request with wrong uid in request to update display name")
+        uid1 = uid+"1"
+        payload = {}
+        payload.update({"display_name":uid})
+        response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
+        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
+        assert response.json()["error_code"] == resp_error_code, (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg , "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        self.log.info("STEP 4: Perform get iam users to verify new display name")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        self.log.info("Print user info %s", get_resp.json())
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Check if update is done successfully")
+        assert_utils.assert_true((get_resp.json()["display_name"] == resp.json()["display_name"]),
+                                 "Display Name updated")
+        self.log.info("[END]Update User with display name, non existing uid in request")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38089')
+    def test_38089(self):
+        """
+        Update request with uid and generate-key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] STEP 1: Creating IAM user with basic parameters")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        self.log.info("payload :  %s", payload)
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = resp1.json()["tenant"] + "$" + payload['uid']
+        self.created_iam_users.add(uid)
+        self.log.info("STEP 2: Perform get iam users")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Send request to update uid and generate-key")
+        payload = {}
+        payload.update({"generate_key":True})
+        resp = self.csm_obj.modify_iam_user_rgw(uid, payload)
+        self.log.info("STEP 4: Perform get iam users to verify new display name")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        self.log.info("Print user info %s", get_resp.json())
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Check if keys are generated successfully")
+        assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]!="",
+                               "Access key not generated")
+        assert_utils.assert_true(get_resp.json()["keys"][0]["secret_key"]!="",
+                               "Secret key not generated")
+        self.log.info("STEP 6: Create bucket and put object")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        try:
+            status, resp = s3_obj.create_bucket(bucket_name)
+            self.log.info("Printing response %s", resp.json())
+            assert_utils.assert_true(status, resp)
+        except Exception as error:
+            self.log.info("Expected exception received %s", error)
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                         file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step: Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("[END]Update request with uid and generate-key")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38090')
+    def test_38090(self):
+        """
+        Update request with uid and other parameters randomly
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] STEP 1: Creating IAM user with basic parameters")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        uid = resp.json()["tenant"] + "$" + payload['uid']
+        self.log.info("STEP 2: Perform get iam users")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Update any random parameters for created user")
+        payload = {}
+        payload.update({"email":(uid+"@seagate.com")})
+        payload.update({"suspended": True})
+        resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
+        self.log.info("STEP 4: Perform get iam users to verify updated random parameters")
+        get_resp = self.csm_obj.get_iam_user(uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Check if update is done successfully")
+        assert_utils.assert_true((get_resp.json()["email"] != resp.json()["email"]),
+                                 "Email id not updated")
+        assert_utils.assert_true(get_resp.json()["suspended"] != resp.json()["suspended"],
+                                 "Suspended parameter not updated")
+        self.log.info("[END]Update request with uid and other parameters randomly. ")
+        self.log.info("##### Test completed -  %s #####", test_case_name)

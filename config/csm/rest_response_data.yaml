@@ -43,3 +43,5 @@
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
     - 'Provided access key exists and belongs to another user.'
+  NoSuchUser:
+    - "User does not exist."
