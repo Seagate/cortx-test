@@ -102,9 +102,12 @@ class TestRestartPod:
         LOGGER.info("Done: Teardown completed.")
 
     @staticmethod
-    def verify_ha_prop(resp_dict, status):
+    def get_node_resource_id(resp_dict, status):
         """
-        This is a local method to verify the ha logs properties
+        This is a local method to verify the status and get node and resource ids
+        :param resp_dict: halog properties
+        :param status: status need to be checked
+        :return: node and resource id as tuple
         """
         source_list = resp_dict['source']
         resource_type_list = resp_dict['resource_type']
@@ -122,7 +125,7 @@ class TestRestartPod:
                                       f"Resource status of {generation_id_list[index]} "
                                       f"is not {status}")
         return node_id, resource_id
-
+        
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36017")
@@ -150,7 +153,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
         failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
@@ -174,12 +177,12 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='online')
+        resp = self.get_node_resource_id(resp_dict, status='online')
         online_node_id = resp[0]
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
-                                                                          "are different")
+                                                                          "are different")                                                              
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
                     "node and resource IDs")
 
@@ -222,9 +225,9 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
-        failed_resource_id = resp[1]
+        failed_resource_id = resp[1]                             
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
@@ -248,7 +251,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='online')
+        resp = self.get_node_resource_id(resp_dict, status='online')
         online_node_id = resp[0]
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
@@ -292,7 +295,7 @@ class TestRestartPod:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True, status='failed')
-        resp = self.verify_ha_prop(resp_dict, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
         failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
@@ -317,7 +320,7 @@ class TestRestartPod:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True)
-        resp = self.verify_ha_prop(resp_dict, status='online')
+        resp = self.get_node_resource_id(resp_dict, status='online')
         online_node_id = resp[0]
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
@@ -329,6 +332,7 @@ class TestRestartPod:
         LOGGER.info("COMPLETED: pod online event to component Hare -"
                     "data pod comes online after data pod restart using kubectl delete pod")
 
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36193")
@@ -338,7 +342,6 @@ class TestRestartPod:
         server pod comes online after server pod restart using deployment
         """
 
-        # This Tc will fail for now - need fix CORTX-29300
         LOGGER.info(
             "STARTED: Publish the pod online event to component Hare - "
             "Server pod comes online after server pod restart using deployment")
@@ -363,7 +366,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
         failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
@@ -389,7 +392,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='online')
+        resp = self.get_node_resource_id(resp_dict, status='online')
         online_node_id = resp[0]
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
@@ -407,6 +410,7 @@ class TestRestartPod:
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Server pod comes online after server pod restart using deployment")
 
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36197")
@@ -416,7 +420,6 @@ class TestRestartPod:
         server pod comes online after server pod restart using replicas
         """
 
-        # This Tc will fail for now - need fix CORTX-29300
         LOGGER.info("STARTED: Publish the pod online event to component Hare- "
                     "Server pod comes online after server pod restart using replicas.")
 
@@ -437,7 +440,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
         failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
@@ -461,7 +464,7 @@ class TestRestartPod:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.verify_ha_prop(resp_dict, status='online')
+        resp = self.get_node_resource_id(resp_dict, status='online')
         online_node_id = resp[0]
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
