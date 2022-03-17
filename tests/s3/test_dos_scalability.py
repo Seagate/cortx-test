@@ -124,13 +124,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5336")
+                log_file_prefix="TEST-5336",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -170,13 +171,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5337")
+                log_file_prefix="TEST-5337",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -216,7 +218,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
@@ -267,13 +269,14 @@ class TestDosScalability:
                     access_key=access_key,
                     secret_key=secret_key,
                     bucket=self.bucket_name,
-                    end_point=S3_CFG['s3b_url'],
+                    end_point=S3_CFG['s3_url'],
                     num_clients=client,
                     num_sample=client,
                     obj_name_pref=self.obj_name,
                     obj_size=obj_size,
                     skip_cleanup=True,
-                    log_file_prefix="TEST-5340")
+                    log_file_prefix="TEST-5340",
+                    validate_certs=S3_CFG["validate_certs"])
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
@@ -319,13 +322,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=client,
                 num_sample=client,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5341")
+                log_file_prefix="TEST-5341",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -368,13 +372,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5308")
+                log_file_prefix="TEST-5308",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(

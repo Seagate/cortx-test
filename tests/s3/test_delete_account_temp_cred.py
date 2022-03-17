@@ -89,7 +89,7 @@ class TestDeleteAccountTempCred:
         LOGGER.info(
             "Step 4: Retrieving temporary credentials for the account %s",
             account_name)
-        self.temp_creds = dict()
+        self.temp_creds = {}
         temp_creds = self.iam_test_obj.get_temp_auth_credentials_account(
             account_name, account_password, duration=duration)
         assert_true(temp_creds[0], temp_creds[1])
