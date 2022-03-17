@@ -16,6 +16,7 @@
     - "Only {} user can create other {} users"
   Access denied for account:
     - "Access denied. Cannot modify another S3 account."
+    - "Access denied."
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
@@ -31,9 +32,14 @@
     - "Invalid parameter for user"
   "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}":
     - "Invalid parameter for user"
+  empty key:
+    - "_schema: Empty value for access_key"
+    - "_schema: Empty value for secret_key"
+    - "Uid: Field may not be null."
 4103:
   users_already_exists:
     - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
+    - 'Provided access key exists and belongs to another user.'
