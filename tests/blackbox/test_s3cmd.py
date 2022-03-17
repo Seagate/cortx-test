@@ -39,7 +39,7 @@ from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_not_in
 from commons.utils.s3_utils import assert_s3_err_msg
 from commons.utils import system_utils
-from commons import constants as const
+from commons import error_constants as errconst
 from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from config import CMN_CFG
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
@@ -294,8 +294,8 @@ class TestS3cmdClient:
                 S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
             resp = system_utils.run_local_cmd(command, chk_stderr=True)
         except CTException as error:
-            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
-                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+            assert_s3_err_msg(errconst.RGW_ERR_DUPLICATE_BKT_NAME,
+                              errconst.CORTX_ERR_DUPLICATE_BKT_NAME,
                               CMN_CFG["s3_engine"], error)
         self.log.info(
             "STEP: 2 Creating bucket failed with existing bucket name")
@@ -405,7 +405,7 @@ class TestS3cmdClient:
         command = self.s3cmd_test_obj.command_formatter(
             S3CMD_CNF, self.s3cmd_cfg["remove_bucket"], cmd_arguments)
         resp = system_utils.run_local_cmd(command, chk_stderr=True)
-        assert_in("BucketNotEmpty", str(resp[1]), resp)
+        assert_in(errconst.BKT_NOT_EMPTY_ERR, str(resp[1]), resp)
         self.log.info("STEP: 3 Delete bucket failed")
         self.log.info(
             "ENDED: delete bucket which has objects using s3cmd client")
@@ -731,7 +731,7 @@ class TestS3cmdClient:
         command = self.s3cmd_test_obj.command_formatter(
             S3CMD_CNF, self.s3cmd_cfg["list_bucket"], cmd_arguments)
         resp = system_utils.run_local_cmd(command, chk_stderr=True)
-        assert_in("NoSuchBucket", str(resp[1]), resp[1])
+        assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY, str(resp[1]), resp[1])
         self.log.info("STEP: 5 Object listed in bucket")
         self.log.info("ENDED: delete bucket forcefully which has objects using s3cmd client")
 

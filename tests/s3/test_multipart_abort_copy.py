@@ -28,6 +28,7 @@ from time import perf_counter_ns
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_constants as errconst
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.s3_utils import get_unaligned_parts
@@ -41,10 +42,12 @@ from commons.utils.system_utils import backup_or_restore_files
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
+from commons.utils.s3_utils import assert_s3_err_msg
 from commons.params import TEST_DATA_FOLDER
 from commons import constants as const
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
+from config import CMN_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import CMN_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
@@ -200,8 +203,7 @@ class TestMultipartAbortCopy:
                 parts=parts)
         except CTException as error:
             self.log.error(error)
-            assert_s3_err_msg(const.RGW_ERR_NO_SUCH_UPLOAD, const.CORTX_ERR_NO_SUCH_UPLOAD,
-                              CMN_CFG["s3_engine"], error)
+            assert_utils.assert_in(errconst.NO_SUCH_UPLOAD_ERR, error.message, error)
             self.log.info(
                 "Uploading parts to the aborted multipart upload ID failed")
         self.log.info("Stop background S3 IOs")
@@ -379,7 +381,9 @@ class TestMultipartAbortCopy:
                 self.s3_test_obj.object_info(bucket, self.object_name)
             except CTException as error:
                 self.log.error(error)
-                assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
+                assert_s3_err_msg(errconst.RGW_HEAD_OBJ_ERR,
+                                errconst.CORTX_HEAD_OBJ_ERR,
+                                CMN_CFG["s3_engine"], error)
         self.log.info("Stop background S3 IOs")
         self.s3_background_io.stop()
         self.log.info("ENDED: Test deleting completed multipart object during copy operation")

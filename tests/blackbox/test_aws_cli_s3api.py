@@ -33,7 +33,7 @@ from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.s3_utils import assert_s3_err_msg
-from commons import constants as const
+from commons import error_constants as errconst
 from config.s3 import S3_CFG
 from config import CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -178,7 +178,6 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_delete_non_empty_bucket_2333(self):
         """delete bucket which has objects using aws cli."""
-        error_msg = "BucketNotEmpty"
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.buckets_list.append(self.bucket_name)
@@ -192,7 +191,7 @@ class TestAwsCliS3Api:
             self.log.info("File is not created because: %s ", output)
         resp = self.s3t_obj.delete_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], error_msg)
+        assert_utils.assert_exact_string(resp[1], errconst.BKT_NOT_EMPTY_ERR)
         self.buckets_list = list()
         self.log.info("Failed to delete bucket having objects in it")
 
@@ -243,8 +242,8 @@ class TestAwsCliS3Api:
             resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
-                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+            assert_s3_err_msg(errconst.RGW_ERR_DUPLICATE_BKT_NAME,
+                              errconst.CORTX_ERR_DUPLICATE_BKT_NAME,
                               CMN_CFG["s3_engine"], error)
         self.log.info("Failed to create bucket using existing bucket name")
 

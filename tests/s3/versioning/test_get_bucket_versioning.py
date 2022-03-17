@@ -26,6 +26,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_constants as errconst
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -127,7 +128,7 @@ class TestGetBucketVersioning:
         access_key, secret_key = self.create_s3account()
         s3_new_test_obj = S3VersioningTestLib(
             access_key=access_key, secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
-        err_message = "AccessDenied"
+        err_message = errconst.ACCESS_DENIED_ERR_KEY
         self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])

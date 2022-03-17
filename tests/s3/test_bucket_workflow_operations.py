@@ -26,7 +26,7 @@ import time
 
 import pytest
 
-from commons import constants as const
+from commons import error_constants as errconst
 from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -185,7 +185,7 @@ class TestBucketWorkflowOperations:
                 self.bucket_list.append(each_bucket)
             except CTException as error:
                 self.log.info(error.message)
-                assert "InvalidBucketName" in error.message, error.message
+                assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info(
             "Creating buckets with name less than 3 and more than 63 characters length is failed")
         self.log.info(
@@ -210,7 +210,7 @@ class TestBucketWorkflowOperations:
             self.bucket_list.append(bkt_upper)
         except CTException as error:
             self.log.info(error.message)
-            assert "InvalidBucketName" in error.message, error.message
+            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with uppercase letters is failed")
         self.log.info(
             "ENDED: Bucket names must not contain uppercase characters")
@@ -233,7 +233,7 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bkt_name)
         except CTException as error:
             self.log.info(error.message)
-            assert "InvalidBucketName" in error.message, error.message
+            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with underscore is failed")
         self.log.info("ENDED: Bucket names must not contain underscores")
 
@@ -267,7 +267,7 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bucket_name)
         except CTException as error:
             self.log.info(error.message)
-            assert "Parameter validation failed" in error.message, error.message
+            assert errconst.BKT_SPECIAL_CHARACTER_ERR in error.message, error.message
         self.log.info("Creating a bucket with special characters is failed")
         self.log.info("ENDED: Bucket names with special characters")
 
@@ -289,11 +289,10 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bkt_name_ip)
         except CTException as error:
             self.log.error(error.message)
-            assert "InvalidBucketName" in error.message, error.message
-        self.log.info(
-            "Creating a bucket with an IP address format is failed")
-        self.log.info(
-            "ENDED: Bucket names must not be formatted as an IP address (for example, 192.168.5.4)")
+            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
+        self.log.info("Creating a bucket with an IP address format is failed")
+        self.log.info("ENDED: Bucket names must not be formatted as an IP address "
+            "(for example, 192.168.5.4)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -372,8 +371,8 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert_s3_err_msg(const.RGW_ERR_DUPLICATE_BKT_NAME,
-                              const.CORTX_ERR_DUPLICATE_BKT_NAME,
+            assert_s3_err_msg(errconst.RGW_ERR_DUPLICATE_BKT_NAME,
+                              errconst.CORTX_ERR_DUPLICATE_BKT_NAME,
                               CMN_CFG["s3_engine"], error)
         self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
@@ -449,7 +448,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert "BucketNotEmpty" in error.message, error.message
+            assert errconst.BKT_NOT_EMPTY_ERR in error.message, error.message
         self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Delete bucket which has objects")
 
@@ -550,18 +549,15 @@ class TestBucketWorkflowOperations:
     def test_delete_non_existing_bucket_2049(self):
         """Delete bucket when Bucket does not exists."""
         self.log.info("STARTED: Delete bucket when Bucket does not exists")
-        self.log.info(
-            "Deleting bucket which does not exists on s3 server")
+        self.log.info("Deleting bucket which does not exists on s3 server")
         try:
             resp = self.s3_test_obj.delete_bucket(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "NoSuchBucket" in error.message, error.message
-        self.log.info(
-            "Deleting bucket which does not exists on s3 server is failed")
-        self.log.info(
-            "ENDED: Delete bucket which does not exists on s3 server")
+            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+        self.log.info("Deleting bucket which does not exists on s3 server is failed")
+        self.log.info("ENDED: Delete bucket which does not exists on s3 server")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -659,7 +655,7 @@ class TestBucketWorkflowOperations:
             self.bucket_list.append(self.bucket_name)
         except CTException as error:
             self.log.info(error.message)
-            assert "Not Found" in error.message, error.message
+            assert errconst.BKT_HEAD_NOT_FOUND in error.message, error.message
         self.log.info("Head bucket on non existing bucket is failed")
         self.log.info("ENDED: HEAD bucket when Bucket does not exists")
 
@@ -799,20 +795,17 @@ class TestBucketWorkflowOperations:
     @CTFailOn(error_handler)
     def test_delete_non_existing_multibuckets_433(self):
         """Delete multiobjects where the bucket is not present."""
-        self.log.info(
-            "STARTED: Delete multiobjects where the bucket is not present")
+        self.log.info("STARTED: Delete multiobjects where the bucket is not present")
         obj_lst = ["obj1", "obj2"]
-        self.log.info(
-            "Step 1: Deleting the objects for non-existing bucket")
+        self.log.info("Step 1: Deleting the objects for non-existing bucket")
         try:
             resp = self.s3_test_obj.delete_multiple_objects(
                 self.bucket_name, obj_lst)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "NoSuchBucket" in error.message, error.message
-            self.log.info(
-                "Step 1: objects delete operation failed with error %s",
+            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            self.log.info("Step 1: objects delete operation failed with error %s",
                 "NoSuchBucket")
         self.log.info("Step 2: List objects for non-existing bucket")
         try:
@@ -820,10 +813,9 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "NoSuchBucket" in error.message, error.message
-            self.log.info(
-                "Step 2: List objects for non-existing bucket failed with error %s",
-                "NoSuchBucket")
+            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            self.log.info("Step 2: List objects for non-existing bucket failed with "
+                "error %s", "NoSuchBucket")
         self.log.info(
             "ENDED: Delete multiobjects where the bucket is not present")
 
@@ -838,11 +830,9 @@ class TestBucketWorkflowOperations:
 
          and dont give any permissions to account2 and delete multiple objects from account2
         """
-        self.log.info(
-            "STARTED: create bucket and upload objects from account1 and dont give"
+        self.log.info("STARTED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
-        self.log.info(
-            "Step : Creating account with name %s and email_id %s",
+        self.log.info("Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
         create_account = self.rest_obj.create_s3_account(
             acc_name=self.account_name,
@@ -883,9 +873,8 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], res[1])
         except CTException as error:
             self.log.error(error.message)
-            assert "AccessDenied" in error.message, error.message
-            self.log.info(
-                "Step 3: deleting objects using account 2 failed with error %s",
+            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            self.log.info("Step 3: deleting objects using account 2 failed with error %s",
                 "AccessDenied")
         self.account_list.append(self.account_name)
         self.log.info(

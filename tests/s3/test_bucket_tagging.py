@@ -24,6 +24,7 @@ import time
 import logging
 import pytest
 
+from commons import error_constants as errconst
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -158,7 +159,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchTagSetError", str(error.message), error.message)
+            assert_utils.assert_in(errconst.BKT_SET_TAG_ERR,
+                        str(error.message), error.message)
         self.log.info("Step 4: Retrieving bucket tag failed with NoSuchTagSetError")
         self.log.info("ENDED: Verify DELETE Bucket tagging")
 
@@ -169,8 +171,8 @@ class TestBucketTagging:
     @CTFailOn(error_handler)
     def test_2435(self):
         """Create a tag whose key is up to 128 Unicode characters in length."""
-        self.log.info(
-            "STARTED: Create a tag whose key is up to 128 Unicode characters in length")
+        self.log.info("STARTED: Create a tag whose key is up to 128 Unicode "
+            "characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
@@ -227,10 +229,11 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("InvalidTagError", str(error.message), error.message)
+            assert_utils.assert_in(errconst.BKT_INVALID_TAG_ERR,
+                str(error.message), error.message)
         self.log.info("Step 2: Setting tag for a bucket failed with InvalidTagError")
-        self.log.info(
-            "ENDED: Create a tag whose key is more than 128 Unicode characters in length")
+        self.log.info("ENDED: Create a tag whose key is more than 128 Unicode "
+            "characters in length")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -239,8 +242,8 @@ class TestBucketTagging:
     @CTFailOn(error_handler)
     def test_2437(self):
         """Create a tag having values up to 256 Unicode characters in length."""
-        self.log.info(
-            "STARTED: Create a tag having values up to 256 Unicode characters in length")
+        self.log.info("STARTED: Create a tag having values up to 256 Unicode "
+            "characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
@@ -306,10 +309,11 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("InvalidTagError", str(error.message), error.message)
+            assert_utils.assert_in(errconst.BKT_INVALID_TAG_ERR,
+                    str(error.message), error.message)
         self.log.info("Step 2: Setting tag for a bucket failed with %s", self.bucket_name)
-        self.log.info(
-            "ENDED: Create a tag having values more than 512 Unicode characters in length")
+        self.log.info("ENDED: Create a tag having values more than 512 Unicode characters "
+            "in length")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -366,7 +370,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("InvalidTagError", str(error.message), error.message)
+            assert_utils.assert_in(errconst.BKT_INVALID_TAG_ERR,
+                    str(error.message), error.message)
         self.log.info("Setting %d tags for a bucket failed with %s", 51, "InvalidTagError")
         self.log.info("ENDED: Create Bucket tags, more than 50")
 
@@ -483,7 +488,8 @@ class TestBucketTagging:
                 assert_utils.assert_false(resp[0], resp[1])
             except CTException as error:
                 self.log.info(error)
-                assert_utils.assert_in("InvalidTagError", str(error.message), error.message)
+                assert_utils.assert_in(errconst.BKT_INVALID_TAG_ERR,
+                                    str(error.message), error.message)
         self.log.info("Step 2: Could not set tags for a bucket with tag keys "
                       "having invalid special characters")
         self.log.info("ENDED: Create multiple tags with tag keys having"
@@ -514,7 +520,8 @@ class TestBucketTagging:
                 assert_utils.assert_false(resp[0], resp[1])
             except CTException as error:
                 self.log.info(error)
-                assert_utils.assert_in("InvalidTagError", str(error.message), error.message)
+                assert_utils.assert_in(errconst.BKT_INVALID_TAG_ERR,
+                                    str(error.message), error.message)
         self.log.info("Step 2: Could not set multiple tags with tag values"
                       " having invalid special character")
         self.log.info("ENDED: Create multiple tags with tag values having "
@@ -542,9 +549,9 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("MalformedXML", str(error.message), error.message)
-        self.log.info(
-            "Step 2: Setting bucket tags with duplicate keys failed with %s",
+            assert_utils.assert_in(errconst.BKT_TAG_DUPLICATE_KEY_ERR,
+                                str(error.message), error.message)
+        self.log.info("Step 2: Setting bucket tags with duplicate keys failed with %s",
             "MalformedXML")
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 
@@ -670,7 +677,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 7: Retrieving tag of a bucket failed with NoSuchBucket")
         self.log.info("Step 8: Retrieving tag of an object")
         try:
@@ -679,7 +687,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 8: Retrieving tag of an object failed with NoSuchBucket")
         self.log.info("ENDED: Delete Bucket having tags associated with Bucket and its Objects")
 
@@ -732,7 +741,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 1: Setting a tag for non existing bucket failed with: NoSuchBucket")
         self.log.info("ENDED: Verify PUT bucket tagging to non-existing bucket")
 
@@ -752,7 +762,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 1: Setting a tag for non existing bucket failed with NoSuchBucket")
         self.log.info("Step 2: Retrieving tag of non existing bucket")
         try:
@@ -761,7 +772,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 2: Retrieved tag of non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify GET bucket tagging to non-existing bucket")
 
@@ -780,7 +792,8 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 1: Setting tag for non existing bucket failed")
         self.log.info("Step 2: Deleting tag of a non existing bucket")
         try:
@@ -790,6 +803,7 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(error.message), error.message)
+            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
+                                str(error.message), error.message)
         self.log.info("Step 2: Deleting tag of a non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify DELETE bucket tagging to non-existing bucket")
