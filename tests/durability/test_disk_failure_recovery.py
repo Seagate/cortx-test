@@ -62,6 +62,7 @@ class TestDiskFailureRecovery:
         cls.dsk_rec_obj = DiskFailureRecoveryLib()
         cls.s3_clean = None
         cls.parity_units = None
+        cls.pod_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.delay_sns_repair = 30
 
@@ -319,7 +320,7 @@ class TestDiskFailureRecovery:
 
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36393")
-    def test_sns_repair_fail_disk_less_than_k(self):
+    def test_sns_repair_fail_disk_diff_cvg_less_than_k(self):
         """
         Validate SNS repair works fine with failed disks are less than K(parity units)
         and from different cvg
@@ -415,7 +416,7 @@ class TestDiskFailureRecovery:
 
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36394")
-    def test_sns_repair_fail_disk_less_than_k(self):
+    def test_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
         """
         Validate SNS repair works fine with failed disks are equal to K(parity units)
         and from different cvg

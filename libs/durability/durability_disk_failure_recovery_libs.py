@@ -147,7 +147,7 @@ class DiskFailureRecoveryLib:
         :param master_obj: Node Object of Master
         :param worker_obj: list of worker node object
         :return : tuple(bool,dict)
-                 list of format 'host_name$cvg$disk'
+                 dict of format
                  {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
                   'disk2': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-02', '/dev/sdd']}
         """
@@ -170,7 +170,19 @@ class DiskFailureRecoveryLib:
         return True, return_dict
 
     def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,
-                  worker_obj: list, pod_name: str, on_diff_cvg: bool = False):
+                  worker_obj: list, pod_name: str, on_diff_cvg: bool = False) -> tuple:
+        """
+        Return the unique list of failed disks.
+        :param disk_fail_cnt: Number of disks to be failed
+        :param master_obj: Node Object of Master
+        :param worker_obj: list of worker node object
+        :param pod_name: name of the pod
+        :param on_diff_cvg: selects disks from different cvg if set True
+        :return : tuple(bool,dict)
+                 dict of format
+                 {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
+                  'disk2': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-02', '/dev/sdd']}
+        """
 
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
         failed_disks_dict = {}
