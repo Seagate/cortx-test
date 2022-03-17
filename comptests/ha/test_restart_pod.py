@@ -125,7 +125,7 @@ class TestRestartPod:
                                       f"Resource status of {generation_id_list[index]} "
                                       f"is not {status}")
         return node_id, resource_id
-        
+
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36017")
@@ -182,7 +182,7 @@ class TestRestartPod:
         online_resource_id = resp[1]
         assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
         assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
-                                                                          "are different")                                                              
+                                                                          "are different")
         LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
                     "node and resource IDs")
 
@@ -227,7 +227,7 @@ class TestRestartPod:
                                                      kvalue=1, health_monitor=True)
         resp = self.get_node_resource_id(resp_dict, status='failed')
         failed_node_id = resp[0]
-        failed_resource_id = resp[1]                             
+        failed_resource_id = resp[1]
         LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 3: Check for publish action event")
