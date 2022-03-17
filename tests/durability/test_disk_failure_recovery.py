@@ -249,7 +249,7 @@ class TestDiskFailureRecovery:
                                                                         "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_before)
 
-        LOGGER.info("Step 3: Fail disks less than K(parity units)")
+        LOGGER.info("Step 3: Fail disks equal to K(parity units)")
         LOGGER.info("No of parity units (K): %s", self.parity_units)
         disk_fail_cnt = self.parity_units
 
@@ -438,7 +438,7 @@ class TestDiskFailureRecovery:
                                                                         "degraded_byte_count")
         LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
 
-        LOGGER.info("Step 3: Fail disks less than K(parity units)")
+        LOGGER.info("Step 3: Fail disks equal to K(parity units)")
         LOGGER.info("No of parity units (K): %s", self.parity_units)
         disk_fail_cnt = self.parity_units
 
