@@ -95,7 +95,7 @@ def trigger_tests_from_te(args):
     tp_build = tp_details.fields.customfield_22980
     build_number = tp_build[0] if tp_build else 0
 
-    os.environ[params.S3TESTS_CONF_ENV] = params.S3TESTS_CONF
+    os.environ[params.S3TESTS_CONF_ENV] = params.S3TESTS_CONF_FILE
 
     for test in test_list:
         test_id = str(test[0])
