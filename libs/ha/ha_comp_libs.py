@@ -163,10 +163,11 @@ class HAK8SCompLib:
             # For one pod operation there will be 9 lines of log
             kvalue *= 9
         if health_monitor:
-            # For one pod operation there will be 4 lines of log
             if kubectl_delete:
+                # For kubectl delete both offline and online logs will be together
                 kvalue*=8
             else:
+                # For one pod operation there will be 4 lines of log in health monitor
                 kvalue*=4
         cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
         output = node_obj.execute_cmd(cmd_halog)
