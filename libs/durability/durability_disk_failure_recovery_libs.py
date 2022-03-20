@@ -220,3 +220,63 @@ class DiskFailureRecoveryLib:
             failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]
             all_disks.pop(selected_disk)
         return True, failed_disks_dict
+    def perform_near_full_sys_writes(self, master_obj: LogicalNode, memory_percent: int,
+                                     workload_in_mb: list, bucket_prefix: str):
+        """
+        Perform write operation till the memory if filled to given percentage
+        :param master_obj: Logical node object of master
+        :param memory_percent: Perform write operation till memory if upto given input percentage
+        :param workload_in_mb: Object sizes to perform writes
+        :param bucket_prefix: Bucket prefix for the data written
+        """
+        # Get available data disk space
+        health_obj = Health(master_obj.hostname, master_obj.username, master_obj.password)
+        total_cap, avail_cap, used_cap = health_obj.get_sys_capacity()
+        current_usage_per = int(used_cap / total_cap * 100)
+
+        if memory_percent > current_usage_per:
+            # Get SNS configuration to retrieve available user data space
+            durability_values = self.retrieve_durability_values(master_obj, 'sns')
+            if not durability_values[0]:
+                LOGGER.error("Error in retrieving SNS values")
+                return durability_values
+            sns_values = {key: int(value) for key, value in durability_values[1].items()}
+            LOGGER.debug("Durability Values (SNS) %s", sns_values)
+            data_sns = sns_values['data']
+            sum_sns = sum(sns_values.values())
+            LOGGER.debug("Current usage : %s Expected memory usage : %s", current_usage_per,
+                         memory_percent)
+            write_percent = memory_percent - current_usage_per
+            expected_writes = (write_percent * total_cap) / 100
+            user_data_writes = data_sns / sum_sns * expected_writes
+            LOGGER.info("User writes to be performed in %s bytes", user_data_writes)
+
+            workload_in_mb.reverse()
+            mb = 1024 * 1024
+            user_data_writes = user_data_writes/mb
+            for each in workload_in_mb:
+                if user_data_writes > 0:
+                    break
+                samples = int(user_data_writes / each)
+                if samples > 0:
+                    user_data_writes -= (samples * each)
+                    bucket_name = f"{bucket_prefix}_{each}mb"
+                    obj_size = f'{each}Mb'
+                    resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+                                           num_clients=10, num_sample=samples,
+                                           obj_name_pref="workload", obj_size=obj_size,
+                                           skip_cleanup=False, duration=None,
+                                           log_file_prefix=f"workload_{each}mb",
+                                           end_point=S3_CFG["s3_url"],
+                                           validate_certs=S3_CFG["validate_certs"])
+                    LOGGER.info(f"Workload: {samples} objects of {each} with 10 parallel clients ")
+                    LOGGER.info(f"Log Path {resp[1]}")
+                    assert not s3bench.check_log_file_error(resp[1]), \
+                        f"S3bench workload for failed for {each}MB. Please read log file {resp[1]}"
+                else:
+                    continue
+        else:
+            LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
+                        current_usage_per, memory_percent)
+            bucket_prefix = None
+        return True, bucket_prefix
