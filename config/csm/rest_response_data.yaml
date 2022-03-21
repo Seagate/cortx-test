@@ -36,9 +36,16 @@
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
     - "Uid: Field may not be null."
+  InvalidKeyType:
+    - "Invalid key type specified. Must be one of S3, shift"
+    - "Max_buckets: Not a valid integer."
+    - "Suspended: Not a valid boolean."
+    - "Op_mask: Invalid value."
 4103:
   users_already_exists:
     - "User already exists:"
+  EmailExists:
+    - "Provided email address exists"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."

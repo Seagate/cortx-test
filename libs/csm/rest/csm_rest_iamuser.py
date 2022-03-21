@@ -663,9 +663,10 @@ class RestIamUser(RestTestLib):
             result = False
         return result, resp
 
+    @RestTestLib.authenticate_and_login
     def modify_iam_user_rgw(self, uid, payload: dict):
         """
-        Creates IAM user for given payload.
+        Modify IAM User parameters.
         :param uid: userid
         :param payload: payload for user creation
         :return: response
@@ -676,3 +677,28 @@ class RestIamUser(RestTestLib):
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
         return response
+
+    @RestTestLib.authenticate_and_login
+    def iam_user_patch_random_payload(self):
+        """
+        Return random patch payload for IAM user for RGW with Ceph
+        """
+        # Initialize all variables
+        payload = {}
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        payload.update({"uid": user_id})
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        payload.update({"display_name": display_name})
+        payload = self.iam_user_optional_payload_rgw(payload)
+        del payload["uid"]
+        del payload["tenant"]
+        del payload["user_caps"]
+        optional_payload = payload.copy()
+        ran_sel = random.sample(range(0, len(optional_payload)),
+                                    self.cryptogen.randrange(0, len(optional_payload)))
+        for i, (k, _) in enumerate(payload.items()):
+            if i not in ran_sel:
+                del optional_payload[k]
+        payload = optional_payload.copy()
+        self.log.info("Payload : %s", payload)
+        return payload
