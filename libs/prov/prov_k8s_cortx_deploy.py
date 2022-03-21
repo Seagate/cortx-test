@@ -1185,6 +1185,7 @@ class ProvDeployK8sCortxLib:
                                              self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Check  ALL service status")
+            time.sleep(60)
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
@@ -1290,7 +1291,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
         assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
+        end_time = start_time + 70*(len(data_pod_list)*2)  # 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
