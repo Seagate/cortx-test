@@ -255,7 +255,7 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
         resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
         worker_node[worker].update({"eth1": resp[0].strip("\n")})  # eth1 for all worker nodes
     worker_eth1 = [worker["eth1"] for worker in worker_node.values() if "eth1" in worker.keys()]
-    print(worker_eth1)
+    print("Worker nodes eth1: ", worker_eth1)
     random.shuffle(worker_eth1)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     resp = json.loads(resp)
@@ -265,13 +265,14 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                 "cortx-io-svc-" in item_data["metadata"]["name"]:
             svc = item_data["metadata"]["name"]
             get_iosvc_data[svc] = dict()
+            get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
                     get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
                     get_iosvc_data[svc].update({"name": port_items["name"]})
-                    get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
             else:
                 LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
+    print("get_iosvc_data is: ", get_iosvc_data)
     LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_iosvc_data)
     # for worker in worker_node.keys():
     #     if get_iosvc_data.get(worker) is not None:
