@@ -31,7 +31,7 @@ from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
-from config import CMN_CFG, PROV_CFG,
+from config import CMN_CFG, PROV_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
