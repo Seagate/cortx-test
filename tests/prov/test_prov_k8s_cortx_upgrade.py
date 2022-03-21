@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Provisioner Component level test cases for K8s CORTX Software Upgrade."""
+"""Test cases for K8s CORTX Software Upgrade."""
 
 import logging
 import os
@@ -34,7 +34,6 @@ from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -87,16 +86,8 @@ class TestK8CortxUpgrade:
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-        resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
-                                                self.worker_node_list)
-        assert_utils.assert_true(resp)
 
-    def perform_upgrade(self, upgrade_image_version: str, exc: bool = True):
-        """Function calls upgrade and put return in queue object."""
-        LOGGER.info("Calling upgrade.")
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj, upgrade_image_version,
-                                                   self.prov_deploy_cfg["git_remote_path"], exc=exc)
-        self.que.put(resp)
+
 
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
@@ -119,8 +110,7 @@ class TestK8CortxUpgrade:
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         if int(upgrade_version) <= int(installed_version):
-            assert_utils.assert_true(resp[0],
-                                     "Installed version is same or higher than installing version.")
+            assert False, "Installed version is same or higher than installing version."
         else:
             LOGGER.info("Installed version is lower than installing version.")
         LOGGER.info("Step 4: Check cluster health.")
@@ -135,11 +125,13 @@ class TestK8CortxUpgrade:
         assert_utils.assert_true(resp[0], resp[1])
         new_installed_version = resp[1]['cortx']['common']['release']['version']
         LOGGER.info("New CORTX image version: %s", new_installed_version)
-        LOGGER.info("Step 10 : Check PODs are up and running.")
+        assert_utils.assert_equals(installing_version, new_installed_version,
+                                   "Installing version is equal to new installed version.")
+        LOGGER.info("Step 7 : Check PODs are up and running.")
         resp = self.deploy_lc_obj.check_pods_status(self.master_node_obj)
         assert_utils.assert_true(resp)
         LOGGER.info("All PODs are up and running.")
-        LOGGER.info("Step 11 : Check Cluster health and services.")
+        LOGGER.info("Step 8 : Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
         resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
                                                   pod_prefix=cons.POD_NAME_PREFIX)
@@ -173,6 +165,6 @@ class TestK8CortxUpgrade:
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         # TO DO BUG #CORTX-29184
         if int(upgrade_version) <= int(installed_version):
-            assert_utils.assert_true(resp[0],
-                                     "Installed version is same or higher than installing version.")
+            assert False, "Installed version is same or higher than installing version."
+        #will upgrade method once #CORTX-29187
         LOGGER.info("Test Completed.")
