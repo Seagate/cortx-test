@@ -39,11 +39,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestK8CortxUpgrade:
+
     """ This class contains test cases for K8s CORTX Software Upgrade. """
 
     @classmethod
     def setup_class(cls):
-        """Setup class"""
+
+        """ Setup class. """
+
         LOGGER.info("STARTED: Setup Module operations")
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
@@ -74,6 +77,7 @@ class TestK8CortxUpgrade:
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
+
         """"
         Teardown method
         """
@@ -86,9 +90,9 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
-        """
-        Verify CORTX Software upgrade.
-        """
+
+        """ Verify CORTX Software upgrade."""
+
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
