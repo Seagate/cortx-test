@@ -322,7 +322,7 @@ CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
 CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
-CMD_AWS_CONF_KEYS_RGW = "make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
+CMD_AWS_CONF_KEYS_RGW = "make aws-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
                         "endpoint={}"
 CMD_AWSCLI_CONF = "aws configure"
 # Upload directory recursively to s3.

@@ -46,58 +46,63 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 class TestBucketACL:
     """Bucket ACL Test suite."""
 
-    @classmethod
-    def setup_class(cls):
-        """Function will be invoked prior to each test case."""
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test operations.")
-        cls.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
-        cls.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.test_file = f"testfile{time.perf_counter()}.txt"
-        cls.s3_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        cls.test_dir_path = os.path.join(TEST_DATA_PATH, "TestBucketACL")
-        if not system_utils.path_exists(cls.test_dir_path):
-            resp = system_utils.make_dirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", resp)
-        cls.log.info("Test data path: %s", cls.test_dir_path)
-        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        cls.bucket = "{}-{}".format("aclbucket", time.perf_counter_ns())
-        cls.account_prefix = "acltestaccn_{}"
-        cls.account = "{}{}".format("acltestaccn1", time.perf_counter_ns())
-        cls.email_id = "{}{}".format(cls.account, "@seagate.com")
-        cls.account1 = "{}{}".format("acltestaccn2", time.perf_counter_ns())
-        cls.email_id1 = "{}{}".format(cls.account, "@seagate.com")
-        cls.rest_obj = S3AccountOperations()
-        cls.log.info("Bucket name: %s", cls.bucket)
-        cls.account_list = []
-        cls.log.info("ENDED: Setup test operations")
+    # pylint: disable=attribute-defined-outside-init
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """
+        Summary: Function will be invoked prior to each test case.
 
-    @classmethod
-    def teardown_class(cls):
-        """Function to perform the cleanup for test suit."""
-        cls.log.info("STARTED: Teardown test operations")
-        if system_utils.path_exists(cls.test_file_path):
-            resp = system_utils.remove_file(cls.test_file_path)
-            cls.log.info("removed path: %s, resp: %s", cls.test_file_path, resp)
-        cls.log.info("Deleting buckets in default account")
-        resp = cls.s3_obj.bucket_list()
-        cls.log.info(resp)
-        pref_list = [each_bucket for each_bucket in resp[1] if each_bucket == cls.bucket]
+        Description: It will perform all prerequisite and cleanup test.
+        """
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: setup test operations.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"])
+        self.test_file = "testfile{}.txt"
+        self.s3_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.test_dir_path = os.path.join(TEST_DATA_PATH, "TestBucketACL")
+        if not system_utils.path_exists(self.test_dir_path):
+            resp = system_utils.make_dirs(self.test_dir_path)
+            self.log.info("Created path: %s", resp)
+        self.log.info("Test data path: %s", self.test_dir_path)
+        self.test_file_path = os.path.join(
+            self.test_dir_path, self.test_file.format(time.perf_counter()))
+        self.bucket = "{}-{}".format("aclbucket", time.perf_counter_ns())
+        self.account_prefix = "acltestaccn_{}"
+        self.account = "{}{}".format("acltestaccn1", time.perf_counter_ns())
+        self.email_id = "{}{}".format(self.account, "@seagate.com")
+        self.account1 = "{}{}".format("acltestaccn2", time.perf_counter_ns())
+        self.email_id1 = "{}{}".format(self.account, "@seagate.com")
+        self.rest_obj = S3AccountOperations()
+        self.log.info("Bucket name: %s", self.bucket)
+        self.account_list = []
+        self.log.info("ENDED: Setup test operations")
+        yield
+        self.log.info("STARTED: Teardown test operations")
+        if system_utils.path_exists(self.test_file_path):
+            resp = system_utils.remove_file(self.test_file_path)
+            self.log.info(
+                "removed path: %s, resp: %s",
+                self.test_file_path,
+                resp)
+        self.log.info("Deleting buckets in default account")
+        resp = self.s3_obj.bucket_list()
+        self.log.info(resp)
+        pref_list = [each_bucket for each_bucket in resp[1]
+                     if each_bucket == self.bucket]
         if pref_list:
             for bucket in pref_list:
-                cls.acl_obj.put_bucket_acl(bucket, acl="private")
-            resp = cls.s3_obj.delete_multiple_buckets(pref_list)
-            cls.log.info(resp)
+                self.acl_obj.put_bucket_acl(bucket, acl="private")
+            resp = self.s3_obj.delete_multiple_buckets(pref_list)
+            self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
-        del cls.rest_obj
-        cls.log.info("ENDED: Teardown test operations")
-
-    def teardown_method(self):
-        """Function to perform the cleanup for each test."""
         self.log.info("Deleted buckets in default account")
         self.log.info("Account list: %s", self.account_list)
         self.delete_accounts(self.account_list)
+        del self.rest_obj
+        self.log.info("ENDED: Teardown test operations")
 
     def delete_accounts(self, accounts):
         """It will clean up resources which are getting created during test suite setup."""
