@@ -44,7 +44,6 @@ class TestK8CortxUpgrade:
 
     @classmethod
     def setup_class(cls):
-
         """ Setup class. """
 
         LOGGER.info("STARTED: Setup Module operations")
@@ -77,7 +76,6 @@ class TestK8CortxUpgrade:
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
-
         """"
         Teardown method
         """
@@ -90,7 +88,6 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
-
         """ Verify CORTX Software upgrade."""
 
         LOGGER.info("Test Started.")
