@@ -38,9 +38,9 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
@@ -293,13 +293,13 @@ class ProvDeployK8sCortxLib:
                     return False, line
         return True, lines
 
-    def pull_cortx_image(self, worker_obj: LogicalNode ):
+    def pull_cortx_image(self, worker_obj: LogicalNode):
         """
         This method pulls  cortx image
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull Cortx image on worker node %s",worker_obj.hostname)
+        LOGGER.info("Pull Cortx image on worker node %s", worker_obj.hostname)
         worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
         if self.cortx_server_image:
             worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
@@ -334,7 +334,7 @@ class ProvDeployK8sCortxLib:
 
         thread_list = []
         for each in worker_node_list:
-            t = Thread(target=self.pull_cortx_image,args=(each,))
+            t = Thread(target=self.pull_cortx_image, args=(each,))
             t.start()
             thread_list.append(t)
         for each in thread_list:
@@ -360,8 +360,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
                                                 self.deploy_cfg["k8s_dir"])
-            return resp
-
+        return resp
 
     def checkout_solution_file(self, git_tag):
         """
@@ -642,7 +641,7 @@ class ProvDeployK8sCortxLib:
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            if self.cortx_server_image and image_key == "cortxserver" :
+            if self.cortx_server_image and image_key == "cortxserver":
                 cortx_im[image_key] = cortx_server_image
             else:
                 cortx_im[image_key] = cortx_image
