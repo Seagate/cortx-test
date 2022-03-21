@@ -354,10 +354,9 @@ class TestDiskFailureRecovery:
 
         while disk_fail_cnt >= 1:
             resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
-                                              self.node_worker_list, self.pod_name, on_diff_cvg=True)
+                                        self.node_worker_list, self.pod_name, on_diff_cvg=True)
             if "Number of cvg are less" in resp[1]:
                 disk_fail_cnt -= 1
-                continue
             else:
                 assert_utils.assert_true(resp[0], resp[1])
                 self.failed_disks_dict = resp[1]
@@ -454,10 +453,9 @@ class TestDiskFailureRecovery:
 
         while disk_fail_cnt >= 1:
             resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
-                                              self.node_worker_list, self.pod_name, on_diff_cvg=True)
+                                        self.node_worker_list, self.pod_name, on_diff_cvg=True)
             if "Number of cvg are less" in resp[1]:
                 disk_fail_cnt -= 1
-                continue
             else:
                 assert_utils.assert_true(resp[0], resp[1])
                 self.failed_disks_dict = resp[1]
