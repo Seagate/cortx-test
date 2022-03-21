@@ -23,25 +23,25 @@
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "rpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "encl_lpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "encl_rpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "gem_controller": {
             "ip": "",
             "user": "",
@@ -64,25 +64,25 @@
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "rpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "encl_lpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "encl_rpdu": {
             "ip": "",
             "port": "",
             "user": "",
             "pwd": ""
-            },
+             },
         "gem_controller": {
             "ip": "",
             "user": "",
@@ -118,8 +118,8 @@
 {
    "mgmt_vip": "",
    "csm_admin_user":{
-    "username": "",
-    "password": ""
-   }
+   "username": "",
+   "password": ""
+  }
 }
 }
