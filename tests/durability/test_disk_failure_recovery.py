@@ -170,7 +170,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -197,7 +197,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -249,7 +249,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 2: Get degraded byte count before failing the disk")
         degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
                                                                         "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_before)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
 
         LOGGER.info("Step 3: Fail disks equal to K(parity units)")
         LOGGER.info("No of parity units (K): %s", self.parity_units)
@@ -264,7 +264,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -291,7 +291,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after sns repair is greater than "
@@ -361,7 +361,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -388,7 +388,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -455,7 +455,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
         degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -482,7 +482,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
