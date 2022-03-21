@@ -290,7 +290,7 @@ class TestFailureHandlingPodFailure:
                                                          common_const.HA_SHUTDOWN_LOGS[2], lines=4)
         assert_utils.assert_true(resp[0], "Alert not sent to hare")
         LOGGER.info("Step 4: Successfully sent action event to hare")
-        
+
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod deployment - delete deployment")
 
