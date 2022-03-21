@@ -31,13 +31,14 @@ from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
-from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
+from config import CMN_CFG, PROV_CFG,
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
 class TestK8CortxUpgrade:
+
     """ This class contains test cases for K8s CORTX Software Upgrade. """
 
     @classmethod
@@ -67,11 +68,13 @@ class TestK8CortxUpgrade:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj, pod_prefix=cons.POD_NAME_PREFIX)
+        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj,
+                                                 pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
+
         """"
         Teardown method
         """
@@ -139,7 +142,8 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
         """
-        Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or lower version.
+        Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
+        lower version.
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
