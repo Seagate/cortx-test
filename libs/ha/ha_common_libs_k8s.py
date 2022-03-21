@@ -744,7 +744,6 @@ class HAK8s:
             resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         except IOError as error:
             LOGGER.error("Error: Cluster status has some failures.")
-            LOGGER.debug("Response for cluster status: %s", error)
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
