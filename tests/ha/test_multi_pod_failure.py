@@ -1212,7 +1212,7 @@ class TestMultiPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
+    @pytest.mark.skip(reason="Blocked until 'CORTX-27549' resolve")
     @pytest.mark.tags("TEST-35787")
     @CTFailOn(error_handler)
     def test_kpods_fail_node_down(self):
@@ -2215,7 +2215,7 @@ class TestMultiPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
+    @pytest.mark.skip(reason="Blocked until 'CORTX-27549' resolve")
     @pytest.mark.tags("TEST-35788")
     @CTFailOn(error_handler)
     def test_kpods_fail_node_nw_down(self):
@@ -2341,8 +2341,7 @@ class TestMultiPodFailure:
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         LOGGER.info("Step 1: Create and list buckets and perform upload and copy "
-                    "object from %s bucket to other buckets, download objects "
-                    "and verify etags", self.bucket_name)
+                    "object from %s bucket to other buckets ", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -2351,8 +2350,7 @@ class TestMultiPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
         LOGGER.info("Step 1: successfully create and list buckets and perform upload and copy"
-                    "object from %s bucket to other buckets, download objects "
-                    "and verify etags", self.bucket_name)
+                    "object from %s bucket to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Shutdown the %s (K) data pods by deleting deployment "
                     "(unsafe)", self.kvalue)
@@ -2586,6 +2584,7 @@ class TestMultiPodFailure:
 
         bkt_obj_dict = {}
         output = Queue()
+        bkt_obj_dict[f"ha-bkt-{perf_counter_ns()}"] = f"ha-obj-{perf_counter_ns()}"
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -2699,12 +2698,12 @@ class TestMultiPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 7: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bucketnew = f"ha-bkt-new-{int((perf_counter_ns()))}"
+        objectnew = f"ha-obj-new-{int((perf_counter_ns()))}"
         bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
+        bkt_obj_dict[bucketnew] = objectnew
         LOGGER.info("Step 8: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
+                    "copy object etags", self.object_name, self.bucket_name, bucketnew)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -2713,14 +2712,16 @@ class TestMultiPodFailure:
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+                    "verified copy object etags", self.object_name, self.bucket_name, bucketnew)
 
-        LOGGER.info("Step 9: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Step 9: Download the uploaded %s on %s & verify etags.", objectnew, bucketnew)
+        resp = s3_test_obj.get_object(bucket=bucketnew, key=objectnew)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+                                                      f"for object {objectnew} of bucket "
+                                                      f"{bucketnew}.")
+        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.",
+                    objectnew, bucketnew)
 
         LOGGER.info("COMPLETED: Verify copy object during data pods failure till K pods.")
