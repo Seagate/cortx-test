@@ -446,6 +446,7 @@ K8S_PRE_DISK = "/dev/sdb"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+HAPROXY_DUMMY_RGW_CONFIG = "scripts/cicd_k8s/haproxy_rgw_dummy.cfg"
 
 # Pod restore methods
 RESTORE_SCALE_REPLICAS = "scale_replicas"

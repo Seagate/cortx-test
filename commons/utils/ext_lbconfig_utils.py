@@ -25,7 +25,7 @@ Module to maintain External Load Balancer set utils
 import json
 import logging
 import os
-
+import random
 from commons import commands as cm_cmd
 from commons import constants as cm_const
 from commons.helpers.pods_helper import LogicalNode
@@ -236,3 +236,95 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
         return True, ext_ip, port_https, port_http
     else:
         return False, "Did not get expected port numbers."
+
+def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: str):
+    """
+    Implement external Haproxy LB
+    :param m_node: hostname for master node
+    :param username: username for node
+    :param password: password for node
+    :param ext_ip: External LB IP from client node setup
+    """
+    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
+    # return worker node
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
+    # pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.SERVER_POD_NAME_PREFIX)
+    worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
+    for worker in worker_node.keys():
+        w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
+        resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+        worker_node[worker].update({"eth1": resp[0].strip("\n")})  # eth1 for all worker nodes
+    worker_eth1 = [worker["eth1"] for worker in worker_node.values() if "eth1" in worker.keys()]
+    random.shuffle(worker_eth1)
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+    resp = json.loads(resp)
+    get_iosvc_data = dict()
+    for item_data in resp["items"]:
+        if item_data["spec"]["type"] == "LoadBalancer" and \
+                "cortx-io-svc-" in item_data["metadata"]["name"]:
+            svc = item_data["metadata"]["name"]
+            get_iosvc_data[svc] = dict()
+            if item_data["spec"].get("ports") is not None:
+                for port_items in item_data["spec"]["ports"]:
+                    get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
+                    get_iosvc_data[svc].update({"name": port_items["name"]})
+                    get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
+            else:
+                LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
+    LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_iosvc_data)
+    # for worker in worker_node.keys():
+    #     if get_iosvc_data.get(worker) is not None:
+    #         worker_node[worker].update(get_iosvc_data[worker])
+    #     else:
+    #         assert_utils.assert_true(False, f"Can't find port details for {worker} "
+    #                                         f"from {get_iosvc_data}")
+
+    with open(cm_const.HAPROXY_DUMMY_RGW_CONFIG, 'r') as f_read:
+        haproxy_dummy = f_read.readlines()
+    if not os.path.exists("/etc/haproxy"):
+        sys_utils.execute_cmd("mkdir -p {}".format("/etc/haproxy"))
+    with open(cm_const.const.CFG_FILES[0], "w") as f_write:
+        for line in haproxy_dummy:
+            if "# cortx_setup_1" in line:
+                line = f"    bind {ext_ip}:8000\n"
+                f_write.write(line)
+                continue
+            if "# cortx_setup_https" in line:
+                line = f"    bind {ext_ip}:8443 ssl crt /etc/ssl/stx/stx.pem\n"
+                f_write.write(line)
+                continue
+            # if "# auth_port_9080" in line:
+            #     line = f"    bind {ext_ip}:9080\n"
+            #     f_write.write(line)
+            #     continue
+            # if "# auth_https_port_9443" in line:
+            #     line = f"    bind {ext_ip}:9443 ssl crt /etc/ssl/stx/stx.pem\n"
+            #     f_write.write(line)
+            #     continue
+            if "# 8000 cortx_setup_1" in line:
+                for index, worker in enumerate(get_iosvc_data.keys(), 1):
+                    line = f"    server ha-s3-{index} {get_iosvc_data[svc]['eth1']}:" \
+                           f"{get_iosvc_data[svc]['8000']}    #port mapped to 8000\n"
+                    f_write.write(line)
+                continue
+            if "# 8443 cortx_setup_https" in line:
+                for index, worker in enumerate(get_iosvc_data.keys(), 1):
+                    line = f"    server ha-s3-ssl-{index} {get_iosvc_data[svc]['eth1']}:" \
+                           f"{get_iosvc_data[svc]['8443']} ssl verify none    #port mapped to 8443\n"
+                    f_write.write(line)
+                continue
+            # if "# 9080 s3_auth" in line:
+            #     for index, worker in enumerate(worker_node.keys(), 1):
+            #         line = f"    server s3authserver-instance{index} " \
+            #                f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']} " \
+            #                f"#port mapped to 9080\n"
+            #         f_write.write(line)
+            #     continue
+            # if "# 9443 s3_auth_https" in line:
+            #     for index, worker in enumerate(worker_node.keys(), 1):
+            #         line = f"    server s3authserver-instance-ssl-{index} " \
+            #                f"{worker_node[worker]['eth1']}:{worker_node[worker]['9443']} " \
+            #                f"ssl verify none    #port mapped to 9443\n"
+            #         f_write.write(line)
+            #     continue
+            f_write.write(line)

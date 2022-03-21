@@ -133,6 +133,17 @@ def main():
     port = resp[3]
     ext_port_ip = "{}:{}".format(ext_ip, port)
     print("External LB value, ip and port will be: {}".format(ext_port_ip))
+    resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
+    ext_ip = resp[1].strip("'\\n'b'")
+    print("External LB IP: {}".format(ext_ip))
+    print("Creating haproxy.cfg for {} Node setup".format(args.master_node))
+    haproxy_cfg = config['default']['haproxy_config']
+    ext_lb.configure_haproxy_rgw_lb(
+        master_node, username=username, password=args.password, ext_ip=ext_ip)
+    with open(haproxy_cfg, 'r') as f_read:
+        print((45 * "*" + "haproxy.cfg" + 45 * "*" + "\n"))
+        print(f_read.read())
+        print((100 * "*" + "\n"))
 
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 admin_user=admin_user, admin_passwd=admin_passwd,
