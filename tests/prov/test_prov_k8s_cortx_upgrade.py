@@ -87,8 +87,6 @@ class TestK8CortxUpgrade:
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
 
-
-
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
@@ -124,9 +122,10 @@ class TestK8CortxUpgrade:
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         new_installed_version = resp[1]['cortx']['common']['release']['version']
-        LOGGER.info("New CORTX image version: %s", new_installed_version)
-        assert_utils.assert_equals(installing_version, new_installed_version,
-                                   "Installing version is equal to new installed version.")
+        newly_installed_version = new_install_version.split("-")[1]
+        LOGGER.info("New CORTX image version: %s", newly_installed_version)
+        if int(upgrade_version) = int(newly_installed_version):
+            assert True, "Newly Installed version is same as upgrade version."
         LOGGER.info("Step 7 : Check PODs are up and running.")
         resp = self.deploy_lc_obj.check_pods_status(self.master_node_obj)
         assert_utils.assert_true(resp)
