@@ -130,7 +130,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
-    @pytest.mark.durability
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36580")
     def test_sns_repair_fail_disk_less_than_k(self):
@@ -227,7 +227,7 @@ class TestDiskFailureRecovery:
                     "are less than K(parity units)")
 
     # pylint: disable=too-many-statements
-    @pytest.mark.durability
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36581")
     def test_sns_repair_fail_disk_equal_to_k(self):
@@ -320,7 +320,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are equal to K(parity units)")
 
-    @pytest.mark.durability
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36393")
     def test_sns_repair_fail_disk_diff_cvg_less_than_k(self):
@@ -352,10 +352,16 @@ class TestDiskFailureRecovery:
         else:
             disk_fail_cnt = random.randint(1, self.parity_units-1)  # nosec
 
-        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
-                                          self.node_worker_list, self.pod_name, on_diff_cvg=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.failed_disks_dict = resp[1]
+        while disk_fail_cnt >= 1:
+            resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                              self.node_worker_list, self.pod_name, on_diff_cvg=True)
+            if "Number of cvg are less" in resp[1]:
+                disk_fail_cnt -= 1
+                continue
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+                self.failed_disks_dict = resp[1]
+                break
         time.sleep(self.delay_sns_repair)
 
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
@@ -417,7 +423,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are less than K(parity units) and from different cvg")
 
-    @pytest.mark.durability
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36394")
     def test_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
@@ -446,10 +452,16 @@ class TestDiskFailureRecovery:
         LOGGER.info("No of parity units (K): %s", self.parity_units)
         disk_fail_cnt = self.parity_units
 
-        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
-                                          self.node_worker_list, self.pod_name, on_diff_cvg=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.failed_disks_dict = resp[1]
+        while disk_fail_cnt >= 1:
+            resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                              self.node_worker_list, self.pod_name, on_diff_cvg=True)
+            if "Number of cvg are less" in resp[1]:
+                disk_fail_cnt -= 1
+                continue
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+                self.failed_disks_dict = resp[1]
+                break
         time.sleep(self.delay_sns_repair)
 
         LOGGER.info("Step 4: Get degraded byte count after disk failure")

@@ -204,6 +204,8 @@ class DiskFailureRecoveryLib:
                 if flg:
                     one_disk_per_cvg_dict[disk] = all_disks[disk]
             if len(one_disk_per_cvg_dict) < disk_fail_cnt:
+                LOGGER.info("for failing only one disk per cvg, "
+                            "number of cvg's are less than disk fail count")
                 return False, "Number of cvg are less than disk fail count"
             all_disks = copy.deepcopy(one_disk_per_cvg_dict)
 
