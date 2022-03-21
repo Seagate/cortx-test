@@ -34,20 +34,19 @@ from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
 
 class TestK8CortxUpgrade:
-    """
-    This class contains test cases for K8s CORTX Software Upgrade.
-    """
+    """ This class contains test cases for K8s CORTX Software Upgrade. """
 
     @classmethod
     def setup_class(cls):
         """Setup class"""
         LOGGER.info("STARTED: Setup Module operations")
-        cls.que = queue.Queue()
+        cls.que = queue.queue()
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
         cls.upgrade_image = os.getenv("UPGRADE_IMAGE",None)
@@ -76,7 +75,6 @@ class TestK8CortxUpgrade:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
 
-    @classmethod
     def teardown_class(self):
         """"
         Teardown method
@@ -166,14 +164,5 @@ class TestK8CortxUpgrade:
         # TO DO BUG #CORTX-29184
         LOGGER.info("Step 3: Start upgrade.")
         resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Check if installed version is equals to installing version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]['cortx']['common']['release']['version']
-        LOGGER.info("new_install_version: %s", new_installed_version)
-        newly_install_version = new_installed_version.split("-")[1]
-        LOGGER.info("New CORTX image version: %s", newly_install_version)
-        if int(upgrade_version) <= int(newly_install_version):
-            assert False, "new installed image version is same or higher than upgrade image version."
+        assert_utils.assert_False(resp[0],resp[1])
         LOGGER.info("Test Completed.")
