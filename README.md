@@ -1,5 +1,5 @@
 # cortx-test
-CORTX-TEST is a repository for multiple automation projects developed for CORTX LR-R2 and future versions.
+CORTX-TEST is a repository for multiple automation projects developed for CORTX and supported solutions/systems.
 
 It is logically divided into following components: 
 * Test Automation framework
