@@ -1735,7 +1735,8 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][2]
                                          , "Response message check failed")
-        self.log.info("##### Test completed -  %s #####", test_case_name) 
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+ 
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
