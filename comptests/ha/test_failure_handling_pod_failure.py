@@ -323,7 +323,7 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Before delete %s", before_del)
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 2: New data pod created automatically by kubernetes")
-        
+
         LOGGER.info("Step 3: Check pod failed alert in health monitor log")
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
@@ -339,4 +339,3 @@ class TestFailureHandlingPodFailure:
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
-
