@@ -193,7 +193,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("sns start resp: %s", resp)
 
         time.sleep(self.delay_sns_repair)
-        LOGGER.info("Step 8: Check degraded byte count after disk fail")
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
@@ -215,7 +215,7 @@ class TestDiskFailureRecovery:
                                                     skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36580-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
@@ -286,7 +286,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("sns start resp: %s", resp)
         time.sleep(self.delay_sns_repair)
 
-        LOGGER.info("Step 8: Check degraded byte count after disk fail")
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
@@ -308,7 +308,7 @@ class TestDiskFailureRecovery:
                                                     skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36581-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
@@ -382,7 +382,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("sns start resp: %s", resp)
         time.sleep(self.delay_sns_repair)
 
-        LOGGER.info("Step 8: Check degraded byte count after disk fail")
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
             (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
@@ -404,7 +404,7 @@ class TestDiskFailureRecovery:
                                                     skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36393-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
@@ -475,7 +475,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("sns start resp: %s", resp)
         time.sleep(self.delay_sns_repair)
 
-        LOGGER.info("Step 8: Check degraded byte count after disk fail")
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
         degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
         LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
@@ -497,7 +497,7 @@ class TestDiskFailureRecovery:
                                                     skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36394-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
