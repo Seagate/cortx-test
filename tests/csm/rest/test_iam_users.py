@@ -1549,7 +1549,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Check if keys are generated successfully")
         if len(get_resp.json()["keys"]) > 1:
-           self.log.info("second pair of keys generated")
+            self.log.info("second pair of keys generated")
         assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]!=resp.json()[
                             "keys"][0]["access_key"], "Access key not generated")
         assert_utils.assert_true(get_resp.json()["keys"][1]["secret_key"]!=resp.json()[
@@ -1610,7 +1610,7 @@ class TestIamUserRGW():
         invalid_params = ["access_key", "secret_key", "generate_key", "key_type"]
         for elements in invalid_params:
             if elements in payload:
-               del payload[elements]
+                del payload[elements]
         self.log.info("new random payload :  %s", payload)
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
@@ -1620,7 +1620,7 @@ class TestIamUserRGW():
         count=0
         for key in payload.keys():
             if payload[key]!=get_resp.json()[key]:
-               break
+                break
             count+=1
         assert_utils.assert_true(len(payload)==count, "Update not done successfully")
         self.log.info("[END]Update request with uid and other parameters randomly. ")
@@ -1735,8 +1735,7 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][2]
                                          , "Response message check failed")
-        self.log.info("##### Test completed -  %s #####", test_case_name)
-       
+        self.log.info("##### Test completed -  %s #####", test_case_name) 
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
