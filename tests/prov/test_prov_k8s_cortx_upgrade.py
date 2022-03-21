@@ -37,8 +37,8 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
-class TestK8CortxUpgrade:
 
+class TestK8CortxUpgrade:
     """ This class contains test cases for K8s CORTX Software Upgrade. """
 
     @classmethod
@@ -74,7 +74,6 @@ class TestK8CortxUpgrade:
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
-
         """"
         Teardown method
         """
