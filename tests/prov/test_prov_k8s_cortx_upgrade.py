@@ -87,6 +87,8 @@ class TestK8CortxUpgrade:
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
 
+
+
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
@@ -121,11 +123,10 @@ class TestK8CortxUpgrade:
         LOGGER.info("Step 6: Check if installed version is equals to installing version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]['cortx']['common']['release']['version']
-        newly_installed_version = new_install_version.split("-")[1]
-        LOGGER.info("New CORTX image version: %s", newly_installed_version)
-        if int(upgrade_version) = int(newly_installed_version):
-            assert True, "Newly Installed version is same as upgrade version."
+        new_installed_version = resp[1]['cortx']['common']['release']['version'].split("-")[1]
+        LOGGER.info("New CORTX image version: %s", new_installed_version)
+        assert_utils.assert_equals(new_installed_version, upgrade_version,
+                                   "new_installed version is equal to upgrade_version.")
         LOGGER.info("Step 7 : Check PODs are up and running.")
         resp = self.deploy_lc_obj.check_pods_status(self.master_node_obj)
         assert_utils.assert_true(resp)
@@ -163,7 +164,16 @@ class TestK8CortxUpgrade:
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         # TO DO BUG #CORTX-29184
-        if int(upgrade_version) <= int(installed_version):
-            assert False, "Installed version is same or higher than installing version."
-        #will upgrade method once #CORTX-29187
+        LOGGER.info("Step 3: Start upgrade.")
+        resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Check if installed version is equals to installing version.")
+        resp = HAK8s.get_config_value(self.master_node_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        new_installed_version = resp[1]['cortx']['common']['release']['version']
+        LOGGER.info("new_install_version: %s", new_installed_version)
+        newly_install_version = new_installed_version.split("-")[1]
+        LOGGER.info("New CORTX image version: %s", newly_install_version)
+        if int(upgrade_version) <= int(newly_install_version):
+            assert False, "new installed image version is same or higher than upgrade image version."
         LOGGER.info("Test Completed.")
