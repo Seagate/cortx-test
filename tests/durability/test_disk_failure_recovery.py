@@ -130,6 +130,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
+    @pytest.mark.durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36580")
     def test_sns_repair_fail_disk_less_than_k(self):
@@ -226,6 +227,7 @@ class TestDiskFailureRecovery:
                     "are less than K(parity units)")
 
     # pylint: disable=too-many-statements
+    @pytest.mark.durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36581")
     def test_sns_repair_fail_disk_equal_to_k(self):
@@ -318,6 +320,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are equal to K(parity units)")
 
+    @pytest.mark.durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36393")
     def test_sns_repair_fail_disk_diff_cvg_less_than_k(self):
@@ -414,6 +417,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are less than K(parity units) and from different cvg")
 
+    @pytest.mark.durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36394")
     def test_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
