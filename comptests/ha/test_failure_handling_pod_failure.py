@@ -113,7 +113,7 @@ class TestFailureHandlingPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
-   
+
     @staticmethod
     def get_node_resource_id(resp_dict):
         """
