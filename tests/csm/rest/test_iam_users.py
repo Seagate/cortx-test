@@ -1457,13 +1457,12 @@ class TestIamUserRGW():
         payload.update({"display_name":(uid+"1")})
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
-        self.log.info("Print resp with new display name")
         self.log.info("STEP 4: Perform get iam users to verify new display name")
         get_resp = self.csm_obj.get_iam_user(uid)
         self.log.info("Print user info %s", get_resp.json())
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Check if update is done successfully")
-        assert_utils.assert_true((get_resp.json()["display_name"] != resp.json()["display_name"]),
+        assert_utils.assert_true((get_resp.json()["display_name"] == uid+"1"),
                                  "Display Name not updated")
         self.log.info("[END]Update User with display name, correct uid in request.")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -1532,8 +1531,8 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("random")
         self.log.info("payload :  %s", payload)
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
-        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, 
-                                   "IAM user creation failed")
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
         uid = resp1.json()["tenant"] + "$" + payload['uid']
         self.created_iam_users.add(uid)
         self.log.info("STEP 2: Perform get iam users")
@@ -1549,9 +1548,11 @@ class TestIamUserRGW():
         self.log.info("Print user info %s", get_resp.json())
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Check if keys are generated successfully")
-        assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]!=resp.json()[
+        if len(get_resp.json()["keys"]) > 1:
+           self.log.info("second pair of keys generated")
+        assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]!=resp.json()[
                             "keys"][0]["access_key"], "Access key not generated")
-        assert_utils.assert_true(get_resp.json()["keys"][0]["secret_key"]!=resp.json()[
+        assert_utils.assert_true(get_resp.json()["keys"][1]["secret_key"]!=resp.json()[
                             "keys"][0]["secret_key"], "Secret key not generated")
         self.log.info("STEP 6: Create bucket and put object")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
@@ -1605,11 +1606,23 @@ class TestIamUserRGW():
         self.log.info("STEP 3: Update any random parameters for created user")
         payload = self.csm_obj.iam_user_patch_random_payload()
         self.log.info("Random payload is %s:", payload)
+        self.log.info("Deleting parameters which would not be present in response for updation")
+        invalid_params = ["access_key", "secret_key", "generate_key", "key_type"]
+        for elements in invalid_params:
+            if elements in payload:
+               del payload[elements]
+        self.log.info("new random payload :  %s", payload)
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
         self.log.info("STEP 4: Perform get iam users to verify updated random parameters")
         get_resp = self.csm_obj.get_iam_user(uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        count=0
+        for key in payload.keys():
+            if payload[key]!=get_resp.json()[key]:
+               break
+            count+=1
+        assert_utils.assert_true(len(payload)==count, "Update not done successfully")
         self.log.info("[END]Update request with uid and other parameters randomly. ")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -1648,6 +1661,7 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][0]
                                          , "Response message check failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -1683,7 +1697,8 @@ class TestIamUserRGW():
             if CSM_REST_CFG["msg_check"] == "enable":
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][1]
-                                         , "Response message check failed")
+                                          , "Response message check failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -1720,7 +1735,8 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][2]
                                          , "Response message check failed")
-
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+       
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -1757,6 +1773,7 @@ class TestIamUserRGW():
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][3]
                                          , "Response message check failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -1801,6 +1818,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.json()["message"] ==
                                      self.rest_resp_conf[4103]['EmailExists'][0]
                                      , "Response message check failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -1831,7 +1849,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Patch request status code failed")
-
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+   
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -1861,6 +1880,7 @@ class TestIamUserRGW():
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -1896,3 +1916,4 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.json()["message"] ==
                                      self.rest_resp_conf[4099]['empty key'][1]
                                      , "Response message check failed")
+        self.log.info("##### Test completed -  %s #####", test_case_name)

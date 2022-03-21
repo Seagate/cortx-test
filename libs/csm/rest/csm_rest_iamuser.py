@@ -671,14 +671,13 @@ class RestIamUser(RestTestLib):
         :param payload: payload for user creation
         :return: response
         """
-        self.log.info("Creating IAM user request....")
+        self.log.info("Modifying IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
         response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
         return response
 
-    @RestTestLib.authenticate_and_login
     def iam_user_patch_random_payload(self):
         """
         Return random patch payload for IAM user for RGW with Ceph
