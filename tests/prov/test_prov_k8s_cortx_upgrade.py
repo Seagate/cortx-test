@@ -52,7 +52,6 @@ class TestK8CortxUpgrade:
         cls.upgrade_image = os.getenv("UPGRADE_IMAGE",None)
         cls.current_image = os.getenv("CURRENT_IMAGE", None)
         cls.deploy_conf = PROV_CFG["k8s_cortx_deploy"]
-        cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
