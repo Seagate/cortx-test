@@ -139,13 +139,13 @@ class TestProvK8CortxRollingUpgrade:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
-        LOGGER.info("Step 7: Check if installed version is correct .")
+        LOGGER.info("Step 7: Check if installed version is equals to installing version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         new_installed_version = resp[1]['cortx']['common']['release']['version']
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
-                                   "Installing version is same as new installed version.")
+                                   "Installing version is not equal to new installed version.")
         LOGGER.info("Step 7: Done.")
         LOGGER.info("Test Completed.")
 
