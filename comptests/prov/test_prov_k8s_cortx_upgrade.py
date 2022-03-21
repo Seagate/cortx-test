@@ -290,8 +290,8 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check proper error message when invalid argument passed to upgrade script.")
-        upgrade_cmd = "sh upgrade-cortx-cloud.sh -abc"
-        cmd = "cd {}; {}".format(self.prov_deploy_cfg["git_remote_path"], upgrade_cmd)
+        cmd = "cd {}; {}".format(self.prov_deploy_cfg["git_remote_path"],
+                                 self.prov_deploy_cfg["uprade_with_wrong_param"])
         resp = self.master_node_obj.execute_cmd(cmd=cmd, exc=False)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -308,9 +308,9 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check proper error message when no argument passed to upgrade script.")
-        upgrade_cmd = "sh upgrade-cortx-cloud.sh"
         error_msg = "ERROR: Required option POD_TYPE is missing."
-        cmd = "cd {}; {}".format(self.prov_deploy_cfg["git_remote_path"], upgrade_cmd)
+        cmd = "cd {}; {}".format(self.prov_deploy_cfg["git_remote_path"],
+                                 self.prov_deploy_cfg["upgrade_with_no_param"])
         resp = self.master_node_obj.execute_cmd(cmd=cmd, exc=False)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
