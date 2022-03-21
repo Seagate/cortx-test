@@ -200,7 +200,7 @@ class TestMultiPodFailure:
                 node_iface = self.ip_dict.get(node_ip)[0]
                 worker_obj = self.ip_dict.get(node_ip)[1]
                 worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(node_iface, "up"),
-                                            read_lines=True)
+                                       read_lines=True)
                 resp = sysutils.check_ping(host=node_ip)
                 assert_utils.assert_true(resp, "Interface is still not up.")
         if os.path.exists(self.test_dir_path):
@@ -2599,7 +2599,8 @@ class TestMultiPodFailure:
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
-        LOGGER.info("Step 1: Create bucket, upload an object to one of the bucket ")
+        LOGGER.info("Step 1: Create bucket, upload an object and copy to the bucket")
+        # This is done just to get put_etag for further ops.
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -2607,7 +2608,9 @@ class TestMultiPodFailure:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
-        LOGGER.info("Step 1: Successfully created bucket, uploaded an object to the bucket")
+        LOGGER.info("Step 1: Successfully created bucket, uploaded and copied an object "
+                    "to the bucket")
+        bkt_obj_dict.clear()
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         for cnt in range(bkt_cnt):
