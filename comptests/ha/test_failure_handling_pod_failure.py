@@ -28,6 +28,7 @@ import time
 import pytest
 
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.ha.ha_comp_libs import HAK8SCompLib
 from config import CMN_CFG
 from config import HA_CFG
 from commons.utils import assert_utils
@@ -52,6 +53,7 @@ class TestFailureHandlingPodFailure:
         cls.node_master_list = []
         cls.host_list = []
         cls.ha_obj = HAK8s()
+        cls.ha_comp_obj = HAK8SCompLib()
         cls.restored = True
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         for node in range(cls.num_nodes):
@@ -108,11 +110,31 @@ class TestFailureHandlingPodFailure:
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
+        
+    @staticmethod
+    def get_node_resource_id(resp_dict):
+        """
+        This is a local method to verify the status and get node and resource ids
+        :param resp_dict: halog properties
+        """
+        source_list = resp_dict['source']
+        resource_type_list = resp_dict['resource_type']
+        resource_status_list = resp_dict['resource_status']
+        generation_id_list = resp_dict['generation_id']
+        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
+                                                          resource_status_list)):
+            assert_utils.assert_equal(data1, 'monitor',
+                                      f"Source of {generation_id_list[index]} is not from monitor")
+            assert_utils.assert_equal(data2, 'node',
+                                      f"Resource of {generation_id_list[index]} is not node")
+            assert_utils.assert_equal(data3, 'failed',
+                                      f"Resource status of {generation_id_list[index]} "
+                                      "is not failed")
 
+    @pytest.mark.skip(reason="CORTX-28823")
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-30218")
@@ -184,6 +206,7 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Step 1: Shutdown the data pod by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        before_del = len(pod_list)
         pod_name = random.sample(pod_list, 1)[0]
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
@@ -192,40 +215,28 @@ class TestFailureHandlingPodFailure:
         self.deployment_name = resp[1]
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
+        
+        LOGGER.info("Step 2: Check the node status.")
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        resp = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        after_del = len(resp)
+        LOGGER.info("After delete %s", after_del)
+        LOGGER.info("Before delete %s", before_del)
+        assert_utils.assert_not_equal(after_del, before_del, "Data pod didn't gets deleted")
+        LOGGER.info("Step 2: Node status shows with the deleted pod")
 
-        LOGGER.info("Step 2: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Cluster is in degraded state")
+        LOGGER.info("Step 3: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict)
+        LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
-        LOGGER.info("Step 3: Check pod failure alert.")
-        LOGGER.info("Step 4: Correct event and content should be published to component Hare.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        pod_nameha = pod_list[0]
-        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
-        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
-        node_obj = None
-        for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
-                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
-                                       username=CMN_CFG["nodes"][node]["username"],
-                                       password=CMN_CFG["nodes"][node]["password"])
-                break
-        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        LOGGER.info("Getting the HA pod pvc log dir %s", node_obj)
-        hapvc = None
-        for hapvc in pvc_list:
-            if common_const.HA_POD_NAME_PREFIX in hapvc:
-                hapvc = hapvc.replace("\n", "")
-                LOGGER.info("HA log pvc list %s", hapvc)
-                break
-        cmd_halog = "tail -5 /mnt/fs-local-volume/local-path-provisioner/" \
-                    + hapvc + "/log/ha/*/health_monitor.log | grep 'to component hare'"
-        output = node_obj.execute_cmd(cmd_halog)
-        LOGGER.info("Events output :%s", output)
-
-        # TODO: Pod failure alert verification - EOS-28560
-        # TODO: Correct event and contents published to component Hare - EOS-28560
+        LOGGER.info("Step 4: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 4: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod - delete replica replicaset")
@@ -244,6 +255,7 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Step 1: Shutdown the data pod by deleting deployment")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        before_del = len(pod_list)
         pod_name = random.sample(pod_list, 1)[0]
 
         LOGGER.info("Deleting pod %s", pod_name)
@@ -257,40 +269,28 @@ class TestFailureHandlingPodFailure:
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_DEPLOYMENT_K8S
 
-        LOGGER.info("Step 2: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Cluster is in degraded state")
+        LOGGER.info("Step 2: Check the node status.")
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        resp = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
+        after_del = len(resp)
+        LOGGER.info("After delete %s", after_del)
+        LOGGER.info("Before delete %s", before_del)
+        assert_utils.assert_not_equal(after_del, before_del, "Data pod didn't gets deleted")
+        LOGGER.info("Step 2: Node status shows with the deleted pod")
 
-        LOGGER.info("Step 3: Check pod failure alert.")
-        LOGGER.info("Step 4: Correct event and content should be published to component Hare.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        pod_nameha = pod_list[0]
-        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
-        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
-        node_obj = None
-        for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
-                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
-                                       username=CMN_CFG["nodes"][node]["username"],
-                                       password=CMN_CFG["nodes"][node]["password"])
-                break
-        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        LOGGER.info("Getting the HA pod pvc log dir %s", node_obj)
-        hapvc = None
-        for hapvc in pvc_list:
-            if common_const.HA_POD_NAME_PREFIX in hapvc:
-                hapvc = hapvc.replace("\n", "")
-                LOGGER.info("HA log pvc list %s", hapvc)
-                break
-        cmd_halog = "tail -5 /mnt/fs-local-volume/local-path-provisioner/" \
-                    + hapvc + "/log/ha/*/health_monitor.log | grep 'to component hare'"
-        output = node_obj.execute_cmd(cmd_halog)
-        LOGGER.info("Events output :%s", output)
+        LOGGER.info("Step 3: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict)
+        LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
-        # TODO: Pod failure alert verification - EOS-28560
-        # TODO: Correct event and contents published to component Hare - EOS-28560
-
+        LOGGER.info("Step 4: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 4: Successfully sent action event to hare")
+        
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod deployment - delete deployment")
 
@@ -323,34 +323,19 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("Before delete %s", before_del)
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 2: New data pod created automatically by kubernetes")
+        
+        LOGGER.info("Step 3: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict)
+        LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
-        LOGGER.info("Step 3: Check pod failure alert.")
-        LOGGER.info("Step 4: Correct event and content should be published to component Hare.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        pod_nameha = pod_list[0]
-        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
-        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
-        node_obj = None
-        for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
-                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
-                                       username=CMN_CFG["nodes"][node]["username"],
-                                       password=CMN_CFG["nodes"][node]["password"])
-                break
-        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        hapvc = None
-        for hapvc in pvc_list:
-            if common_const.HA_POD_NAME_PREFIX in hapvc:
-                hapvc = hapvc.replace("\n", "")
-                LOGGER.info("HA log pvc list %s", hapvc)
-                break
-        cmd_halog = "tail -5 /mnt/fs-local-volume/local-path-provisioner/" \
-                    + hapvc + "/log/ha/*/health_monitor.log | grep 'to component hare'"
-        output = node_obj.execute_cmd(cmd_halog)
-        LOGGER.info("Events output :%s", output)
-
-        # TODO: Pod failure alert verification - EOS-28560
-        # TODO: Correct event and contents published to component Hare - EOS-28560
+        LOGGER.info("Step 4: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 4: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
