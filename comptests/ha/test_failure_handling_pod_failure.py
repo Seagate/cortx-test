@@ -215,7 +215,7 @@ class TestFailureHandlingPodFailure:
         self.deployment_name = resp[1]
         self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
-        
+
         LOGGER.info("Step 2: Check the node status.")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         resp = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
