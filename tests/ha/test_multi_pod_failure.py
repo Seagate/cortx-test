@@ -22,6 +22,7 @@
 HA test suite for Multiple (K) Pods Failure
 """
 
+import copy
 import logging
 import os
 import random
@@ -29,7 +30,6 @@ import secrets
 import threading
 import time
 from multiprocessing import Process
-import copy
 from multiprocessing import Queue
 from time import perf_counter_ns
 
@@ -51,9 +51,9 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
@@ -2259,9 +2259,9 @@ class TestMultiPodFailure:
                                                       node_list=self.node_worker_list,
                                                       node_fqdn=data_node_fqdn)
             node_ip = resp[1]
-            ip_data.append(resp[2]) # node_iface
-            ip_data.append(resp[3]) # new_worker_obj
-            self.node_ip_list.append(node_ip) # node_ip_list
+            ip_data.append(resp[2])     # node_iface
+            ip_data.append(resp[3])     # new_worker_obj
+            self.node_ip_list.append(node_ip)   # node_ip_list
             assert_utils.assert_true(resp[0], "Node network is still up")
             LOGGER.info("Step 2: %s Node's network is down.", data_node_fqdn)
             remain_pod_list1 = list(filter(lambda x: x != data_pod_name, data_pod_list))
@@ -2733,6 +2733,7 @@ class TestMultiPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Multipart not completely supported till PI-7")
     @pytest.mark.tags("TEST-35783")
     @CTFailOn(error_handler)
     def test_partial_mpu_after_kpods_fail(self):
@@ -2743,7 +2744,7 @@ class TestMultiPodFailure:
         LOGGER.info("STARTED: Test to verify partial multipart upload after each data pod is "
                     "failed till K pods and complete upload after all K pods are failed")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
-        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        total_parts = self.kvalue * 10 + 50
         parts = list(range(1, total_parts + 1))
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
@@ -2788,9 +2789,10 @@ class TestMultiPodFailure:
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(uploading_parts, part_n["PartNumber"])
         LOGGER.info("Listed parts of partial multipart upload: %s", res[1])
-        parts = [ele for ele in parts if ele not in uploading_parts]
         LOGGER.info("Step 1: Successfully performed partial multipart upload for %s parts out "
                     "of total %s", uploading_parts, len(parts))
+        parts = [ele for ele in parts if ele not in uploading_parts]
+
         LOGGER.info("Shutdown %s (K) data pods one by one and Start multipart upload for "
                     "5GB object in multiple parts with every data pod shutdown", self.kvalue)
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -2930,6 +2932,7 @@ class TestMultiPodFailure:
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Multipart not completely supported till PI-7")
     @pytest.mark.tags("TEST-35784")
     @CTFailOn(error_handler)
     def test_mpu_during_kpods_shutdown(self):
@@ -2939,7 +2942,7 @@ class TestMultiPodFailure:
         LOGGER.info("STARTED: Test to verify multipart upload during data pods failure till K pods "
                     "by delete deployment")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
-        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        total_parts = self.kvalue * 10 + 50
         part_numbers = list(range(1, total_parts + 1))
         random.shuffle(part_numbers)
         output = Queue()
@@ -3046,7 +3049,7 @@ class TestMultiPodFailure:
             assert_utils.assert_true(False, "Failed to upload parts when cluster was in degraded "
                                             f"state. Failed parts: {failed_parts}")
         elif exp_failed_parts:
-            LOGGER.info("Step 6.1: Upload remaining parts")
+            LOGGER.info("Step 6.1: Upload expected failed remaining parts")
             resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                         bucket_name=self.bucket_name,
                                                         object_name=self.object_name,
@@ -3056,10 +3059,11 @@ class TestMultiPodFailure:
                                                         total_parts=total_parts,
                                                         multipart_obj_path=self.multipart_obj_path,
                                                         mpu_id=mpu_id)
-            assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+            assert_utils.assert_true(resp[0],
+                                     f"Failed to upload expected failed remaining parts {resp[1]}")
             parts_etag1 = resp[3]
             parts_etag = parts_etag + parts_etag1
-            LOGGER.info("Step 6.1: Successfully uploaded remaining parts")
+            LOGGER.info("Step 6.1: Successfully uploaded expected failed remaining parts")
         LOGGER.info("Step 6: Successfully checked background process responses")
 
         parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
