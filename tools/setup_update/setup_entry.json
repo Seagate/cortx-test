@@ -116,10 +116,10 @@
 
 "csm":
 {
-   "mgmt_vip": "",
-   "csm_admin_user":{
-   "username": "",
-   "password": ""
+  "mgmt_vip": "",
+  "csm_admin_user":{
+    "username": "",
+    "password": ""
   }
 }
 }
