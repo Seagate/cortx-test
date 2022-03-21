@@ -1454,8 +1454,9 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Send patch request to update display name")
         payload = {}
-        payload.update({"display_name":uid})
+        payload.update({"display_name":(uid+"1")})
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
         self.log.info("Print resp with new display name")
         self.log.info("STEP 4: Perform get iam users to verify new display name")
         get_resp = self.csm_obj.get_iam_user(uid)
@@ -1497,7 +1498,7 @@ class TestIamUserRGW():
         self.log.info("STEP 3: Send request with wrong uid in request to update display name")
         uid1 = uid+"1"
         payload = {}
-        payload.update({"display_name":uid})
+        payload.update({"display_name":(uid+"1")})
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
         assert response.json()["error_code"] == resp_error_code, (
@@ -1530,7 +1531,8 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("random")
         self.log.info("payload :  %s", payload)
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
-        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED, 
+                                   "IAM user creation failed")
         uid = resp1.json()["tenant"] + "$" + payload['uid']
         self.created_iam_users.add(uid)
         self.log.info("STEP 2: Perform get iam users")
@@ -1540,15 +1542,16 @@ class TestIamUserRGW():
         payload = {}
         payload.update({"generate_key":True})
         resp = self.csm_obj.modify_iam_user_rgw(uid, payload)
-        self.log.info("STEP 4: Perform get iam users to verify new display name")
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user modify failed")
+        self.log.info("STEP 4: Perform get iam users to verify newly created keys")
         get_resp = self.csm_obj.get_iam_user(uid)
         self.log.info("Print user info %s", get_resp.json())
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Check if keys are generated successfully")
-        assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]!="",
-                               "Access key not generated")
-        assert_utils.assert_true(get_resp.json()["keys"][0]["secret_key"]!="",
-                               "Secret key not generated")
+        assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]!=resp.json()[
+                            "keys"][0]["access_key"], "Access key not generated")
+        assert_utils.assert_true(get_resp.json()["keys"][0]["secret_key"]!=resp.json()[
+                            "keys"][0]["secret_key"], "Secret key not generated")
         self.log.info("STEP 6: Create bucket and put object")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
