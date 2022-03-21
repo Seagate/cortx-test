@@ -23,7 +23,6 @@
 import logging
 import os
 import time
-import queue
 import pytest
 
 from commons import constants as cons
@@ -38,7 +37,6 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
-
 class TestK8CortxUpgrade:
     """ This class contains test cases for K8s CORTX Software Upgrade. """
 
@@ -46,7 +44,6 @@ class TestK8CortxUpgrade:
     def setup_class(cls):
         """Setup class"""
         LOGGER.info("STARTED: Setup Module operations")
-        cls.que = queue.queue()
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
         cls.upgrade_image = os.getenv("UPGRADE_IMAGE",None)
@@ -83,8 +80,6 @@ class TestK8CortxUpgrade:
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-
-
 
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
