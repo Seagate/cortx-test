@@ -34,14 +34,19 @@ from commons.utils.s3_utils import get_unaligned_parts
 from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.s3_utils import get_multipart_etag
 from commons.utils.s3_utils import assert_s3_err_msg
-from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import backup_or_restore_files
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from commons import constants as const
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
-from libs.s3 import S3H_OBJ, CMN_CFG
+from libs.s3 import S3H_OBJ
+from libs.s3 import CMN_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
