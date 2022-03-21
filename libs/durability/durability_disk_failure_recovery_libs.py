@@ -20,16 +20,18 @@
 """
 HA disk failure recovery utility methods
 """
-import json
-import random
-import logging
 import copy
+import json
+import logging
+import random
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from config.s3 import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -220,14 +222,13 @@ class DiskFailureRecoveryLib:
             failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]
             all_disks.pop(selected_disk)
         return True, failed_disks_dict
-    def perform_near_full_sys_writes(self, master_obj: LogicalNode, memory_percent: int,
-                                     workload_in_mb: list, bucket_prefix: str):
+
+    def get_user_data_space_in_bytes(self, master_obj: LogicalNode, memory_percent: int) -> tuple:
         """
-        Perform write operation till the memory if filled to given percentage
-        :param master_obj: Logical node object of master
-        :param memory_percent: Perform write operation till memory if upto given input percentage
-        :param workload_in_mb: Object sizes to perform writes
-        :param bucket_prefix: Bucket prefix for the data written
+        Retrieve the available user data space in bytes to attain the given memory percent
+        :param master_obj: Logical node object of Master
+        :param memory_percent: Expected Memory Percentage to achieve.
+        :return : (boolean, int)
         """
         # Get available data disk space
         health_obj = Health(master_obj.hostname, master_obj.username, master_obj.password)
@@ -250,33 +251,83 @@ class DiskFailureRecoveryLib:
             expected_writes = (write_percent * total_cap) / 100
             user_data_writes = data_sns / sum_sns * expected_writes
             LOGGER.info("User writes to be performed in %s bytes", user_data_writes)
-
-            workload_in_mb.reverse()
-            mb = 1024 * 1024
-            user_data_writes = user_data_writes/mb
-            for each in workload_in_mb:
-                if user_data_writes > 0:
-                    break
-                samples = int(user_data_writes / each)
-                if samples > 0:
-                    user_data_writes -= (samples * each)
-                    bucket_name = f"{bucket_prefix}_{each}mb"
-                    obj_size = f'{each}Mb'
-                    resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
-                                           num_clients=10, num_sample=samples,
-                                           obj_name_pref="workload", obj_size=obj_size,
-                                           skip_cleanup=False, duration=None,
-                                           log_file_prefix=f"workload_{each}mb",
-                                           end_point=S3_CFG["s3_url"],
-                                           validate_certs=S3_CFG["validate_certs"])
-                    LOGGER.info(f"Workload: {samples} objects of {each} with 10 parallel clients ")
-                    LOGGER.info(f"Log Path {resp[1]}")
-                    assert not s3bench.check_log_file_error(resp[1]), \
-                        f"S3bench workload for failed for {each}MB. Please read log file {resp[1]}"
-                else:
-                    continue
+            return True, user_data_writes
         else:
             LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
                         current_usage_per, memory_percent)
-            bucket_prefix = None
-        return True, bucket_prefix
+            return True, 0
+
+    @staticmethod
+    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> list:
+        """
+        Perform write operation till the memory if filled to given percentage
+        :param s3userinfo: S3user dictionary with access/secret key
+        :param user_data_writes: Write operation to be performed for specific bytes
+        :param bucket_prefix: Bucket prefix for the data written
+        :return : list of dictionary
+                format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
+                     'obj_size': obj_size, 'num_sample': sample}]
+        """
+        workload = [1, 16, 128, 256, 512]  # workload in mb
+        mb = 1024 * 1024
+        client = 10
+        workload = [each * mb for each in workload]  # convert to bytes
+        each_workload_byte = user_data_writes / len(workload)
+        return_list = []
+        for obj_size in workload:
+            samples = int(each_workload_byte / obj_size)
+            if samples > 0:
+                bucket_name = f'{bucket_prefix}-{obj_size}b'
+                obj_name = f'obj_{obj_size}'
+                resp = s3bench.s3bench(s3userinfo['accesskey'],
+                                       s3userinfo['secretkey'],
+                                       bucket=bucket_name,
+                                       num_clients=client,
+                                       num_sample=samples,
+                                       obj_name_pref=obj_name, obj_size=obj_size,
+                                       skip_cleanup=False, duration=None,
+                                       log_file_prefix=f"workload_{obj_size}mb",
+                                       end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"])
+                LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,
+                            obj_size, client)
+                LOGGER.info(f"Log Path {resp[1]}")
+                assert not s3bench.check_log_file_error(resp[1]), \
+                    f"S3bench workload for failed for {obj_size}. Please read log file {resp[1]}"
+                return_list.append(
+                    {'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
+                     'obj_size': obj_size, 'num_sample': samples})
+            else:
+                continue
+        return return_list
+
+    @staticmethod
+    def perform_near_full_sys_operations(s3userinfo, workload_info: list, skipread: bool = True,
+            validate: bool = True, skipcleanup: bool = False):
+        """
+        Perform Read/Validate/Delete operations on the workload info using s3bench
+        :param s3userinfo: S3user dictionary with access/secret key
+        :param workload_info: S3bench workload info of performed writes
+        :param skipread: Skip reading objects created if True
+        :param validate: perform checksum validation on read data is True
+        :param skipcleanup: Skip deleting objects created if True
+        """
+        for each in workload_info:
+            resp = s3bench.s3bench(s3userinfo['accesskey'],
+                                   s3userinfo['secretkey'],
+                                   bucket=each['bucket'],
+                                   num_clients=each['num_clients'],
+                                   num_sample=each['num_sample'],
+                                   obj_name_pref=each['obj_name_pref'], obj_size=each['obj_size'],
+                                   skip_cleanup=skipcleanup,
+                                   skip_write=True,
+                                   skip_read=skipread,
+                                   validate=validate,
+                                   log_file_prefix=f"read_workload_{each['obj_size']}mb",
+                                   end_point=S3_CFG["s3_url"],
+                                   validate_certs=S3_CFG["validate_certs"])
+            LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
+                        each['obj_size'],each['num_clients'])
+            LOGGER.info(f"Log Path {resp[1]}")
+            assert not s3bench.check_log_file_error(resp[1]), \
+                f"S3bench workload failed for {each['obj_size']}. Please read log file {resp[1]}"
