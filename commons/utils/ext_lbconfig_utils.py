@@ -269,7 +269,7 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
                     get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
-                    get_iosvc_data[svc].update({"name": port_items["name"]})
+                    #get_iosvc_data[svc].update({"name": port_items["name"]})
             else:
                 LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
     print("get_iosvc_data is: ", get_iosvc_data)
@@ -304,13 +304,13 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
             #     f_write.write(line)
             #     continue
             if "# 8000 cortx_setup_1" in line:
-                for index, worker in enumerate(get_iosvc_data.keys(), 1):
+                for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-{index} {get_iosvc_data[svc]['eth1']}:" \
                            f"{get_iosvc_data[svc]['8000']}    #port mapped to 8000\n"
                     f_write.write(line)
                 continue
             if "# 8443 cortx_setup_https" in line:
-                for index, worker in enumerate(get_iosvc_data.keys(), 1):
+                for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-ssl-{index} {get_iosvc_data[svc]['eth1']}:" \
                            f"{get_iosvc_data[svc]['8443']} ssl verify none    #port mapped to 8443\n"
                     f_write.write(line)
