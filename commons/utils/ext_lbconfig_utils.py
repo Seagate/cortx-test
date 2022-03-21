@@ -246,14 +246,12 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
     :param ext_ip: External LB IP from client node setup
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
-    # return worker node
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
-    # pods_list = m_node_obj.get_all_pods(pod_prefix=cm_const.SERVER_POD_NAME_PREFIX)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
         resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-        worker_node[worker].update({"eth1": resp[0].strip("\n")})  # eth1 for all worker nodes
+        worker_node[worker].update({"eth1": resp[0].strip("\n")})
     worker_eth1 = [worker["eth1"] for worker in worker_node.values() if "eth1" in worker.keys()]
     print("Worker nodes eth1: ", worker_eth1)
     random.shuffle(worker_eth1)
@@ -269,18 +267,10 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
                     get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
-                    #get_iosvc_data[svc].update({"name": port_items["name"]})
             else:
                 LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
     print("get_iosvc_data is: ", get_iosvc_data)
     LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_iosvc_data)
-    # for worker in worker_node.keys():
-    #     if get_iosvc_data.get(worker) is not None:
-    #         worker_node[worker].update(get_iosvc_data[worker])
-    #     else:
-    #         assert_utils.assert_true(False, f"Can't find port details for {worker} "
-    #                                         f"from {get_iosvc_data}")
-
     with open(cm_const.HAPROXY_DUMMY_RGW_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
     if not os.path.exists("/etc/haproxy"):
@@ -295,14 +285,6 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                 line = f"    bind {ext_ip}:8443 ssl crt /etc/ssl/stx/stx.pem\n"
                 f_write.write(line)
                 continue
-            # if "# auth_port_9080" in line:
-            #     line = f"    bind {ext_ip}:9080\n"
-            #     f_write.write(line)
-            #     continue
-            # if "# auth_https_port_9443" in line:
-            #     line = f"    bind {ext_ip}:9443 ssl crt /etc/ssl/stx/stx.pem\n"
-            #     f_write.write(line)
-            #     continue
             if "# 8000 cortx_setup_1" in line:
                 for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-{index} {get_iosvc_data[svc]['eth1']}:" \
@@ -315,18 +297,4 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                            f"{get_iosvc_data[svc]['8443']} ssl verify none    #port mapped to 8443\n"
                     f_write.write(line)
                 continue
-            # if "# 9080 s3_auth" in line:
-            #     for index, worker in enumerate(worker_node.keys(), 1):
-            #         line = f"    server s3authserver-instance{index} " \
-            #                f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']} " \
-            #                f"#port mapped to 9080\n"
-            #         f_write.write(line)
-            #     continue
-            # if "# 9443 s3_auth_https" in line:
-            #     for index, worker in enumerate(worker_node.keys(), 1):
-            #         line = f"    server s3authserver-instance-ssl-{index} " \
-            #                f"{worker_node[worker]['eth1']}:{worker_node[worker]['9443']} " \
-            #                f"ssl verify none    #port mapped to 9443\n"
-            #         f_write.write(line)
-            #     continue
             f_write.write(line)
