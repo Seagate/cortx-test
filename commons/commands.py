@@ -522,6 +522,8 @@ CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+UPGRADE_NO_PARAM_CMD = "cd {}; sh upgrade-cortx-cloud.sh"
+UPGRADE_WRONG_PARAM_CMD = "cd {}; sh upgrade-cortx-cloud.sh -abc"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"

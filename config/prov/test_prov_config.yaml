@@ -6,5 +6,3 @@ k8s_prov_cortx_deploy:
   cold_upgrade: "sh upgrade-cortx-cloud.sh -cold"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   images_key: [ "cortxcontrol", "cortxdata", "cortxserver", "cortxha", "cortxclient" ]
-  upgrade_with_no_param: "sh upgrade-cortx-cloud.sh"
-  uprade_with_wrong_param: "sh upgrade-cortx-cloud.sh -abc"
