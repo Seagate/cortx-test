@@ -255,6 +255,7 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
         resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
         worker_node[worker].update({"eth1": resp[0].strip("\n")})  # eth1 for all worker nodes
     worker_eth1 = [worker["eth1"] for worker in worker_node.values() if "eth1" in worker.keys()]
+    print(worker_eth1)
     random.shuffle(worker_eth1)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
     resp = json.loads(resp)
