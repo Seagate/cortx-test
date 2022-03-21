@@ -24,14 +24,11 @@ import logging
 import os
 import time
 import queue
-from threading import Thread
-import yaml
 import pytest
 
-from commons import commands, configmanager
 from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
+from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
@@ -42,9 +39,9 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 LOGGER = logging.getLogger(__name__)
 
 
-class TestProvK8CortxUpgrade:
+class TestK8CortxUpgrade:
     """
-    This class contains Provisioner Component level test cases for K8s CORTX Software Upgrade.
+    This class contains test cases for K8s CORTX Software Upgrade.
     """
 
     @classmethod
@@ -101,9 +98,7 @@ class TestProvK8CortxUpgrade:
                                                    self.prov_deploy_cfg["git_remote_path"], exc=exc)
         self.que.put(resp)
 
-    @pytest.mark.run(order=1)
     @pytest.mark.lc
-    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
         """
@@ -119,18 +114,18 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 2: Done.")
         LOGGER.info("Step 3: Check if installing version is higher than installed version.")
-        # TODO : Better way to compare two versions.
         LOGGER.info("upgrade_image: %s", self.upgrade_image)
         upgrade_image_version = self.upgrade_image.split(":")[1]
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         if int(upgrade_version) <= int(installed_version):
-            assert_utils.assert_true(resp[0],"Installed version is same or higher than installing version." )
+            assert_utils.assert_true(resp[0],
+                                     "Installed version is same or higher than installing version.")
         else:
             LOGGER.info("Installed version is lower than installing version.")
-        # TODO : Use data-pod when cortx services framework is done.
         LOGGER.info("Step 4: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix=cons.POD_NAME_PREFIX)
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
+                                                  pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Start upgrade.")
         resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
@@ -146,18 +141,17 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("All PODs are up and running.")
         LOGGER.info("Step 11 : Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj, pod_prefix=cons.POD_NAME_PREFIX)
+        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
+                                                  pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         pod_name = self.master_node_obj.get_pod_name(pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(pod_name[0], pod_name[1])
         resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
-        # assert True
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
-    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
         """
@@ -173,13 +167,12 @@ class TestProvK8CortxUpgrade:
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 2: Done.")
         LOGGER.info("Step 3: Check if installing version is higher than installed version.")
-        # TODO : Better way to compare two versions.
         LOGGER.info("upgrade_image: %s", self.upgrade_image)
         upgrade_image_version = self.upgrade_image.split(":")[1]
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         # TO DO BUG #CORTX-29184
         if int(upgrade_version) <= int(installed_version):
-            assert_utils.assert_true(resp[0], "Installed version is same or higher than installing version.")
-        # assert True
+            assert_utils.assert_true(resp[0],
+                                     "Installed version is same or higher than installing version.")
         LOGGER.info("Test Completed.")
