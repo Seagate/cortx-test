@@ -18,12 +18,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test runner for ceph/s3-tests nosetests based tests."""
-# pylint: disable=B404
 import argparse
 import datetime
 import logging
 import os
-import subprocess
+import subprocess # nosec
 from core import runner
 from commons import params
 from commons.utils import system_utils
@@ -76,7 +75,6 @@ def collect_test_info(jira_obj, test):
     return test_name, test_label, test_to_run
 
 
-# pylint: disable=B603
 def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
     """Run nosetests command for execution."""
     cmd_line = [
@@ -85,7 +83,7 @@ def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
     ]
     log = open(log_file, 'a')
     LOGGER.info('Running nosetests command %s', cmd_line)
-    prc = subprocess.Popen(cmd_line, stdout=log, stderr=log, cwd=params.S3TESTS_DIR)
+    prc = subprocess.Popen(cmd_line, stdout=log, stderr=log, cwd=params.S3TESTS_DIR) # nosec
     prc.communicate()
     return "PASS" if prc.returncode == 0 else "FAIL"
 
