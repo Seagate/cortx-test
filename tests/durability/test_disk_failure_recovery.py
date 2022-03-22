@@ -31,7 +31,7 @@ from commons import constants as common_const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from config import CMN_CFG
+from config import CMN_CFG, HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -101,6 +101,8 @@ class TestDiskFailureRecovery:
         assert_utils.assert_true(resp[0], resp[1])
         self.pod_name = resp[1]
         LOGGER.info("Done: Setup operations.")
+
+        self.near_full_percent = HA_CFG['near_full_system_percent']
 
     def teardown_method(self):
         """
@@ -526,23 +528,22 @@ class TestDiskFailureRecovery:
     @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36396")
-    def test_near_full_sns_repair_fail_disk_diff_cvg_less_than_k(self):
+    def test_near_full_fail_disk_diff_cvg_less_than_k(self):
         """
         Validate SNS repair works fine on near full system with failed
         disks are less than K(parity units)
         """
         LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
                     "are less than K(parity units)")
-        near_full_percent = 60
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = users
         workload_info = None
         s3userinfo = list(users.values())[0]
 
         LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
-                    near_full_percent)
+                    self.near_full_percent)
         resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             near_full_percent)
+                                                             self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:
@@ -648,23 +649,23 @@ class TestDiskFailureRecovery:
     @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36397")
-    def test_near_full_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
+    def test_near_full_fail_disk_diff_cvg_equal_to_k(self):
         """
         Validate SNS repair works fine on near full system with failed disks
         are equal to K(parity units)
         """
         LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
                     "are equal to K(parity units)")
-        near_full_percent = 60
+
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = users
         workload_info = None
         s3userinfo = list(users.values())[0]
 
         LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
-                    near_full_percent)
+                    self.near_full_percent)
         resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             near_full_percent)
+                                                             self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:
@@ -766,7 +767,7 @@ class TestDiskFailureRecovery:
     @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36398")
-    def test_sns_repair_fail_disk_same_cvg_less_equal_to_k(self):
+    def test_fail_disk_same_cvg_less_equal_to_k(self):
         """
         Validate SNS repair works fine with failed disks are less than or equal to K(parity units)
         on same cvg
@@ -865,23 +866,22 @@ class TestDiskFailureRecovery:
     @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36399")
-    def test_near_full_sns_repair_fail_disk_same_cvg_less_equal_to_k(self):
+    def test_near_full_fail_disk_same_cvg_less_equal_to_k(self):
         """
         Validate SNS repair works fine on near full system with failed disks on same cvg
         are less or equal to K(parity units)
         """
         LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
                     "on same cvg are equal to K(parity units)")
-        near_full_percent = 60
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = users
         workload_info = None
         s3userinfo = list(users.values())[0]
 
         LOGGER.info("Step 1: PerformWrite operations till overall disk space is filled %s",
-                    near_full_percent)
+                    self.near_full_percent)
         resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             near_full_percent)
+                                                             self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:

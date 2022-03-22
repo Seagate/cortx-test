@@ -29,6 +29,7 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from scripts.s3_bench import s3bench
@@ -282,6 +283,9 @@ class DiskFailureRecoveryLib:
                      'obj_size': obj_size, 'num_sample': sample}]
         """
         workload = [1, 16, 128, 256, 512]  # workload in mb
+        if CMN_CFG["setup_type"] == "HW":
+            workload.extend([1024,2048,3072,4096])
+
         mb = 1024 * 1024
         client = 10
         workload = [each * mb for each in workload]  # convert to bytes
