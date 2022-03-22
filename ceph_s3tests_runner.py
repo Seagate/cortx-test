@@ -42,11 +42,20 @@ def parse_args():
                         help="Jira Xray Test Plan ID")
     parser.add_argument("-tt", "--test_type", type=str,
                         help="Type of tests to execute")
+    parser.add_argument("-ll", "--log_level", type=int, default=20,
+                        help="log level value as defined below" +
+                             "CRITICAL = 50" +
+                             "FATAL = CRITICAL" +
+                             "ERROR = 40" +
+                             "WARNING = 30 WARN = WARNING" +
+                             "INFO = 20 DEBUG = 10"
+                        )
     return parser.parse_args()
 
 
 def get_tests_from_te(jira_obj, args, test_type=None):
     """Get tests from given test execution"""
+    LOGGER.info("Fetching test list from TE : %s", args.te_ticket)
     if test_type is None:
         test_type = ['ALL']
     test_list, _ = jira_obj.get_test_ids_from_te(str(args.te_ticket), test_type)
@@ -70,7 +79,7 @@ def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
     """Run nosetests command for execution"""
     cmd_line = f"{params.VIRTUALENV_DIR}/bin/nosetests {test_to_run}"
     log = open(log_file, 'a')
-    LOGGER.debug('Running nosetests command %s', cmd_line)
+    LOGGER.info('Running nosetests command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, shell=True, stdout=log, stderr=log, cwd=params.S3TESTS_DIR)
     prc.communicate()
     return "PASS" if prc.returncode == 0 else "FAIL"
@@ -81,6 +90,7 @@ def trigger_tests_from_te(args):
     Get the tests from test execution
     Trigger those tests using nosetests command
     """
+    LOGGER.info("Starting test execution")
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
     test_list = get_tests_from_te(jira_obj, args, args.test_type)
@@ -99,7 +109,7 @@ def trigger_tests_from_te(args):
 
     for test in test_list:
         test_id = str(test[0])
-        LOGGER.debug("TEST ID : ", test_id)
+        LOGGER.info("TEST ID : %s", test_id)
         test_name, test_label, test_to_run = collect_test_info(jira_obj, test)
 
         log_file_name = f"{test_id}_{test_to_run}.log"
@@ -120,12 +130,17 @@ def trigger_tests_from_te(args):
                                                    remote_path=remote_path,
                                                    local_path=log_file)
         if resp[0]:
-            LOGGER.debug("Log file is uploaded at location : %s", resp[1])
+            LOGGER.info("Log file is uploaded at location : %s", resp[1])
         else:
-            LOGGER.debug("Failed to upload log file at location : %s", resp[1])
+            LOGGER.info("Failed to upload log file at location : %s", resp[1])
 
         # Update Jira for status and log file
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
+
+
+def initialize_loghandler(level=logging.DEBUG):
+    """Initialize ceph s3tests runner logging."""
+    logging.basicConfig(level=level)
 
 
 def main(args):
@@ -134,4 +149,5 @@ def main(args):
 
 if __name__ == '__main__':
     opts = parse_args()
+    initialize_loghandler(opts.log_level)
     main(opts)
