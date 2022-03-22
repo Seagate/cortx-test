@@ -2,10 +2,10 @@
 CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
 
 It is logically divided into following components:
-	* Test Automation framework
-	* Test Execution Framework
-	* Robot framework and
-	* Tools (reporting, DI, clone TP etc.)
+	*	Test Automation framework
+	*	Test Execution Framework
+	*	Robot framework and
+	*	Tools (reporting, DI, clone TP etc.)
 
 ## Getting Started
 This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
