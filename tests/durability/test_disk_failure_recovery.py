@@ -22,18 +22,19 @@ Test suite for disk failure recovery
 """
 
 import logging
-import time
 import random
+import time
+
 import pytest
 
+from commons import constants as common_const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from commons import constants as common_const
-from config import CMN_CFG
+from config import CMN_CFG, HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.durability.durability_disk_failure_recovery_libs import DiskFailureRecoveryLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -51,10 +52,8 @@ class TestDiskFailureRecovery:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.username = []
-        cls.password = []
         cls.test_prefix = []
-        cls.failed_disks = []
+        cls.failed_disks_dict = []
         cls.node_master_list = []
         cls.hlth_master_list = []
         cls.node_worker_list = []
@@ -62,24 +61,23 @@ class TestDiskFailureRecovery:
         cls.dsk_rec_obj = DiskFailureRecoveryLib()
         cls.s3_clean = None
         cls.parity_units = None
+        cls.pod_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.delay_sns_repair = 30
 
-        for node in range(cls.num_nodes):
-            cls.host = CMN_CFG["nodes"][node]["hostname"]
-            user_name = CMN_CFG["nodes"][node]["username"]
-            user_pass = CMN_CFG["nodes"][node]["password"]
-            if CMN_CFG["nodes"][node]["node_type"] == "master":
-                cls.node_master_list.append(LogicalNode(hostname=cls.host,
-                                                        username=user_name,
+        for node in CMN_CFG["nodes"]:
+            host = node["hostname"]
+            user_name = node["username"]
+            user_pass = node["password"]
+            if node["node_type"] == "master":
+                cls.node_master_list.append(LogicalNode(hostname=host, username=user_name,
                                                         password=user_pass))
-                cls.hlth_master_list.append(Health(hostname=cls.host,
-                                                   username=user_name,
+                cls.hlth_master_list.append(Health(hostname=host, username=user_name,
                                                    password=user_pass))
             else:
-                cls.node_worker_list.append(LogicalNode(hostname=cls.host,
-                                                        username=user_name,
+                cls.node_worker_list.append(LogicalNode(hostname=host, username=user_name,
                                                         password=user_pass))
+        cls.near_full_percent = HA_CFG['near_full_system_percent']
 
     def setup_method(self):
         """
@@ -98,6 +96,11 @@ class TestDiskFailureRecovery:
         resp = self.dsk_rec_obj.retrieve_durability_values(self.node_master_list[0], "sns")
         assert_utils.assert_true(resp[0], resp[1])
         self.parity_units = resp[1]['parity']
+
+        LOGGER.info("Getting data pod name.")
+        resp = self.node_master_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.pod_name = resp[1]
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -106,13 +109,12 @@ class TestDiskFailureRecovery:
         """
         LOGGER.info("STARTED: Teardown Operations.")
         LOGGER.info("Cleanup: Make failed disks online")
-        resp = self.node_master_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
-        pod_name = resp[1]
-        for select_disk in self.failed_disks:
-            fail_disk = select_disk.split('$')
-            resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
-                                                            fail_disk[0], fail_disk[2], "online")
+        for disk in self.failed_disks_dict:
+            resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0],
+                                                            self.pod_name,
+                                                            self.failed_disks_dict[disk][0],
+                                                            self.failed_disks_dict[disk][2],
+                                                            "online")
             LOGGER.info("disk status change resp: %s", resp)
         LOGGER.info("Cleanup: Made all disks online")
 
@@ -128,6 +130,7 @@ class TestDiskFailureRecovery:
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36580")
     def test_sns_repair_fail_disk_less_than_k(self):
@@ -153,37 +156,21 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("Step 3: Fail disks less than K(parity units)")
         LOGGER.info("No of parity units (K): %s", self.parity_units)
-
         if self.parity_units == 1:
             disk_fail_cnt = 1
         else:
-            disk_fail_cnt = random.randint(1, self.parity_units-1)  # nosec
-        LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
+            disk_fail_cnt = random.randint(1, self.parity_units - 1)  # nosec
 
-        resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
-                                                    self.node_worker_list)
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name)
         assert_utils.assert_true(resp[0], resp[1])
-        all_disks = resp[1]
-        LOGGER.info("list of all disks: %s", all_disks)
-
-        resp = self.node_master_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
-        pod_name = resp[1]
-
-        for cnt in range(disk_fail_cnt):
-            selected_disk = random.choice(all_disks)  # nosec
-            fail_disk = selected_disk.split('$')
-            LOGGER.info("disk fail loop: %s, disk selected for failure: %s", cnt + 1, fail_disk)
-            resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
-                                                            fail_disk[0], fail_disk[2], "failed")
-            LOGGER.info("fail disk resp: %s", resp)
-            self.failed_disks.append(selected_disk)
-
+        self.failed_disks_dict = resp[1]
         time.sleep(self.delay_sns_repair)
+
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
-        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -203,19 +190,18 @@ class TestDiskFailureRecovery:
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Step 7: Start SNS repair")
-        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", pod_name)
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
         LOGGER.info("sns start resp: %s", resp)
 
         time.sleep(self.delay_sns_repair)
-        LOGGER.info("Step 8: Check degraded byte counts are zero "
-                    "or less than count after disk fail")
-        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after sns repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -227,11 +213,10 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 10: Read data written in step 1")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[0],
-                                                    skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36580-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
@@ -242,6 +227,7 @@ class TestDiskFailureRecovery:
                     "are less than K(parity units)")
 
     # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36581")
     def test_sns_repair_fail_disk_equal_to_k(self):
@@ -263,38 +249,22 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 2: Get degraded byte count before failing the disk")
         degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
                                                                         "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_before)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
 
-        LOGGER.info("Step 3: Fail disks less than K(parity units)")
+        LOGGER.info("Step 3: Fail disks equal to K(parity units)")
         LOGGER.info("No of parity units (K): %s", self.parity_units)
-
         disk_fail_cnt = self.parity_units
-        LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
 
-        resp = self.dsk_rec_obj.get_all_nodes_disks(self.node_master_list[0],
-                                                    self.node_worker_list)
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name)
         assert_utils.assert_true(resp[0], resp[1])
-        all_disks = resp[1]
-        LOGGER.info("list of all disks: %s", all_disks)
-
-        resp = self.node_master_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
-        pod_name = resp[1]
-
-        for cnt in range(disk_fail_cnt):
-            selected_disk = random.choice(all_disks)  # nosec
-            fail_disk = selected_disk.split('$')
-            LOGGER.info("disk fail loop: %s, disk selected for failure: %s", cnt + 1, fail_disk)
-            resp = self.dsk_rec_obj.change_disk_status_hctl(self.node_master_list[0], pod_name,
-                                                            fail_disk[0], fail_disk[2], "failed")
-            LOGGER.info("fail disk resp: %s", resp)
-            self.failed_disks.append(selected_disk)
-
+        self.failed_disks_dict = resp[1]
         time.sleep(self.delay_sns_repair)
+
         LOGGER.info("Step 4: Get degraded byte count after disk failure")
-        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl\
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_fail)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
 
         if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
@@ -314,15 +284,14 @@ class TestDiskFailureRecovery:
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Step 7: Start SNS repair")
-        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", pod_name)
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
         LOGGER.info("sns start resp: %s", resp)
-
         time.sleep(self.delay_sns_repair)
-        LOGGER.info("Step 8: Check degraded byte counts are zero "
-                    "or less than count after disk fail")
-        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl\
+
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
             (self.hlth_master_list[0], "degraded_byte_count")
-        LOGGER.info("degraded byte cunt: %s", degraded_byte_cnt_after_repair)
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after sns repair is greater than "
@@ -338,11 +307,10 @@ class TestDiskFailureRecovery:
         LOGGER.info("Step 10: Read data written in step 1")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[0],
-                                                    skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 11: Do IOs(Write and Read)")
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
         self.test_prefix.append('test-36581-after-recovery')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix[-1],
@@ -351,3 +319,670 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
                     "are equal to K(parity units)")
+
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36393")
+    def test_sns_repair_fail_disk_diff_cvg_less_than_k(self):
+        """
+        Validate SNS repair works fine with failed disks are less than K(parity units)
+        and from different cvg
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine with failed disks "
+                    "are less than K(parity units) and from different cvg")
+
+        LOGGER.info("Step 1: Do IOs(Write and Read)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix.append('test-36393')
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 2: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
+                                                                        "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 3: Fail disks less than K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        if self.parity_units == 1:
+            disk_fail_cnt = 1
+        else:
+            disk_fail_cnt = random.randint(1, self.parity_units - 1)  # nosec
+
+        while disk_fail_cnt >= 1:
+            resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                              self.node_worker_list, self.pod_name,
+                                              on_diff_cvg=True)
+            if "Number of cvg are less" in resp[1]:
+                disk_fail_cnt -= 1
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+                self.failed_disks_dict = resp[1]
+                break
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 4: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        LOGGER.info("Step 5: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36393-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 6: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count after sns repair")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 9: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 10: Read data written in step 1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36393-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
+                    "are less than K(parity units) and from different cvg")
+
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36394")
+    def test_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
+        """
+        Validate SNS repair works fine with failed disks are equal to K(parity units)
+        and from different cvg
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine with failed disks "
+                    "are equal to K(parity units) and from different cvg")
+
+        LOGGER.info("Step 1: Do IOs(Write and Read)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix.append('test-36394')
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 2: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
+                                                                        "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 3: Fail disks equal to K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        disk_fail_cnt = self.parity_units
+
+        while disk_fail_cnt >= 1:
+            resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                              self.node_worker_list, self.pod_name,
+                                              on_diff_cvg=True)
+            if "Number of cvg are less" in resp[1]:
+                disk_fail_cnt -= 1
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+                self.failed_disks_dict = resp[1]
+                break
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 4: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        LOGGER.info("Step 5: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36394-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 6: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count after sns repair")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 9: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 10: Read data written in step 1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36394-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
+                    "are equal to K(parity units) and from different cvg")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36396")
+    def test_near_full_fail_disk_diff_cvg_less_than_k(self):
+        """
+        Validate SNS repair works fine on near full system with failed
+        disks are less than K(parity units)
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
+                    "are less than K(parity units)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users
+        workload_info = None
+        s3userinfo = list(users.values())[0]
+
+        LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
+                    self.near_full_percent)
+        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                             self.near_full_percent)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if not resp[1]:
+            LOGGER.info("Current Memory usage is already more than expected memory usage,"
+                        " skipping write operation")
+        else:
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                 user_data_writes=resp[1],
+                                                                 bucket_prefix=
+                                                                 self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
+
+        LOGGER.info("Step 2: Do IOs(Write and Read)")
+        self.test_prefix.append('test-36396')
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 3: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
+                                                                        "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 4: Fail disks less than K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        if self.parity_units == 1:
+            disk_fail_cnt = 1
+        else:
+            disk_fail_cnt = random.randint(1, self.parity_units - 1)  # nosec
+
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name, on_diff_cvg=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.failed_disks_dict = resp[1]
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 5: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        # TODO : check if system goes into read only mode
+        LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36396-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 8: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+
+        time.sleep(self.delay_sns_repair)
+        LOGGER.info("Step 9: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count after sns repair")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 10: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Read data written in step 2")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 12: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36396-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if workload_info:
+            LOGGER.info("Step 13: Read data written in step 1")
+            self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                              workload_info=workload_info)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
+                    "are less than K(parity units)")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36397")
+    def test_near_full_fail_disk_diff_cvg_equal_to_k(self):
+        """
+        Validate SNS repair works fine on near full system with failed disks
+        are equal to K(parity units)
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
+                    "are equal to K(parity units)")
+
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users
+        workload_info = None
+        s3userinfo = list(users.values())[0]
+
+        LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
+                    self.near_full_percent)
+        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                             self.near_full_percent)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if not resp[1]:
+            LOGGER.info("Current Memory usage is already more than expected memory usage,"
+                        " skipping write operation")
+        else:
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                          user_data_writes=resp[1],
+                                                                          bucket_prefix=
+                                                                          self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
+
+        LOGGER.info("Step 2: Do IOs(Write and Read)")
+        self.test_prefix.append('test-36397')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 3: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
+                                                                        "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 4: Fail disks equal to K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        disk_fail_cnt = self.parity_units
+
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name, on_diff_cvg=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.failed_disks_dict = resp[1]
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 5: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        # TODO : check if system goes into read only mode
+        LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36397-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 8: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 9: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after sns repair is greater than "
+                                            "or equal to degraded byte count after disk fail")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 10: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Read data written in step 2")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 12: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36397-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if workload_info:
+            LOGGER.info("Step 13: Read data written in step 1")
+            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                              workload_info=workload_info)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
+                    "are equal to K(parity units)")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36398")
+    def test_fail_disk_same_cvg_less_equal_to_k(self):
+        """
+        Validate SNS repair works fine with failed disks are less than or equal to K(parity units)
+        on same cvg
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine with failed disks "
+                    "are less than or equal to K(parity units) on same cvg")
+
+        LOGGER.info("Step 1: Do IOs(Write and Read)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix.append('test-36398')
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 2: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(
+            self.hlth_master_list[0],
+            "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 3: Fail disks less than K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        if self.parity_units == 1:
+            disk_fail_cnt = 1
+        else:
+            disk_fail_cnt = random.randint(1, self.parity_units - 1)  # nosec
+
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name, on_same_cvg=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.failed_disks_dict = resp[1]
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 4: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        LOGGER.info("Step 5: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36398-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 6: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+
+        time.sleep(self.delay_sns_repair)
+        LOGGER.info("Step 8: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count after repair")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 9: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 10: Read data written in step 1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36398-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("COMPLETED: Test SNS repair works fine with failed disks "
+                    "are less than K(parity units) on same cvg")
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.data_durability
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-36399")
+    def test_near_full_fail_disk_same_cvg_less_equal_to_k(self):
+        """
+        Validate SNS repair works fine on near full system with failed disks on same cvg
+        are less or equal to K(parity units)
+        """
+        LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
+                    "on same cvg are equal to K(parity units)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users
+        workload_info = None
+        s3userinfo = list(users.values())[0]
+
+        LOGGER.info("Step 1: PerformWrite operations till overall disk space is filled %s",
+                    self.near_full_percent)
+        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                             self.near_full_percent)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if not resp[1]:
+            LOGGER.info("Current Memory usage is already more than expected memory usage,"
+                        " skipping write operation")
+        else:
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                          user_data_writes=resp[1],
+                                                                          bucket_prefix=
+                                                                          self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
+
+        LOGGER.info("Step 2: Do IOs(Write and Read)")
+        self.test_prefix.append('test-36399')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 3: Get degraded byte count before failing the disk")
+        degraded_byte_cnt_before = self.dsk_rec_obj.get_byte_count_hctl(self.hlth_master_list[0],
+                                                                        "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_before)
+
+        LOGGER.info("Step 4: Fail disks equal to K(parity units)")
+        LOGGER.info("No of parity units (K): %s", self.parity_units)
+        disk_fail_cnt = self.parity_units
+
+        resp = self.dsk_rec_obj.fail_disk(disk_fail_cnt, self.node_master_list[0],
+                                          self.node_worker_list, self.pod_name, on_same_cvg=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.failed_disks_dict = resp[1]
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 5: Get degraded byte count after disk failure")
+        degraded_byte_cnt_after_fail = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_fail)
+
+        if degraded_byte_cnt_before >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
+                                            "or equal to degraded byte count before disk fail")
+        else:
+            LOGGER.info("Degraded byte count is more as expected after disk fail")
+
+        # TODO : check if system goes into read only mode
+        LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
+        self.test_prefix.append('test-36399-after-disk-fail')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 7: Check cluster status")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 8: Start SNS repair")
+        resp = self.dsk_rec_obj.sns_repair(self.node_master_list[0], "start", self.pod_name)
+        LOGGER.info("sns start resp: %s", resp)
+        time.sleep(self.delay_sns_repair)
+
+        LOGGER.info("Step 9: Check degraded byte count after sns repair")
+        degraded_byte_cnt_after_repair = self.dsk_rec_obj.get_byte_count_hctl \
+            (self.hlth_master_list[0], "degraded_byte_count")
+        LOGGER.info("degraded byte count: %s", degraded_byte_cnt_after_repair)
+
+        if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
+            assert_utils.assert_true(False, "Degraded byte count after sns repair is greater than "
+                                            "or equal to degraded byte count after disk fail")
+        else:
+            LOGGER.info("Degraded byte count after sns repair is less than "
+                        "degraded byte count after disk fail")
+
+        LOGGER.info("Step 10: Check cluster status after repair")
+        resp = self.hlth_master_list[0].all_cluster_services_online()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 11: Read data written in step 2")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[0],
+                                                    skipwrite=True, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 12: Do IOs(Write and Read) after sns repair")
+        self.test_prefix.append('test-36399-after-recovery')
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
+                                                    log_prefix=self.test_prefix[-1],
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        if workload_info:
+            LOGGER.info("Step 13: Read data written in step 1")
+            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                              workload_info=workload_info)
+            assert_utils.assert_true(resp[0],resp[1])
+        LOGGER.info("COMPLETED: Validate SNS repair works fine on near full system with failed "
+                    "disks on same cvg are equal to K(parity units)")

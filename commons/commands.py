@@ -167,6 +167,13 @@ PCS_STATUS_CMD = "pcs status"
 SELINUX_STATUS_CMD = "sestatus > {}"
 IPMI_SDR_LIST_CMD = "ipmitool sdr list"
 
+# Mock monitor commands.
+PUBLISH_CMD = "{} publish -f {}"
+GET_DATA_NODE_ID_CMD = "{} -gdt"
+GET_SERVER_NODE_ID_CMD = "{} -gs"
+GET_DISK_ID_CMD = "{} get-disks -n {}"
+GET_CVG_ID_CMD = "{} get-cvgs -n {}"
+
 # All the constants are alphabetically arranged.
 """All the constants are alphabetically arranged."""
 PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
@@ -522,7 +529,14 @@ CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+<<<<<<< HEAD
 UPGRADE_CLUSTER_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
+=======
+UPGRADE_CLUSTER_CMD = "cd {}; sh upgrade-cortx-cloud.sh -p {}"
+
+# Incomplete commands
+UPGRADE_NEG_CMD = "cd {}; sh upgrade-cortx-cloud.sh"
+>>>>>>> 64a9820ce68c979b065cd69a50fa28848f0a3ab0
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
