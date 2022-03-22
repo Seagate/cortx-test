@@ -17,7 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Test runner for ceph/s3-tests nosetests based tests"""
+"""Test runner for ceph/s3-tests nosetests based tests."""
 import argparse
 import datetime
 import logging
@@ -111,7 +111,7 @@ def trigger_tests_from_te(args):
     for test in test_list:
         test_id = str(test[0])
         LOGGER.info("TEST ID : %s", test_id)
-        _, test_label, test_to_run = collect_test_info(jira_obj, test)
+        _, _, test_to_run = collect_test_info(jira_obj, test)
 
         log_file_name = f"{test_id}_{test_to_run}.log"
         log_file = os.path.join(reports_dir, log_file_name)
