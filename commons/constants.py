@@ -466,26 +466,3 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
-
-#errors for rgw and cortx s3
-RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
-                         "operation: Unknown")
-CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
-                           "operation: Your key is too long.")
-RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
-                      "operation: Unknown")
-CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
-                        "operation: One or more of the specified parts could not be found. "
-                        "The part might not have been uploaded, or the specified entity tag"
-                        " might not have matched the part's entity tag.")
-RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
-                              "CreateBucket operation: Unknown")
-CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
-                                "the CreateBucket operation: Your previous request to create the "
-                                "named bucket succeeded and you already own it.")
-RGW_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart operation: "
-                          "Unknown")
-CORTX_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart "
-                            "operation: The specified multipart upload does not exist. The "
-                            "upload ID might be invalid, or the multipart upload might have been "
-                            "aborted or completed.")
