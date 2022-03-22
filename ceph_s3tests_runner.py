@@ -32,7 +32,7 @@ from commons.utils.jira_utils import JiraTask
 LOGGER = logging.getLogger(__name__)
 
 def parse_args():
-    """Parse command line arguments"""
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--jira_update", type=bool, default=False,
                         help="Update Jira. Can be False in case Jira is down")
@@ -54,7 +54,7 @@ def parse_args():
 
 
 def get_tests_from_te(jira_obj, args, test_type=None):
-    """Get tests from given test execution"""
+    """Get tests from given test execution."""
     LOGGER.info("Fetching test list from TE : %s", args.te_ticket)
     if test_type is None:
         test_type = ['ALL']
@@ -65,7 +65,7 @@ def get_tests_from_te(jira_obj, args, test_type=None):
 
 
 def collect_test_info(jira_obj, test):
-    """Collect Test information"""
+    """Collect Test information."""
     test_details = jira_obj.get_issue_details(test)
     test_name = test_details.fields.summary
     test_to_run = test_details.fields.customfield_20984
@@ -76,20 +76,21 @@ def collect_test_info(jira_obj, test):
 
 
 def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
-    """Run nosetests command for execution"""
-    cmd_line = f"{params.VIRTUALENV_DIR}/bin/nosetests {test_to_run}"
+    """Run nosetests command for execution."""
+    cmd_line = [
+        f"{params.VIRTUALENV_DIR}/bin/nosetests",
+        f"{test_to_run}"
+    ]
     log = open(log_file, 'a')
     LOGGER.info('Running nosetests command %s', cmd_line)
-    prc = subprocess.Popen(cmd_line, shell=True, stdout=log, stderr=log, cwd=params.S3TESTS_DIR)
+    prc = subprocess.Popen(cmd_line, stdout=log, stderr=log, cwd=params.S3TESTS_DIR)
     prc.communicate()
     return "PASS" if prc.returncode == 0 else "FAIL"
 
 
+# pylint: disable-msg=too-many-locals
 def trigger_tests_from_te(args):
-    """
-    Get the tests from test execution
-    Trigger those tests using nosetests command
-    """
+    """Trigger tests from the provided test execution."""
     LOGGER.info("Starting test execution")
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
@@ -110,7 +111,7 @@ def trigger_tests_from_te(args):
     for test in test_list:
         test_id = str(test[0])
         LOGGER.info("TEST ID : %s", test_id)
-        test_name, test_label, test_to_run = collect_test_info(jira_obj, test)
+        _, test_label, test_to_run = collect_test_info(jira_obj, test)
 
         log_file_name = f"{test_id}_{test_to_run}.log"
         log_file = os.path.join(reports_dir, log_file_name)
@@ -144,6 +145,7 @@ def initialize_loghandler(level=logging.DEBUG):
 
 
 def main(args):
+    """Main function to start ceph s3-tests execution."""
     trigger_tests_from_te(args)
 
 
