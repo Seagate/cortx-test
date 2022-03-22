@@ -105,6 +105,7 @@ class TestDICheckHA:
             resp = make_dirs(cls.test_dir_path)
             LOGGER.info("Created dir %s", resp)
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         This function will be invoked prior to each test case.

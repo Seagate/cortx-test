@@ -44,4 +44,7 @@ tools/setup_update/setup_entry.py:79: DeprecationWarning: count is deprecated. U
 Record entry 61cdb760456c4e8dc53c3c94 is inserted successfully
 
 3b. If you want to update the old entry because of any reason then use following command;
-(virenv) [root@ssc-vm-3563 cortx-test]# python3.7 tools/setup_update/setup_entry.py --new_entry False --dbuser datawrite --dbpassword seagate@123
+(virenv) [root@ssc-vm-3563 cortx-test]# python3.7 tools/setup_update/setup_entry.py --new_entry False --dbuser <> --dbpassword <>
+
+Note that in setup.json , hostname and fqdn are used interchangeably in Seagate lab environment. Meaning hostname is same
+as FQDN.

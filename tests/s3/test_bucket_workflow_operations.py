@@ -44,29 +44,28 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
 
-    @classmethod
-    def setup_class(cls):
+    # pylint: disable=attribute-defined-outside-init
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Function to perform the setup ops for each test."""
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: Setup test operations.")
-        cls.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
-        cls.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
-        cls.email_id = "{}@seagate.com".format(cls.account_name)
-        cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        cls.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
-        cls.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
-        cls.file_path = os.path.join(cls.folder_path, cls.filename)
-        if not system_utils.path_exists(cls.folder_path):
-            system_utils.make_dirs(cls.folder_path)
-        cls.rest_obj = S3AccountOperations()
-        cls.account_list = []
-        cls.bucket_list = []
-        cls.log.info("ENDED: Setup test operations")
-
-    def teardown_method(self):
-        """Function to perform the clean up for each test."""
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: Setup test operations.")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
+        self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.account_name)
+        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        self.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
+        self.file_path = os.path.join(self.folder_path, self.filename)
+        if not system_utils.path_exists(self.folder_path):
+            system_utils.make_dirs(self.folder_path)
+        self.rest_obj = S3AccountOperations()
+        self.account_list = []
+        self.bucket_list = []
+        self.log.info("ENDED: Setup test operations")
+        yield
         self.log.info("STARTED: Cleanup test operations.")
         bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
