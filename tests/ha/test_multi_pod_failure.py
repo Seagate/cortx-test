@@ -2870,7 +2870,7 @@ class TestMultiPodFailure:
                                                     total_parts=total_parts,
                                                     multipart_obj_path=object_path)
 
-        assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+        assert_utils.assert_true(resp[0], f"Failed to upload remaining parts {resp[1]}")
         parts_etags.extend(resp[3])
         LOGGER.info("Listing parts of partial multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
