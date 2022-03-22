@@ -2,10 +2,10 @@
 CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
 
 It is logically divided into following components: 
-* Test Automation framework
-* Test Run Framework
-* Robot framework and
-* Tools (reporting, DI, clone TP, etc.,).
+  * Test Automation framework
+  * Test Run Framework
+  * Robot framework and
+  * Tools (reporting, DI, clone TP, etc.,).
 
 ## Getting Started
 This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
@@ -14,10 +14,10 @@ You can have a separate client VM with any Linux flavour to install client side 
 
 ## Git process
 Typically a member contributing to test framework would follow the review process as follows:
-1. We are following the concept of upstream and downstream where commits happen on your forked repository (downstream) 
-2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). 
-3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. 
-4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process. 
+ 1. We are following the concept of upstream and downstream where commits happen on your forked repository (downstream) 
+ 2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). 
+ 3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. 
+ 4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process. 
 
 ## Get the Sources
 Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
