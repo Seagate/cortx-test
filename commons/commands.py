@@ -529,14 +529,10 @@ CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
 DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
-<<<<<<< HEAD
 UPGRADE_CLUSTER_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
-=======
-UPGRADE_CLUSTER_CMD = "cd {}; sh upgrade-cortx-cloud.sh -p {}"
 
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; sh upgrade-cortx-cloud.sh"
->>>>>>> 64a9820ce68c979b065cd69a50fa28848f0a3ab0
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
