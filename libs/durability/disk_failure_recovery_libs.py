@@ -20,16 +20,19 @@
 """
 HA disk failure recovery utility methods
 """
-import json
-import random
-import logging
 import copy
+import json
+import logging
+import random
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from config import CMN_CFG
+from config.s3 import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -169,8 +172,8 @@ class DiskFailureRecoveryLib:
                 return False, err
         return True, return_dict
 
-    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,
-                  worker_obj: list, pod_name: str, on_diff_cvg: bool = False) -> tuple:
+    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,worker_obj: list,
+                   pod_name: str, on_diff_cvg: bool = False, on_same_cvg = False) -> tuple:
         """
         Return the unique list of failed disks.
         :param disk_fail_cnt: Number of disks to be failed
@@ -178,6 +181,7 @@ class DiskFailureRecoveryLib:
         :param worker_obj: list of worker node object
         :param pod_name: name of the pod
         :param on_diff_cvg: selects disks from different cvg if set True
+        :param on_same_cvg: selects disks from same cvg if set True
         :return : tuple(bool,dict)
                  dict of format
                  {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
@@ -204,11 +208,22 @@ class DiskFailureRecoveryLib:
                 if flg:
                     one_disk_per_cvg_dict[disk] = all_disks[disk]
             if len(one_disk_per_cvg_dict) < disk_fail_cnt:
-                LOGGER.info(f"for failing only one disk per cvg, number of cvg's: "
+                LOGGER.error(f"for failing only one disk per cvg, number of cvg's: "
                             f"{one_disk_per_cvg_dict} are less than disk fail count: "
                             f"{disk_fail_cnt}")
                 return False, "Number of cvg are less than disk fail count"
             all_disks = copy.deepcopy(one_disk_per_cvg_dict)
+
+        if on_same_cvg:
+            # select random node and cvg
+            same_cvg_disks = {}
+            random_disk = random.choice(list(all_disks.values()))
+            node = random_disk[0]
+            cvg = random_disk[1]
+            for key,value in all_disks.items():
+                if node == value[0] and cvg == value[1]:
+                    same_cvg_disks[key] = value
+            all_disks = copy.deepcopy(same_cvg_disks)
 
         for cnt in range(disk_fail_cnt):
             selected_disk = random.choice(list(all_disks))  # nosec
@@ -220,3 +235,119 @@ class DiskFailureRecoveryLib:
             failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]
             all_disks.pop(selected_disk)
         return True, failed_disks_dict
+
+    def get_user_data_space_in_bytes(self, master_obj: LogicalNode, memory_percent: int) -> tuple:
+        """
+        Retrieve the available user data space in bytes to attain the given memory percent
+        :param master_obj: Logical node object of Master
+        :param memory_percent: Expected Memory Percentage to achieve.
+        :return : (boolean, int)
+        """
+        # Get available data disk space
+        health_obj = Health(master_obj.hostname, master_obj.username, master_obj.password)
+        total_cap, avail_cap, used_cap = health_obj.get_sys_capacity()
+        current_usage_per = int(used_cap / total_cap * 100)
+
+        if memory_percent > current_usage_per:
+            # Get SNS configuration to retrieve available user data space
+            durability_values = self.retrieve_durability_values(master_obj, 'sns')
+            if not durability_values[0]:
+                LOGGER.error("Error in retrieving SNS values")
+                return durability_values
+            sns_values = {key: int(value) for key, value in durability_values[1].items()}
+            LOGGER.debug("Durability Values (SNS) %s", sns_values)
+            data_sns = sns_values['data']
+            sum_sns = sum(sns_values.values())
+            LOGGER.debug("Current usage : %s Expected disk usage : %s", current_usage_per,
+                         memory_percent)
+            write_percent = memory_percent - current_usage_per
+            expected_writes = (write_percent * total_cap) / 100
+            user_data_writes = data_sns / sum_sns * expected_writes
+            LOGGER.info("User writes to be performed %s bytes to attain %s full disk space",
+                        user_data_writes, memory_percent)
+            return True, user_data_writes
+        else:
+            LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
+                        current_usage_per, memory_percent)
+            return True, 0
+
+    @staticmethod
+    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> tuple:
+        """
+        Perform write operation till the memory is filled to given percentage
+        :param s3userinfo: S3user dictionary with access/secret key
+        :param user_data_writes: Write operation to be performed for specific bytes
+        :param bucket_prefix: Bucket prefix for the data written
+        :return : list of dictionary
+                format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
+                     'obj_size': obj_size, 'num_sample': sample}]
+        """
+        workload = [1, 16, 128, 256, 512]  # workload in mb
+        if CMN_CFG["setup_type"] == "HW":
+            workload.extend([1024,2048,3072,4096])
+
+        mb = 1024 * 1024
+        client = 10
+        workload = [each * mb for each in workload]  # convert to bytes
+        each_workload_byte = user_data_writes / len(workload)
+        return_list = []
+        for obj_size in workload:
+            samples = int(each_workload_byte / obj_size)
+            if samples > 0:
+                bucket_name = f'{bucket_prefix}-{obj_size}b'
+                obj_name = f'obj_{obj_size}'
+                resp = s3bench.s3bench(s3userinfo['accesskey'],
+                                       s3userinfo['secretkey'],
+                                       bucket=bucket_name,
+                                       num_clients=client,
+                                       num_sample=samples,
+                                       obj_name_pref=obj_name, obj_size=obj_size,
+                                       skip_cleanup=True, duration=None,
+                                       log_file_prefix=f"workload_{obj_size}mb",
+                                       end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"])
+                LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,
+                            obj_size, client)
+                LOGGER.info(f"Log Path {resp[1]}")
+                if s3bench.check_log_file_error(resp[1]):
+                    return False,f"S3bench workload for failed for {obj_size}." \
+                                 f" Please read log file {resp[1]}"
+                return_list.append(
+                    {'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
+                     'obj_size': obj_size, 'num_sample': samples})
+            else:
+                continue
+        return True, return_list
+
+    @staticmethod
+    def perform_near_full_sys_operations(s3userinfo, workload_info: list, skipread: bool = True,
+                                         validate: bool = True, skipcleanup: bool = False):
+        """
+        Perform Read/Validate/Delete operations on the workload info using s3bench
+        :param s3userinfo: S3user dictionary with access/secret key
+        :param workload_info: S3bench workload info of performed writes
+        :param skipread: Skip reading objects created if True
+        :param validate: perform checksum validation on read data is True
+        :param skipcleanup: Skip deleting objects created if True
+        """
+        for each in workload_info:
+            resp = s3bench.s3bench(s3userinfo['accesskey'],
+                                   s3userinfo['secretkey'],
+                                   bucket=each['bucket'],
+                                   num_clients=each['num_clients'],
+                                   num_sample=each['num_sample'],
+                                   obj_name_pref=each['obj_name_pref'], obj_size=each['obj_size'],
+                                   skip_cleanup=skipcleanup,
+                                   skip_write=True,
+                                   skip_read=skipread,
+                                   validate=validate,
+                                   log_file_prefix=f"read_workload_{each['obj_size']}mb",
+                                   end_point=S3_CFG["s3_url"],
+                                   validate_certs=S3_CFG["validate_certs"])
+            LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
+                        each['obj_size'], each['num_clients'])
+            LOGGER.info(f"Log Path {resp[1]}")
+            if s3bench.check_log_file_error(resp[1]):
+                return False, f"S3bench workload for failed for {each['obj_size']}." \
+                              f" Please read log file {resp[1]}"
+        return True, f'S3bench workload successful'
