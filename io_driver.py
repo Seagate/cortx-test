@@ -17,7 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """
-IOdriver for scheduling and managing all tests.
+IO driver for scheduling and managing all tests.
 Consists of Schedular which parses yaml based inputs and schedules, monitor jobs accordingly.
 IO driver will also be responsible for performing health checks and
 support bundle collection on regular intervals.
@@ -35,19 +35,19 @@ from multiprocessing import Process, Manager
 
 import psutil
 
-from commons.io.io_logger import StreamToLogger
-from commons.params import NFS_SERVER_DIR, MOUNT_DIR
-from commons.utils import assert_utils
-from commons.utils.system_utils import mount_nfs_server
 from config import IO_DRIVER_CFG
 from config import S3_CFG
-from libs.io import yaml_parser
-from libs.io.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
-from libs.io.tools.s3bench import S3bench
+from src.commons.logger import StreamToLogger
+from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
+from src.commons.utils import assert_utils
+from src.commons.utils.system_utils import mount_nfs_server
+from src.libs import yaml_parser
+from src.libs.cluster_services import collect_upload_sb_to_nfs_server, check_cluster_services
+from src.libs.tools.s3bench import S3bench
 
 logger = logging.getLogger()
 
-sched_obj = sched.scheduler(time.time, time.sleep)
+sched_obj = sched.scheduler(time.time)
 manager = Manager()
 process_states = manager.dict()
 event_list = list()
@@ -57,7 +57,7 @@ mount_dir = MOUNT_DIR
 
 def initialize_loghandler(level=logging.DEBUG):
     """
-    Initialize io driver runner logging with stream and file handlers.
+    Initialize s3 driver runner logging with stream and file handlers.
     param level: logging level used in CorIO tool.
     """
     logger.setLevel(level)
@@ -89,7 +89,7 @@ def parse_args():
     parser.add_argument("-sk", "--secret-key", type=str, help="s3 secret Key.")
     parser.add_argument("-ak", "--access-key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
-                        help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
+                        help="fqdn of s3 endpoint for s3 operations.", default="s3.seagate.com")
     parser.add_argument("-nn", "--number-of-nodes", type=int, default=1,
                         help="number of nodes in k8s system")
     return parser.parse_args()
@@ -149,7 +149,7 @@ def update_process_termination(return_status):
 
 # pylint: disable=too-many-arguments
 def run_s3bench(access, secret, endpoint, test_id, clients, samples, size_low,
-                size_high, seed, part_low, part_high, duration=None):
+        size_high, seed, part_low, part_high, duration=None):
     """Execute S3bench tool and update error code if any, to process_state on termination."""
     logger.info("Start S3bench run ")
     s3bench = S3bench(access=access, secret=secret, endpoint=endpoint, test_id=test_id,

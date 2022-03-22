@@ -1,7 +1,7 @@
 # s3 common parameters.
 s3api_retry: 6
 region: "US"
-endpoint: "https://s3.seagate.com"
+s3_url: "https://s3.seagate.com"
 iam_url: "https://iam.seagate.com:9443"
 https_iam_port: "9443"
 http_iam_port: "9080"

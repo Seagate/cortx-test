@@ -16,4 +16,18 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-""" unittest module."""
+"""Unittest s3 init file."""
+
+import os
+import logging
+from src.commons.logger import StreamToLogger
+
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+dir_path = os.path.join(os.path.join(os.getcwd(), "log", "unittest"))
+if not os.path.exists(dir_path):
+    os.makedirs(dir_path, exist_ok=True)
+name = os.path.splitext(os.path.basename(__file__))[0]
+name = os.path.join(dir_path, f"{name}_console.log")
+StreamToLogger(name, logger)

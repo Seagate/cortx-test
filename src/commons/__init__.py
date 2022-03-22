@@ -16,4 +16,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-""" unittest module."""
+
+"""Creating objects from datatypes module to use in constants module."""
+from src.commons.datatypes import _Final
+const = _Final()

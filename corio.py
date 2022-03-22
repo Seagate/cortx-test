@@ -34,19 +34,15 @@ from pprint import pformat
 import pandas as pd
 import schedule
 
-from commons.io.io_logger import StreamToLogger
-from commons.params import NFS_SERVER_DIR, MOUNT_DIR
-from commons.utils.system_utils import mount_nfs_server
 from config import S3_CFG
 from io_driver import logger
-from libs.io import yaml_parser
-from tests.io import test_s3_bucket_io_stability
-from tests.io import test_s3_copy_object
-from tests.io import test_s3_multipart_io_stability
-from tests.io import test_s3_obj_range_read_io_stability
-from tests.io import test_s3_object_io_stability
-from tests.io import test_s3api_multipart_partcopy_io_stability
-
+from scripts.s3 import test_s3_copy_object, test_s3api_multipart_partcopy_io_stability
+from scripts.s3 import test_s3_object_io_stability, test_s3_bucket_io_stability, test_s3_obj_range_read_io_stability, \
+    test_s3_multipart_io_stability
+from src.commons.logger import StreamToLogger
+from src.commons.params import NFS_SERVER_DIR, MOUNT_DIR
+from src.commons.utils.system_utils import mount_nfs_server
+from src.libs import yaml_parser
 
 function_mapping = {
     'copy_object': [test_s3_copy_object.TestS3CopyObjects, 'execute_copy_object_workload'],
@@ -59,12 +55,12 @@ function_mapping = {
                           'execute_object_range_read_workload'],
     'multipart_partcopy': [test_s3api_multipart_partcopy_io_stability.TestMultiPartsPartCopy,
                            'execute_multipart_partcopy_workload']
-}
+    }
 
 
 def initialize_loghandler(level=logging.INFO):
     """
-    Initialize io driver runner logging with stream and file handlers.
+    Initialize s3 driver runner logging with stream and file handlers.
     param level: logging level used in CorIO tool.
     """
     logger.setLevel(level)
@@ -98,7 +94,7 @@ def parse_args():
     parser.add_argument("-sk", "--secret_key", type=str, help="s3 secret Key.")
     parser.add_argument("-ak", "--access_key", type=str, help="s3 access Key.")
     parser.add_argument("-ep", "--endpoint", type=str,
-                        help="fqdn of s3 endpoint for io operations.", default="s3.seagate.com")
+                        help="fqdn of s3 endpoint for s3 operations.", default="s3.seagate.com")
     parser.add_argument("-nn", "--number_of_nodes", type=int,
                         help="number of nodes in k8s system", default=1)
     return parser.parse_args()
@@ -213,7 +209,7 @@ def log_status(parsed_input: dict, corio_start_time: datetime.time, test_failed)
                     if datetime.now() > (test_start_time + v1['result_duration']):
                         input_dict[
                             "RESULT_UPDATE"] = f"Passed at " \
-                            f"{(test_start_time + v1['result_duration']).strftime(date_format)}"
+                                               f"{(test_start_time + v1['result_duration']).strftime(date_format)}"
                     else:
                         input_dict["RESULT_UPDATE"] = f"In Progress"
                     input_dict["TOTAL_TEST_EXECUTION"] = datetime.now() - test_start_time
