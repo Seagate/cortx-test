@@ -86,7 +86,6 @@ class TestK8CortxUpgrade:
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
 
-
     @pytest.mark.lc
     @pytest.mark.cortx_upgrade_disruptive
     @pytest.mark.tags("TEST-33660")
