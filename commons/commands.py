@@ -167,6 +167,13 @@ PCS_STATUS_CMD = "pcs status"
 SELINUX_STATUS_CMD = "sestatus > {}"
 IPMI_SDR_LIST_CMD = "ipmitool sdr list"
 
+# Mock monitor commands.
+PUBLISH_CMD = "{} publish -f {}"
+GET_DATA_NODE_ID_CMD = "{} -gdt"
+GET_SERVER_NODE_ID_CMD = "{} -gs"
+GET_DISK_ID_CMD = "{} get-disks -n {}"
+GET_CVG_ID_CMD = "{} get-cvgs -n {}"
+
 # All the constants are alphabetically arranged.
 """All the constants are alphabetically arranged."""
 PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
