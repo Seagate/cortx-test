@@ -272,7 +272,7 @@ class DiskFailureRecoveryLib:
             return True, 0
 
     @staticmethod
-    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> list:
+    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> tuple:
         """
         Perform write operation till the memory is filled to given percentage
         :param s3userinfo: S3user dictionary with access/secret key
@@ -309,14 +309,15 @@ class DiskFailureRecoveryLib:
                 LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,
                             obj_size, client)
                 LOGGER.info(f"Log Path {resp[1]}")
-                assert not s3bench.check_log_file_error(resp[1]), \
-                    f"S3bench workload for failed for {obj_size}. Please read log file {resp[1]}"
+                if s3bench.check_log_file_error(resp[1]):
+                    return False,f"S3bench workload for failed for {obj_size}." \
+                                 f" Please read log file {resp[1]}"
                 return_list.append(
                     {'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
                      'obj_size': obj_size, 'num_sample': samples})
             else:
                 continue
-        return return_list
+        return True, return_list
 
     @staticmethod
     def perform_near_full_sys_operations(s3userinfo, workload_info: list, skipread: bool = True,
@@ -346,5 +347,7 @@ class DiskFailureRecoveryLib:
             LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
                         each['obj_size'], each['num_clients'])
             LOGGER.info(f"Log Path {resp[1]}")
-            assert not s3bench.check_log_file_error(resp[1]), \
-                f"S3bench workload failed for {each['obj_size']}. Please read log file {resp[1]}"
+            if s3bench.check_log_file_error(resp[1]):
+                return False, f"S3bench workload for failed for {each['obj_size']}." \
+                              f" Please read log file {resp[1]}"
+        return True, f'S3bench workload successful'

@@ -77,6 +77,7 @@ class TestDiskFailureRecovery:
             else:
                 cls.node_worker_list.append(LogicalNode(hostname=host, username=user_name,
                                                         password=user_pass))
+        cls.near_full_percent = HA_CFG['near_full_system_percent']
 
     def setup_method(self):
         """
@@ -101,8 +102,6 @@ class TestDiskFailureRecovery:
         assert_utils.assert_true(resp[0], resp[1])
         self.pod_name = resp[1]
         LOGGER.info("Done: Setup operations.")
-
-        self.near_full_percent = HA_CFG['near_full_system_percent']
 
     def teardown_method(self):
         """
@@ -550,10 +549,12 @@ class TestDiskFailureRecovery:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            workload_info = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                                          user_data_writes=resp[1],
-                                                                          bucket_prefix=
-                                                                          self.test_prefix[-1])
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                 user_data_writes=resp[1],
+                                                                 bucket_prefix=
+                                                                 self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
 
         LOGGER.info("Step 2: Do IOs(Write and Read)")
         self.test_prefix.append('test-36396')
@@ -592,6 +593,7 @@ class TestDiskFailureRecovery:
         else:
             LOGGER.info("Degraded byte count is more as expected after disk fail")
 
+        # TODO : check if system goes into read only mode
         LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
         self.test_prefix.append('test-36396-after-disk-fail')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
@@ -641,7 +643,7 @@ class TestDiskFailureRecovery:
             LOGGER.info("Step 13: Read data written in step 1")
             self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
                                                               workload_info=workload_info)
-
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
                     "are less than K(parity units)")
 
@@ -672,10 +674,12 @@ class TestDiskFailureRecovery:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            workload_info = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
                                                                           user_data_writes=resp[1],
                                                                           bucket_prefix=
                                                                           self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
 
         LOGGER.info("Step 2: Do IOs(Write and Read)")
         self.test_prefix.append('test-36397')
@@ -710,6 +714,7 @@ class TestDiskFailureRecovery:
         else:
             LOGGER.info("Degraded byte count is more as expected after disk fail")
 
+        # TODO : check if system goes into read only mode
         LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
         self.test_prefix.append('test-36397-after-disk-fail')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
@@ -757,9 +762,9 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
                                                               workload_info=workload_info)
-
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
                     "are equal to K(parity units)")
 
@@ -888,10 +893,12 @@ class TestDiskFailureRecovery:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            workload_info = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
                                                                           user_data_writes=resp[1],
                                                                           bucket_prefix=
                                                                           self.test_prefix[-1])
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info = resp[1]
 
         LOGGER.info("Step 2: Do IOs(Write and Read)")
         self.test_prefix.append('test-36399')
@@ -926,6 +933,7 @@ class TestDiskFailureRecovery:
         else:
             LOGGER.info("Degraded byte count is more as expected after disk fail")
 
+        # TODO : check if system goes into read only mode
         LOGGER.info("Step 6: Do IOs(Write and Read) after disk failure")
         self.test_prefix.append('test-36399-after-disk-fail')
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=s3userinfo,
@@ -973,8 +981,8 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
                                                               workload_info=workload_info)
-
+            assert_utils.assert_true(resp[0],resp[1])
         LOGGER.info("COMPLETED: Validate SNS repair works fine on near full system with failed "
                     "disks on same cvg are equal to K(parity units)")
