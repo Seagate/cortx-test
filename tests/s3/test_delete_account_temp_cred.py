@@ -317,10 +317,12 @@ class TestDeleteAccountTempCred:
     @CTFailOn(error_handler)
     def test_4523(self):
         """Delete account using temp cred where that account recently got deleted."""
-        LOGGER.info("STARTED: Delete account using temp cred where that account recently "
+        LOGGER.info(
+            "STARTED: Delete account using temp cred where that account recently "
             "got deleted")
         self.get_temp_creds(self.account_name, self.cfg["password"])
-        LOGGER.info("Step 5: Deleting account using temporary credentials of an account %s",
+        LOGGER.info(
+            "Step 5: Deleting account using temporary credentials of an account %s",
             self.account_name)
         resp = self.iam_test_obj.delete_account_using_temp_creds(
             self.account_name,
@@ -328,7 +330,8 @@ class TestDeleteAccountTempCred:
             self.temp_creds["secret_key"],
             self.temp_creds["session_token"])
         assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Deleting account using temporary credentials of an account %s",
+        LOGGER.info(
+            "Step 5: Deleting account using temporary credentials of an account %s",
             self.account_name)
         LOGGER.info("Step 6: Verifying that account is deleted by listing accounts")
         resp = self.iam_test_obj.list_accounts(
@@ -376,7 +379,8 @@ class TestDeleteAccountTempCred:
         except CTException as error:
             LOGGER.error(error.message)
             assert_in("ExpiredToken", error.message, error.message)
-        LOGGER.info("Step 5: Creating a bucket using expired temporary credentials failed "
+        LOGGER.info(
+            "Step 5: Creating a bucket using expired temporary credentials failed "
             "with %s", "ExpiredToken")
         LOGGER.info("ENDED: Perform S3 operations using expired temp credentials")
 
@@ -416,7 +420,8 @@ class TestDeleteAccountTempCred:
     @CTFailOn(error_handler)
     def test_4692(self):
         """Delete account forcefully using temp cred where that account contains some Resource."""
-        LOGGER.info("STARTED: Delete account forcefully using temp credentials "
+        LOGGER.info(
+            "STARTED: Delete account forcefully using temp credentials "
             "where that account contains some Resource")
         test_4692_cfg = S3_TMP_CRED_CFG["test_4692"]
         self.get_temp_creds(self.account_name, self.cfg["password"])
@@ -442,5 +447,6 @@ class TestDeleteAccountTempCred:
         LOGGER.info(
             "Step 6: Deleting an account forcefully using temp credentials failed "
             "with %s", errmsg.S3_ACC_NOT_EMPTY_ERR)
-        LOGGER.info("ENDED: Delete account forcefully using temp credentials "
+        LOGGER.info(
+            "ENDED: Delete account forcefully using temp credentials "
             "where that account contains some Resource")

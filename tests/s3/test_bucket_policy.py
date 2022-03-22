@@ -6894,7 +6894,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errmsg.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -6976,7 +6976,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errmsg.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")

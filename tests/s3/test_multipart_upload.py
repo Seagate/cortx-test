@@ -504,8 +504,7 @@ class TestMultipartUpload:
         """Create multipart upload having more than 10,000 parts."""
         self.log.info("Create multipart upload having more than 10,000 parts")
         mp_config = MPART_CFG["test_8922"]
-        self.log.info("Creating a bucket with name : %s",
-            self.bucket_name)
+        self.log.info("Creating a bucket with name : %s", self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
@@ -574,7 +573,8 @@ class TestMultipartUpload:
         res = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, res[1], res[1])
         self.log.info("Cannot complete multipart upload")
-        self.log.info("Multipart upload - create all parts less than 5 MB size, "
+        self.log.info(
+            "Multipart upload - create all parts less than 5 MB size, "
             "last part can be > 5 MB")
 
     @pytest.mark.s3_ops

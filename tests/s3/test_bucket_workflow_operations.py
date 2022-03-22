@@ -291,7 +291,8 @@ class TestBucketWorkflowOperations:
             self.log.error(error.message)
             assert errmsg.S3_BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with an IP address format is failed")
-        self.log.info("ENDED: Bucket names must not be formatted as an IP address "
+        self.log.info(
+            "ENDED: Bucket names must not be formatted as an IP address "
             "(for example, 192.168.5.4)")
 
     @pytest.mark.parallel
@@ -805,7 +806,8 @@ class TestBucketWorkflowOperations:
         except CTException as error:
             self.log.error(error.message)
             assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
-            self.log.info("Step 1: objects delete operation failed with error %s",
+            self.log.info(
+                "Step 1: objects delete operation failed with error %s",
                 "NoSuchBucket")
         self.log.info("Step 2: List objects for non-existing bucket")
         try:
@@ -814,7 +816,8 @@ class TestBucketWorkflowOperations:
         except CTException as error:
             self.log.error(error.message)
             assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
-            self.log.info("Step 2: List objects for non-existing bucket failed with "
+            self.log.info(
+                "Step 2: List objects for non-existing bucket failed with "
                 "error %s", "NoSuchBucket")
         self.log.info(
             "ENDED: Delete multiobjects where the bucket is not present")
@@ -830,7 +833,8 @@ class TestBucketWorkflowOperations:
 
          and dont give any permissions to account2 and delete multiple objects from account2
         """
-        self.log.info("STARTED: create bucket and upload objects from account1 and dont give"
+        self.log.info(
+            "STARTED: create bucket and upload objects from account1 and dont give"
             " any permissions to account2 and delete multiple objects from account2")
         self.log.info("Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
@@ -874,7 +878,8 @@ class TestBucketWorkflowOperations:
         except CTException as error:
             self.log.error(error.message)
             assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
-            self.log.info("Step 3: deleting objects using account 2 failed with error %s",
+            self.log.info(
+                "Step 3: deleting objects using account 2 failed with error %s",
                 "AccessDenied")
         self.account_list.append(self.account_name)
         self.log.info(

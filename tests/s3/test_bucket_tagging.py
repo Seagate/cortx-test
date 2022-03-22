@@ -170,7 +170,8 @@ class TestBucketTagging:
     @CTFailOn(error_handler)
     def test_2435(self):
         """Create a tag whose key is up to 128 Unicode characters in length."""
-        self.log.info("STARTED: Create a tag whose key is up to 128 Unicode "
+        self.log.info(
+            "STARTED: Create a tag whose key is up to 128 Unicode "
             "characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
@@ -231,7 +232,8 @@ class TestBucketTagging:
             assert_utils.assert_in(errmsg.S3_BKT_INVALID_TAG_ERR, str(error.message),
                                    error.message)
         self.log.info("Step 2: Setting tag for a bucket failed with InvalidTagError")
-        self.log.info("ENDED: Create a tag whose key is more than 128 Unicode "
+        self.log.info(
+            "ENDED: Create a tag whose key is more than 128 Unicode "
             "characters in length")
 
     @pytest.mark.parallel
@@ -241,7 +243,8 @@ class TestBucketTagging:
     @CTFailOn(error_handler)
     def test_2437(self):
         """Create a tag having values up to 256 Unicode characters in length."""
-        self.log.info("STARTED: Create a tag having values up to 256 Unicode "
+        self.log.info(
+            "STARTED: Create a tag having values up to 256 Unicode "
             "characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
@@ -311,8 +314,8 @@ class TestBucketTagging:
             assert_utils.assert_in(errmsg.S3_BKT_INVALID_TAG_ERR, str(error.message),
                                    error.message)
         self.log.info("Step 2: Setting tag for a bucket failed with %s", self.bucket_name)
-        self.log.info("ENDED: Create a tag having values more than 512 Unicode characters "
-            "in length")
+        self.log.info(
+            "ENDED: Create a tag having values more than 512 Unicode characters in length")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -549,7 +552,8 @@ class TestBucketTagging:
         except CTException as error:
             self.log.info(error)
             assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, str(error.message), error.message)
-        self.log.info("Step 2: Setting bucket tags with duplicate keys failed with %s",
+        self.log.info(
+            "Step 2: Setting bucket tags with duplicate keys failed with %s",
             "MalformedXML")
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 

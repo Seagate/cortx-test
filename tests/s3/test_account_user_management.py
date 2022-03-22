@@ -624,7 +624,7 @@ class TestAccountUserManagement:
             self.log.debug(error.message)
             assert_in(errmsg.DUPLICATE_USER_ERR_KEY, error.message, error.message)
         self.log.info("Could not create user with existing name %s",
-                    str(self.user_name))
+                      str(self.user_name))
         self.users_list.append(self.user_name)
         self.log.info("END: creating user with existing name.")
 

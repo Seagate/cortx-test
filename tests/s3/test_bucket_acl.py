@@ -379,11 +379,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3527(self):
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL bucket-owner-full-control along with READ "
+        self.log.info(
+            "STARTED: Add canned ACL bucket-owner-full-control along with READ "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "bucket-owner-full-control", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED:Add canned ACL bucket-owner-full-control along with READ ACL "
+        self.log.info(
+            "ENDED:Add canned ACL bucket-owner-full-control along with READ ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -393,11 +395,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3528(self):
         """Add canned ACL bucket-owner-read along with READ ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL bucket-owner-read along with READ ACL "
+        self.log.info(
+            "STARTED: Add canned ACL bucket-owner-read along with READ ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "bucket-owner-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL bucket-owner-read along with READ ACL "
+        self.log.info(
+            "ENDED: Add canned ACL bucket-owner-read along with READ ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -407,11 +411,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3529(self):
         """Add canned ACL "private" along with "READ" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'private' along with 'READ' ACL "
+        self.log.info(
+            "STARTED: Add canned ACL 'private' along with 'READ' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "private", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'private' along with 'READ' ACL "
+        self.log.info(
+            "ENDED: Add canned ACL 'private' along with 'READ' ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -422,11 +428,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3530(self):
         """Add canned ACL "private" along with "FULL_CONTROL" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
+        self.log.info(
+            "STARTED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "private", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
+        self.log.info(
+            "ENDED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -437,11 +445,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3531(self):
         """Add canned ACL "public-read" along with "READ_ACP" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'public-read' along with 'READ_ACP' ACL "
+        self.log.info(
+            "STARTED: Add canned ACL 'public-read' along with 'READ_ACP' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "public-read", "grant-read-acp", errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'public-read' along with 'READ_ACP' ACL grant "
+        self.log.info(
+            "ENDED: Add canned ACL 'public-read' along with 'READ_ACP' ACL grant "
             "permission")
 
     @pytest.mark.parallel
@@ -451,11 +461,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3532(self):
         """Add canned ACL "public-read" along with "WRITE_ACP" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
+        self.log.info(
+            "STARTED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "public-read", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
+        self.log.info(
+            "ENDED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -465,11 +477,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_write_3533(self):
         """Add canned ACL 'public-read-write' along with "WRITE_ACP" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
+        self.log.info(
+            "STARTED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "public-read-write", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
+        self.log.info(
+            "ENDED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
             "ACL grant permission")
 
     @pytest.mark.parallel
@@ -479,11 +493,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_write_3534(self):
         """Add canned ACL 'public-read-write' along with "FULL_CONTROL" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
+        self.log.info(
+            "STARTED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "public-read-write", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
+        self.log.info(
+            "ENDED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
             "ACL grant permission")
 
     @pytest.mark.parallel
@@ -493,11 +509,13 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_authenticate_read_3535(self):
         """Add canned ACL 'authenticate-read' along with "READ" ACL grant permission."""
-        self.log.info("STARTED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
+        self.log.info(
+            "STARTED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "authenticated-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
+        self.log.info(
+            "ENDED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -507,12 +525,14 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_authenticate_read_3536(self):
         """Add canned ACL 'authenticate-read' along with "READ_ACP" ACL grant permission."""
-        self.log.info("STARTED:Add canned ACL 'authenticate-read' along with 'READ_ACP' "
+        self.log.info(
+            "STARTED:Add canned ACL 'authenticate-read' along with 'READ_ACP' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "authenticated-read", "grant-read-acp", 
             error_msg=errmsg.CANNED_ACL_GRANT_ERR)
-        self.log.info("ENDED: Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL "
+        self.log.info(
+            "ENDED: Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL "
             "grant permission")
 
     @pytest.mark.parallel
@@ -911,9 +931,11 @@ class TestBucketACL:
         except CTException as error:
             self.log.info(error.message)
             assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
-            self.log.info("Step 2: retrieving bucket acl using account 2 failed with error %s",
+            self.log.info(
+                "Step 2: retrieving bucket acl using account 2 failed with error %s",
                 "AccessDenied")
-        self.log.info("ENDED:acc1: put bucket, acc2: no permissions or canned acl, "
+        self.log.info(
+            "ENDED:acc1: put bucket, acc2: no permissions or canned acl, "
             "get-bucket-acl details")
 
     @pytest.mark.parallel
