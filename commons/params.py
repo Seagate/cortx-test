@@ -132,4 +132,3 @@ S3TESTS_CONF_ENV = "S3TEST_CONF"
 S3TESTS_CONF_FILE = "s3tests.conf"
 VIRTUALENV_DIR = "virtualenv"
 REPORTS_DIR = "reports"
-
