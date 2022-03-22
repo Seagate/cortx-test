@@ -117,7 +117,7 @@ class TestFailureHandlingPodFailure:
     @staticmethod
     def get_node_status_log(resp_dict):
         """
-        This is a local method to verify the status and get node and resource ids
+        This is a local method to verify the pod status
         :param resp_dict: halog properties
         """
         source_list = resp_dict['source']
