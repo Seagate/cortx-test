@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,6 +15,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """All common error constants string from cortx-test."""
 
