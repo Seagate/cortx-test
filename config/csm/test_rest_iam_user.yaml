@@ -4,4 +4,7 @@ test_1133:
 test_36448:
   invalid_key: "!@#$%^&*!@#$%^&*"
   valid_key: "0555b35654ad16*"
-  
+
+test_38088:
+  error_code: 12288
+  message_id: "NoSuchUser"  
