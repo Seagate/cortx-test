@@ -594,14 +594,8 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(
             users.values())[0], log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.s3bench_cleanup = None
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
-        LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
-        self.restored = False
-        LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
+
         LOGGER.info(
             "Completed: Test to check READs after cluster restart on WRITEs before shutdown.")
 
@@ -638,13 +632,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs with variable sizes objects."
                     "Verified READs and verified DI on the written data.")
-        self.s3bench_cleanup = None
-        LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean = None
-        self.restored = False
-        LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
+
         LOGGER.info("Completed: Test to check WRITEs after cluster restart.")
 
     # pylint: disable-msg=too-many-locals
