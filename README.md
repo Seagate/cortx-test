@@ -1,18 +1,27 @@
 # cortx-test
-CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. 
-Right now, it can be divided into following logical loosely coupled parts 
-* Test framework. 
-* Test execution framework. 
-* Robot framework and 
-* Tools (reporting, DI, clone TP, etc.,).
+CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
 
-## Start Here
-Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create a GitHub account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+It is logically divided into following components:
+	*	Test Automation framework
+	*	Test Execution Framework
+	*	Robot framework and
+	*	Tools (reporting, DI, clone TP etc.)
 
-You may need a separate client vm with any Linux Flavour to install client side pre-requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as client as well.     
+## Getting Started
+This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+
+You can have a separate client VM with any Linux flavour to install client side pre-requisites and start using automation framework on the same VM. This VM should have connectivity to Cortx Cluster OR CORTX OVA deployment. Alternatively you may use one of the nodes as client (less recommended).     
+
+## Git process
+Typically a member contributing to test framework would follow the review process as follows:
+	1. We are following the concept of upstream and downstream where commits happen on your forked repository (downstream)
+	2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream)
+	3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
+	4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process
 
 ## Get the Sources
-Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
+Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
+Commands as follows:
 ```
 git clone https://github.com/Seagate/cortx-test.git
 cd cortx-test/
@@ -22,22 +31,22 @@ git checkout dev
 git remote -v
 git remote add upstream https://github.com/Seagate/cortx-test.git
 git remote -v
-Issuing the above command again will return you output as shown below.
+```
+Issuing the above command again will return output as shown:
+```
 > origin    https://github.com/YOUR_USERNAME/cortx-test.git (fetch)
 > origin    https://github.com/YOUR_USERNAME/cortx-test.git (push)
 > upstream        https://github.com/Seagate/cortx-test.git (fetch)
 > upstream        https://github.com/Seagate/cortx-test.git (push)
+```
+Then fetch upstream...
+```
 git fetch upstream
 git pull upstream dev
-```
+``` 
 
-## Git Commands
-Learn generic Git commands to make yourself comfortable with git. 
-
-Engineers contributing to test framework should understand the review process. We are following the concept of upstreams and downstream where commits happen on your forked repository, and then you can raise a PR to merge it to Seagate Cortx-Test repository. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to check in and raise PR to upstream checkin even when they have read access to Seagate Repositories.   
-
-## Set up dev environment
-Following steps helps to set up client side env, where test framework runs. These steps assume that you have installed git client and cloned Cortx-test.  
+## Setting up dev environment
+Following steps help in setting up client side env, where test framework will run. These steps assume that you have followed earlier process (i.e. git client is installed and `Cortx-test` is cloned)  
     
     1. `yum update -y`
     
@@ -88,7 +97,7 @@ curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fb
 ## Script to set up client environment (Alternate option to manual steps)
 Change dir to your local repository root folder. If you have checked out your code 
 in clean_dev directory created in your home on Linux machine (RHEL Flavour), then
-/home/<yourname>/clean_dev is the local repository root folder. 
+`/home/<yourname>/clean_dev` is the local repository root folder. 
 ```
  # cd clean_dev
  # ./cortx-test/ci_tools/client_setup.sh 
@@ -315,7 +324,7 @@ If you want to anyway run the parallel tests sequentially. You should use --forc
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928 --force_serial_run True
 ```
-If you want to run your test plan and test execution ticket with test runner, you should skip --force_serial_run switch.
+If you want to run your test plan and TE ticket with test runner, you should skip --force_serial_run switch.
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928
 ``` 
@@ -433,16 +442,3 @@ While ordering client on ssc-cloud, make sure
     mkswap /dev/mapper/vg_sysvol-lv_swap
     swapon /dev/mapper/vg_sysvol-lv_swap
     ```
-
-## How to automate component level test cases
-Components level tests can be either pure component level tests which run
-1. Tests run in the same process as code to be tested
-2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)
-3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used.
-
-Some setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests.
-
-* In case 1) Component tests can be automated as a separate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
-* In case 2) Component tests can utilize cortx-test directly and build their own libraries to test components.
-* In case 3) Component tests can be written in cortx-test and utilize all the capabilities of the framework.
-
