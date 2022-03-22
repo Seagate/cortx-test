@@ -652,7 +652,8 @@ class TestDiskFailureRecovery:
     @pytest.mark.tags("TEST-36397")
     def test_near_full_sns_repair_fail_disk_diff_cvg_equal_to_k(self):
         """
-        Validate SNS repair works fine on near full system with failed disks are equal to K(parity units)
+        Validate SNS repair works fine on near full system with failed disks
+        are equal to K(parity units)
         """
         LOGGER.info("STARTED: Validate SNS repair works fine on near full system with failed disks "
                     "are equal to K(parity units)")
@@ -780,7 +781,7 @@ class TestDiskFailureRecovery:
         workload_info = None
         s3userinfo = list(users.values())[0]
 
-        LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
+        LOGGER.info("Step 1: PerformWrite operations till overall disk space is filled %s",
                     near_full_percent)
         resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
                                                              near_full_percent)
