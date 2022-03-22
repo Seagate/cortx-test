@@ -584,8 +584,7 @@ class TestMultipartUpload:
     def test_multipart_upload_part_number_should_be_in_range_1_to_10k_2295(
             self):
         """Multipart Upload Part numbers should be in range of 1 to 10,000."""
-        self.log.info(
-            "Multipart Upload Part numbers should be in range of 1 to 10,000")
+        self.log.info("Multipart Upload Part numbers should be in range of 1 to 10,000")
         mp_config = MPART_CFG["test_8923"]
         res = self.create_bucket_to_upload_parts(
             self.bucket_name,
