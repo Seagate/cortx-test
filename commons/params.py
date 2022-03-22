@@ -130,5 +130,5 @@ PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
 S3TESTS_DIR = "s3-tests"
 S3TESTS_CONF_ENV = "S3TEST_CONF"
 S3TESTS_CONF_FILE = "s3tests.conf"
-VIRTUALENV_DIR = "virtualenv"
 REPORTS_DIR = "reports"
+VIRTUALENV_DIR = "virtualenv"
