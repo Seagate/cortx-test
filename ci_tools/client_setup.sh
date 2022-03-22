@@ -3,14 +3,6 @@ secrets_json_path=/root/secrets.json
 cp $secrets_json_path "$WORKSPACE/cortx-test/secrets.json"
 cd cortx-test
 
-FILE=$WORKSPACE/prov_config.ini
-if [ -f "$FILE" ]; then
-    echo "$FILE exists."
-    cp "$WORKSPACE/prov_config.ini" "$WORKSPACE/cortx-test/prov_config.ini"
-else
-    echo "$FILE does not exist."
-fi
-
 function check_installation {
   pckarr=(unzip, google-chrome-stable_current_x86_64.rpm )
   for i in  ${pckarr[*]}
