@@ -1607,11 +1607,9 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_patch_random_payload()
         self.log.info("Random payload is %s:", payload)
         if "access_key" in payload and "secret_key" not in payload:
-             del payload["access_key"]
+            del payload["access_key"]
         elif "secret_key" in payload and "access_key" not in payload:
-             del payload["secret_key"]
-        else:
-             pass
+            del payload["secret_key"]
         self.log.info("new random payload :  %s", payload)
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
@@ -1755,7 +1753,6 @@ class TestIamUserRGW():
                                          self.rest_resp_conf[4099]['InvalidKeyType'][2]
                                          , "Response message check failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
- 
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
