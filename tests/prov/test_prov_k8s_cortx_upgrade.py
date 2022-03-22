@@ -40,6 +40,7 @@ LOGGER = logging.getLogger(__name__)
 
 class TestK8CortxUpgrade:
 
+
     """ This class contains test cases for K8s CORTX Software Upgrade. """
 
     @classmethod
@@ -88,6 +89,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
+
         """ Verify CORTX Software upgrade."""
 
         LOGGER.info("Test Started.")
@@ -141,6 +143,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
+
         """
         Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
         lower version.
