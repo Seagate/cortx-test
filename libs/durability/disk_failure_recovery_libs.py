@@ -171,8 +171,8 @@ class DiskFailureRecoveryLib:
                 return False, err
         return True, return_dict
 
-    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,
-                  worker_obj: list, pod_name: str, on_diff_cvg: bool = False) -> tuple:
+    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,worker_obj: list,
+                   pod_name: str, on_diff_cvg: bool = False, on_same_cvg = False) -> tuple:
         """
         Return the unique list of failed disks.
         :param disk_fail_cnt: Number of disks to be failed
@@ -180,6 +180,7 @@ class DiskFailureRecoveryLib:
         :param worker_obj: list of worker node object
         :param pod_name: name of the pod
         :param on_diff_cvg: selects disks from different cvg if set True
+        :param on_same_cvg: selects disks from same cvg if set True
         :return : tuple(bool,dict)
                  dict of format
                  {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
@@ -206,11 +207,22 @@ class DiskFailureRecoveryLib:
                 if flg:
                     one_disk_per_cvg_dict[disk] = all_disks[disk]
             if len(one_disk_per_cvg_dict) < disk_fail_cnt:
-                LOGGER.info(f"for failing only one disk per cvg, number of cvg's: "
+                LOGGER.error(f"for failing only one disk per cvg, number of cvg's: "
                             f"{one_disk_per_cvg_dict} are less than disk fail count: "
                             f"{disk_fail_cnt}")
                 return False, "Number of cvg are less than disk fail count"
             all_disks = copy.deepcopy(one_disk_per_cvg_dict)
+
+        if on_same_cvg:
+            # select random node and cvg
+            same_cvg_disks = {}
+            random_disk = random.choice(list(all_disks.values()))
+            node = random_disk[0]
+            cvg = random_disk[1]
+            for key,value in all_disks.items():
+                if node == value[0] and cvg == value[1]:
+                    same_cvg_disks[key] = value
+            all_disks = copy.deepcopy(same_cvg_disks)
 
         for cnt in range(disk_fail_cnt):
             selected_disk = random.choice(list(all_disks))  # nosec
