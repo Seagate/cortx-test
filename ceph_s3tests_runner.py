@@ -18,6 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test runner for ceph/s3-tests nosetests based tests."""
+# pylint: disable=B404
 import argparse
 import datetime
 import logging
@@ -75,6 +76,7 @@ def collect_test_info(jira_obj, test):
     return test_name, test_label, test_to_run
 
 
+# pylint: disable=B603
 def run_nose_cmd(test_to_run=None, log_file='nosetest.log'):
     """Run nosetests command for execution."""
     cmd_line = [
