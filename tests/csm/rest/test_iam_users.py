@@ -1606,11 +1606,12 @@ class TestIamUserRGW():
         self.log.info("STEP 3: Update any random parameters for created user")
         payload = self.csm_obj.iam_user_patch_random_payload()
         self.log.info("Random payload is %s:", payload)
-        self.log.info("Deleting parameters which would not be present in response for updation")
-        invalid_params = ["access_key", "secret_key", "generate_key", "key_type"]
-        for elements in invalid_params:
-            if elements in payload:
-                del payload[elements]
+        if "access_key" in payload and "secret_key" not in payload:
+             del payload["access_key"]
+        elif "secret_key" in payload and "access_key" not in payload:
+             del payload["secret_key"]
+        else:
+             pass
         self.log.info("new random payload :  %s", payload)
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
@@ -1619,8 +1620,26 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         count=0
         for key in payload.keys():
-            if payload[key]!=get_resp.json()[key]:
-                break
+            if key=="generate_key":
+                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]!=resp.json()[
+                            "keys"][0]["access_key"], "Access key not generated")
+            elif key=="key_type" and len(get_resp.json()["keys"]) > 1 and \
+                              "access_key" in payload and "secret_key" in payload:
+                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]==payload[
+                         "access_key"])
+            elif key=="key_type" and "access_key" in payload and "secret_key" in payload:
+                assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]==payload[
+                         "access_key"])
+            elif key=="key_type" and "access_key" not in payload and "secret_key" not in payload:
+                assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]==resp.json()[
+                           "keys"][0]["access_key"])
+            elif key=="key_type" and len(get_resp.json()["keys"]) > 1 and \
+                              "access_key" not in payload and "secret_key" not in payload:
+                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]==resp.json()[
+                              "keys"][0]["access_key"])
+            else:
+                if payload[key]!=get_resp.json()[key]:
+                    break
             count+=1
         assert_utils.assert_true(len(payload)==count, "Update not done successfully")
         self.log.info("[END]Update request with uid and other parameters randomly. ")
