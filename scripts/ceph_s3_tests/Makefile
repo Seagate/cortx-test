@@ -23,7 +23,7 @@
 #	3. make configure-s3tests  # Generate configuration file for running tests
 # Note: Please provide existing s3account user access, secret keys through command line.
 
-CORTX_TESTS_DIR=/root/makefile_test
+CORTX_TESTS_DIR=/root/cortx-test
 ENDPOINT=s3.seagate.com
 PORT_NUM=30443
 REGION=default
