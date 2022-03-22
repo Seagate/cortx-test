@@ -313,7 +313,6 @@ class TestProvK8CortxRollingUpgrade:
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
         resp = "".join(resp).replace("\\n", "\n")
-        print(resp)
         assert_utils.assert_in(error_msg, resp)
         LOGGER.info("Test Completed.")
 
