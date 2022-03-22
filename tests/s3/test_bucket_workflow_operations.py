@@ -26,7 +26,7 @@ import time
 
 import pytest
 
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -185,7 +185,7 @@ class TestBucketWorkflowOperations:
                 self.bucket_list.append(each_bucket)
             except CTException as error:
                 self.log.info(error.message)
-                assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
+                assert errmsg.S3_BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info(
             "Creating buckets with name less than 3 and more than 63 characters length is failed")
         self.log.info(
@@ -210,7 +210,7 @@ class TestBucketWorkflowOperations:
             self.bucket_list.append(bkt_upper)
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
+            assert errmsg.S3_BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with uppercase letters is failed")
         self.log.info(
             "ENDED: Bucket names must not contain uppercase characters")
@@ -233,7 +233,7 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bkt_name)
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
+            assert errmsg.S3_BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with underscore is failed")
         self.log.info("ENDED: Bucket names must not contain underscores")
 
@@ -267,7 +267,7 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bucket_name)
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.BKT_SPECIAL_CHARACTER_ERR in error.message, error.message
+            assert errmsg.S3_BKT_SPECIAL_CHARACTER_ERR in error.message, error.message
         self.log.info("Creating a bucket with special characters is failed")
         self.log.info("ENDED: Bucket names with special characters")
 
@@ -289,7 +289,7 @@ class TestBucketWorkflowOperations:
             self.account_list.append(bkt_name_ip)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_INVALID_NAME_ERR in error.message, error.message
+            assert errmsg.S3_BKT_INVALID_NAME_ERR in error.message, error.message
         self.log.info("Creating a bucket with an IP address format is failed")
         self.log.info("ENDED: Bucket names must not be formatted as an IP address "
             "(for example, 192.168.5.4)")
@@ -371,8 +371,8 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert_s3_err_msg(errconst.RGW_ERR_DUPLICATE_BKT_NAME,
-                              errconst.CORTX_ERR_DUPLICATE_BKT_NAME,
+            assert_s3_err_msg(errmsg.RGW_ERR_DUPLICATE_BKT_NAME,
+                              errmsg.CORTX_ERR_DUPLICATE_BKT_NAME,
                               CMN_CFG["s3_engine"], error)
         self.log.info("Creating a bucket with existing bucket name is failed")
         self.bucket_list.append(self.bucket_name)
@@ -448,7 +448,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.BKT_NOT_EMPTY_ERR in error.message, error.message
+            assert errmsg.S3_BKT_NOT_EMPTY_ERR in error.message, error.message
         self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Delete bucket which has objects")
 
@@ -555,7 +555,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
         self.log.info("Deleting bucket which does not exists on s3 server is failed")
         self.log.info("ENDED: Delete bucket which does not exists on s3 server")
 
@@ -655,7 +655,7 @@ class TestBucketWorkflowOperations:
             self.bucket_list.append(self.bucket_name)
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.BKT_HEAD_NOT_FOUND in error.message, error.message
+            assert errmsg.NOT_FOUND_ERR in error.message, error.message
         self.log.info("Head bucket on non existing bucket is failed")
         self.log.info("ENDED: HEAD bucket when Bucket does not exists")
 
@@ -804,7 +804,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
             self.log.info("Step 1: objects delete operation failed with error %s",
                 "NoSuchBucket")
         self.log.info("Step 2: List objects for non-existing bucket")
@@ -813,7 +813,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
             self.log.info("Step 2: List objects for non-existing bucket failed with "
                 "error %s", "NoSuchBucket")
         self.log.info(
@@ -873,7 +873,7 @@ class TestBucketWorkflowOperations:
             assert_utils.assert_false(resp[0], res[1])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info("Step 3: deleting objects using account 2 failed with error %s",
                 "AccessDenied")
         self.account_list.append(self.account_name)

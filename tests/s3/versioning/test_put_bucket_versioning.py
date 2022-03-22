@@ -26,7 +26,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -182,7 +182,7 @@ class TestPutBucketVersioning:
         except CTException as error:
             self.log.info("Step 2: Verify MalformedXML error with "
                           "Disabled bucket versioning")
-            assert_utils.assert_in(errconst.BKT_TAG_DUPLICATE_KEY_ERR, error.message,
+            assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be Disabled")
@@ -215,7 +215,7 @@ class TestPutBucketVersioning:
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify MalformedXML error with Unversioned bucket versioning")
-            assert_utils.assert_in(errconst.BKT_TAG_DUPLICATE_KEY_ERR, error.message,
+            assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be "
@@ -258,7 +258,7 @@ class TestPutBucketVersioning:
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify MalformedXML error with Unversioned bucket versioning")
-            assert_utils.assert_in(errconst.BKT_TAG_DUPLICATE_KEY_ERR, error.message,
+            assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, error.message,
                                    f"Expected error: MalformedXML Actual error: {error}")
             self.log.error("Error message: %s", error)
             self.log.info("Verified that bucket versioning can not be "

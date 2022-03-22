@@ -29,7 +29,7 @@ import pytest
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
@@ -263,14 +263,15 @@ class TestBucketPolicy:
         try:
             s3_bkt_policy_obj_two.delete_bucket_policy(bucket_name)
         except CTException as error:
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = acl_obj_one.put_bucket_acl(
             bucket_name, acl="private")
         assert resp[0], resp[1]
         resp = s3_obj_one.delete_bucket(bucket_name, force=True)
         assert resp[0], resp[1]
-        self.log.info("Delete bucket policy should through error message %s",
-            errconst.ACCESS_DENIED_ERR_KEY)
+        self.log.info(
+            "Delete bucket policy should through error message %s",
+            errmsg.ACCESS_DENIED_ERR_KEY)
 
     def create_bucket_put_obj_with_dir(
             self,
@@ -357,10 +358,10 @@ class TestBucketPolicy:
                 bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Put Bucket policy from second account will result into"
-            "failure with error : %s", errconst.ACCESS_DENIED_ERR_KEY)
+            "failure with error : %s", errmsg.ACCESS_DENIED_ERR_KEY)
         resp = self.acl_obj.put_bucket_acl(
             bucket_name, acl="private")
         assert resp[0], resp[1]
@@ -453,7 +454,7 @@ class TestBucketPolicy:
                 self.file_path)
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Uploading object to bucket with second account failed with error %s",
                 error.message)
@@ -650,7 +651,7 @@ class TestBucketPolicy:
                 self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_NO_SUCH_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
         self.log.info(
             "Step 2 : Retrieving policy of a bucket %s is failed",
             self.bucket_name)
@@ -673,7 +674,7 @@ class TestBucketPolicy:
                 self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 1 : Retrieving policy of a bucket %s is failed",
             self.bucket_name)
@@ -792,7 +793,7 @@ class TestBucketPolicy:
                 self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 3 : Get bucket policy with another account is failed")
         self.log.info(
@@ -863,7 +864,7 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_RESOURCE_ERR)
+            errmsg.S3_BKT_POLICY_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination with bucket name and all objects.")
 
@@ -885,7 +886,7 @@ class TestBucketPolicy:
             "objkey646_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination without mentioning bucket name")
 
@@ -907,7 +908,7 @@ class TestBucketPolicy:
             "objkey658_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination with not present bucket name")
 
@@ -1000,7 +1001,7 @@ class TestBucketPolicy:
             "objkey680_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination mentioning IAM details")
 
@@ -1024,7 +1025,7 @@ class TestBucketPolicy:
             "objkey682_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination with "
             "missing required component/value as per arn format")
@@ -1051,7 +1052,7 @@ class TestBucketPolicy:
             "objkey688_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test resource arn combination with multiple arns")
 
@@ -1073,7 +1074,7 @@ class TestBucketPolicy:
             "objkey689_2")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_RESOURCE_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_RESOURCE_ERR)
         self.log.info("Put bucket policy on a bucket is failed")
         self.log.info(
             "ENDED: Test resource arn combination with wildcard * for bucket")
@@ -1410,7 +1411,7 @@ class TestBucketPolicy:
         try:
             self.s3_bkt_policy_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert errconst.BKT_POLICY_NO_SUCH_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
         self.log.info("ENDED: Apply Delete-bucket-policy on existing bucket")
 
     @pytest.mark.parallel
@@ -1427,9 +1428,10 @@ class TestBucketPolicy:
         try:
             self.s3_bkt_policy_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
-        self.log.info("Step 1: Delete bucket policy should through error message %s",
-            errconst.NO_BUCKET_OBJ_ERR_KEY)
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+        self.log.info(
+            "Step 1: Delete bucket policy should through error message %s",
+            errmsg.NO_BUCKET_OBJ_ERR_KEY)
         self.log.info("ENDED: Apply Delete-bucket-policy on non existing bucket.")
 
     @pytest.mark.parallel
@@ -1488,10 +1490,10 @@ class TestBucketPolicy:
         try:
             self.s3_bkt_policy_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert errconst.BKT_POLICY_NO_SUCH_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
         self.log.info(
             "Step 3: Delete bucket policy should through error message %s",
-            errconst.BKT_POLICY_NO_SUCH_ERR)
+            errmsg.S3_BKT_POLICY_NO_SUCH_ERR)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy without specifying policy.")
 
@@ -1765,7 +1767,7 @@ class TestBucketPolicy:
         try:
             s3_bkt_policy_obj_2.delete_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Delete bucket policy should through error message")
         self.log.info(
@@ -1815,7 +1817,7 @@ class TestBucketPolicy:
         try:
             s3_bkt_policy_obj_2.delete_bucket_policy(self.bucket_name)
         except CTException as error:
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Delete bucket policy should through error message")
         self.log.info(
@@ -1858,7 +1860,7 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with invalid account-id")
 
@@ -1890,7 +1892,7 @@ class TestBucketPolicy:
         bkt_json_policy = bucket_policy
         self.put_invalid_policy(self.bucket_name,
                                 bkt_json_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with invalid user name")
 
@@ -1928,7 +1930,7 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with "
             "valid accountid and valid user but of different account")
@@ -1953,7 +1955,7 @@ class TestBucketPolicy:
         self.log.info("Performing put bucket policy")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with wildcard * for all accounts.")
 
@@ -1983,7 +1985,7 @@ class TestBucketPolicy:
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with wildcard * for all users in account")
 
@@ -2013,7 +2015,7 @@ class TestBucketPolicy:
             bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn specifying wildcard "
             "in the portion of the ARN that specifies the resource type")
@@ -2054,7 +2056,7 @@ class TestBucketPolicy:
             format(account_id, self.user_name)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test arn specifying invalid text in place of arn")
 
@@ -2094,7 +2096,7 @@ class TestBucketPolicy:
                                                                      self.user_name)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test arn specifying invalid text for partition value")
 
@@ -2134,7 +2136,7 @@ class TestBucketPolicy:
             format(account_id, self.user_name)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test arn specifying invalid text for service value.")
 
@@ -2174,7 +2176,7 @@ class TestBucketPolicy:
             format(account_id, self.user_name)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test arn specifying invalid text for region value .")
 
@@ -2214,7 +2216,7 @@ class TestBucketPolicy:
             format(account_id, self.user_name)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test arn specifying component/value as per arn format at inchanged position")
 
@@ -2235,7 +2237,7 @@ class TestBucketPolicy:
         self.log.info("Step 2,3 : Put Bucket policy with missing field")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_MISSING_FIELD_ERR)
+                                errmsg.S3_BKT_POLICY_MISSING_FIELD_ERR)
         self.log.info(
             "ENDED: Test missing key fields in bucket policy json")
 
@@ -2256,7 +2258,7 @@ class TestBucketPolicy:
         self.log.info("Step 2,3 : Put Bucket policy with invalid field")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_UNKNOWN_FIELD_ERR)
+                                errmsg.S3_BKT_POLICY_UNKNOWN_FIELD_ERR)
         self.log.info(
             "ENDED: Test invalid field in bucket policy json")
 
@@ -2278,7 +2280,7 @@ class TestBucketPolicy:
             "Step 2,3 : Put Bucket policy with case sensitivity of key fields")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_UNKNOWN_FIELD_ERR)
+                                errmsg.S3_BKT_POLICY_UNKNOWN_FIELD_ERR)
         self.log.info(
             "ENDED: Test the case sensitivity of key fields in bucket policy json")
 
@@ -2299,7 +2301,7 @@ class TestBucketPolicy:
         self.log.info("Step 2,3 : Put Bucket policy with invalid values")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_INVALID_ACTION_ERR)
+                                errmsg.S3_BKT_POLICY_INVALID_ACTION_ERR)
         self.log.info(
             "ENDED: Test invalid values in the key fields in bucket policy json")
 
@@ -2321,7 +2323,7 @@ class TestBucketPolicy:
             "Step 2,3 : Put Bucket policy with blank values for the key fields")
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
-                                errconst.BKT_POLICY_EMPTY_ACTION_ERR)
+                                errmsg.S3_BKT_POLICY_EMPTY_ACTION_ERR)
         self.log.info(
             "ENDED: Test blank values for the key fields in bucket policy json.")
 
@@ -2409,7 +2411,7 @@ class TestBucketPolicy:
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 2: Uploading an object from another account is failed")
         self.log.info(
@@ -2576,10 +2578,10 @@ class TestBucketPolicy:
                 self.bucket_name, "obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Retrieved object using user of account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 6: Retrieving object using account 3")
         s3_obj_acc_3 = s3_test_lib.S3TestLib(
             access_key=access_key_2, secret_key=secret_key_2)
@@ -2598,7 +2600,7 @@ class TestBucketPolicy:
                 self.bucket_name, "obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 7: Retrieving object using user of account 3 is failed with error %s",
                 error.message)
@@ -2664,7 +2666,7 @@ class TestBucketPolicy:
                 self.bucket_name, "obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 5: Retrieving object using user of account 2 is failed with error %s",
                 error.message)
@@ -2729,7 +2731,7 @@ class TestBucketPolicy:
                 self.bucket_name, "obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 5: Retrieving object using user of account 2 is failed with error %s",
                 error.message)
@@ -2844,10 +2846,10 @@ class TestBucketPolicy:
                 self.bucket_name, maxkeys=4)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Verified that listing of object from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericLessThan Condition Operator, "
             "key s3:max-keys and Effect Deny")
@@ -2960,10 +2962,10 @@ class TestBucketPolicy:
                 self.bucket_name, maxkeys=11)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4:Verified that listing of object from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericGreaterThan Condition Operator, "
             "key s3:max-keys and Effect Deny")
@@ -3076,10 +3078,10 @@ class TestBucketPolicy:
                 self.bucket_name, maxkeys=10)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Verified that listing of object from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericNotEquals Condition Operator, "
             "key s3:max-keys and Effect Deny")
@@ -3192,11 +3194,11 @@ class TestBucketPolicy:
                 self.bucket_name, maxkeys=10)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Verified that listing of object "
             "from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using NumericGreaterThanEquals Condition Operator, "
             "key s3:max-keys and Effect Deny")
@@ -3238,7 +3240,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
             self.log.info(
                 "Step 2 : Applying policy on a bucket is failed with error %s",
                 error.message)
@@ -3287,7 +3289,7 @@ class TestBucketPolicy:
             self.s3_bkt_policy_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_NO_SUCH_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
         self.log.info(
             "Step 3: Verified that policy is deleted from a bucket %s",
             self.bucket_name)
@@ -3323,7 +3325,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
             self.log.info("Step 2: Applying policy on a bucket is "
                           "failed with error %s", error.message)
         self.log.info(
@@ -3356,7 +3358,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_INVALID_ACTION_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_INVALID_ACTION_ERR in error.message, error.message
             self.log.info("Step 2: Applying policy on a bucket is "
                           "failed with error %s", error.message)
         self.log.info(
@@ -3439,7 +3441,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info("Step 2: Deleting policy with users credential is "
                           "failed with error %s", error.message)
         self.log.info(
@@ -3485,7 +3487,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: Applying policy on a bucket with users credential is "
                 "failed with error %s", error.message)
@@ -3568,7 +3570,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 6: Deleting policy of a bucket is failed with error %s",
                 error.message)
@@ -3707,7 +3709,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 2: Put Bucket policy failed with error message : %s",
             "NoSuchBucket")
@@ -3994,10 +3996,10 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 2: Put Bucket policy from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = self.acl_obj.put_bucket_acl(
             self.bucket_name, acl="private")
         assert resp[0], resp[1]
@@ -4040,10 +4042,10 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_json_policy)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 2: Put Bucket policy from second account failing with error: %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = self.acl_obj.put_bucket_acl(
             self.bucket_name, acl="private")
         assert resp[0], resp[1]
@@ -4081,7 +4083,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Applying policy on a bucket is failed with error %s",
                 error.message)
@@ -4122,7 +4124,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Applying policy on a bucket is failed with error %s",
                 error.message)
@@ -4176,7 +4178,7 @@ class TestBucketPolicy:
             s3_policy_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Deleting policy of a bucket "
                 "with another account is failed with error %s", error.message)
@@ -4246,7 +4248,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.delete_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: Deleting bucket policy with users "
                 "credentials is failed with error %s", error.message)
@@ -4287,7 +4289,7 @@ class TestBucketPolicy:
             self.s3_bkt_policy_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_NO_SUCH_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
             self.log.info(
                 "Step 3: Verified that policy is deleted from a bucket %s",
                 self.bucket_name)
@@ -4331,7 +4333,7 @@ class TestBucketPolicy:
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Applying bucket policy with users "
                 "credentials is failed with error %s", error.message)
@@ -4375,7 +4377,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Retrieving bucket policy with users "
                 "credentials is failed with error %s", error.message)
@@ -4412,7 +4414,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: Retrieving bucket policy with users "
                 "credentials is failed with error %s", error.message)
@@ -4522,7 +4524,7 @@ class TestBucketPolicy:
             s3_policy_usr_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Retrieving bucket policy with users "
                 "credentials is failed with error %s", error.message)
@@ -4611,7 +4613,7 @@ class TestBucketPolicy:
             s3_policy_usr2_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 5: Get bucket policy with account2 login is failed with error %s",
                 error.message)
@@ -4674,7 +4676,7 @@ class TestBucketPolicy:
             s3_policy_usr2_obj.get_bucket_policy(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 3: Get bucket policy with account2 login is failed with error %s",
                 error.message)
@@ -4724,10 +4726,10 @@ class TestBucketPolicy:
                 self.obj_name_prefix)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Listing object with prefix using another account failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using StringEquals "
             "Condition Operator, key 's3:prefix' and Effect Allow")
@@ -4776,10 +4778,10 @@ class TestBucketPolicy:
                 self.obj_name_prefix)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Listing object with prefix using another account failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using StringNotEquals "
             "Condition Operator, key 's3:prefix' and Effect Deny")
@@ -4827,10 +4829,10 @@ class TestBucketPolicy:
                 self.obj_name_prefix)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Listing object with prefix using another account failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using StringEquals "
             "Condition Operator, key 's3:prefix' and Effect Deny")
@@ -4880,19 +4882,19 @@ class TestBucketPolicy:
                 self.obj_name_prefix)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Listing object with prefix using another account failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Listing object using another account")
         try:
             s3_obj.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Listing object using another account failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create Bucket Policy using StringNotEquals Condition Operator,"
             " key 's3:prefix' and Effect Allow")
@@ -4940,11 +4942,11 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_RESOURCE_ERR)
+            errmsg.S3_BKT_POLICY_RESOURCE_ERR)
         self.log.info(
             "Applying a policy to a bucket %s failed with %s",
             self.bucket_name,
-            errconst.BKT_POLICY_RESOURCE_ERR)
+            errmsg.S3_BKT_POLICY_RESOURCE_ERR)
         self.log.info(
             "ENDED: Create Bucket Policy using 'StringEquals' Condition Operator,"
             " key 's3:x-amz-grant-write',Effect Allow and Action 's3:ListBucket'")
@@ -4969,7 +4971,7 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test invalid Account ID in the bucket policy json")
 
@@ -4998,7 +5000,7 @@ class TestBucketPolicy:
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test invalid User name in the bucket policy json")
 
@@ -5864,7 +5866,7 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -5918,7 +5920,7 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -5978,7 +5980,7 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -6035,7 +6037,7 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: Uploading object to a bucket failed with error %s",
                 error.message)
@@ -6087,7 +6089,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6153,7 +6155,7 @@ _date."""
             self.bucket_name,
             bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6224,7 +6226,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[2], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6289,7 +6291,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6355,7 +6357,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6421,7 +6423,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6488,7 +6490,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0])
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6553,7 +6555,7 @@ _date."""
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         max_key_list = [1, 2, 3, 4]
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.list_obj_with_max_keys_and_diff_acnt(
             self.bucket_name, s3_obj1, max_key_list[0], err_message)
         self.list_obj_with_max_keys_and_diff_acnt(
@@ -6589,7 +6591,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.create_bucket_put_objects(
             self.bucket_name, 2, obj_prefix)
         acc_details = []
@@ -6654,7 +6656,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.create_bucket_put_objects(
             self.bucket_name, 2, obj_prefix)
         acc_details = []
@@ -6721,7 +6723,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.create_bucket_put_objects(
             self.bucket_name, 11, obj_prefix)
         acc_details = []
@@ -6786,7 +6788,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.create_bucket_put_objects(
             self.bucket_name, 11, obj_prefix)
         acc_details = []
@@ -6873,7 +6875,7 @@ _date."""
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_RESOURCE_ERR)
+            errmsg.S3_BKT_POLICY_RESOURCE_ERR)
         self.log.info(
             "ENDED: Test Create Bucket Policy using StringEqualsIfExists "
             "Condition Operator, key s3:x-amz-grant-write,Effect Allow and Action s3:ListBucket")
@@ -6892,7 +6894,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message =  errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -6974,7 +6976,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message =  errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -7128,7 +7130,7 @@ _date."""
             "Case 1 put object with acl permission as {} with new account".format(acl_permission))
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
-            acl=acl_permission, err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            acl=acl_permission, err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 2 put object without acl permission with new account")
         self.put_object_with_acl_cross_acnt(
@@ -7193,7 +7195,7 @@ _date."""
             self.bucket_name,
             self.s3_obj,
             self.obj_name_prefix,
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-acl' and Value 'False'")
@@ -7474,7 +7476,7 @@ _date."""
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_read_acp="ID={}".format(canonical_id),
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, self.s3_obj, self.obj_name_prefix)
@@ -7538,7 +7540,7 @@ _date."""
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, self.s3_obj, self.obj_name_prefix,
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-read-acp'"
@@ -7656,7 +7658,7 @@ _date."""
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_write_acp="ID={}".format(canonical_id),
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, self.s3_obj, self.obj_name_prefix)
@@ -7720,7 +7722,7 @@ _date."""
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, self.s3_obj, self.obj_name_prefix,
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 4: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key 's3:x-amz-grant-write-acp'"
@@ -7838,7 +7840,7 @@ _date."""
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, s3test_acl_obj, self.obj_name_prefix,
             grant_full_control="ID={}".format(canonical_id),
-            err_message= errconst.ACCESS_DENIED_ERR_KEY)
+            err_message=errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2 put object without grant permission")
         self.put_object_with_acl_cross_acnt(
             self.bucket_name, self.s3_obj, self.obj_name_prefix)
@@ -7861,7 +7863,7 @@ _date."""
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
-            errconst.BKT_POLICY_INVALID_JSON_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_JSON_ERR)
         self.log.info(
             "ENDED: Test when blank file is provided for put bucket policy")
 
@@ -8363,10 +8365,10 @@ _date."""
                 grant_read_acp="id={}".format(can_id))
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 7: Applying read acp permission on a bucket is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Test Give user permission for PutBucketPolicy and "
             "from user allow Get/PutBucketPolicy,PutBucketAcl permission to cross account user.")
@@ -8423,10 +8425,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Case 2: Uploading object with account 2 is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key "
@@ -8523,10 +8525,10 @@ _date."""
             self.bucket_name,
             s3_obj_acc_2,
             2,
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Listing objects with max keys from account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2: Listing objects with account 2")
         resp = s3_obj_acc_2.object_list(self.bucket_name)
         assert resp[0], resp[1]
@@ -8573,10 +8575,10 @@ _date."""
             s3_obj_acc2.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Case 2: Listing objects from account 2 is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:max-keys and Value False")
@@ -8671,10 +8673,10 @@ _date."""
             self.bucket_name,
             s3_obj_acc_2,
             "bkt_policy",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Listing objects with prefix from account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2: Listing object using account 2")
         resp = s3_obj_acc_2.object_list(self.bucket_name)
         assert resp[0], resp[1]
@@ -8734,10 +8736,10 @@ _date."""
             s3_obj_acc2.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Case 2: Listing objects from account 2 is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:prefix and Value False")
@@ -8834,10 +8836,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: Uploading object with account 2 is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition operator Key s3:x-amz-content-sha256 and Value True")
 
@@ -8966,11 +8968,11 @@ _date."""
                 "STANDARD")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Case 1: Uploading an object with storage class "
                 "STANDARD using account 2 is failed with error %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2: Uploading an object with account 2")
         resp = s3_obj_acc2.put_object(
             self.bucket_name,
@@ -9032,10 +9034,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info(
             "ENDED: Test Bucket Policy having Null Condition "
@@ -9161,10 +9163,10 @@ _date."""
                 grant_write_acp="ID={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploaded an object with storage class --grant-write using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
@@ -9175,10 +9177,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9250,10 +9252,10 @@ _date."""
                 grant_read="ID={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploaded an object with storage class --grant-read using account 2")
         self.log.info("Case 2: Uploading an object with account 2")
@@ -9339,10 +9341,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 2: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9413,10 +9415,10 @@ _date."""
                 acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9429,10 +9431,10 @@ _date."""
                 acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9443,10 +9445,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info(
             "Case 4: Uploading an object with invalid value 'xyz' using account 2")
@@ -9595,10 +9597,10 @@ _date."""
                 acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9611,10 +9613,10 @@ _date."""
                 acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9625,10 +9627,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9697,10 +9699,10 @@ _date."""
                 acl="bucket-owner-read")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-read is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploaded an object with --acl bucket-owner-read using account 2")
         self.log.info(
@@ -9713,10 +9715,10 @@ _date."""
                 acl="public-read")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: Uploading an object with --acl bucket-owner-full-control is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 2: Uploaded an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Case 3: Uploading an object with account 2")
@@ -9727,10 +9729,10 @@ _date."""
                 self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 3: Uploading an object with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Case 3: Uploaded an object with account 2")
         self.log.info("Step 2: Verified the Bucket Policy from cross account")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -9864,10 +9866,10 @@ _date."""
                 prefix="obj_policy")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: List objects with account 2 is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Listed objects with prefix using account 2")
         self.log.info(
@@ -9878,10 +9880,10 @@ _date."""
                 prefix=prefix_upper)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 2: List objects with upper prefix is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 2: Listed objects with upper prefix using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -10022,10 +10024,10 @@ _date."""
                 acl="bucket-owner-full-control")
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Case 1: Put objects is failed with error %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "Case 1: Uploading an object with --acl bucket-owner-full-control using account 2")
         self.log.info("Step 3: Verified the Bucket Policy from cross account")
@@ -10143,7 +10145,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -10217,7 +10219,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -10455,7 +10457,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
-        err_message =  errconst.ACCESS_DENIED_ERR_KEY
+        err_message = errmsg.ACCESS_DENIED_ERR_KEY
         object_lst = []
         self.log.info(
             "Step 1 : Create a bucket and upload objects in the bucket")
@@ -10780,7 +10782,7 @@ _date."""
                 grant_write_acp="id={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "put object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11020,7 +11022,7 @@ _date."""
             acl_obj_1.get_bucket_acl(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 10 & 11: Get ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11102,7 +11104,7 @@ _date."""
                 self.bucket_name, self.object_name, self.file_path)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 10 & 11: Put object in the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11183,7 +11185,7 @@ _date."""
             self.s3test_obj_1.object_list(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "List objects from the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11271,7 +11273,7 @@ _date."""
                 grant_write_acp="id={}".format(canonical_id_user_1))
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch"
                       "Put ACL of the bucket  -run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11353,7 +11355,7 @@ _date."""
             acl_obj_1.get_bucket_acl(self.bucket_name)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "Get ACL of the bucket  - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11452,7 +11454,7 @@ _date."""
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch"
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -11551,7 +11553,7 @@ _date."""
                                      object_key=object_names[0])
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 10 & 11: Account switch "
                       "Get object ACL - run from account1")
         self.log.info("set put_bucket_acl to private as part of teardown.")
@@ -12817,10 +12819,10 @@ _date."""
                 self.s3_obj.object_list(self.bucket_name)
             except CTException as error:
                 self.log.error(error.message)
-                assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+                assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 4: Listing objects of bucket without prefix failed with %s",
-                 errconst.ACCESS_DENIED_ERR_KEY)
+                errmsg.ACCESS_DENIED_ERR_KEY)
         except CTException as error:
             self.log.error(error.message)
         finally:
@@ -12874,10 +12876,10 @@ _date."""
                 self.bucket_name, prefix=self.obj_name_prefix)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 3: Listed objects of bucket with prefix failed with %s",
-             errconst.ACCESS_DENIED_ERR_KEY)
+            errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("Step 4: Listing objects of bucket without prefix")
         resp = self.s3_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
@@ -12918,10 +12920,10 @@ _date."""
                 self.bucket_name, bkt_policy_json)
         except CTException as error:
             self.log.error(error.message)
-            assert errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR in error.message, error.message
         self.log.info(
             "Step 3: Applying bucket policy on a bucket failed with %s",
-            errconst.BKT_POLICY_INVALID_PRINCIPAL_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_PRINCIPAL_ERR)
         self.log.info(
             "ENDED: Test principal arn combination with account-id and user as root.")
 
@@ -13239,7 +13241,7 @@ _date."""
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy_1,
-            errconst.BKT_POLICY_INVALID_ACTION_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_ACTION_ERR)
         self.log.info(
             "Step 3: Creating a json to allow ListBucket for account 2")
         bucket_policy_2["Statement"][0]["Principal"]["AWS"] = \
@@ -13298,7 +13300,7 @@ _date."""
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy_1,
-            errconst.BKT_POLICY_INVALID_ACTION_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_ACTION_ERR)
         self.log.info(
             "Step 3: Creating a json to allow GetObject for account 2")
         bucket_policy_2["Statement"][0]["Principal"]["AWS"] = \
@@ -13344,7 +13346,7 @@ _date."""
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy_1,
-            errconst.BKT_POLICY_INVALID_ACTION_ERR)
+            errmsg.S3_BKT_POLICY_INVALID_ACTION_ERR)
         self.log.info(
             "Step 3: Creating a json to allow PutBucketTagging for account 2")
         bucket_policy_2["Statement"][0]["Principal"]["AWS"] = \

@@ -25,7 +25,7 @@ import shutil
 import logging
 import pytest
 
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_acl_test_lib
@@ -172,7 +172,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_object_acl(
                 self.dummy_bucket, "ut-obj-01")
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_02_get_bucket_acl(self):
@@ -185,7 +185,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl(
                 self.dummy_bucket)
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_03_get_bucket_acl_using_iam_credentials(self):
@@ -208,8 +208,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl_using_iam_credentials(
                 "dummyAccKey", "dummySecKey", "ut-bkt-03")
         except CTException as error:
-            assert errconst.INVALID_ACCESSKEY_ERR_KEY in str(
-                error.message), error.message
+            assert errmsg.INVALID_ACCESSKEY_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_04_put_object_acl(self):
@@ -350,4 +349,4 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message

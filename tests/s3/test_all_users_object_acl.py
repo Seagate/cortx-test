@@ -24,7 +24,7 @@ import logging
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -58,7 +58,7 @@ class TestAllUsersObjectAcl:
             endpoint_url=S3_CFG["s3_url"])
         self.iam_test_obj = iam_test_lib.IamTestLib(
             endpoint_url=S3_CFG["iam_url"])
-        self.err_msg = errconst.ACCESS_DENIED_ERR_KEY
+        self.err_msg = errmsg.ACCESS_DENIED_ERR_KEY
         self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
         self.test_file = "{}{}".format("all_users_obj_acl", time.perf_counter_ns())
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAllUsersObjectAcl")

@@ -28,7 +28,7 @@ from time import perf_counter_ns
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.s3_utils import get_unaligned_parts
@@ -202,7 +202,7 @@ class TestMultipartAbortCopy:
                 parts=parts)
         except CTException as error:
             self.log.error(error)
-            assert_utils.assert_in(errconst.NO_SUCH_UPLOAD_ERR, error.message, error)
+            assert_utils.assert_in(errmsg.NO_SUCH_UPLOAD_ERR, error.message, error)
             self.log.info(
                 "Uploading parts to the aborted multipart upload ID failed")
         self.log.info("Stop background S3 IOs")
@@ -380,9 +380,9 @@ class TestMultipartAbortCopy:
                 self.s3_test_obj.object_info(bucket, self.object_name)
             except CTException as error:
                 self.log.error(error)
-                assert_s3_err_msg(errconst.RGW_HEAD_OBJ_ERR,
-                                errconst.CORTX_HEAD_OBJ_ERR,
-                                CMN_CFG["s3_engine"], error)
+                assert_s3_err_msg(errmsg.RGW_HEAD_OBJ_ERR,
+                                  errmsg.CORTX_HEAD_OBJ_ERR,
+                                  CMN_CFG["s3_engine"], error)
         self.log.info("Stop background S3 IOs")
         self.s3_background_io.stop()
         self.log.info("ENDED: Test deleting completed multipart object during copy operation")

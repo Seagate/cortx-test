@@ -25,7 +25,7 @@ import shutil
 import logging
 import pytest
 
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
@@ -291,7 +291,7 @@ class TestS3TaggingTestLib:
             S3_TAG_OBJ.set_bucket_tag_duplicate_keys(
                 "ut-bkt-08", "aaa1", "bbb2")
         except CTException as error:
-            assert errconst.BKT_TAG_DUPLICATE_KEY_ERR in str(error.message), error.message
+            assert errmsg.MALFORMED_XML_ERR in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_09_set_bucket_tag_base64_encode(self):
@@ -304,7 +304,7 @@ class TestS3TaggingTestLib:
             S3_TAG_OBJ.set_bucket_tag_invalid_char(
                 self.dummy_bucket, "aaa", "aaa")
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_10_set_duplicate_object_tag_key(self):
@@ -331,7 +331,7 @@ class TestS3TaggingTestLib:
                 "aaa",
                 "bbb")
         except CTException as error:
-            assert errconst.BKT_TAG_DUPLICATE_KEY_ERR in str(error.message), error.message
+            assert errmsg.MALFORMED_XML_ERR in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_11_put_object_tag_with_tagging(self):
@@ -363,7 +363,7 @@ class TestS3TaggingTestLib:
                 key="aaa",
                 value="bbb")
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_12_put_object_tag_base64_encode(self):
@@ -385,7 +385,7 @@ class TestS3TaggingTestLib:
                 self.dummy_bucket, "ut-obj-12",
                 "aaa", "bbb")
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_13_get_object_tagging(self):
@@ -406,4 +406,4 @@ class TestS3TaggingTestLib:
             S3_TAG_OBJ.get_object_with_tagging(
                 self.dummy_bucket, "ut-obj-13")
         except CTException as error:
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message

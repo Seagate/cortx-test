@@ -25,7 +25,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
@@ -109,7 +109,7 @@ class TestPutBucket:
         """Verify put-bucket where authorization header is missing."""
         self.log.info("STARTED: Verify put-bucket where authorization header is missing")
         self.create_and_list_buckets_without_auth(
-            self.bucket_name, errconst.ACCESS_DENIED_ERR_KEY)
+            self.bucket_name, errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info("ENDED: Verify put-bucket where authorization header is missing")
 
     @pytest.mark.parallel
@@ -124,7 +124,7 @@ class TestPutBucket:
             "STARTED: Verify put-bucket with ip address format where authorization"
             " header is missing")
         self.create_and_list_buckets_without_auth(
-            "192.168.10.20", errconst.ACCESS_DENIED_ERR_KEY)
+            "192.168.10.20", errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Verify put-bucket with ip address format where authorization header is missing")
 
@@ -138,7 +138,7 @@ class TestPutBucket:
         self.log.info(
             "STARTED: Create multiple buckets where authorization header is missing")
         for bucket in [f"{self.bucket_name}416_1", f"{self.bucket_name}416_2"]:
-            self.create_and_list_buckets_without_auth(bucket, errconst.ACCESS_DENIED_ERR_KEY)
+            self.create_and_list_buckets_without_auth(bucket, errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create multiple buckets where authorization header is missing")
 
@@ -169,7 +169,7 @@ class TestPutBucket:
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                errconst.ACCESS_DENIED_ERR_KEY,
+                errmsg.ACCESS_DENIED_ERR_KEY,
                 error.message,
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
@@ -181,7 +181,7 @@ class TestPutBucket:
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                errconst.ACCESS_DENIED_ERR_KEY,
+                errmsg.ACCESS_DENIED_ERR_KEY,
                 error.message,
                 error.message)
         self.log.info(

@@ -27,7 +27,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
@@ -180,7 +180,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
         self.log.info("ENDED: verify Get Bucket ACL of non existing Bucket")
 
     @pytest.mark.parallel
@@ -231,7 +231,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert errconst.NO_BUCKET_NAME_ERR in str(error.message), error.message
+            assert errmsg.NO_BUCKET_NAME_ERR in str(error.message), error.message
         self.log.info("ENDED: Verify Get Bucket ACL without Bucket name")
 
     @pytest.mark.parallel
@@ -251,7 +251,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert errconst.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
         self.log.info("ENDED: Delete Bucket and verify Bucket ACL")
 
     @pytest.mark.parallel
@@ -317,7 +317,7 @@ class TestBucketACL:
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert errconst.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(self.bucket)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -363,7 +363,7 @@ class TestBucketACL:
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert errconst.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(self.bucket)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -382,9 +382,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL bucket-owner-full-control along with READ "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "bucket-owner-full-control",
-            error_msg=errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "bucket-owner-full-control", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED:Add canned ACL bucket-owner-full-control along with READ ACL "
             "grant permission")
 
@@ -398,9 +396,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL bucket-owner-read along with READ ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "bucket-owner-read",
-            error_msg=errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "bucket-owner-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL bucket-owner-read along with READ ACL "
             "grant permission")
 
@@ -414,9 +410,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'private' along with 'READ' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "private",
-            error_msg=errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "private", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'private' along with 'READ' ACL "
             "grant permission")
 
@@ -431,10 +425,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "private",
-            "grant-full-control",
-            errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "private", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
             "grant permission")
 
@@ -449,10 +440,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'public-read' along with 'READ_ACP' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "public-read",
-            "grant-read-acp",
-            errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "public-read", "grant-read-acp", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'public-read' along with 'READ_ACP' ACL grant "
             "permission")
 
@@ -466,10 +454,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "public-read",
-            "grant-write-acp",
-            errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "public-read", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
             "grant permission")
 
@@ -483,10 +468,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "public-read-write",
-            "grant-write-acp",
-            errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "public-read-write", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
             "ACL grant permission")
 
@@ -500,10 +482,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "public-read-write",
-            "grant-full-control",
-            errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "public-read-write", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
             "ACL grant permission")
 
@@ -517,9 +496,7 @@ class TestBucketACL:
         self.log.info("STARTED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
             "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "authenticated-read",
-            error_msg=errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "authenticated-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
             "grant permission")
 
@@ -533,10 +510,8 @@ class TestBucketACL:
         self.log.info("STARTED:Add canned ACL 'authenticate-read' along with 'READ_ACP' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket,
-            "authenticated-read",
-            "grant-read-acp",
-            error_msg=errconst.CANNED_ACL_GRANT_ERR)
+            self.bucket, "authenticated-read", "grant-read-acp", 
+            error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info("ENDED: Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL "
             "grant permission")
 
@@ -670,7 +645,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.INVALID_ACL_ERR in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info("Cleanup activity")
         self.log.info("Deleting a bucket %s", self.bucket)
         resp = s3_test.delete_bucket(self.bucket)
@@ -935,7 +910,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert errconst.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info("Step 2: retrieving bucket acl using account 2 failed with error %s",
                 "AccessDenied")
         self.log.info("ENDED:acc1: put bucket, acc2: no permissions or canned acl, "

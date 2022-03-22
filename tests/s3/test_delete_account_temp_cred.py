@@ -25,7 +25,7 @@ from libs.s3 import s3_test_lib, iam_test_lib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.utils.assert_utils import \
     assert_true, assert_in, assert_equal, assert_not_in
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
@@ -202,10 +202,10 @@ class TestDeleteAccountTempCred:
                 test_4519_cfg["temp_session_token"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.INVALID_ACCESSKEY_ERR_KEY,
-                error.message, error.message)
-        LOGGER.info("Step 5: Deleting account using invalid credentials failed with %s",
-            errconst.INVALID_ACCESSKEY_ERR_KEY)
+            assert_in(errmsg.INVALID_ACCESSKEY_ERR_KEY, error.message, error.message)
+        LOGGER.info(
+            "Step 5: Deleting account using invalid credentials failed with %s",
+            errmsg.INVALID_ACCESSKEY_ERR_KEY)
         LOGGER.info("ENDED: Delete account with invalid temp credentials")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -226,10 +226,10 @@ class TestDeleteAccountTempCred:
                 test_4520_cfg["temp_session_token"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.INVALID_ACCESSKEY_ERR_KEY,
-                error.message, error.message)
-        LOGGER.info("Step 4: Deleting non existing account with temp credentials failed with %s",
-            errconst.INVALID_ACCESSKEY_ERR_KEY)
+            assert_in(errmsg.INVALID_ACCESSKEY_ERR_KEY, error.message, error.message)
+        LOGGER.info(
+            "Step 4: Deleting non existing account with temp credentials failed with %s",
+            errmsg.INVALID_ACCESSKEY_ERR_KEY)
         LOGGER.info("ENDED: Delete non existing account with temp credentials.")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -242,7 +242,8 @@ class TestDeleteAccountTempCred:
         Delete account after 20 mins using temp credentials with expire time limit,
         Note:-There is time limit for duration like example [1 hour].
         """
-        LOGGER.info("STARTED: Delete account after 20 mins using temp credentials with "
+        LOGGER.info(
+            "STARTED: Delete account after 20 mins using temp credentials with "
             "expire time limit.")
         test_4521_cfg = S3_TMP_CRED_CFG["test_4521"]
         self.get_temp_creds(
@@ -250,7 +251,8 @@ class TestDeleteAccountTempCred:
             self.cfg["password"],
             duration=test_4521_cfg["time_duration"])
         time.sleep(test_4521_cfg["time_duration"])
-        LOGGER.info("Step 5: Deleting account %s using temporary credentials after "
+        LOGGER.info(
+            "Step 5: Deleting account %s using temporary credentials after "
             "expiry of time limit", self.account_name)
         try:
             self.iam_test_obj.delete_account_using_temp_creds(
@@ -260,10 +262,12 @@ class TestDeleteAccountTempCred:
                 self.temp_creds["session_token"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.CRED_EXPIRE_ERR, error.message, error.message)
-        LOGGER.info("Step 5: Deleting account using temporary credentials after"
-            " expiry of time limit failed with %s", errconst.CRED_EXPIRE_ERR)
-        LOGGER.info("ENDED: Delete account after 20 mins using temp credentials with expire "
+            assert_in(errmsg.CRED_EXPIRE_ERR, error.message, error.message)
+        LOGGER.info(
+            "Step 5: Deleting account using temporary credentials after"
+            " expiry of time limit failed with %s", errmsg.CRED_EXPIRE_ERR)
+        LOGGER.info(
+            "ENDED: Delete account after 20 mins using temp credentials with expire "
             "time limit.")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -300,10 +304,10 @@ class TestDeleteAccountTempCred:
             s3_temp_test_obj.create_bucket(test_4522_cfg["bucket_name"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.INVALID_ACCESSKEY_ERR_KEY,
-                    error.message, error.message)
-        LOGGER.info("Step 7: Creating a bucket using temp credentials of a deleted account "
-            "failed with %s", errconst.INVALID_ACCESSKEY_ERR_KEY)
+            assert_in(errmsg.INVALID_ACCESSKEY_ERR_KEY, error.message, error.message)
+        LOGGER.info(
+            "Step 7: Creating a bucket using temp credentials of a deleted account "
+            "failed with %s", errmsg.INVALID_ACCESSKEY_ERR_KEY)
         LOGGER.info("ENDED: Perform S3 operations using deleted account temp credentials")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -342,10 +346,10 @@ class TestDeleteAccountTempCred:
                 self.temp_creds["session_token"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.INVALID_ACCESSKEY_ERR_KEY,
-                    error.message, error.message)
-        LOGGER.info("Step 7: Deleting account using temp credentials of deleted account "
-            "failed with %s", errconst.INVALID_ACCESSKEY_ERR_KEY)
+            assert_in(errmsg.INVALID_ACCESSKEY_ERR_KEY, error.message, error.message)
+        LOGGER.info(
+            "Step 7: Deleting account using temp credentials of deleted account "
+            "failed with %s", errmsg.INVALID_ACCESSKEY_ERR_KEY)
         LOGGER.info("ENDED: Delete account using temp cred where that account recently got deleted")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -386,7 +390,8 @@ class TestDeleteAccountTempCred:
         Delete account after 1 hour using temp credentials with expire time limit,
         Note:-There is time limit for duration like example [1 hour].
         """
-        LOGGER.info("STARTED: Delete account after 1 hour using temp credentials with "
+        LOGGER.info(
+            "STARTED: Delete account after 1 hour using temp credentials with "
             "expire time limit.")
         test_4526_cfg = S3_TMP_CRED_CFG["test_4526"]
         try:
@@ -396,11 +401,12 @@ class TestDeleteAccountTempCred:
                 duration=test_4526_cfg["time_duration"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.MAX_DUR_EXCEED_ERR,
-                    error.message, error.message)
-        LOGGER.info("Step 4: Retrieving temporary credentials for the account failed with %s",
-            errconst.MAX_DUR_EXCEED_ERR)
-        LOGGER.info("ENDED: Delete account after 1 hour using temp credentials with expire "
+            assert_in(errmsg.S3_MAX_DUR_EXCEED_ERR, error.message, error.message)
+        LOGGER.info(
+            "Step 4: Retrieving temporary credentials for the account failed with %s",
+            errmsg.S3_MAX_DUR_EXCEED_ERR)
+        LOGGER.info(
+            "ENDED: Delete account after 1 hour using temp credentials with expire "
             "time limit.")
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
@@ -432,9 +438,9 @@ class TestDeleteAccountTempCred:
                 self.temp_creds["session_token"])
         except CTException as error:
             LOGGER.error(error.message)
-            assert_in(errconst.ACC_NOT_EMPTY_ERR,
-                    error.message, error.message)
-        LOGGER.info("Step 6: Deleting an account forcefully using temp credentials failed "
-            "with %s", errconst.ACC_NOT_EMPTY_ERR)
+            assert_in(errmsg.S3_ACC_NOT_EMPTY_ERR, error.message, error.message)
+        LOGGER.info(
+            "Step 6: Deleting an account forcefully using temp credentials failed "
+            "with %s", errmsg.S3_ACC_NOT_EMPTY_ERR)
         LOGGER.info("ENDED: Delete account forcefully using temp credentials "
             "where that account contains some Resource")

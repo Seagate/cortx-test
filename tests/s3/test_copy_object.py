@@ -28,7 +28,7 @@ from multiprocessing import Process
 
 import logging
 import pytest
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
@@ -610,8 +610,8 @@ class TestCopyObjects:
                 status, f"copied object greater than 5GB: {response}")
         except CTException as error:
             LOGGER.info(error.message)
-            assert_s3_err_msg(errconst.RGW_ERR_COPY_OBJ,
-                              errconst.CORTX_ERR_COPY_OBJ,
+            assert_s3_err_msg(errmsg.RGW_ERR_COPY_OBJ,
+                              errmsg.CORTX_ERR_COPY_OBJ,
                               CMN_CFG["s3_engine"], error)
         LOGGER.info("Step 5: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -691,7 +691,7 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             LOGGER.info(error.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info("Step 9: Get Object ACL of the destination bucket from Account1.")
         resp = s3_acl_obj1.get_bucket_acl(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -773,7 +773,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp)
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info("Step 9: Get Object ACL of the destination object from Account2.")
         resp = s3_acl_obj2.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1210,7 +1210,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info(
             "Step 7:  Compare ETag of source and destination object for data Integrity.")
         LOGGER.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1358,7 +1358,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info(
             "Step 6:  Compare ETag of source and destination object for data Integrity.")
         LOGGER.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1491,8 +1491,8 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_s3_err_msg(errconst.RGW_ERR_GET_OBJ_ACCESS,
-                              errconst.CORTX_ERR_GET_OBJ_ACCESS,
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
                               CMN_CFG["s3_engine"], error)
         LOGGER.info("6. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -1551,8 +1551,8 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_s3_err_msg(errconst.RGW_ERR_GET_OBJ_ACCESS,
-                              errconst.CORTX_ERR_GET_OBJ_ACCESS,
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
                               CMN_CFG["s3_engine"], error)
         LOGGER.info("6. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -1621,8 +1621,8 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_s3_err_msg(errconst.RGW_ERR_GET_OBJ_ACCESS,
-                              errconst.CORTX_ERR_GET_OBJ_ACCESS,
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
                               CMN_CFG["s3_engine"], error)
         resp = s3_acl_obj1.put_bucket_acl(
             bucket_name=self.bucket_name1,
@@ -1767,8 +1767,8 @@ class TestCopyObjects:
                 self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_s3_err_msg(errconst.RGW_ERR_COPY_OBJ_METADATA,
-                              errconst.CORTX_ERR_COPY_OBJ_METADATA,
+            assert_s3_err_msg(errmsg.RGW_ERR_COPY_OBJ_METADATA,
+                              errmsg.CORTX_ERR_COPY_OBJ_METADATA,
                               CMN_CFG["s3_engine"], error)
         LOGGER.info("Step 4: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
@@ -1810,7 +1810,7 @@ class TestCopyObjects:
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(errconst.NO_SUCH_KEY_ERR, error.message, error)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info(
             "Step 4: Copy object from bucket1 to bucket2 using wildcard * for part of "
             "source-object name.")
@@ -1819,7 +1819,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(errconst.NO_SUCH_KEY_ERR, error.message, error)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info(
             "Step 5: Copy object from bucket1 to bucket2 using wildcard ? for a character of "
             "source-object name.")
@@ -1828,7 +1828,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}?", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(errconst.NO_SUCH_KEY_ERR, error.message, error)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info("Step 6: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-17110_s3bench_ios")
@@ -1871,7 +1871,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -1942,7 +1942,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and "
                     "full control to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_permission(
@@ -1991,7 +1991,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("ENDED: Use bucket policy to deny copy object to another account and "
                     "allow through ACLs.")
 
@@ -2031,7 +2031,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2091,7 +2091,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 11: Using bucket policy Allow PutObject and PutObjectTagging access to "
                     "Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2160,7 +2160,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2256,5 +2256,5 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as err:
             LOGGER.info(err.message)
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,err.message, err)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("ENDED: Use bucket policy to validate copy object with applied ACL.")

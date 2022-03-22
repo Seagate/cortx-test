@@ -26,7 +26,7 @@ import time
 
 import pytest
 from commons.ct_fail_on import CTFailOn
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -158,7 +158,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.put_object(self.bucket_name, "testobj", self.test_file_path)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Putting an object to bucket from other unsigned user is failed")
         self.log.info("ENDED: Put an object in bucket without Authentication when AllUsers"
                       " have READ permission")
@@ -190,7 +190,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Deleting object from other unsigned user failed")
         self.log.info("ENDED: Delete an object from bucket without Authentication "
                       "when AllUsers have READ permission")
@@ -223,7 +223,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading object's ACL from other unsigned user is failed")
         self.log.info("ENDED: Read an object ACL from bucket without Authentication "
                       "when AllUsers have READ permission")
@@ -255,7 +255,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_bucket_acl(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading bucket's ACL from other unsigned user failed")
         self.log.info("ENDED: Read a bucket ACL of a bucket without Authentication "
                       "when AllUsers have READ permission")
@@ -287,7 +287,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.put_bucket_acl(self.bucket_name, acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Updating bucket ACL from other unsigned user is failed")
         self.log.info("ENDED: Update a bucket ACL for a bucket without Authentication "
                       "when AllUsers have READ permission")
@@ -321,7 +321,7 @@ class TestAllUsersBucketAcl:
                                                           acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Updating object's ACL from other unsigned user is failed")
         self.log.info("ENDED: Update an object ACL from bucket without Authentication"
                       " when AllUsers have READ permission")
@@ -354,7 +354,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.object_list(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Listing objects in bucket from other unsigned user is failed")
         self.log.info("ENDED: Listing of objects in bucket without Authentication when"
                       " AllUsers have WRITE permission")
@@ -458,7 +458,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading an object ACL from other unsigned user failed")
         self.log.info("ENDED: Read an object ACL from bucket without Authentication "
                       "when AllUsers have WRITE permission")
@@ -490,7 +490,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_bucket_acl(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 3: Reading bucket ACL from other unsigned user failed")
         self.log.info("ENDED: Read a bucket ACL from bucket without Authentication"
                       " when AllUsers have WRITE permission")
@@ -522,7 +522,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.put_bucket_acl(self.bucket_name, acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Changing bucket ACL to private from "
                       "other unsigned user is failed")
         self.log.info("ENDED: Update a bucket ACL from bucket without Authentication "
@@ -555,7 +555,7 @@ class TestAllUsersBucketAcl:
                                                           acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Changing object ACL to private from "
                       "other unsigned user is failed")
         self.log.info("ENDED: Update an object ACL from bucket without Authentication"
@@ -588,7 +588,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.object_list(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Get list of objects from other unsigned user failed")
         self.log.info("ENDED: Check listing of objects in bucket without Authentication"
                       " when AllUsers have READ_ACP permission")
@@ -621,7 +621,7 @@ class TestAllUsersBucketAcl:
                                                self.test_file_path)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Uploading object from other unsigned user failed")
         self.log.info("ENDED: Create an object in bucket without Authentication "
                       "when AllUsers have READ_ACP permission")
@@ -653,7 +653,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Deleting existing object from other unsigned user failed")
         self.log.info("ENDED: Delete an object from bucket without Authentication "
                       "when AllUsers have READ_ACP permission")
@@ -685,7 +685,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading object's ACL from other unsigned user is failed")
         self.log.info("ENDED: Read an object ACL from bucket without Authentication"
                       " when AllUsers have READ_ACP permission")
@@ -749,7 +749,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.put_bucket_acl(self.bucket_name, acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Updating bucket's ACL from other unsigned user is failed")
         self.log.info("ENDED: Update a bucket ACL from bucket without Authentication"
                       " when AllUsers have READ_ACP permission")
@@ -782,7 +782,7 @@ class TestAllUsersBucketAcl:
                 self.bucket_name, self.obj_name, acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Updating object's ACL from other unsigned user is failed")
         self.log.info("ENDED: Update an object ACL from bucket without Authentication "
                       "when AllUsers have READ_ACP permission")
@@ -814,7 +814,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.object_list(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Getting list of objects in bucket from other unsigned user failed")
         self.log.info("ENDED: Check listing of objects in bucket without Authentication "
                       "when AllUsers have WRITE_ACP permission")
@@ -848,7 +848,7 @@ class TestAllUsersBucketAcl:
                 self.bucket_name, self.new_obj_name, self.test_file_path)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Uploading an object to a bucket from other unsigned user is failed")
         self.log.info("ENDED: Create an object in bucket without Authentication when "
                       "AllUsers have WRITE_ACP permission")
@@ -880,7 +880,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Deleting an object from other unsigned user is failed")
         self.log.info("ENDED: Delete an object from bucket without Authentication when "
                       "AllUsers have WRITE_ACP permission")
@@ -911,7 +911,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading object ACL through other unsigned account failed")
         self.log.info("ENDED: Read an object ACL from bucket without Authentication when "
                       "AllUsers have WRITE_ACP permission")
@@ -942,7 +942,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_bucket_acl(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading bucket ACL through other unsigned account failed")
         self.log.info("ENDED: Read a bucket ACL from bucket without Authentication "
                       "when AllUsers have WRITE_ACP permission")
@@ -1006,7 +1006,7 @@ class TestAllUsersBucketAcl:
                 self.bucket_name, self.obj_name, acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4:Updating object ACL through other unsigned account failed")
         self.log.info("ENDED: Update an object ACL from bucket without Authentication"
                       " when AllUsers have WRITE_ACP permission")
@@ -1126,7 +1126,7 @@ class TestAllUsersBucketAcl:
             resp = self.no_auth_obj.get_object_acl(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Reading object ACL through other unsigned account failed")
         self.log.info("ENDED: Read an object ACL from bucket without Authentication when"
                       " AllUsers have FULL_CONTROL permission")
@@ -1218,7 +1218,7 @@ class TestAllUsersBucketAcl:
                                                           acl="private")
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY, error.message, error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message, error.message)
         self.log.info("Step 4: Updating object ACL through other unsigned account failed")
         self.log.info("ENDED: Update an object ACL from bucket without Authentication "
                       "when AllUsers have FULL_CONTROL permission")

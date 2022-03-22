@@ -23,7 +23,7 @@ import time
 import logging
 import pytest
 
-from commons import error_constants as errconst
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -136,8 +136,7 @@ class TestBucketLocation:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in(errconst.NO_BUCKET_OBJ_ERR_KEY,
-                str(error.message), error.message)
+            assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 1 : Get bucket location on non existing bucket failed "
             "with error %s", "NoSuchBucket")
         self.log.info("ENDED: Verify get bucket location for the bucket which is "
@@ -271,8 +270,7 @@ class TestBucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert_utils.assert_in(errconst.ACCESS_DENIED_ERR_KEY,
-                str(error.message), error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")
         self.log.info(
