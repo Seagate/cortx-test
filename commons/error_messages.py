@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -15,42 +17,40 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
 
 """All common error constants string from cortx-test."""
 
 # S3 errors for Cortx s3 and RGW S3
 
 RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
-                        "operation: Unknown")
+                         "operation: Unknown")
 CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
-                          "operation: Your key is too long.")
+                           "operation: Your key is too long.")
 RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
-                     "operation: Unknown")
+                      "operation: Unknown")
 CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
                         "operation: One or more of the specified parts could not be found. The "
                         "part might not have been uploaded, or the specified entity tag might not "
                         "have matched the part's entity tag.")
 RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
-                             "CreateBucket operation: Unknown")
+                              "CreateBucket operation: Unknown")
 CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
-                               "the CreateBucket operation: Your previous request to create "
-                               "the named bucket succeeded and you already own it.")
+                                "the CreateBucket operation: Your previous request to create "
+                                "the named bucket succeeded and you already own it.")
 RGW_ERR_COPY_OBJ = ("An error occurred (InvalidRequest) when calling the CopyObject operation:"
                     " The specified copy source is larger than the maximum allowable size for a "
                     "copy source: 5368709120")
 CORTX_ERR_COPY_OBJ = ("An error occurred (InvalidRequest) when calling the CopyObject operation:"
-                     " The specified copy source is larger than the maximum allowable size for a "
-                     "copy source: 5368709120")
+                      " The specified copy source is larger than the maximum allowable size for a "
+                      "copy source: 5368709120")
 RGW_ERR_COPY_OBJ_METADATA = ("An error occurred (InvalidRequest) when calling the CopyObject "
-                            "operation: This copy request is illegal because it is trying to "
-                            "copy an object to itself without changing the object's metadata, "
-                            "storage class, website redirect location or encryption attributes.")
+                             "operation: This copy request is illegal because it is trying to "
+                             "copy an object to itself without changing the object's metadata, "
+                             "storage class, website redirect location or encryption attributes.")
 CORTX_ERR_COPY_OBJ_METADATA = ("An error occurred (InvalidRequest) when calling the CopyObject "
-                              "operation: This copy request is illegal because it is trying to "
-                              "copy an object to itself without changing the object's metadata, "
-                              "storage class, website redirect location or encryption attributes.")
+                               "operation: This copy request is illegal because it is trying to "
+                               "copy an object to itself without changing the object's metadata, "
+                               "storage class, website redirect location or encryption attributes.")
 RGW_HEAD_OBJ_ERR = ("An error occurred (404) when calling the HeadObject operation: Not Found")
 CORTX_HEAD_OBJ_ERR = ("An error occurred (404) when calling the HeadObject operation: Not Found")
 

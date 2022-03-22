@@ -529,7 +529,7 @@ class TestBucketACL:
             "STARTED:Add canned ACL 'authenticate-read' along with 'READ_ACP' "
             "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "authenticated-read", "grant-read-acp", 
+            self.bucket, "authenticated-read", "grant-read-acp",
             error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
             "ENDED: Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL "

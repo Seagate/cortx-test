@@ -26,8 +26,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons import error_messages as errmsg
-from commons.utils.assert_utils import \
-    assert_true, assert_in, assert_equal, assert_not_in
+from commons.utils.assert_utils import assert_true
+from commons.utils.assert_utils import assert_in
+from commons.utils.assert_utils import assert_equal
+from commons.utils.assert_utils import assert_not_in
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from config.s3 import S3_TMP_CRED_CFG
 
