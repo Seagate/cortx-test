@@ -593,8 +593,7 @@ class TestMultipartUpload:
             mp_config["file_size"],
             mp_config["total_parts"])
         mpu_id, _ = res
-        self.log.info(
-            "Multipart Upload Part numbers should be in range of 1 to 10,000")
+        self.log.info("Multipart Upload Part numbers should be in range of 1 to 10,000")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(
             mpu_id,
