@@ -245,12 +245,13 @@ class DiskFailureRecoveryLib:
             LOGGER.debug("Durability Values (SNS) %s", sns_values)
             data_sns = sns_values['data']
             sum_sns = sum(sns_values.values())
-            LOGGER.debug("Current usage : %s Expected memory usage : %s", current_usage_per,
+            LOGGER.debug("Current usage : %s Expected disk usage : %s", current_usage_per,
                          memory_percent)
             write_percent = memory_percent - current_usage_per
             expected_writes = (write_percent * total_cap) / 100
             user_data_writes = data_sns / sum_sns * expected_writes
-            LOGGER.info("User writes to be performed in %s bytes", user_data_writes)
+            LOGGER.info("User writes to be performed %s bytes to attain %s full disk space",
+                        user_data_writes, memory_percent)
             return True, user_data_writes
         else:
             LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
@@ -303,7 +304,7 @@ class DiskFailureRecoveryLib:
 
     @staticmethod
     def perform_near_full_sys_operations(s3userinfo, workload_info: list, skipread: bool = True,
-            validate: bool = True, skipcleanup: bool = False):
+                                         validate: bool = True, skipcleanup: bool = False):
         """
         Perform Read/Validate/Delete operations on the workload info using s3bench
         :param s3userinfo: S3user dictionary with access/secret key
@@ -327,7 +328,7 @@ class DiskFailureRecoveryLib:
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"])
             LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
-                        each['obj_size'],each['num_clients'])
+                        each['obj_size'], each['num_clients'])
             LOGGER.info(f"Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload failed for {each['obj_size']}. Please read log file {resp[1]}"
