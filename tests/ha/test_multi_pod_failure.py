@@ -2438,6 +2438,7 @@ class TestMultiPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Multipart feature F-20C targeted for PI-7")
     @pytest.mark.tags("TEST-35782")
     @CTFailOn(error_handler)
     def test_degraded_mpu_after_kpods_fail(self):
@@ -2733,7 +2734,7 @@ class TestMultiPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Multipart not completely supported till PI-7")
+    @pytest.mark.skip(reason="Multipart feature F-20C targeted for PI-7")
     @pytest.mark.tags("TEST-35783")
     @CTFailOn(error_handler)
     def test_partial_mpu_after_kpods_fail(self):
@@ -2744,7 +2745,7 @@ class TestMultiPodFailure:
         LOGGER.info("STARTED: Test to verify partial multipart upload after each data pod is "
                     "failed till K pods and complete upload after all K pods are failed")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
-        total_parts = self.kvalue * 10 + 50
+        total_parts = self.kvalue * 5 + HA_CFG["5gb_mpu_data"]["total_parts"]
         parts = list(range(1, total_parts + 1))
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
@@ -2932,7 +2933,7 @@ class TestMultiPodFailure:
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Multipart not completely supported till PI-7")
+    @pytest.mark.skip(reason="Multipart feature F-20C targeted for PI-7")
     @pytest.mark.tags("TEST-35784")
     @CTFailOn(error_handler)
     def test_mpu_during_kpods_shutdown(self):
@@ -2942,7 +2943,7 @@ class TestMultiPodFailure:
         LOGGER.info("STARTED: Test to verify multipart upload during data pods failure till K pods "
                     "by delete deployment")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
-        total_parts = self.kvalue * 10 + 50
+        total_parts = self.kvalue * 5 + HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
         random.shuffle(part_numbers)
         output = Queue()
@@ -3001,7 +3002,6 @@ class TestMultiPodFailure:
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 2: Sucessfully shutdown %s (K) data pods one by one while continuous "
                     "multipart upload in background", self.kvalue)
-        event.clear()
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -3026,6 +3026,7 @@ class TestMultiPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services on remaining pods are in online state")
+        event.clear()
 
         LOGGER.info("Step 6: Checking response from background process")
         thread.join()
