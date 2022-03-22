@@ -273,7 +273,7 @@ class DiskFailureRecoveryLib:
     @staticmethod
     def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> list:
         """
-        Perform write operation till the memory if filled to given percentage
+        Perform write operation till the memory is filled to given percentage
         :param s3userinfo: S3user dictionary with access/secret key
         :param user_data_writes: Write operation to be performed for specific bytes
         :param bucket_prefix: Bucket prefix for the data written
@@ -298,7 +298,7 @@ class DiskFailureRecoveryLib:
                                        num_clients=client,
                                        num_sample=samples,
                                        obj_name_pref=obj_name, obj_size=obj_size,
-                                       skip_cleanup=False, duration=None,
+                                       skip_cleanup=True, duration=None,
                                        log_file_prefix=f"workload_{obj_size}mb",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])

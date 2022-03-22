@@ -200,7 +200,7 @@ class TestDiskFailureRecovery:
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after sns repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -397,7 +397,7 @@ class TestDiskFailureRecovery:
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after sns repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -497,7 +497,7 @@ class TestDiskFailureRecovery:
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after sns repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -614,7 +614,7 @@ class TestDiskFailureRecovery:
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after sns repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
@@ -836,7 +836,7 @@ class TestDiskFailureRecovery:
 
         if degraded_byte_cnt_after_repair >= degraded_byte_cnt_after_fail:
             assert_utils.assert_true(False, "Degraded byte count after disk failure less than "
-                                            "or equal to degraded byte count before disk fail")
+                                            "or equal to degraded byte count after repair")
         else:
             LOGGER.info("Degraded byte count after sns repair is less than "
                         "degraded byte count after disk fail")
