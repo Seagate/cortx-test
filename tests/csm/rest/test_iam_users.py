@@ -1865,7 +1865,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Patch request status code failed")
-        self.log.info("##### Test completed -  %s #####", test_case_name) 
+        self.log.info("##### Test completed -  %s #####", test_case_name)
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
