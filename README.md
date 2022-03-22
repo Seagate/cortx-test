@@ -1,5 +1,5 @@
 # cortx-test
-CORTX-TEST is a repository for multiple automation projects developed for CORTX and supported solutions/systems.
+CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
 
 It is logically divided into following components: 
 * Test Automation framework
