@@ -29,6 +29,7 @@ import copy
 from multiprocessing import Process
 from time import perf_counter_ns
 import yaml
+import json
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -65,8 +66,8 @@ class HAK8s:
         self.vm_username = os.getenv(
             "QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         self.vm_password = os.getenv("QA_VM_POOL_PASSWORD", HA_CFG["vm_params"]["passwd"])
-        CMN_CFG.get('bmc', {}).get('username')
-        CMN_CFG.get('bmc', {}).get('password')
+        self.bmc_user = CMN_CFG.get('bmc', {}).get('username')
+        self.bmc_pwd = CMN_CFG.get('bmc', {}).get('password')
         self.t_power_on = HA_CFG["common_params"]["power_on_time"]
         self.t_power_off = HA_CFG["common_params"]["power_off_time"]
         self.mgnt_ops = ManagementOPs()
@@ -743,7 +744,6 @@ class HAK8s:
             resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         except IOError as error:
             LOGGER.error("Error: Cluster status has some failures.")
-            LOGGER.debug("Response for cluster status: %s",resp)
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
@@ -1197,3 +1197,114 @@ class HAK8s:
         data = yaml.safe_load(conf_fd)
 
         return True, data
+
+    @staticmethod
+    def setup_mock_monitor(node_obj):
+        """
+        :param node_obj: Object for node
+        :return: Bool
+        """
+        # TODO: Revisit once RPM for mock_health_event_publisher is available
+        LOGGER.info("Get HA pod name for setting up mock monitor")
+        ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
+        LOGGER.info("Install git inside ha pod %s", ha_pod)
+        try:
+            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
+                                  command_suffix="yum install git -y", decode=True)
+        except IOError as error:
+            LOGGER.error("Failed to install git inside ha pod %s due to error: %s", ha_pod, error)
+            return False
+
+        LOGGER.info("Clone HA repo inside ha pod %s to get mock_health_event_publisher.py", ha_pod)
+        try:
+            node_obj.send_k8s_cmd(
+                operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
+                command_suffix=f"test -f {common_const.MOCK_MONITOR_PATH}",
+                decode=True)
+        except IOError as error:
+            LOGGER.info("%s file doesn't exist. Error: %s", common_const.MOCK_MONITOR_PATH, error)
+            try:
+                node_obj.send_k8s_cmd(
+                    operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
+                    command_suffix="git clone -b fault_k8s https://github.com/Seagate/cortx-ha.git",
+                    decode=True)
+            except IOError as error:
+                LOGGER.error("Failed to clone repo cortx-ha.git inside ha pod %s due to error: %s",
+                             ha_pod, error)
+                return False
+
+        return True
+
+    @staticmethod
+    def simulate_disk_cvg_failure(node_obj, source, resource_status, resource_type,
+                                  resource_cnt=1, node_cnt=1, delay=None):
+        """
+        :param node_obj: Object for node
+        :param source: Source of the event, monitor, ha, hare, etc.
+        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
+        repaired, rebalancing, offline, etc.
+        :param resource_type: node, cvg, disk, etc.
+        :param resource_cnt: Count of the resources
+        :param node_cnt: Count of the nodes on which failure to be simulated
+        :param delay: Delay between two events (Optional)
+        Format of events file:
+        {
+        "events":
+            {
+                "1": { # Any key
+                    "source": "hare", # Source of the event, monitor, ha, hare, etc.
+                    "node_id": "xxxx", # Node id fetched with -gdt/-gs arguments above.
+                    "resource_type": "node", # Resource type, node, cvg, disk, etc.
+                    "resource_id": "xxxx", # Resource id fetched with -gdt/-gs/get-cvgs/get-disks
+                    options above.
+                    "resource_status": "online", # Resource status, recovering, online, failed,
+                    unknown, degraded, repairing, repaired, rebalancing, offline, etc.
+                    "specific_info": {} # Key-value pairs e.g. "generation_id": "xxxx"
+                    },
+                # Repeat the dictionary above with specific values if multiple events to be sent.
+            },
+        "delay": xxxx # If present this will add delay of specified seconds between the events.
+        }
+        :return: Bool, config_dict/error
+        """
+        config_json_file = "config.json"
+        config_dict = dict()
+        config_dict["events"] = {}
+        # TODO: Get node id list using with -gdt/-gs arguments.
+        node_id_list = []
+        # TODO: Get resource id list using with -gdt/-gs/get-cvgs/get-disks options.
+        resource_id_list = []
+        if len(node_id_list) < node_cnt or len(resource_id_list) < resource_cnt:
+            LOGGER.error("Please provide correct count for resource/node")
+            return False, (node_id_list, resource_id_list)
+        count = 0
+        for n_cnt in range(node_cnt):
+            for d_cnt in range(resource_cnt):
+                count += 1
+                config_dict["events"][f"{count}"] = {}
+                config_dict["events"][f"{count}"]["resource_type"] = resource_type
+                config_dict["events"][f"{count}"]["source"] = source
+                config_dict["events"][f"{count}"]["resource_status"] = resource_status
+                config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
+                config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
+
+        if delay:
+            config_dict["delay"] = delay
+
+        with open(config_json_file, "w") as outfile:
+            json.dump(config_dict, outfile)
+
+        LOGGER.info("Publishing mock events: %s", config_dict)
+        LOGGER.info("Get HA pod name for publishing event")
+        ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
+        LOGGER.info("Publishing event %s for %s resource type through ha pod %s", resource_status,
+                    resource_type, ha_pod)
+        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_PATH, config_json_file)
+        try:
+            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
+                                  command_suffix=cmd, decode=True)
+        except IOError as error:
+            LOGGER.error("Failed to publish the event due to error: %s", error)
+            return False, error
+
+        return True, config_dict
