@@ -8,7 +8,7 @@ It is logically divided into following components:
 * Tools (reporting, DI, clone TP, etc.,).
 
 ## Getting Started
-This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to . Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
 
 You can have a separate client VM with any Linux flavour to install client side pre-requisites and start using automation framework on the same VM. This VM should have connectivity to Cortx Cluster OR CORTX OVA deployment. Alternatively you may use one of the nodes as client (less recommended).     
 
