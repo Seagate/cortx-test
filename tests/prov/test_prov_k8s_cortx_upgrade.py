@@ -45,7 +45,6 @@ class TestK8CortxUpgrade:
     def setup_class(cls):
 
         """ Setup class. """
-
         LOGGER.info("STARTED: Setup Module operations")
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
@@ -88,9 +87,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
-
         """ Verify CORTX Software upgrade."""
-
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
@@ -142,7 +139,6 @@ class TestK8CortxUpgrade:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
-
         """
         Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
         lower version.
