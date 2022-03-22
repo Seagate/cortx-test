@@ -324,7 +324,7 @@ If you want to anyway run the parallel tests sequentially. You should use --forc
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928 --force_serial_run True
 ```
-If you want to run your test plan and test execution ticket with test runner, you should skip --force_serial_run switch.
+If you want to run your test plan and TE (TestExecution) ticket with test runner, you should skip --force_serial_run switch.
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928
 ``` 
