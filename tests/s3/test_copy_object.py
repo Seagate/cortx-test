@@ -28,13 +28,16 @@ from multiprocessing import Process
 
 import logging
 import pytest
+from commons import error_messages as errmsg
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
+from commons.utils.s3_utils import assert_s3_err_msg
 from config.s3 import S3_CFG
+from config import CMN_CFG
 from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
@@ -607,10 +610,9 @@ class TestCopyObjects:
                 status, f"copied object greater than 5GB: {response}")
         except CTException as error:
             LOGGER.info(error.message)
-            assert_utils.assert_in(
-                "An error occurred (InvalidRequest) when calling the CopyObject operation:"
-                " The specified copy source is larger than the maximum allowable size for a"
-                " copy source: 5368709120", error.message, error)
+            assert_s3_err_msg(errmsg.RGW_ERR_COPY_OBJ,
+                              errmsg.CORTX_ERR_COPY_OBJ,
+                              CMN_CFG["s3_engine"], error)
         LOGGER.info("Step 5: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-19846_s3bench_ios")
@@ -689,11 +691,8 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             LOGGER.info(error.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the "
-                "GetObjectAcl operation: Access Denied", error.message, error)
-        LOGGER.info(
-            "Step 9: Get Object ACL of the destination bucket from Account1.")
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
+        LOGGER.info("Step 9: Get Object ACL of the destination bucket from Account1.")
         resp = s3_acl_obj1.get_bucket_acl(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_acl_obj2.put_bucket_acl(
@@ -774,11 +773,8 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp)
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation:"
-                " Access Denied", error.message, error)
-        LOGGER.info(
-            "Step 9: Get Object ACL of the destination object from Account2.")
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
+        LOGGER.info("Step 9: Get Object ACL of the destination object from Account2.")
         resp = s3_acl_obj2.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
@@ -1214,9 +1210,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
-                "Access Denied", error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info(
             "Step 7:  Compare ETag of source and destination object for data Integrity.")
         LOGGER.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1364,9 +1358,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
-                "Access Denied", error.message, error)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,error.message, error)
         LOGGER.info(
             "Step 6:  Compare ETag of source and destination object for data Integrity.")
         LOGGER.info("ETags: Put: %s, copy: %s", put_etag, copy_etag)
@@ -1499,9 +1491,9 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied", error.message, error)
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
+                              CMN_CFG["s3_engine"], error)
         LOGGER.info("6. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-19897_s3bench_ios")
@@ -1559,9 +1551,9 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied", error.message, error)
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
+                              CMN_CFG["s3_engine"], error)
         LOGGER.info("6. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-19898_s3bench_ios")
@@ -1629,9 +1621,9 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied", error.message, error)
+            assert_s3_err_msg(errmsg.RGW_ERR_GET_OBJ_ACCESS,
+                              errmsg.CORTX_ERR_GET_OBJ_ACCESS,
+                              CMN_CFG["s3_engine"], error)
         resp = s3_acl_obj1.put_bucket_acl(
             bucket_name=self.bucket_name1,
             grant_full_control="id={}".format(canonical_id1))
@@ -1775,12 +1767,9 @@ class TestCopyObjects:
                 self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (InvalidRequest) when calling the "
-                "CopyObject operation: This copy request is illegal because "
-                "it is trying to copy an object to itself without changing "
-                "the object's metadata, storage class, website redirect "
-                "location or encryption attributes.", error.message, error.message)
+            assert_s3_err_msg(errmsg.RGW_ERR_COPY_OBJ_METADATA,
+                              errmsg.CORTX_ERR_COPY_OBJ_METADATA,
+                              CMN_CFG["s3_engine"], error)
         LOGGER.info("Step 4: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-16899_s3bench_ios")
@@ -1821,9 +1810,7 @@ class TestCopyObjects:
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
-                " The specified key does not exist.", error.message, error.message)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info(
             "Step 4: Copy object from bucket1 to bucket2 using wildcard * for part of "
             "source-object name.")
@@ -1832,9 +1819,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
-                " The specified key does not exist.", error.message, error.message)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info(
             "Step 5: Copy object from bucket1 to bucket2 using wildcard ? for a character of "
             "source-object name.")
@@ -1843,9 +1828,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}?", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
-                "An error occurred (NoSuchKey) when calling the CopyObject operation:"
-                " The specified key does not exist.", error.message, error.message)
+            assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
         LOGGER.info("Step 6: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
             ios="Stop", log_prefix="TEST-17110_s3bench_ios")
@@ -1888,11 +1871,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation:"
-                " Access Denied",
-                err.message,
-                err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -1963,10 +1942,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and "
                     "full control to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_permission(
@@ -2015,10 +1991,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("ENDED: Use bucket policy to deny copy object to another account and "
                     "allow through ACLs.")
 
@@ -2058,10 +2031,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2121,10 +2091,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 11: Using bucket policy Allow PutObject and PutObjectTagging access to "
                     "Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2193,10 +2160,7 @@ class TestCopyObjects:
             assert_utils.assert_false(status, response)
         except CTException as err:
             LOGGER.error(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
@@ -2292,8 +2256,5 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as err:
             LOGGER.info(err.message)
-            assert_utils.assert_in(
-                "An error occurred (AccessDenied) when calling the CopyObject operation: "
-                "Access Denied",
-                err.message, err.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
         LOGGER.info("ENDED: Use bucket policy to validate copy object with applied ACL.")

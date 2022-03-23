@@ -25,8 +25,10 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import remove_file
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3 import iam_test_lib, s3_test_lib
 
@@ -400,7 +402,7 @@ class TestS3TestLib:
                 "ut-obj-17",
                 self.test_file_path)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_18_get_bucket_size(self):
@@ -411,7 +413,7 @@ class TestS3TestLib:
         try:
             S3_TEST_OBJ.get_bucket_size(self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_19_list_objects_params(self):
@@ -432,7 +434,7 @@ class TestS3TestLib:
             S3_TEST_OBJ.list_objects_with_prefix(
                 self.dummy_bucket, self.obj_prefix)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_20_put_object_with_storage_class(self):
