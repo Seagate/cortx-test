@@ -58,10 +58,10 @@ class TestDataDurability:
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.rest_obj = S3AccountOperations()
         self.log.info("STARTED: setup test operations.")
-        self.account_name = "data_durability_acc{}".format(perf_counter_ns())
-        self.email_id = "{}@seagate.com".format(self.account_name)
-        self.bucket_name = "data-durability-bkt{}".format(perf_counter_ns())
-        self.test_file = "data_durability{}.txt".format(perf_counter_ns())
+        self.account_name = f"data_durability_acc{perf_counter_ns()}"
+        self.email_id = f"{self.account_name}@seagate.com"
+        self.bucket_name = f"data-durability-bkt{perf_counter_ns()}"
+        self.test_file = f"data_durability{perf_counter_ns()}.txt"
         self.object_name = "obj_data_durability"
         self.sleep_time = 10
         self.file_size = 5

@@ -25,6 +25,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -423,8 +424,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9420"]["value"],
                 tag_count=S3_OBJ_TST["test_9420"]["tag_count"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9420"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info("Add more than 10 tags to an existing object")
 
     @pytest.mark.parallel
@@ -464,8 +464,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9421"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9421"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.MALFORMED_XML_ERR in str(error.message), error.message
         self.log.info(
             "Tags associated with an object must have unique tag keys.")
 
@@ -586,8 +585,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9424"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9424"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create a tag whose key is more than 128 Unicode characters in length")
 
@@ -659,8 +657,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9426"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9426"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create a tag having values more than 512 Unicode characters in length")
 
@@ -823,8 +820,7 @@ class TestObjectTagging:
                     invalid_key,
                     S3_OBJ_TST["test_9430"]["value"])
             except CTException as error:
-                assert S3_OBJ_TST["test_9430"]["error_message"] \
-                    in str(error.message), error.message
+                assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag keys having invalid special characters")
 
@@ -874,8 +870,7 @@ class TestObjectTagging:
                     S3_OBJ_TST["s3_object"]["key"],
                     invalid_value)
             except CTException as error:
-                assert S3_OBJ_TST["test_9431"]["error_message"] in \
-                    str(error.message), error.message
+                assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag values having invalid special characters")
 
@@ -1248,8 +1243,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9438"]["value"],
                 tag_count=S3_OBJ_TST["test_9438"]["tag_count"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9438"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Add maximum nos. of Object tags >100 using json file")
 

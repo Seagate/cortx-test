@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -15,49 +16,55 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 
 """S3 IAM user TestSuite"""
 
 import copy
 import json
+import logging
 import os
 import secrets
 import string
-import logging
-from time import perf_counter_ns
+import time
 from multiprocessing import Process
+from time import perf_counter_ns
 
 import pytest
-import time
+
 from commons import commands as comm
 from commons import constants as cons
-from commons.helpers import node_helper
-from commons.utils import assert_utils, system_utils
-from commons.configmanager import config_utils
 from commons import cortxlogging as log
-from commons.params import TEST_DATA_FOLDER
+from commons.configmanager import config_utils
 from commons.exceptions import CTException
+from commons.helpers import node_helper
 from commons.helpers.node_helper import Node
-from config import CSM_CFG
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils, system_utils
 from config import CMN_CFG
-from config.s3 import S3_CFG
+from config import CSM_CFG
 from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
+from config.s3 import S3_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 from libs.s3 import S3H_OBJ, s3_test_lib, s3_misc
-from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import iam_test_lib
-from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
+from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from scripts.s3_bench import s3bench
 
+START_LOG_FORMAT = "##### Test started -  "
+END_LOG_FORMAT = "##### Test Ended -  "
 
+
+# pylint: disable-msg=too-many-public-methods
+# pylint: disable-msg=too-many-instance-attributes
 class TestIAMUserManagement:
     """IAM user Testsuite for CLI/Rest"""
 
     @classmethod
     def setup_class(cls):
+        """Setup class"""
         cls.log = logging.getLogger(__name__)
         cls.remote_path = cons.AUTHSERVER_CONFIG
         cls.backup_path = cls.remote_path + ".bak"
@@ -126,8 +133,6 @@ class TestIAMUserManagement:
         self.s3_iam_account_dict = {}
 
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
-        self.START_LOG_FORMAT = "##### Test started -  "
-        self.END_LOG_FORMAT = "##### Test Ended -  "
         self.log.info("ENDED : Setup operations for test function")
 
     def teardown_method(self):
@@ -248,13 +253,14 @@ class TestIAMUserManagement:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.info(resp)
         assert_utils.assert_true(
             os.path.exists(
@@ -295,7 +301,7 @@ class TestIAMUserManagement:
         Test An S3 account owner shall be able to Create and View IAM user details and
         check s3 resources are intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23398_ios", duration="0h1m")
@@ -307,7 +313,7 @@ class TestIAMUserManagement:
         self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 3: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23398_ios")
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -319,7 +325,7 @@ class TestIAMUserManagement:
         TEST create IAM users and verify secret keys should not be displayed thereafter
         while listing users and s3 resources should be intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23399_ios", duration="0h1m")
@@ -335,7 +341,7 @@ class TestIAMUserManagement:
         assert_utils.assert_list_item(user_list, self.user_name)
         self.log.info("Step 4. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23399_ios")
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -347,7 +353,7 @@ class TestIAMUserManagement:
         TEST An S3 account owner shall be able to create or regenerate an access key for IAM users
         and s3 resources should be intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23400_ios", duration="0h1m")
@@ -372,7 +378,7 @@ class TestIAMUserManagement:
             user_name=self.user_name,
             access_key_id=create_access_key[1]['AccessKey']['AccessKeyId'])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -384,7 +390,7 @@ class TestIAMUserManagement:
         TEST An S3 account owner can delete IAM users and
         s3 resources should be intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23401_ios", duration="0h1m")
@@ -398,7 +404,7 @@ class TestIAMUserManagement:
         self.log.info("Step 4: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23401_ios")
         self.log.info("Deleted iam user with name %s", self.user_name)
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -410,7 +416,7 @@ class TestIAMUserManagement:
         TEST to create two access keys per IAM user and
         s3 resources should be intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23402_ios", duration="0h1m")
@@ -453,7 +459,7 @@ class TestIAMUserManagement:
             resp = self.iam_test_obj.delete_access_key(
                 user_name=self.user_name, access_key_id=key)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -466,7 +472,7 @@ class TestIAMUserManagement:
         TEST IAM users should be able to access and perform CRUD operations on resources
         with another access key and s3 resources should be intact while S3 IO's are in progress.
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="test_23463_ios", duration="0h1m")
@@ -497,7 +503,7 @@ class TestIAMUserManagement:
         self.log.info("Verified access key is deleted for IAM user %s", self.user_name)
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23463_ios")
-        self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -694,7 +700,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -702,7 +708,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
@@ -723,7 +729,7 @@ class TestIAMUserManagement:
             "Statement"][0]["Resource"].format(bucket)
         modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
             "Statement"][1]["Resource"].format(bucket)
-        s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+        s3_bkt_policy_obj.put_bucket_policy(bucket, json.dumps(modified_bucket_policy))
         self.log.debug("Retrieving policy of a bucket %s", bucket)
         resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
         assert_utils.assert_true(resp[0], resp[1])
@@ -746,8 +752,7 @@ class TestIAMUserManagement:
         resp = self.auth_obj.delete_iam_accesskey(
             iam_user, accesskeyid, s3_access_key, s3_secret_key)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "ENDED: Test control pod deletion should not affect existing user I/O")
+        self.log.info("ENDED: Test control pod deletion should not affect existing user I/O")
 
     @pytest.mark.lc
     @pytest.mark.s3_ops
@@ -761,7 +766,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -769,7 +774,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Try to create duplicate s3iamuser using direct REST API call")
         resp = self.auth_obj.create_iam_user(
@@ -788,28 +793,28 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
-        iam_access_keys  = []
+        iam_access_keys = []
         self.log.info("Key 1: Empty Access key")
-        iam_access_keys .append("")
+        iam_access_keys.append("")
         ak_len = cons.Rest.IAM_ACCESS_LL - 1
         self.log.info("Key 2: Access key less than %s", cons.Rest.IAM_ACCESS_LL)
-        iam_access_keys .append(secrets.choice(string.ascii_letters) * ak_len)
+        iam_access_keys.append(secrets.choice(string.ascii_letters) * ak_len)
         ak_len = cons.Rest.IAM_ACCESS_UL + 1
         self.log.info("Key 3: Access key greather than %s", cons.Rest.IAM_ACCESS_UL)
-        iam_access_keys .append("x" * ak_len)
+        iam_access_keys.append("x" * ak_len)
         self.log.info("Key 4: Access key special character except _")
-        iam_access_keys .append(string.punctuation)
+        iam_access_keys.append(string.punctuation)
         self.log.info("Step 2: Try to create s3iamuser with custom keys using direct REST API call")
-        for access_key in iam_access_keys :
+        for access_key in iam_access_keys:
             self.log.info("[START] Access Key : %s", access_key)
             iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
@@ -828,7 +833,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -847,7 +852,7 @@ class TestIAMUserManagement:
             iam_user = "iamuser_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
                 cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
@@ -867,7 +872,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -875,7 +880,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -894,7 +899,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -902,7 +907,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -921,7 +926,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -929,7 +934,7 @@ class TestIAMUserManagement:
         iam_user1 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user1, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
@@ -941,7 +946,7 @@ class TestIAMUserManagement:
         iam_user2 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user2, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         secret_key2 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -963,7 +968,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -971,7 +976,7 @@ class TestIAMUserManagement:
         iam_user1 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user1, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user1,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user1, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key1 = iam_user1.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         secret_key1 = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
@@ -983,7 +988,7 @@ class TestIAMUserManagement:
         iam_user2 = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user2, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user2,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user2, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key2 = iam_user2.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1010,7 +1015,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -1018,7 +1023,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1043,7 +1048,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -1051,7 +1056,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1072,14 +1077,14 @@ class TestIAMUserManagement:
         s3_acc_name1 = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name1, "{}@seagate.com".format(s3_acc_name1), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name1]=[]
+        self.s3_iam_account_dict[s3_acc_name1] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key1 = resp[1]["access_key"]
         self.log.info("Step 2: Create another s3 Account")
         s3_acc_name2 = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name2, "{}@seagate.com".format(s3_acc_name2), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name2]=[]
+        self.s3_iam_account_dict[s3_acc_name2] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key2 = resp[1]["access_key"]
         s3_secret_key2 = resp[1]["secret_key"]
@@ -1087,7 +1092,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
-        self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
+        self.s3_iam_account_dict[s3_acc_name2].append((iam_user, s3_access_key2, s3_secret_key2))
         assert_utils.assert_true(resp[0], resp[1])
         secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1108,14 +1113,14 @@ class TestIAMUserManagement:
         s3_acc_name1 = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name1, "{}@seagate.com".format(s3_acc_name1), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name1]=[]
+        self.s3_iam_account_dict[s3_acc_name1] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_secret_key1 = resp[1]["secret_key"]
         self.log.info("Step 2: Create another s3 Account")
         s3_acc_name2 = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name2, "{}@seagate.com".format(s3_acc_name2), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name2]=[]
+        self.s3_iam_account_dict[s3_acc_name2] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key2 = resp[1]["access_key"]
         s3_secret_key2 = resp[1]["secret_key"]
@@ -1123,7 +1128,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key2, s3_secret_key2)
-        self.s3_iam_account_dict[s3_acc_name2].append((iam_user,s3_access_key2, s3_secret_key2))
+        self.s3_iam_account_dict[s3_acc_name2].append((iam_user, s3_access_key2, s3_secret_key2))
         assert_utils.assert_true(resp[0], resp[1])
         access_key = iam_user.ljust(cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
         resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1148,7 +1153,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -1156,7 +1161,7 @@ class TestIAMUserManagement:
         iam_user = "iamuser_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
-        self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+        self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
         iam_access_key = []
@@ -1203,23 +1208,22 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
-        iam_secret_keys = []
-        iam_secret_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL))
-        iam_secret_keys.append(secrets.choice(string.ascii_letters) * cons.Rest.IAM_SECRET_UL)
-        iam_secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
-                                                        length=cons.Rest.IAM_SECRET_LL))
-        iam_secret_keys.append(string.punctuation)
+        iam_secret_keys = ["_" + config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL),
+                           secrets.choice(string.ascii_letters) * cons.Rest.IAM_SECRET_UL,
+                           config_utils.gen_rand_string(chars=string.digits,
+                                                        length=cons.Rest.IAM_SECRET_LL),
+                           string.punctuation]
         self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
         for secret_key in iam_secret_keys:
             self.log.info("Creating s3iamuser with secret key: %s.", secret_key)
             iam_user = "im_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
                 cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
@@ -1242,13 +1246,13 @@ class TestIAMUserManagement:
                 "Statement"][0]["Resource"].format(bucket)
             modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
                 "Statement"][1]["Resource"].format(bucket)
-            s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+            s3_bkt_policy_obj.put_bucket_policy(bucket, json.dumps(modified_bucket_policy))
             self.log.debug("Retrieving policy of a bucket %s", bucket)
             resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.debug(resp[1]["Policy"])
             self.perform_basic_io(obj, bucket, access_key, secret_key,
-                                           s3_access_key, s3_secret_key)
+                                  s3_access_key, s3_secret_key)
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_user, accesskeyid, s3_access_key, s3_secret_key)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1272,22 +1276,21 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
-        iam_access_keys = []
-        iam_access_keys.append("_" + config_utils.gen_rand_string(length=cons.Rest.IAM_ACCESS_LL))
-        iam_access_keys.append(secrets.choice(string.ascii_letters) * cons.Rest.IAM_ACCESS_UL)
-        iam_access_keys.append(config_utils.gen_rand_string(chars=string.digits,
-                                                        length=cons.Rest.IAM_ACCESS_LL))
+        iam_access_keys = ["_" + config_utils.gen_rand_string(length=cons.Rest.IAM_ACCESS_LL),
+                           secrets.choice(string.ascii_letters) * cons.Rest.IAM_ACCESS_UL,
+                           config_utils.gen_rand_string(chars=string.digits,
+                                                        length=cons.Rest.IAM_ACCESS_LL)]
         self.log.info("Step 2: Create s3iamuser with custom keys using direct REST API call")
         for access_key in iam_access_keys:
             self.log.info("Creating s3iamuser with access key %s.", access_key)
             iam_user = "im_{}".format(perf_counter_ns())
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             secret_key = config_utils.gen_rand_string(length=cons.Rest.IAM_SECRET_LL)
             resp = self.auth_obj.create_custom_iam_accesskey(
@@ -1308,13 +1311,13 @@ class TestIAMUserManagement:
                 "Statement"][0]["Resource"].format(bucket)
             modified_bucket_policy["Statement"][1]["Resource"] = modified_bucket_policy[
                 "Statement"][1]["Resource"].format(bucket)
-            s3_bkt_policy_obj.put_bucket_policy(bucket,json.dumps(modified_bucket_policy))
+            s3_bkt_policy_obj.put_bucket_policy(bucket, json.dumps(modified_bucket_policy))
             self.log.debug("Retrieving policy of a bucket %s", bucket)
             resp = s3_bkt_policy_obj.get_bucket_policy(bucket)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.debug(resp[1]["Policy"])
             self.perform_basic_io(obj, bucket, access_key, secret_key,
-                                           s3_access_key, s3_secret_key)
+                                  s3_access_key, s3_secret_key)
             resp = self.auth_obj.delete_iam_accesskey(
                 iam_user, accesskeyid, s3_access_key, s3_secret_key)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1338,7 +1341,7 @@ class TestIAMUserManagement:
         s3_acc_name = self.s3_user.format(perf_counter_ns())
         resp = self.rest_obj.create_s3_account(
             s3_acc_name, "{}@seagate.com".format(s3_acc_name), self.acc_password)
-        self.s3_iam_account_dict[s3_acc_name]=[]
+        self.s3_iam_account_dict[s3_acc_name] = []
         assert_utils.assert_true(resp[0], resp[1])
         s3_access_key = resp[1]["access_key"]
         s3_secret_key = resp[1]["secret_key"]
@@ -1351,7 +1354,7 @@ class TestIAMUserManagement:
             iam_users.append(iam_user)
             resp = self.auth_obj.create_iam_user(
                 iam_user, self.iam_password, s3_access_key, s3_secret_key)
-            self.s3_iam_account_dict[s3_acc_name].append((iam_user,s3_access_key, s3_secret_key))
+            self.s3_iam_account_dict[s3_acc_name].append((iam_user, s3_access_key, s3_secret_key))
             assert_utils.assert_true(resp[0], resp[1])
             access_key = iam_user.ljust(
                 cons.Rest.IAM_ACCESS_LL, secrets.choice(string.ascii_letters))
@@ -1364,7 +1367,7 @@ class TestIAMUserManagement:
         #  check error on MAX_IAM_USERS+1 (1001th) IAM user create
         self.log.info(
             "Step 3: Try to create %d s3iamuser using direct REST API call",
-            cons.Rest.MAX_IAM_USERS+1)
+            cons.Rest.MAX_IAM_USERS + 1)
         iam_user = "iam_{}".format(perf_counter_ns())
         resp = self.auth_obj.create_iam_user(
             iam_user, self.iam_password, s3_access_key, s3_secret_key)
@@ -1396,7 +1399,7 @@ class TestIAMUserManagement:
         """
         s3iamusers creation with different maxIAMUserLimit values
         """
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         iam_users = []
         self.log.info("Step 1: Make copy of original authserver.properties file")
         resp = self.nobj.make_remote_file_copy(path=self.remote_path, backup_path=self.backup_path)
@@ -1411,7 +1414,7 @@ class TestIAMUserManagement:
         if prop_dict:
             if prop_dict['maxIAMUserLimit'] != "0":
                 prop_dict['maxIAMUserLimit'] = "0"
-        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.auth_file_change = True
         self.log.info("Step 3: Restart s3 authserver")
@@ -1437,7 +1440,7 @@ class TestIAMUserManagement:
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
             prop_dict['maxIAMUserLimit'] = "6"
-        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")
         status = system_utils.run_remote_cmd(
@@ -1476,7 +1479,7 @@ class TestIAMUserManagement:
     @pytest.mark.tags("TEST-28852")
     def test_28852(self):
         """s3accounts creation with different maxIAMAccountLimit values"""
-        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("%s %s", START_LOG_FORMAT, log.get_frame())
         s3_accounts = []
         resp, acc_list = self.rest_obj.list_s3_accounts()
         self.log.debug("Total s3 accounts present: %s", len(acc_list))
@@ -1496,7 +1499,7 @@ class TestIAMUserManagement:
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
             prop_dict['maxAccountLimit'] = f"{len(acc_list)}"
-        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.auth_file_change = True
         self.log.info("Step 3: Restart s3 authserver")
@@ -1526,7 +1529,7 @@ class TestIAMUserManagement:
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
             prop_dict['maxAccountLimit'] = f"{len(acc_list) + 6}"
-        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")
         status = system_utils.run_remote_cmd(

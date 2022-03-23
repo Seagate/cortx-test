@@ -21,7 +21,6 @@ import os
 import pytest
 from kubernetes import client, config
 from kubernetes.stream import stream
-from commons.utils import assert_utils
 
 LOGGER = logging.getLogger(__name__)
 

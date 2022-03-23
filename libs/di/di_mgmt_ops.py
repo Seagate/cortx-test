@@ -25,10 +25,6 @@ import logging
 import json
 from http import HTTPStatus
 
-import boto3
-from config import CMN_CFG
-from config import CSM_CFG
-from config import S3_CFG
 from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl
@@ -271,6 +267,8 @@ class ManagementOPs:
 
     @classmethod
     def create_s3_user_csm_rest(cls, user_name, passwd):
+        """Function creates s3 user using REST API.
+        """
         udict = dict()
         s3acc_obj = RestS3user()
         resp = s3acc_obj.create_an_account(user_name, passwd)

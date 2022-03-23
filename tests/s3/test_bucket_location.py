@@ -23,6 +23,7 @@ import time
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -39,8 +40,7 @@ class TestBucketLocation:
     """Bucket Location Test suite."""
 
     # pylint: disable=attribute-defined-outside-init
-    @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup_method(self):
         """
         Summary: Function will be invoked prior to each test case.
 
@@ -58,7 +58,9 @@ class TestBucketLocation:
         self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.log.info("ENDED : Setup test operations.")
-        yield
+
+    def teardown_method(self):
+        """ this is called after each test execution is over """
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
         resp = self.s3_test_obj.bucket_list()[1]
@@ -125,7 +127,8 @@ class TestBucketLocation:
     def test_get_bkt_loc_bkt_not_present_273(self):
         """verify get bucket location for the bucket which is not present."""
         self.log.info(
-            "Verify get bucket location for the bucket which is not present")
+            "STARTED: Verify get bucket location for the bucket which is "
+            "not present")
         self.log.info(
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
@@ -135,13 +138,13 @@ class TestBucketLocation:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in("NoSuchBucket", str(
-                error.message), error.message)
+            assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info(
-            "Step 1 : Get bucket location on non existing bucket failed with error %s",
-            "NoSuchBucket")
+            "Step 1 : Get bucket location on non existing bucket failed "
+            "with error %s", "NoSuchBucket")
         self.log.info(
-            "Verify get bucket location for the bucket which is not present")
+            "ENDED: Verify get bucket location for the bucket which is "
+            "not present")
 
     # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
@@ -271,8 +274,7 @@ class TestBucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert_utils.assert_in("AccessDenied", str(
-                error.message), error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, str(error.message), error.message)
         self.log.info(
             "Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")

@@ -167,6 +167,13 @@ PCS_STATUS_CMD = "pcs status"
 SELINUX_STATUS_CMD = "sestatus > {}"
 IPMI_SDR_LIST_CMD = "ipmitool sdr list"
 
+# Mock monitor commands.
+PUBLISH_CMD = "{} publish -f {}"
+GET_DATA_NODE_ID_CMD = "{} -gdt"
+GET_SERVER_NODE_ID_CMD = "{} -gs"
+GET_DISK_ID_CMD = "{} get-disks -n {}"
+GET_CVG_ID_CMD = "{} get-cvgs -n {}"
+
 # All the constants are alphabetically arranged.
 """All the constants are alphabetically arranged."""
 PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
@@ -315,7 +322,7 @@ CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
 CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
-CMD_AWS_CONF_KEYS_RGW = "make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
+CMD_AWS_CONF_KEYS_RGW = "make aws-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
                         "endpoint={}"
 CMD_AWSCLI_CONF = "aws configure"
 # Upload directory recursively to s3.
@@ -518,10 +525,14 @@ HELM_GET_VALUES = "helm get values {}"
 # LC commands
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
-CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
-CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
-DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
+CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
+DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
+
+# Incomplete commands
+UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"

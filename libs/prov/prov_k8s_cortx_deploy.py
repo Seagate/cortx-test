@@ -28,6 +28,7 @@ import os
 import re
 import signal
 import time
+from threading import Thread
 from typing import List
 
 import requests.exceptions
@@ -37,9 +38,9 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from config import PROV_CFG, PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
@@ -292,17 +293,16 @@ class ProvDeployK8sCortxLib:
                     return False, line
         return True, lines
 
-    def pull_cortx_image(self, worker_obj_list: list):
+    def pull_cortx_image(self, worker_obj: LogicalNode):
         """
         This method pulls  cortx image
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull Cortx image on all worker nodes.")
-        for obj in worker_obj_list:
-            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
-            if self.cortx_server_image:
-                obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
+        LOGGER.info("Pull Cortx image on worker node %s", worker_obj.hostname)
+        worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
+        if self.cortx_server_image:
+            worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -332,7 +332,13 @@ class ProvDeployK8sCortxLib:
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["k8s_dir"], system_disk)
 
-        self.pull_cortx_image(worker_node_list)
+        thread_list = []
+        for each in worker_node_list:
+            t = Thread(target=self.pull_cortx_image, args=(each,))
+            t.start()
+            thread_list.append(t)
+        for each in thread_list:
+            each.join()
 
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
@@ -354,7 +360,6 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
                                                 self.deploy_cfg["k8s_dir"])
-            return resp
         return resp
 
     def checkout_solution_file(self, git_tag):
@@ -636,7 +641,7 @@ class ProvDeployK8sCortxLib:
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            if self.cortx_server_image and image_key == "cortxserver" :
+            if self.cortx_server_image and image_key == "cortxserver":
                 cortx_im[image_key] = cortx_server_image
             else:
                 cortx_im[image_key] = cortx_image
@@ -1185,6 +1190,7 @@ class ProvDeployK8sCortxLib:
                                              self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Check  ALL service status")
+            time.sleep(60)
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
@@ -1269,6 +1275,8 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(server_pod_list)
             LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
+        if len(response) == 0:
+            return False, "All Services are not started."
         return response
 
     def check_service_status(self, master_node_obj: LogicalNode):
@@ -1288,7 +1296,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
         assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
+        end_time = start_time + 70*(len(data_pod_list)*2)  # 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
@@ -1371,21 +1379,25 @@ class ProvDeployK8sCortxLib:
         return config_list
 
     @staticmethod
-    def upgrade_software(node_obj, upgrade_image_version: str,
-                         git_remote_path: str, **kwargs) -> tuple:
+    def upgrade_software(node_obj: LogicalNode, git_remote_path: str,
+                         upgrade_type: str = "rolling", granular_type: str = "all",
+                         exc: bool = True) -> tuple:
         """
-        Helper function to upgrade.
+        Helper function to Upgrade CORTX stack.
         :param node_obj: Master node(Logical Node object)
-        :param upgrade_image_version: Version Image to Upgrade.
         :param git_remote_path: Remote path of repo.
+        :param upgrade_type: Type of upgrade (rolling or cold).
+        :param granular_type: Type to upgrade all or particular pod.
         :param exc: Flag to disable/enable exception raising
         :return: True/False
         """
-        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
-        exc = kwargs.get('exc', True)
+        LOGGER.info("Upgrading CORTX image version.")
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        upgrade_cmd = prov_deploy_cfg["upgrade_cluster"].format(upgrade_image_version)
-        cmd = "cd {}; {}".format(git_remote_path, upgrade_cmd)
+        if upgrade_type == "rolling":
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+        else:
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -1393,6 +1405,7 @@ class ProvDeployK8sCortxLib:
         resp = "".join(resp).replace("\\n", "\n")
         if "Error" in resp or "Failed" in resp:
             return False, resp
+        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
         return True, resp
 
     @staticmethod
@@ -1452,3 +1465,46 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("RPM is %s", installed_rpm)
             return True, installed_rpm
         return False, installed_rpm
+
+    @staticmethod
+    def pull_image(node_obj: LogicalNode, image: str) -> tuple:
+        """
+        Helper function to pull cortx image.
+        :param: node_obj: node object(Logical Node object)
+        :param: image: cortx image to pull
+        :return: True/False and success/failure message
+        """
+        LOGGER.info("Pull Cortx image.")
+        try:
+            node_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(image))
+        except IOError as err:
+            LOGGER.error("An error occurred in %s:", ProvDeployK8sCortxLib.pull_image.__name__)
+            return False, err
+        return True, "Image pulled."
+
+    @staticmethod
+    def update_sol_with_image(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = image_dict['rgw_image']
+            else:
+                parent_key['images'][image] = image_dict['all_image']
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
