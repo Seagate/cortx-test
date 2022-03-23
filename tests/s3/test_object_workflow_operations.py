@@ -25,6 +25,7 @@ import logging
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -201,8 +202,7 @@ class TestObjectWorkflowOperations:
             resp = self.s3_test_obj.object_upload(self.bucket_name, self.obj_name, self.file_path)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert S3_OBJ_TST["test_2211"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
         self.log.info("Uploading an object to non existing is failed")
         self.log.info("ENDED: Add Object to non existing bucket")
 
@@ -505,8 +505,7 @@ class TestObjectWorkflowOperations:
             resp = self.s3_test_obj.object_info(self.bucket_name, self.obj_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert S3_OBJ_TST["test_2219"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.NOT_FOUND_ERR in str(error.message), error.message
         self.log.info("Retrieving of metadata is failed")
         self.buckets_list.append(self.bucket_name)
         self.log.info(
@@ -686,11 +685,11 @@ class TestObjectWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert cfg_7656["err_message"] in error.message, error.message
+            assert errmsg.S3_MULTI_BUCKET_DELETE_ERR in error.message, error.message
         self.log.info(
             "Step 3: Deleting %s objects from a bucket failed with %s",
             cfg_7656["del_obj_cnt"],
-            cfg_7656["err_message"])
+            errmsg.S3_MULTI_BUCKET_DELETE_ERR)
         self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete objects and mention 1001 objects.")
 
