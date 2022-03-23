@@ -532,7 +532,7 @@ DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 
 # Incomplete commands
-UPGRADE_NEG_CMD = "cd {}; sh upgrade-cortx-cloud.sh"
+UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
