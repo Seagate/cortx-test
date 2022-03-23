@@ -238,7 +238,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
         return False, "Did not get expected port numbers."
 
 
-def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: str):
+def configure_haproxy_mgw_lb(m_node: str, username: str, password: str, ext_ip: str):
     """
     Implement external Haproxy LB
     :param m_node: hostname for master node
