@@ -64,14 +64,12 @@ test_3217:
   obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account215{}"
   emailid: "my_account215{}@seagate.com"
-  error_msg: "InvalidACL"
 test_3218:
   obj_acl_rdwr: "READ_WRITE"
   account_name: "my_account216{}"
   emailid: "my_account216{}@seagate.com"
   Type: "CanonicalUser"
   DisplayName: "s3user"
-  error_msg: "InvalidACL"
 test_3227:
   account_name: "my_account225{}"
   emailid: "my_account225{}@seagate.com"
@@ -85,11 +83,9 @@ test_3230:
   grant_count: 99
   name_initials: "my_account{}{}"
   name_postfix: "@seagate.com"
-  error_msg: "InvalidACL"
 test_3231:
   modified_acl_id: "fqECr9d0gZDKJycxjTmiu"
   modified_acl_name: "s3acc123424123"
-  error_msg: "InvalidArgument"
   Type: "CanonicalUser"
 test_3682:
   acl_permission: "private"
@@ -212,7 +208,6 @@ test_3511:
 test_3513:
   bucket_full_control: "bucket-owner-read"
 test_3552:
-  error_msg: "InvalidACL"
   permission: "private"
   acc_str: "AccountName = {}"
   account_name_1: "my_account_10792{}"
@@ -227,7 +222,6 @@ test_3553:
   emailid_1: "my_account_10793{}@seagate.com"
   can_str: "CanonicalUser"
 test_3554:
-  error_msg: "InvalidACL"
   permission_2: "private"
   account_name_1: "my_account_10794{}"
   emailid_1: "my_account_10795{}@seagate.com"
@@ -279,7 +273,6 @@ test_3453:
 test_3454:
   type: "CanonicalUser"
   sub_can_id: "agsdhgh"
-  err_message: "Invalid Argument"
 test_3455:
   account_name_3: "my_account_3{}"
   emailid_3: "my_account_3{}@seagate.com"
@@ -326,9 +319,7 @@ test_3541:
   emailid: "testacnt3541{}@seagate.com"
 test_3228:
   policy: "{}"
-  err_msg: "Parameter validation failed"
 test_3248:
-  err_msg: "No such file"
   account_name: "my_account_{}"
   emailid: "my_account_{}@seagate.com"
   json_policy:
@@ -470,7 +461,6 @@ test_8558:
   obj_name: "testobj8558"
   start_range: 2025
   stop_range: 2026
-  error_message: "An error occurred (MetadataTooLarge) when calling the PutObject operation: Your metadata headers exceed the maximum allowed metadata size"
 test_8913:
   bucket_name: "obj-metadata8913"
   obj_name: "testobj8913_"
@@ -510,11 +500,9 @@ test_9420:
     bucket_name: "objtag9420"
     value: "valuekey"
     tag_count: 20
-    error_message: "InvalidTagError"
 test_9421:
     bucket_name: "objtag9421"
     value: "valuekey"
-    error_message: "MalformedXML"
 test_9422:
     bucket_name: "objtag9422"
     value: "valuekey"
@@ -527,14 +515,12 @@ test_9424:
     bucket_name: "objtag9424"
     key: "seagateorganizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128cha"
     value: "valuekey"
-    error_message: "InvalidTagError"
 test_9425:
     bucket_name: "objtag9425"
     value: "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128cha"
 test_9426:
     bucket_name: "objtag9426"
     value: "caationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorgaaationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorgaaaaaaaa"
-    error_message: "InvalidTagError"
 test_9427:
     bucket_name: "objtag9427"
     key1: "testkey"
@@ -567,7 +553,6 @@ test_9430:
         - "~"
         - "?"
         - "*"
-    error_message: "InvalidTagError"
 test_9431:
     bucket_name: "objtag9431"
     value: "testvalue"
@@ -587,7 +572,6 @@ test_9431:
         - "~"
         - "?"
         - "*"
-    error_message: "InvalidTagError"
 test_9432:
     bucket_name: "objtag9432"
     value: "testvalue"
@@ -620,7 +604,6 @@ test_9438:
     bucket_name: "objtag9438"
     value: "testvalue"
     tag_count: 15
-    error_message: "InvalidTagError"
 test_9439:
     bucket_name: "objtag9439"
     value: "testvalue"
@@ -650,7 +633,6 @@ test_2210:
 test_2211:
   bucket_name: "objworkflow2211"
   obj_name: "testobj2211"
-  error_message: "NoSuchBucket"
 test_2213:
   bucket_name: "objworkflow2213"
   obj_name: "testobj2213"
@@ -679,7 +661,6 @@ test_2219:
   obj_name: "testobj2219"
   key: "testkey"
   value: "testvalue"
-  error_message: "Not Found"
 test_2220:
   bucket_name: "objworkflow2220"
   obj_name: "testobj2220"
@@ -696,7 +677,6 @@ test_7656:
   bucket_name: "objworkflow7656"
   no_of_objects: 1010
   del_obj_cnt: 1001
-  err_message: "MaxMessageLengthExceeded"
 test_7657:
   bucket_name: "objworkflow7657"
   no_of_objects: 1010
