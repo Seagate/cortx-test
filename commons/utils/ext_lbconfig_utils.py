@@ -248,6 +248,9 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+    master_eth1 = resp[0].strip("\n")
+    print("master eth1: ", master_eth1)
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
         resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
@@ -263,7 +266,10 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                 "cortx-io-svc-" in item_data["metadata"]["name"]:
             svc = item_data["metadata"]["name"]
             get_iosvc_data[svc] = dict()
-            get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
+            if svc == "cortx-io-svc-0":
+                get_iosvc_data[svc].update({"eth1": master_eth1})
+            else:
+                get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
                     get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
@@ -278,11 +284,11 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
     with open(cm_const.const.CFG_FILES[0], "w") as f_write:
         for line in haproxy_dummy:
             if "# cortx_setup_1" in line:
-                line = f"    bind {ext_ip}:8000\n"
+                line = f"    bind {ext_ip}:80\n"
                 f_write.write(line)
                 continue
             if "# cortx_setup_https" in line:
-                line = f"    bind {ext_ip}:8443 ssl crt /etc/ssl/stx/stx.pem\n"
+                line = f"    bind {ext_ip}:443 ssl crt /etc/ssl/stx/stx.pem\n"
                 f_write.write(line)
                 continue
             if "# 8000 cortx_setup_1" in line:
@@ -298,3 +304,17 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                     f_write.write(line)
                 continue
             f_write.write(line)
+    LOGGER.info("Configuring rsyslog to Configure Logging for HAProxy")
+    resp = configure_rsyslog()
+    LOGGER.debug("Configuring rsyslog response = %s", resp)
+    if os.path.exists(cm_const.LOCAL_PEM_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
+        os.path.abspath(cm_const.LOCAL_PEM_PATH))))
+    m_node_obj.copy_file_to_local(cm_const.K8S_PEM_FILE_PATH, cm_const.LOCAL_PEM_PATH)
+    resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
+    assert_utils.assert_true(resp[0], resp[1])
+    resp = sys_utils.execute_cmd("puppet agent --disable")
+    assert_utils.assert_true(resp[0], resp[1])
+
+    LOGGER.info("External HAProxy is configured.")
