@@ -125,6 +125,7 @@ def main():
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
     ext_node = os.getenv("EXTERNAL_EXPOSURE_SERVICE")
+    print("ext_node: ", ext_node)
     node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
     if ext_node == "NodePort":
         resp = ext_lb.configure_nodeport_lb(node_obj, "eth1")
@@ -149,7 +150,7 @@ def main():
 
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 admin_user=admin_user, admin_passwd=admin_passwd,
-                                ext_ip=ext_port_ip)
+                                ext_ip=ext_ip)
     print("target_name: {}".format(setupname))
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
