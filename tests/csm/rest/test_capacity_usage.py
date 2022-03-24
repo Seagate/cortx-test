@@ -32,12 +32,10 @@ from commons.utils import assert_utils
 from commons.constants import POD_NAME_PREFIX
 from commons.constants import RESTORE_SCALE_REPLICAS
 from config import CMN_CFG
-from libs.csm.rest.csm_rest_capacity import SystemCapacity
-from libs.csm.rest.csm_rest_cluster import RestCsmCluster
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
+from libs.csm.csm_interface import csm_api_factory
+
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -47,44 +45,46 @@ class TestSystemCapacity():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.system_capacity = SystemCapacity()
+        cls.csm_obj = csm_api_factory("rest")
         cls.cryptogen = SystemRandom()
         cls.log.info("Initiating Rest Client ...")
-        cls.csm_cluster = RestCsmCluster()
-        cls.csm_user = RestCsmUser()
-        cls.s3user_obj = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
-        cls.username = cls.csm_user.config["csm_admin_user"]["username"]
-        cls.user_pass = cls.csm_user.config["csm_admin_user"]["password"]
+        cls.username = cls.csm_obj.config["csm_admin_user"]["username"]
+        cls.user_pass = cls.csm_obj.config["csm_admin_user"]["password"]
         cls.akey = ""
         cls.skey = ""
         cls.s3_user = ""
         cls.bucket = ""
-        cls.row_temp= "N{} failure"
-        cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
-                                   CMN_CFG["nodes"][0]["username"],
-                                   CMN_CFG["nodes"][0]["password"])
+        cls.row_temp = "N{} failure"
         cls.ha_obj = HAK8s()
         cls.node_list = []
         cls.host_list = []
         cls.num_nodes = len(CMN_CFG["nodes"])
         for node in CMN_CFG["nodes"]:
             if node["node_type"] == "master":
+                cls.log.debug("Master node : %s", node["hostname"])
                 cls.master = LogicalNode(hostname=node["hostname"],
-                                        username=node["username"],
-                                        password=node["password"])
+                                         username=node["username"],
+                                         password=node["password"])
                 cls.hlth_master = Health(hostname=node["hostname"],
                                          username=node["username"],
                                          password=node["password"])
             else:
+                cls.log.debug("Worker node : %s", node["hostname"])
                 cls.node_list.append(LogicalNode(hostname=node["hostname"],
-                                          username=node["username"],
-                                          password=node["password"]))
+                                                 username=node["username"],
+                                                 password=node["password"]))
                 host = node["hostname"]
                 cls.host_list.append(host)
+        cls.log.info("Master node object: %s", cls.master)
+        cls.log.info("Worker node List: %s", cls.host_list)
+        cls.num_worker = len(cls.host_list)
+        cls.log.info("Number of workers detected: %s", cls.num_worker)
         cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
                                  username=CMN_CFG["nodes"][0]["username"],
                                  password=CMN_CFG["nodes"][0]["password"])
+
+        cls.log.debug("Node object list : %s", cls.nd_obj)
         cls.restore_pod = None
         cls.restore_method = None
         cls.deployment_name = None
@@ -95,7 +95,7 @@ class TestSystemCapacity():
         Setup method for creating s3 user
         """
         self.log.info("Creating S3 account")
-        resp = self.s3user_obj.create_s3_account()
+        resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
@@ -113,7 +113,7 @@ class TestSystemCapacity():
         assert s3_misc.delete_objects_bucket(
             self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Deleting S3 account %s created in setup", self.s3_user)
-        resp = self.s3user_obj.delete_s3_account_user(self.s3_user)
+        resp = self.csm_obj.delete_s3_account_user(self.s3_user)
         assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
         if self.restore_pod:
             self.log.info("Restore deleted pods.")
@@ -126,6 +126,7 @@ class TestSystemCapacity():
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             self.log.info("Successfully restored pod by %s way", self.restore_method)
 
+    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15200')
@@ -134,9 +135,9 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        results = self.system_capacity.parse_capacity_usage()
+        results = self.csm_obj.parse_capacity_usage()
         csm_total, csm_avail, csm_used, csm_used_percent, csm_unit = results
-        ha_total, ha_avail, ha_used = self.health_helper.get_sys_capacity()
+        ha_total, ha_avail, ha_used = self.hlth_master.get_sys_capacity()
         ha_used_percent = round((ha_used / ha_total) * 100, 1)
         csm_used_percent = round(csm_used_percent, 1)
         assert_utils.assert_equals(
@@ -153,7 +154,7 @@ class TestSystemCapacity():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -167,54 +168,49 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33899"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
 
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
-
         self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0, critical=0,
+            damaged=0, err_margin=test_cfg["err_margin"])
         self.log.info("[End] Fetch degraded capacity on Consul with 0 Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        ##cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL with 0 Node failure")
-
         self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -224,50 +220,52 @@ class TestSystemCapacity():
 
             index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with %s Node failure",
-                            self.host_list[node])
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+                          self.host_list[node])
+
+            resp = self.csm_obj.get_capacity_consul()
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s Node failure",
-                            self.host_list[node])
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+                          self.host_list[node])
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Fetch degraded capacity on CSM with %s Node failure",
-                            self.host_list[node])
-            resp = self.system_capacity.get_degraded_capacity()
+                          self.host_list[node])
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Power on node back from BMC/ssc-cloud and check node status")
             resp = self.ha_obj.host_power_on(host=self.host_list[node])
@@ -276,54 +274,53 @@ class TestSystemCapacity():
             time.sleep(40)
             self.log.info("Verified %s is powered on and pinging.", self.host_list[node])
             self.log.info("[End] Power on node back from BMC/ssc-cloud and check node status")
-
             index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with 0 Node failure")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
-
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -337,65 +334,57 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33919"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
 
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
+        self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
+        resp = self.csm_obj.get_capacity_consul()
 
-        self.log.info(
-            "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
         # TBD: Write Function for constructing df from values.
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"])
         self.log.info(
             "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
-        self.log.info(
-            "[End] Fetch degraded capacity on CSM with 0 Node failure")
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
+        self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -404,7 +393,8 @@ class TestSystemCapacity():
             self.log.info("[End] Bringing down Node %s", self.host_list[node])
 
             self.log.info("[Start] Start some IOs on %s", self.host_list[node])
-            obj = f"object{self.s3_user}.txt"
+            tmp = time.time_ns()
+            obj = f"object{self.s3_user}{tmp}.txt"
             write_bytes_mb = self.cryptogen.randrange(
                 test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
@@ -413,56 +403,65 @@ class TestSystemCapacity():
             resp = s3_misc.create_put_objects(
                 obj, self.bucket, self.akey, self.skey, object_size=write_bytes_mb)
             assert resp, "Put object Failed"
-            self.log.info("[End] Start some IOs on %s", node)
+            self.log.info("[End] Start some IOs on %s", self.host_list[node])
             new_written = write_bytes_mb * 1024 * 1024
+            self.log.info("New bytes written : %s", new_written)
             total_written = total_written + new_written
-
+            self.log.info("Waiting for %s seconds for degraded count to be updated", 60)
+            time.sleep(60)
             index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with %s Node failure",
-                            self.host_list[node])
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+                          self.host_list[node])
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            self.log.info("Total bytes written : %s", total_written)
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on Consul with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s Node failure",
-                            self.host_list[node])
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+                          self.host_list[node])
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on HCTL with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Fetch degraded capacity on CSM with %s Node failure",
-                            self.host_list[node])
-            resp = self.system_capacity.get_degraded_capacity()
+                          self.host_list[node])
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on CSM with %s Node failure",
-                            self.host_list[node])
+                          self.host_list[node])
 
             self.log.info("[Start] Power on node back and check node status")
             resp = self.ha_obj.host_power_on(host=self.host_list[node])
@@ -470,53 +469,58 @@ class TestSystemCapacity():
             self.log.info("[End] Power on node back and check node status")
 
             index = self.row_temp.format(0)
-            self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            self.log.info("[Start] Fetch degraded capacity on Consul with no Node failure")
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
-                resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
-                total=total_written)
-            self.log.info("[End] Fetch degraded capacity on Consul with 0 Node failure")
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
 
-            self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=total_written, degraded=None, critical=0, damaged=0, err_margin=10,
+                total=total_written)
+            assert resp[0], resp[1]
+            self.log.info("[End] Fetch degraded capacity on Consul with no Node failure")
+
+            self.log.info("[Start] Fetch degraded capacity on HCTL with no Node failure")
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
-                resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
-                total=total_written)
-            self.log.info("[End] Fetch degraded capacity on HCTL with 0 Node failure")
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
 
-            self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=total_written, degraded=None, critical=0, damaged=0, err_margin=10,
+                total=total_written)
+            assert resp[0], resp[1]
+            self.log.info("[End] Fetch degraded capacity on HCTL with no Node failure")
+
+            self.log.info("[Start] Fetch degraded capacity on CSM with no Node failure")
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
-                resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            resp = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=total_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
-            self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
+            assert resp[0], resp[1]
+            self.log.info("[End] Fetch degraded capacity on CSM with no Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-locals
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -530,64 +534,58 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33920"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
-
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
 
         self.log.info(
             "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"])
         self.log.info(
             "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -598,8 +596,8 @@ class TestSystemCapacity():
             self.log.info("[Start] Start some IOs on %s", node)
 
             self.log.info("Creating custom S3 account...")
-            user_data = self.s3user_obj.create_custom_s3_payload("valid")
-            resp = self.s3user_obj.create_custom_s3_user(user_data)
+            user_data = self.csm_obj.create_custom_s3_payload("valid")
+            resp = self.csm_obj.create_custom_s3_user(user_data)
             self.log.info("Verify Status code of the Create user operation.")
             assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
 
@@ -630,14 +628,14 @@ class TestSystemCapacity():
             index = self.row_temp.format(node)
             self.log.info(
                 "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -645,29 +643,29 @@ class TestSystemCapacity():
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -680,59 +678,59 @@ class TestSystemCapacity():
 
             self.log.info(
                 "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info(
             "Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -745,64 +743,58 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_33928"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
-
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
 
         self.log.info(
             "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"])
         self.log.info(
             "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -812,48 +804,49 @@ class TestSystemCapacity():
 
             index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with 0 Node failure")
 
             self.log.info("[Start] Power on node back and check node status")
@@ -863,59 +856,59 @@ class TestSystemCapacity():
 
             index = self.row_temp.format(0)
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info(
             "Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -929,64 +922,58 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33929"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
-
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
 
         self.log.info(
             "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"])
         self.log.info(
             "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
         self.log.info(
             "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -1011,14 +998,14 @@ class TestSystemCapacity():
             index = self.row_temp.format(node)
             self.log.info(
                 "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -1026,29 +1013,29 @@ class TestSystemCapacity():
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=new_written, degraded=None, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -1061,59 +1048,59 @@ class TestSystemCapacity():
 
             index = self.row_temp.format(0)
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                 critical=0, damaged=0,
-                                                                 err_margin=test_cfg["err_margin"],
-                                                                 total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"],
+                                                         total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info(
             "Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1127,23 +1114,19 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_34698"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
         new_written = 0
         row_temp = "N{} failure"
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
+
         obj = f"object{self.s3_user}.txt"
         write_bytes_mb = self.cryptogen.randrange(
-                test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
+            test_cfg["object_size"]["start_range"], test_cfg["object_size"]["stop_range"])
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker):
             self.log.info("[Start] Start some IOs")
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, write_bytes_mb,
-                            self.bucket)
+                          self.bucket)
             resp = s3_misc.create_put_objects(
                 obj, self.bucket, self.akey, self.skey, object_size=write_bytes_mb)
             assert resp, "Put object Failed"
@@ -1152,48 +1135,50 @@ class TestSystemCapacity():
 
             self.log.info(
                 "[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             # TBD: Write Function for constructing df from values.
             total_written = resp["healthy"]
             cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
             cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
             cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
             cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-            cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                                critical=0, damaged=0,
-                                                                err_margin=test_cfg["err_margin"])
+            #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                         critical=0, damaged=0,
+                                                         err_margin=test_cfg["err_margin"])
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
             cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
             cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
             cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
             cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
             cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
             cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-            cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
@@ -1211,15 +1196,15 @@ class TestSystemCapacity():
             index = row_temp.format(node)
             self.log.info(
                 "[Start] Fetch degraded capacity on Consul with 1 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
             total_written = total_written - new_written
-            assert self.system_capacity.verify_degraded_capacity(
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -1227,29 +1212,29 @@ class TestSystemCapacity():
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 1 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 1 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with 1 Node failure")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0, err_margin=10,
                 total=total_written)
             self.log.info(
@@ -1264,53 +1249,56 @@ class TestSystemCapacity():
             self.log.info("[End] Power on node back from BMC/ssc-cloud and check node status")
 
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on Consul with 0 Node failure")
 
             self.log.info(
                 "[Start] Fetch degraded capacity on HCTL with 0 Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on HCTL with 0 Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info(
                 "[End] Fetch degraded capacity on CSM with 0 Node failure")
 
         self.log.info(
             "Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.skip("Feature not ready")
@@ -1326,52 +1314,49 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33925"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
 
         self.log.info("[Start] Fetch degraded capacity on Consul with 0 Pod failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0, critical=0,
+            damaged=0, err_margin=test_cfg["err_margin"])
         self.log.info("[End] Fetch degraded capacity on Consul with 0 Pod failure")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Pod failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL with 0 Pod failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM with 0 Pod failure")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM with 0 Pod failure")
 
         self.log.info("Get pod name to be deleted")
@@ -1382,9 +1367,9 @@ class TestSystemCapacity():
             self.log.info("Deleting pod %s", pod_name)
             resp = self.master.create_pod_replicas(num_replica=0, pod_name=pod_name)
             assert_utils.assert_false(resp[0],
-                f"Failed to delete pod {pod_name} by making replicas=0")
+                                      f"Failed to delete pod {pod_name} by making replicas=0")
             self.log.info("[End] Successfully shutdown/deleted pod %s by making replicas=0",
-                pod_name)
+                          pod_name)
 
             self.deployment_name = resp[1]
             self.restore_pod = True
@@ -1402,66 +1387,69 @@ class TestSystemCapacity():
             self.log.info("[End] Services of pod are in offline state")
 
             self.log.info("Step 8: Check services status on remaining pods %s",
-                        pod_list.remove(pod_name))
+                          pod_list.remove(pod_name))
             resp = self.hlth_master.get_pod_svc_status(pod_list=pod_list.remove(pod_name),
-                                                            fail=False)
+                                                       fail=False)
             self.log.debug("[Start] Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
             self.log.info("[End] Services of remaining pod are in online state")
 
             #self.log.info("Step 9: Perform IO operation on %s", bucket_name)
-            #resp = self.acc_capacity.perform_io_validate_data_usage(
+            # resp = self.acc_capacity.perform_io_validate_data_usage(
             #    [s3_user, access_key, secret_key, bucket_name],
             #    NORMAL_UPLOAD_SIZES_IN_MB, False)
             #assert_utils.assert_true(resp, "Error during IO operations")
             #self.log.info("Step 9: Performed IO operation on %s", bucket_name)
 
-
             index = pod_name + "offline"
             self.log.info("[Start] Fetch degraded capacity on Consul with %s pod failure", pod_name)
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with %s pod failure", pod_name)
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s pod failure", pod_name)
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with %s pod failure", pod_name)
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with %s pod failure", pod_name)
 
             self.log.info("[Start]  Restore deleted pods : %s", pod_name)
-            resp = self.ha_obj.restore_pod(pod_obj=self.master, restore_method=self.restore_method,
-                        restore_params={"deployment_name": self.deployment_name,
-                        "deployment_backup": self.deployment_backup})
+            resp = self.ha_obj.restore_pod(
+                pod_obj=self.master, restore_method=self.restore_method,
+                restore_params={"deployment_name": self.deployment_name,
+                                "deployment_backup": self.deployment_backup})
             self.log.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             self.log.info("Successfully restored pod by %s way", self.restore_method)
@@ -1470,51 +1458,54 @@ class TestSystemCapacity():
 
             index = pod_name + "online"
             self.log.info("[Start] Fetch degraded capacity on Consul with 0 pod failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with 0 pod failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 pod failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with 0 pod failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with 0 pod failure")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with 0 pod failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Blocked on EOS-27549")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1528,56 +1519,52 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33926"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(self.num_worker)
         total_written = 0
 
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
-
         self.log.info("[Start] Fetch degraded capacity on Consul with no Node failure")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0, critical=0,
+            damaged=0, err_margin=test_cfg["err_margin"])
         self.log.info("[End] Fetch degraded capacity on Consul with no Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with no Node failure")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc["No failure"]["hctl_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["hctl_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL with no Node failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM with no Node failure")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc["No failure"]["csm_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM with no Node failure")
 
-        for node in range(self.num_nodes+1):
+        for node in range(self.num_worker+1):
             self.log.info("[Start] Bringing down Node %s: %s", node, self.host_list[node])
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node])
             assert resp, f"{self.host_list[node]} has not shutdown yet."
@@ -1585,45 +1572,48 @@ class TestSystemCapacity():
             self.log.info("Verified %s is powered off and not pinging.", self.host_list[node])
             self.log.info("[End] Bringing down Node %s", self.host_list[node])
 
-            index =  self.row_temp.format(node)
+            index = self.row_temp.format(node)
             self.log.info("[Start] Fetch degraded capacity on Consul with Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with Node failure")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=0, degraded=None,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with Node failure")
 
             self.log.info("[Start] Power on the node : %s", self.host_list[node])
@@ -1633,51 +1623,53 @@ class TestSystemCapacity():
 
             index = self.row_temp.format(0)
             self.log.info("[Start] Fetch degraded capacity on Consul with no Node failure")
-            resp = self.system_capacity.get_capacity_consul()
-            # TBD : Consul output doest have degraded capacity yet.
+            resp = self.csm_obj.get_capacity_consul()
+
             cap_df.loc[index]["consul_healthy"] = resp["healthy"]
             cap_df.loc[index]["consul_degraded"] = resp["degraded"]
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-            cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on Consul with no Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with no Node failure")
-            # TBD : HCTL output doest have degraded capacity yet.
-            resp = self.health_helper.hctl_status_json()
+
+            resp = self.hlth_master.hctl_status_json()["bytecount"]
             cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
             cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-            cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on HCTL with no Node failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with no Node failure")
-            resp = self.system_capacity.get_degraded_capacity()
+            resp = self.csm_obj.get_degraded_capacity()
             assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-            resp = resp.json()
+            resp = resp.json()["bytecount"]
             cap_df.loc[index]["csm_healthy"] = resp["healthy"]
             cap_df.loc[index]["csm_degraded"] = resp["degraded"]
             cap_df.loc[index]["csm_critical"] = resp["critical"]
             cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-            cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-            assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                        critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                        total=total_written)
+            #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+            assert self.csm_obj.verify_degraded_capacity(
+                resp, healthy=None, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             self.log.info("[End] Fetch degraded capacity on CSM with no Node failure")
 
         self.log.info("Summation check of the healthy bytes from each node failure for consul")
-        assert self.system_capacity.verify_degraded_capacity_all(
-            cap_df, self.num_nodes), "Overall check failed."
+        assert self.csm_obj.verify_degraded_capacity_all(
+            cap_df, self.num_worker), "Overall check failed."
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1690,116 +1682,116 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         test_cfg = self.csm_conf["test_33927"]
-        cap_df = self.system_capacity.get_dataframe_all(self.num_nodes)
+        cap_df = self.csm_obj.get_dataframe_all(1)
         total_written = 0
-        self.log.info("[Start] Checking cluster capacity")
-        # TBD : Command is not updated on TDS yet.
-        total_cap, _, _, _, _ = self.system_capacity.parse_capacity_usage()
-        assert total_cap > 0, "Total capacity is less or equal to Zero."
-        self.log.info("[End] Checking cluster capacity")
 
-        index = "cluster_start"
+        index = "No failure"
         self.log.info("[Start] Fetch degraded capacity on Consul before cluster restart")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         total_written = resp["healthy"]
         cap_df.loc[index]["consul_healthy"] = resp["healthy"]
         cap_df.loc[index]["consul_degraded"] = resp["degraded"]
         cap_df.loc[index]["consul_critical"] = resp["critical"]
         cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-        cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"])
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0, critical=0,
+            damaged=0, err_margin=test_cfg["err_margin"])
         self.log.info("[End] Fetch degraded capacity on Consul before cluster restart")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL before cluster restart")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
         cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
         cap_df.loc[index]["hctl_critical"] = resp["critical"]
         cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                                                             critical=0, damaged=0,
-                                                             err_margin=test_cfg["err_margin"],
-                                                             total=total_written)
+        #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+                                                     critical=0, damaged=0,
+                                                     err_margin=test_cfg["err_margin"],
+                                                     total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL before cluster restart")
 
         self.log.info("[Start] Fetch degraded capacity on CSM before cluster restart")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc[index]["csm_healthy"] = resp["healthy"]
         cap_df.loc[index]["csm_degraded"] = resp["degraded"]
         cap_df.loc[index]["csm_critical"] = resp["critical"]
         cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-        cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM before cluster restart")
 
         self.log.info("[Start] Stop Cluster")
         resp = self.ha_obj.cortx_stop_cluster(self.master)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Check the cluster status and start the cluster in case its still down.")
-        resp = self.ha_obj.check_cluster_status(self.master)
-        assert resp[0], "Failed to stop the cluster."
+        assert resp[0], resp[1]
+        time.sleep(60)
         self.log.info("[End] Stop Cluster")
 
-        index = "cluster_restart"
+        index = "N0 failure"
         self.log.info("[Start] Cluster restart.")
         self.log.info("Check whether cluster restart command ran successfully.")
         resp = self.ha_obj.cortx_start_cluster(self.master)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert resp[0], resp[1]
         self.log.info("Cluster is up and running.")
         self.log.info("Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert resp[0], resp[1]
         self.log.info("[End] Cluster restart.")
 
         self.log.info("[Start] Fetch degraded capacity on Consul after cluster restart")
-        resp = self.system_capacity.get_capacity_consul()
-        # TBD : Consul output doest have degraded capacity yet.
+        resp = self.csm_obj.get_capacity_consul()
+
         cap_df.loc[index]["consul_healthy"] = resp["healthy"]
         cap_df.loc[index]["consul_degraded"] = resp["degraded"]
         cap_df.loc[index]["consul_critical"] = resp["critical"]
         cap_df.loc[index]["consul_damaged"] = resp["damaged"]
-        cap_df.loc[index]["consul_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                    total=total_written)
+        #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on Consul after cluster restart")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL after cluster restart")
-        # TBD : HCTL output doest have degraded capacity yet.
-        resp = self.health_helper.hctl_status_json()
+
+        resp = self.hlth_master.hctl_status_json()["bytecount"]
         cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
         cap_df.loc[index]["hctl_degraded"] = resp["degraded"]
         cap_df.loc[index]["hctl_critical"] = resp["critical"]
         cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
-        cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                    total=total_written)
+        #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on HCTL after cluster restart")
 
         self.log.info("[Start] Fetch degraded capacity on CSM after cluster restart")
-        resp = self.system_capacity.get_degraded_capacity()
+        resp = self.csm_obj.get_degraded_capacity()
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
-        resp = resp.json()
+        resp = resp.json()["bytecount"]
         cap_df.loc[index]["csm_healthy"] = resp["healthy"]
         cap_df.loc[index]["csm_degraded"] = resp["degraded"]
         cap_df.loc[index]["csm_critical"] = resp["critical"]
         cap_df.loc[index]["csm_damaged"] = resp["damaged"]
-        cap_df.loc[index]["csm_repaired"] = resp["repaired"]
-        assert self.system_capacity.verify_degraded_capacity(resp, healthy=None, degraded=0,
-                    critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                    total=total_written)
+        #cap_df.loc[index]["csm_repaired"] = resp["repaired"]
+        assert self.csm_obj.verify_degraded_capacity(
+            resp, healthy=None, degraded=0, critical=0, damaged=0, err_margin=test_cfg
+            ["err_margin"],
+            total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM after cluster restart")
-
+        cap_df = cap_df.fillna(0)
+        result = (cap_df.loc["No failure"] == cap_df.loc["N0 failure"]).all()
         self.log.info("Check the cluster value before and after restart are same")
-        assert cap_df["cluster_restart"] == cap_df["cluster_start"], "Values are not consistent."
+        assert result, "Values are not consistent."
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1811,14 +1803,14 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 2: Modify header to invalid key")
         header['Authorization1'] = header.pop('Authorization')
         self.log.info("Step 3: Call degraded capacity api with invalid key in header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed for invalid key access")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed for invalid key access")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1834,14 +1826,14 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 2: Modify header for missing params")
         header['Authorization'] = ''
         self.log.info("Step 3: Call degraded capacity api with missing params in header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1863,14 +1855,14 @@ class TestSystemCapacity():
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 4: Modify header to delete key and value")
         del header['Authorization']
         self.log.info("Step 5: Call degraded capacity api with deleted key and value in header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1886,12 +1878,12 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
-        self.log.info("Step 2: Call degraded capacity api with valid header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
+        self.log.info("Step 4: Call degraded capacity api with valid header")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1913,14 +1905,14 @@ class TestSystemCapacity():
         resp = self.csm_cluster.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 4: Modify header for invalid value")
         header['Authorization'] = 'abc'
         self.log.info("Step 5: Call degraded capacity api with invalid header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1936,14 +1928,14 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 2: Modify header for invalid value")
         header['Authorization'] = 'abc'
         self.log.info("Step 3: Call degraded capacity api with invalid header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header, "full")
+        response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1959,20 +1951,20 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Get header for admin user")
-        header = self.csm_user.get_headers(self.username, self.user_pass)
+        header = self.csm_obj.get_headers(self.username, self.user_pass)
         self.log.info("Step 2: Call degraded capacity api with valid header")
-        response = self.system_capacity.get_degraded_capacity_custom_login(header)
+        response = self.csm_obj.get_degraded_capacity_custom_login(header)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("Step 3: Check all variables are present in rest response")
-        resp = self.system_capacity.validate_metrics(response.json())
+        resp = self.csm_obj.validate_metrics(response.json())
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp, "Rest data metrics check failed")
         self.log.info("Step 4: Verified metric data for bytecount")
-        response = self.system_capacity.get_degraded_capacity('full')
+        response = self.csm_obj.get_degraded_capacity(endpoint_param=None)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("Step 5: Check all variables are present in rest response")
-        resp = self.system_capacity.validate_metrics(response.json(), 'full')
+        resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert_utils.assert_true(resp, "Rest data metrics check failed in full mode")
         self.log.info("##### Test ended -  %s #####", test_case_name)
