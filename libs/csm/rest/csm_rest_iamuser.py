@@ -505,7 +505,6 @@ class RestIamUser(RestTestLib):
                 if key == "access_key":
                     if value != rest_response["keys"][0]["access_key"]:
                         return False, key, value, rest_response["keys"][0]["access_key"]
-
                 elif key == "secret_key":
                     if value != rest_response["keys"][0]["secret_key"]:
                         return False, key, value, rest_response["keys"][0]["secret_key"]
@@ -525,6 +524,36 @@ class RestIamUser(RestTestLib):
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def add_user_caps_rgw(self, uid, payload: dict):
+        """
+        Add capabilities to user
+        :param uid: uid of user
+        :param payload: payload for adding capabilities
+        :return: response
+        """
+        self.log.info("Adding user capabilities to user....")
+        endpoint = CSM_REST_CFG["s3_iam_caps_endpoint"] + "/" + uid
+        response = self.restapi.rest_call("put", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Adding user capabilities to user request successfully sent...")
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def remove_user_caps_rgw(self, uid, payload: dict):
+        """
+        Remove capabilities from user
+        :param uid: uid of user
+        :param payload: payload for removing capabilities
+        :return: response
+        """
+        self.log.info("Removing user capabilities from user....")
+        endpoint = CSM_REST_CFG["s3_iam_caps_endpoint"] + "/" + uid
+        response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Removing user capabilities from user request successfully sent...")
         return response
 
     def delete_iam_user_rgw(self, uid, header, purge_data=False):
@@ -701,3 +730,44 @@ class RestIamUser(RestTestLib):
         payload = optional_payload.copy()
         self.log.info("Payload : %s", payload)
         return payload
+
+    @staticmethod
+    def verify_caps(updated_caps, get_resp_caps):
+        """
+        Verify if updated capabilities are available in get resp capabilities
+        :param updated_caps: capabilities used for update request
+        :param get_resp_caps: capabilities received in get iam call
+        :return list of difference in updated and get iam call capabilities
+        """
+        existing_caps = []
+        random_cap_list = updated_caps.split(";")
+        for item in random_cap_list:
+            caps = item.split("=")
+            list_item = {}
+            list_item.update({"type": caps[0]})
+            if caps[1] == "read,write":
+                list_item.update({"perm": '*'})
+            else:
+                list_item.update({"perm": caps[1]})
+            existing_caps.append(list_item)
+        diff_items = []
+        for i in get_resp_caps:
+            if i not in existing_caps:
+                diff_items.append(i)
+        return diff_items
+
+    @staticmethod
+    def get_random_caps():
+        """
+        Get random capabilities
+        """
+        cap_keys = ['usage', 'users', 'buckets', 'info', 'metadata', 'zone']
+        cap_values = ['read', 'write', 'read,write', '*']
+        random_index = random.sample(range(1, len(cap_keys)),
+                                     SystemRandom().randrange(1, len(cap_keys)))
+        random_cap = ""
+        for index in random_index:
+            value_index = SystemRandom().randrange(0, len(cap_values))
+            value = cap_values[value_index]
+            random_cap = random_cap + cap_keys[index] + "=" + value + ";"
+        return random_cap[:-1]
