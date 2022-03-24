@@ -49,6 +49,7 @@ from scripts.s3_bench import s3bench
 class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     """S3 Account User Management delete/view s3 account,create/regenerate access key test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -164,13 +165,14 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.info(resp)
         assert_utils.assert_true(os.path.exists(resp[1]), f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")

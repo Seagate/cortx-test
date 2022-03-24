@@ -29,6 +29,7 @@ from time import perf_counter_ns
 
 import pytest
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import remove_file, path_exists
@@ -865,7 +866,7 @@ class TestMultipartUploadPartCopy:
                 part_number=2, upload_id=mpu_id1, copy_source_range="bytes=0-4294967296")
             assert_utils.assert_false(resp[0], resp)
         except CTException as error:
-            assert_utils.assert_in("AccessDenied", error.message)
+            assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY, error.message)
         self.log.info("Step 6: Upload part 1 by using regular file upload.")
         resp = response1[8].upload_part(os.urandom(5242880), self.bucket_name1,
                                         self.object_name1, part_number=1, upload_id=mpu_id1)

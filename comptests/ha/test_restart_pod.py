@@ -50,10 +50,8 @@ class TestRestartPod:
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_worker_list = []
         cls.node_master_list = []
-        cls.host_list = []
         cls.ha_obj = HAK8s()
         cls.ha_comp_obj = HAK8SCompLib()
-        cls.restored = True
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
@@ -73,7 +71,6 @@ class TestRestartPod:
         """
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
-        self.restored = True
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -98,12 +95,36 @@ class TestRestartPod:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
+
+    @staticmethod
+    def get_node_resource_id(resp_dict, status):
+        """
+        This is a local method to verify the status and get node and resource ids
+        :param resp_dict: halog properties
+        :param status: status need to be checked
+        :return: node and resource id as tuple
+        """
+        source_list = resp_dict['source']
+        resource_type_list = resp_dict['resource_type']
+        resource_status_list = resp_dict['resource_status']
+        generation_id_list = resp_dict['generation_id']
+        node_id = resp_dict['node_id']
+        resource_id = resp_dict['resource_id']
+        for index, (data1, data2, data3) in enumerate(zip(source_list, resource_type_list,
+                                                          resource_status_list)):
+            assert_utils.assert_equal(data1, 'monitor',
+                                      f"Source of {generation_id_list[index]} is not from monitor")
+            assert_utils.assert_equal(data2, 'node',
+                                      f"Resource of {generation_id_list[index]} is not node")
+            assert_utils.assert_equal(data3, status,
+                                      f"Resource status of {generation_id_list[index]} "
+                                      f"is not {status}")
+        return node_id, resource_id
 
     @pytest.mark.comp_ha
     @pytest.mark.lc
@@ -125,11 +146,23 @@ class TestRestartPod:
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
         self.deployment_name = resp[1]
-        self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
+        self.restore_pod = True
 
-        #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 2: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
+        LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 3: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 3: Successfully sent action event to hare")
 
         LOGGER.info("Step 4: Start pod by making replicas=1")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -140,8 +173,24 @@ class TestRestartPod:
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
         self.restore_pod = False
 
-        #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 5: Check pod online alert and verify node and resource IDs")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
+        assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
+                                                                          "are different")
+        LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
+                    "node and resource IDs")
+
+        LOGGER.info("Step 6: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 6: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare- "
                     "Data pod comes online after data pod restart using replicas.")
@@ -169,26 +218,53 @@ class TestRestartPod:
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
-        self.restore_pod = True
         self.restore_method = common_const.RESTORE_DEPLOYMENT_K8S
+        self.restore_pod = True
 
-        #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 2: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
+        LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 3: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 3: Successfully sent action event to hare")
 
         LOGGER.info("Step 4: Restore the deleted pod by creating deployment")
-        if self.restore_pod:
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup})
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                        restore_method=self.restore_method,
+                                        restore_params={"deployment_name": self.deployment_name,
+                                                        "deployment_backup":
+                                                            self.deployment_backup})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully restored pod by %s way", self.restore_method)
         self.restore_pod = False
 
-        #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 5: Check pod online alert and verify node and resource IDs")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
+        assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
+                                                                          "are different")
+        LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
+                    "node and resource IDs")
+
+        LOGGER.info("Step 6: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 6: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Data pod comes online after data pod restart using deployment")
@@ -214,8 +290,21 @@ class TestRestartPod:
         assert_utils.assert_true(resp, "Data pod didn't deleted successfully")
         LOGGER.info("Step 1:Data pod deleted successfully")
 
-        #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 2: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True,
+                                                     kubectl_delete=True, status='failed')
+        resp = self.get_node_resource_id(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
+        LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 3: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 3: Successfully sent action event to hare")
 
         LOGGER.info("Step 4: Check the node status.")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
@@ -226,12 +315,24 @@ class TestRestartPod:
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 4: New data pod created automatically by kubernetes")
 
-        #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 5: Check pod online alert and verify node and resource IDs")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True,
+                                                     kubectl_delete=True)
+        resp = self.get_node_resource_id(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
+        assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
+                                                                          "are different")
+        LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
+                    "node and resource IDs")
 
         LOGGER.info("COMPLETED: pod online event to component Hare -"
                     "data pod comes online after data pod restart using kubectl delete pod")
 
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36193")
@@ -240,6 +341,7 @@ class TestRestartPod:
         Publish the pod online event to Hare -
         server pod comes online after server pod restart using deployment
         """
+
         LOGGER.info(
             "STARTED: Publish the pod online event to component Hare - "
             "Server pod comes online after server pod restart using deployment")
@@ -257,30 +359,58 @@ class TestRestartPod:
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
-        self.restore_pod = True
         self.restore_method = common_const.RESTORE_DEPLOYMENT_K8S
+        self.restore_pod = True
 
-        #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 2: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
+        LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 3: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 3: Successfully sent action event to hare")
 
         LOGGER.info("Step 4: Restore the deleted pod by creating deployment")
-        if self.restore_pod:
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup})
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                        restore_method=self.restore_method,
+                                        restore_params={"deployment_name": self.deployment_name,
+                                                        "deployment_backup":
+                                                            self.deployment_backup})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         LOGGER.info("Step 4: Successfully restored pod by %s way", self.restore_method)
         self.restore_pod = False
 
-        #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 5: Check pod online alert and verify node and resource IDs")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
+        assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
+                                                                          "are different")
+        LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
+                    "node and resource IDs")
+
+        LOGGER.info("Step 6: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 6: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Server pod comes online after server pod restart using deployment")
 
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36197")
@@ -303,11 +433,23 @@ class TestRestartPod:
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
         self.deployment_name = resp[1]
-        self.restore_pod = True
         self.restore_method = common_const.RESTORE_SCALE_REPLICAS
+        self.restore_pod = True
 
-        #TODO: Step-2 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-3 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 2: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='failed')
+        failed_node_id = resp[0]
+        failed_resource_id = resp[1]
+        LOGGER.info("Step 2: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 3: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 3: Successfully sent action event to hare")
 
         LOGGER.info("Step 4: Start pod by making replicas=1")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -318,8 +460,24 @@ class TestRestartPod:
         LOGGER.info("Step 4: Successfully started the pod again by making replicas=1")
         self.restore_pod = False
 
-        #TODO: Step-5 | Getting multiple events for pod delete operation - CORTX-28560
-        #TODO: Step-6 | Pod Online events are not seeing in the health monitor log - CORTX-28867
+        LOGGER.info("Step 5: Check pod online alert and verify node and resource IDs")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True)
+        resp = self.get_node_resource_id(resp_dict, status='online')
+        online_node_id = resp[0]
+        online_resource_id = resp[1]
+        assert_utils.assert_equal(failed_node_id, online_node_id, "Pod node IDs are different")
+        assert_utils.assert_equal(failed_resource_id, online_resource_id, "Pod resource IDs "
+                                                                          "are different")
+        LOGGER.info("Step 5: Successfully checked pod online event to hare and verified the "
+                    "node and resource IDs")
+
+        LOGGER.info("Step 6: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 6: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare- "
-                    "Data pod comes online after data pod restart using replicas.")
+                    "Server pod comes online after server pod restart using replicas.")

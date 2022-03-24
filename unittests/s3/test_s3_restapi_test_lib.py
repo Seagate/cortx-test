@@ -30,6 +30,8 @@ from commons.helpers.node_helper import Node
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=attribute-defined-outside-init
 
 class TestS3RestAPI:
     """Class to test the s3 rest api methods."""

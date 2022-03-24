@@ -559,6 +559,81 @@ class RestIamUser(RestTestLib):
         self.log.info("Get IAM user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
+    def add_key_to_iam_user(self, **kwargs):
+        """
+        Add keys to the user
+        :keyword access_key: access key which needs to be added to user
+        :keyword secret_key: secret_key key which needs to be added to user
+        :keyword uid : uid of user for which keys need to be added
+        :keyword key_type : type of key to be added
+        :keyword generate_key : whether to generate keys for user
+        :return response of add key rest call
+        """
+        self.log.info("Adding key to IAM user request....")
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
+        endpoint = CSM_REST_CFG["s3_iam_keys_endpoint"]
+        payload = {"uid": kwargs.get("uid", None)}
+        payload.update({"key_type": kwargs.get("key_type", 's3')})
+        payload.update({"generate_key": kwargs.get("generate_key", True)})
+        if access_key is not None:
+            payload.update({"access_key": access_key})
+        if secret_key is not None:
+            payload.update({"secret_key": secret_key})
+        response = self.restapi.rest_call("put", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Adding key to IAM user request successfully sent...")
+        return response
+
+    def validate_added_deleted_keys(self, existing_keys, new_keys, added=True):
+        """
+        To validate if new keys are added or deleted properly
+        :keyword existing_keys: List of existing keys
+        :keyword new_keys : List of new keys for comparison with existing keys
+        :keyword added : whether keys were added in new keys
+        :return difference of existing and new keys
+        """
+        self.log.info("Validating keys")
+        self.log.debug("Existing keys %s", existing_keys)
+        self.log.debug("New keys %s", new_keys)
+        if added:
+            keys_list1 = existing_keys
+            keys_list2 = new_keys
+        else:
+            keys_list2 = existing_keys
+            keys_list1 = new_keys
+        key_match_cnt = 0
+        existing_keys_matching = False
+        diff_key = []
+        for key in keys_list2:
+            if key not in keys_list1:
+                diff_key.append(key)
+            else:
+                key_match_cnt = key_match_cnt + 1
+        if len(diff_key) == 1 and key_match_cnt == len(keys_list1):
+            existing_keys_matching = True
+        return existing_keys_matching, diff_key
+
+    @RestTestLib.authenticate_and_login
+    def remove_key_from_iam_user(self, **kwargs):
+        """
+        Remove keys from the user
+        :keyword access_key: access key which needs to be removed from user
+        :keyword uid : uid of user for which keys need to be removed
+        :keyword key_type : type of key to be removed
+        :return response of remove key rest call
+        """
+        self.log.info("Remove key from IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_keys_endpoint"]
+        payload = {"uid": kwargs.get("uid", None)}
+        payload.update({"key_type": kwargs.get("key_type", 's3')})
+        payload = {"access_key": kwargs.get("access_key", None)}
+        response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("Remove key from IAM user request successfully sent...")
+        return response
+
     def verify_create_iam_user_rgw(
             self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
         """
@@ -587,3 +662,42 @@ class RestIamUser(RestTestLib):
             self.log.error("Status code check failed.")
             result = False
         return result, resp
+
+    @RestTestLib.authenticate_and_login
+    def modify_iam_user_rgw(self, uid, payload: dict):
+        """
+        Modify IAM User parameters.
+        :param uid: userid
+        :param payload: payload for user creation
+        :return: response
+        """
+        self.log.info("Modifying IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
+                                          headers=self.headers)
+        self.log.info("IAM user request successfully sent...")
+        return response
+
+    def iam_user_patch_random_payload(self):
+        """
+        Return random patch payload for IAM user for RGW with Ceph
+        """
+        # Initialize all variables
+        payload = {}
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        payload.update({"uid": user_id})
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        payload.update({"display_name": display_name})
+        payload = self.iam_user_optional_payload_rgw(payload)
+        del payload["uid"]
+        del payload["tenant"]
+        del payload["user_caps"]
+        optional_payload = payload.copy()
+        ran_sel = random.sample(range(0, len(optional_payload)),
+                                    self.cryptogen.randrange(0, len(optional_payload)))
+        for i, (k, _) in enumerate(payload.items()):
+            if i not in ran_sel:
+                del optional_payload[k]
+        payload = optional_payload.copy()
+        self.log.info("Payload : %s", payload)
+        return payload

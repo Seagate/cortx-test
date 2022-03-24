@@ -1,6 +1,6 @@
 log_dir: "log/latest/"
 s3bench_path: "/usr/bin/s3bench"
-s3bench_binary: "https://github.com/Seagate/s3bench/releases/download/v2021-06-28/s3bench.2021-06-28"
+s3bench_binary: "https://github.com/Seagate/s3bench/releases/download/v2022-03-14/s3bench.2022-03-14"
 
 log_format:
     format: "%(asctime)s - %(message)s"

@@ -58,7 +58,6 @@ test_8674:
 test_8922:
     file_size: 50005
     total_parts: 10001
-    err_msg: "InvalidPart"
 
 test_8923:
     file_size: 50000
@@ -68,12 +67,10 @@ test_8923:
 test_8924:
     file_size: 20
     total_parts: 5
-    err_msg: "EntityTooSmall"
 
 test_2297:
     file_size: 11000
     total_parts: 2
-    err_msg: "EntityTooLarge"
 
 test_8926:
     file_size: 10
@@ -209,10 +206,6 @@ test_28530:
           count: 1
         - part_size: 40.3
           count: 1
-    error_msg: "An error occurred (NoSuchUpload) when calling the ListParts
-    operation: The specified multipart upload does not exist. The upload ID might be invalid, or
-    the multipart upload might have been aborted or completed."
-
 
 test_28526:
     file_size: 5242880
@@ -281,10 +274,7 @@ test_29167:
     file_size: 300
     chunk_size: 1048576
     total_parts: 5
-    error_msg: "An error occurred (NoSuchUpload) when calling the UploadPart operation:
-    The specified multipart upload does not exist. The upload ID might be invalid, or the
-    multipart upload might have been aborted or completed."
-
+   
 test_29164:
     file_size: 600
     chunk_size: 1048576
@@ -307,7 +297,6 @@ test_29166:
     file_size: 500
     chunk_size: 1048576
     total_parts: 20
-    error_msg: "An error occurred (404) when calling the HeadObject operation: Not Found"
 
 test_29168:
     file_size: 5242880

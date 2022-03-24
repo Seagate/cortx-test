@@ -26,6 +26,7 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_bucket_policy_test_lib
@@ -158,8 +159,7 @@ class TestS3BucketPolicyTestLib:
         try:
             S3_BKT_POLICY_OBJ.get_bucket_policy(bkt_name)
         except CTException as error:
-            assert "NoSuchBucketPolicy" in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in str(error.message), error.message
         bucket_policy = {
             'Version': '2019-12-04',
             'Statement': [{
@@ -199,7 +199,7 @@ class TestS3BucketPolicyTestLib:
             S3_BKT_POLICY_OBJ.put_bucket_policy(
                 self.dummy_bucket, bkt_policy)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_03_delete_bucket_policy(self):
@@ -225,4 +225,4 @@ class TestS3BucketPolicyTestLib:
         try:
             S3_BKT_POLICY_OBJ.delete_bucket_policy("ut-bkt-03")
         except CTException as error:
-            assert "NoSuchBucketPolicy" in error.message, error.message
+            assert errmsg.S3_BKT_POLICY_NO_SUCH_ERR in error.message, error.message
