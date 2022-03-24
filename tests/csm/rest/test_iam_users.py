@@ -2126,3 +2126,207 @@ class TestIamUserRGW():
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39026')
+    def test_39026(self):
+        """
+        Verify IOs with bucket read capability
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "usage=read;buckets=read;users=read"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
+        self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp.json()["keys"][0]["access_key"],
+                           secret_key=resp.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Step: Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step: Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 3: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39027')
+    def test_39027(self):
+        """
+        Verify IOs with bucket write capability
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "buckets=read,write"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp1.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
+        self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Step: Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step: Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 3: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("Step 4: Remove existing cap and add new capability")
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
+                                     "Remove cap request status code failed")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 4: Verify removed capabilities")
+        assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
+                                     "Capabilities are not updated properly")
+        user_cap = "buckets=*"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.add_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
+                                     "Add cap request status code failed")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Verify added capabilities")
+        diff_items = self.csm_obj.verify_caps(user_cap, get_resp.json()["caps"])
+        self.log.info("Difference in capabilities %s", diff_items)
+        assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
+        self.log.info("Step 5: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Step: Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step: Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 6: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39028')
+    def test_39028(self):
+        """
+        Add-remove invalid capabilities
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "usage=read;buckets=write;users=read"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp1.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        self.log.info("Step 2: Add some invalid capabilities")
+        user_cap = "random=;buckets="
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.add_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
+                                     "Invalid caps added")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Verify added capabilities")
+        diff_items = self.csm_obj.verify_caps(user_cap, get_resp.json()["caps"])
+        self.log.info("Difference in capabilities %s", diff_items)
+        assert_utils.assert_false(len(diff_items) == 0, "Valid caps not retained properly")
+        self.log.info("Step 4: Remove invalid capabilities")
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
+                                     "Attempt to remove invalid caps")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Verify removed capabilities")
+        assert_utils.assert_false(len(get_resp.json()["caps"]) == 0,
+                                     "Remove invalid capabilities sucsessful")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
