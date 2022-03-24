@@ -28,7 +28,9 @@ from commons import cortxlogging
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
 
 class TestCliAlert:
-    """Alert Testsuite for CLI"""
+    """
+    Alert Testsuite for CLI
+    """
 
     @classmethod
     def setup_class(cls):
