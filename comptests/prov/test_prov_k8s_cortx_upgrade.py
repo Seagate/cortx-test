@@ -346,3 +346,34 @@ class TestProvK8CortxRollingUpgrade:
         assert_utils.assert_in("Ensure all pods are in a healthy state", resp[1])
         LOGGER.info("Step 3: Done")
         LOGGER.info("Test Completed.")
+
+        @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-37359")
+    def test_37359(self):
+        """
+        Verify rolling upgrade fails when any pod is not in running state.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Get data pod from cluster.")
+        pod_name = self.master_node_obj.get_pod_name(pod_prefix=cons.POD_NAME_PREFIX)
+        assert_utils.assert_true(pod_name[0], pod_name[1])
+        LOGGER.info("Step 1: Done.")
+
+        LOGGER.info("Step 2: Start a thread to delete one of the pod.")
+        pod_delete_cmd = commands.K8S_DELETE_POD.format(pod_name[1])
+        kwargs = {"cmd": pod_delete_cmd, "read_lines": True}
+        pod_delete_thread = Thread(target=self.master_node_obj.execute_cmd, kwargs=kwargs)
+        pod_delete_thread.start()
+        time.sleep(2)  # Wait to start pod_delete_thread
+        LOGGER.info("Step 2: Done.")
+
+        LOGGER.info("Step 3: Start a thread for upgrade.")
+        que = queue.Queue()
+        upgrade_thread = Thread(target=self.perform_upgrade, args=(False, que,))
+        upgrade_thread.start()
+        resp = que.get(1)
+        pod_delete_thread.join()
+        assert_utils.assert_in("Ensure all pods are in a healthy state", resp[1])
+        LOGGER.info("Step 3: Done")
+        LOGGER.info("Test Completed.")
