@@ -25,6 +25,7 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_multipart_test_lib
@@ -278,7 +279,7 @@ class TestS3MultipartTestLib:
         try:
             S3_MP_OBJ.list_multipart_uploads(self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_07_get_byte_range_of_object(self):
@@ -298,4 +299,4 @@ class TestS3MultipartTestLib:
                 self.dummy_bucket, "ut-obj-07",
                 0, 5)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message

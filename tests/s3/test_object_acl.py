@@ -27,6 +27,7 @@ import copy
 import json
 import pytest
 
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -829,9 +830,8 @@ class TestObjectACL:
                 canonical_id,
                 permission)
         except CTException as error:
-            assert S3_OBJ_TST["test_3217"]["error_msg"] in error.message, error.message
-        self.log.info(
-            "Step 1: Invalid permission set for object%s", self.obj_name)
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
+        self.log.info("Step 1: Invalid permission set for object%s", self.obj_name)
         self.log.info("Put object acl with invalid permission")
 
     @pytest.mark.parallel
@@ -857,7 +857,7 @@ class TestObjectACL:
             self.s3_acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3218"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 1: Done setting permission for the object using XML structure")
         self.log.info("put object acl with invalid XML structure")
@@ -1034,7 +1034,7 @@ class TestObjectACL:
                 self.s3_acl_obj.add_grantee(
                     self.bucket_name, self.obj_name, canonical_id, permission)
             except CTException as error:
-                assert S3_OBJ_TST["test_3230"]["error_msg"] in error.message, error.message
+                assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
                 self.log.error(error.message)
         self.log.info("Put object acl with 100 grants")
 
@@ -1060,7 +1060,7 @@ class TestObjectACL:
             self.s3_acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, modified_acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3231"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 1: Done setting put object acl with invalid display name and invalid id")
         self.log.info(
@@ -1117,7 +1117,7 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 5: Object resp should fail with exception")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1173,7 +1173,7 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1294,7 +1294,7 @@ class TestObjectACL:
             self.log.info("Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1360,7 +1360,7 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 6: Get object ACL response using account 2 is AccessDenied")
         object_file_resp = s3_acl_obj_2.s3_client.get_object(
@@ -1391,7 +1391,7 @@ class TestObjectACL:
             "check for get-object-acl from account1")
         write_acp = S3_OBJ_TST["test_3687"]["write_acp"]
         auth_read = S3_OBJ_TST["test_3687"]["auth_read"]
-        error_msg = S3_OBJ_TST["s3_object"]["error_msg"]
+        error_msg = errmsg.ACCESS_DENIED_ERR_KEY
         resp = system_utils.create_file(self.test_file_path,
                                         S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
@@ -1623,7 +1623,7 @@ class TestObjectACL:
             self.log.info(
                 "Step 6: Get ACL response for Account 2 %s", get_acl_res)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1695,7 +1695,7 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info("Step 6: Object from should return ACCESSIONED")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1769,7 +1769,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 6: Done getting object ACL from user 2")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1868,7 +1868,7 @@ class TestObjectACL:
                 self.bucket_name, self.obj_name)
             assert not get_usr_obj[0]
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3_acl_obj_1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(can_id_usr_1))
@@ -1972,7 +1972,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3_acl_obj_1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(can_id_usr_1))
@@ -2603,7 +2603,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj_1.put_object_with_acl(
                 self.bucket_name,
@@ -2611,7 +2611,7 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_3498"]["auth_read"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object ACL operation should fail with exception and"
             "error message was verified")
@@ -2701,7 +2701,7 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_3499"]["auth_read"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3acl_user1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -3291,10 +3291,10 @@ class TestObjectACL:
             acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, modified_acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3552"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 3: Exception was raised while adding invalid ACP with error message : %s",
-            S3_OBJ_TST["test_3552"]["error_msg"])
+            errmsg.S3_INVALID_ACL_ERR)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3412,11 +3412,10 @@ class TestObjectACL:
                 canonical_id,
                 S3_OBJ_TST["test_3554"]["permission_2"])
         except CTException as error:
-            assert S3_OBJ_TST["test_3554"]["error_msg"] in \
-                error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 4: Put full control and private ACL to object was handled with error message: %s",
-            S3_OBJ_TST["test_3554"]["error_msg"])
+            errmsg.S3_INVALID_ACL_ERR)
         self.log.info("Add canned ACL private in request body along with "
                       "FULL_CONTROL ACL grant permission in request body")
 
@@ -3472,10 +3471,10 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_159"]["permission"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object failure was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3534,10 +3533,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_170"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3624,10 +3623,10 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 7: Get object ACL was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         # Cleanup
         resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
         assert_utils.assert_true(resp[0], resp[1])
@@ -3721,10 +3720,10 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 7: Get Object ACL was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         # Cleanup
         resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
         assert_utils.assert_true(resp[0], resp[1])
@@ -3992,7 +3991,7 @@ class TestObjectACL:
         try:
             s3_tag_obj_2.get_object_tags(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 6: Done After switching to account2 perfrom get-object-tagging ")
         resp = s3_obj_1.bucket_list()[1]
@@ -4183,10 +4182,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_169"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4245,10 +4244,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_167"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4306,10 +4305,10 @@ class TestObjectACL:
         try:
             s3obj_user2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Get object ACL response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4492,11 +4491,11 @@ class TestObjectACL:
                 obj_permission)
         except CTException as error:
             self.log.info(error.message)
-            assert test_3454_cfg["err_message"] in error.message, error.message
+            assert errmsg.S3_OBJ_ACL_INVALID_ARGUMENT_ERR in error.message, error.message
         self.log.info(
             "Step 4: Setting a %s permission to an object for second account"
             " with invalid canonical id failed with %s",
-            obj_permission, test_3454_cfg["err_message"])
+            obj_permission, errmsg.S3_OBJ_ACL_INVALID_ARGUMENT_ERR)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4573,10 +4572,10 @@ class TestObjectACL:
             s3_test_obj3.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4650,10 +4649,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4727,10 +4726,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4804,10 +4803,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4967,12 +4966,12 @@ class TestObjectACL:
                 self.bucket_name, self.obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for second account",
             obj_permission)
@@ -5051,13 +5050,13 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj2.put_object_canned_acl(
                 self.bucket_name, self.obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == obj_permission, resp[1]
@@ -5139,7 +5138,7 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_acl_obj2.put_object_canned_acl(
             self.bucket_name, self.obj_name, grant_read=email)
         assert resp[0], resp[1]
@@ -5147,7 +5146,7 @@ class TestObjectACL:
             s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for "
             "second account successfully", obj_permission)
@@ -5274,7 +5273,7 @@ class TestObjectACL:
                 access_control_policy=obj_acl_json)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["test_3228"]["err_msg"] in error.message, error.message
+            assert errmsg.S3_BKT_SPECIAL_CHARACTER_ERR in error.message, error.message
             self.log.info(
                 "Step 1: Invalid JSON failed with "
                 "error: %s",
@@ -5363,7 +5362,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5389,7 +5388,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5438,7 +5437,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5465,7 +5464,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5506,7 +5505,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
