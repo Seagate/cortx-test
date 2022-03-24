@@ -28,6 +28,7 @@ s3_operation_data:
 
 copy_obj_data:
   bkt_cnt: 5
+  bkt_multi: 10
 
 s3_bucket_data:
   no_buckets_for_deg_deletes: 150
@@ -41,3 +42,5 @@ s3_bench_large_workloads: ["1Gb", "2Gb", "3Gb", "4Gb", "5Gb"]
 
 bg_bucket_ops:
   no_del_buckets: 100
+
+near_full_system_percent: 60

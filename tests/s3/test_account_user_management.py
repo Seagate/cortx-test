@@ -26,6 +26,7 @@ import time
 import pytest
 
 from commons.constants import const
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -36,7 +37,6 @@ from commons.utils.system_utils import create_file, remove_file
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
-from libs.s3 import S3H_OBJ
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
@@ -83,7 +83,7 @@ class TestAccountUserManagement:
         """
         # Delete created user with prefix.
         self.log.info("STARTED: Test setup operations.")
-        self.test_file = "testfile_{}".format(time.perf_counter_ns())
+        self.test_file = f"testfile_{time.perf_counter_ns()}"
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAccountUserManagement")
         self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
         if not os.path.exists(self.test_dir_path):
@@ -91,17 +91,14 @@ class TestAccountUserManagement:
             self.log.info("Created path: %s", self.test_dir_path)
         self.log.info("Test file path: %s", self.test_file_path)
         self.timestamp = time.time()
-        self.account_name = "{0}{1}".format(
-            self.account_name_prefix, str(
-                time.perf_counter_ns())).replace('.', '_')
-        self.user_name = "{0}{1}".format(
-            self.user_name_prefix, str(
-                time.perf_counter_ns())).replace('.', '_')
-        self.bucket_name = "testbucket{}".format(str(time.perf_counter_ns()))
-        self.obj_name = "testobj{}".format(str(time.perf_counter_ns()))
+        self.account_name = f"{self.account_name_prefix}" \
+                            f"{str(time.perf_counter_ns()).replace('.', '_')}"
+        self.user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
+        self.bucket_name = f"testbucket{str(time.perf_counter_ns())}"
+        self.obj_name = f"testobj{str(time.perf_counter_ns())}"
         self.s3acc_obj = S3AccountOperationsRestAPI()
-        self.users_list = list()
-        self.accounts_list = list()
+        self.users_list = []
+        self.accounts_list = []
         self.log.info(
             "Delete created user with prefix: %s", self.user_name)
         # Uncomment later when delete iam user feature is available
@@ -224,7 +221,7 @@ class TestAccountUserManagement:
         total_account = 100
         self.log.info("Step 1: Creating %s accounts", str(total_account))
         # Defining list.
-        account_list, access_keys, secret_keys = list(), list(), list()
+        account_list, access_keys, secret_keys = [], [], []
         acc_name = self.account_name_prefix
         self.log.info("account prefix: %s", str(acc_name))
         for cnt in range(total_account):
@@ -278,7 +275,7 @@ class TestAccountUserManagement:
         resp = self.s3acc_obj.create_s3_account(self.account_name,
                                                 self.email_id.format(self.account_name),
                                                 self.s3acc_password)
-        assert "attempted to create an account that already exists" in resp[1], resp[1]
+        assert errmsg.ACCOUNT_ERR in resp[1], resp[1]
         self.log.info("Created another account with existing account name response %s", resp[1])
         self.accounts_list.append(self.account_name)
         self.log.info(
@@ -398,16 +395,14 @@ class TestAccountUserManagement:
         bucket_name = self.bucket_name
         self.log.info(bucket_name)
         self.log.info("Creating a bucket with name %s", str(bucket_name))
-        err_message = "InvalidAccessKeyId"
         try:
             resp = s3_user_obj.create_bucket(bucket_name)
             assert not resp[0], resp[1]
         except CTException as error:
-            assert err_message in error.message, error.message
+            assert errmsg.INVALID_ACCESSKEY_ERR in error.message, error.message
         self.log.info("Bucket with name %s is not created", str(bucket_name))
         obj_name = self.obj_name
         self.log.info("Putting object %s to bucket %s", obj_name, bucket_name)
-        err_message = "NoSuchBucket"
         try:
             respo = create_file(self.test_file_path, 1)
             self.log.info(respo)
@@ -415,9 +410,8 @@ class TestAccountUserManagement:
                 bucket_name, obj_name, self.test_file_path)
             assert resp[0], resp[1]
         except CTException as error:
-            assert err_message in error.message, error.message
-        self.log.info(
-            "Could not put object %s to bucket %s", obj_name, bucket_name)
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+        self.log.info("Could not put object %s to bucket %s", obj_name, bucket_name)
         self.log.info("Downloading object from bucket %s", str(bucket_name))
         try:
             resp = s3_user_obj.object_download(
@@ -425,11 +419,9 @@ class TestAccountUserManagement:
             self.log.info(resp)
             assert resp[0], resp[1]
         except CTException as error:
-            assert "404" in error.message, error.message  # Forbidden
-        self.log.info(
-            "Could not download object from bucket %s", str(bucket_name))
-        self.log.info(
-            "Step 2: Performed CRUD operations with invalid user's credentials.")
+            assert errmsg.NOT_FOUND_ERRCODE in error.message, error.message  # Forbidden
+        self.log.info("Could not download object from bucket %s", str(bucket_name))
+        self.log.info("Step 2: Performed CRUD operations with invalid user's credentials.")
         self.accounts_list.append(self.account_name)
         iam_obj.delete_user(self.user_name)
         del iam_obj
@@ -630,12 +622,9 @@ class TestAccountUserManagement:
             assert not resp[0], resp[1]
         except CTException as error:
             self.log.debug(error.message)
-            assert_in(
-                "EntityAlreadyExists",
-                error.message,
-                error.message)
-        self.log.info(
-            "Could not create user with existing name %s", str(self.user_name))
+            assert_in(errmsg.DUPLICATE_USER_ERR_KEY, error.message, error.message)
+        self.log.info("Could not create user with existing name %s",
+                      str(self.user_name))
         self.users_list.append(self.user_name)
         self.log.info("END: creating user with existing name.")
 
@@ -875,8 +864,7 @@ class TestAccountUserManagement:
         """SSL certificate."""
         self.log.info("START: SSL certificate.")
         resp = self.node_obj.path_exists(self.ca_cert_path)
-        assert resp, "certificate path not present: {}".format(
-            self.ca_cert_path)
+        assert resp, f"certificate path not present: {self.ca_cert_path}"
         status, resp = self.node_obj.copy_file_to_local(
             self.ca_cert_path, "ca.crt")
         assert status, resp
@@ -904,8 +892,7 @@ class TestAccountUserManagement:
             "Step 1: Checking if %s file exists on server", str(
                 self.ca_cert_path))
         resp = self.node_obj.path_exists(self.ca_cert_path)
-        assert resp, "certificate path not present: {}".format(
-            self.ca_cert_path)
+        assert resp, f"certificate path not present: {self.ca_cert_path}"
         self.log.info(
             "Verified that %s file exists on server", str(self.ca_cert_path))
         self.log.info("END: ssl certificate present.")
@@ -982,8 +969,7 @@ class TestAccountUserManagement:
         self.log.info("User Data is: %s", str(resp[1]))
         self.log.info(
             "Step 3: Verifying ARN format of user %s", str(self.user_name))
-        arn_format = "arn:aws:iam::{}:user/{}".format(
-            account_id, self.user_name)
+        arn_format = f"arn:aws:iam::{account_id}:user/{self.user_name}"
         assert arn_format == resp[1]['User']["Arn"], "Invalid user ARN format"
         self.log.info(
             "Step 3: Verified ARN format of user %s successfully",

@@ -23,6 +23,7 @@
 import logging
 import time
 import urllib
+from http import HTTPStatus
 
 from commons import errorcodes as err
 from commons.constants import Rest
@@ -114,11 +115,11 @@ class S3AccountOperationsRestAPI(RestS3user):
             LOGGER.debug("delete s3accounts user : %s", user_name)
             # Fetching api response
             response = self.delete_s3_account_user(user_name)
-            status = response.status_code != Rest.SUCCESS_STATUS or response.ok is not True
-            if status:
+            if response.status_code == HTTPStatus.OK:
+                return True, "Deleted user successfully"
+            else:
+                LOGGER.debug(response.json())
                 return False, response.json()["message"]
-            LOGGER.debug(response.json())
-            return True, response.json()["message"]
         except BaseException as error:
             LOGGER.error(
                 "%s %s: %s",
