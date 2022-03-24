@@ -82,7 +82,7 @@ class TestSystemCapacity():
         cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
                                  username=CMN_CFG["nodes"][0]["username"],
                                  password=CMN_CFG["nodes"][0]["password"])
-        
+
         cls.log.debug("Node object list : %s", cls.nd_obj)
         cls.restore_pod = None
         cls.restore_method = None
@@ -1747,7 +1747,7 @@ class TestSystemCapacity():
                     total=total_written)
         self.log.info("[End] Fetch degraded capacity on CSM after cluster restart")
         cap_df = cap_df.fillna(0)
-        result = (cap_df.loc["No failure"] ==  cap_df.loc["N0 failure"]).all()
+        result = (cap_df.loc["No failure"] == cap_df.loc["N0 failure"]).all()
         self.log.info("Check the cluster value before and after restart are same")
         assert result, "Values are not consistent."
 
@@ -1924,6 +1924,6 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("Step 5: Check all variables are present in rest response")
-        resp = self.csm_obj.validate_metrics(response.json(),  endpoint_param=None)
+        resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert_utils.assert_true(resp, "Rest data metrics check failed in full mode")
         self.log.info("##### Test ended -  %s #####", test_case_name)
