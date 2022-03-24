@@ -8,7 +8,7 @@ test_33899:
     start_range: 10
     stop_range: 100
 test_33919:
-  err_margin: 0
+  err_margin: 10
   object_size:
     start_range: 10
     stop_range: 100
