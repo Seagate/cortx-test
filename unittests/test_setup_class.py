@@ -15,12 +15,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Test N Unit style setup and teardown."""
 import logging
 import pytest
 
 logger = logging.getLogger(__name__)
 
 
+# pylint: disable=no-self-use
 class TestClass:
 
     def setup_class(self):

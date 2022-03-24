@@ -139,9 +139,8 @@ class RestS3user(RestTestLib):
         :return: response delete s3account
         """
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"Delete bypassed"}'
+            rest_iam_user = RestIamUser()
+            response = rest_iam_user.delete_iam_user(user=username)
         else:
             # Building request url
             self.log.debug(

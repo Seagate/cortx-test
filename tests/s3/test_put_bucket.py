@@ -25,6 +25,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
@@ -41,26 +42,29 @@ class TestPutBucket:
         """Setup class"""
         cls.no_auth_obj = None
         cls.no_auth_obj_without_cert = None
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test operations.")
-        cls.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
-                                      s3_cert_path=S3_CFG["s3_cert_path"])
-        cls.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
-                                                   s3_cert_path=None)
-        cls.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
-        cls.log.info("ENDED: setup test operations.")
 
-    @classmethod
-    def teardown_class(cls):
-        """Function to perform the cleanup for each test."""
-        cls.log.info("STARTED: Test teardown operations.")
-        status, bktlist = cls.s3t_obj.bucket_list()
+    # pylint: disable=attribute-defined-outside-init
+    def setup_method(self):
+        """Function to perform the setup ops for each test."""
+        self.log = logging.getLogger(__name__)
+        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                       s3_cert_path=S3_CFG["s3_cert_path"])
+        self.no_auth_obj_without_cert = S3LibNoAuth(endpoint_url=S3_CFG["s3_url"],
+                                                    s3_cert_path=None)
+        self.log.info("STARTED: setup test operations.")
+        self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
+        self.log.info("ENDED: setup test operations.")
+
+    def teardown_method(self):
+        """Function to perform the clean up for each test."""
+        self.log.info("STARTED: Test teardown operations.")
+        status, bktlist = self.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
-        if cls.bucket_name in bktlist:
-            resp = cls.s3t_obj.delete_bucket(cls.bucket_name, force=True)
+        if self.bucket_name in bktlist:
+            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
-        cls.log.info("ENDED: Test teardown operations.")
+        self.log.info("ENDED: Test teardown operations.")
 
     def create_and_list_buckets_without_auth(self, bucket_name, err_message):
         """
@@ -103,12 +107,10 @@ class TestPutBucket:
     @CTFailOn(error_handler)
     def test_verify_put_bucket_authorization_header_missing_412(self):
         """Verify put-bucket where authorization header is missing."""
-        self.log.info(
-            "STARTED: Verify put-bucket where authorization header is missing")
+        self.log.info("STARTED: Verify put-bucket where authorization header is missing")
         self.create_and_list_buckets_without_auth(
-            self.bucket_name, "AccessDenied")
-        self.log.info(
-            "ENDED: Verify put-bucket where authorization header is missing")
+            self.bucket_name, errmsg.ACCESS_DENIED_ERR_KEY)
+        self.log.info("ENDED: Verify put-bucket where authorization header is missing")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -122,7 +124,7 @@ class TestPutBucket:
             "STARTED: Verify put-bucket with ip address format where authorization"
             " header is missing")
         self.create_and_list_buckets_without_auth(
-            "192.168.10.20", "AccessDenied")
+            "192.168.10.20", errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Verify put-bucket with ip address format where authorization header is missing")
 
@@ -136,7 +138,7 @@ class TestPutBucket:
         self.log.info(
             "STARTED: Create multiple buckets where authorization header is missing")
         for bucket in [f"{self.bucket_name}416_1", f"{self.bucket_name}416_2"]:
-            self.create_and_list_buckets_without_auth(bucket, "AccessDenied")
+            self.create_and_list_buckets_without_auth(bucket, errmsg.ACCESS_DENIED_ERR_KEY)
         self.log.info(
             "ENDED: Create multiple buckets where authorization header is missing")
 
@@ -167,7 +169,7 @@ class TestPutBucket:
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                "AccessDenied",
+                errmsg.ACCESS_DENIED_ERR_KEY,
                 error.message,
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
@@ -179,7 +181,7 @@ class TestPutBucket:
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                "AccessDenied",
+                errmsg.ACCESS_DENIED_ERR_KEY,
                 error.message,
                 error.message)
         self.log.info(

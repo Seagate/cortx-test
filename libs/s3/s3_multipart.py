@@ -252,7 +252,7 @@ class Multipart(S3Lib):
 
         return response
 
-
+# pylint: disable=too-few-public-methods
 class ProgressPercentage:
     """Call back for sending progress"""
 

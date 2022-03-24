@@ -27,6 +27,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
@@ -46,58 +47,63 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 class TestBucketACL:
     """Bucket ACL Test suite."""
 
-    @classmethod
-    def setup_class(cls):
-        """Function will be invoked prior to each test case."""
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test operations.")
-        cls.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
-        cls.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.test_file = f"testfile{time.perf_counter()}.txt"
-        cls.s3_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        cls.test_dir_path = os.path.join(TEST_DATA_PATH, "TestBucketACL")
-        if not system_utils.path_exists(cls.test_dir_path):
-            resp = system_utils.make_dirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", resp)
-        cls.log.info("Test data path: %s", cls.test_dir_path)
-        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        cls.bucket = "{}-{}".format("aclbucket", time.perf_counter_ns())
-        cls.account_prefix = "acltestaccn_{}"
-        cls.account = "{}{}".format("acltestaccn1", time.perf_counter_ns())
-        cls.email_id = "{}{}".format(cls.account, "@seagate.com")
-        cls.account1 = "{}{}".format("acltestaccn2", time.perf_counter_ns())
-        cls.email_id1 = "{}{}".format(cls.account, "@seagate.com")
-        cls.rest_obj = S3AccountOperations()
-        cls.log.info("Bucket name: %s", cls.bucket)
-        cls.account_list = []
-        cls.log.info("ENDED: Setup test operations")
+    # pylint: disable=attribute-defined-outside-init
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """
+        Summary: Function will be invoked prior to each test case.
 
-    @classmethod
-    def teardown_class(cls):
-        """Function to perform the cleanup for test suit."""
-        cls.log.info("STARTED: Teardown test operations")
-        if system_utils.path_exists(cls.test_file_path):
-            resp = system_utils.remove_file(cls.test_file_path)
-            cls.log.info("removed path: %s, resp: %s", cls.test_file_path, resp)
-        cls.log.info("Deleting buckets in default account")
-        resp = cls.s3_obj.bucket_list()
-        cls.log.info(resp)
-        pref_list = [each_bucket for each_bucket in resp[1] if each_bucket == cls.bucket]
+        Description: It will perform all prerequisite and cleanup test.
+        """
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: setup test operations.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"])
+        self.test_file = "testfile{}.txt"
+        self.s3_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.test_dir_path = os.path.join(TEST_DATA_PATH, "TestBucketACL")
+        if not system_utils.path_exists(self.test_dir_path):
+            resp = system_utils.make_dirs(self.test_dir_path)
+            self.log.info("Created path: %s", resp)
+        self.log.info("Test data path: %s", self.test_dir_path)
+        self.test_file_path = os.path.join(
+            self.test_dir_path, self.test_file.format(time.perf_counter()))
+        self.bucket = "{}-{}".format("aclbucket", time.perf_counter_ns())
+        self.account_prefix = "acltestaccn_{}"
+        self.account = "{}{}".format("acltestaccn1", time.perf_counter_ns())
+        self.email_id = "{}{}".format(self.account, "@seagate.com")
+        self.account1 = "{}{}".format("acltestaccn2", time.perf_counter_ns())
+        self.email_id1 = "{}{}".format(self.account, "@seagate.com")
+        self.rest_obj = S3AccountOperations()
+        self.log.info("Bucket name: %s", self.bucket)
+        self.account_list = []
+        self.log.info("ENDED: Setup test operations")
+        yield
+        self.log.info("STARTED: Teardown test operations")
+        if system_utils.path_exists(self.test_file_path):
+            resp = system_utils.remove_file(self.test_file_path)
+            self.log.info(
+                "removed path: %s, resp: %s",
+                self.test_file_path,
+                resp)
+        self.log.info("Deleting buckets in default account")
+        resp = self.s3_obj.bucket_list()
+        self.log.info(resp)
+        pref_list = [each_bucket for each_bucket in resp[1]
+                     if each_bucket == self.bucket]
         if pref_list:
             for bucket in pref_list:
-                cls.acl_obj.put_bucket_acl(bucket, acl="private")
-            resp = cls.s3_obj.delete_multiple_buckets(pref_list)
-            cls.log.info(resp)
+                self.acl_obj.put_bucket_acl(bucket, acl="private")
+            resp = self.s3_obj.delete_multiple_buckets(pref_list)
+            self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
-        del cls.rest_obj
-        cls.log.info("ENDED: Teardown test operations")
-
-    def teardown_method(self):
-        """Function to perform the cleanup for each test."""
         self.log.info("Deleted buckets in default account")
         self.log.info("Account list: %s", self.account_list)
         self.delete_accounts(self.account_list)
+        del self.rest_obj
+        self.log.info("ENDED: Teardown test operations")
 
     def delete_accounts(self, accounts):
         """It will clean up resources which are getting created during test suite setup."""
@@ -174,8 +180,8 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "NoSuchBucket" in str(error.message), error.message
-        self.log.info("verify Get Bucket ACL of non existing Bucket")
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+        self.log.info("ENDED: verify Get Bucket ACL of non existing Bucket")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -225,8 +231,8 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "Required parameter bucket_name not set" in str(error.message), error.message
-        self.log.info("Verify Get Bucket ACL without Bucket name")
+            assert errmsg.NO_BUCKET_NAME_ERR in str(error.message), error.message
+        self.log.info("ENDED: Verify Get Bucket ACL without Bucket name")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -245,8 +251,8 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "NoSuchBucket" in str(error.message), error.message
-        self.log.info("Delete Bucket and verify Bucket ACL")
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
+        self.log.info("ENDED: Delete Bucket and verify Bucket ACL")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -311,7 +317,7 @@ class TestBucketACL:
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert "AccessDenied" in str(error.message), error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(self.bucket)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -335,7 +341,6 @@ class TestBucketACL:
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
             self.account_list.append(account)
-        err_message = "AccessDenied"
         s3_obj_acl = s3_test_lib.S3TestLib(access_key=access_keys[0], secret_key=secret_keys[0])
         resp = s3_obj_acl.create_bucket(self.bucket)
         self.log.info(resp)
@@ -358,7 +363,7 @@ class TestBucketACL:
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert err_message in str(error.message), error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in str(error.message), error.message
         resp = s3_obj_acl.delete_bucket(self.bucket)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -375,12 +380,13 @@ class TestBucketACL:
     def test_add_canned_acl_bucket_3527(self):
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
         self.log.info(
-            "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
+            "STARTED: Add canned ACL bucket-owner-full-control along with READ "
+            "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "bucket-owner-full-control",
-            error_msg="Specifying both Canned ACLs and Header Grants is not allowed")
+            self.bucket, "bucket-owner-full-control", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
-            "Add canned ACL bucket-owner-full-control along with READ ACL grant permission")
+            "ENDED:Add canned ACL bucket-owner-full-control along with READ ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -389,11 +395,14 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3528(self):
         """Add canned ACL bucket-owner-read along with READ ACL grant permission."""
-        self.log.info("Add canned ACL bucket-owner-read along with READ ACL grant permission")
+        self.log.info(
+            "STARTED: Add canned ACL bucket-owner-read along with READ ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "bucket-owner-read",
-            error_msg="Specifying both Canned ACLs and Header Grants is not allowed")
-        self.log.info("Add canned ACL bucket-owner-read along with READ ACL grant permission")
+            self.bucket, "bucket-owner-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
+        self.log.info(
+            "ENDED: Add canned ACL bucket-owner-read along with READ ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -402,11 +411,14 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3529(self):
         """Add canned ACL "private" along with "READ" ACL grant permission."""
-        self.log.info("Add canned ACL 'private' along with 'READ' ACL grant permission")
+        self.log.info(
+            "STARTED: Add canned ACL 'private' along with 'READ' ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "private",
-            error_msg="Specifying both Canned ACLs and Header Grants is not allowed")
-        self.log.info("Add canned ACL 'private' along with 'READ' ACL grant permission")
+            self.bucket, "private", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
+        self.log.info(
+            "ENDED: Add canned ACL 'private' along with 'READ' ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -416,11 +428,14 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3530(self):
         """Add canned ACL "private" along with "FULL_CONTROL" ACL grant permission."""
-        self.log.info("Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
+        self.log.info(
+            "STARTED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "private", "grant-full-control",
-            "Specifying both Canned ACLs and Header Grants is not allowed")
-        self.log.info("Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
+            self.bucket, "private", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
+        self.log.info(
+            "ENDED: Add canned ACL 'private' along with 'FULL_CONTROL' ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -430,11 +445,14 @@ class TestBucketACL:
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3531(self):
         """Add canned ACL "public-read" along with "READ_ACP" ACL grant permission."""
-        self.log.info("Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
+        self.log.info(
+            "STARTED: Add canned ACL 'public-read' along with 'READ_ACP' ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "public-read", "grant-read-acp",
-            "Specifying both Canned ACLs and Header Grants is not allowed")
-        self.log.info("Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
+            self.bucket, "public-read", "grant-read-acp", errmsg.CANNED_ACL_GRANT_ERR)
+        self.log.info(
+            "ENDED: Add canned ACL 'public-read' along with 'READ_ACP' ACL grant "
+            "permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -444,12 +462,13 @@ class TestBucketACL:
     def test_add_canned_acl_public_read_3532(self):
         """Add canned ACL "public-read" along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
-            "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
+            "STARTED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "public-read", "grant-write-acp",
-            "Specifying both Canned ACLs and Header Grants is not allowed")
+            self.bucket, "public-read", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
-            "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
+            "ENDED: Add canned ACL 'public-read' along with 'WRITE_ACP' ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -459,12 +478,13 @@ class TestBucketACL:
     def test_add_canned_acl_public_read_write_3533(self):
         """Add canned ACL 'public-read-write' along with "WRITE_ACP" ACL grant permission."""
         self.log.info(
-            "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
+            "STARTED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
+            "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "public-read-write", "grant-write-acp",
-            "Specifying both Canned ACLs and Header Grants is not allowed")
+            self.bucket, "public-read-write", "grant-write-acp", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
-            "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
+            "ENDED: Add canned ACL 'public-read-write' along with 'WRITE_ACP' "
+            "ACL grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -474,12 +494,13 @@ class TestBucketACL:
     def test_add_canned_acl_public_read_write_3534(self):
         """Add canned ACL 'public-read-write' along with "FULL_CONTROL" ACL grant permission."""
         self.log.info(
-            "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
+            "STARTED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
+            "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "public-read-write", "grant-full-control",
-            "Specifying both Canned ACLs and Header Grants is not allowed")
+            self.bucket, "public-read-write", "grant-full-control", errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
-            "Add canned ACL 'public-read-write' along with 'FULL_CONTROL' ACL grant permission")
+            "ENDED: Add canned ACL 'public-read-write' along with 'FULL_CONTROL' "
+            "ACL grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -489,11 +510,13 @@ class TestBucketACL:
     def test_add_canned_acl_authenticate_read_3535(self):
         """Add canned ACL 'authenticate-read' along with "READ" ACL grant permission."""
         self.log.info(
-            "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
+            "STARTED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
+            "grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
-            self.bucket, "authenticated-read",
-            error_msg="Specifying both Canned ACLs and Header Grants is not allowed")
-        self.log.info("Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
+            self.bucket, "authenticated-read", error_msg=errmsg.CANNED_ACL_GRANT_ERR)
+        self.log.info(
+            "ENDED: Add canned ACL 'authenticate-read' along with 'READ' ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -503,12 +526,14 @@ class TestBucketACL:
     def test_add_canned_acl_authenticate_read_3536(self):
         """Add canned ACL 'authenticate-read' along with "READ_ACP" ACL grant permission."""
         self.log.info(
-            "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
+            "STARTED:Add canned ACL 'authenticate-read' along with 'READ_ACP' "
+            "ACL grant permission")
         self.create_bucket_with_acl_and_grant_permissions(
             self.bucket, "authenticated-read", "grant-read-acp",
-            error_msg="Specifying both Canned ACLs and Header Grants is not allowed")
+            error_msg=errmsg.CANNED_ACL_GRANT_ERR)
         self.log.info(
-            "Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL grant permission")
+            "ENDED: Add canned ACL 'authenticate-read' along with 'READ_ACP' ACL "
+            "grant permission")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -640,7 +665,7 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert "InvalidACL" in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info("Cleanup activity")
         self.log.info("Deleting a bucket %s", self.bucket)
         resp = s3_test.delete_bucket(self.bucket)
@@ -905,10 +930,13 @@ class TestBucketACL:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
-            assert "AccessDenied" in error.message, error.message
-            self.log.info("Step 2: retrieving bucket acl using account 2 failed with AccessDenied")
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
+            self.log.info(
+                "Step 2: retrieving bucket acl using account 2 failed with error %s",
+                "AccessDenied")
         self.log.info(
-            "ENDED:acc1: put bucket, acc2: no permissions or canned acl, get-bucket-acl details")
+            "ENDED:acc1: put bucket, acc2: no permissions or canned acl, "
+            "get-bucket-acl details")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
