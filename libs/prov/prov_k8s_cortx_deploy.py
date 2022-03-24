@@ -489,7 +489,8 @@ class ProvDeployK8sCortxLib:
                                                       control_nodeport_https=
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
-                                                      deployment_type=self.deployment_type)
+                                                      deployment_type=self.deployment_type,
+                                                      lb_count=self.lb_count)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
