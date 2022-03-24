@@ -1944,7 +1944,7 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Creating IAM user")
+        self.log.info("Step-1: Creating IAM user")
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -1960,21 +1960,25 @@ class TestIamUserRGW():
             random_cap = self.csm_obj.get_random_caps()
             payload = {}
             payload.update({"user_caps": random_cap})
+            self.log.info("STEP 2: Add user capabilities %s", random_cap)
             resp = self.csm_obj.add_user_caps_rgw(uid, payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                      "Add cap request status code failed")
             get_resp = self.csm_obj.get_iam_user(user=uid)
             assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+            self.log.info("STEP 3: Verify added capabilities")
             diff_items = self.csm_obj.verify_caps(random_cap, get_resp.json()["caps"])
             self.log.info("Difference in capabilities %s", diff_items)
             assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
+            self.log.info("STEP 4: Remove capabilities")
             resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                      "Remove cap request status code failed")
             get_resp = self.csm_obj.get_iam_user(user=uid)
             assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+            self.log.info("STEP 4: Verify removed capabilities")
             assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
                                      "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -1990,7 +1994,7 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Creating IAM user")
+        self.log.info("Step-1: Creating IAM user")
         default_cap = "users=read,write"
         updated_cap = "buckets=read,write"
         uid = "iam_user_1_" + str(int(time.time_ns()))
@@ -2005,6 +2009,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
         uid1 = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid1)
+        self.log.info("STEP 2: Create another user with same uid and different tenant")
         payload.update({"tenant": "abcc"})
         payload.update({"access_key": "abcc"})
         payload.update({"email": "abcc@seagate.com"})
@@ -2015,18 +2020,21 @@ class TestIamUserRGW():
         self.created_iam_users.add(uid2)
         payload = {}
         payload.update({"user_caps": updated_cap})
+        self.log.info("STEP 3: Add capabilities to user-1")
         resp = self.csm_obj.add_user_caps_rgw(uid1, payload, login_as="csm_user_manage")
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Add cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid1)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 4: Verify added capabilities for user-1")
         diff_items = self.csm_obj.verify_caps(default_cap + ";" + updated_cap,
                                               get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         get_resp = self.csm_obj.get_iam_user(user=uid2)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Verify capabilities of user-2")
         diff_items = self.csm_obj.verify_caps(default_cap, get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are updated for another user")
@@ -2043,7 +2051,7 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Creating IAM user")
+        self.log.info("Step-1: Creating IAM user")
         initial_cap = "usage=read;buckets=read;users=read"
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
@@ -2057,13 +2065,15 @@ class TestIamUserRGW():
         uid1 = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid1)
         payload = {}
-        payload.update({"user_caps": "buckets=write" })
+        payload.update({"user_caps": "buckets=write"})
+        self.log.info("STEP 2: Remove capabilities which is not present")
         resp = self.csm_obj.remove_user_caps_rgw(uid1, payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Remove cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid1)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Verify capabilities are not changed")
         diff_items = self.csm_obj.verify_caps(initial_cap, get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
@@ -2080,7 +2090,7 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Creating IAM user")
+        self.log.info("Step-1: Creating IAM user")
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -2095,6 +2105,7 @@ class TestIamUserRGW():
         random_cap = self.csm_obj.get_random_caps()
         payload = {}
         payload.update({"user_caps": random_cap})
+        self.log.info("STEP 2: Verify added capabilities with monitor csm user")
         resp = self.csm_obj.add_user_caps_rgw(uid, payload, login_as="csm_user_monitor")
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
@@ -2104,6 +2115,7 @@ class TestIamUserRGW():
         diff_items = self.csm_obj.verify_caps(init_cap, get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
+        self.log.info("STEP 3: Verify remove capabilities with csm monitor user")
         resp = self.csm_obj.remove_user_caps_rgw(uid, payload, login_as="csm_user_monitor")
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
