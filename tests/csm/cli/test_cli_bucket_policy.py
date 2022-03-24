@@ -36,7 +36,7 @@ from libs.csm.cli.cortx_cli_bucket_policy import CortxCliS3BktPolicyOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 
-
+# pylint: disable=R0904
 class TestCliBucketPolicy:
     """Bucket Policy Testsuite for CLI"""
 
