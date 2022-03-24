@@ -492,6 +492,7 @@ K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
+GET_BYTECOUNT = "consul kv get -recurse bytecount"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
@@ -525,14 +526,15 @@ HELM_GET_VALUES = "helm get values {}"
 # LC commands
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
-CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
-CLSTR_LOGS_CMD = "cd {}; sh logs-cortx-cloud.sh"
-DEPLOY_CLUSTER_CMD = "cd {}; sh deploy-cortx-cloud.sh > {}"
+CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
+PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
+DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
-UPGRADE_CLUSTER_CMD = "cd {}; sh upgrade-cortx-cloud.sh -p {}"
+UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 
 # Incomplete commands
-UPGRADE_NEG_CMD = "cd {}; sh upgrade-cortx-cloud.sh"
+UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"

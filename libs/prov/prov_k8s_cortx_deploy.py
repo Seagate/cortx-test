@@ -216,9 +216,10 @@ class ProvDeployK8sCortxLib:
         param: system_disk: parameter to prereq script
         """
         LOGGER.info("Execute prereq script")
-        cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log". \
-            format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
-        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+        pre_req_log = PROV_CFG['k8s_cortx_deploy']["pre_req_log"]
+        pre_req_cmd = common_cmd.PRE_REQ_CMD.format(remote_code_path, system_disk) + \
+                      f" > {pre_req_log}"
+        resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
                                     timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
@@ -1296,7 +1297,7 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
         assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
         start_time = int(time.time())
-        end_time = start_time + 70*(len(data_pod_list)*2)  # 32 mins timeout
+        end_time = start_time + 70 * (len(data_pod_list) * 2)  # 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
