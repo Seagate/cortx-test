@@ -2126,3 +2126,162 @@ class TestIamUserRGW():
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38971')
+    def test_38971(self):
+        """
+        Verify create IAM user with uid same as tenant
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        uid = resp.json()["user_id"]
+        self.created_iam_users.add(uid)
+
+        self.log.info("Step-2: Creating IAM user with same name as tenant")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        payload.update({"tenant": uid})
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "IAM user creation failed"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38969')
+    def test_38969(self):
+        """
+        Verify PATCH iam user request for access key that belongs to another user.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr1 = resp.json()
+        self.created_iam_users.add(usr1["user_id"])
+        
+        self.log.info("Step-2: Creating IAM user 2")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr2 = resp.json()
+        self.created_iam_users.add(usr2["user_id"])
+
+        payload = {"access_key": usr1["keys"][0]["access_key"],
+                    "secret_key":usr1["keys"][0]["secret_key"]}
+        resp = self.csm_obj.modify_iam_user_rgw(usr2["user_id"], payload)
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "IAM user creation failed"
+        resp = resp.json()
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp["message"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1] , "Message check failed"
+            assert resp["message_id"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "Message id check failed"
+            assert resp["error_code"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "error code check failed"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38918')
+    def test_38918(self):
+        """
+        Attempt to modify Access key, secret key while IO operations are ongoing with old key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr = resp.json()
+        self.created_iam_users.add(usr["user_id"])
+
+        #TODO: start io thread
+
+        payload = {"access_key": usr["keys"][0]["access_key"],
+                    "secret_key":usr["keys"][0]["secret_key"]}
+        resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "IAM user creation failed"
+        resp = resp.json()
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp["message"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1] , "Message check failed"
+            assert resp["message_id"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "Message id check failed"
+            assert resp["error_code"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "error code check failed"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38914')
+    def test_38914(self):
+        """
+        Verify PATCH iam user request for invalid field
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr = resp.json()
+        self.created_iam_users.add(usr["user_id"])
+        payloads = self.csm_conf["test_38914"]["payloads"]
+        for payload in payloads:
+            resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
+            assert resp.status_code == HTTPStatus.BAD_REQUEST, "IAM user creation failed"
+            resp = resp.json()
+            if CSM_REST_CFG["msg_check"] == "enable":
+                assert resp["message"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1] , "Message check failed"
+                assert resp["message_id"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "Message id check failed"
+                assert resp["error_code"] == self.rest_resp_conf[12288]['EntityAlreadyExists'][1], "error code check failed"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38106')
+    def test_38106(self):
+        """
+        Add-remove random capabilities with csm monitor role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: ")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38092')
+    def test_38092(self):
+        """
+        Add-remove random capabilities with csm monitor role
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: ")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
