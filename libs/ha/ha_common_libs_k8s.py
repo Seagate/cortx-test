@@ -374,29 +374,39 @@ class HAK8s:
                 return False, f"s3bench operation failed: {resp[1]}"
         return True, "Successfully completed s3bench operation"
 
-    def cortx_start_cluster(self, pod_obj):
+    def cortx_start_cluster(self, pod_obj, dir_path=None):
         """
         This function starts the cluster
         :param pod_obj : Pod object from which the command should be triggered
+        :param dir_path : Path to repo scripts
         :return: Boolean, response
         """
         LOGGER.info("Start the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
-                                   read_lines=True, exc=False)
+        if dir_path:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(dir_path),
+                                       read_lines=True, exc=False)
+        else:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
+                                       read_lines=True, exc=False)
         LOGGER.info("Cluster start response: {}".format(resp))
         if resp[0]:
             return True, resp
         return False, resp
 
-    def cortx_stop_cluster(self, pod_obj):
+    def cortx_stop_cluster(self, pod_obj, dir_path=None):
         """
         This function stops the cluster
         :param pod_obj : Pod object from which the command should be triggered
+        :param dir_path : Path to repo scripts
         :return: Boolean, response
         """
         LOGGER.info("Stop the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
-                                   read_lines=True, exc=False)
+        if dir_path:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(dir_path),
+                                       read_lines=True, exc=False)
+        else:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
+                                       read_lines=True, exc=False)
         LOGGER.info("Cluster stop response: %s", resp)
         if resp[0]:
             return True, resp
@@ -733,17 +743,23 @@ class HAK8s:
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
-    def check_cluster_status(self, pod_obj, pod_list=None):
+    def check_cluster_status(self, pod_obj, pod_list=None, dir_path=None):
         """
         :param pod_obj: Object for master node
         :param pod_list: Data pod name list to get the hctl status
+        :param dir_path : Path to repo scripts
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
+        resp = None
         try:
-            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+            if dir_path:
+                resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(dir_path))
+            else:
+                resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         except IOError as error:
             LOGGER.error("Error: Cluster status has some failures.")
+            LOGGER.debug("Response for cluster status: %s", resp)
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
