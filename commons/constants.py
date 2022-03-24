@@ -441,7 +441,7 @@ SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
-K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
+K8S_SCRIPTS_PATH = "/root/cortx-k8s/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 K8S_PRE_DISK = "/dev/sdb"
