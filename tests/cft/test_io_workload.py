@@ -36,6 +36,7 @@ class TestIOWorkload:
 
     @pytest.mark.lc
     @pytest.mark.sanity
+    @pytest.mark.s3_data_path
     @pytest.mark.tags("TEST-39180")
     def test_39180(self):
         """Basic IO test."""
