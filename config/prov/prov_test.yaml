@@ -133,6 +133,8 @@ k8s_cortx_deploy:
   control_port_https: 31169
   iface: "eth1"
   service_type: "LoadBalancer"
+  lb_count: 1
+  deployment_type: "standard"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"

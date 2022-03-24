@@ -64,6 +64,8 @@ class ProvDeployK8sCortxLib:
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
+        self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
+        self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
         self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
         self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
@@ -486,7 +488,8 @@ class ProvDeployK8sCortxLib:
                                                       nodeport_https=self.nodeport_https,
                                                       control_nodeport_https=
                                                       self.control_nodeport_https,
-                                                      service_type=self.service_type)
+                                                      service_type=self.service_type,
+                                                      deployment_type=self.deployment_type)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -685,9 +688,13 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get('control_nodeport_https',
                                             self.deploy_cfg['control_port_https'])
+        lb_count = kwargs.get('lb_count', self.deploy_cfg['lb_count'])
+        deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
+            if deployment_type:
+                parent_key['deployment_type'] = deployment_type
             content = parent_key['secrets']['content']
             common = parent_key['common']
             LOGGER.debug("common is %s", common)
@@ -702,6 +709,8 @@ class ProvDeployK8sCortxLib:
             s3_service['nodePorts']['https'] = nodeport_https
             control_service['nodePorts']['https'] = control_nodeport_https
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
+            if service_type == "LoadBalancer":
+                s3_service['count'] = lb_count
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
                 passwd_dict[key] = pswdmanager.decrypt(value)
