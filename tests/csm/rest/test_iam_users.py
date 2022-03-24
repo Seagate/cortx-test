@@ -2303,6 +2303,7 @@ class TestIamUserRGW():
         assert resp1.status_code == HTTPStatus.CREATED, \
             "User could not be created"
         uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
         self.log.info("Step 2: Add some invalid capabilities")
         user_cap = "random=;buckets="
         payload = {}
@@ -2314,9 +2315,8 @@ class TestIamUserRGW():
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Verify added capabilities")
-        diff_items = self.csm_obj.verify_caps(user_cap, get_resp.json()["caps"])
-        self.log.info("Difference in capabilities %s", diff_items)
-        assert_utils.assert_false(len(diff_items) == 0, "Valid caps not retained properly")
+        assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
+                                 "Invalid capabilities added")
         self.log.info("Step 4: Remove invalid capabilities")
         payload = {}
         payload.update({"user_caps": user_cap})
@@ -2326,7 +2326,7 @@ class TestIamUserRGW():
                                      "Attempt to remove invalid caps")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
-        self.log.info("STEP 5: Verify removed capabilities")
-        assert_utils.assert_false(len(get_resp.json()["caps"]) == 0,
-                                     "Remove invalid capabilities sucsessful")
+        self.log.info("STEP 5: Verify original capabilities are intact")
+        assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
+                                 "Original caps are not intact")
         self.log.info("##### Test ended -  %s #####", test_case_name)
