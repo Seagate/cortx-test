@@ -38,7 +38,7 @@ class TestIOWorkload:
     @pytest.mark.sanity
     @pytest.mark.s3_data_path
     @pytest.mark.tags("TEST-39180")
-    def test_39180(self):
+    def test_basic_io(self):
         """Basic IO test."""
         bucket_name = f'bucket-test-39180-{int(time.time())}'
         self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name, s3t_obj=self.s3t_obj)
