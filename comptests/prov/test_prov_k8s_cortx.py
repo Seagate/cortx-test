@@ -39,7 +39,7 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils", "log"]
+PVC_LIST = ["cluster.conf", "hare", "log", "motr", "rgw", "solution"]
 
 
 class TestProvK8Cortx:
