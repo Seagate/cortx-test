@@ -689,7 +689,7 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get('control_nodeport_https',
                                             self.deploy_cfg['control_port_https'])
-        lb_count = kwargs.get('lb_count', self.deploy_cfg['lb_count'])
+        lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
         deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
@@ -810,10 +810,12 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
+                if worker.path_exists("/etc/3rd-party/"):
+                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
+                if worker.path_exists("/var/data/3rd-party/"):
+                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
