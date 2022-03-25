@@ -743,7 +743,7 @@ class HAK8s:
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
-   def check_cluster_status(self, pod_obj, pod_list=None, dir_path=None):
+    def check_cluster_status(self, pod_obj, pod_list=None, dir_path=None):
         """
         :param pod_obj: Object for master node
         :param pod_list: Data pod name list to get the hctl status
