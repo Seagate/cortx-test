@@ -192,14 +192,18 @@ class HAK8SCompLib:
         resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [],
                      'node_id': [], 'resource_id': []}
         for line in output:
-            source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
-            resource_type = line.split("{")[4].split(",")[6].split(":")[1].strip().replace("'", '')
-            resource_status = line.split("{")[4].split(",")[8].split(":")[1].\
-                strip().replace("'", '')
-            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().\
-                replace("'", '').replace('}', '')
-            node_id = line.split("{")[4].split(",")[5].split(":")[1].strip().replace("'", '')
-            resource_id = line.split("{")[4].split(",")[7].split(":")[1].strip().replace("'", '')
+            source = line.split("{")[3].split(",")[0].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_type = line.split("{")[3].split(",")[6].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_status = line.split("{")[3].split(",")[8].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
+            generation_id = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')\
+                .replace('}', '').replace('"', '')
+            node_id = line.split("{")[3].split(",")[5].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_id = line.split("{")[3].split(",")[7].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
             resp_dict['source'].append(source)
             resp_dict['resource_status'].append(resource_status)
             resp_dict['resource_type'].append(resource_type)
