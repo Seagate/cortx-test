@@ -93,9 +93,9 @@ class TestPodFailure:
         cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
-            cls.host = CMN_CFG["nodes"][0]["hostname"]
-            cls.username.append(CMN_CFG["nodes"][0]["username"])
-            cls.password.append(CMN_CFG["nodes"][0]["password"])
+            cls.host = CMN_CFG["nodes"][node]["hostname"]
+            cls.username.append(CMN_CFG["nodes"][node]["username"])
+            cls.password.append(CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"] == "master":
                 cls.host_master_list.append(cls.host)
                 cls.node_master_list.append(LogicalNode(hostname=cls.host,
