@@ -2215,13 +2215,13 @@ class TestIamUserRGW():
             self.log.debug("File path not exists, create a directory")
             system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         system_utils.create_file(file_path_upload, self.file_size)
-        self.log.info("Step: Verify put object.")
+        self.log.info("Verify put object.")
         resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                  file_path=file_path_upload)
         self.log.info("Removing uploaded object from a local path.")
         os.remove(file_path_upload)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step: Verify get object.")
+        self.log.info("Verify get object.")
         resp = s3_obj.get_object(bucket_name, test_file)
         assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 3: Delete bucket")
@@ -2237,7 +2237,7 @@ class TestIamUserRGW():
                                      "Remove cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
-        self.log.info("STEP 4: Verify removed capabilities")
+        self.log.info("Step 5: Verify removed capabilities")
         assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
                                      "Capabilities are not updated properly")
         user_cap = "buckets=*"
@@ -2249,11 +2249,11 @@ class TestIamUserRGW():
                                      "Add cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
-        self.log.info("STEP 3: Verify added capabilities")
+        self.log.info("STEP 6: Verify added capabilities")
         diff_items = self.csm_obj.verify_caps(user_cap, get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
-        self.log.info("Step 5: Create bucket and perform IO")
+        self.log.info("Step 7: Create bucket and perform IO")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
                            secret_key=resp1.json()["keys"][0]["secret_key"])
@@ -2268,16 +2268,16 @@ class TestIamUserRGW():
             self.log.debug("File path not exists, create a directory")
             system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         system_utils.create_file(file_path_upload, self.file_size)
-        self.log.info("Step: Verify put object.")
+        self.log.info("Verify put object.")
         resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
                                  file_path=file_path_upload)
         self.log.info("Removing uploaded object from a local path.")
         os.remove(file_path_upload)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step: Verify get object.")
+        self.log.info("Verify get object.")
         resp = s3_obj.get_object(bucket_name, test_file)
         assert_utils.assert_true(resp[0], resp)
-        self.log.info("Step 6: Delete bucket")
+        self.log.info("Step 8: Delete bucket")
         resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Bucket deleted successfully")
@@ -2293,6 +2293,11 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_39028"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
         self.log.info(
             "Step 1: Login using csm user and create a user with some capabilities")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
@@ -2310,8 +2315,13 @@ class TestIamUserRGW():
         payload.update({"user_caps": user_cap})
         resp = self.csm_obj.add_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                     "Invalid caps added")
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+                                     "Invalid caps added"
+        assert resp.json()["error_code"] == resp_error_code, (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["message"] == msg , "Message check failed."
+        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Verify added capabilities")
@@ -2322,8 +2332,13 @@ class TestIamUserRGW():
         payload.update({"user_caps": user_cap})
         resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                     "Attempt to remove invalid caps")
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+                                     "Invalid caps added"
+        assert resp.json()["error_code"] == resp_error_code, (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["message"] == msg , "Message check failed."
+        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Verify original capabilities are intact")
