@@ -120,7 +120,8 @@ class TestProvK8CortxRollingUpgrade:
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
             resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.prov_deploy_cfg["git_remote_path"])
+                                                    remote_code_path=self.
+                                                    prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
@@ -256,7 +257,8 @@ class TestProvK8CortxRollingUpgrade:
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
             resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.prov_deploy_cfg["git_remote_path"])
+                                                    remote_code_path=self.
+                                                    prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
