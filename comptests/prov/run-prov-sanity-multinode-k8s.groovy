@@ -13,7 +13,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 			    cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/UPGRADE_DISRUPTIVE']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -37,7 +37,7 @@ deactivate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}"
+python3.7 scripts/cicd_k8s/client_multinode_rgw.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
 '''
 			}

@@ -28,11 +28,11 @@ from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from config import CMN_CFG, PROV_CFG
+from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 
-DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")   
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ class TestProvK8Cortx:
         """Setup class"""
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
+        cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.ha_obj = HAK8s()
         cls.dir_path = common_const.K8S_SCRIPTS_PATH
@@ -320,7 +321,8 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp1[0], resp1[1])
         LOGGER.info("Executing cortx cluster shutdown command.")
         LOGGER.info("Step 2: Check whether cluster shutdown command ran successfully.")
-        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0],
+                                              dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Check whether data and control pods are not present")
         resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
@@ -340,10 +342,12 @@ class TestProvK8Cortx:
         assert_utils.assert_false(is_same)
         LOGGER.info("Step 4: Check the cluster status and start the cluster "
                     "in case its still down.")
-        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0],
+                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         if not resp[0]:
             LOGGER.info("Cluster not in good state, trying to restart it.")
-            resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+            resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0],
+                                                   dir_path=self.prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 5: Cluster is back online.")
@@ -360,16 +364,19 @@ class TestProvK8Cortx:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Check whether cluster shutdown command ran successfully.")
-        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0])
+        resp = self.ha_obj.cortx_stop_cluster(self.master_node_list[0],
+                                              dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Check the cluster status and start the cluster "
                     "in case its still down.")
-        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0],
+                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         if not resp[0]:
             LOGGER.info("Cluster not in good state, trying to restart it.")
         LOGGER.info("Executing cortx cluster restart command.")
         LOGGER.info("Step 3: Check whether cluster restart command ran successfully.")
-        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0],
+                                               dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
