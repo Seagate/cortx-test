@@ -116,11 +116,12 @@ class TestProvK8CortxRollingUpgrade:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"all_image": self.cortx_all_image, "rgw_image": self.cortx_rgw_image}
-        resp = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
-        assert_utils.assert_true(resp[0], resp[1])
+        local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
+        assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, resp[1],
-                                                    self.prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                    remote_code_path=self.
+                                                    prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
@@ -252,11 +253,12 @@ class TestProvK8CortxRollingUpgrade:
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"all_image": self.cortx_all_parallel_image,
                       "rgw_image": self.cortx_rgw_parallel_image}
-        resp = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
-        assert_utils.assert_true(resp[0], resp[1])
+        local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
+        assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, resp[1],
-                                                    self.prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                    remote_code_path=self.
+                                                    prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
