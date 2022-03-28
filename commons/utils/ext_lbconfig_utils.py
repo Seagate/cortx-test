@@ -238,7 +238,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
         return False, "Did not get expected port numbers."
 
 
-def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: str):
+def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: str):
     """
     Implement external Haproxy LB
     :param m_node: hostname for master node
@@ -273,7 +273,8 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
                 get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
-                    get_iosvc_data[svc].update({f"{port_items['targetPort']}": port_items["nodePort"]})
+                    get_iosvc_data[svc].update({f"{port_items['targetPort']}":
+                                                    port_items["nodePort"]})
             else:
                 LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
     print("get_iosvc_data is: ", get_iosvc_data)
@@ -301,7 +302,8 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
             if "# 443 cortx_setup_https" in line:
                 for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-ssl-{index} {get_iosvc_data[svc]['eth1']}:" \
-                           f"{get_iosvc_data[svc]['rgw-https']} ssl verify none    #port mapped to 443\n"
+                           f"{get_iosvc_data[svc]['rgw-https']} " \
+                           f"ssl verify none    #port mapped to 443\n"
                     f_write.write(line)
                 continue
             f_write.write(line)
