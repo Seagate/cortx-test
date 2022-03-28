@@ -295,13 +295,13 @@ def configure_haproxy_rgw_lb(m_node: str, username: str, password: str, ext_ip: 
             if "# 80 cortx_setup_1" in line:
                 for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-{index} {get_iosvc_data[svc]['eth1']}:" \
-                           f"{get_iosvc_data[svc]['80']}    #port mapped to 80\n"
+                           f"{get_iosvc_data[svc]['rgw-http']}    #port mapped to 80\n"
                     f_write.write(line)
                 continue
             if "# 443 cortx_setup_https" in line:
                 for index, svc in enumerate(get_iosvc_data.keys(), 1):
                     line = f"    server ha-s3-ssl-{index} {get_iosvc_data[svc]['eth1']}:" \
-                           f"{get_iosvc_data[svc]['443']} ssl verify none    #port mapped to 443\n"
+                           f"{get_iosvc_data[svc]['rgw-https']} ssl verify none    #port mapped to 443\n"
                     f_write.write(line)
                 continue
             f_write.write(line)
