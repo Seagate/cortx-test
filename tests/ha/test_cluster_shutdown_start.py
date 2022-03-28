@@ -329,7 +329,7 @@ class TestClusterShutdownStart:
             LOGGER.info("Step 7: Create new S3 account and perform IOs.")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-29468-1'
-            self.s3_clean.update = users
+            self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True, nsamples=10)
@@ -554,7 +554,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29474'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -765,7 +765,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29473-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -841,7 +841,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29475-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -945,7 +945,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 6: Create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29476-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -998,7 +998,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Create new S3 account and perform IOs.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29479-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=10)
@@ -1080,7 +1080,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 7: Create new S3 account and perform IOs.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29480-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=10)
@@ -1223,7 +1223,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 8: Create new buckets. Run IOs & verify DI. Delete created buckets.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29471-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=10)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1292,7 +1292,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 6: Create 10 buckets and run S3 IOs on variable size objects.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29478-1'
-        self.s3_clean.update = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=10)
