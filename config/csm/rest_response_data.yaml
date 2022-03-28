@@ -52,3 +52,6 @@
     - 'Provided access key exists and belongs to another user.'
   NoSuchUser:
     - "User does not exist."
+  InvalidCapability:
+    - "Attempt to grant invalid admin capability."
+
