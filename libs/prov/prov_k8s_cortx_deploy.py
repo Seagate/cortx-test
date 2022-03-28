@@ -813,10 +813,12 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
+                if worker.path_exists("/etc/3rd-party/"):
+                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
+                if worker.path_exists("/var/data/3rd-party/"):
+                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
