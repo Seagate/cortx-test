@@ -224,14 +224,17 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
                                     timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
-        LOGGER.info("\n %s", resp1)
-        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
-                                                    read_lines=True)
-        LOGGER.info("\n %s", openldap_dir_residue)
-        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
-                                                  read_lines=True)
-        LOGGER.info("\n %s", thirdparty_residue)
+        if node_obj.path_exists("/mnt/fs-local-volume/"):
+            resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
+            LOGGER.info("\n %s", resp1)
+        if node_obj.path_exists("/etc/3rd-party/"):
+            openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
+                                                        read_lines=True)
+            LOGGER.info("\n %s", openldap_dir_residue)
+        if node_obj.path_exists("/var/data/3rd-party/"):
+            thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
+                                                      read_lines=True)
+            LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -810,12 +813,10 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                if worker.path_exists("/etc/3rd-party/"):
-                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
-                if worker.path_exists("/var/data/3rd-party/"):
-                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
+                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                LOGGER.debug("resp : %s", resp)
+                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
