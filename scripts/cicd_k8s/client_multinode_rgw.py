@@ -132,7 +132,7 @@ def main():
         if not resp[0]:
             print("Did not get expected response: {}".format(resp))
         ext_port_ip = resp[1]
-        port = resp[3]
+        port = resp[2]
         ext_ip = "{}:{}".format(ext_port_ip, port)
         print("External LB value, ip and port will be: {}".format(ext_ip))
     elif ext_node == "LoadBalancer":
