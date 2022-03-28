@@ -238,25 +238,26 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
         return False, "Did not get expected port numbers."
 
 
-def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: str):
+def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: str, iface="eth1"):
     """
-    Implement external Haproxy LB
+    Implement external Haproxy LB for RGW
     :param m_node: hostname for master node
     :param username: username for node
     :param password: password for node
     :param ext_ip: External LB IP from client node setup
+    :param iface: public data IP interface default is eth1
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
     worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
-    resp = m_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
     master_eth1 = resp[0].strip("\n")
-    print("master eth1: ", master_eth1)
+    LOGGER.info("Data IP from master node: %s", master_eth1)
     for worker in worker_node.keys():
         w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
-        resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format("eth1"), read_lines=True)
-        worker_node[worker].update({"eth1": resp[0].strip("\n")})
-    worker_eth1 = [worker["eth1"] for worker in worker_node.values() if "eth1" in worker.keys()]
+        resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
+        worker_node[worker].update({iface: resp[0].strip("\n")})
+    worker_eth1 = [worker[iface] for worker in worker_node.values() if iface in worker.keys()]
     print("Worker nodes eth1: ", worker_eth1)
     random.shuffle(worker_eth1)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
@@ -268,9 +269,9 @@ def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: s
             svc = item_data["metadata"]["name"]
             get_iosvc_data[svc] = dict()
             if svc == "cortx-io-svc-0":
-                get_iosvc_data[svc].update({"eth1": master_eth1})
+                get_iosvc_data[svc].update({iface: master_eth1})
             else:
-                get_iosvc_data[svc].update({"eth1": worker_eth1.pop()})
+                get_iosvc_data[svc].update({iface: worker_eth1.pop()})
             if item_data["spec"].get("ports") is not None:
                 for port_items in item_data["spec"]["ports"]:
                     get_iosvc_data[svc].update({f"{port_items['targetPort']}":

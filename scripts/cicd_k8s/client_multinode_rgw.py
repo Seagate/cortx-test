@@ -143,7 +143,7 @@ def main():
         print("Creating haproxy.cfg for {} Node setup".format(args.master_node))
         haproxy_cfg = config['default']['haproxy_config']
         ext_lb.configure_haproxy_rgwlb(
-            master_node, username=username, password=args.password, ext_ip=ext_ip)
+            master_node, username=username, password=args.password, ext_ip=ext_ip, iface=iface)
         with open(haproxy_cfg, 'r') as f_read:
             print((45 * "*" + "haproxy.cfg" + 45 * "*" + "\n"))
             print(f_read.read())
