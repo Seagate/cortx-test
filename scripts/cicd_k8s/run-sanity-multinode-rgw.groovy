@@ -38,6 +38,7 @@ export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}

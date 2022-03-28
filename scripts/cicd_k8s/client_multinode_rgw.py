@@ -135,7 +135,7 @@ def main():
         port = resp[3]
         ext_ip = "{}:{}".format(ext_port_ip, port)
         print("External LB value, ip and port will be: {}".format(ext_ip))
-    else:
+    elif ext_node == "LoadBalancer":
         resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
         ext_ip = resp[1].strip("'\\n'b'")
         print("External LB IP: {}".format(ext_ip))
