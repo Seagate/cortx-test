@@ -240,7 +240,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
 
 def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: str, iface="eth1"):
     """
-    Implement external Haproxy LB for RGW
+    Implement external service set as LoadBalancer for RGW
     :param m_node: hostname for master node
     :param username: username for node
     :param password: password for node
