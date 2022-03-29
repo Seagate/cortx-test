@@ -343,6 +343,7 @@ class TestClusterShutdownStart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="F-20C not completely supported with RGW.")
     @pytest.mark.tags("TEST-29472")
     @CTFailOn(error_handler)
     def test_mpu_with_cluster_restart_29472(self):
@@ -435,7 +436,7 @@ class TestClusterShutdownStart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="F-20C not completely supported.")
+    @pytest.mark.skip(reason="F-20C not completely supported for RGW.")
     @pytest.mark.tags("TEST-29474")
     @CTFailOn(error_handler)
     def test_partial_mpu_bfr_aftr_clstr_rstrt_29474(self):
