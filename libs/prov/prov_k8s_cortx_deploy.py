@@ -884,7 +884,7 @@ class ProvDeployK8sCortxLib:
         return True
 
     @staticmethod
-    def post_deployment_steps_lc(s3_engine, endpoint=""):
+    def post_deployment_steps_lc(s3_engine, endpoint):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         returns status boolean
