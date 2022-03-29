@@ -1230,12 +1230,10 @@ class ProvDeployK8sCortxLib:
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
-                ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
-                                                        master_node_list[0].username,
-                                                        master_node_list[0].password,
-                                                        eth1_ip)
-                LOGGER.info("Kill residue haproxy -f process if any")
-                self.kill_all_process_instance("haproxy -f")
+                ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                           master_node_list[0].username,
+                                                           master_node_list[0].password,
+                                                           eth1_ip, self.deploy_cfg['iface'])
             LOGGER.info("Step to Create S3 account and configure credentials")
             if self.s3_engine == "2":
                 resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
