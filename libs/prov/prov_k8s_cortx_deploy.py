@@ -1227,7 +1227,7 @@ class ProvDeployK8sCortxLib:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
                 port = resp[2]
-                ext_port_ip = self.deploy_cfg['protocol'].format(ext_ip, port)
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+":{}".format(port)
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
