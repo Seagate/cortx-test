@@ -1509,3 +1509,115 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             pointer.close()
         return True, file_path
+
+    @staticmethod
+    def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in image_dict:
+            if image == "cortxcontrol":
+                parent_key['images'][image] = image_dict['cortxcontrol'] 
+            elif image == "cortxha":
+                parent_key['images'][image] = image_dict['cortxha']
+            elif image == "cortxdata":
+                parent_key['images'][image] = image_dict['cortxdata']
+            elif image == "cortxserver":
+                parent_key['images'][image] = image_dict['cortxserver']
+            else:
+                LOGGER.info("Error")
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
+
+    def upgrade_software_any_pod(self, node_obj: LogicalNode, git_remote_path: str,
+                         upgrade_type: str = "rolling", granular_type: str = "None",
+                         **kwargs) -> tuple:
+        """
+        Helper function to Upgrade CORTX stack.
+        :param node_obj: Master node(Logical Node object)
+        :param git_remote_path: Remote path of repo.
+        :param upgrade_type: Type of upgrade (rolling or cold).
+        :param granular_type: Type to upgrade for  particular pod.
+        :param exc: Flag to disable/enable exception raising
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image version.")
+        exc = kwargs.get('exc', True)
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        if upgrade_type == "rolling":
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+            print(cmd)
+        else:
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
+        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        LOGGER.debug("".join(resp).replace("\\n", "\n"))
+        resp = "".join(resp).replace("\\n", "\n")
+        if "Error" in resp or "Failed" in resp:
+            return False, resp
+        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
+        return True, resp
+
+    @staticmethod
+    def get_control_pod(node_obj) -> tuple:
+        """
+        Get list of control pods in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of control pods in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        control_pod_list = [pod.strip() for pod in output if common_const.CONTROL_POD_NAME_PREFIX in pod]
+        if control_pod_list is not None:
+            return True, control_pod_list
+        return False, "CONTROL PODS are not retrieved for cluster."
+
+    @staticmethod
+    def get_server_pod(node_obj) -> tuple:
+        """
+        Get list of server pods in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of server pods in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        server_pod_list = [pod.strip() for pod in output if common_const.SERVER_POD_NAME_PREFIX in pod]
+        if server_pod_list is not None:
+            return True, server_pod_list
+        return False, "SERVER PODS are not retrieved for cluster."
+
+    @staticmethod
+    def get_ha_pod(node_obj) -> tuple:
+        """
+        Get list of ha pod in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of ha pod in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        ha_pod_list = [pod.strip() for pod in output if common_const.HA_POD_NAME_PREFIX in pod]
+        if ha_pod_list is not None:
+            return True, ha_pod_list
+        return False, "HA PODS are not retrieved for cluster."
+        

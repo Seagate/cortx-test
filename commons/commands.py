@@ -513,6 +513,7 @@ KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:m
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
+GET_POD = "kubectl describe po {} | grep image"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
