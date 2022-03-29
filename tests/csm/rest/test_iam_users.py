@@ -2345,3 +2345,178 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
                                  "Original caps are not intact")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39401')
+    def test_39401(self):
+        """
+        Test create IAM users with same UID in same tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START]Try Creating IAM users with same UID")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        tenant = "tenant_" + str(int(time.time_ns()))
+        self.log.info("Creating 1st iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"uid": user_id})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("TryCreating 2nd iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"uid": user_id})
+        resp3 = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Printing resp %s:", resp3)
+        self.log.info("Verify Response : %s", resp3)
+        assert_utils.assert_true(resp3.status_code == HTTPStatus.CONFLICT,
+                                 "Patch request status code failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(resp.json()["message"] ==
+                                     self.rest_resp_conf[39401]['users_already_exists'][0]
+                                     , "Response message check failed")
+        self.log.info("[END]Try Creating IAM users with same UID")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39403')
+    def test_39403(self):
+        """
+        Test create IAM users with same name in same tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        tenant = "tenant_" + str(int(time.time_ns()))
+        self.log.info("Creating 1st iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"display_name": display_name})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                    "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Creating 2nd iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"display_name": display_name})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                    "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39404')
+    def test_39404(self):
+        """
+        Test create IAM users with same UID in different tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"uid": user_id})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39405')
+    def test_39405(self):
+        """
+        Test create IAM users with same name in different tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"display_name": display_name})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39406')
+    def test_39406(self):
+        """
+        Test create IAM users with same UID and name in different tenants.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"uid": user_id})
+            optional_payload.update({"display_name": display_name})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
