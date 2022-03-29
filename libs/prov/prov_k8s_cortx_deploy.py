@@ -221,19 +221,20 @@ class ProvDeployK8sCortxLib:
         pre_req_log = PROV_CFG['k8s_cortx_deploy']["pre_req_log"]
         pre_req_cmd = common_cmd.PRE_REQ_CMD.format(remote_code_path, system_disk) + \
                       f" > {pre_req_log}"
+        list_mnt_dir = common_cmd.LS_LH_CMD.format(self.deploy_cfg['local_path_prov'])
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
         resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
                                     timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        if node_obj.path_exists("/mnt/fs-local-volume/"):
-            resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
+        if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
+            resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
             LOGGER.info("\n %s", resp1)
-        if node_obj.path_exists("/etc/3rd-party/"):
-            openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
-                                                        read_lines=True)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
+            openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
             LOGGER.info("\n %s", openldap_dir_residue)
-        if node_obj.path_exists("/var/data/3rd-party/"):
-            thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
-                                                      read_lines=True)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_data_dir']):
+            thirdparty_residue = node_obj.execute_cmd(list_data_3rd_party, read_lines=True)
             LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
@@ -804,8 +805,8 @@ class ProvDeployK8sCortxLib:
         param: worker node obj list
         """
         destroy_cmd = common_cmd.DESTROY_CLUSTER_CMD.format(custom_repo_path)
-        list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
-        list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
@@ -813,10 +814,10 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                if worker.path_exists("/etc/3rd-party/"):
+                if worker.path_exists(self.deploy_cfg['3rd_party_dir']):
                     resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
                     LOGGER.debug("resp : %s", resp)
-                if worker.path_exists("/var/data/3rd-party/"):
+                if worker.path_exists(self.deploy_cfg['3rd_party_data_dir']):
                     resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
                     LOGGER.debug("resp : %s", resp)
             return True, resp
