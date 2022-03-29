@@ -424,6 +424,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
@@ -495,6 +496,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
@@ -566,6 +568,8 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-locals
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
