@@ -445,9 +445,12 @@ K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 K8S_PRE_DISK = "/dev/sdb"
+K8S_PEM_FILE_PATH = "/root/deploy-scripts/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/" \
+                    "ssl-cert/s3.seagate.com.pem"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+HAPROXY_DUMMY_RGW_CONFIG = "scripts/cicd_k8s/haproxy_rgw_dummy.cfg"
 
 # Pod restore methods
 RESTORE_SCALE_REPLICAS = "scale_replicas"
