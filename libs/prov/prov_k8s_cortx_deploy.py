@@ -41,7 +41,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from config import PROV_CFG, PROV_TEST_CFG
+from config import PROV_CFG, PROV_TEST_CFG, S3_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -1044,10 +1044,10 @@ class ProvDeployK8sCortxLib:
                 samples = 5
             resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                    num_clients=clients,
-                                   num_sample=samples, obj_name_pref="test-object-",
+                                   num_sample=samples, obj_name_pref=f"test-object-{workload}",
                                    obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix,
-                                   end_point=endpoint_url)
+                                   end_point=endpoint_url, validate_certs=S3_CFG["validate_certs"])
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
