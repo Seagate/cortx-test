@@ -278,8 +278,7 @@ def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: s
                                                     port_items["nodePort"]})
             else:
                 LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
-    print("get_iosvc_data is: ", get_iosvc_data)
-    LOGGER.info("Worker node IP PORTs info for haproxy: %s", get_iosvc_data)
+    LOGGER.info("io-svc IP PORTs info for haproxy: %s", get_iosvc_data)
     with open(cm_const.HAPROXY_DUMMY_RGW_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
     if not os.path.exists("/etc/haproxy"):
