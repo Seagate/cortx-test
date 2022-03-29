@@ -128,6 +128,7 @@ k8s_cortx_deploy:
   s3_max_start_timeout: 240
   setup_size: "small"
   protocol: "http://{}:{}"
+  https_protocol: "https://{}"
   https_port: 30443
   http_port: 30080
   control_port_https: 31169

@@ -884,7 +884,7 @@ class ProvDeployK8sCortxLib:
         return True
 
     @staticmethod
-    def post_deployment_steps_lc(s3_engine, endpoint):
+    def post_deployment_steps_lc(s3_engine, endpoint=""):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         returns status boolean
@@ -1234,6 +1234,7 @@ class ProvDeployK8sCortxLib:
                                                            master_node_list[0].username,
                                                            master_node_list[0].password,
                                                            eth1_ip, self.deploy_cfg['iface'])
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
             LOGGER.info("Step to Create S3 account and configure credentials")
             if self.s3_engine == "2":
                 resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
