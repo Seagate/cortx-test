@@ -31,4 +31,3 @@ test_38971:
 test_39028:
   error_code: 12288
   message_id: "InvalidCapability"
-

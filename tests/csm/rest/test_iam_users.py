@@ -33,7 +33,7 @@ from commons.constants import Rest as const
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons.utils import config_utils
+from commons.exceptions import CTException
 from config import CSM_REST_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -2238,7 +2238,7 @@ class TestIamUserRGW():
             resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
                         file_path=file_path_upload)
             assert True, "Put object passed with old keys."
-        except Exception as err:
+        except CTException as err:
             assert "SignatureDoesNotMatch" in err.message, "Error message check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -2528,4 +2528,3 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
                                  "Original caps are not intact")
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
