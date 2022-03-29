@@ -2372,7 +2372,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("TryCreating 2nd iam user with tenant %s", tenant)
+        self.log.info("Try Creating 2nd iam user with tenant %s", tenant)
         optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
         optional_payload.update({"tenant": tenant})
         optional_payload.update({"uid": user_id})
