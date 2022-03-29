@@ -36,6 +36,7 @@
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
     - "Uid: Field may not be null."
+    - "{}: Unknown field."
   InvalidKeyType:
     - "Invalid key type specified. Must be one of S3, shift"
     - "Max_buckets: Not a valid integer."
@@ -52,3 +53,5 @@
     - 'Provided access key exists and belongs to another user.'
   NoSuchUser:
     - "User does not exist."
+  KeyExists:
+    - 'Provided access key exists and belongs to another user.'
