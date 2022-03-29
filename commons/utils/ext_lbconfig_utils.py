@@ -25,7 +25,7 @@ Module to maintain External Load Balancer set utils
 import json
 import logging
 import os
-
+import random
 from commons import commands as cm_cmd
 from commons import constants as cm_const
 from commons.helpers.pods_helper import LogicalNode
@@ -236,3 +236,88 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
         return True, ext_ip, port_https, port_http
     else:
         return False, "Did not get expected port numbers."
+
+
+def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: str, iface="eth1"):
+    """
+    Implement external service set as LoadBalancer for RGW
+    :param m_node: hostname for master node
+    :param username: username for node
+    :param password: password for node
+    :param ext_ip: External LB IP from client node setup
+    :param iface: public data IP interface default is eth1
+    """
+    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
+    worker_node = {resp[index].strip("\n"): dict() for index in range(1, len(resp))}
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
+    master_eth1 = resp[0].strip("\n")
+    LOGGER.info("Data IP from master node: %s", master_eth1)
+    for worker in worker_node.keys():
+        w_node_obj = LogicalNode(hostname=worker, username=username, password=password)
+        resp = w_node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
+        worker_node[worker].update({iface: resp[0].strip("\n")})
+    worker_eth1 = [worker[iface] for worker in worker_node.values() if iface in worker.keys()]
+    print("Worker nodes eth1: ", worker_eth1)
+    random.shuffle(worker_eth1)
+    resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+    resp = json.loads(resp)
+    get_iosvc_data = dict()
+    for item_data in resp["items"]:
+        if item_data["spec"]["type"] == "LoadBalancer" and \
+                "cortx-io-svc-" in item_data["metadata"]["name"]:
+            svc = item_data["metadata"]["name"]
+            get_iosvc_data[svc] = dict()
+            if svc == "cortx-io-svc-0":
+                get_iosvc_data[svc].update({iface: master_eth1})
+            else:
+                get_iosvc_data[svc].update({iface: worker_eth1.pop()})
+            if item_data["spec"].get("ports") is not None:
+                for port_items in item_data["spec"]["ports"]:
+                    get_iosvc_data[svc].update({f"{port_items['targetPort']}":
+                                                    port_items["nodePort"]})
+            else:
+                LOGGER.info("Failed to get ports details from %s", get_iosvc_data.get(svc))
+    LOGGER.info("io-svc IP PORTs info for haproxy: %s", get_iosvc_data)
+    with open(cm_const.HAPROXY_DUMMY_RGW_CONFIG, 'r') as f_read:
+        haproxy_dummy = f_read.readlines()
+    if not os.path.exists("/etc/haproxy"):
+        sys_utils.execute_cmd("mkdir -p {}".format("/etc/haproxy"))
+    with open(cm_const.const.CFG_FILES[0], "w") as f_write:
+        for line in haproxy_dummy:
+            if "# cortx_setup_1" in line:
+                line = f"    bind {ext_ip}:80\n"
+                f_write.write(line)
+                continue
+            if "# cortx_setup_https" in line:
+                line = f"    bind {ext_ip}:443 ssl crt /etc/ssl/stx/stx.pem\n"
+                f_write.write(line)
+                continue
+            if "# 80 cortx_setup_1" in line:
+                for index, svc in enumerate(get_iosvc_data.keys(), 1):
+                    line = f"    server ha-s3-{index} {get_iosvc_data[svc]['eth1']}:" \
+                           f"{get_iosvc_data[svc]['rgw-http']}    #port mapped to 80\n"
+                    f_write.write(line)
+                continue
+            if "# 443 cortx_setup_https" in line:
+                for index, svc in enumerate(get_iosvc_data.keys(), 1):
+                    line = f"    server ha-s3-ssl-{index} {get_iosvc_data[svc]['eth1']}:" \
+                           f"{get_iosvc_data[svc]['rgw-https']} " \
+                           f"ssl verify none    #port mapped to 443\n"
+                    f_write.write(line)
+                continue
+            f_write.write(line)
+    LOGGER.info("Configuring rsyslog to Configure Logging for HAProxy")
+    resp = configure_rsyslog()
+    LOGGER.debug("Configuring rsyslog response = %s", resp)
+    if os.path.exists(cm_const.LOCAL_PEM_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
+        os.path.abspath(cm_const.LOCAL_PEM_PATH))))
+    m_node_obj.copy_file_to_local(cm_const.K8S_PEM_FILE_PATH, cm_const.LOCAL_PEM_PATH)
+    resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
+    assert_utils.assert_true(resp[0], resp[1])
+    resp = sys_utils.execute_cmd("puppet agent --disable")
+    assert_utils.assert_true(resp[0], resp[1])
+
+    LOGGER.info("External HAProxy is configured.")
