@@ -8,7 +8,6 @@ test_36448:
 test_38088:
   error_code: 12288
   message_id: "NoSuchUser"  
-
 test_38914:
   payloads:
     - {"system":null}
@@ -29,3 +28,7 @@ test_38969:
 test_38971:
   error_code: 12288
   message_id: "KeyExists"
+test_39028:
+  error_code: 12288
+  message_id: "InvalidCapability"
+

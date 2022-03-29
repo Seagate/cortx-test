@@ -332,7 +332,6 @@ class TestRestartPod:
         LOGGER.info("COMPLETED: pod online event to component Hare -"
                     "data pod comes online after data pod restart using kubectl delete pod")
 
-    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36193")
@@ -410,7 +409,6 @@ class TestRestartPod:
         LOGGER.info("COMPLETED: Publish the pod online event to component Hare - "
                     "Server pod comes online after server pod restart using deployment")
 
-    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-29300")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36197")

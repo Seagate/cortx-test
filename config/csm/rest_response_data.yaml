@@ -55,3 +55,6 @@
     - "User does not exist."
   KeyExists:
     - 'Provided access key exists and belongs to another user.'
+  InvalidCapability:
+    - "Attempt to grant invalid admin capability."
+
