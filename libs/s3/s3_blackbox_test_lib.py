@@ -65,7 +65,8 @@ class JCloudClient:
         dir_list = os.listdir(source)
         if "jcloudclient.jar" not in dir_list or "jclient.jar" not in dir_list:
             temp_dir = "/mnt/jjarfiles"
-            os.mkdir(temp_dir)
+            if not os.path.exists(temp_dir):
+                os.mkdir(temp_dir)
             mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
             umount_cmd = f"umount -v {temp_dir}"
             run_local_cmd(mount_cmd)
