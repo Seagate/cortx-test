@@ -1230,17 +1230,13 @@ class HAK8s:
         """
         LOGGER.info("Get HA pod name for setting up mock monitor")
         ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
-        LOGGER.info("Copy script %s inside %s", common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod)
-        try:
-            LOGGER.info("Copying file %s to %s", common_const.MOCK_MONITOR_LOCAL_PATH,
-                        common_const.MOCK_MONITOR_REMOTE_PATH)
-            node_obj.copy_file_to_remote(local_path=common_const.MOCK_MONITOR_LOCAL_PATH,
-                                         remote_path=common_const.MOCK_MONITOR_REMOTE_PATH)
-        except Exception as error:
-            LOGGER.error("Failed to copy %s to master node due to error: %s",
-                         common_const.MOCK_MONITOR_LOCAL_PATH, error)
-            return False
-
+        LOGGER.info("Copying file %s to %s", common_const.MOCK_MONITOR_LOCAL_PATH,
+                    common_const.MOCK_MONITOR_REMOTE_PATH)
+        resp = node_obj.copy_file_to_remote(local_path=common_const.MOCK_MONITOR_LOCAL_PATH,
+                                            remote_path=common_const.MOCK_MONITOR_REMOTE_PATH)
+        if not resp[0]:
+            LOGGER.error("Failed in copy file due to : %s", resp[1])
+            return resp[0]
         try:
             LOGGER.info("Changing access mode of file")
             node_obj.execute_cmd(cmd=common_cmd.FILE_MODE_CHANGE_CMD.format(
