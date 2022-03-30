@@ -323,14 +323,10 @@ class TestMultipartUploadGetPut:
         self.log.info(" Complete the multipart with first and last part upload")
         uploaded_parts[1].reverse()
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            try:
-                resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, uploaded_parts[1],
+            resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, uploaded_parts[1],
                                                                   self.bucket_name,
                                                                   self.object_name)
-                assert_utils.assert_true(resp[0], resp[1])
-            except CTException as error:
-                self.log.error(error)
-                self.log.info("Failed to complete the multipart with incomplete part details ")
+            assert_utils.assert_true(resp[0], resp[1])
         else:
             try:
                 resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, uploaded_parts[1],
