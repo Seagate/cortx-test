@@ -47,6 +47,9 @@
     - "User already exists:"
   EmailExists:
     - "Provided email address exists"
+39401:
+  users_already_exists:
+    - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
