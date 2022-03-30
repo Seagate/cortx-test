@@ -127,7 +127,7 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[2])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_mc_ver_sr.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_mc_ver_sr.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, mc_ver, mc_sr
@@ -153,7 +153,7 @@ class ControllerLib:
             mc_password = str(response.text)
             mc_password = (mc_password.split(',')[1]).split('=')[1]
         except BaseException as error:
-            LOGGER.error("Error in %s: %s", ControllerLib.get_mc_debug_pswd.__name__, error)
+            LOGGER.exception("Error in %s: %s", ControllerLib.get_mc_debug_pswd.__name__, error)
             raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
         LOGGER.info("MC debug password: %s", mc_password)
@@ -207,7 +207,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.simulate_fault_ctrl.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.simulate_fault_ctrl.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, password_str
@@ -250,7 +251,7 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.show_disks.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.show_disks.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
             return status, path
 
@@ -287,7 +288,8 @@ class ControllerLib:
 
                 drive_dict = resp[1]
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_total_drive_count.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_total_drive_count.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], len(drive_dict)
@@ -333,7 +335,7 @@ class ControllerLib:
                         status = v['health']
                         break
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.check_phy_health.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.check_phy_health.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], status
@@ -380,8 +382,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.set_drive_status_telnet.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.set_drive_status_telnet.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, drive_status
@@ -474,7 +476,7 @@ class ControllerLib:
                 if not disk_volumes_dict:
                     return False, disk_volumes_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_show_volumes.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_volumes.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_volumes_dict
@@ -572,8 +574,8 @@ class ControllerLib:
                 if not expander_status_dict:
                     return False, expander_status_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_show_expander_status.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_expander_status.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, expander_status_dict
@@ -649,7 +651,8 @@ class ControllerLib:
                 if not disk_group_dict:
                     return False, disk_group_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_show_disk_group.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_disk_group.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_group_dict
@@ -726,7 +729,7 @@ class ControllerLib:
                 if not disks_dict:
                     return False, disks_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_show_disks.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_disks.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disks_dict
@@ -770,7 +773,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except Exception as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.clear_drive_metadata.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.clear_drive_metadata.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status
@@ -820,7 +824,7 @@ class ControllerLib:
                             (common_cmd.STRING_MANIPULATION.format(response[1]))
                             .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.remove_add_drive.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.remove_add_drive.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, drive_status
@@ -883,7 +887,7 @@ class ControllerLib:
                         (common_cmd.STRING_MANIPULATION.format(response[1]))
                         .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.add_spares_dg.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.add_spares_dg.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, f"Successfully added drives {drives} to disk group {disk_group}"
@@ -905,7 +909,7 @@ class ControllerLib:
                     if value['disk_group'] == disk_group:
                         drive_list.append(value['location'])
                 except KeyError:
-                    LOGGER.error("No disk group found for %s", key)
+                    LOGGER.exception("No disk group found for %s", key)
                     continue
 
             return True, drive_list
@@ -931,7 +935,7 @@ class ControllerLib:
                         if value['location'] == d:
                             drive_usage_dict[d] = value['usage']
                     except KeyError:
-                        LOGGER.error("No disk found of phy number %s", d)
+                        LOGGER.exception("No disk found of phy number %s", d)
                         continue
 
             return True, drive_usage_dict
