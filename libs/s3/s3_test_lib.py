@@ -589,7 +589,7 @@ class S3TestLib(S3Lib):
             LOGGER.info("Check bucket is empty")
             resp = self.object_list(bucket_name)
             if resp[1]:
-                raise Exception("Bucket is not empty %s" .format(resp[1]))
+                raise CTException(err.S3_SERVER_ERROR, "Bucket is not empty %s".format(resp[1]))
             LOGGER.info("Verified that bucket was empty")
             LOGGER.debug("Creating a file %s", str(file_path))
             create_file(file_path, mb_count)
