@@ -3084,6 +3084,7 @@ class TestPodFailure:
                                                       bkt_op=False, put_etag=put_etag)
             assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
             put_etag = resp[1]
+        LOGGER.info("Step 7: Successfully checked responses from background process.")
 
         LOGGER.info("Step 8: Download the uploaded objects & verify etags")
         for key, val in bkt_obj_dict.items():
@@ -3099,7 +3100,7 @@ class TestPodFailure:
         object3 = f"ha-obj3-{int((perf_counter_ns()))}"
         bkt_obj_dict.clear()
         bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 8: Perform copy of %s from already created/uploaded %s to %s and verify "
+        LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
@@ -3107,16 +3108,16 @@ class TestPodFailure:
                                                   bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Performed copy of %s from already created/uploaded %s to %s and "
+        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 9: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
         resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
         LOGGER.info("Get object response: %s", resp)
         get_etag = resp[1]["ETag"]
         assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
                                                       f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify copy object during data pod shutdown (delete deployment)")
 

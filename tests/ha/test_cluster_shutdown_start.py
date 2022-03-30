@@ -975,8 +975,9 @@ class TestClusterShutdownStart:
                                                       bkt_op=False, put_etag=put_etag)
             assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
             put_etag = resp[1]
+        LOGGER.info("Step 5: Successfully checked responses from background process.")
 
-        LOGGER.info("Step 5: Download the uploaded object and verify checksum")
+        LOGGER.info("Step 6: Download the uploaded object and verify checksum")
         for k, v in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=k, key=v)
             LOGGER.info("Get object response: %s", resp)
@@ -984,9 +985,9 @@ class TestClusterShutdownStart:
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {v} of bucket {k}. Put and Get "
                                                           "Etag mismatch")
-        LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("Step 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29476-1'
@@ -994,7 +995,7 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify copy object to other buckets during cluster restart")
 
