@@ -162,6 +162,8 @@ class TestIamUserRGW():
         cls.bucket_name = None
         cls.user_id = None
         cls.display_name = None
+        cls.test_file = None
+        cls.test_file_path = None
         cls.file_size = cls.cryptogen.randrange(10, 100)
         cls.log.info("[END] CSM setup class completed.")
 
@@ -173,6 +175,8 @@ class TestIamUserRGW():
         self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
         self.user_id = const.IAM_USER + str(int(time.time_ns()))
         self.display_name = const.IAM_USER + str(int(time.time_ns()))
+        self.test_file = "test-object.txt"
+        self.test_file_path = os.path.join(TEST_DATA_FOLDER, self.test_file)
         self.log.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -472,37 +476,11 @@ class TestIamUserRGW():
             assert_utils.assert_false(len(buckets), "buckets found on new IAM user")
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
-            self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(self.bucket_name)
-            assert_utils.assert_true(status, resp)
-            resp = s3_obj.bucket_list()
-            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
-            self.log.info("Step: Verified create bucket")
-            self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(self.bucket_name)
-            assert resp[0], resp[1]
+            resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file, self.test_file_path,
+                                 self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
-            resp_bkt_lst = None if not resp[1] else resp[1]
-            # For checking the object list should be none
-            assert resp_bkt_lst is None, resp
-            assert_utils.assert_is_not_none(resp[0], resp[1])
-            self.log.info("Step: Verified that bucket was empty")
-            self.log.info("Step: Verify put object.")
-            test_file = "test-object.txt"
-            file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-            if os.path.exists(file_path_upload):
-                os.remove(file_path_upload)
-            if not os.path.isdir(TEST_DATA_FOLDER):
-                self.log.debug("File path not exists, create a directory")
-                system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-            system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
-                                     file_path=file_path_upload)
-            self.log.info("Removing uploaded object from a local path.")
-            os.remove(file_path_upload)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(self.bucket_name, test_file)
+            self.log.info("Verify get object.")
+            resp = s3_obj.get_object(self.bucket_name, self.test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -542,37 +520,11 @@ class TestIamUserRGW():
             assert_utils.assert_false(len(buckets), "buckets found on new IAM user")
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
-            self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(self.bucket_name)
-            assert_utils.assert_true(status, resp)
-            resp = s3_obj.bucket_list()
-            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
-            self.log.info("Step: Verified create bucket")
-            self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(self.bucket_name)
-            assert resp[0], resp[1]
+            resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file, self.test_file_path,
+                                 self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
-            resp_bkt_lst = None if not resp[1] else resp[1]
-            # For checking the object list should be none
-            assert resp_bkt_lst is None, resp
-            assert_utils.assert_is_not_none(resp[0], resp[1])
-            self.log.info("Step: Verified that bucket was empty")
-            self.log.info("Step: Verify put object.")
-            test_file = "test-object.txt"
-            file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-            if os.path.exists(file_path_upload):
-                os.remove(file_path_upload)
-            if not os.path.isdir(TEST_DATA_FOLDER):
-                self.log.debug("File path not exists, create a directory")
-                system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-            system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
-                                     file_path=file_path_upload)
-            self.log.info("Removing uploaded object from a local path.")
-            os.remove(file_path_upload)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(self.bucket_name, test_file)
+            self.log.info("Verify get object.")
+            resp = s3_obj.get_object(self.bucket_name, self.test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -613,37 +565,11 @@ class TestIamUserRGW():
             assert_utils.assert_false(len(buckets), "buckets found on new IAM user")
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
-            self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(self.bucket_name)
-            assert_utils.assert_true(status, resp)
-            resp = s3_obj.bucket_list()
-            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
-            self.log.info("Step: Verified create bucket")
-            self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(self.bucket_name)
-            assert resp[0], resp[1]
+            resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file, self.test_file_path,
+                                 self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
-            resp_bkt_lst = None if not resp[1] else resp[1]
-            # For checking the object list should be none
-            assert resp_bkt_lst is None, resp
-            assert_utils.assert_is_not_none(resp[0], resp[1])
-            self.log.info("Step: Verified that bucket was empty")
-            self.log.info("Step: Verify put object.")
-            test_file = "test-object.txt"
-            file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-            if os.path.exists(file_path_upload):
-                os.remove(file_path_upload)
-            if not os.path.isdir(TEST_DATA_FOLDER):
-                self.log.debug("File path not exists, create a directory")
-                system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-            system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
-                                     file_path=file_path_upload)
-            self.log.info("Removing uploaded object from a local path.")
-            os.remove(file_path_upload)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(self.bucket_name, test_file)
+            self.log.info("Verify get object.")
+            resp = s3_obj.get_object(self.bucket_name, self.test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -680,37 +606,11 @@ class TestIamUserRGW():
             assert_utils.assert_false(len(buckets), "buckets found on new IAM user")
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
-            self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(self.bucket_name)
-            assert_utils.assert_true(status, resp)
-            resp = s3_obj.bucket_list()
-            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
-            self.log.info("Step: Verified create bucket")
-            self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(self.bucket_name)
-            assert resp[0], resp[1]
+            resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file, self.test_file_path,
+                                 self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
-            resp_bkt_lst = None if not resp[1] else resp[1]
-            # For checking the object list should be none
-            assert resp_bkt_lst is None, resp
-            assert_utils.assert_is_not_none(resp[0], resp[1])
-            self.log.info("Step: Verified that bucket was empty")
-            self.log.info("Step: Verify put object.")
-            test_file = "test-object.txt"
-            file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-            if os.path.exists(file_path_upload):
-                os.remove(file_path_upload)
-            if not os.path.isdir(TEST_DATA_FOLDER):
-                self.log.debug("File path not exists, create a directory")
-                system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-            system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
-                                     file_path=file_path_upload)
-            self.log.info("Removing uploaded object from a local path.")
-            os.remove(file_path_upload)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(self.bucket_name, test_file)
+            self.log.info("Verify get object.")
+            resp = s3_obj.get_object(self.bucket_name, self.test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -2603,6 +2503,7 @@ class TestIamUserRGW():
         optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
         optional_payload.update({"tenant": tenant})
         optional_payload.update({"uid": user_id})
+        self.log.info("updated payload :  %s", optional_payload)
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -2615,6 +2516,7 @@ class TestIamUserRGW():
         optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
         optional_payload.update({"tenant": tenant})
         optional_payload.update({"uid": user_id})
+        self.log.info("updated payload :  %s", optional_payload)
         resp3 = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Printing resp %s:", resp3)
         self.log.info("Verify Response : %s", resp3)
@@ -2645,6 +2547,7 @@ class TestIamUserRGW():
         optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
         optional_payload.update({"tenant": tenant})
         optional_payload.update({"display_name": display_name})
+        self.log.info("updated payload :  %s", optional_payload)
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -2657,6 +2560,7 @@ class TestIamUserRGW():
         optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
         optional_payload.update({"tenant": tenant})
         optional_payload.update({"display_name": display_name})
+        self.log.info("updated payload :  %s", optional_payload)
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -2687,6 +2591,7 @@ class TestIamUserRGW():
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
             optional_payload.update({"uid": user_id})
+            self.log.info("updated payload :  %s", optional_payload)
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -2717,6 +2622,7 @@ class TestIamUserRGW():
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
             optional_payload.update({"display_name": display_name})
+            self.log.info("updated payload :  %s", optional_payload)
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
@@ -2749,6 +2655,7 @@ class TestIamUserRGW():
             optional_payload.update({"tenant": tenant})
             optional_payload.update({"uid": user_id})
             optional_payload.update({"display_name": display_name})
+            self.log.info("updated payload :  %s", optional_payload)
             resp = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
