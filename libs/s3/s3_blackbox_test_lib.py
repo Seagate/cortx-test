@@ -69,9 +69,9 @@ class JCloudClient:
             mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
             umount_cmd = f"umount -v {temp_dir}"
             run_local_cmd(mount_cmd)
-            run_local_cmd(f"yes | cp -rf {temp_dir}*.jar {source}")
+            run_local_cmd(f"yes | cp -rf {temp_dir}/*.jar {source}")
             run_local_cmd(umount_cmd)
-            os.remove(temp_dir)
+            os.rmdir(temp_dir)
 
         run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
         res_ls = run_local_cmd(f"ls {destination}")[1]
