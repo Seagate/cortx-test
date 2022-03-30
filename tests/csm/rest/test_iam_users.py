@@ -2142,7 +2142,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
-        uid = resp.json()["user_id"]
+        uid = resp.json()["tenant"] + "$" + resp.json()["user_id"]
         self.created_iam_users.add(uid)
 
         self.log.info("Step-2: Creating IAM user with same name as tenant")
@@ -2203,7 +2203,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-38918')
     def test_38918(self):
         """
-        Attempt to modify Access key, secret key while IO operations are ongoing with old key
+        Verify IO operations fails with old key after secret key is modified
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
