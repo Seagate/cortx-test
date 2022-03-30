@@ -70,7 +70,12 @@ class ControllerLib:
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
 
-        self.copy = True
+        self.copy = False
+
+    def copy_telnet_operations_file(self):
+        """
+        Function to copy telnet operations file
+        """
         runner_path = cons.REMOTE_TELNET_PATH
         local_path = cons.TELNET_OP_PATH
         LOGGER.info("Copying file %s to %s", local_path, runner_path)
@@ -88,14 +93,15 @@ class ControllerLib:
         LOGGER.info("Copying file %s to %s", local_path, runner_path)
         self.node_obj.copy_file_to_remote(local_path=local_path,
                                           remote_path=runner_path)
-        if not self.node_obj.path_exists(path=runner_path):
-            self.copy = False
+        if self.node_obj.path_exists(path=runner_path):
+            self.copy = True
 
     def get_mc_ver_sr(self) -> Tuple[str, str, str]:
         """
         Function to get the version and serial number of the management controller.
         :return: version and serial number of the management controller
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SET_DEBUG_CMD
@@ -121,7 +127,7 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[2])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s", ControllerLib.get_mc_ver_sr.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_mc_ver_sr.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, mc_ver, mc_sr
@@ -147,8 +153,7 @@ class ControllerLib:
             mc_password = str(response.text)
             mc_password = (mc_password.split(',')[1]).split('=')[1]
         except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         ControllerLib.get_mc_debug_pswd.__name__, error)
+            LOGGER.exception("Error in %s: %s", ControllerLib.get_mc_debug_pswd.__name__, error)
             raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
         LOGGER.info("MC debug password: %s", mc_password)
@@ -174,6 +179,7 @@ class ControllerLib:
         :return: Boolean, Response
         :rtype: Tuple of (bool, String)
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 ras_sspl_cfg = RAS_VAL["ras_sspl_alert"]
@@ -201,8 +207,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.simulate_fault_ctrl.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.simulate_fault_ctrl.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, password_str
@@ -217,6 +223,7 @@ class ControllerLib:
         :return: Boolean, file path
         :rtype: Tuple of (bool, String)
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 LOGGER.info("Show disks for %s enclosure.", self.enclosure_ip)
@@ -244,8 +251,7 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.show_disks.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.show_disks.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
             return status, path
 
@@ -259,6 +265,7 @@ class ControllerLib:
         :return: (Boolean, Number of drives)
         :rtype: Boolean, Integer
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -281,8 +288,8 @@ class ControllerLib:
 
                 drive_dict = resp[1]
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_total_drive_count.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_total_drive_count.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], len(drive_dict)
@@ -300,6 +307,7 @@ class ControllerLib:
         :return: (Boolean, status of the phy)
         :rtype: Boolean, String
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             try:
@@ -327,8 +335,7 @@ class ControllerLib:
                         status = v['health']
                         break
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.check_phy_health.__name__, error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.check_phy_health.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return resp[0], status
@@ -350,6 +357,7 @@ class ControllerLib:
         :type: str
         :return: None
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
@@ -374,9 +382,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[1]))
                     .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.set_drive_status_telnet.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.set_drive_status_telnet.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, drive_status
@@ -399,6 +406,7 @@ class ControllerLib:
         :return: (Boolean, disk volume dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_VOLUMES
@@ -406,8 +414,7 @@ class ControllerLib:
                 volumes_param = CMN_DESTRUCTIVE_CFG.get("show_volumes")
                 LOGGER.debug(volumes_param)
                 if not isinstance(volumes_param, dict):
-                    raise Exception(f"Failed to get show_volumes: "
-                                    f"{volumes_param}")
+                    raise Exception(f"Failed to get show_volumes: {volumes_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
@@ -433,15 +440,13 @@ class ControllerLib:
                 LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
-                    raise Exception(f"Local copy for {output_file_path} "
-                                    f"not exists.")
+                    raise Exception(f"Local copy for {output_file_path} not exists.")
                 status, disk_volumes_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(volumes_param.values()))
                 LOGGER.debug("Show volumes dict: %s", disk_volumes_dict)
                 if not status:
-                    raise Exception(f"failed to parse output file: "
-                                    f"{disk_volumes_dict}")
+                    raise Exception(f"failed to parse output file: {disk_volumes_dict}")
                 # Cleanup dict.
                 if isinstance(disk_volumes_dict, dict):
                     d = {}
@@ -471,9 +476,7 @@ class ControllerLib:
                 if not disk_volumes_dict:
                     return False, disk_volumes_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_show_volumes.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_volumes.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_volumes_dict
@@ -495,16 +498,15 @@ class ControllerLib:
         :return: (Boolean, controller dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_XP_STATUS
                 LOGGER.debug(cmd)
-                expander_param = CMN_DESTRUCTIVE_CFG.get("show_expander_"
-                                                         "status")
+                expander_param = CMN_DESTRUCTIVE_CFG.get("show_expander_status")
                 LOGGER.debug(expander_param)
                 if not isinstance(expander_param, dict):
-                    raise Exception(f"Failed to get show_expander_status: "
-                                    f"{expander_param}")
+                    raise Exception(f"Failed to get show_expander_status: {expander_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
@@ -529,16 +531,14 @@ class ControllerLib:
                 LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
-                    raise Exception(f"Local copy for {output_file_path} "
-                                    f"not exists.")
+                    raise Exception(f"Local copy for {output_file_path} not exists.")
                 status, expander_status_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(expander_param.values()))
                 LOGGER.debug("Show expander-status dict: %s",
                              expander_status_dict)
                 if not status:
-                    raise Exception(f"failed to parse output file: "
-                                    f"{expander_status_dict}")
+                    raise Exception(f"failed to parse output file: {expander_status_dict}")
                 # Cleanup dict.
                 if isinstance(expander_status_dict, dict):
                     d = {}
@@ -574,9 +574,8 @@ class ControllerLib:
                 if not expander_status_dict:
                     return False, expander_status_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_show_expander_status.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_expander_status.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, expander_status_dict
@@ -596,6 +595,7 @@ class ControllerLib:
         :return: (Boolean, disk group dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_SHOW_DISK_GROUP
@@ -603,8 +603,7 @@ class ControllerLib:
                 diskgroup_param = CMN_DESTRUCTIVE_CFG.get("show_disk_groups")
                 LOGGER.debug(diskgroup_param)
                 if not isinstance(diskgroup_param, dict):
-                    raise Exception(f"Failed to get show_disk_group: "
-                                    f"{diskgroup_param}")
+                    raise Exception(f"Failed to get show_disk_group: {diskgroup_param}")
                 # Check telnet_operations.py present on primary node.
                 runner_path = cons.REMOTE_TELNET_PATH
                 res = self.node_obj.path_exists(path=runner_path)
@@ -630,15 +629,13 @@ class ControllerLib:
                 LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
-                    raise Exception(f"Local copy for {output_file_path} "
-                                    f"not exists.")
+                    raise Exception(f"Local copy for {output_file_path} not exists.")
                 status, disk_group_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(diskgroup_param.values()))
                 LOGGER.debug("Show disk-group dict: %s", disk_group_dict)
                 if not status:
-                    raise Exception(f"failed to parse output file: "
-                                    f"{disk_group_dict}")
+                    raise Exception(f"failed to parse output file: {disk_group_dict}")
                 # Cleanup dict.
                 if isinstance(disk_group_dict, dict):
                     disk_group_dict = dict([(disk_group_dict[k]['name'],
@@ -654,9 +651,8 @@ class ControllerLib:
                 if not disk_group_dict:
                     return False, disk_group_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_show_disk_group.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_disk_group.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disk_group_dict
@@ -679,6 +675,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.SHOW_DISKS_CMD
@@ -712,15 +709,13 @@ class ControllerLib:
                 LOGGER.info("copy file log: %s", output_file_path)
                 # Parse output xml.
                 if not os.path.exists(output_file_path):
-                    raise Exception(f"Local copy for {output_file_path} "
-                                    f"not exists.")
+                    raise Exception(f"Local copy for {output_file_path} not exists.")
                 status, disks_dict = conf_util.parse_xml_controller(
                     filepath=output_file_path,
                     field_list=list(disks_param.values()))
                 LOGGER.debug("Show disks dict: %s", disks_dict)
                 if not status:
-                    raise Exception(f"failed to parse output file: "
-                                    f"{disks_dict}")
+                    raise Exception(f"failed to parse output file: {disks_dict}")
                 # Cleanup dict.
                 if isinstance(disks_dict, dict):
                     disks_dict = dict([(disks_dict[k]['durable-id'],
@@ -734,9 +729,7 @@ class ControllerLib:
                 if not disks_dict:
                     return False, disks_dict
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.get_show_disks.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.get_show_disks.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return True, disks_dict
@@ -751,6 +744,7 @@ class ControllerLib:
         :return: (Boolean, disks dict).
         :rtype: tuple
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 cmd = common_cmd.CMD_CLEAR_METADATA.format(drive_num)
@@ -779,9 +773,8 @@ class ControllerLib:
                     (common_cmd.STRING_MANIPULATION.format(response[0])).
                     replace('\n', ' ').replace('\\n', ' ')).read()
             except Exception as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.clear_drive_metadata.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.clear_drive_metadata.__name__,
+                                 error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status
@@ -802,6 +795,7 @@ class ControllerLib:
         :type: str
         :return: None
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 for drv in drive_number:
@@ -830,9 +824,7 @@ class ControllerLib:
                             (common_cmd.STRING_MANIPULATION.format(response[1]))
                             .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.remove_add_drive.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.remove_add_drive.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
             return status, drive_status
@@ -849,6 +841,7 @@ class ControllerLib:
         :return: status, message
         :rtype: bool, str
         """
+        self.copy_telnet_operations_file()
         if self.copy:
             try:
                 LOGGER.info("Adding available drives to disk group %s", disk_group)
@@ -894,13 +887,10 @@ class ControllerLib:
                         (common_cmd.STRING_MANIPULATION.format(response[1]))
                         .replace('\n', ' ').replace('\\n', ' ')).read()
             except BaseException as error:
-                LOGGER.error("Error in %s: %s",
-                             ControllerLib.add_spares_dg.__name__,
-                             error)
+                LOGGER.exception("Error in %s: %s", ControllerLib.add_spares_dg.__name__, error)
                 raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
 
-            return True, f"Successfully added drives {drives} to disk group " \
-                         f"{disk_group}"
+            return True, f"Successfully added drives {drives} to disk group {disk_group}"
 
     def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, any]:
         """
@@ -919,7 +909,7 @@ class ControllerLib:
                     if value['disk_group'] == disk_group:
                         drive_list.append(value['location'])
                 except KeyError:
-                    LOGGER.error("No disk group found for %s", key)
+                    LOGGER.exception("No disk group found for %s", key)
                     continue
 
             return True, drive_list
@@ -945,7 +935,7 @@ class ControllerLib:
                         if value['location'] == d:
                             drive_usage_dict[d] = value['usage']
                     except KeyError:
-                        LOGGER.error("No disk found of phy number %s", d)
+                        LOGGER.exception("No disk found of phy number %s", d)
                         continue
 
             return True, drive_usage_dict
