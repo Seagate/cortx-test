@@ -2169,7 +2169,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr1 = resp.json()
-        self.created_iam_users.add(usr1["user_id"])
+        uid1 = usr1["tenant"] + "$" + usr1["user_id"]
+        self.created_iam_users.add(uid1)
 
         self.log.info("Step-2: Creating IAM user 2")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
@@ -2177,12 +2178,13 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr2 = resp.json()
-        self.created_iam_users.add(usr2["user_id"])
+        uid2 = usr2["tenant"] + "$" + usr2["user_id"]
+        self.created_iam_users.add(uid2)
 
         self.log.info("Step-3: Edit IAM user with access key of user 1")
         payload = {"access_key": usr1["keys"][0]["access_key"],
                     "secret_key":usr1["keys"][0]["secret_key"]}
-        resp = self.csm_obj.modify_iam_user_rgw(usr2["user_id"], payload)
+        resp = self.csm_obj.modify_iam_user_rgw(uid2, payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "PATCH status code check failed"
         resp = resp.json()
         if CSM_REST_CFG["msg_check"] == "enable":
