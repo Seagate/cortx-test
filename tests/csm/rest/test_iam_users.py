@@ -159,8 +159,21 @@ class TestIamUserRGW():
         assert setup_ready
         cls.created_iam_users = set()
         cls.cryptogen = SystemRandom()
+        cls.bucket_name = None
+        cls.user_id = None
+        cls.display_name = None
         cls.file_size = cls.cryptogen.randrange(10, 100)
         cls.log.info("[END] CSM setup class completed.")
+
+    def setup_method(self):
+        """
+        This function will be invoked prior to each test case.
+        """
+        self.log.info("STARTED: Setup Operations")
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        self.user_id = const.IAM_USER + str(int(time.time_ns()))
+        self.display_name = const.IAM_USER + str(int(time.time_ns()))
+        self.log.info("Done: Setup operations.")
 
     def teardown_method(self):
         """Teardown method which run after each function.
@@ -428,7 +441,6 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-39412')
     def test_39412(self):
         """
@@ -438,14 +450,13 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info(
             "[START] Create same name buckets with same name IAM users in different tenant")
-        bucket_name = "iam-user-bucket-" + str(int(time.time()))
-        user_id = const.IAM_USER + str(int(time.time_ns()))
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
-            optional_payload.update({"uid": user_id})
+            optional_payload.update({"uid": self.user_id})
+            self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
@@ -462,13 +473,13 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(bucket_name)
+            status, resp = s3_obj.create_bucket(self.bucket_name)
             assert_utils.assert_true(status, resp)
             resp = s3_obj.bucket_list()
-            assert_utils.assert_in(bucket_name, resp[1], resp[1])
+            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
             self.log.info("Step: Verified create bucket")
             self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(bucket_name)
+            resp = s3_obj.object_list(self.bucket_name)
             assert resp[0], resp[1]
             assert_utils.assert_true(resp[0], resp[1])
             resp_bkt_lst = None if not resp[1] else resp[1]
@@ -485,13 +496,13 @@ class TestIamUserRGW():
                 self.log.debug("File path not exists, create a directory")
                 system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
             system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(bucket_name, test_file)
+            resp = s3_obj.get_object(self.bucket_name, test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -500,7 +511,6 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-39411')
     def test_39411(self):
         """
@@ -510,14 +520,13 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info(
             "[START] Create same name buckets with same name IAM users in different tenant")
-        bucket_name = "iam-user-bucket-" + str(int(time.time()))
-        display_name = const.IAM_USER + str(int(time.time_ns()))
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
-            optional_payload.update({"display_name": display_name})
+            optional_payload.update({"display_name": self.display_name})
+            self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
@@ -534,13 +543,13 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(bucket_name)
+            status, resp = s3_obj.create_bucket(self.bucket_name)
             assert_utils.assert_true(status, resp)
             resp = s3_obj.bucket_list()
-            assert_utils.assert_in(bucket_name, resp[1], resp[1])
+            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
             self.log.info("Step: Verified create bucket")
             self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(bucket_name)
+            resp = s3_obj.object_list(self.bucket_name)
             assert resp[0], resp[1]
             assert_utils.assert_true(resp[0], resp[1])
             resp_bkt_lst = None if not resp[1] else resp[1]
@@ -557,23 +566,21 @@ class TestIamUserRGW():
                 self.log.debug("File path not exists, create a directory")
                 system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
             system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(bucket_name, test_file)
+            resp = s3_obj.get_object(self.bucket_name, test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     # pylint: disable=too-many-statements
-    # pylint: disable=too-many-locals
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-39410')
     def test_39410(self):
         """
@@ -583,16 +590,14 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info(
             "[START] Create same name buckets with same name IAM users in different tenant")
-        bucket_name = "iam-user-bucket-" + str(int(time.time()))
-        user_id = const.IAM_USER + str(int(time.time_ns()))
-        display_name = const.IAM_USER + str(int(time.time_ns()))
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
-            optional_payload.update({"uid": user_id})
-            optional_payload.update({"display_name": display_name})
+            optional_payload.update({"uid": self.user_id})
+            optional_payload.update({"display_name": self.display_name})
+            self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
@@ -609,13 +614,13 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(bucket_name)
+            status, resp = s3_obj.create_bucket(self.bucket_name)
             assert_utils.assert_true(status, resp)
             resp = s3_obj.bucket_list()
-            assert_utils.assert_in(bucket_name, resp[1], resp[1])
+            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
             self.log.info("Step: Verified create bucket")
             self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(bucket_name)
+            resp = s3_obj.object_list(self.bucket_name)
             assert resp[0], resp[1]
             assert_utils.assert_true(resp[0], resp[1])
             resp_bkt_lst = None if not resp[1] else resp[1]
@@ -632,13 +637,13 @@ class TestIamUserRGW():
                 self.log.debug("File path not exists, create a directory")
                 system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
             system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(bucket_name, test_file)
+            resp = s3_obj.get_object(self.bucket_name, test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -646,7 +651,6 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-35931')
     def test_35931(self):
         """
@@ -655,12 +659,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM users with different tenant")
-        bucket_name = "iam-user-bucket-" + str(int(time.time()))
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
             optional_payload.update({"tenant": tenant})
+            self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
@@ -677,13 +681,13 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             self.log.info("Step: Verify create bucket")
-            status, resp = s3_obj.create_bucket(bucket_name)
+            status, resp = s3_obj.create_bucket(self.bucket_name)
             assert_utils.assert_true(status, resp)
             resp = s3_obj.bucket_list()
-            assert_utils.assert_in(bucket_name, resp[1], resp[1])
+            assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
             self.log.info("Step: Verified create bucket")
             self.log.info("Step: Check bucket is empty")
-            resp = s3_obj.object_list(bucket_name)
+            resp = s3_obj.object_list(self.bucket_name)
             assert resp[0], resp[1]
             assert_utils.assert_true(resp[0], resp[1])
             resp_bkt_lst = None if not resp[1] else resp[1]
@@ -700,13 +704,13 @@ class TestIamUserRGW():
                 self.log.debug("File path not exists, create a directory")
                 system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
             system_utils.create_file(file_path_upload, self.file_size)
-            resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+            resp = s3_obj.put_object(bucket_name=self.bucket_name, object_name=test_file,
                                      file_path=file_path_upload)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(file_path_upload)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Step: Verify get object.")
-            resp = s3_obj.get_object(bucket_name, test_file)
+            resp = s3_obj.get_object(self.bucket_name, test_file)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
