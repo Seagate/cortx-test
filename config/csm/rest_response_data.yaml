@@ -46,9 +46,15 @@
     - "User already exists:"
   EmailExists:
     - "Provided email address exists"
+39401:
+  users_already_exists:
+    - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
     - 'Provided access key exists and belongs to another user.'
   NoSuchUser:
     - "User does not exist."
+  InvalidCapability:
+    - "Attempt to grant invalid admin capability."
+

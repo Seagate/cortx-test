@@ -2126,3 +2126,397 @@ class TestIamUserRGW():
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39026')
+    def test_39026(self):
+        """
+        Verify IOs with bucket read capability
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "usage=read;buckets=read;users=read"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
+        self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp.json()["keys"][0]["access_key"],
+                           secret_key=resp.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Step: Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step: Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 3: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39027')
+    def test_39027(self):
+        """
+        Verify IOs with bucket write capability
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "buckets=read,write"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp1.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
+        self.log.info("Step 2: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 3: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("Step 4: Remove existing cap and add new capability")
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
+                                     "Remove cap request status code failed")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("Step 5: Verify removed capabilities")
+        assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
+                                     "Capabilities are not updated properly")
+        user_cap = "buckets=*"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.add_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
+                                     "Add cap request status code failed")
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 6: Verify added capabilities")
+        diff_items = self.csm_obj.verify_caps(user_cap, get_resp.json()["caps"])
+        self.log.info("Difference in capabilities %s", diff_items)
+        assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
+        self.log.info("Step 7: Create bucket and perform IO")
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
+                           secret_key=resp1.json()["keys"][0]["secret_key"])
+        status, resp = s3_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(status, resp)
+        self.log.info("Create bucket successful for user")
+        test_file = "test-object.txt"
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
+        system_utils.create_file(file_path_upload, self.file_size)
+        self.log.info("Verify put object.")
+        resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
+                                 file_path=file_path_upload)
+        self.log.info("Removing uploaded object from a local path.")
+        os.remove(file_path_upload)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Verify get object.")
+        resp = s3_obj.get_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 8: Delete bucket")
+        resp = s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Bucket deleted successfully")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-39028')
+    def test_39028(self):
+        """
+        Add-remove invalid capabilities
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_39028"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
+        self.log.info(
+            "Step 1: Login using csm user and create a user with some capabilities")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        user_cap = "usage=read;buckets=write;users=read"
+        payload.update({"user_caps": user_cap})
+        self.log.info("payload :  %s", payload)
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp1.status_code == HTTPStatus.CREATED, \
+            "User could not be created"
+        uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        self.created_iam_users.add(uid)
+        self.log.info("Step 2: Add some invalid capabilities")
+        user_cap = "random=;buckets="
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.add_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+                                     "Invalid caps added"
+        assert resp.json()["error_code"] == resp_error_code, (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["message"] == msg , "Message check failed."
+        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 3: Verify added capabilities")
+        assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
+                                 "Invalid capabilities added")
+        self.log.info("Step 4: Remove invalid capabilities")
+        payload = {}
+        payload.update({"user_caps": user_cap})
+        resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+                                     "Invalid caps added"
+        assert resp.json()["error_code"] == resp_error_code, (
+            "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["message"] == msg , "Message check failed."
+        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        get_resp = self.csm_obj.get_iam_user(user=uid)
+        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        self.log.info("STEP 5: Verify original capabilities are intact")
+        assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
+                                 "Original caps are not intact")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39401')
+    def test_39401(self):
+        """
+        Test create IAM users with same UID in same tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START]Try Creating IAM users with same UID")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        tenant = "tenant_" + str(int(time.time_ns()))
+        self.log.info("Creating 1st iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"uid": user_id})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Try Creating 2nd iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"uid": user_id})
+        resp3 = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Printing resp %s:", resp3)
+        self.log.info("Verify Response : %s", resp3)
+        assert_utils.assert_true(resp3.status_code == HTTPStatus.CONFLICT,
+                                 "Patch request status code failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(resp.json()["message"] ==
+                                     self.rest_resp_conf[39401]['users_already_exists'][0]
+                                     , "Response message check failed")
+        self.log.info("[END]Try Creating IAM users with same UID")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39403')
+    def test_39403(self):
+        """
+        Test create IAM users with same name in same tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        tenant = "tenant_" + str(int(time.time_ns()))
+        self.log.info("Creating 1st iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"display_name": display_name})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                    "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Creating 2nd iam user with tenant %s", tenant)
+        optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        optional_payload.update({"tenant": tenant})
+        optional_payload.update({"display_name": display_name})
+        resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                    "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+        resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+        self.log.info("Printing response %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39404')
+    def test_39404(self):
+        """
+        Test create IAM users with same UID in different tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"uid": user_id})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39405')
+    def test_39405(self):
+        """
+        Test create IAM users with same name in different tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"display_name": display_name})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-39406')
+    def test_39406(self):
+        """
+        Test create IAM users with same UID and name in different tenants.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Creating IAM users with different tenant")
+        user_id = const.IAM_USER + str(int(time.time_ns()))
+        display_name = const.IAM_USER + str(int(time.time_ns()))
+        for cnt in range(2):
+            tenant = "tenant_" + str(cnt)
+            self.log.info("Creating new iam user with tenant %s", tenant)
+            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"tenant": tenant})
+            optional_payload.update({"uid": user_id})
+            optional_payload.update({"display_name": display_name})
+            resp = self.csm_obj.create_iam_user_rgw(optional_payload)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                     "IAM user creation failed")
+            self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
+            resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
+            self.log.info("Printing response %s", resp)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("[END]Creating IAM users with different tenant")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
