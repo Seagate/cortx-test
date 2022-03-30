@@ -38,10 +38,15 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
+from commons.params import LOG_DIR
+from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from config import PROV_CFG, PROV_TEST_CFG
+from commons.utils import system_utils
+from commons.utils import assert_utils
+from commons.utils import ext_lbconfig_utils
+from config import PROV_CFG
+from config import S3_CFG
+from config import PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -64,6 +69,8 @@ class ProvDeployK8sCortxLib:
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
+        self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
+        self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
         self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
         self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
@@ -219,17 +226,21 @@ class ProvDeployK8sCortxLib:
         pre_req_log = PROV_CFG['k8s_cortx_deploy']["pre_req_log"]
         pre_req_cmd = common_cmd.PRE_REQ_CMD.format(remote_code_path, system_disk) + \
                       f" > {pre_req_log}"
+        list_mnt_dir = common_cmd.LS_LH_CMD.format(self.deploy_cfg['local_path_prov'])
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
         resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
                                     timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        resp1 = node_obj.execute_cmd(cmd="ls -lhR /mnt/fs-local-volume/", read_lines=True)
-        LOGGER.info("\n %s", resp1)
-        openldap_dir_residue = node_obj.execute_cmd(cmd="ls -lhR /etc/3rd-party/",
-                                                    read_lines=True)
-        LOGGER.info("\n %s", openldap_dir_residue)
-        thirdparty_residue = node_obj.execute_cmd(cmd="ls -lhR /var/data/3rd-party/",
-                                                  read_lines=True)
-        LOGGER.info("\n %s", thirdparty_residue)
+        if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
+            resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
+            LOGGER.info("\n %s", resp1)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
+            openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
+            LOGGER.info("\n %s", openldap_dir_residue)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_data_dir']):
+            thirdparty_residue = node_obj.execute_cmd(list_data_3rd_party, read_lines=True)
+            LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -486,7 +497,9 @@ class ProvDeployK8sCortxLib:
                                                       nodeport_https=self.nodeport_https,
                                                       control_nodeport_https=
                                                       self.control_nodeport_https,
-                                                      service_type=self.service_type)
+                                                      service_type=self.service_type,
+                                                      deployment_type=self.deployment_type,
+                                                      lb_count=self.lb_count)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -685,9 +698,13 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get('control_nodeport_https',
                                             self.deploy_cfg['control_port_https'])
+        lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
+        deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
+            if deployment_type:
+                parent_key['deployment_type'] = deployment_type
             content = parent_key['secrets']['content']
             common = parent_key['common']
             LOGGER.debug("common is %s", common)
@@ -702,6 +719,8 @@ class ProvDeployK8sCortxLib:
             s3_service['nodePorts']['https'] = nodeport_https
             control_service['nodePorts']['https'] = control_nodeport_https
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
+            if service_type == "LoadBalancer":
+                s3_service['count'] = lb_count
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
                 passwd_dict[key] = pswdmanager.decrypt(value)
@@ -791,8 +810,8 @@ class ProvDeployK8sCortxLib:
         param: worker node obj list
         """
         destroy_cmd = common_cmd.DESTROY_CLUSTER_CMD.format(custom_repo_path)
-        list_etc_3rd_party = "ls -lhR /etc/3rd-party/"
-        list_data_3rd_party = "ls -lhR /var/data/3rd-party/"
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
@@ -800,10 +819,12 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
+                if worker.path_exists(self.deploy_cfg['3rd_party_dir']):
+                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
+                if worker.path_exists(self.deploy_cfg['3rd_party_data_dir']):
+                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -1029,10 +1050,10 @@ class ProvDeployK8sCortxLib:
                 samples = 5
             resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                    num_clients=clients,
-                                   num_sample=samples, obj_name_pref="test-object-",
+                                   num_sample=samples, obj_name_pref=f"test-object-{workload}",
                                    obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix,
-                                   end_point=endpoint_url)
+                                   end_point=endpoint_url, validate_certs=S3_CFG["validate_certs"])
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -1210,17 +1231,16 @@ class ProvDeployK8sCortxLib:
                 if not resp[0]:
                     LOGGER.debug("Did not get expected response: %s", resp)
                 ext_ip = resp[1]
-                port = resp[3]
-                ext_port_ip = self.deploy_cfg['protocol'].format(ext_ip, port)
+                port = resp[2]
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+":{}".format(port)
                 LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
             else:
                 LOGGER.info("Configure HAproxy on client")
-                ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
-                                                        master_node_list[0].username,
-                                                        master_node_list[0].password,
-                                                        eth1_ip)
-                LOGGER.info("Kill residue haproxy -f process if any")
-                self.kill_all_process_instance("haproxy -f")
+                ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                           master_node_list[0].username,
+                                                           master_node_list[0].password,
+                                                           eth1_ip, self.deploy_cfg['iface'])
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
             LOGGER.info("Step to Create S3 account and configure credentials")
             if self.s3_engine == "2":
                 resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
