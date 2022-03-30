@@ -2147,7 +2147,7 @@ class TestIamUserRGW():
 
         self.log.info("Step-2: Creating IAM user with same name as tenant")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
-        payload.update({"tenant": uid})
+        payload.update({"tenant": resp.json()["user_id"]})
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed"
