@@ -33,6 +33,7 @@ from commons.constants import Rest as const
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import config_utils
 from commons.exceptions import CTException
 from config import CSM_REST_CFG
 from libs.csm.csm_interface import csm_api_factory
@@ -2230,9 +2231,9 @@ class TestIamUserRGW():
         system_utils.create_file(file_path_upload, size)
         resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
                     file_path=file_path_upload)
-
+        new_skey = config_utils.gen_rand_string(length=const.S3_ACCESS_LL)
         payload = {"access_key": usr["keys"][0]["access_key"],
-                    "secret_key":"sdss"}
+                    "secret_key":new_skey}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.OK, "PATCH request failed."
         resp = resp.json()
