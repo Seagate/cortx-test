@@ -26,7 +26,6 @@ from http import HTTPStatus
 import os
 from random import SystemRandom
 import pytest
-
 from commons import configmanager
 from commons import cortxlogging
 from commons import commands as common_cmd
@@ -34,12 +33,13 @@ from commons.constants import Rest as const
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import config_utils
+from commons.exceptions import CTException
 from config import CSM_REST_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
-
 
 class TestIamUser():
     """REST API Test cases for IAM users"""
@@ -2125,6 +2125,192 @@ class TestIamUserRGW():
         diff_items = self.csm_obj.verify_caps(init_cap, get_resp.json()["caps"])
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38971')
+    def test_38971(self):
+        """
+        Verify create IAM user with uid same as tenant
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        uid = resp.json()["tenant"] + "$" + resp.json()["user_id"]
+        self.created_iam_users.add(uid)
+
+        self.log.info("Step-2: Creating IAM user with same name as tenant")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        payload.update({"tenant": resp.json()["user_id"]})
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "Status code check failed"
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38969')
+    def test_38969(self):
+        """
+        Verify PATCH iam user request for access key that belongs to another user.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr1 = resp.json()
+        uid1 = usr1["tenant"] + "$" + usr1["user_id"]
+        self.created_iam_users.add(uid1)
+
+        self.log.info("Step-2: Creating IAM user 2")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr2 = resp.json()
+        uid2 = usr2["tenant"] + "$" + usr2["user_id"]
+        self.created_iam_users.add(uid2)
+
+        self.log.info("Step-3: Edit IAM user with access key of user 1")
+        payload = {"access_key": usr1["keys"][0]["access_key"],
+                    "secret_key":usr1["keys"][0]["secret_key"]}
+        resp = self.csm_obj.modify_iam_user_rgw(uid2, payload)
+        assert resp.status_code == HTTPStatus.CONFLICT, "PATCH status code check failed"
+        resp = resp.json()
+        if CSM_REST_CFG["msg_check"] == "enable":
+            err_code = self.csm_conf["test_38969"]["error_code"]
+            assert int(resp["error_code"]) == err_code, "Error code check failed"
+            msg_id = self.csm_conf["test_38969"]["message_id"]
+            assert resp["message_id"] == msg_id, "Message id check failed"
+            msg = self.rest_resp_conf[err_code][msg_id][0]
+            assert resp["message"] == msg, "Message check failed"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38918')
+    def test_38918(self):
+        """
+        Verify IO operations fails with old key after secret key is modified
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr = resp.json()
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
+        akey = usr["keys"][0]["access_key"]
+        skey = usr["keys"][0]["secret_key"]
+        bucket = "testbucket"
+        test_file = "test-object.txt"
+
+        s3_obj = S3TestLib(access_key = akey, secret_key=skey)
+        resp = s3_obj.create_bucket(bucket)
+        size = SystemRandom().randrange(10, 100)
+        file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
+        if os.path.exists(file_path_upload):
+            os.remove(file_path_upload)
+        system_utils.create_file(file_path_upload, size)
+        resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
+                    file_path=file_path_upload)
+        new_skey = config_utils.gen_rand_string(length=const.S3_ACCESS_LL)
+        payload = {"access_key": usr["keys"][0]["access_key"],
+                    "secret_key":new_skey}
+        resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
+        assert resp.status_code == HTTPStatus.OK, "PATCH request failed."
+        resp = resp.json()
+        try:
+            resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
+                        file_path=file_path_upload)
+            assert True, "Put object passed with old keys."
+        except CTException as err:
+            assert "SignatureDoesNotMatch" in err.message, "Error message check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38914')
+    def test_38914(self):
+        """
+        Verify PATCH iam user request for invalid field
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user 1")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr = resp.json()
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
+        payloads = self.csm_conf["test_38914"]["payloads"]
+        for payload in payloads:
+            resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
+            assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
+            resp = resp.json()
+            if CSM_REST_CFG["msg_check"] == "enable":
+                err_code = self.csm_conf["test_38092"]["error_code"]
+                assert int(resp["error_code"]) == err_code, "Error code check failed"
+                msg_id = self.csm_conf["test_38092"]["message_id"]
+                assert resp["message_id"] == msg_id, "Message id check failed"
+                msg = self.rest_resp_conf[err_code][msg_id][3].format(list(payload.keys())[0])
+                assert resp["message"].lower() == msg.lower(), "Message check failed"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-38092')
+    def test_38092(self):
+        """
+        Verify PATCH iam user request for Invalid access key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step-1: Creating IAM user")
+        payload = self.csm_obj.iam_user_payload_rgw("valid")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
+        usr = resp.json()
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
+
+        self.log.info("Step-2: Modify IAM user with invalid access key")
+        payload = {"access_key": "",
+                    "secret_key":usr["keys"][0]["secret_key"]}
+        resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
+        resp = resp.json()
+        if CSM_REST_CFG["msg_check"] == "enable":
+            err_code = self.csm_conf["test_38092"]["error_code"]
+            assert int(resp["error_code"]) == err_code, "Error code check failed"
+            msg_id = self.csm_conf["test_38092"]["message_id"]
+            assert resp["message_id"] == msg_id, "Message id check failed"
+            msg = self.rest_resp_conf[err_code][msg_id][0]
+            assert resp["message"] == msg , "Message check failed"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
