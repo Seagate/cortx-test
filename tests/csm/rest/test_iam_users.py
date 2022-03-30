@@ -2213,7 +2213,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr = resp.json()
-        self.created_iam_users.add(usr["user_id"])
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
         akey = usr["keys"][0]["access_key"]
         skey = usr["keys"][0]["secret_key"]
         bucket = "testbucket"
@@ -2259,7 +2259,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr = resp.json()
-        self.created_iam_users.add(usr["user_id"])
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
         payloads = self.csm_conf["test_38914"]["payloads"]
         for payload in payloads:
             resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
@@ -2293,7 +2293,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr = resp.json()
-        self.created_iam_users.add(usr["user_id"])
+        self.created_iam_users.add(usr["tenant"] + "$" + usr["user_id"])
 
         self.log.info("Step-2: Modify IAM user with invalid access key")
         payload = {"access_key": "",
