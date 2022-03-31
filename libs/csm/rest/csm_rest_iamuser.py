@@ -587,7 +587,47 @@ class RestIamUser(RestTestLib):
                                           headers=header)
         self.log.info("Get IAM user request successfully sent...")
         return response
+    
+    @RestTestLib.authenticate_and_login
+    def get_iam_user_payload_rgw(self, payload: dict, auth_header=None):
+        """
+            Get IAM user info for given uid.
+        """
+        self.log.info("Creating IAM user Get request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + payload["uid"]
 
+        if auth_header is not None:
+            response = self.restapi.rest_call("get", endpoint=endpoint, json_dict=None,
+                                              headers=None)
+            self.log.info("IAM user request successfully sent...")
+        else:
+            response = self.restapi.rest_call("get", endpoint=endpoint, json_dict=payload,
+                                              headers=self.headers)
+            self.log.info("IAM user request successfully sent...")
+        return response
+    
+    @RestTestLib.authenticate_and_login
+    def delete_iam_user_payload_rgw(self, uid, payload: dict, auth_header=None):
+        """
+        Delete IAM user for given payload.
+        """
+        self.log.info("Creating IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        if payload is not None:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                              headers=self.headers)
+            self.log.info("IAM user request successfully sent...")
+        else:
+            if auth_header is not None:
+                response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=None,
+                                                  headers=None)
+                self.log.info("IAM user request successfully sent...")
+            else:
+                response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=None,
+                                                  headers=self.headers)
+                self.log.info("IAM user request successfully sent...")
+        return response
+    
     @RestTestLib.authenticate_and_login
     def add_key_to_iam_user(self, **kwargs):
         """
@@ -614,7 +654,25 @@ class RestIamUser(RestTestLib):
                                           headers=self.headers)
         self.log.info("Adding key to IAM user request successfully sent...")
         return response
-
+    
+    @RestTestLib.authenticate_and_login
+    def create_iam_user_keys_rgw(self, payload: dict, authHeader=None):
+        """
+          Create IAM user keys for user.
+        """
+        self.log.info("Create IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_keys_endpoint"]
+        self.log.info("endpoint: %s", endpoint)
+        if authHeader is not None:
+            response = self.restapi.rest_call("put", endpoint=endpoint, json_dict=payload,
+                                              headers=authHeader)
+            return response.status_code,
+        else:
+            response = self.restapi.rest_call("put", endpoint=endpoint, json_dict=payload,
+                                              headers=self.headers)
+            self.log.info("Get IAM user request successfull...")
+        return response
+    
     def validate_added_deleted_keys(self, existing_keys, new_keys, added=True):
         """
         To validate if new keys are added or deleted properly
@@ -662,7 +720,25 @@ class RestIamUser(RestTestLib):
                                           headers=self.headers)
         self.log.info("Remove key from IAM user request successfully sent...")
         return response
-
+    
+    @RestTestLib.authenticate_and_login
+    def delete_iam_user_keys_rgw(self, payload: dict, authHeader=None):
+        """
+          delete IAM user keys for user.
+        """
+        self.log.info("Create IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_keys_endpoint"]
+        self.log.info("endpoint: %s", endpoint)
+        if authHeader is not None:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                              headers=authHeader)
+            return response.status_code,
+        else:
+            response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
+                                              headers=self.headers)
+            self.log.info("Get IAM user request successfull...")
+        return response
+    
     def verify_create_iam_user_rgw(
             self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
         """
@@ -705,6 +781,24 @@ class RestIamUser(RestTestLib):
         response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
+        return response
+    
+    @RestTestLib.authenticate_and_login
+    def modify_iam_user_keys_rgw(self, uid, payload: dict, auth_header=None):
+        """
+            Modify IAM user info.
+        """
+        self.log.info("Creating IAM user request....")
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+
+        if auth_header is not None:
+            response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=None,
+                                              headers=None)
+            self.log.info("IAM user request successfully sent...")
+        else:
+            response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
+                                              headers=self.headers)
+            self.log.info("IAM user request successfully sent...")
         return response
 
     def iam_user_patch_random_payload(self):
@@ -771,3 +865,4 @@ class RestIamUser(RestTestLib):
             value = cap_values[value_index]
             random_cap = random_cap + cap_keys[index] + "=" + value + ";"
         return random_cap[:-1]
+
