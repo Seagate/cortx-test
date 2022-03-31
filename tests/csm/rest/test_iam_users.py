@@ -163,6 +163,7 @@ class TestIamUserRGW():
         cls.user_id = None
         cls.display_name = None
         cls.test_file = None
+        cls.test_file_path = None
         cls.file_size = cls.cryptogen.randrange(10, 100)
         cls.log.info("[END] CSM setup class completed.")
 
