@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=redefined-outer-name, import-error, broad-except, unspecified-encoding
+# pylint: disable=protected-access, inconsistent-return-statements
 
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -36,37 +38,39 @@ from ha import const
 from ha.util.message_bus import MessageBus
 from ha.core.system_health.const import HEALTH_STATUSES
 
-docker_env_file = '/.dockerenv'
-_index = 'cortx'
-cluster_config_file = '/etc/cortx/cluster.conf'
-config_file_format = 'yaml'
-_events_key = 'events'
-_source_key = 'source'
-_node_id_key = 'node_id'
-_resource_type_key = 'resource_type'
-_resource_id_key = 'resource_id'
-_resource_status_key = 'resource_status'
-_specific_info_key = 'specific_info'
-_delay_key = 'delay'
+DOCKER_ENV_FILE = '/.dockerenv'
+_INDEX = 'cortx'
+CLUSTER_CONFIG_FILE = '/etc/cortx/cluster.conf'
+CONFIG_FILE_FORMAT = 'yaml'
+_EVENTS_KEY = 'events'
+_SOURCE_KEY = 'source'
+_NODE_ID_KEY = 'node_id'
+_RESOURCE_TYPE_KEY = 'resource_type'
+_RESOURCE_ID_KEY = 'resource_id'
+_RESOURCE_STATUS_KEY = 'resource_status'
+_SPECIFIC_INFO_KEY = 'specific_info'
+_DELAY_KEY = 'delay'
+
 
 def is_container_env() -> bool:
     """Returns True if environment is docker container else False."""
-    docker_env_file_path = pathlib.Path(docker_env_file)
+    docker_env_file_path = pathlib.Path(DOCKER_ENV_FILE)
     if docker_env_file_path.exists():
         return True
     return False
 
+
 def get_data_nodes() -> list:
-    """
-    Fetches data node ids using HA wrapper class and displays the result.
+    """Fetches data node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
 
     Returns: list of node ids
     """
-    data_node_ids = ConftStoreSearch.get_data_pods(_index)
+    data_node_ids = ConftStoreSearch.get_data_pods(_INDEX)
     return data_node_ids
+
 
 def get_server_nodes() -> list:
     """
@@ -77,8 +81,9 @@ def get_server_nodes() -> list:
 
     Returns: list of node ids
     """
-    server_node_ids = ConftStoreSearch.get_server_pods(_index)
+    server_node_ids = ConftStoreSearch.get_server_pods(_INDEX)
     return server_node_ids
+
 
 def get_disks(args: argparse.Namespace) -> None:
     """
@@ -88,8 +93,9 @@ def get_disks(args: argparse.Namespace) -> None:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    disk_ids = ConftStoreSearch.get_disk_list(_index, args.node_id)
+    disk_ids = ConftStoreSearch.get_disk_list(_INDEX, args.node_id)
     print(disk_ids)
+
 
 def get_cvgs(args: argparse.Namespace) -> None:
     """
@@ -99,9 +105,11 @@ def get_cvgs(args: argparse.Namespace) -> None:
     conf_store: ConftStoreSearch object
     node_id: machine_id value
     """
-    cvg_ids = ConftStoreSearch.get_cvg_list(_index, args.node_id)
+    cvg_ids = ConftStoreSearch.get_cvg_list(_INDEX, args.node_id)
     print(cvg_ids)
 
+
+# pylint: disable=too-many-locals
 def publish(args: argparse.Namespace) -> None:
     """
     publishes the message on the message bus.
@@ -111,23 +119,27 @@ def publish(args: argparse.Namespace) -> None:
     conf_store: ConftStoreSearch object
     """
     try:
-        with open(args.file, 'r') as fi:
-            events_dict = json.load(fi)
-            if _events_key in events_dict.keys():
+        with open(args.file, 'r') as fi_p:
+            events_dict = json.load(fi_p)
+            if _EVENTS_KEY in events_dict.keys():
                 ConfigManager.init(None)
                 MessageBus.init()
-                message_type = Conf.get(const.HA_GLOBAL_INDEX, f'FAULT_TOLERANCE{const._DELIM}message_type')
+                message_type = Conf.get(const.HA_GLOBAL_INDEX,
+                                        f'FAULT_TOLERANCE{const._DELIM}message_type')
                 message_producer = MessageBus.get_producer("health_event_generator", message_type)
-                cluster_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}cluster_id')
+                cluster_id = Conf.get(const.HA_GLOBAL_INDEX,
+                                      f'COMMON_CONFIG{const._DELIM}cluster_id')
                 site_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}site_id')
                 rack_id = Conf.get(const.HA_GLOBAL_INDEX, f'COMMON_CONFIG{const._DELIM}rack_id')
-                storageset_id = '1' # TODO: Read from config when available.
-                for _, value in events_dict[_events_key].items():
-                    resource_type = value[_resource_type_key]
-                    resource_type_list = Conf.get(const.HA_GLOBAL_INDEX, f"CLUSTER{const._DELIM}resource_type")
+                # TODO: Read from config when available.  # pylint: disable=fixme
+                storageset_id = '1'
+                for _, value in events_dict[_EVENTS_KEY].items():
+                    resource_type = value[_RESOURCE_TYPE_KEY]
+                    resource_type_list = Conf.get(const.HA_GLOBAL_INDEX,
+                                                  f"CLUSTER{const._DELIM}resource_type")
                     if resource_type not in resource_type_list:
                         raise Exception(f'Invalid resource_type: {resource_type}')
-                    resource_status = value[_resource_status_key]
+                    resource_status = value[_RESOURCE_STATUS_KEY]
                     status_supported = False
                     for status in list(HEALTH_STATUSES):
                         if resource_status == status.value:
@@ -136,31 +148,33 @@ def publish(args: argparse.Namespace) -> None:
                     if status_supported is False:
                         raise Exception(f'Invalid resource_status: {resource_status}')
                     payload = {
-                        f'{HealthAttr.SOURCE}': value[_source_key],
+                        f'{HealthAttr.SOURCE}': value[_SOURCE_KEY],
                         f'{HealthAttr.CLUSTER_ID}': cluster_id,
                         f'{HealthAttr.SITE_ID}': site_id,
                         f'{HealthAttr.RACK_ID}': rack_id,
                         f'{HealthAttr.STORAGESET_ID}': storageset_id,
-                        f'{HealthAttr.NODE_ID}': value[_node_id_key],
+                        f'{HealthAttr.NODE_ID}': value[_NODE_ID_KEY],
                         f'{HealthAttr.RESOURCE_TYPE}': resource_type,
-                        f'{HealthAttr.RESOURCE_ID}': value[_resource_id_key],
+                        f'{HealthAttr.RESOURCE_ID}': value[_RESOURCE_ID_KEY],
                         f'{HealthAttr.RESOURCE_STATUS}': resource_status
                     }
                     health_event = HealthEvent(**payload)
-                    health_event.set_specific_info(value[_specific_info_key])
+                    health_event.set_specific_info(value[_SPECIFIC_INFO_KEY])
                     print(f"Publishing health event {health_event.json}")
                     message_producer.publish(health_event.json)
-                    if _delay_key in events_dict.keys():
-                        print(f"Sleeping for {events_dict[_delay_key]} seconds")
-                        time.sleep(events_dict[_delay_key])
+                    if _DELAY_KEY in events_dict.keys():
+                        print(f"Sleeping for {events_dict[_DELAY_KEY]} seconds")
+                        time.sleep(events_dict[_DELAY_KEY])
     except Exception as err:
         sys.stderr.write(f"Health event generator failed. Error: {err}\n")
         return errno.EINVAL
 
+
 FUNCTION_MAP = {
-                '-gdt' : get_data_nodes, '--get-data-nodes': get_data_nodes,
-                '-gs' : get_server_nodes, '--get-server-nodes': get_server_nodes
+                '-gdt': get_data_nodes, '--get-data-nodes': get_data_nodes,
+                '-gs': get_server_nodes, '--get-server-nodes': get_server_nodes
                 }
+
 
 def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
     """
@@ -177,19 +191,26 @@ def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
 
     subparsers = my_parser.add_subparsers()
 
-    my_parser.add_argument('-gdt', '--get-data-nodes', action='store_true', help='Get the list of data node ids')
-    my_parser.add_argument('-gs', '--get-server-nodes', action='store_true', help='Get the list of server node ids')
+    my_parser.add_argument('-gdt', '--get-data-nodes', action='store_true',
+                           help='Get the list of data node ids')
+    my_parser.add_argument('-gs', '--get-server-nodes', action='store_true',
+                           help='Get the list of server node ids')
 
     parser_publish = subparsers.add_parser('publish', help='Publish the message')
-    parser_publish.add_argument('-f', '--file', action='store', help='input config file', required=True)
+    parser_publish.add_argument('-f', '--file', action='store', help='input config file',
+                                required=True)
     parser_publish.set_defaults(handler=publish)
 
-    parser_disks = subparsers.add_parser('get-disks', help='Displays the Disk Ids associated with the Node')
-    parser_disks.add_argument('-n', '--node-id', help='Node id for which disk id is required', required=True)
+    parser_disks = subparsers.add_parser('get-disks',
+                                         help='Displays the Disk Ids associated with the Node')
+    parser_disks.add_argument('-n', '--node-id', help='Node id for which disk id is required',
+                              required=True)
     parser_disks.set_defaults(handler=get_disks)
 
-    parser_cvgs = subparsers.add_parser('get-cvgs', help='Displays the CVG Ids associated with the Node')
-    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which cvg id is required', required=True)
+    parser_cvgs = subparsers.add_parser('get-cvgs',
+                                        help='Displays the CVG Ids associated with the Node')
+    parser_cvgs.add_argument('-n', '--node-id', help='Node id for which cvg id is required',
+                             required=True)
     parser_cvgs.set_defaults(handler=get_cvgs)
 
     args = my_parser.parse_args()
@@ -199,17 +220,17 @@ def get_args() -> (argparse.Namespace, argparse.ArgumentParser):
 if __name__ == '__main__':
     if not is_container_env():
         sys.exit('Please use this script in containerized environment')
-    option = None
+    OPTION = None
     args, parser_obj = get_args()
     Conf.init()
-    file_to_load = f'{config_file_format}://{cluster_config_file}'
-    Conf.load(_index, file_to_load)
+    file_to_load = f'{CONFIG_FILE_FORMAT}://{CLUSTER_CONFIG_FILE}'
+    Conf.load(_INDEX, file_to_load)
     _conf_store = ConftStoreSearch(conf_store_req=False)
 
     data_node_ids = get_data_nodes()
 
     if len(sys.argv) > 1:
-        option = sys.argv[1]
+        OPTION = sys.argv[1]
     else:
         parser_obj.print_help()
         sys.exit(0)
@@ -221,4 +242,4 @@ if __name__ == '__main__':
             sys.exit(1)
         args.handler(args)
     else:
-        print(FUNCTION_MAP[option]())
+        print(FUNCTION_MAP[OPTION]())

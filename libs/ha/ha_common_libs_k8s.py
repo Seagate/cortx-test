@@ -1237,7 +1237,11 @@ class HAK8s:
         if not resp[0]:
             LOGGER.error("Failed in copy file due to : %s", resp[1])
             return resp[0]
+
         try:
+            LOGGER.info("Convert script in linux compatible format")
+            node_obj.execute_cmd(cmd=common_cmd.DOS2UNIX_CMD.format(
+                common_const.MOCK_MONITOR_REMOTE_PATH))
             LOGGER.info("Changing access mode of file")
             node_obj.execute_cmd(cmd=common_cmd.FILE_MODE_CHANGE_CMD.format(
                 common_const.MOCK_MONITOR_REMOTE_PATH))
@@ -1324,8 +1328,9 @@ class HAK8s:
                     resource_type, ha_pod)
         cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH, config_json_file)
         try:
-            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                                  command_suffix=cmd, decode=True)
+            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod,
+                                  namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
+                                  decode=True)
         except IOError as error:
             LOGGER.error("Failed to publish the event due to error: %s", error)
             return False, error
