@@ -586,6 +586,11 @@ class S3TestLib(S3Lib):
             LOGGER.debug("Creating a bucket with name %s", str(bucket_name))
             create_bucket = self.create_bucket(bucket_name)
             LOGGER.debug("Created a bucket with name %s", str(bucket_name))
+            LOGGER.info("Check bucket is empty")
+            resp = self.object_list(bucket_name)
+            if resp[1]:
+                raise CTException(err.S3_SERVER_ERROR, "Bucket is not empty %s".format(resp[1]))
+            LOGGER.info("Verified that bucket was empty")
             LOGGER.debug("Creating a file %s", str(file_path))
             create_file(file_path, mb_count)
             LOGGER.debug("Created a file %s", str(file_path))
