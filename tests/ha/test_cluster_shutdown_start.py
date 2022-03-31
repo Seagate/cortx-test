@@ -179,7 +179,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29301'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: IOs are completed successfully.")
 
@@ -573,11 +573,9 @@ class TestClusterShutdownStart:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29469'
         self.s3_clean = self.s3bench_cleanup = users
-        resp = self.ha_obj.ha_s3_workload_operation(
-            s3userinfo=list(users.values())[0],
-            log_prefix=self.test_prefix,
-            skipread=True,
-            skipcleanup=True)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipread=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
@@ -590,8 +588,9 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(
-            users.values())[0], log_prefix=self.test_prefix, skipwrite=True)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipwrite=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
 
@@ -626,6 +625,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
         LOGGER.info("STEP 4: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB). "
                     "Verify READs and DI on the written data.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-29470-1'
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1009,7 +1011,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29479'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: IOs are completed successfully.")
 
@@ -1062,7 +1064,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29480'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: IOs are completed successfully.")
 
