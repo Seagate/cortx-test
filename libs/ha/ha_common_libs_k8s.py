@@ -908,13 +908,14 @@ class HAK8s:
         :rtype: Boolean, list
         """
         log_list = []
-        resp = False
+        resp = (False, "Logs not found")
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
             resp = system_utils.validate_s3bench_parallel_execution(log_path=log)
             if not resp[0] and pass_logs:
                 LOGGER.error(resp[1])
-            log_list.append(log) if (pass_logs and not resp) or (not pass_logs and resp) else log
+            log_list.append(log) if (pass_logs and not resp[0]) or \
+                                    (not pass_logs and resp[0]) else log
 
         return resp[0], log_list
 
