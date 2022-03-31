@@ -1393,12 +1393,10 @@ class ProvDeployK8sCortxLib:
         :return: True/False
         """
         LOGGER.info("Upgrading CORTX image version.")
-        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         if upgrade_type == "rolling":
-            cmd = "cd {}; {}".format(git_remote_path,
-                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+            cmd = common_cmd.UPGRADE_CLUSTER_CMD.format(git_remote_path,granular_type)
         else:
-            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
+            cmd = common_cmd.UPGRADE_COLD_CLUSTER_CMD.format(git_remote_path)
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -1542,82 +1540,23 @@ class ProvDeployK8sCortxLib:
             pointer.close()
         return True, file_path
 
-    def upgrade_software_any_pod(self, node_obj: LogicalNode, git_remote_path: str,
-                         upgrade_type: str = "rolling", granular_type: str = "None",
-                         **kwargs) -> tuple:
+    @staticmethod
+    def get_installed_version(resp):
         """
-        Helper function to Upgrade CORTX stack.
-        :param node_obj: Master node(Logical Node object)
-        :param git_remote_path: Remote path of repo.
-        :param upgrade_type: Type of upgrade (rolling or cold).
-        :param granular_type: Type to upgrade for  particular pod.
-        :param exc: Flag to disable/enable exception raising
-        :return: True/False
+        Get installed version for image
+        return : image version
         """
-        LOGGER.info("Upgrading CORTX image version.")
-        exc = kwargs.get('exc', True)
-        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        if upgrade_type == "rolling":
-            cmd = "cd {}; {}".format(git_remote_path,
-                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
-            print(cmd)
-        else:
-            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
-        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
-        if isinstance(resp, bytes):
-            resp = str(resp, 'UTF-8')
-        LOGGER.debug("".join(resp).replace("\\n", "\n"))
-        resp = "".join(resp).replace("\\n", "\n")
-        if "Error" in resp or "Failed" in resp:
-            return False, resp
-        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
-        return True, resp
+        return resp['cortx']['common']['release']['version']
 
     @staticmethod
-    def get_control_pod(node_obj) -> tuple:
-        """
-        Get list of control pods in cluster.
-        param: node_obj: Master node(Logical Node object)
-        return: True/False and pods list/failure message
-        """
-        LOGGER.info("Get list of control pods in cluster.")
-        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
-                                      " -o=custom-columns=NAME:.metadata.name",
-                                      read_lines=True)
-        control_pod_list = [pod.strip() for pod in output if common_const.CONTROL_POD_NAME_PREFIX in pod]
-        if control_pod_list is not None:
-            return True, control_pod_list
-        return False, "CONTROL PODS are not retrieved for cluster."
-
-    @staticmethod
-    def get_server_pod(node_obj) -> tuple:
-        """
-        Get list of server pods in cluster.
-        param: node_obj: Master node(Logical Node object)
-        return: True/False and pods list/failure message
-        """
-        LOGGER.info("Get list of server pods in cluster.")
-        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
-                                      " -o=custom-columns=NAME:.metadata.name",
-                                      read_lines=True)
-        server_pod_list = [pod.strip() for pod in output if common_const.SERVER_POD_NAME_PREFIX in pod]
-        if server_pod_list is not None:
-            return True, server_pod_list
-        return False, "SERVER PODS are not retrieved for cluster."
-
-    @staticmethod
-    def get_ha_pod(node_obj) -> tuple:
-        """
-        Get list of ha pod in cluster.
-        param: node_obj: Master node(Logical Node object)
-        return: True/False and pods list/failure message
-        """
-        LOGGER.info("Get list of ha pod in cluster.")
-        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
-                                      " -o=custom-columns=NAME:.metadata.name",
-                                      read_lines=True)
-        ha_pod_list = [pod.strip() for pod in output if common_const.HA_POD_NAME_PREFIX in pod]
-        if ha_pod_list is not None:
-            return True, ha_pod_list
-        return False, "HA PODS are not retrieved for cluster."
+    def compare_version(installing_version, installed_version):
+        """ 
+        Compare two version 
+        return : greater version
         
+        """
+        if(installing_version > installed_version):
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+  

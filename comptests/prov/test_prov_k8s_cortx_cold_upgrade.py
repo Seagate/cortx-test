@@ -22,9 +22,6 @@
 
 import logging
 import os
-import time
-import queue
-from threading import Thread
 import pytest
 
 from commons import commands
@@ -53,32 +50,23 @@ class TestProvK8CortxColdUpgrade:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.num_nodes = (CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
         cls.local_sol_path = cons.LOCAL_SOLUTION_PATH
-        for node in range(cls.num_nodes):
-            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
+
+        for node in cls.num_nodes: 
+            node_obj = LogicalNode(hostname=node["hostname"], 
+            username=node["username"], password=node["password"])
             cls.host_list.append(node_obj)
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+            if node["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
-    def perform_upgrade(self, exc: bool = True, output=None):
-        """Function calls upgrade and put return value in queue object."""
-        LOGGER.info("Calling upgrade.")
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   exc=exc)
-        output.put(resp)
-
-    @pytest.mark.run(order=1)
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-37357")
@@ -90,17 +78,15 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 1: Get installed version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        installed_version = resp[1]['cortx']['common']['release']['version']
+        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        # TODO : Better way to compare two versions.
         installing_version = self.cortx_all_image.split(":")[1].split("-")
         installing_version = installing_version[0] + "-" + installing_version[1]
         LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        assert installing_version > installed_version, \
-            "Installed version is higher than installing version."
+        self.deploy_lc_obj.compare_version(installing_version,installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -140,14 +126,13 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 7: Check if installed version is equals to installing version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]['cortx']['common']['release']['version']
+        new_installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
-                                   "Installing version is not equal to new installed version.")
+                                   "Installing version is equal to new installed version.")
         LOGGER.info("Step 7: Done.")
         LOGGER.info("Test Completed.")
 
-    @pytest.mark.run(order=1)
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-37352")
@@ -162,6 +147,7 @@ class TestProvK8CortxColdUpgrade:
         for output in resp:
                 output = output.split("\n")
                 resp = str(resp)
+                # TODO : Command for Crashloopbackoff state needs to be implemented
                 if("Init:ImagePullBackOf") in output[0]:
                     LOGGER.info(output)
                     LOGGER.info("Step 1: Done.")
@@ -169,17 +155,15 @@ class TestProvK8CortxColdUpgrade:
                     LOGGER.info("Step 2: Get installed version.")
                     resp = HAK8s.get_config_value(self.master_node_obj)
                     assert_utils.assert_true(resp[0], resp[1])
-                    installed_version = resp[1]['cortx']['common']['release']['version']
+                    installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
                     LOGGER.info("Current version: %s", installed_version)
                     LOGGER.info("Step 2: Done.")
 
                     LOGGER.info("Step 3: Check if installing version is higher than installed version.")
-                    # TODO : Better way to compare two versions.
                     installing_version = self.cortx_all_image.split(":")[1].split("-")
                     installing_version = installing_version[0] + "-" + installing_version[1]
                     LOGGER.info("Installing CORTX image verson: %s", installing_version)
-                    assert installing_version > installed_version, \
-                        "Installed version is higher than installing version."
+                    self.deploy_lc_obj.compare_version(installing_version,installed_version)
                     LOGGER.info("Step 3: Done.")
 
                     LOGGER.info("Step 4: Check cluster health.")
