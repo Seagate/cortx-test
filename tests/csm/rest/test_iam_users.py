@@ -175,6 +175,12 @@ class TestIamUserRGW():
         self.user_id = const.IAM_USER + str(int(time.time_ns()))
         self.display_name = const.IAM_USER + str(int(time.time_ns()))
         self.test_file = "test-object.txt"
+        self.test_file_path = os.path.join(TEST_DATA_FOLDER, self.test_file)
+        if os.path.exists(self.test_file_path):
+            os.remove(self.test_file_path)
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists, create a directory")
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         self.log.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -475,7 +481,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 TEST_DATA_FOLDER, self.file_size)
+                                 self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -519,7 +525,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 TEST_DATA_FOLDER, self.file_size)
+                                 self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -564,7 +570,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 TEST_DATA_FOLDER, self.file_size)
+                                 self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -605,7 +611,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 TEST_DATA_FOLDER, self.file_size)
+                                 self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
