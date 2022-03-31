@@ -22,9 +22,6 @@
 
 import logging
 import os
-import time
-import queue
-from threading import Thread
 import pytest
 
 from commons import commands
