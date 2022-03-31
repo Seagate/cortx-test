@@ -67,8 +67,8 @@ class JCloudClient:
             temp_dir = "/mnt/jjarfiles"
             if not os.path.exists(temp_dir):
                 os.mkdir(temp_dir)
-            mount_cmd = f"mount.nfs -v {nfs_path} {temp_dir}"
-            umount_cmd = f"umount -v {temp_dir}"
+            mount_cmd = commands.CMD_MOUNT.format(nfs_path, temp_dir)
+            umount_cmd = commands.CMD_UMOUNT.format(temp_dir)
             run_local_cmd(mount_cmd)
             run_local_cmd(f"yes | cp -rf {temp_dir}/*.jar {source}")
             run_local_cmd(umount_cmd)
