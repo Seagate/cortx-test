@@ -525,8 +525,8 @@ HELM_ROLLBACK = "helm rollback {} {}"
 HELM_GET_VALUES = "helm get values {}"
 
 # LC commands
-CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
-CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
