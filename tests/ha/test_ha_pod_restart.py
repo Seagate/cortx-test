@@ -2937,7 +2937,7 @@ class TestPodRestart:
         thread.daemon = True  # Daemonize thread
         thread.start()
         # TODO Need to update timing once we get stability in degraded IOs performance
-        time.sleep(200)
+        time.sleep(HA_CFG["common_params"]["degraded_wait_delay"])
         LOGGER.info("Step 6: Successfully started READs and verified DI on the written data in "
                     "background")
 
@@ -2960,9 +2960,8 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
         event.clear()
-        LOGGER.debug("Event is cleared")
         thread.join()
-        LOGGER.debug("Thread has joined.")
+        LOGGER.debug("Event is cleared and thread has joined.")
         LOGGER.info("Verifying responses from background process")
         responses = {}
         while len(responses) != 2:
@@ -2972,11 +2971,11 @@ class TestPodRestart:
         LOGGER.debug("Background S3bench responses : %s", responses)
         if not responses["pass_res"]:
             assert_utils.assert_true(False,
-                                     "No Background S3bench logs when event was cleared")
+                                     "No background IOs passed while event was cleared")
         nonbkgrd_logs = list(x[1] for x in responses["pass_res"])
         if not responses["fail_res"]:
             assert_utils.assert_true(False,
-                                     "No Background S3bench logs when event was set")
+                                     "No background IOs passed while event was set")
         bkgrd_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=nonbkgrd_logs)
         assert_utils.assert_false(len(resp[1]), "Non Background Logs which contain failures"
