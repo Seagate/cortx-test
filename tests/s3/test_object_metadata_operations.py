@@ -32,7 +32,7 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 from commons.utils.s3_utils import assert_s3_err_msg
-from commons import constants as const
+from commons import error_messages as errmsg
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib, CMN_CFG
@@ -285,7 +285,7 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-            assert_s3_err_msg(const.RGW_ERR_LONG_OBJ_NAME, const.CORTX_ERR_LONG_OBJ_NAME,
+            assert_s3_err_msg(errmsg.RGW_ERR_LONG_OBJ_NAME, errmsg.CORTX_ERR_LONG_OBJ_NAME,
                               CMN_CFG["s3_engine"], error)
         self.log.info("Create object key greater than 1024 byte long")
 
@@ -557,7 +557,7 @@ class TestObjectMetadataOperations:
                 m_key=m_key,
                 m_value=m_val)
         except CTException as error:
-            assert S3_OBJ_TST["test_8558"]["error_message"] in error.message, error.message
+            assert errmsg.S3_META_DATA_HEADER_EXCEED_ERR in error.message, error.message
         self.log.info("Update user defined metadata greater than 2 KB")
 
     @pytest.mark.parallel

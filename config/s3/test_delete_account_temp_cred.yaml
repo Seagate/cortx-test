@@ -10,35 +10,26 @@ test_4519:
   temp_access_key: "aljalkjfoiwej12324c"
   temp_secret_key: "akjhfkjahfq972rudajdakjda"
   temp_session_token: "tGM7DSpjJVGHhRc7pflI2grRf4jkINRaCvME+sDW"
-  err_message: "InvalidAccessKeyId"
 
 test_4520:
   account_name: "delacctempcred_acc_1"
   temp_access_key: "lakjdlkajfq9872dhsakj"
   temp_secret_key: "KalkjfkafIUYDuiqy2894"
   temp_session_token: "tGM7DSpjJVGHhRc7pflI2grRf4jkINRaCvME+sDW"
-  err_message: "InvalidAccessKeyId"
 
 test_4521:
-  err_message: "ExpiredCredential"
   time_duration: 1200
 
 test_4522:
   bucket_name: "delacctempcred-bkt-4522"
-  err_message: "InvalidAccessKeyId"
-
-test_4523:
-  err_message: "InvalidAccessKeyId"
 
 test_4525:
   bucket_name: "delacctempcred-bkt-4525"
-  err_message: "ExpiredToken"
   time_duration: 1200
 
 test_4526:
   time_duration: 5000
-  err_message: "MaxDurationIntervalExceeded"
 
 test_4692:
   bucket_name: "delacctempcred-bkt-4692"
-  err_message: "AccountNotEmpty"
+

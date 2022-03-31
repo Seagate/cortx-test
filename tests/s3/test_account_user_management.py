@@ -26,6 +26,7 @@ import time
 import pytest
 
 from commons.constants import const
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -274,7 +275,7 @@ class TestAccountUserManagement:
         resp = self.s3acc_obj.create_s3_account(self.account_name,
                                                 self.email_id.format(self.account_name),
                                                 self.s3acc_password)
-        assert "attempted to create an account that already exists" in resp[1], resp[1]
+        assert errmsg.ACCOUNT_ERR in resp[1], resp[1]
         self.log.info("Created another account with existing account name response %s", resp[1])
         self.accounts_list.append(self.account_name)
         self.log.info(
@@ -394,16 +395,14 @@ class TestAccountUserManagement:
         bucket_name = self.bucket_name
         self.log.info(bucket_name)
         self.log.info("Creating a bucket with name %s", str(bucket_name))
-        err_message = "InvalidAccessKeyId"
         try:
             resp = s3_user_obj.create_bucket(bucket_name)
             assert not resp[0], resp[1]
         except CTException as error:
-            assert err_message in error.message, error.message
+            assert errmsg.INVALID_ACCESSKEY_ERR in error.message, error.message
         self.log.info("Bucket with name %s is not created", str(bucket_name))
         obj_name = self.obj_name
         self.log.info("Putting object %s to bucket %s", obj_name, bucket_name)
-        err_message = "NoSuchBucket"
         try:
             respo = create_file(self.test_file_path, 1)
             self.log.info(respo)
@@ -411,9 +410,8 @@ class TestAccountUserManagement:
                 bucket_name, obj_name, self.test_file_path)
             assert resp[0], resp[1]
         except CTException as error:
-            assert err_message in error.message, error.message
-        self.log.info(
-            "Could not put object %s to bucket %s", obj_name, bucket_name)
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in error.message, error.message
+        self.log.info("Could not put object %s to bucket %s", obj_name, bucket_name)
         self.log.info("Downloading object from bucket %s", str(bucket_name))
         try:
             resp = s3_user_obj.object_download(
@@ -421,11 +419,9 @@ class TestAccountUserManagement:
             self.log.info(resp)
             assert resp[0], resp[1]
         except CTException as error:
-            assert "404" in error.message, error.message  # Forbidden
-        self.log.info(
-            "Could not download object from bucket %s", str(bucket_name))
-        self.log.info(
-            "Step 2: Performed CRUD operations with invalid user's credentials.")
+            assert errmsg.NOT_FOUND_ERRCODE in error.message, error.message  # Forbidden
+        self.log.info("Could not download object from bucket %s", str(bucket_name))
+        self.log.info("Step 2: Performed CRUD operations with invalid user's credentials.")
         self.accounts_list.append(self.account_name)
         iam_obj.delete_user(self.user_name)
         del iam_obj
@@ -626,12 +622,9 @@ class TestAccountUserManagement:
             assert not resp[0], resp[1]
         except CTException as error:
             self.log.debug(error.message)
-            assert_in(
-                "EntityAlreadyExists",
-                error.message,
-                error.message)
-        self.log.info(
-            "Could not create user with existing name %s", str(self.user_name))
+            assert_in(errmsg.DUPLICATE_USER_ERR_KEY, error.message, error.message)
+        self.log.info("Could not create user with existing name %s",
+                      str(self.user_name))
         self.users_list.append(self.user_name)
         self.log.info("END: creating user with existing name.")
 

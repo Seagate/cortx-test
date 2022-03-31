@@ -435,8 +435,8 @@ R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
 SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
-                                    SERVER_POD_NAME_PREFIX: ["s3", "hare", "utils"],
-                                    CONTROL_POD_NAME_PREFIX: ["csm", "motr", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["rgw", "hare", "utils"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
                                     HA_POD_NAME_PREFIX: ["utils"]}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
@@ -445,9 +445,12 @@ K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 K8S_PRE_DISK = "/dev/sdb"
+K8S_PEM_FILE_PATH = "/root/deploy-scripts/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/" \
+                    "ssl-cert/s3.seagate.com.pem"
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+HAPROXY_DUMMY_RGW_CONFIG = "scripts/cicd_k8s/haproxy_rgw_dummy.cfg"
 
 # Pod restore methods
 RESTORE_SCALE_REPLICAS = "scale_replicas"
@@ -466,26 +469,3 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
-
-#errors for rgw and cortx s3
-RGW_ERR_LONG_OBJ_NAME = ("An error occurred (InvalidObjectName) when calling the PutObject "
-                         "operation: Unknown")
-CORTX_ERR_LONG_OBJ_NAME = ("An error occurred (KeyTooLongError) when calling the PutObject "
-                           "operation: Your key is too long.")
-RGW_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
-                      "operation: Unknown")
-CORTX_ERR_WRONG_JSON = ("An error occurred (InvalidPart) when calling the CompleteMultipartUpload "
-                        "operation: One or more of the specified parts could not be found. "
-                        "The part might not have been uploaded, or the specified entity tag"
-                        " might not have matched the part's entity tag.")
-RGW_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyExists) when calling the "
-                              "CreateBucket operation: Unknown")
-CORTX_ERR_DUPLICATE_BKT_NAME = ("An error occurred (BucketAlreadyOwnedByYou) when calling"
-                                "the CreateBucket operation: Your previous request to create the "
-                                "named bucket succeeded and you already own it.")
-RGW_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart operation: "
-                          "Unknown")
-CORTX_ERR_NO_SUCH_UPLOAD = ("An error occurred (NoSuchUpload) when calling the UploadPart "
-                            "operation: The specified multipart upload does not exist. The "
-                            "upload ID might be invalid, or the multipart upload might have been "
-                            "aborted or completed.")

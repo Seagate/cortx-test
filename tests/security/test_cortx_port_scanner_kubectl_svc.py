@@ -71,6 +71,15 @@ def test_cortx_port_scanner_kubectl_svc():
                 LOGGER.info(port_item.port)
                 if port_item.port != "NoneType":
                     actual_ports.append(int(port_item.port))
+                if port_item.node_port is not None:
+                    # Check if node port is >= 30000 and <=32767
+                    # if node port is in this range, then it can be ignored from
+                    # adding to actual_ports. Such that those ports are expected and
+                    # will not be part of the comparison
+                    # So add the node_port only if its outside the range of 30000 to 32767
+                    if int(port_item.node_port) < 30000 or int(port_item.node_port) > 32767:
+                        actual_ports.append(int(port_item.node_port))
+
 
     # Prepare a list of actual ports
 

@@ -79,7 +79,7 @@ pipeline {
                         while IFS= read -r line; do
                            rm -rf $TARGET_ENTRY
                            echo $line > "$TARGET_ENTRY"
-                           pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line
+                           pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line --validate_certs False
                         done < $ALL_SETUP_ENTRY
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
                         . ./scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
