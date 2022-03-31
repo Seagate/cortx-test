@@ -1,24 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-#
 
 """blackbox test library which contains CRUD and related helper operations."""
 import os
@@ -26,13 +23,21 @@ import logging
 import time
 
 from commons import commands
-from commons.utils import config_utils, system_utils, assert_utils
-from commons.utils.system_utils import run_local_cmd, execute_cmd
+from commons.utils import config_utils
+from commons.utils import system_utils
+from commons.utils import assert_utils
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import execute_cmd
+from commons.utils.assert_utils import assert_true
+from commons.utils.assert_utils import assert_in
+from commons.constants import S3_ENGINE_RGW
+from config import CMN_CFG
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
-from commons.utils.assert_utils import assert_true, assert_in
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
+
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -97,14 +102,21 @@ class JCloudClient:
                     prop_dict['s3_endpoint'] = s3_endpoint
                 prop_dict['use_https'] = 'true' if S3_CFG['use_ssl'] else 'false'
                 # Skip certificate validation with https/ssl is unsupported option in jcloud/jclient
-                prop_dict['use_https'] = 'true' if S3_CFG['validate_certs'] else 'false'
 
+                if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                    prop_dict['s3_endpoint'] = s3_endpoint.split(':')[0]
+                    if S3_CFG['use_ssl']:
+                        prop_dict['s3_https_port'] = s3_endpoint.split(':')[1]
+                    else:
+                        prop_dict['s3_http_port'] = s3_endpoint.split(':')[1]
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
 
+    # pylint: disable=too-many-arguments
     @staticmethod
-    def create_cmd_format(bucket, operation, jtool=None, chunk=None):
+    def create_cmd_format(bucket, operation, jtool=None, chunk=None,
+                          access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Function forms a command to perform specified operation.
 
@@ -113,19 +125,21 @@ class JCloudClient:
         :param str operation: type of operation to be performed on s3
         :param str jtool: Name of the java jar tool
         :param bool chunk: Its accepts chunk upload, if True
+        :param access_key: Access Key for S3 operation
+        :param secret_key: Secret Key for S3 operation
         :return: str command: cli command to be executed
         """
         if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
-                ACCESS_KEY, SECRET_KEY)
+                access_key, secret_key)
             bucket_url = "s3://{}".format(bucket)
             cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
                                           aws_keys_str, "-p")
         else:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
-                ACCESS_KEY, SECRET_KEY)
+                access_key, secret_key)
             bucket_url = "s3://{}".format(bucket)
             if chunk:
                 cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
@@ -358,7 +372,7 @@ class S3CMD:
         self.s3cf_path = S3_CFG["s3cfg_path"]
         self.use_ssl = S3_CFG['use_ssl']
         self.validate_certs = S3_CFG['validate_certs']
-        self.endpoint = S3_CFG['s3_url'].strip('https://').strip('http://')
+        self.endpoint = S3_CFG["s3_url"].split('//')[1]
 
     def configure_s3cfg(self, access: str = None, secret: str = None) -> bool:
         """

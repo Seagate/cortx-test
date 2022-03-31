@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -28,6 +27,7 @@ import copy
 import json
 import pytest
 
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -131,7 +131,7 @@ class TestObjectACL:
         assert res[0], res[1]
         self.log.info("Step : Object is created:%s", obj_name)
 
-    def create_s3_acc_cortxcli(self, account_name, email_id, password):
+    def create_s3_account(self, account_name, email_id, password):
         """
         Function to create s3 Account using cortxcli tool and return account details and objects.
 
@@ -176,7 +176,7 @@ class TestObjectACL:
         email_id = "{}@seagate.com".format(self.account_name)
         self.log.info("Creating account with name %s and email_id %s",
                       account_name, email_id)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             account_name, email_id, self.s3acc_passwd)
         json_policy = test_cfg["grantee_json"]
         json_policy["Grantee"]["ID"] = result[0]
@@ -585,7 +585,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with valid custom acl xml and check get object acl and compare")
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -616,7 +616,7 @@ class TestObjectACL:
         """put object acl with a valid canonical ID."""
         self.log.info("put object acl with a valid canonical ID")
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -675,7 +675,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with valid permission ------------>> [Read]")
         permission = S3_OBJ_TST["test_3213"]["obj_acl_rd"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
@@ -709,7 +709,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with valid permission ------------>> [Write]")
         permission = S3_OBJ_TST["test_3214"]["obj_acl_wr"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -746,7 +746,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with valid permission ------------>> [Read_acp]")
         permission = S3_OBJ_TST["test_3215"]["obj_acl_rdc"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -782,7 +782,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with valid permission ------------>> [Write_acp]")
         permission = S3_OBJ_TST["test_3216"]["obj_acl_wrc"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -817,7 +817,7 @@ class TestObjectACL:
         """Put object acl with invalid permission."""
         self.log.info("put object acl with invalid permission")
         permission = S3_OBJ_TST["test_3217"]["obj_acl_rdwr"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -830,9 +830,8 @@ class TestObjectACL:
                 canonical_id,
                 permission)
         except CTException as error:
-            assert S3_OBJ_TST["test_3217"]["error_msg"] in error.message, error.message
-        self.log.info(
-            "Step 1: Invalid permission set for object%s", self.obj_name)
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
+        self.log.info("Step 1: Invalid permission set for object%s", self.obj_name)
         self.log.info("Put object acl with invalid permission")
 
     @pytest.mark.parallel
@@ -844,7 +843,7 @@ class TestObjectACL:
         """Put object acl with invalid XML structure."""
         self.log.info("put object acl with invalid XML structure")
         permission = S3_OBJ_TST["test_3218"]["obj_acl_rdwr"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
@@ -858,7 +857,7 @@ class TestObjectACL:
             self.s3_acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3218"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 1: Done setting permission for the object using XML structure")
         self.log.info("put object acl with invalid XML structure")
@@ -875,11 +874,11 @@ class TestObjectACL:
             "get-object-acl to get ACL XML and compare")
 
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_1 = result[0]
         self.log.info("Step 1: Completed creating account 1")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_2 = result[0]
         self.log.info("Step 2: Completed creating account 2")
@@ -933,7 +932,7 @@ class TestObjectACL:
         self.log.info(
             "put object acl with invalid object   [i.e object is not present]")
         permission = S3_OBJ_TST["s3_object"]["full_ctrl"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
@@ -982,7 +981,7 @@ class TestObjectACL:
                 str(time.perf_counter_ns()), str(each))
             email_id = "{}{}".format(
                 account_name, S3_OBJ_TST["test_3229"]["name_postfix"])
-            result = self.create_s3_acc_cortxcli(
+            result = self.create_s3_account(
                 account_name, email_id, self.s3acc_passwd)
             can_id = result[0]
             op_val = self.s3_acl_obj.add_grantee(
@@ -1014,7 +1013,7 @@ class TestObjectACL:
                 str(time.perf_counter_ns()), str(each))
             email_id = "{}{}".format(
                 account_name, S3_OBJ_TST["test_3230"]["name_postfix"])
-            result = self.create_s3_acc_cortxcli(
+            result = self.create_s3_account(
                 account_name, email_id, self.s3acc_passwd)
             can_id = result[0]
             op_val = self.s3_acl_obj.add_grantee(
@@ -1028,14 +1027,14 @@ class TestObjectACL:
                 str(time.perf_counter_ns()), str(101))
             email = "{}{}".format(
                 acc_name, S3_OBJ_TST["test_3230"]["name_postfix"])
-            result = self.create_s3_acc_cortxcli(
+            result = self.create_s3_account(
                 acc_name, email, self.s3acc_passwd)
             canonical_id = result[0]
             try:
                 self.s3_acl_obj.add_grantee(
                     self.bucket_name, self.obj_name, canonical_id, permission)
             except CTException as error:
-                assert S3_OBJ_TST["test_3230"]["error_msg"] in error.message, error.message
+                assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
                 self.log.error(error.message)
         self.log.info("Put object acl with 100 grants")
 
@@ -1061,7 +1060,7 @@ class TestObjectACL:
             self.s3_acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, modified_acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3231"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 1: Done setting put object acl with invalid display name and invalid id")
         self.log.info(
@@ -1082,7 +1081,7 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # User Account Variables
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         # Creating the new s3 and ACL Object
         s3_obj_1 = result[1]
@@ -1109,7 +1108,7 @@ class TestObjectACL:
         # Creating 2nd User Account
         # User Account Variables
         self.log.info("Step 3: Creating 2nd Account")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_acl_obj_2 = result[2]
         self.log.info("Step 3: Created second account")
@@ -1118,7 +1117,7 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 5: Object resp should fail with exception")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1142,7 +1141,7 @@ class TestObjectACL:
         # User Account Variables
 
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1163,7 +1162,7 @@ class TestObjectACL:
         assert obj_acl[0], obj_acl[1]
         # Creating 2nd User Account
         # User Account Variables
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3-Object
         self.log.info("Getting object from user 2")
@@ -1174,7 +1173,7 @@ class TestObjectACL:
             self.log.info("Step 5: Getting object from user 2")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1197,7 +1196,7 @@ class TestObjectACL:
             " private canned acl for put-objecct-acl and check for get-object-acl from account1")
         write_acp = S3_OBJ_TST["test_3684"]["acl_permission"]
         self.log.info("Step 1: Creating account 2 ")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id_1, self.s3acc_passwd)
         canonical_id = result[0]
         self.log.info("Step 1: Completed Creating account 2 completed")
@@ -1261,7 +1260,7 @@ class TestObjectACL:
         assert resp[0], resp[1]
         # Creating User Account 1
         self.log.info("Step 1: Creating User Account 1")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Successfully Created account 1")
         # Creating the new s3 Object
@@ -1285,7 +1284,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Get response of the get ACL is : %s", obj_acl)
         # Creating 2nd User Account and setting User Account Variables
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3-Object
         self.log.info("Getting object from user 2")
@@ -1295,7 +1294,7 @@ class TestObjectACL:
             self.log.info("Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1322,7 +1321,7 @@ class TestObjectACL:
                                         S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1352,7 +1351,7 @@ class TestObjectACL:
         self.log.info("Step 4: Verified the acl property of the object")
         # Creating 2nd User Account
         # User Account Variables
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
@@ -1361,7 +1360,7 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 6: Get object ACL response using account 2 is AccessDenied")
         object_file_resp = s3_acl_obj_2.s3_client.get_object(
@@ -1392,12 +1391,12 @@ class TestObjectACL:
             "check for get-object-acl from account1")
         write_acp = S3_OBJ_TST["test_3687"]["write_acp"]
         auth_read = S3_OBJ_TST["test_3687"]["auth_read"]
-        error_msg = S3_OBJ_TST["s3_object"]["error_msg"]
+        error_msg = errmsg.ACCESS_DENIED_ERR_KEY
         resp = system_utils.create_file(self.test_file_path,
                                         S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 2
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info(
             "Step 2: Creating Bucket and putting object into it using Account 1")
@@ -1478,7 +1477,7 @@ class TestObjectACL:
                                         S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         # Creating the new s3 Object
         s3_obj_1 = result[1]
@@ -1508,7 +1507,7 @@ class TestObjectACL:
         # User Account Variables
         self.log.info("Creating account name %s and email_id %s",
                       self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
@@ -1566,7 +1565,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Successfully Created account 1")
         canonical_id_1 = result[0]
@@ -1594,7 +1593,7 @@ class TestObjectACL:
         # Creating 2nd User Account User Account Variables
         self.log.info("Creating account with name %s and email_id %s",
                       self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_2 = result[0]
         # Creating the 2nd user s3 Object
@@ -1624,7 +1623,7 @@ class TestObjectACL:
             self.log.info(
                 "Step 6: Get ACL response for Account 2 %s", get_acl_res)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_obj_1.delete_bucket(self.bucket_name, force=True)
@@ -1656,7 +1655,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account 1 with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Successfully Created account 1")
         # Creating the new s3 Object
@@ -1687,7 +1686,7 @@ class TestObjectACL:
         # Creating 2nd User Account and setting User Account Variables
         self.log.info("Creating account name %s and email_id %s",
                       self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3 Object
         self.log.info("Getting object from user 2")
@@ -1696,7 +1695,7 @@ class TestObjectACL:
             self.log.info("Step 6: Getting the Object from user second")
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info("Step 6: Object from should return ACCESSIONED")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1731,7 +1730,7 @@ class TestObjectACL:
             "Step 1: Creating account 1 with name %s and email_id %s",
             self.account_name_1,
             self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed Creating account 1")
         # Creating the new s3 Object
@@ -1762,7 +1761,7 @@ class TestObjectACL:
         # Creating 2nd User Account and set User Account Variables
         self.log.info("Creating account name %s and email_id %s",
                       self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         # Creating the 2nd user s3 Object
         s3_acl_obj_2 = result[2]
@@ -1770,7 +1769,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info("Step 6: Done getting object ACL from user 2")
         resp = s3_obj_1.bucket_list()[1]
         if self.bucket_name in resp:
@@ -1804,7 +1803,7 @@ class TestObjectACL:
             "Step 1: Creating account 1 with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
         # User Account Variables
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         can_id_usr_1 = result[0]
         # Creating the new s3 Object
@@ -1813,7 +1812,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Creating account 2 with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         can_id_usr_2 = result[0]
         self.log.info("Step 2: Successfully Created account 2")
@@ -1869,7 +1868,7 @@ class TestObjectACL:
                 self.bucket_name, self.obj_name)
             assert not get_usr_obj[0]
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3_acl_obj_1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(can_id_usr_1))
@@ -1907,7 +1906,7 @@ class TestObjectACL:
             self.account_name_1, self.email_id_1)
         # User Account Variables
 
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         can_id_usr_1 = result[0]
         # Creating the new s3 Object
@@ -1917,7 +1916,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Creating account 2 with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         can_id_usr_2 = result[0]
         self.log.info("Step 2: Successfully Created account 2")
@@ -1973,7 +1972,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3_acl_obj_1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(can_id_usr_1))
@@ -2003,7 +2002,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1 : Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2051,7 +2050,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Successfully created the account")
         self.log.info(
@@ -2098,7 +2097,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2147,7 +2146,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2196,7 +2195,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2245,7 +2244,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2294,7 +2293,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2341,7 +2340,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Completed creating account")
         self.log.info(
@@ -2386,7 +2385,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info(
             "Step 2: Creating bucket using %s account credentials",
@@ -2434,7 +2433,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Account was Created Successfully")
         self.log.info(
@@ -2558,7 +2557,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result[0]
         s3_obj_1 = result[1]
@@ -2566,7 +2565,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result[0]
         s3obj_user2 = result[2]
@@ -2604,7 +2603,7 @@ class TestObjectACL:
         try:
             s3_acl_obj_1.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj_1.put_object_with_acl(
                 self.bucket_name,
@@ -2612,7 +2611,7 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_3498"]["auth_read"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object ACL operation should fail with exception and"
             "error message was verified")
@@ -2646,7 +2645,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result[0]
         s3obj_user1 = result[1]
@@ -2654,7 +2653,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result[0]
         s3obj_user2 = result[2]
@@ -2702,7 +2701,7 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_3499"]["auth_read"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         s3acl_user1.put_bucket_acl(
             bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -2738,7 +2737,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3obj_user = result[1]
         s3acl_user = result[2]
@@ -2802,7 +2801,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             self.account_name_1,
             self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3obj_user = result[1]
         s3acl_user = result[2]
@@ -2860,7 +2859,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Step 1: Account was created")
         acl_obj = result[2]
@@ -2911,7 +2910,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -2959,7 +2958,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3007,7 +3006,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3058,7 +3057,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3109,7 +3108,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3159,7 +3158,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3209,7 +3208,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
@@ -3260,7 +3259,7 @@ class TestObjectACL:
             self.test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         acl_obj = result[2]
@@ -3292,10 +3291,10 @@ class TestObjectACL:
             acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, modified_acl)
         except CTException as error:
-            assert S3_OBJ_TST["test_3552"]["error_msg"] in error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 3: Exception was raised while adding invalid ACP with error message : %s",
-            S3_OBJ_TST["test_3552"]["error_msg"])
+            errmsg.S3_INVALID_ACL_ERR)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3321,7 +3320,7 @@ class TestObjectACL:
             self.test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         acl_obj = result[2]
@@ -3382,7 +3381,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         self.log.info("Step 1: Account was created")
@@ -3413,11 +3412,10 @@ class TestObjectACL:
                 canonical_id,
                 S3_OBJ_TST["test_3554"]["permission_2"])
         except CTException as error:
-            assert S3_OBJ_TST["test_3554"]["error_msg"] in \
-                error.message, error.message
+            assert errmsg.S3_INVALID_ACL_ERR in error.message, error.message
         self.log.info(
             "Step 4: Put full control and private ACL to object was handled with error message: %s",
-            S3_OBJ_TST["test_3554"]["error_msg"])
+            errmsg.S3_INVALID_ACL_ERR)
         self.log.info("Add canned ACL private in request body along with "
                       "FULL_CONTROL ACL grant permission in request body")
 
@@ -3437,14 +3435,14 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info(
             "Step 1: Creating account 2 with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Successfully created account 1 and 2")
@@ -3473,10 +3471,10 @@ class TestObjectACL:
                 self.test_file_path,
                 acl=S3_OBJ_TST["test_159"]["permission"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object failure was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3499,14 +3497,14 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
@@ -3535,10 +3533,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_170"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -3564,13 +3562,13 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Account were created successfully")
@@ -3625,10 +3623,10 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 7: Get object ACL was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         # Cleanup
         resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
         assert_utils.assert_true(resp[0], resp[1])
@@ -3659,14 +3657,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         # Creating 2nd User Account and User Account Variables
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         can_id_2 = result[0]
         s3obj_user2 = result[2]
@@ -3722,10 +3720,10 @@ class TestObjectACL:
         try:
             acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 7: Get Object ACL was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         # Cleanup
         resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
         assert_utils.assert_true(resp[0], resp[1])
@@ -3756,7 +3754,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
@@ -3804,7 +3802,7 @@ class TestObjectACL:
         self.log.info(
             "Step 4: Done Get object-acl on above object and verify from account 1")
         self.log.info("Step 5 : Switch to Account 2")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_tag_obj_2 = result[3]
         self.log.info("Step 5 : Done Switch to Account 2")
@@ -3845,7 +3843,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
@@ -3881,7 +3879,7 @@ class TestObjectACL:
         self.log.info("Step 2: Done verify the object tags created")
         self.log.info(
             "Step 3: Apply grant FULL_CONTROL permission to account2")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
@@ -3935,7 +3933,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
@@ -3970,7 +3968,7 @@ class TestObjectACL:
         assert S3_OBJ_TST["test_421"]["value"] in resp[1][0]["Value"], resp[1]
         self.log.info("Step 2: Done verify the object tags created")
         self.log.info("Step 3: Apply grant WRITE permission to account2")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
@@ -3993,7 +3991,7 @@ class TestObjectACL:
         try:
             s3_tag_obj_2.get_object_tags(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 6: Done After switching to account2 perfrom get-object-tagging ")
         resp = s3_obj_1.bucket_list()[1]
@@ -4024,7 +4022,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Create tags on existing object using s3api put-object-tagging from account1")
         # Creating User Account 1
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         self.log.info("Successfully Created account 1")
         # Creating the new s3 Object
@@ -4058,7 +4056,7 @@ class TestObjectACL:
         assert S3_OBJ_TST["test_419"]["value"] in resp[1][0]["Value"], resp[1]
         self.log.info("Step 2: Done verify the object tags created")
         self.log.info("Step 3: Apply grant READ permission to account2")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_2 = result[0]
         s3_tag_obj_2 = result[3]
@@ -4137,7 +4135,7 @@ class TestObjectACL:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
     @pytest.mark.sanity
-    @pytest.mark.tags("TEST-17181")
+    @pytest.mark.tags("TEST-7572")
     def test_put_object_acl_public_read_write_169(self):
         """Put-object-acl from cross account on obj with public-read-write canned-acl permission."""
         self.log.info(
@@ -4150,14 +4148,14 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
@@ -4184,10 +4182,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_169"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4212,14 +4210,14 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
@@ -4246,10 +4244,10 @@ class TestObjectACL:
                 self.obj_name,
                 acl=S3_OBJ_TST["test_167"]["can_object_acl"])
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Put Object response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4278,14 +4276,14 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj = result[2]
         s3obj_user = result[1]
         self.log.info(
             "Step 1 : Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3obj_user2 = result[2]
         self.log.info("Step 1: Accounts was created successfully")
@@ -4307,10 +4305,10 @@ class TestObjectACL:
         try:
             s3obj_user2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Get object ACL response was handled with error message : %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3obj_user.bucket_list()[1]
         if self.bucket_name in resp:
             s3obj_user.delete_bucket(self.bucket_name, force=True)
@@ -4334,7 +4332,7 @@ class TestObjectACL:
             "STARTED:put object in account1 and give read-acp permissions "
             "to account2 and get-object-acl details")
         permission = S3_OBJ_TST["test_286"]["obj_acl_rdc"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         canonical_id = result[0]
         acl_obj_2 = result[2]
@@ -4366,7 +4364,7 @@ class TestObjectACL:
         """put object in account1 and get-object-acl details for that object."""
         self.log.info(
             "STARTED:put object in account1 and get-object-acl details for that object")
-        self.create_s3_acc_cortxcli(
+        self.create_s3_account(
             self.account_name,
             self.email_id,
             self.s3acc_passwd)
@@ -4400,7 +4398,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
@@ -4408,7 +4406,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
@@ -4468,14 +4466,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id = result[0]
         self.log.info("Step 1: Created two accounts successfully")
@@ -4493,11 +4491,11 @@ class TestObjectACL:
                 obj_permission)
         except CTException as error:
             self.log.info(error.message)
-            assert test_3454_cfg["err_message"] in error.message, error.message
+            assert errmsg.S3_OBJ_ACL_INVALID_ARGUMENT_ERR in error.message, error.message
         self.log.info(
             "Step 4: Setting a %s permission to an object for second account"
             " with invalid canonical id failed with %s",
-            obj_permission, test_3454_cfg["err_message"])
+            obj_permission, errmsg.S3_OBJ_ACL_INVALID_ARGUMENT_ERR)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4526,7 +4524,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
@@ -4534,10 +4532,10 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_test_obj3 = result[1]
         self.log.info("Step 1: Created three accounts successfully")
@@ -4574,10 +4572,10 @@ class TestObjectACL:
             s3_test_obj3.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4606,7 +4604,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
@@ -4614,7 +4612,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
@@ -4651,10 +4649,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4683,7 +4681,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
@@ -4691,7 +4689,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
@@ -4728,10 +4726,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4760,7 +4758,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
@@ -4768,7 +4766,7 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id, s3_test_obj2, s3_acl_obj2, _ = result
         self.log.info("Step 1: Created two accounts successfully")
@@ -4805,10 +4803,10 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 4: Retrieving an object using second account failed with %s",
-            S3_OBJ_TST["s3_object"]["error_msg"])
+            errmsg.ACCESS_DENIED_ERR_KEY)
         resp = s3_test_obj1.bucket_list()[1]
         if self.bucket_name in resp:
             s3_test_obj1.delete_bucket(self.bucket_name, force=True)
@@ -4834,14 +4832,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
@@ -4916,14 +4914,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
@@ -4968,12 +4966,12 @@ class TestObjectACL:
                 self.bucket_name, self.obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for second account",
             obj_permission)
@@ -5003,14 +5001,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
@@ -5052,13 +5050,13 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         try:
             s3_acl_obj2.put_object_canned_acl(
                 self.bucket_name, self.obj_name, grant_full_control=email)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == obj_permission, resp[1]
@@ -5091,14 +5089,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_test_obj2 = result[1]
         s3_acl_obj2 = result[2]
@@ -5140,7 +5138,7 @@ class TestObjectACL:
             s3_test_obj2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         resp = s3_acl_obj2.put_object_canned_acl(
             self.bucket_name, self.obj_name, grant_read=email)
         assert resp[0], resp[1]
@@ -5148,7 +5146,7 @@ class TestObjectACL:
             s3_acl_obj2.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
         self.log.info(
             "Step 5: Verified that %s permission is set for "
             "second account successfully", obj_permission)
@@ -5175,14 +5173,14 @@ class TestObjectACL:
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_1, self.email_id_1)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         s3_acl_obj1 = result[2]
         s3_test_obj1 = result[1]
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2, self.email_id_2)
-        self.create_s3_acc_cortxcli(
+        self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         self.log.info("Step 1: Created two accounts successfully")
         self.create_bucket_obj(self.bucket_name, self.obj_name, s3_test_obj1)
@@ -5275,7 +5273,7 @@ class TestObjectACL:
                 access_control_policy=obj_acl_json)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["test_3228"]["err_msg"] in error.message, error.message
+            assert errmsg.S3_BKT_SPECIAL_CHARACTER_ERR in error.message, error.message
             self.log.info(
                 "Step 1: Invalid JSON failed with "
                 "error: %s",
@@ -5298,7 +5296,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             self.account_name,
             self.email_id)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         json_policy = test_cfg["json_policy"]
         json_policy["Owner"]["ID"] = result[0]
@@ -5355,7 +5353,7 @@ class TestObjectACL:
             "STARTED: change account (to account2) and get object which is created by account1")
         self.log.info("Creating account with name %s and email_id %s",
                       self.account_name, self.email_id)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
@@ -5364,7 +5362,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5390,7 +5388,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5439,7 +5437,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5466,7 +5464,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 1: get object using acc 2 failed with err message: %s",
                 error.message)
@@ -5491,7 +5489,7 @@ class TestObjectACL:
             "Creating account with name %s and email_id %s",
             self.account_name_2,
             self.email_id_2)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_obj_2 = result[1]
         self.log.info("Step 1: Put canned ACL for the Existing Object")
@@ -5507,7 +5505,7 @@ class TestObjectACL:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
         except CTException as error:
             self.log.error(error.message)
-            assert S3_OBJ_TST["s3_object"]["error_msg"] in error.message, error.message
+            assert errmsg.ACCESS_DENIED_ERR_KEY in error.message, error.message
             self.log.info(
                 "Step 2: get object using acc 2 failed with err message: %s",
                 error.message)

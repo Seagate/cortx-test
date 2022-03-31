@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -50,6 +49,7 @@ from scripts.s3_bench import s3bench
 class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     """S3 Account User Management delete/view s3 account,create/regenerate access key test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -165,13 +165,14 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=S3_CFG["s3b_url"],
+            end_point=S3_CFG["s3_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
             obj_size=obj_size,
             duration=duration,
-            log_file_prefix=log_file_prefix)
+            log_file_prefix=log_file_prefix,
+            validate_certs=S3_CFG["validate_certs"])
         self.log.info(resp)
         assert_utils.assert_true(os.path.exists(resp[1]), f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")
@@ -307,7 +308,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         resp = s3_test_obj.delete_bucket(self.bucket_name1, force=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]
@@ -372,7 +373,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         del self.resources_dict[s3_test_obj]
         self.log.info("Step 9. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]
@@ -433,7 +434,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         del self.resources_dict[s3_test_obj]
         self.log.info("Step 9. Delete s3 account user using csm admin user.")
-        resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(self.s3acc_name1)
+        resp = self.s3acc_op_rest.delete_s3_account(self.s3acc_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Account Deleted", resp[1], resp[1])
         del self.account_dict[self.s3acc_name1]

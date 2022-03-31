@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -24,10 +23,8 @@ import time
 import random
 import logging
 import json
-import boto3
-from config import CMN_CFG
-from config import CSM_CFG
-from config import S3_CFG
+from http import HTTPStatus
+
 from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl
@@ -40,7 +37,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ManagementOPs:
-
     email_suffix = "@seagate.com"
     user_prefix = 'di_user'
 
@@ -55,7 +51,7 @@ class ManagementOPs:
         iam_users = dict()
         # Create S3 user
         iam_users.update(
-            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
+            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})  # nosec
         iam_users.update({'emailid': iam_users['user_name'] + cls.email_suffix})
         iam_users.update(
             {'password': DI_CFG["DiUserConfig"]["s3_account"]["password"]})
@@ -271,10 +267,13 @@ class ManagementOPs:
 
     @classmethod
     def create_s3_user_csm_rest(cls, user_name, passwd):
+        """Function creates s3 user using REST API.
+        """
         udict = dict()
         s3acc_obj = RestS3user()
         resp = s3acc_obj.create_an_account(user_name, passwd)
-        assert_utils.assert_equal(resp.status_code, 200, 'S3 account user not created.')
+        assert_utils.assert_equal(resp.status_code, HTTPStatus.CREATED,
+                                  'S3 account user not created.')
         acc_details = json.loads(resp.text)
         LOGGER.info("Created s3 account %s", user_name)
         udict.update({'accesskey': acc_details["access_key"]})

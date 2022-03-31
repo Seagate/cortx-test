@@ -1,32 +1,33 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test library for CSM related cluster operations."""
 import os
-import json
-import random
-import time
 import re
+import time
+
 import yaml
 
 from commons import commands as common_cmd
+from commons import constants as cons
+from commons.utils import assert_utils
+from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -65,7 +66,7 @@ class RestCsmCluster(RestTestLib):
         data = data.split("\n")
         res = False
         for line in data:
-            if "cortx-control-pod" in line:
+            if "cortx-control" in line:
                 line_found = line
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[0]
@@ -172,3 +173,76 @@ class RestCsmCluster(RestTestLib):
             if pod_name in line and 'Error' in line:
                 return True
         return False
+
+    def restart_control_pod(self, nd_obj):
+        """
+        Stop and start control pod
+        :param nd_obj: Master node object
+        :return True/False: If pod restart is successful
+        """
+        pod_name = nd_obj.get_pod_name(CONTROL_POD_NAME_PREFIX)
+        if not pod_name[0]:
+            return pod_name
+        resp = nd_obj.delete_pod(pod_name[1])
+        if not resp[0]:
+            return resp
+        self.log.info("Step : Check if control pod is re-deployed")
+        pod_up = False
+        for _ in range(3):
+            resp = nd_obj.get_pod_name(CONTROL_POD_NAME_PREFIX)
+            if resp[0]:
+                pod_up = True
+                break
+            time.sleep(30)
+        if not pod_up:
+            return pod_up, "Pod is not up"
+        return pod_up, "Pod is restarted"
+
+    def set_telemetry_auth(self, pod_name, csm_list_key_value, csm_rest_api=True):
+        """
+        Stop and start control pod
+        :param pod_name: Name of the pod
+        :param csm_list_key_value: CSM API key value list
+        :param csm_rest_api: True when we are not updating consul db
+        :return True/False: If able to set Telemetry Auth
+        """
+        if csm_rest_api:
+            self.nd_objs[0].execute_cmd(cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
+                pod_name, cons.CSM_CONF_PATH, cons.CSM_COPY_PATH, cons.CORTX_CSM_POD),
+                read_lines=False, exc=False)
+            resp = self.nd_objs[0].copy_file_to_local(
+                remote_path=cons.CSM_COPY_PATH, local_path=cons.CSM_COPY_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            stream = open(cons.CSM_COPY_PATH, 'r')
+            data = yaml.safe_load(stream)
+            for csm_dict in csm_list_key_value:
+                for csm_key, csm_val in csm_dict.items():
+                    url_list = csm_key.split('/')
+                    dict1 = dict(zip(range(0, len(url_list)), url_list))
+                    if len(url_list) == 3:
+                        data[dict1[0]][dict1[1]][dict1[2]] = csm_val
+                    elif len(url_list) == 2:
+                        data[dict1[0]][dict1[1]] = csm_val
+                    elif len(url_list) == 1:
+                        data[dict1[0]] = csm_val
+                    elif len(url_list) == 4:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]] = csm_val
+                    elif len(url_list) == 5:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]][dict1[4]] = csm_val
+                    elif len(url_list) == 6:
+                        data[dict1[0]][dict1[1]][dict1[2]][dict1[3]][dict1[4]][dict1[5]] = csm_val
+                    else:
+                        return False, "Not able to set telemetry auth using CSM REST"
+            with open(cons.CSM_COPY_PATH, 'w') as yaml_file:
+                yaml_file.write(yaml.dump(data, default_flow_style=False))
+            yaml_file.close()
+            resp = self.nd_objs[0].copy_file_to_remote(
+                local_path=cons.CSM_COPY_PATH, remote_path=cons.CSM_COPY_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            # cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c
+            # cortx-csm-agent
+            self.nd_objs[0].execute_cmd(cmd=common_cmd.K8S_CP_TO_CONTAINER_CMD.format(
+                cons.CSM_COPY_PATH, pod_name, cons.CSM_CONF_PATH, cons.CORTX_CSM_POD),
+                read_lines=False, exc=False)
+            return True, "Able to set telemetry auth "
+        return False, "Not able to set telemetry auth using CSM REST"

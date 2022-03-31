@@ -1,35 +1,32 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """DOS Scalability Test Module."""
 
-import os
 import time
 import logging
 import pytest
 from commons import commands
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.utils import system_utils
-from commons.utils.system_utils import remove_file, run_remote_cmd
-from commons.utils.assert_utils import assert_true, assert_not_in
+from commons.utils.system_utils import run_remote_cmd
+from commons.utils.assert_utils import assert_not_in
+from commons.utils.assert_utils import assert_true
 from commons.helpers.health_helper import Health
 from scripts.s3_bench import s3bench as s3b_obj
 from config import CMN_CFG as CM_CFG
@@ -68,6 +65,7 @@ class TestDosScalability:
         cls.log.info("Step: Successfully installed S3bench tool: %s.", res)
         cls.log.info("ENDED: setup test suite operations.")
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked before each test case execution.
@@ -126,17 +124,18 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5336")
+                log_file_prefix="TEST-5336",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 400)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -172,13 +171,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5337")
+                log_file_prefix="TEST-5337",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -218,7 +218,7 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
@@ -269,13 +269,14 @@ class TestDosScalability:
                     access_key=access_key,
                     secret_key=secret_key,
                     bucket=self.bucket_name,
-                    end_point=S3_CFG['s3b_url'],
+                    end_point=S3_CFG['s3_url'],
                     num_clients=client,
                     num_sample=client,
                     obj_name_pref=self.obj_name,
                     obj_size=obj_size,
                     skip_cleanup=True,
-                    log_file_prefix="TEST-5340")
+                    log_file_prefix="TEST-5340",
+                    validate_certs=S3_CFG["validate_certs"])
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
@@ -321,13 +322,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=client,
                 num_sample=client,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5341")
+                log_file_prefix="TEST-5341",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
@@ -370,13 +372,14 @@ class TestDosScalability:
                 access_key=access_key,
                 secret_key=secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG['s3b_url'],
+                end_point=S3_CFG['s3_url'],
                 num_clients=num_clients,
                 num_sample=num_sample,
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-5308")
+                log_file_prefix="TEST-5308",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(

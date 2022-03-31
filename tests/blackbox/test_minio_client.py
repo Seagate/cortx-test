@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -188,15 +187,20 @@ class TestMinioClient:
     def test_max_bucket_2348(self):
         """Max no of buckets supported using Minion Client."""
         self.log.info("STARTED: Max no of buckets supported using Minion Client")
-        self.log.info("Step 1: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
+        self.log.info("Step 1 : Delete all existing buckets for the user")
+        resp = self.s3t_obj.delete_all_buckets()
+        self.log.info(resp)
+        assert resp[0], resp[1]
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
+        self.log.info("Step 2: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
             cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name) + self.minio_obj.validate_cert
             resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
             self.minio_bucket_list.append(bkt_name)
-        self.log.info("Step 1: Created %s buckets using minio", self.minio_cnf["no_of_buckets"])
-        self.log.info("Step 2: Verifying buckets are created")
+        self.log.info("Step 2: Created %s buckets using minio", self.minio_cnf["no_of_buckets"])
+        self.log.info("Step 3: Verifying buckets are created")
         bucket_list = self.s3t_obj.bucket_list()[1]
         for each_bucket in self.minio_bucket_list:
             assert_utils.assert_in(each_bucket, bucket_list)
@@ -206,7 +210,7 @@ class TestMinioClient:
             self.minio_bucket_list = list()
         else:
             self.log.info("Buckets are not deleted: %s", output)
-        self.log.info("Step 2: Verified that buckets are created")
+        self.log.info("Step 3: Verified that buckets are created")
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
     @pytest.mark.parallel

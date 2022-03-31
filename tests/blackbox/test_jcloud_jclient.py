@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates.
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -630,7 +629,12 @@ class TestJcloudAndJclient:
         """max no of buckets supported using jcloudclient."""
         self.log.info("STARTED: max no of buckets supported using jcloudclient")
         common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
-        self.log.info("STEP 1: Creating n buckets")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
+        resp = self.s3_test_obj.delete_all_buckets()
+        self.log.info(resp)
+        assert resp[0], resp[1]
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
+        self.log.info("STEP 2: Creating n buckets")
         for bkt in range(1000):
             bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
             self.log.info("Creating bucket with name : %s", bkt_name_str)
@@ -641,14 +645,14 @@ class TestJcloudAndJclient:
             assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp)
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
-        self.log.info("STEP 1: n buckets were created successfully")
+        self.log.info("STEP 2: n buckets were created successfully")
         bkt_lst = self.jcloud_bucket_list
-        self.log.info("STEP 2: Verifying all the buckets")
+        self.log.info("STEP 3: Verifying all the buckets")
         resp = self.s3_test_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
-        self.log.info("STEP 2: All the s3 buckets created were verified")
+        self.log.info("STEP 3: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
 
     @pytest.mark.parallel
@@ -703,7 +707,12 @@ class TestJcloudAndJclient:
         """max no of buckets supported using Jclient."""
         self.log.info("STARTED: max no of buckets supported using Jclient")
         common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
-        self.log.info("STEP 1: Creating n buckets")
+        self.log.info("Step 1 : Delete all existing buckets for the user")
+        resp = self.s3_test_obj.delete_all_buckets()
+        self.log.info(resp)
+        assert resp[0], resp[1]
+        self.log.info("Step 1 : Deleted all existing buckets for the user")
+        self.log.info("STEP 2: Creating n buckets")
         for bkt in range(1000):
             bkt_name_str = "{}-{}".format(self.bucket_name, bkt)
             self.log.info("Creating bucket with name : %s", bkt_name_str)
@@ -713,14 +722,14 @@ class TestJcloudAndJclient:
             self.jcloud_bucket_list.append(bkt_name_str)
             assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
             self.log.info("Bucket %s was created successfully", bkt_name_str)
-        self.log.info("STEP 1: n buckets were created successfully")
+        self.log.info("STEP 2: n buckets were created successfully")
         bkt_lst = self.jcloud_bucket_list
-        self.log.info("STEP 2: Verifying all the buckets")
+        self.log.info("STEP 3: Verifying all the buckets")
         resp = self.s3_test_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
-        self.log.info("STEP 2: All the s3 buckets created were verified")
+        self.log.info("STEP 3: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using Jclient")
 
     @pytest.mark.parallel

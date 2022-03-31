@@ -1,16 +1,15 @@
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -26,7 +25,6 @@ from commons import commands as cmd
 from commons.constants import const
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.commands import CMD_S3BENCH
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.health_helper import Health
 from config import CMN_CFG as CM_CFG
@@ -35,10 +33,13 @@ from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable-msg=too-many-public-methods
 
 class TestDataPathValidation:
     """Data Path Test suite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
@@ -144,30 +145,22 @@ class TestDataPathValidation:
         :return: None
         """
         self.log.info("concurrent users TC using S3bench")
-        s3bench_cmd = CMD_S3BENCH.format(
-            self.access_key,
-            self.secret_key,
-            bucket,
-            S3_CFG["s3b_url"],
-            100,
-            100,
-            obj_prefix,
-            "4Kb")
-        resp = system_utils.run_local_cmd(s3bench_cmd)
-        self.log.debug(resp)
+        res = s3bench_obj.s3bench(
+            access_key=self.access_key,
+            secret_key=self.secret_key,
+            bucket=bucket,
+            end_point=S3_CFG['s3_url'],
+            num_clients=100,
+            num_sample=100,
+            obj_name_pref=obj_prefix,
+            obj_size="4Kb",
+            log_file_prefix=obj_prefix,
+            validate_certs=S3_CFG["validate_certs"])
+        self.log.debug(res)
+        self.log_file.append(res[1])
+        resp = system_utils.validate_s3bench_parallel_execution(
+            log_dir=s3bench_obj.LOG_DIR, log_prefix=obj_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_is_not_none(resp[1], resp)
-        resp_split = resp[1].split("\\n")
-        resp_filtered = [i for i in resp_split if 'Number of Errors' in i]
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        assert_utils.assert_not_in(
-            "exit status 2", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
-        assert_utils.assert_not_in(
-            "panic", ",".join(
-                resp[1]), f"S3 IO's failed: {resp[1]}")
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_data_path
@@ -347,12 +340,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=1,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8731_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8731_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8731_s3bench_{request_load}")
@@ -406,12 +400,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=self.bucket_name,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8732_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8732_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8732_s3bench_{request_load}")
@@ -474,12 +469,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8733_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8733_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8733_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
@@ -541,12 +537,13 @@ class TestDataPathValidation:
                 access_key=self.access_key,
                 secret_key=self.secret_key,
                 bucket=bkt,
-                end_point=S3_CFG["s3b_url"],
+                end_point=S3_CFG["s3_url"],
                 num_clients=client,
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8734_s3bench_{request_load}")
+                log_file_prefix=f"TEST-8734_s3bench_{request_load}",
+                validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(
                 s3bench_obj.LOG_DIR, f"TEST-8734_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])

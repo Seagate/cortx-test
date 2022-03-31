@@ -1,18 +1,17 @@
 """Backend functions for Performance tabs"""
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -26,12 +25,11 @@ import dash_table
 import dash_html_components as html
 import plotly.graph_objs as go
 
-from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 from Performance.schemas import *
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
     sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list, \
     sort_sessions
-from Performance.mongodb_api import find_documents, count_documents
+from Performance.mongodb_api import find_documents, count_documents, get_aggregate
 from Performance.styles import style_dashtable_header, style_table_cell
 
 
@@ -321,7 +319,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
     """
     temp_data = []
     run_state = "successful"
-    added_objects = False
+    added_objects = "NA"
     skipttfb = True
     operations = ["Read", "Write"]
 
@@ -333,42 +331,46 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
         data_needed_for_query['operation'] = operation
 
         query = get_complete_schema(data_needed_for_query)
-        count = count_documents(query=query, uri=uri, db_name=db_name,
-                                collection=db_collection)
-        db_data = find_documents(query=query, uri=uri, db_name=db_name,
-                                 collection=db_collection)
+        group_query = {
+            "_id": "null",
+            "total_objs": { "$sum": "$Objects"},
+            "sum_throughput": {"$sum": "$Throughput"},
+            "sum_iops": {"$sum": "$IOPS"},
+            "avg_lat": {"$avg": "$Latency"},
+            "avg_lat_avg": {"$avg": "$Latency.Avg"},
+            "run_state": { "$addToSet": "$Run_State"},
+            "avg_ttfb_avg": {"$avg": "$TTFB.Avg"},
+            "avg_ttfb_99p": {"$avg": "$TTFB.Avg"},
+            }
 
-        if not added_objects:
-            try:
-                num_objects = int(db_data[0]['Objects'])
-            except IndexError:
-                num_objects = "NA"
-            except KeyError:
-                num_objects = "NA"
+        cursor = get_aggregate(query=query, group_query=group_query, uri=uri, db_name=db_name,
+                        collection=db_collection)
+        if not cursor:
+            cursor = {
+            "_id": "null", "total_objs": "NA", "sum_throughput": "NA", "sum_iops": "NA",
+            "avg_lat": "NA", "avg_lat_avg": "NA", "run_state": "NA", "avg_ttfb_avg": "NA",
+            "avg_ttfb_99p": "NA"}
 
-            temp_data.append(num_objects)
-            added_objects = True
+        if cursor['total_objs'] != "NA":
+            added_objects = cursor['total_objs']
+        if 'failed' in cursor['run_state']:
+            run_state = 'failed'
 
-        try:
-            if "Run_State" in db_data[0].keys() and db_data[0]['Run_State'].lower() == "failed":
-                run_state = "failed"
-        except IndexError:
-            run_state = "successful"
-
-        temp_data.append(get_data(count, db_data, "Throughput", 1))
-        temp_data.append(get_data(count, db_data, "IOPS", 1))
+        temp_data.append(round_off(cursor['sum_throughput']))
+        temp_data.append(round_off(cursor['sum_iops']))
         if data_needed_for_query["name"] == 'Hsbench':
-            temp_data.append(get_data(count, db_data, "Latency", 1))
+            temp_data.append(round_off(cursor['avg_lat']))
         elif data_needed_for_query["name"] == 'S3bench':
-            temp_data.append(get_average_data(count, db_data, "Latency", "Avg", 1000))
+            temp_data.append(round_off(cursor['avg_lat_avg']*1000))
             if skipttfb:
-                temp_data.append(get_average_data(count, db_data, "TTFB", "Avg", 1000))
-                temp_data.append(get_average_data(count, db_data, "TTFB", "99p", 1000))
+                temp_data.append(round_off(cursor['avg_ttfb_avg']*1000))
+                temp_data.append(round_off(cursor['avg_ttfb_99p']*1000))
         else:
-            temp_data.append(get_average_data(count, db_data, "Latency", "Avg", 1))
+            temp_data.append(round_off(cursor['avg_lat']))
 
         skipttfb = False
 
+    temp_data.insert(0, added_objects)
     return temp_data, run_state
 
 

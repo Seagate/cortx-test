@@ -1,23 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
 #
 
 """Python Library using boto3 module to perform multipart Operations."""
@@ -27,7 +25,6 @@ import sys
 import logging
 import threading
 from boto3.s3.transfer import TransferConfig
-from botocore.config import Config
 from libs.s3.s3_core_lib import S3Lib
 
 LOGGER = logging.getLogger(__name__)
@@ -37,10 +34,10 @@ class Multipart(S3Lib):
     """Class containing methods to implement multipart functionality."""
 
     def create_multipart_upload(self,
-            bucket_name: str = None,
-            obj_name: str = None,
-            m_key: str = None,
-            m_value: str = None) -> dict:
+                                bucket_name: str = None,
+                                obj_name: str = None,
+                                m_key: str = None,
+                                m_value: str = None) -> dict:
         """
         Request to initiate a multipart upload.
 
@@ -61,10 +58,10 @@ class Multipart(S3Lib):
         return response
 
     def upload_part(self,
-            body: str = None,
-            bucket_name: str = None,
-            object_name: str = None,
-            **kwargs) -> dict:
+                    body: str = None,
+                    bucket_name: str = None,
+                    object_name: str = None,
+                    **kwargs) -> dict:
         """
         Upload parts of a specific multipart upload.
 
@@ -159,7 +156,7 @@ class Multipart(S3Lib):
         """
         List all initiated multipart uploads.
         :param bucket: Name of the bucket.
-        :keymarker: key marker of more than >1000 mpu
+        :param keymarker: key marker of more than >1000 mpu
         :return: response.
         """
         result = self.s3_client.list_multipart_uploads(Bucket=bucket, KeyMarker=keymarker)
@@ -206,7 +203,56 @@ class Multipart(S3Lib):
 
         return response
 
+    def upload_part_copy(self,
+                         copy_source: str = None,
+                         bucket_name: str = None,
+                         object_name: str = None,
+                         **kwargs) -> dict:
+        """
+        Upload parts of a specific multipart upload.
 
+        :param copy_source: source of part copy.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :upload_id: upload id of the multipart upload
+        :part_number: part number to be uploaded
+        :**kwargs: optional params dict
+        :return:
+        """
+        content_md5 = kwargs.get("content_md5", None)
+        copy_source_range = kwargs.get("copy_source_range", "")
+        upload_id = kwargs.get("upload_id", None)
+        part_number = kwargs.get("part_number", None)
+        if copy_source_range:
+            if content_md5:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source,
+                    ContentMD5=content_md5,
+                    CopySourceRange=copy_source_range)
+            else:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source, CopySourceRange=copy_source_range)
+        else:
+            if content_md5:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source,
+                    ContentMD5=content_md5)
+            else:
+                response = self.s3_client.upload_part_copy(
+                    Bucket=bucket_name, Key=object_name,
+                    UploadId=upload_id, PartNumber=part_number,
+                    CopySource=copy_source)
+        logging.debug(response)
+
+        return response
+
+# pylint: disable=too-few-public-methods
 class ProgressPercentage:
     """Call back for sending progress"""
 
@@ -230,10 +276,10 @@ class ProgressPercentage:
 
 
 class MultipartUsingBoto(S3Lib):
-    """Multipart lib using boto3 high level multi part functionality.
-    """
+    """Multipart lib using boto3 high level multi part functionality."""
 
-    def get_transfer_config(self):
+    @staticmethod
+    def get_transfer_config():
         """Create a transfer config."""
         config = TransferConfig(multipart_threshold=1024 * 1024,
                                 max_concurrency=10,
@@ -248,9 +294,9 @@ class MultipartUsingBoto(S3Lib):
         file_path = kwargs.get('file_path')
         s3_prefix = kwargs.get('s3prefix')  # s3prefix should not start with /
         config = self.get_transfer_config()
-        assert not bucket_name
-        assert not file_path
-        assert not config
+        assert bucket_name
+        assert file_path
+        assert config
         key = os.path.split(file_path)[-1]
         if s3_prefix is not None:
             key = '/'.join([s3_prefix, key])
@@ -268,9 +314,13 @@ class MultipartUsingBoto(S3Lib):
         file_path = kwargs.get('file_path')  # Local download file path
         config = self.get_transfer_config()
         key = kwargs.get('key')  # key is s3 server side name with prefix.
-        assert not key
-        self.s3_resource.Object(bucket_name, key). \
-            download_file(file_path,
-                          Config=config,
-                          Callback=ProgressPercentage(file_path)
-                          )
+        assert key
+        try:
+            self.s3_resource.Object(bucket_name, key). \
+                download_file(file_path,
+                              Config=config,
+                              Callback=ProgressPercentage(file_path)
+                              )
+        except Exception as error:
+            LOGGER.error("Error in multipart_upload: %s", str(error))
+            raise error

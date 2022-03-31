@@ -260,6 +260,11 @@ test_32171:
     error_code: 4101
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
+test_32174:
+    new_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
+test_32178:
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
+    email_id: "test@seagate.com"
 test_32180:
     error_code: 4101
     message: "Cannot delete the last {} user"

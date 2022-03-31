@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -32,14 +31,18 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
+from commons.utils.s3_utils import assert_s3_err_msg
+from commons import error_messages as errmsg
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
-from libs.s3 import s3_test_lib
+from libs.s3 import s3_test_lib, CMN_CFG
 
+# pylint: disable=too-many-instance-attributes
 
 class TestObjectMetadataOperations:
     """"Object Metadata Operations Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -85,8 +88,6 @@ class TestObjectMetadataOperations:
         :param obj_name: Name of an object to be put to the bucket
         :param file_path: Path of the file to be created and uploaded to bucket
         :param mb_count: Size of file in MBs
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
@@ -268,10 +269,10 @@ class TestObjectMetadataOperations:
         create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
-        count_limit = random.choice(
-            range(
+        system_random = random.SystemRandom()
+        count_limit = system_random.randrange(
                 S3_OBJ_TST["test_8550"]["start_range"],
-                S3_OBJ_TST["test_8550"]["stop_range"]))
+                S3_OBJ_TST["test_8550"]["stop_range"])
         obj_key = "".join(
             random.choices(
                 string.ascii_lowercase,
@@ -284,7 +285,8 @@ class TestObjectMetadataOperations:
                 obj_key,
                 self.file_path)
         except CTException as error:
-            assert S3_OBJ_TST["test_8550"]["error_message"] in error.message, error.message
+            assert_s3_err_msg(errmsg.RGW_ERR_LONG_OBJ_NAME, errmsg.CORTX_ERR_LONG_OBJ_NAME,
+                              CMN_CFG["s3_engine"], error)
         self.log.info("Create object key greater than 1024 byte long")
 
     @pytest.mark.parallel
@@ -555,7 +557,7 @@ class TestObjectMetadataOperations:
                 m_key=m_key,
                 m_value=m_val)
         except CTException as error:
-            assert S3_OBJ_TST["test_8558"]["error_message"] in error.message, error.message
+            assert errmsg.S3_META_DATA_HEADER_EXCEED_ERR in error.message, error.message
         self.log.info("Update user defined metadata greater than 2 KB")
 
     @pytest.mark.parallel

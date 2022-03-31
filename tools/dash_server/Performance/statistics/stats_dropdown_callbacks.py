@@ -1,18 +1,17 @@
 """Performance statistics callbacks for handling dropdowns"""
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -138,17 +137,17 @@ def update_nodes_dropdown(build, release_combined, branch, current_value):
 
 
 @app.callback(
-    Output('perf_pfull_dropdown', 'options'),
-    Output('perf_pfull_dropdown', 'value'),
-    Output('perf_pfull_dropdown', 'disabled'),
+    Output('perf_clients_dropdown', 'options'),
+    Output('perf_clients_dropdown', 'value'),
+    Output('perf_clients_dropdown', 'disabled'),
     Input('perf_nodes_dropdown', 'value'),
     State('perf_release_dropdown', 'value'),
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
-    State('perf_pfull_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_percentfill_dropdown(nodes, release_combined, branch, build, current_value):
+def update_clients_dropdown(nodes, release_combined, branch, build, current_value):
     options = None
     value = None
     disabled = False
@@ -157,8 +156,48 @@ def update_percentfill_dropdown(nodes, release_combined, branch, build, current_
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
+        clients = get_distinct_keys(release, 'Count_of_Clients', {'OS': op_sys,
+                                  'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
+        clients = list(map(int, clients))
+        clients.sort()
+        if nodes:
+            options = get_dict_from_array(clients, False, 'clients')
+            if current_value in clients:
+                value = current_value
+            else:
+                value = options[-1]['value']
+            if len(clients) == 1:
+                disabled = True
+        else:
+            raise PreventUpdate
+
+    return options, value, disabled
+
+
+@app.callback(
+    Output('perf_pfull_dropdown', 'options'),
+    Output('perf_pfull_dropdown', 'value'),
+    Output('perf_pfull_dropdown', 'disabled'),
+    Input('perf_clients_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    prevent_initial_call=True
+)
+def update_percentfill_dropdown(clients, release_combined, branch, build, nodes, current_value):
+    options = None
+    value = None
+    disabled = False
+    if not all([release_combined, branch, build, nodes, clients]):  # pylint: disable=no-else-raise
+        raise PreventUpdate
+    else:
+        release = release_combined.split("_")[0]
+        op_sys = release_combined.split("_")[1]
         pfulls = get_distinct_keys(release, 'Percentage_full', {
-            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Count_of_Clients': clients })
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
             if current_value in pfulls:
@@ -182,21 +221,23 @@ def update_percentfill_dropdown(nodes, release_combined, branch, build, current_
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_custom_dropdown(pfull, release_combined, branch, build, nodes, current_value):
+def update_custom_dropdown(pfull, release_combined, branch, build, nodes, clients, current_value):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes, clients]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         custom = get_distinct_keys(release, 'Custom', {
             'OS': op_sys, 'Branch': branch,
-            'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
+            'Build': build, 'Count_of_Servers': nodes, 'Count_of_Clients': clients,
+            'Percentage_full': pfull})
         if custom:
             options = get_dict_from_array(custom, False)
             if current_value in custom:
@@ -220,22 +261,24 @@ def update_custom_dropdown(pfull, release_combined, branch, build, nodes, curren
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_iteration_dropdown(custom, release_combined, branch, build, nodes, pfull, current_value):
+def update_iteration_dropdown(custom, release_combined, branch, build, nodes, clients,
+    pfull, current_value):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, custom]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes, custom, clients]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         iterations = get_distinct_keys(release, 'Iteration', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull,  'Custom': custom})
+            'Percentage_full': pfull, 'Count_of_Clients': clients, 'Custom': custom})
         iterations.sort()
         if iterations:
             options = get_dict_from_array(iterations, True, 'itrns')
@@ -260,24 +303,26 @@ def update_iteration_dropdown(custom, release_combined, branch, build, nodes, pf
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
     State('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_sessions_dropdown(itrns, release_combined, branch, build, nodes, pfull, custom, 
+def update_sessions_dropdown(itrns, release_combined, branch, build, nodes, clients, pfull, custom,
                                 current_value):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes, itrns, clients]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         sessions = get_distinct_keys(release, 'Sessions', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
+            'Count_of_Clients': clients, 'Percentage_full': pfull, 'Iteration': itrns,
+            'Custom': custom
         })
         sessions.sort()
         if sessions:
@@ -306,25 +351,27 @@ def update_sessions_dropdown(itrns, release_combined, branch, build, nodes, pful
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_buckets_dropdown(sessions, release_combined, branch, build, nodes, pfull, custom, itrns,
-                                current_value):
+def update_buckets_dropdown(sessions, release_combined, branch, build, nodes, clients,
+                     pfull, custom, itrns, current_value):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns, sessions]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes, clients, itrns, sessions]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         buckets = get_distinct_keys(release, 'Buckets', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
+            'Count_of_Clients': clients, 'Percentage_full': pfull, 'Iteration': itrns,
+            'Custom': custom, 'Sessions': sessions
         })
         buckets = list(map(int, buckets))
         buckets.sort()
@@ -351,6 +398,7 @@ def update_buckets_dropdown(sessions, release_combined, branch, build, nodes, pf
     State('perf_branch_dropdown', 'value'),
     State('perf_build_dropdown', 'value'),
     State('perf_nodes_dropdown', 'value'),
+    State('perf_clients_dropdown', 'value'),
     State('perf_pfull_dropdown', 'value'),
     State('perf_iteration_dropdown', 'value'),
     State('perf_custom_dropdown', 'value'),
@@ -358,20 +406,20 @@ def update_buckets_dropdown(sessions, release_combined, branch, build, nodes, pf
     State('perf_bucketops_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_bucketops_dropdown(buckets, release_combined, branch,
-                              build, nodes, pfull, itrns, custom, sessions, current_value):
+def update_bucketops_dropdown(buckets, release_combined, branch, build, nodes, clients,
+ pfull, itrns, custom, sessions, current_value):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns, sessions, buckets]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes, itrns, sessions, buckets, clients]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
         op_sys = release_combined.split("_")[1]
         objsizes = get_distinct_keys(release, 'Object_Size', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench',
-            'Buckets': buckets, 'Sessions': sessions
+            'Count_of_Clients': clients, 'Percentage_full': pfull, 'Iteration': itrns,
+            'Custom': custom, 'Name': 'Hsbench', 'Buckets': buckets, 'Sessions': sessions
         })
         if objsizes:
             objsizes = sort_object_sizes_list(objsizes)

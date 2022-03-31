@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -26,18 +25,26 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import remove_file
 from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
-from commons.params import TEST_DATA_FOLDER
-from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
+from libs.s3 import s3_test_lib
+from libs.s3 import s3_tagging_test_lib
+from libs.s3 import s3_multipart_test_lib
 
 
+# pylint: disable-msg=too-many-instance-attributes
 class TestObjectTagging:
     """Object Tagging Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -417,8 +424,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9420"]["value"],
                 tag_count=S3_OBJ_TST["test_9420"]["tag_count"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9420"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info("Add more than 10 tags to an existing object")
 
     @pytest.mark.parallel
@@ -458,8 +464,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9421"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9421"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.MALFORMED_XML_ERR in str(error.message), error.message
         self.log.info(
             "Tags associated with an object must have unique tag keys.")
 
@@ -580,8 +585,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9424"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9424"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create a tag whose key is more than 128 Unicode characters in length")
 
@@ -653,8 +657,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9426"]["value"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9426"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create a tag having values more than 512 Unicode characters in length")
 
@@ -817,8 +820,7 @@ class TestObjectTagging:
                     invalid_key,
                     S3_OBJ_TST["test_9430"]["value"])
             except CTException as error:
-                assert S3_OBJ_TST["test_9430"]["error_message"] \
-                    in str(error.message), error.message
+                assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag keys having invalid special characters")
 
@@ -868,8 +870,7 @@ class TestObjectTagging:
                     S3_OBJ_TST["s3_object"]["key"],
                     invalid_value)
             except CTException as error:
-                assert S3_OBJ_TST["test_9431"]["error_message"] in \
-                    str(error.message), error.message
+                assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag values having invalid special characters")
 
@@ -1242,8 +1243,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9438"]["value"],
                 tag_count=S3_OBJ_TST["test_9438"]["tag_count"])
         except CTException as error:
-            assert S3_OBJ_TST["test_9438"]["error_message"] in str(
-                error.message), error.message
+            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Add maximum nos. of Object tags >100 using json file")
 

@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -22,23 +21,29 @@
 
 import logging
 import os
-import time
-import pytest
 import shutil
-from commons import cortxlogging
-from commons.utils import config_utils
-from commons.constants import SwAlerts as const
+import time
+from http import HTTPStatus
+import pytest
+
 from commons import constants as cons
+from commons import cortxlogging
+from commons.constants import Rest as rest_const
+from commons.constants import SwAlerts as const
+from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
-from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_stats import SystemStats
+from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ras.sw_alerts import SoftwareAlert
 
 
 class TestCsmLoad():
     """Test cases for performing CSM REST API load testing using jmeter"""
+
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
@@ -53,7 +58,6 @@ class TestCsmLoad():
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
         cls.config_chk.delete_csm_users()
-        cls.config_chk.delete_s3_users()
         user_already_present = cls.config_chk.check_predefined_csm_user_present()
         if not user_already_present:
             user_already_present = cls.config_chk.setup_csm_users()
@@ -64,10 +68,13 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
+        cls.s3user = RestS3user()
+        cls.csm_user = RestCsmUser()
 
     def setup_method(self):
-        self.log.info("Deleting older jmeter logs : %s",self.jmx_obj.jtl_log_path )
-        shutil.rmtree(self.jmx_obj.jtl_log_path)
+        self.log.info("Deleting older jmeter logs : %s", self.jmx_obj.jtl_log_path)
+        if os.path.exists(self.jmx_obj.jtl_log_path):
+            shutil.rmtree(self.jmx_obj.jtl_log_path)
 
     def teardown_method(self):
         """Teardown method
@@ -148,11 +155,36 @@ class TestCsmLoad():
         test_cfg = self.test_cfgs["test_22204"]
         jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
+
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
+        user_data = resp.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['s3_accounts'])
+        self.log.info("Existing S3 users count: %s", existing_user)
+        self.log.info("Max S3 users : %s", rest_const.MAX_S3_USERS)
+        new_s3_users = rest_const.MAX_S3_USERS - existing_user
+        self.log.info("New users to create: %s", new_s3_users)
+
+        self.log.info("Step 1: Listing all csm users")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=rest_const.SUCCESS_STATUS,
+            return_actual_response=True)
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == rest_const.SUCCESS_STATUS
+        user_data = response.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing CSM users count: %s", existing_user)
+        self.log.info("Max csm users : %s", rest_const.MAX_CSM_USERS)
+        new_csm_users = rest_const.MAX_CSM_USERS - existing_user
+        self.log.info("New users to create: %s", new_csm_users)
+        loops = min(new_s3_users, new_csm_users)
         resp = self.jmx_obj.run_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
-            loop=test_cfg["loop"])
+            loop=loops)
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -288,6 +320,6 @@ class TestCsmLoad():
             loop=test_cfg["loop"])
         assert resp, "Jmeter Execution Failed."
         err_cnt, total_cnt = self.jmx_obj.get_err_cnt(os.path.join(self.jmx_obj.jtl_log_path,
-                                                      "statistics.json"))
+                                                                   "statistics.json"))
         assert err_cnt == 0, f"{err_cnt} of {total_cnt} requests have failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)

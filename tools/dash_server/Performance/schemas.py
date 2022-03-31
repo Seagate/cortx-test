@@ -1,18 +1,17 @@
 """Performance schemas consumed by backend and essential for database"""
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -36,6 +35,7 @@ def get_common_schema(data):
         'OS': data['OS'],
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
+        'Count_of_Clients': data['clients'],
         'Percentage_full': data['pfull'],
         'Iteration': data['itrns'],
         'Custom': data['custom'],
@@ -117,7 +117,7 @@ def get_complete_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = {"$exists": False}
-    # entry['Count_of_Clients'] = data['clients'],
+    entry['Additional_op'] = {"$exists": False}
 
     return entry
 
@@ -125,7 +125,7 @@ def get_complete_schema(data):
 def get_degraded_schema(data):
     """
     function for getting complete performance schema
-    wrt database and provided data
+    wrt database and provided data for degraded cluster
     Args:
         data: data needed for query
     Returns:
@@ -137,23 +137,48 @@ def get_degraded_schema(data):
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
     entry['Cluster_State'] = data['cluster_state']
-    # entry['Count_of_Clients'] = data['clients'],
+
+    return entry
+
+
+def get_copyobject_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data for copy object
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
+    entry = get_common_schema(data)
+    entry['Build'] = data['build']
+    entry['Object_Size'] = data['objsize']
+    entry['Operation'] = data['operation']
+    entry['Name'] = data['name']
+    entry['Cluster_State'] = {"$exists": False}
+    entry['Additional_op'] = 'Copy_op'
 
     return entry
 
 
 statistics_column_headings = [
-    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
     'Read TTFB 99% (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
-    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
     'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 bucketops_headings = [
     'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
     'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
 
+copyobj_headings = [
+    'Samples', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Copy Object Throughput (MBps)', 'Copy Object IOPS',
+    'Copy Object Latency (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 def get_dropdown_labels(dropdown_type):
     """
@@ -169,6 +194,7 @@ def get_dropdown_labels(dropdown_type):
         'branch': ' Branch',
         'build': ' Build',
         'nodes': ' Nodes',
+        'clients': ' Clients',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',

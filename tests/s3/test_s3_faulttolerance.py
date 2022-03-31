@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -46,8 +45,8 @@ class TestS3FaultTolerance:
         self.s3_obj = s3_test_lib.S3TestLib()
         self.s3_m_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.fault_flg = False
-        self.bucket_name = "bkt-faulttolerance-{}".format(perf_counter_ns())
-        self.object_name = "obj-faulttolerance-{}".format(perf_counter_ns())
+        self.bucket_name = f"bkt-faulttolerance-{perf_counter_ns()}"
+        self.object_name = f"obj-faulttolerance-{perf_counter_ns()}"
         self.test_directory = os.path.join(TEST_DATA_FOLDER, "TestS3FaultTolerance")
         if not system_utils.path_exists(self.test_directory):
             system_utils.make_dirs(self.test_directory)
@@ -243,7 +242,7 @@ class TestS3FaultTolerance:
             "and results in motr failure.")
         resp = S3H_OBJ.s3server_inject_faulttolerance(enable=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4. Upload a 6MB filesize object to a bucket.")
+        self.log.info("Step 4. Upload a 6MB file size object to a bucket.")
         resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file_fallocate(self.test_file_path, "6MB")
@@ -444,7 +443,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 6: Run getobject and check the output.")
         resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        resp = self.s3_m_obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
+        resp = self.s3_m_obj.get_object(self.bucket_name,
+                                        self.test_file_path,
+                                        ranges="1048576-3145728")
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 

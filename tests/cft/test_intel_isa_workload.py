@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -93,12 +92,6 @@ class TestIntelISAIO:
         """
         self.log.info("STARTED: Setup Operations")
         self.reset_s3config = False
-        # TODO Fix
-        self.log.info("Checking if all nodes are reachable and PCS clean.")
-        for hlt_obj in self.hlt_list:
-            res = hlt_obj.check_node_health()
-            assert_utils.assert_true(res[0], res[1])
-        self.log.info("All nodes are reachable and PCS looks clean.")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -174,8 +167,7 @@ class TestIntelISAIO:
                 # TODO : restart s3 and motr services
                 self.log.info(
                     "Procedure yet to be defined for restarting services within containers")
-            self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name,
-                                                       s3t_obj=self.s3t_obj)
+        self.prov_obj.basic_io_write_read_validate(bucket_name=bucket_name, s3t_obj=self.s3t_obj)
 
     # Ordering maintained for LR2
     # Order - 1  TEST-23540
@@ -190,7 +182,7 @@ class TestIntelISAIO:
     def test_26963(self):
         """ Basic IO test
             N+K+S: 8+2+0
-            CVG’s per node : 1
+            CVG's per node : 1
             Data Devices per CVG: 7
             Metadata Device per CVG : 1
         """
@@ -205,7 +197,7 @@ class TestIntelISAIO:
         """
         S3bench IO workload test
         N+K+S: 8+2+0
-        CVG’s per node : 1
+        CVG's per node : 1
         Data Devices per CVG: 7
         Metadata Device per CVG : 1
         """
@@ -222,7 +214,7 @@ class TestIntelISAIO:
     def test_26964(self):
         """ Basic IO test
             N+K+S: 3+2+0
-            CVG’s per node : 2
+            CVG's per node : 2
             Data Devices per CVG: 3
             Metadata Device per CVG : 1
         """
@@ -237,7 +229,7 @@ class TestIntelISAIO:
         """
         S3bench IO workload test
         N+K+S: 3+2+0
-        CVG’s per node : 2
+        CVG's per node : 2
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
@@ -254,7 +246,7 @@ class TestIntelISAIO:
     def test_26967(self):
         """ Basic IO test
             N+K+S: 8+4+0
-            CVG’s per node : 2
+            CVG's per node : 2
             Data Devices per CVG: 3
             Metadata Device per CVG : 1
         """
@@ -269,7 +261,7 @@ class TestIntelISAIO:
         """
         S3bench IO workload test
         N+K+S: 8+4+0
-        CVG’s per node : 2
+        CVG's per node : 2
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
@@ -286,7 +278,7 @@ class TestIntelISAIO:
     def test_26968(self):
         """ Basic IO test
             N+K+S: 10+5+0
-            CVG’s per node : 2
+            CVG's per node : 2
             Data Devices per CVG: 3
             Metadata Device per CVG : 1
         """
@@ -301,7 +293,7 @@ class TestIntelISAIO:
         """
         S3bench IO workload test
         N+K+S: 10+5+0
-        CVG’s per node : 2
+        CVG's per node : 2
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """

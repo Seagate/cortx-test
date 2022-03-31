@@ -26,21 +26,23 @@
 ACCESS=None
 SECRET=None
 ENDPOINT=s3.seagate.com
-VERIFY_SSL='True'
-VALIDATE_CERTS='True'
+VERIFY_SSL=True
+VALIDATE_CERTS=True
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 APACHE_J_METER=apache-jmeter-5.4.1.tgz
 
-ifeq ($(VERIFY_SSL),'True')
+ifeq ($(VERIFY_SSL), True)
    ssl=--ssl
-   endpoint = https://$(ENDPOINT)
+   endpoint=https://$(ENDPOINT)
+   iam_port=9443
 else
    ssl=--no-ssl
-   endpoint = http://$(ENDPOINT)
+   endpoint=http://$(ENDPOINT)
+   iam_port=9080
 endif
 
-ifeq ($(VALIDATE_CERTS),'True')
+ifeq ($(VALIDATE_CERTS), True)
    certificate=--check-certificate
 else
    certificate=--no-check-certificate
@@ -61,6 +63,7 @@ aws-configure:
 	aws configure set plugins.endpoint awscli_plugin_endpoint
 	aws configure set s3.endpoint_url $(endpoint)
 	aws configure set s3api.endpoint_url $(endpoint)
+	aws configure set iam.endpoint_url $(endpoint):$(iam_port)
 	aws configure set default.ca_bundle $(CA_CRT)
 	aws configure set aws_access_key_id $(ACCESS)
 	aws configure set aws_secret_access_key $(SECRET)
@@ -68,6 +71,19 @@ aws-configure:
 	aws configure set output "json"
 	@echo "### configured awscli. ###"
 
+aws-configure-rgw:
+
+	@echo "### configure awscli. ###"
+	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
+	aws configure set plugins.endpoint awscli_plugin_endpoint
+	aws configure set s3.endpoint_url $(endpoint)
+	aws configure set s3api.endpoint_url $(endpoint)
+	aws configure set default.ca_bundle $(CA_CRT)
+	aws configure set aws_access_key_id $(ACCESS)
+	aws configure set aws_secret_access_key $(SECRET)
+	aws configure set region "default"
+	aws configure set output "json"
+	@echo "### configured awscli. ###"
 
 s3cmd-install:
 
@@ -103,7 +119,7 @@ s3fs-configure:
 
 	@echo "###configure s3fs in current machine###"
 	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
-	trust anchor $(CA_CRT)
+	-trust anchor $(CA_CRT)
 	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
@@ -124,7 +140,7 @@ minio-configure:
 
 	@echo "###Configure minio client in current machine###"
 	./mc config host add s3 $(endpoint) $(ACCESS) $(SECRET) --api S3v4
-	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
+	-cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
 	@echo "###configured minio client in current machine###"
 
 
@@ -145,11 +161,24 @@ jcloud-client-install:
 s3bench-install:
 
 	@echo "###Installing s3bench tool###"
-	rm -rf /root/go/src/s3bench
+	wget -O /usr/bin/s3bench https://github.com/Seagate/s3bench/releases/download/v2022-03-14/s3bench.2022-03-14
+	chmod +x /usr/bin/s3bench
+	@echo "###Installed s3bench tool###"
+
+warp-install:
+
+	@echo "###Installing warp tool###"
+	yum install -y https://github.com/minio/warp/releases/download/v0.5.5/warp_0.5.5_Linux_x86_64.rpm
+	@echo "###Installed warp tool###"
+
+hsbench-install:
+
+	@echo "###Installing hsbench tool###"
+	rm -rf /root/go/src/github.com/markhpc/hsbench
 	sudo yum install -y go
-	go get github.com/Seagate/s3bench
-	trust anchor /etc/ssl/stx-s3-clients/s3/ca.crt
-	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
+	go get github.com/markhpc/hsbench
+	cd /root/go/src/github.com/markhpc/hsbench
+	go build
 	@echo "###Installed s3bench tool###"
 
 bashrc-configure:
@@ -160,6 +189,8 @@ bashrc-configure:
 aws: aws-install aws-configure
 	@echo "### Installed & configured aws tool. ###"
 
+aws-rgw: aws-install aws-configure-rgw
+	@echo "### Installed & configured aws tool. ###"
 
 s3fs: s3fs-install s3fs-configure
 	@echo "### Installed & configured s3fs tool. ###"
@@ -191,7 +222,10 @@ apache-jmeter-install:
 	@echo "###Installed apache jmeter in current machine###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install bashrc-configure
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install warp-install apache-jmeter-install bashrc-configure
+	@echo "### All tools are installed & configured. ###"
+
+all-rgw: clean aws-rgw s3fs s3cmd minio jcloud-client-install s3bench-install warp-install apache-jmeter-install bashrc-configure
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -212,10 +246,12 @@ clean:
 help :
 
 	@echo "all: Install & configure tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make all --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "all-rgw: Install & configure tools like aws-rgw, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make all --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey> endpoint=<IP:PORT>"
 	@echo "clean: Remove installed tools like s3fs, s3cmd, minio, jclientcloud, s3bench. Eg: make clean --makefile=<makefile_path>"
 	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make install-tools --makefile=<makefile_path>"
 	@echo "configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "aws: Install & configure aws tool. Eg: make aws --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "aws-rgw: Install & configure aws tool. Eg: make aws --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey> endpoint=<IP:PORT>"
 	@echo "s3fs: Install & configure s3fs tool. Eg: make s3fs --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3cmd: Install & configure s3cmd tool. Eg: make s3cmd --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "jcloud-client-install: Setup jcloud-client. Eg: make jcloud-client --makefile=<makefile_path>"

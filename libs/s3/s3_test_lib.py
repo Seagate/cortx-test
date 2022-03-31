@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -56,7 +55,7 @@ class S3TestLib(S3Lib):
                  s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
-        Initialize members of SS3TestLib and its parent class.
+        Initialize members of S3TestLib and its parent class.
 
         :param access_key: access key.
         :param secret_key: secret key.
@@ -328,7 +327,7 @@ class S3TestLib(S3Lib):
             file_path: str = None,
             **kwargs) -> tuple:
         """
-        Downloading Object of the required Bucket.
+        Downloading Object of the required Bucket using range read
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
@@ -339,6 +338,7 @@ class S3TestLib(S3Lib):
             if os.path.exists(file_path):
                 os.remove(file_path)
             LOGGER.info("Starting downloading the object")
+
             response = super().object_download(bucket_name, obj_name, file_path, **kwargs)
             LOGGER.debug(
                 "The %s has been downloaded successfully at mentioned file path %s",
@@ -365,6 +365,7 @@ class S3TestLib(S3Lib):
             LOGGER.info("You have opted to delete buckets.")
             start_time = perf_counter()
             if force:
+                LOGGER.info("Trying polling mechanism as bucket is getting deleted forcefully.")
                 response = poll(super().delete_bucket, bucket_name, force)
             else:
                 response = super().delete_bucket(bucket_name, force)
@@ -585,6 +586,11 @@ class S3TestLib(S3Lib):
             LOGGER.debug("Creating a bucket with name %s", str(bucket_name))
             create_bucket = self.create_bucket(bucket_name)
             LOGGER.debug("Created a bucket with name %s", str(bucket_name))
+            LOGGER.info("Check bucket is empty")
+            resp = self.object_list(bucket_name)
+            if resp[1]:
+                raise CTException(err.S3_SERVER_ERROR, "Bucket is not empty %s".format(resp[1]))
+            LOGGER.info("Verified that bucket was empty")
             LOGGER.debug("Creating a file %s", str(file_path))
             create_file(file_path, mb_count)
             LOGGER.debug("Created a file %s", str(file_path))
@@ -608,23 +614,33 @@ class S3TestLib(S3Lib):
     def get_object(
             self,
             bucket: str = None,
-            key: str = None) -> tuple:
+            key: str = None,
+            ranges: str = None,
+            raise_exec: bool = True) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
+        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
+        :param ranges: Byte range to be retrieved
         :param bucket: The bucket name containing the object.
         :return: (Boolean, Response)
         """
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = super().get_object(bucket, key)
+            response = poll(super().get_object, bucket, key, ranges)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
+            if raise_exec:
+                raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            else:
+                if error.response['Error']['Code'] == 'NoSuchKey':
+                    LOGGER.info('No object found - returning empty')
+                    return False, dict()
+                else:
+                    return False, error.response
         return True, response
 
     def list_objects_with_prefix(

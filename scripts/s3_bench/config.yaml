@@ -1,9 +1,6 @@
 log_dir: "log/latest/"
-s3bench_path: "/root/go/src/s3bench"
-cmd_go: "sudo yum install -y go"
-s3bench_get: "go get github.com/Seagate/s3bench"
-s3bench_git: "git clone https://github.com/Seagate/s3bench.git {}"
-s3bench_trust: "trust anchor /etc/ssl/stx-s3-clients/s3/ca.crt"
+s3bench_path: "/usr/bin/s3bench"
+s3bench_binary: "https://github.com/Seagate/s3bench/releases/download/v2022-03-14/s3bench.2022-03-14"
 
 log_format:
     format: "%(asctime)s - %(message)s"

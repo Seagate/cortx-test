@@ -1,17 +1,16 @@
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -19,6 +18,7 @@
 
 """S3 utility Library."""
 import os
+import time
 import logging
 import boto3
 from config.s3 import S3_CFG
@@ -83,7 +83,7 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
 
     iam.delete_user(UserName=user_name)
     LOGGER.debug("Delete IAM user command success")
-
+    time.sleep(S3_CFG["delete_account_delay"])
     result = False
     for iam_user in iam.list_users()["Users"]:
         if user_name == iam_user['UserName']:
@@ -165,9 +165,10 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
 
 
 def create_put_objects(object_name: str, bucket_name: str,
-                       access_key: str, secret_key: str, **kwargs):
+                       access_key: str, secret_key: str, object_size:int=10, **kwargs):
     """
     PUT object in the given bucket with access key and secret key.
+    :param object_size: size of the file in MB.
     """
 
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
@@ -185,8 +186,10 @@ def create_put_objects(object_name: str, bucket_name: str,
     LOGGER.debug("S3 boto resource created")
 
     LOGGER.debug("Created an object : %s", object_name)
+    if not os.path.exists(TEST_DATA_FOLDER):
+        os.mkdir(TEST_DATA_FOLDER)
     file_path = os.path.join(TEST_DATA_FOLDER, object_name)
-    resp = system_utils.create_file(file_path, 10)
+    resp = system_utils.create_file(file_path, object_size)
     if not resp[0]:
         LOGGER.error("Unable to create object file: %s", file_path)
         return False
@@ -205,3 +208,28 @@ def create_put_objects(object_name: str, bucket_name: str,
 
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
     return result
+
+def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Delete object from give bucket, access key and secret key.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+
+    LOGGER.debug("Delete object : %s in bucket: %s", obj_name, bucket_name)
+    s3_resource.Object(bucket_name, obj_name).delete()
+    del s3_resource
+    return True

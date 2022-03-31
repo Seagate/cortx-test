@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -45,26 +44,30 @@ LOGGER = logging.getLogger(__name__)
 
 
 class EnableFailureInjection(ABC):
-
+    """Abstract class to enable failure injection."""
     @abstractmethod
     def enable_checksum_failure(self):
+        """Enable Checksum failure."""
         pass
 
     @abstractmethod
     def enable_data_block_corruption(self):
+        """Enable data block corruption."""
         pass
 
     @abstractmethod
     def enable_meta_data_failure(self):
+        """Enable metadata corruption."""
         pass
 
     @abstractmethod
     def enable_s3_meta_data_failure(self):
+        """Enable s3 metadata corruption."""
         pass
 
 
 class S3FailureInjection(EnableFailureInjection):
-
+    """Implements EnableFailureInjection interface to perform FI on S3."""
     def __init__(self, cmn_cfg):
         """Initialize connection to Nodes or Pods."""
         self.cmn_cfg = cmn_cfg
@@ -96,6 +99,7 @@ class S3FailureInjection(EnableFailureInjection):
         self.nodes_str = 'NODES="{}"'.format(nodes_str)
 
     def create_nodes_connection(self):
+        """Create LogicalNode connections to Target Nodes."""
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
             self._connections = [Connection(node["hostname"], user=node["username"],
@@ -107,19 +111,18 @@ class S3FailureInjection(EnableFailureInjection):
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC:
             pass
 
-    def _inject_fault(self, fault_type=None, s3_instances_per_node=1):
+    def _inject_fault(self, fault_type=None, fault_operation='enable', s3_instances_per_node=1):
         """Injects fault by directly connecting to all Nodes and using REST API.
         Works for s3 server instance = 1
         TODO: Check if output is needed
         """
         stdout = list()
         status = list()
-        enable = commands.FI_ENABLE
         f_type = fault_type if not fault_type else commands.DI_DATA_CORRUPT_ON_WRITE
         start_port = commands.S3_SRV_START_PORT
         if s3_instances_per_node == 1:
             h_p = f'localhost:{start_port}'
-            fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {enable}'
+            fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                          f',{f_type},0,0'
                          f'" {h_p}'
                          )
@@ -136,9 +139,9 @@ class S3FailureInjection(EnableFailureInjection):
         elif s3_instances_per_node > 1:
             for conn in self._connections:
                 start_port = commands.S3_SRV_START_PORT
-                for ix in range(s3_instances_per_node):
-                    h_p = f'localhost:{start_port}'
-                    fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {enable}'
+                for index in range(s3_instances_per_node):
+                    h_p = f'localhost:{start_port + index}'
+                    fault_cmd = (f'curl -X PUT -H "x-seagate-faultinjection: {fault_operation}'
                                  f',{f_type},0,0'
                                  f'" {h_p}'
                                  )
@@ -146,13 +149,15 @@ class S3FailureInjection(EnableFailureInjection):
                         out = conn.run(fault_cmd, pty=False).stdout
                         stdout.append(out)
                     except Exception as fault:
-                        LOGGER.warning("Connections to node was broken %s. Retrying..." % fault)
+                        LOGGER.warning("Connections to node was broken %s. Retrying...", fault)
                         out = conn.run(fault_cmd, pty=False).stdout
                         stdout.append(out)
                     status.append(True)
                     start_port += 1
             return status, stdout
+        return status, stdout
 
+    # pylint: disable-msg=too-many-nested-blocks
     def _set_fault(self, fault_type: str, fault_operation: bool, use_script: bool = False):
         """
         sets the following faults
@@ -174,19 +179,20 @@ class S3FailureInjection(EnableFailureInjection):
             cmd = f'NINST={s3_instances_per_node} {self.nodes_str} FIS="{fault_type}" ' \
                   f'sh {DI_CFG["fault_injection_script"]} {fault_op}'
             result = self.connections[0].execute_cmd(cmd)
-
             if "Host key verification failed" not in result or "ssh exited" not in result \
                     or "pdsh: command not found" not in result or "Permission denied" not in result:
-                LOGGER.info(f"Fault {fault_type} : {fault_op}")
+                LOGGER.info("Fault %s : %s", fault_type, fault_op)
                 return True
             else:
-                LOGGER.error(f"Error during Fault {fault_type} : {fault_op}")
+                LOGGER.error("Error during Fault %s : %s", fault_type, fault_op)
                 LOGGER.error(result)
                 return False
         else:
-            self._inject_fault(fault_type=fault_type, fault_operation=fault_op,
-                               s3_instances_per_node=s3_instances_per_node)
+            status, stdout = self._inject_fault(fault_type=fault_type, fault_operation=fault_op,
+                                                s3_instances_per_node=s3_instances_per_node)
+            return True if all(status) else False
 
+    # pylint: disable=too-many-nested-blocks
     def _set_fault_k8s(self, fault_type: str, fault_operation: bool):
         """
         sets the following faults
@@ -208,11 +214,25 @@ class S3FailureInjection(EnableFailureInjection):
                                                                               "cortx-s3-0")
                 s3_instance = len(s3_containers)
                 for each in range(0, s3_instance):
+                    retries = 3
                     s3_port = 28070 + each + 1
                     cmd = f'curl -X PUT -H "x-seagate-faultinjection: ' \
                           f'{fault_op},always,{fault_type},0,0" {pod_ip}:{s3_port}'
-                    resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
+                    while retries > 0:
+                        try:
+                            resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
+                            LOGGER.debug("http server resp : %s", resp)
+                            if "not allowed against this resource" in str(resp):
+                                return False
+                            if not resp:
+                                break
+                        except IOError as ex:
+                            LOGGER.error("Exception: %s", ex)
+                            LOGGER.error("remaining retrying: %s", retries)
+                            retries -= 1
+                            time.sleep(2)
+                    if retries == 0:
+                        return False
             return True
         except IOError as ex:
             LOGGER.error("Exception: %s", ex)
@@ -239,7 +259,7 @@ class S3FailureInjection(EnableFailureInjection):
                 self.master_node_list[0].copy_file_to_remote(local_path=local_path,
                                                              remote_path=remote_path)
                 resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-                LOGGER.debug("Resp: %s", resp)
+                LOGGER.debug("Set S3 Srv with Fault Injection Resp: %s", resp)
                 time.sleep(30)
                 return True, resp
             except IOError as ex:
@@ -247,9 +267,14 @@ class S3FailureInjection(EnableFailureInjection):
                 return False, ex
 
     def enable_checksum_failure(self):
+        """This essentially means data corruption with Legacy S3 Srv Impl."""
         raise NotImplementedError('S3 team does not support checksum failure')
 
     def enable_data_block_corruption(self) -> bool:
+        """
+        enable data block corruption
+        :return: Bool
+        """
         fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
         status = False
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
@@ -260,6 +285,24 @@ class S3FailureInjection(EnableFailureInjection):
         elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
             status = self._set_fault_k8s(fault_type=fault_type, fault_operation=True)
+        return status
+
+    def disable_data_block_corruption(self) -> bool:
+        """
+        disable data block corruption
+        output: Bool
+        """
+        fault_type = commands.S3_FI_FLAG_DC_ON_WRITE
+        status = False
+        if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+            status, stout = self._set_fault(fault_type=fault_type, fault_operation=False,
+                                            use_script=False)
+            LOGGER.debug("status: %s  stout: %s", status, stout)
+            all(status)
+        elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+            status = self._set_fault_k8s(fault_type=fault_type, fault_operation=False)
         return status
 
     def enable_data_block_corruption_using_node_script(self):
@@ -274,12 +317,16 @@ class S3FailureInjection(EnableFailureInjection):
         return status
 
     def enable_meta_data_failure(self):
+        """Not supported.
+        """
         raise NotImplementedError('Motr team does not support Meta data failure')
 
     def enable_s3_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Motr team does not support Meta data failure')
 
     def close_connections(self):
+        """Close connections to target nodes."""
         if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
                 self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
             for conn in self.connections:
@@ -298,13 +345,17 @@ class MotrFailureInjectionAdapter(EnableFailureInjection):
         self.dc_tool = dc_tool  # delegates task to DC tool
 
     def enable_checksum_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_data_block_corruption(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')
 
     def enable_s3_meta_data_failure(self):
+        """Not supported."""
         raise NotImplementedError('Not Implemented')

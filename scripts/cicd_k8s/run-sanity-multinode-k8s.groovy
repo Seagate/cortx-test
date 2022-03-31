@@ -25,7 +25,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/lc_dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -66,14 +66,15 @@ deactivate
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
 				script {
-			        env.Sanity_Failed = true
+			        env.Sanity_Failed = false
+			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
 echo 'Creating s3 account and configuring awscli on client'
-pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node} --health_check False
+pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node}
 set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
@@ -88,20 +89,25 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
 deactivate
 '''	)
 				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Sanity due to bad health of deployment')
+                    }
                     if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
                         if (lines) {
                             echo "Sanity Test Failed"
+                            env.Sanity_Failed = true
                             currentBuild.result = 'FAILURE'
-                            error('Skipping Regression as Sanity Test Failed')
                         }
                     }
 				}
@@ -110,7 +116,7 @@ deactivate
 		stage('REGRESSION_TEST_EXECUTION') {
 			steps {
 				script {
-			        env.Sanity_Failed = false
+			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
@@ -129,13 +135,18 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Regression due to bad health of deployment')
+                    }
 				}
 			}
 		}
@@ -147,8 +158,29 @@ deactivate
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
+            		  env.new_TP = records[0][0]
         		  }
-        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		   withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					sh label: '', script: '''source venv/bin/activate
+export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}
+deactivate
+'''
+}
+                  if ( fileExists('total_count.csv')) {
+                      def testcount = readCSV file: 'total_count.csv'
+                      env.totalcount = testcount[0][0]
+                      env.passcount = testcount[0][1]
+                      env.failcount = testcount[0][2]
+                      env.skipcount = testcount[0][3]
+                      env.todocount = testcount[0][4]
+                      echo "Total : ${totalcount}"
+                      echo "Pass : ${passcount}"
+                      echo "Fail : ${failcount}"
+                      echo "Skip : ${skipcount}"
+                      echo "Todo : ${todocount}"
+ }
+        		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
@@ -166,12 +198,11 @@ deactivate
 } catch (err) {
     echo "Caught error in crash files collection: ${err}"
 }
-		     } */
+		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
-}
 }

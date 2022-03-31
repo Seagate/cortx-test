@@ -1,17 +1,16 @@
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -36,7 +35,9 @@ from commons.params import PROV_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import HA_TEST_CONFIG_PATH
+from commons.params import PROV_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
+from commons.constants import S3_ENGINE_RGW
 
 
 def split_args(sys_cmd: List):
@@ -86,7 +87,8 @@ if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
     os.environ["USE_SSL"] = str(use_ssl)
 
     _validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else None
-    validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1] if _validate_certs else True
+    validate_certs = pytest_args[
+        pytest_args.index(_validate_certs) + 1] if _validate_certs else True
     os.environ["VALIDATE_CERTS"] = str(validate_certs)
 
 
@@ -99,12 +101,12 @@ def build_s3_endpoints() -> dict:
     iam_url = setup_details.get('lb') if lb_flg else "iam.seagate.com"
     ssl_flg = ast.literal_eval(str(os.environ.get("USE_SSL")).title())
     cert_flg = ast.literal_eval(str(os.environ.get("VALIDATE_CERTS")).title())
+    s3_conf["host_port"] = s3_url  # may be of LB/Host Entry/Node.
     s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
     if ssl_flg:
         s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
     else:
         s3_conf["iam_url"] = f"http://{iam_url}:{s3_conf['http_iam_port']}"
-    s3_conf["s3b_url"] = f"{'https' if cert_flg else 'http'}://{s3_url}"
     s3_conf["use_ssl"] = ssl_flg
     s3_conf["validate_certs"] = cert_flg
 
@@ -112,11 +114,13 @@ def build_s3_endpoints() -> dict:
 
 
 if target:
-    S3_CFG = build_s3_endpoints()
+    S3_CFG = build_s3_endpoints()  # Importing S3cfg from config init can be dangerous.Use s3 init.
 else:
     S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
+if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+    S3_CFG["region"] = "default"
 CMN_CFG.update(S3_CFG)
 JMETER_CFG = configmanager.get_config_wrapper(
     fpath=CSM_CONFIG, config_key="JMeterConfig", target=target, target_key="csm")
@@ -134,6 +138,7 @@ CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
+PROV_TEST_CFG = configmanager.get_config_wrapper(fpath=PROV_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)

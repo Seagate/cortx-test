@@ -49,7 +49,7 @@ features_weights = {
     "High Availability": 10,
     "Security": 10,
     "Data recovery": 10,
-    "Application Testing(UDX, BearOS etc..)": 10,
+    "Application Testing(UDX, BareOS etc..)": 10,
     "Performance": 10,
     "Data Integrity": 10,
     "Longevity": 10,

@@ -6,11 +6,11 @@ echo "Fault injection: $fi_inject"
 
 cortx_data_pod_array=()
 IFS=$'\n' read -r -d '' -a cortx_data_pod_array < <(kubectl get pods | grep cortx-data-pod | awk '{print $1}')
-for i in ${cortx_data_pod_array[@]}
+for i in "${cortx_data_pod_array[@]}"
 do
   s3_containers=()
-  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods $i -o jsonpath='{.spec.containers[*].name}' | grep -o cortx-s3-[0-9]*[0-9])
-  for j in ${s3_containers[@]}; do
+  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods "$i" -o jsonpath='{.spec.containers[*].name}' | grep -o "cortx-s3-[0-9]*[0-9]")
+  for j in "${s3_containers[@]}"; do
     echo "---------------------------------------------------------"
     echo "POD: $i"
     echo "CONTAINER: $j"
@@ -28,15 +28,15 @@ do
 done
 echo "---------------------------------------------------------"
 echo -n "Waiting for new s3 processes to start"
-for i in ${cortx_data_pod_array[@]}
+for i in "${cortx_data_pod_array[@]}"
 do
   s3_containers=()
-  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods $i -o jsonpath='{.spec.containers[*].name}' | grep -o cortx-s3-[0-9]*[0-9])
-  for j in ${s3_containers[@]}; do
+  IFS=$'\n' read -r -d '' -a s3_containers < <(kubectl get pods "$i" -o jsonpath='{.spec.containers[*].name}' | grep -o "cortx-s3-[0-9]*[0-9]")
+  for j in "${s3_containers[@]}"; do
     for k in $(seq 1 30)
     do
       echo -n "."
-      if [ ! -z $(kubectl exec -it $i -c $j -- pgrep s3server 2> /dev/null) ]; then break;fi
+      if [ ! -z "$(kubectl exec -it "$i" -c "$j" -- "pgrep s3server 2> /dev/null")" ]; then break;fi
     done
   done
 done

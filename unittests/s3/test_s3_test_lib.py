@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -8,8 +25,10 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import remove_file
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from libs.s3 import iam_test_lib, s3_test_lib
 
@@ -383,7 +402,7 @@ class TestS3TestLib:
                 "ut-obj-17",
                 self.test_file_path)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_18_get_bucket_size(self):
@@ -394,7 +413,7 @@ class TestS3TestLib:
         try:
             S3_TEST_OBJ.get_bucket_size(self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_19_list_objects_params(self):
@@ -415,7 +434,7 @@ class TestS3TestLib:
             S3_TEST_OBJ.list_objects_with_prefix(
                 self.dummy_bucket, self.obj_prefix)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_20_put_object_with_storage_class(self):

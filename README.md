@@ -1,41 +1,27 @@
 # cortx-test
-CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. 
-Right now, it can be divided into following logical loosely coupled parts 
-* Test framework. 
-* Test execution framework. 
-* Robot framework and 
-* Tools (reporting, DI, clone TP, etc.,).
+CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
 
-## Start Here
-Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+It is logically divided into following components:
+	*	Test Automation framework
+	*	Test Execution Framework
+	*	Robot framework and
+	*	Tools (reporting, DI, clone TP etc.)
 
-You may need a separate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
+## Getting Started
+This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
 
-## Increase client root space size should be at least 50 GB using following commands
-## Please utilize free disks from the output of lsblk
-## Note: In case of multipart/Big object upload, disk space requirement may change/increase.
-```
-df -h
-lsblk 
-pvcreate /dev/sdb
-vgextend vg_sysvol /dev/sdb
-lvextend /dev/mapper/vg_sysvol-lv_root -L +50G
-resize2fs /dev/mapper/vg_sysvol-lv_root
-df -h
-```
+You can have a separate client VM with any Linux flavour to install client side pre-requisites and start using automation framework on the same VM. This VM should have connectivity to Cortx Cluster OR CORTX OVA deployment. Alternatively you may use one of the nodes as client (less recommended).     
 
-## increase the swap space, Please utilize free disks from the output of lsblk
-```
-lsblk 
-pvcreate /dev/sdi
-vgextend vg_sysvol /dev/sdi
-lvextend /dev/mapper/vg_sysvol-lv_swap -l +100%FREE
-swapoff /dev/mapper/vg_sysvol-lv_swap
-mkswap /dev/mapper/vg_sysvol-lv_swap
-swapon /dev/mapper/vg_sysvol-lv_swap
-```
+## Git process
+Typically a member contributing to test framework would follow the review process as follows:
+	1. We are following the concept of upstream and downstream where commits happen on your forked repository (downstream)
+	2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream)
+	3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
+	4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process
+
 ## Get the Sources
-Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
+Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
+Commands as follows:
 ```
 git clone https://github.com/Seagate/cortx-test.git
 cd cortx-test/
@@ -45,22 +31,22 @@ git checkout dev
 git remote -v
 git remote add upstream https://github.com/Seagate/cortx-test.git
 git remote -v
-Issuing the above command again will return you output as shown below.
+```
+Issuing the above command again will return output as shown:
+```
 > origin    https://github.com/YOUR_USERNAME/cortx-test.git (fetch)
 > origin    https://github.com/YOUR_USERNAME/cortx-test.git (push)
 > upstream        https://github.com/Seagate/cortx-test.git (fetch)
 > upstream        https://github.com/Seagate/cortx-test.git (push)
+```
+Then fetch upstream...
+```
 git fetch upstream
 git pull upstream dev
-```
+``` 
 
-## Git Commands
-Learn generic Git commands to make yourself comfortable with git. 
-
-Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream where commits happen on your forked repository and then you can raise a PR to merge it to Seagate's Cortx-Test reporsitory. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to checkin even when they have read access to Seagate Repositories.   
-
-## Set up dev environment
-Following steps helps to setup client side env, where test framework runs. These steps assumes that you have installed git client and cloned Cortx-test.  
+## Setting up dev environment
+Following steps help in setting up client side env, where test framework will run. These steps assume that you have followed earlier process (i.e. git client is installed and `Cortx-test` is cloned)  
     
     1. `yum update -y`
     
@@ -108,18 +94,18 @@ curl https://raw.githubusercontent.com/Seagate/cortx-s3server/kubernetes/scripts
 curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/srv/components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem
 ```
 
-## Script to setup client environment (Alternate option to manual steps)
+## Script to set up client environment (Alternate option to manual steps)
 Change dir to your local repository root folder. If you have checked out your code 
 in clean_dev directory created in your home on Linux machine (RHEL Flavour), then
-/home/<yourname>/clean_dev is the local repository root folder. 
+`/home/<yourname>/clean_dev` is the local repository root folder. 
 ```
  # cd clean_dev
  # ./cortx-test/ci_tools/client_setup.sh 
 ```
-This script should handle client setup. However note that python configure does not have switch --enable-loadable-sqlite-extensions in script.
+This script should handle client setup. However, note that python configures does not have switch --enable-loadable-sqlite-extensions in script.
 
-## Steps to setup s3 client
-To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
+## Steps to set up s3 client
+To set up s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
 Script in project's root folder cortx-test `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
 ```commandline
 Required arguments in configuration:
@@ -128,18 +114,19 @@ Required arguments in configuration:
 optional arguments:
     -i --ignore-errors  Ignore all errors in commands executed to remake files.
     -k --keep-going     Continue as much as possible after an error.
-    ENDPOINT=<s3_endpoint>
-    CA_CRT=<certificate_file_path>
-    NFS_SHARE=<NFS_share_jclient_path>
-    APACHE_J_METER=apache-jmeter-5.4.1.tgz
-    VERIFY_SSL='True'  # This is used to whether https/ssl be used or not
-    VALIDATE_CERTS='True' # This is used whether given certificate should be verified or not.
+    --ENDPOINT=s3_endpoint
+    --CA_CRT=certificate_file_path
+    --NFS_SHARE=NFS_share_jclient_path
+    --APACHE_J_METER=apache-jmeter-5.4.1.tgz
+    --VERIFY_SSL='True' This is used to whether https/ssl be used or not
+    --VALIDATE_CERTS='True' This is used whether given certificate should be verified or not.
+    
 
 make help --makefile=scripts/s3_tools/Makefile
-    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case it's a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
     clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
-    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
-    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case it's a new machine. Eg: make install-tools
+    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case it's a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
     aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
     s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
     s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
@@ -155,16 +142,16 @@ make bashrc-configure
 To install & configure all tools:
 make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
-To just configure instaled tools:
+To just configure installed tools:
 make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
 To install & configure specific tool(i.e aws):
 make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
-To just configure speific tool(i.e. aws):
+To just configure specific tool(i.e. aws):
 make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
-To cleanup all tools:
+To clean up all tools:
 make clean --makefile=scripts/s3_tools/Makefile
 
 ```
@@ -306,8 +293,10 @@ An example setup json configuration is shown below:
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
 ```commandline
 python setup_entry.py --help
+```
 usage: setup_entry.py [-h] [--fpath FPATH] [--dbuser DBUSER]
                       [--dbpassword DBPASSWORD] [--new_entry NEW_ENTRY]
+```
 
 Update the setup entry
 
@@ -335,7 +324,7 @@ If you want to anyway run the parallel tests sequentially. You should use --forc
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928 --force_serial_run True
 ```
-If you want to run your test plan and test execution ticket with test runner, you should skip --force_serial_run switch.
+If you want to run your test plan and TE ticket with test runner, you should skip --force_serial_run switch.
 ```commandline
 python -u testrunner.py -te TEST-17412  -tp TEST-18382 --target s3-vm-2928
 ``` 
@@ -402,7 +391,7 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
 pytest --local=True -d --tx 3*popen -rA unittests\Your_Test_Module.py
 ```
 ```properties
-3 is # of worker processes to be spawned.
+3 is number of worker processes to be spawned.
 ```
 #### Running test plans in dev environment
 ##### With dist mode
@@ -417,27 +406,39 @@ pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging
 
 ## Client Hardware Configuration
 While ordering client on ssc-cloud, make sure
-1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
-2. For more large number of parallel IO connections, good to have 8 CPUs.
-3. By dafult 1GB of swap space is provided, need to order 1 extra disk, and create swap space out of extra disk, and mount it. 
-   
-   Procedure to create swap space of 8 GB: [A gist from one of the articles](https://www.thegeekdiary.com/centos-rhel-how-to-add-new-swap-partition/)
-    * Create new partition using fdisk command
-        * `fdisk /dev/sdb` # sda will generally have OS installation
-        * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
-    * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number for me it was sdb1
-    * Mount swap using `swapon /dev/sdb1`
+    1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
+    2. For more large number of parallel IO connections, good to have 8 CPUs.
+    3. Default 1GB of swap space is provided, need to order 1 extra disk, and create swap space out of extra disk, and mount it.
+        Procedure to create swap space of 8 GB: [A gist from one of the articles](https://www.thegeekdiary.com/centos-rhel-how-to-add-new-swap-partition/)
+        * Create new partition using fdisk command
+            * `fdisk /dev/sdb` # sda will generally have OS installation
+            * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
+        * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number i.e. sdb1
+        * Mount swap using `swapon /dev/sdb1`
 
+    ## Increase client root space size should be at least 50 GB using following commands
+    Please utilize free disks from the output of lsblk
+    Note: In case of multipart/Big object upload, disk space requirement may change/increase.
+    resize2fs is specific to ext2/3/4. In case /root is formatted with xfs we need to use the xfs_growfs tool 
+    e.g. "xfs_growfs /dev/mapper/vg_sysvol-lv_root"
+    We can run lvextend as "lvextend /dev/mapper/vg_sysvol-lv_root -l +100%FREE" to consume all the free PE
+    ```
+    df -h
+    lsblk 
+    pvcreate /dev/sdb
+    vgextend vg_sysvol /dev/sdb
+    lvextend /dev/mapper/vg_sysvol-lv_root -L +50G
+    resize2fs /dev/mapper/vg_sysvol-lv_root
+    df -h
+    ```
 
-## How to automate component level test cases
-Components level tests can be either pure component level tests which run 
-1. Tests run in the same process as code to be tested 
-2. Tests run in another process and interact with the component over a protocol (RPC/HTTP)  
-3. Test runs in another process where component is available as a service and where cortx-test and it's capabilities can be used. 
-
-Some of the setup steps like "MongoDB as Configuration Management Database" should not be required for component level tests. 
-
-* In case 1) Component tests can be automated as a seperate mini framework utilizing cortx-test or have their own libraries. This can then be integrated with test execution and reporting framework.
-* In case 2) Component tests can utilize cortx-test directly and build their own libraries to test components.
-* In case 3) Component tests can be written in cortx-test and utilize all the capabilities of the framework.
-
+    ## increase the swap space, Please utilize free disks from the output of lsblk
+    ```
+    lsblk 
+    pvcreate /dev/sdi
+    vgextend vg_sysvol /dev/sdi
+    lvextend /dev/mapper/vg_sysvol-lv_swap -l +100%FREE
+    swapoff /dev/mapper/vg_sysvol-lv_swap
+    mkswap /dev/mapper/vg_sysvol-lv_swap
+    swapon /dev/mapper/vg_sysvol-lv_swap
+    ```

@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -22,22 +21,32 @@
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-
 import json
 import logging
+import math
 import os
+import re
+import signal
 import time
+from threading import Thread
 from typing import List
 
+import requests.exceptions
 import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR
+from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
+from commons.utils import system_utils
+from commons.utils import assert_utils
+from commons.utils import ext_lbconfig_utils
 from config import PROV_CFG
+from config import S3_CFG
+from config import PROV_TEST_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -56,9 +65,16 @@ class ProvDeployK8sCortxLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
+        self.s3_engine = os.getenv("S3_ENGINE")
         self.cortx_image = os.getenv("CORTX_IMAGE")
-        self.docker_username = os.getenv("DOCKER_USERNAME")
-        self.docker_password = os.getenv("DOCKER_PASSWORD")
+        self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
+        self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
+        self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
+        self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
+        self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
+        self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
+        self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
+                                                self.deploy_cfg["control_port_https"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
@@ -94,7 +110,7 @@ class ProvDeployK8sCortxLib:
             return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
-        jen_parameter["TAINT"] = taint_master
+        jen_parameter["PODS_ON_PRIMARY"] = taint_master
 
         output = Provisioner.build_job(
             k8s_deploy_cfg["job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
@@ -179,35 +195,24 @@ class ProvDeployK8sCortxLib:
 
         return True, "Prerequisite VM check successful"
 
-    @staticmethod
-    def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
-        """
-        Perform Docker Login
-        param: node_obj: Node Object
-        param: docker_user : Docker username
-        param: docker_pswd : Docker password
-        """
-        LOGGER.info("Perform Docker Login")
-        resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
-        LOGGER.debug("resp: %s", resp)
-
     def prereq_git(self, node_obj: LogicalNode, git_tag: str):
         """
-        Checkout cortx-k8s code on the  node. Delete is any previous exists.
+        Checkout cortx-k8s code on the  node. Delete if any previous exists.
         param: node_obj : Node object to checkout code - node.
         param: git tag: tag of service repo
         """
         LOGGER.info("Delete cortx-k8s repo on node")
-        resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format("cortx-k8s"))
+        url = self.deploy_cfg["git_k8_repo"]
+        clone_dir = self.deploy_cfg['clone_dir']
+        resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format(clone_dir))
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git clone cortx-k8s repo")
-        url = self.deploy_cfg["git_k8_repo"]
-        resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
+        resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE_D.format(url, clone_dir))
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git checkout tag %s", git_tag)
-        cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(git_tag)
+        cmd = f"cd {clone_dir} && " + common_cmd.CMD_GIT_CHECKOUT.format(git_tag)
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
@@ -218,10 +223,24 @@ class ProvDeployK8sCortxLib:
         param: system_disk: parameter to prereq script
         """
         LOGGER.info("Execute prereq script")
-        cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log". \
-            format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        pre_req_log = PROV_CFG['k8s_cortx_deploy']["pre_req_log"]
+        pre_req_cmd = common_cmd.PRE_REQ_CMD.format(remote_code_path, system_disk) + \
+                      f" > {pre_req_log}"
+        list_mnt_dir = common_cmd.LS_LH_CMD.format(self.deploy_cfg['local_path_prov'])
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
+        resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
+                                    timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+        if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
+            resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
+            LOGGER.info("\n %s", resp1)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
+            openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
+            LOGGER.info("\n %s", openldap_dir_residue)
+        if node_obj.path_exists(self.deploy_cfg['3rd_party_data_dir']):
+            thirdparty_residue = node_obj.execute_cmd(list_data_3rd_party, read_lines=True)
+            LOGGER.info("\n %s", thirdparty_residue)
 
     @staticmethod
     def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
@@ -235,7 +254,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Remote path %s", remote_path)
         if system_utils.path_exists(local_sol_path):
             node_obj.copy_file_to_remote(local_sol_path, remote_path)
-            return True, f"File copied at {remote_path}"
+            return True, f"Files copied at {remote_path}"
         return False, f"{local_sol_path} not found"
 
     def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
@@ -247,11 +266,18 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = "cd {}; {} | tee deployment.log".format(remote_code_path,
-                                                      self.deploy_cfg["deploy_cluster"])
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        return True, resp
+        cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
+        try:
+            resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                        timeout=self.deploy_cfg['timeout']['deploy'])
+            LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+            return True, resp
+        except TimeoutError as error:
+            LOGGER.error(error, self.deploy_cfg['timeout']['deploy'])
+            node_obj.kill_remote_process(cmd)
+        except IOError as error:
+            LOGGER.exception("The exception occurred is %s", error)
+            return False, error
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
@@ -262,35 +288,37 @@ class ProvDeployK8sCortxLib:
         return : Boolean
         """
         LOGGER.info("Validate Cluster status")
-        cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
-                                                          common_cmd.CLSTR_STATUS_CMD)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
-        if "FAILED" in resp:
-            return False, resp
-        return True, resp
+        status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + f" > {status_file}"
+        resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
+                                    timeout=PROV_CFG['k8s_cortx_deploy']['timeout']['status'])
+        LOGGER.debug(resp)
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, status_file)
+        remote_path = os.path.join(PROV_CFG['k8s_cortx_deploy']["k8s_dir"], status_file)
+        LOGGER.debug("COPY status file to local")
+        node_obj.copy_file_to_local(remote_path, local_path)
+        with open(local_path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                LOGGER.debug("line is %s", line)
+                if "FAILED" in line:
+                    return False, line
+        return True, lines
 
-    def pull_third_party_images(self, worker_obj_list: list):
+    def pull_cortx_image(self, worker_obj: LogicalNode):
         """
-        This method pulls  cortx and 3rd party images
+        This method pulls  cortx image
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull Cortx and 3rd party images on all worker nodes.")
-        LOGGER.debug(self.deploy_cfg['third_party_images'])
-        data = self.deploy_cfg['third_party_images']
-        for obj in worker_obj_list:
-            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
-            for key, value in data.items():
-                if key in ("kafka", "zookeeper"):
-                    value = "bitnami/" + key + ":" + value
-                cmd = common_cmd.CMD_DOCKER_PULL.format(value)
-                obj.execute_cmd(cmd=cmd)
+        LOGGER.info("Pull Cortx image on worker node %s", worker_obj.hostname)
+        worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
+        if self.cortx_server_image:
+            worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
-                             docker_username: str, docker_password: str,
                              git_tag) -> tuple:
         """
         Perform cortx cluster deployment
@@ -311,22 +339,39 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
-            self.docker_login(node, docker_username, docker_password)
             self.prereq_git(node, git_tag)
-            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
+            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["k8s_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
-        self.pull_third_party_images(worker_node_list)
+            self.execute_prereq_cortx(node, self.deploy_cfg["k8s_dir"], system_disk)
 
-        self.docker_login(master_node_list[0], docker_username, docker_password)
+        thread_list = []
+        for each in worker_node_list:
+            t = Thread(target=self.pull_cortx_image, args=(each,))
+            t.start()
+            thread_list.append(t)
+        for each in thread_list:
+            each.join()
+
         self.prereq_git(master_node_list[0], git_tag)
-        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
-        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
+        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
+        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
+        log_file = self.deploy_cfg['log_file']
+
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
+        remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
+        master_node_list[0].copy_file_to_local(remote_path, local_path)
+        pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+                                                     read_lines=True)
+        LOGGER.debug("\n=== POD STATUS ===\n")
+        LOGGER.debug(pod_status)
+        if not resp[0]:
+            with open(local_path, 'r') as file:
+                lines = file.read()
+                LOGGER.debug(lines)
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
             resp = self.validate_cluster_status(master_node_list[0],
-                                                self.deploy_cfg["git_remote_dir"])
-            return resp
+                                                self.deploy_cfg["k8s_dir"])
         return resp
 
     def checkout_solution_file(self, git_tag):
@@ -351,7 +396,6 @@ class ProvDeployK8sCortxLib:
         :Keyword: data_disk_per_cvg: data disk required per cvg
         :Keyword: size_metadata: size of metadata disk
         :Keyword: size_data_disk: size of data disk
-        :Keyword: glusterfs_size: size of glusterfs
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
@@ -360,6 +404,10 @@ class ProvDeployK8sCortxLib:
         :Keyword: dix_spare:
         :Keyword: skip_disk_count_check: disk count check
         :Keyword: third_party_image: dict of third party image
+        :Keyword: log_path: to provide custom log path
+        :Keyword: setup_size: to provide custom size large/small/medium
+        :Keyword: cortx_server_image: to provide cortx server image
+        :Keyword: service_type: to provide service type as LoadBalancer/NodePort
         returns the status, filepath and system reserved disk
         """
         cvg_count = kwargs.get("cvg_count", 2)
@@ -373,10 +421,19 @@ class ProvDeployK8sCortxLib:
         dix_spare = kwargs.get("dix_spare", 0)
         size_metadata = kwargs.get("size_metadata", '20Gi')
         size_data_disk = kwargs.get("size_data_disk", '20Gi')
-        glusterfs_size = kwargs.get("glusterfs_size", '20Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
+        cortx_server_image = kwargs.get("cortx_server_image", None)
+        log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
+        size = kwargs.get("size", self.deploy_cfg['setup_size'])
+        service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
+        nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
+        nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
+        control_nodeport_https = kwargs.get("control_https_port",
+                                            self.deploy_cfg['control_port_https'])
+        LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
+                     nodeport_http, nodeport_https, control_nodeport_https)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -401,7 +458,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
             # The condition to validate the config.
             if not skip_disk_count_check and valid_disk_count > \
-                    (data_disk_per_cvg * cvg_count * node_list):
+                    (cvg_count * node_list):
                 return False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
 
@@ -434,13 +491,21 @@ class ProvDeployK8sCortxLib:
             sys_disk_pernode.update(schema)
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
-        # Update the solution yaml file with password
-        resp_passwd = self.update_password_sol_file(filepath)
+        # Update the solution yaml file with password,service_type and ports
+        resp_passwd = self.update_miscellaneous_param(filepath, log_path, size,
+                                                      nodeport_http=self.nodeport_http,
+                                                      nodeport_https=self.nodeport_https,
+                                                      control_nodeport_https=
+                                                      self.control_nodeport_https,
+                                                      service_type=self.service_type,
+                                                      deployment_type=self.deployment_type,
+                                                      lb_count=self.lb_count)
         if not resp_passwd[0]:
-            return False, "Failed to update passwords in solution file"
+            return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
-                                                        third_party_images_dict)
+                                                        third_party_images_dict,
+                                                        cortx_server_image)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -457,8 +522,7 @@ class ProvDeployK8sCortxLib:
                                             dix_parity,
                                             dix_spare,
                                             size_metadata,
-                                            size_data_disk,
-                                            glusterfs_size)
+                                            size_data_disk)
         if not resp_cvg[0]:
             return False, "Fail to update the cvg details in solution file"
 
@@ -466,7 +530,6 @@ class ProvDeployK8sCortxLib:
         resp_node = self.update_nodes_sol_file(filepath, worker_obj)
         if not resp_node[0]:
             return False, "Failed to update nodes details in solution file"
-
         return True, filepath, sys_disk_pernode
 
     def update_nodes_sol_file(self, filepath, worker_obj):
@@ -515,8 +578,7 @@ class ProvDeployK8sCortxLib:
                             dix_parity: int,
                             dix_spare: int,
                             size_metadata: str,
-                            size_data_disk: str,
-                            glusterfs_size: str):
+                            size_data_disk: str):
 
         """
         Method to update the cvg
@@ -534,7 +596,6 @@ class ProvDeployK8sCortxLib:
         :Param: dix_spare:
         :Param: size_metadata: size of metadata disk
         :Param: size_data_disk: size of data disk
-        :Param: glusterfs_size: size of glusterfs
         :returns the status ,filepath
         """
         nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
@@ -545,7 +606,6 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']  # Parent key
             storage = parent_key['storage']  # child of child key
             cmn_storage_sets = common['storage_sets']  # child of child key
-            common['glusterfs']['size'] = glusterfs_size
             total_cvg = storage.keys()
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
@@ -580,12 +640,14 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict):
+    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict,
+                                      cortx_server_image):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
         cortx_image: this is cortx image name
         third_party_image: dict of third party image
+        cortx_server_image: cortx_server image name
         :returns the status, filepath
         """
         cortx_im = dict()
@@ -593,7 +655,10 @@ class ProvDeployK8sCortxLib:
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            cortx_im[image_key] = cortx_image
+            if self.cortx_server_image and image_key == "cortxserver":
+                cortx_im[image_key] = cortx_server_image
+            else:
+                cortx_im[image_key] = cortx_image
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -615,19 +680,47 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_password_sol_file(self, filepath):
+    # pylint: disable-msg=too-many-locals
+    def update_miscellaneous_param(self, filepath, log_path, size,
+                                   **kwargs):
         """
         This Method update the password in solution.yaml file
         Param: filepath: filename with complete path
+        Param: log_path: to change the log path inside pods
+        Param: size: to change the disk size to be used for data and metadata
+        Param: nodeport_http: http Port for node port service for s3
+        Param: nodeport_https: https Port for node port service for s3
+        Param: control_nodeport_https: https Port for node port service for control
         :returns the status, filepath
         """
+        service_type = kwargs.get('service_type', self.deploy_cfg['service_type'])
+        nodeport_http = kwargs.get('nodeport_http', self.deploy_cfg['http_port'])
+        nodeport_https = kwargs.get('nodeport_https', self.deploy_cfg['https_port'])
+        control_nodeport_https = kwargs.get('control_nodeport_https',
+                                            self.deploy_cfg['control_port_https'])
+        lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
+        deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
+            if deployment_type:
+                parent_key['deployment_type'] = deployment_type
             content = parent_key['secrets']['content']
             common = parent_key['common']
+            LOGGER.debug("common is %s", common)
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
+            common['container_path']['log'] = log_path
+            common['setup_size'] = size
+            s3_service = common['external_services']['s3']
+            control_service = common['external_services']['control']
+            s3_service['type'] = service_type
+            control_service['type'] = service_type
+            s3_service['nodePorts']['http'] = nodeport_http
+            s3_service['nodePorts']['https'] = nodeport_https
+            control_service['nodePorts']['https'] = control_nodeport_https
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
+            if service_type == "LoadBalancer":
+                s3_service['count'] = lb_count
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
                 passwd_dict[key] = pswdmanager.decrypt(value)
@@ -642,8 +735,8 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     @staticmethod
-    def deploy_cortx_k8s_cluster(master_node_list: list, worker_node_list: list,
-                                 deploy_target: str = "CORTX-CLUSTER") -> tuple:
+    def deploy_cortx_k8s_re_job(master_node_list: list, worker_node_list: list,
+                                deploy_target: str = "CORTX-CLUSTER") -> tuple:
         """
         Setup k8s cluster using RE jenkins job
         param: master_node_list : List of all master nodes(Logical Node object)
@@ -669,8 +762,6 @@ class ProvDeployK8sCortxLib:
                             f'user={each.username},' \
                             f'pass={each.password}'
                 hosts_input_str.append(input_str)
-        else:
-            return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
         jen_parameter["DEPLOY_TARGET"] = deploy_target
@@ -694,9 +785,12 @@ class ProvDeployK8sCortxLib:
         param: pod_name: Running Data Pod
         return: True/False and success/failure message
         """
-        LOGGER.info("Get Cluster status")
-        cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
-                                              format(pod_name)).decode('UTF-8')
+        try:
+            LOGGER.info("Get Cluster status")
+            cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
+                                                  format(pod_name)).decode('UTF-8')
+        finally:
+            node_obj.disconnect()
         cluster_status = json.loads(cluster_status)
         if cluster_status is not None:
             nodes_data = cluster_status["nodes"]
@@ -708,27 +802,29 @@ class ProvDeployK8sCortxLib:
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
 
-    def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list):
+    def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list,
+                      custom_repo_path: str = PROV_CFG["k8s_cortx_deploy"]["k8s_dir"]):
         """
         Method used to run destroy script
         param: master node obj list
         param: worker node obj list
         """
-        cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
-                                            self.deploy_cfg["destroy_cluster"])
-        cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
-        cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
-        # cmd4 = "docker image prune -a"
+        destroy_cmd = common_cmd.DESTROY_CLUSTER_CMD.format(custom_repo_path)
+        list_etc_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = common_cmd.LS_LH_CMD.format(self.deploy_cfg['3rd_party_data_dir'])
         try:
-            resp = master_node_obj.execute_cmd(cmd=cmd1)
+            if not master_node_obj.path_exists(custom_repo_path):
+                raise Exception(f"Repo path {custom_repo_path} does not exist")
+            resp = master_node_obj.execute_cmd(cmd=destroy_cmd, recv_ready=True,
+                                               timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
-                resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
-                LOGGER.debug("resp : %s", resp)
-                # resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
-                # LOGGER.debug("resp : %s", resp)
+                if worker.path_exists(self.deploy_cfg['3rd_party_dir']):
+                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
+                if worker.path_exists(self.deploy_cfg['3rd_party_data_dir']):
+                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -794,7 +890,7 @@ class ProvDeployK8sCortxLib:
         return True
 
     @staticmethod
-    def post_deployment_steps_lc():
+    def post_deployment_steps_lc(s3_engine, endpoint):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         returns status boolean
@@ -809,10 +905,28 @@ class ProvDeployK8sCortxLib:
         details = resp.json()
         access_key = details['access_key']
         secret_key = details["secret_key"]
+
         try:
-            LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
-                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+            LOGGER.info("Configure AWS on Client")
+            resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
+            LOGGER.debug("resp : %s", resp)
+            if int(s3_engine) == common_const.S3_ENGINE_RGW:
+                LOGGER.info("Configure AWS keys on Client %s", s3_engine)
+                resp = system_utils.execute_cmd(
+                    common_cmd.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
+                LOGGER.debug("resp : %s", resp)
+            else:
+                LOGGER.info("Configure AWS keys on Client %s")
+                resp = system_utils.execute_cmd(
+                    common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+                LOGGER.debug("resp : %s", resp)
+        # workaround till we have solution for minio configure error
+        # URL `192.168.54.66:30443` for MinIO Client should be of the
+        # form scheme://host[:port]/ without resource component.
+        # \nmake: *** [minio-configure] Error 1\n'
+        except requests.exceptions.InvalidURL as error:
+            LOGGER.exception(error)
+            return True, resp
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -860,7 +974,9 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("Removing local file from client and downloading object")
         system_utils.remove_file(file_path)
-        resp = s3t_obj.object_download(bucket_name, test_file, file_path)
+        resp = s3t_obj.get_object(bucket=bucket_name, key=test_file)
+        with open(file_path, "wb") as data:
+            data.write(resp[1]['Body'].read())
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Verifying checksum of downloaded file with old file should be same")
@@ -906,14 +1022,17 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Basic IO Completed")
 
     @staticmethod
-    def io_workload(access_key, secret_key, bucket_prefix, clients=5):
+    def io_workload(access_key, secret_key, bucket_prefix, clients=5,
+                    **kwargs):
         """
         S3 bench workload test executed for each of Erasure coding config
         param: access_key: s3 user access key
         param: secret_key: s3 user secret keys
         param: bucket_prefix: bucket prefix
         param: client: no clients request
+        param: endpoint_url: endpoint url
         """
+        endpoint_url = kwargs.get('endpoint_url', "s3.seagate.com")
         LOGGER.info("STARTED: S3 bench workload test")
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
@@ -931,9 +1050,10 @@ class ProvDeployK8sCortxLib:
                 samples = 5
             resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                    num_clients=clients,
-                                   num_sample=samples, obj_name_pref="test-object-",
+                                   num_sample=samples, obj_name_pref=f"test-object-{workload}",
                                    obj_size=workload,
-                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
+                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix,
+                                   end_point=endpoint_url, validate_certs=S3_CFG["validate_certs"])
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
@@ -948,13 +1068,10 @@ class ProvDeployK8sCortxLib:
         param: csv_filepath: csv file path
         returns: updated csv file with its path
         """
-        fields = ['ITERATION', 'POD STATUS']
-        with open(csv_filepath, 'w')as fptr:
+        with open(csv_filepath, 'a+') as fptr:
             # writing the fields
             write = csv.writer(fptr)
-            write.writerow(fields)
-            for test in test_list:
-                write.writerows([test])
+            write.writerow(test_list)
             fptr.close()
         return csv_filepath
 
@@ -1013,28 +1130,39 @@ class ProvDeployK8sCortxLib:
         keyword:run_basic_s3_io_flag: flag to run basic s3 io
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
         keyword:destroy_setup_flag:flag to destroy cortx cluster
-
+        keyword:log_path:log_path of cortx cluster
+        keyword:data_disk_size: data disk size
+        keyword:meta_disk_size: metadata disk size
+        keyword:custom_repo_path: Custom repo path to be used for ONLY DESTROY cortx cluster
         """
         setup_k8s_cluster_flag = \
-            kwargs.get("setup_k8s_cluster_flag",
-                       PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
+            kwargs.get("setup_k8s_cluster_flag", self.deploy_cfg['setup_k8s_cluster_flag'])
         cortx_cluster_deploy_flag = \
             kwargs.get("cortx_cluster_deploy_flag",
-                       PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
+                       self.deploy_cfg['cortx_cluster_deploy_flag'])
         setup_client_config_flag = \
             kwargs.get("setup_client_config_flag",
-                       PROV_CFG['k8s_cortx_deploy']['setup_client_config_flag'])
+                       self.deploy_cfg['setup_client_config_flag'])
         run_basic_s3_io_flag = \
-            kwargs.get("run_basic_s3_io_flag",
-                       PROV_CFG['k8s_cortx_deploy']['run_basic_s3_io_flag'])
+            kwargs.get("run_basic_s3_io_flag", self.deploy_cfg['run_basic_s3_io_flag'])
         run_s3bench_workload_flag = \
             kwargs.get("run_s3bench_workload_flag",
-                       PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
-        destroy_setup_flag = kwargs.get("destroy_setup_flag",
-                                        PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
+                       self.deploy_cfg['run_s3bench_workload_flag'])
+        destroy_setup_flag = kwargs.get("destroy_setup_flag", self.deploy_cfg['destroy_setup_flag'])
+        log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
+        custom_repo_path = kwargs.get("custom_repo_path", self.deploy_cfg["k8s_dir"])
+        report_path = kwargs.get("report_filepath", self.deploy_cfg["report_file"])
+        data_disk_size = kwargs.get("data_disk_size", self.deploy_cfg["data_disk_size"])
+        metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
+        row = list()
+        row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+        sns = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)
+        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)
+        row.append(sns)
+        row.append(dix)
         LOGGER.debug("setup_k8s_cluster_flag = %s", setup_k8s_cluster_flag)
         LOGGER.debug("cortx_cluster_deploy_flag = %s", cortx_cluster_deploy_flag)
         LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
@@ -1042,9 +1170,11 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
         LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
-            LOGGER.info("Step to Perform k8s Cluster Deployment")
-            resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
-            assert_utils.assert_true(resp[0], resp[1])
+            resp = self.verify_k8s_cluster_exists(master_node_list, worker_node_list)
+            if not resp:
+                LOGGER.info("Step to Perform k8s Cluster Deployment")
+                resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
+                assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Taint master nodes if not already done.")
             for node in master_node_list:
                 resp = self.validate_master_tainted(node)
@@ -1061,46 +1191,66 @@ class ProvDeployK8sCortxLib:
                                         sns_spare=sns_spare, dix_data=dix_data,
                                         dix_parity=dix_parity, dix_spare=dix_spare,
                                         cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
-                                        size_data_disk="20Gi", size_metadata="20Gi",
-                                        glusterfs_size="20Gi")
+                                        size_data_disk=data_disk_size,
+                                        size_metadata=metadata_disk_size,
+                                        log_path=log_path,
+                                        cortx_server_image=self.cortx_server_image,
+                                        service_type=self.service_type,
+                                        https_port=self.nodeport_https,
+                                        http_port=self.nodeport_http,
+                                        control_https_port=self.control_nodeport_https)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
-                LOGGER.info("The solution yaml file is %s\n", file)
+                LOGGER.info("The detailed solution yaml file is\n")
+                for line in file.readlines():
+                    LOGGER.info(line)
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
-                                             self.docker_username,
-                                             self.docker_password, self.git_script_tag)
+                                             self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step to Check s3 server status")
-            resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-            pod_name = resp[1]
-            start_time = int(time.time())
-            end_time = start_time + 1800  # 30 mins timeout
-            while int(time.time()) < end_time:
-                resp = self.get_hctl_status(master_node_list[0], pod_name)
-                if resp[0]:
-                    LOGGER.info("####All the services online. Time Taken : %s",
-                                (int(time.time()) - start_time))
-                    break
-                time.sleep(60)
-            assert_utils.assert_true(resp[0], resp[1])
-
+            LOGGER.info("Step to Check  ALL service status")
+            time.sleep(60)
+            service_status = self.check_service_status(master_node_list[0])
+            LOGGER.info("service resp is %s", service_status)
+            assert_utils.assert_true(service_status[0], service_status[1])
+            if self.cortx_server_image:
+                resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
+                                                  self.deploy_cfg["rgw_rpm"])
+                assert_utils.assert_true(resp[0], resp[1])
+            row.append(service_status[-1])
         if setup_client_config_flag:
-            resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
+            resp = system_utils.execute_cmd(
+                common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
             eth1_ip = resp[1].strip("'\\n'b'")
-            LOGGER.info("Configure HAproxy on client")
-            ext_lbconfig_utils.configure_haproxy_lb(master_node_list[0].hostname,
-                                                    master_node_list[0].username,
-                                                    master_node_list[0].password, eth1_ip,
-                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+            if self.service_type == "NodePort":
+                resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
+                                                                self.deploy_cfg['iface'])
+                if not resp[0]:
+                    LOGGER.debug("Did not get expected response: %s", resp)
+                ext_ip = resp[1]
+                port = resp[2]
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+":{}".format(port)
+                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
+            else:
+                LOGGER.info("Configure HAproxy on client")
+                ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                           master_node_list[0].username,
+                                                           master_node_list[0].password,
+                                                           eth1_ip, self.deploy_cfg['iface'])
+                ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
             LOGGER.info("Step to Create S3 account and configure credentials")
-            resp = self.post_deployment_steps_lc()
-            assert_utils.assert_true(resp[0], resp[1])
-            access_key, secret_key = S3H_OBJ.get_local_keys()
-            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+            if self.s3_engine == "2":
+                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+                assert_utils.assert_true(resp[0], resp[1])
+                access_key, secret_key = S3H_OBJ.get_local_keys()
+                if self.service_type == "NodePort":
+                    s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                        endpoint_url=ext_port_ip)
+                else:
+                    s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             if run_basic_s3_io_flag:
                 LOGGER.info("Step to Perform basic IO operations")
                 bucket_name = "bucket-" + str(int(time.time()))
@@ -1109,12 +1259,273 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name)
-
+                                 bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
-            resp = self.destroy_setup(master_node_list[0], worker_node_list)
+            resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
             assert_utils.assert_true(resp[0], resp[1])
-
+        row.append("PASS")
+        if os.path.isfile(report_path):
+            resp = self.dump_in_csv(row, report_path)
+            LOGGER.info("Report path is %s", resp)
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
+
+    def check_s3_status(self, master_node_obj: LogicalNode,
+                        pod_prefix: str = common_const.POD_NAME_PREFIX):
+        """
+        Function to check s3 server status
+        """
+        deploy_ff_cfg = PROV_CFG["deploy_ff"]
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        response = list()
+        while int(time.time()) < end_time:
+            pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
+            assert_utils.assert_true(pod_name[0], pod_name[1])
+            resp = self.get_hctl_status(master_node_obj, pod_name[1])
+            if resp[0]:
+                time_taken = (int(time.time()) - start_time)
+                LOGGER.info("All the services are online. Time Taken : %s", time_taken)
+                response.extend(resp)
+                response.append(time_taken)
+                break
+            time.sleep(deploy_ff_cfg["per_step_delay"])
+            server_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                       common_const.SERVER_POD_NAME_PREFIX)
+            assert_utils.assert_true(server_pod_list)
+            LOGGER.debug("The Server pod list is %s", server_pod_list)
+            LOGGER.info("s3 Server Status Check Completed")
+        if len(response) == 0:
+            return False, "All Services are not started."
+        return response
+
+    def check_service_status(self, master_node_obj: LogicalNode):
+        """
+        Function to check all service status
+        param: nodeObj of Master node.
+        returns: dict of all pods with service status True/False and time taken
+        """
+        resp = self.check_pods_status(master_node_obj)
+        assert_utils.assert_true(resp, "All Pods are not in Running state")
+        data_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                 common_const.POD_NAME_PREFIX)
+        server_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                   common_const.SERVER_POD_NAME_PREFIX)
+        LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
+                     data_pod_list, server_pod_list)
+        assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
+        assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
+        start_time = int(time.time())
+        end_time = start_time + 70 * (len(data_pod_list) * 2)  # 32 mins timeout
+        response = list()
+        hctl_status = dict()
+        while int(time.time()) < end_time:
+            for pod_name in data_pod_list:
+                resp = self.get_hctl_status(master_node_obj, pod_name)
+                hctl_status.update({pod_name: resp[0]})
+            for server_pod_name in server_pod_list:
+                resp = self.get_hctl_status(master_node_obj, server_pod_name)
+                hctl_status.update({server_pod_name: resp[0]})
+            status = all(element is True for element in list(hctl_status.values()))
+            if status:
+                time_taken = time.time() - start_time
+                LOGGER.info("#### Services online. Time Taken : %s", time_taken)
+                response.append(status)
+                response.append(time_taken)
+                return response
+        LOGGER.info("hctl_status = %s", hctl_status)
+        response.extend([False, 'Timeout'])
+        return response
+
+    # pylint: disable=broad-except
+    @staticmethod
+    def kill_all_process_instance(name: str):
+        """
+        Kill all instances of specified process
+        :param name: Name of process
+        return : boolean
+        """
+        try:
+            command = f"ps ax | grep '{name}' | grep -v grep"
+            LOGGER.info("Command : %s", command)
+            for line in os.popen(command):
+                fields = line.split()
+                pid = fields[0]
+                # terminating process
+                LOGGER.debug("Killing PID : %s", pid)
+                os.kill(int(pid), signal.SIGKILL)
+            LOGGER.info("Process Successfully terminated")
+            return True
+        except OSError as error:
+            LOGGER.error("Error Encountered while killing %s: %s", name, error)
+            return False
+
+    @staticmethod
+    def get_durability_config(num_nodes) -> list:
+        """
+        Get 3 EC configs based on the number of nodes given as args.
+        EC config will be calculated considering CVG as 1,2,3.
+        NOTE: Minimum 7 disks per node are required for this method.
+        param: num_nodes : Number of nodes
+        return : list of configs. (List of Dictionary)
+        """
+        config_list = []
+        LOGGER.debug("Configurations for %s Nodes", num_nodes)
+        for i in range(1, 4):
+            config = {}
+            cvg_count = i
+            sns_total = num_nodes * cvg_count
+            sns_data = math.ceil(sns_total / 2)
+            sns_data = sns_data + i
+            if sns_data >= sns_total:
+                sns_data = sns_data - 1
+            sns_parity = sns_total - sns_data
+
+            dix_parity = math.ceil((num_nodes + cvg_count) / 2) + i
+            if dix_parity > (num_nodes - 1):
+                dix_parity = num_nodes - 1
+
+            config["sns_data"] = sns_data
+            config["sns_parity"] = sns_parity
+            config["sns_spare"] = 0
+            config["dix_data"] = 1
+            config["dix_parity"] = dix_parity
+            config["dix_spare"] = 0
+            config["data_disk_per_cvg"] = 0  # To utilize max possible on the available system
+            config["cvg_count"] = i
+            config_list.append(config)
+            LOGGER.debug("Config %s : %s", i, config)
+
+        return config_list
+
+    @staticmethod
+    def upgrade_software(node_obj: LogicalNode, git_remote_path: str,
+                         upgrade_type: str = "rolling", granular_type: str = "all",
+                         exc: bool = True) -> tuple:
+        """
+        Helper function to Upgrade CORTX stack.
+        :param node_obj: Master node(Logical Node object)
+        :param git_remote_path: Remote path of repo.
+        :param upgrade_type: Type of upgrade (rolling or cold).
+        :param granular_type: Type to upgrade all or particular pod.
+        :param exc: Flag to disable/enable exception raising
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image version.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        if upgrade_type == "rolling":
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+        else:
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
+        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        LOGGER.debug("".join(resp).replace("\\n", "\n"))
+        resp = "".join(resp).replace("\\n", "\n")
+        if "Error" in resp or "Failed" in resp:
+            return False, resp
+        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
+        return True, resp
+
+    @staticmethod
+    def verify_k8s_cluster_exists(master_node_list, worker_node_list):
+        """
+        This method is to verify the K8S setup exists for given set of nodes.
+        master_node_list: is the Master Node
+        worker_node_list: Worker Nodes
+        returns True if we have K8s cluster exists
+        """
+        resp = master_node_list[0].execute_cmd(common_cmd.K8S_WORKER_NODES,
+                                               read_lines=True)
+        if len(resp) == 0:
+            return False
+        worker_list = []
+        worker_nodes = []
+        for worker in resp[1:]:
+            worker_list.append(worker.strip())
+        LOGGER.debug(worker_list)
+        for nodes in worker_node_list:
+            worker_nodes.append(nodes.hostname)
+        LOGGER.debug("Data from setup_details %s", worker_nodes)
+        master_rsp = master_node_list[0].execute_cmd(common_cmd.K8S_MASTER_NODE,
+                                                     read_lines=True)
+        if len(worker_nodes) == len(worker_list):
+            if worker_nodes.sort() == worker_list.sort() and master_rsp[-1].strip() == \
+                    master_node_list[0].hostname:
+                LOGGER.debug("Master and Worker nodes are matched."
+                             "skipping K8s Cluster deployment")
+                return True
+            LOGGER.error("Input Setup details mismatch with current setup")
+            return False
+        LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
+        return False
+
+    @staticmethod
+    def verfiy_installed_rpms(master_node_list, container_name, rpm_name):
+        """
+        This method is to verify the installed rpms in the pods.
+        param: master_node_list: master node obj.
+        param: rpm_name: rpm which need to be verify if its
+        installed or not
+        returns True
+        """
+        server_pods_list = LogicalNode.get_all_pods(master_node_list[0],
+                                                    common_const.SERVER_POD_NAME_PREFIX)
+        installed_rpm = []
+        for server_pod in server_pods_list:
+            resp = master_node_list[0].execute_cmd(
+                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name),
+                read_lines=True)
+        for element in resp:
+            installed_rpm.append(element.strip())
+        LOGGER.debug("Installed rpm is %s", installed_rpm)
+        result = re.search(rpm_name, installed_rpm[0])
+        if result is not None:
+            LOGGER.debug("RPM is %s", installed_rpm)
+            return True, installed_rpm
+        return False, installed_rpm
+
+    @staticmethod
+    def pull_image(node_obj: LogicalNode, image: str) -> tuple:
+        """
+        Helper function to pull cortx image.
+        :param: node_obj: node object(Logical Node object)
+        :param: image: cortx image to pull
+        :return: True/False and success/failure message
+        """
+        LOGGER.info("Pull Cortx image.")
+        try:
+            node_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(image))
+        except IOError as err:
+            LOGGER.error("An error occurred in %s:", ProvDeployK8sCortxLib.pull_image.__name__)
+            return False, err
+        return True, "Image pulled."
+
+    @staticmethod
+    def update_sol_with_image(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in prov_deploy_cfg["images_key"]:
+            if image == "cortxserver":
+                parent_key['images'][image] = image_dict['rgw_image']
+            else:
+                parent_key['images'][image] = image_dict['all_image']
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path

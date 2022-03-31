@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -100,7 +99,8 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("listing all users")
-            response = super().list_users()["Users"]
+            response = poll(super().list_users)
+            response = response["Users"]
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
@@ -119,7 +119,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating %s user access key.", user_name)
-            response = super().create_access_key(user_name)
+            response = poll(super().create_access_key, user_name)
             LOGGER.info(response)
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
@@ -187,7 +187,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("list access keys.")
-            response = super().list_access_keys(user_name)
+            response = poll(super().list_access_keys, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
@@ -264,8 +264,8 @@ class IamTestLib(IamLib):
                 user_name,
                 password_reset)
             user_dict = {}
-            login_profile = super().create_user_login_profile(
-                user_name, password, password_reset)
+            login_profile = poll(super().create_user_login_profile,
+                                 user_name, password, password_reset)
             user_dict['user_name'] = login_profile.user_name
             user_dict['create_date'] = login_profile.create_date.strftime(
                 "%Y-%m-%d %H:%M:%S")
@@ -356,6 +356,69 @@ class IamTestLib(IamLib):
 
         return True, user_dict
 
+    def delete_user_login_profile(self, user_name):
+        """
+        Deletes the password for the specified IAM user.
+
+        :param user_name: The name of the user whose password you want to delete.
+        """
+        try:
+            response = poll(super().delete_user_login_profile, user_name)
+        except ClientError as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.delete_user_login_profile.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error)
+
+        return True, response
+
+    def create_iam_user(self, user_name, password, password_reset=True) -> tuple:
+        """
+        Creating new user with login profile and access key.
+
+        :param user_name: Name of the user.
+        :param password: password for the user login profile.
+        :param password_reset: with or without password reset value: True/False.
+        :return: (Boolean, response).
+        """
+        try:
+            user_dict = dict()
+            response = self.create_user(user_name=user_name)
+            user_dict.update(response[1])
+            response = self.create_user_login_profile(user_name, password, password_reset)
+            user_dict.update(response[1])
+            response = self.create_access_key(user_name)
+            user_dict.update(response[1])
+            LOGGER.debug(user_dict)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.create_iam_user.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, user_dict
+
+    def delete_iam_user(self, user_name):
+        """Delete iam user with login profile and access key."""
+        try:
+            response = self.list_access_keys(user_name)
+            access_keys = list()
+            for key in response[1].get("AccessKeyMetadata", []):
+                access_keys.append(key.get("AccessKeyId"))
+            LOGGER.info(access_keys)
+            for access_key in access_keys:
+                self.delete_access_key(user_name, access_key)
+            # if self.get_user_login_profile(user_name)[0]:
+            #     self.delete_user_login_profile(user_name)  # OperationNotSupported in cortx.
+            response = self.delete_user(user_name)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         IamTestLib.delete_iam_user.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     def s3_user_operation(
             self,
             user_name: str = None,
@@ -369,7 +432,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating access key for the specified user")
-            response = super().create_access_key(user_name)
+            response = self.create_access_key(user_name)[1]
             LOGGER.info("user_acc_key: %s", str(response))
             acc_key = response["AccessKey"]["AccessKeyId"]
             sec_key = response["AccessKey"]["SecretAccessKey"]
@@ -387,7 +450,7 @@ class IamTestLib(IamLib):
             LOGGER.info(op_bl)
             op_db = s3obj.delete_bucket(bucket_name)
             LOGGER.info(op_db)
-            res = super().delete_access_key(user_name, acc_key)
+            res = self.delete_access_key(user_name, acc_key)
             LOGGER.info("Access Key deleted successfully: %s", str(res))
             LOGGER.info("Completed CRUD operations for s3 Data Path")
             response = {"AccountName": user_name, "BucketName": bucket_name}
@@ -410,7 +473,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Creating access key for the specified user")
-            user_acckey = super().create_access_key(user_name)
+            user_acckey = self.create_access_key(user_name)[1]
             response = user_acckey
             acc_key = response["AccessKey"]["AccessKeyId"]
             LOGGER.info("Updating the access key")
@@ -430,12 +493,11 @@ class IamTestLib(IamLib):
 
         return True, user_name
 
-    @staticmethod
-    def s3_ops_using_temp_auth_creds(
-            access_key: str = None,
-            secret_key: str = None,
-            session_token: str = None,
-            bucket_name: str = None) -> tuple:
+    def s3_ops_using_temp_auth_creds(self,
+                                     access_key: str = None,
+                                     secret_key: str = None,
+                                     session_token: str = None,
+                                     bucket_name: str = None) -> tuple:
         """
         Performing s3 operations using temp auth creds and session token.
 
@@ -447,7 +509,8 @@ class IamTestLib(IamLib):
         """
         LOGGER.info("Performing s3 operations using temp auth credentials.")
         s3_resource = boto3.resource("s3",
-                                     verify=S3_CFG["s3_cert_path"],
+                                     use_ssl=self.use_ssl,
+                                     verify=self.iam_cert_path,
                                      aws_access_key_id=access_key,
                                      aws_secret_access_key=secret_key,
                                      endpoint_url=S3_CFG["s3_url"],
@@ -495,9 +558,7 @@ class IamTestLib(IamLib):
                 account_name, email, LDAP_USERNAME, LDAP_PASSWD)
             acc_li.append(account_name)
             iam_obj = IamLib(access_key=access_key,
-                             secret_key=secret_key,
-                             endpoint_url=S3_CFG["iam_url"],
-                             iam_cert_path=S3_CFG["iam_cert_path"])
+                             secret_key=secret_key)
             for _ in range(int(user_count)):
                 user_name = "testusr{}".format(str(time.time()))
                 iam_obj.create_user(user_name)

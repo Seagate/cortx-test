@@ -94,7 +94,8 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
-  per_step_delay: 10
+  gateway: "0.0.0.0"
+  per_step_delay: 30
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"
   bmc_username: "admin"
@@ -110,7 +111,7 @@ post_deployment_steps:
 k8s_cluster_deploy:
   job_name: "setup-kubernetes-cluster"
   cortx_job_name: "deploy-cortx-k8-cluster"
-  jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/"
+  jenkins_url: "https://eos-jenkins.colo.seagate.com/job/Cortx-kubernetes/"
   auth_token: "$eagate@123"
 
 k8s_cortx_deploy:
@@ -120,30 +121,44 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
-  local_path_prov: "/mnt/fs-local-volume/"
-  s3_max_start_timeout: 900
-  deploy_cluster: "sh deploy-cortx-cloud.sh"
-  destroy_cluster: "sh destroy-cortx-cloud.sh"
+  clone_dir: "deploy-scripts"
+  local_path_prov: "/mnt/fs-local-volume"
+  3rd_party_data_dir: "/var/data/3rd-party/"
+  3rd_party_dir: "/etc/3rd-party/"
+  log_path: "/etc/cortx/log"
+  custom_log_path: "/etc/cortx/custom/log"
+  s3_max_start_timeout: 240
+  setup_size: "small"
+  https_protocol: "https://{}"
+  https_port: 30443
+  http_port: 30080
+  control_port_https: 31169
+  iface: "eth1"
+  service_type: "LoadBalancer"
+  lb_count: 1
+  deployment_type: "standard"
+  data_disk_size: "20Gi"
+  metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
-  exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
-  git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
-  pem_file_path: "/root/cortx-k8s/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/ssl-cert/s3.seagate.com.pem"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
+  report_file: "deployment_report.csv"
+  log_file: "deployment.log"
+  rgw_rpm: "cortx-rgw"
+  status_log_file: "status.log"
+  pre_req_log: "pre_req_log.log"
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
-    openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
-    consul: 'hashicorp/consul:1.10.0'
-    kafka: '3.0.0-debian-10-r7'
-    zookeeper: '3.7.0-debian-10-r182'
-    gluster: 'docker.io/gluster/gluster-centos:latest'
-    rancher: 'rancher/local-path-provisioner:v0.0.20'
-    busybox: 'busybox'
-  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata' ]
+    consul: 'ghcr.io/seagate/consul:1.11.4'
+    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
+    zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
+    rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
+    busybox: 'ghcr.io/seagate/busybox:latest'
+  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata',
+                      'cortxserver', 'cortxha', 'cortxclient' ]
   password:
-    openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
     kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
     consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
     common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
@@ -156,6 +171,11 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+  timeout:
+    pre-req: 120
+    deploy: 7200
+    destroy: 900
+    status: 120
 test_basic_io:
   io_upper_limits:
     Kb: 130

@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -23,23 +22,21 @@
 """Python Library using boto3 module to perform Bucket and object Operations."""
 
 import os
-import sys
 import logging
-import threading
-import boto3
-import boto3.s3
-from boto3.s3.transfer import TransferConfig
-from botocore.config import Config
 from typing import Union
-from commons import commands
-from commons.utils.system_utils import run_local_cmd, create_file
-from config.s3 import S3_CFG
+from botocore.config import Config
+
+import boto3
+from config import S3_CFG, CMN_CFG
+from commons.constants import S3_ENGINE_RGW
 
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint:disable=too-few-public-methods
 class S3Rest:
     """Basic Class for Creating Boto3 REST API Objects."""
+
     def __init__(self,
                  access_key: str = None,
                  secret_key: str = None,
@@ -60,13 +57,16 @@ class S3Rest:
         :param debug: debug mode.
         """
         init_s3_connection = kwargs.get("init_s3_connection", True)
-        region = kwargs.get("region", None)
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            region = kwargs.get("region", "default")
+        else:
+            region = kwargs.get("region", None)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
-        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        self.use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
-        s3_cert_path = s3_cert_path if val_cert else False
+        self.s3_cert_path = s3_cert_path if val_cert else False
         self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
                             f"{'' if val_cert else ' --no-verify-ssl'}"
         if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]):
@@ -76,18 +76,18 @@ class S3Rest:
             boto3.set_stream_logger(name="botocore")
         try:
             if init_s3_connection:
-                self.s3_resource = boto3.resource(
-                    "s3",
-                    use_ssl=use_ssl,
-                    verify=s3_cert_path,
-                    aws_access_key_id=access_key,
-                    aws_secret_access_key=secret_key,
-                    endpoint_url=endpoint_url,
-                    region_name=region,
-                    aws_session_token=aws_session_token,
-                    config=config)
-                self.s3_client = boto3.client("s3", use_ssl=use_ssl,
-                                              verify=s3_cert_path,
+                self.s3_resource = boto3.resource("s3",
+                                                  use_ssl=self.use_ssl,
+                                                  verify=self.s3_cert_path,
+                                                  aws_access_key_id=access_key,
+                                                  aws_secret_access_key=secret_key,
+                                                  endpoint_url=endpoint_url,
+                                                  region_name=region,
+                                                  aws_session_token=aws_session_token,
+                                                  config=config)
+                self.s3_client = boto3.client("s3",
+                                              use_ssl=self.use_ssl,
+                                              verify=self.s3_cert_path,
                                               aws_access_key_id=access_key,
                                               aws_secret_access_key=secret_key,
                                               endpoint_url=endpoint_url,
@@ -96,9 +96,9 @@ class S3Rest:
                                               config=config)
             else:
                 LOGGER.info("Skipped: create s3 client, resource object with boto3.")
-        except Exception as Err:
-            if "unreachable network" not in str(Err):
-                LOGGER.critical(Err)
+        except Exception as error:
+            if "unreachable network" not in str(error):
+                LOGGER.critical(error)
 
     def __del__(self):
         """Destroy all core objects."""
@@ -324,10 +324,9 @@ class S3Lib(S3Rest):
         :return: response.
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
-        LOGGER.debug(
-            "The %s has been downloaded successfully at mentioned file path %s",
-            obj_name,
-            file_path)
+        LOGGER.debug("The %s has been downloaded successfully at mentioned file path %s",
+                     obj_name,
+                     file_path)
 
         return file_path
 
@@ -343,8 +342,8 @@ class S3Lib(S3Rest):
         :return: response.
         """
         bucket = self.s3_resource.Bucket(bucket_name)
-        self.object_list(bucket_name)
         if force:
+            self.object_list(bucket_name)
             LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
                 "objects in it")
@@ -353,7 +352,7 @@ class S3Lib(S3Rest):
                 "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
             self.object_list(bucket_name)
         response = bucket.delete()
-        LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name,response)
+        LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name, response)
 
         return response
 
@@ -371,16 +370,19 @@ class S3Lib(S3Rest):
 
         return response
 
-    def get_object(self, bucket: str = None, key: str = None) -> dict:
+    def get_object(self, bucket: str = None, key: str = None, ranges: str = None) -> dict:
         """
-        Getting byte range of the object.
+        Getting object or byte range of the object.
 
         :param bucket: Name of the bucket.
         :param key: Key of object.
+        :param ranges: Byte range to be retrieved
         :return: response.
         """
-        response = self.s3_client.get_object(
-            Bucket=bucket, Key=key)
+        if ranges:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key, Range=ranges)
+        else:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
         LOGGER.debug(response)
 
         return response

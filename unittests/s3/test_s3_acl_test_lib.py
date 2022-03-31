@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -8,6 +25,7 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_acl_test_lib
@@ -154,7 +172,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_object_acl(
                 self.dummy_bucket, "ut-obj-01")
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_02_get_bucket_acl(self):
@@ -167,7 +185,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl(
                 self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_03_get_bucket_acl_using_iam_credentials(self):
@@ -190,8 +208,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl_using_iam_credentials(
                 "dummyAccKey", "dummySecKey", "ut-bkt-03")
         except CTException as error:
-            assert "InvalidAccessKeyId" in str(
-                error.message), error.message
+            assert errmsg.INVALID_ACCESSKEY_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_04_put_object_acl(self):
@@ -332,4 +349,4 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message

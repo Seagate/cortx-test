@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -31,9 +30,12 @@ import socket
 import builtins
 import errno
 import string
+import glob
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
+from pathlib import Path
+from botocore.response import StreamingBody
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
@@ -146,6 +148,7 @@ def run_remote_cmd_wo_decision(
         error = stderr.read()
         if error:
             LOGGER.debug("Error: %s", str(error))
+    client.close()
     return output, error, exit_status
 
 
@@ -323,6 +326,40 @@ def calculate_checksum(
     if kwargs.get("filter_resp", None) and binary_bz64:
         result = (result[0], filter_bin_md5(result[1]))
     return result
+
+
+def calc_checksum(object_ref: object, hash_algo: str = 'md5'):
+    """
+    Calculate checksum of file or stream.
+    :param object_ref: Object/File Path or byte/buffer stream
+    :param hash_algo: md5 or sha1
+    :return:
+    """
+    read_sz = 8192
+    csum = None
+    file_hash = md5()  # nosec
+    if hash_algo != 'md5':
+        raise NotImplementedError('Only md5 supported')
+    if isinstance(object_ref, StreamingBody):
+        chunk = object_ref.read(amt=read_sz)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = object_ref.read(amt=read_sz)
+        return file_hash.hexdigest()
+    if os.path.exists(object_ref):
+        size = Path(object_ref).stat().st_size
+
+        with open(object_ref, 'rb') as file_ptr:
+            if size < read_sz:
+                buf = file_ptr.read(size)
+            else:
+                buf = file_ptr.read(read_sz)
+            while buf:
+                file_hash.update(buf)
+                buf = file_ptr.read(read_sz)
+            csum = file_hash.hexdigest()
+
+    return csum
 
 
 def cal_percent(num1: float, num2: float) -> float:
@@ -665,7 +702,6 @@ def split_file(filename, size, split_count, random_part_size=False):
     :param random_part_size: True for random size parts, False for equal size parts
     :return: [{"Output":partname, "Size":partsize}]
     """
-
     if os.path.exists(filename):
         LOGGER.debug("Deleting existing file: %s", str(filename))
         remove_file(filename)
@@ -689,7 +725,6 @@ def split_file(filename, size, split_count, random_part_size=False):
                 split_fin.write(fin.read(read_bytes))
                 res_d.append({"Output": fop, "Size": os.stat(fop).st_size})
     LOGGER.debug(res_d)
-
     return res_d
 
 
@@ -1020,11 +1055,15 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
+        LOGGER.info("local path and new path are %s\n%s", local_path, new_path)
         if os.path.isfile(local_path):
+            LOGGER.debug("Copy from %s to %s", local_path, new_path)
             shutil.copy(local_path, new_path)
         else:
+            LOGGER.debug("Copy in else")
             shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
+
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")
@@ -1074,7 +1113,7 @@ def get_s3_url(cfg, node_index):
     return final_urls
 
 
-def random_metadata_generator(
+def random_string_generator(
         size: int = 6,
         chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
     """
@@ -1173,22 +1212,23 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     return file_path_list
 
 
-def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+def validate_s3bench_parallel_execution(log_dir=None, log_prefix=None, log_path=None) -> tuple:
     """
     Validate the s3bench parallel execution log file for failure.
 
     :param log_dir: Log directory path.
     :param log_prefix: s3 bench log prefix.
+    :param log_path: s3 bench log path.
     :return: bool, response.
     """
-    LOGGER.info("S3 parallel ios log validation started.")
-    log_file_list = list_dir(log_dir)
-    log_path = None
-    for filename in log_file_list:
-        if filename.startswith(log_prefix):
-            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("S3 parallel ios log validation started...")
+    if log_dir and os.path.isdir(log_dir):
+        log_path = [filepath for filepath in sorted(
+            glob.glob(os.path.abspath(log_dir) + '/**'),
+            key=os.path.getctime)
+            if os.path.basename(filepath).startswith(log_prefix)][-1]
     LOGGER.info("IO log path: %s", log_path)
-    if not log_path:
+    if not os.path.isfile(log_path):
         return False, f"failed to generate logs for parallel run: {log_prefix}."
     lines = open(log_path).readlines()
     resp_filtered = [
@@ -1210,7 +1250,7 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
             return False, f"{error} Found in S3Bench Run."
     LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
     # remove_file(log_path)  # Keeping logs for FA/Debugging.
-    LOGGER.info("S3 parallel ios log validation completed.")
+    LOGGER.info("S3 parallel ios log validation completed...")
 
     return True, "S3 parallel ios completed successfully."
 
@@ -1237,6 +1277,7 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
 
 def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
     """
