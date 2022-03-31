@@ -76,6 +76,9 @@ class ProvDeployK8sCortxLib:
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
                                                 self.deploy_cfg["control_port_https"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
+        self.data_only_list = ["data-only", "standard"]
+        self.server_only_list = ["server-only", "standard"]
+        self.exclusive_pod_list = ["data-only", "server-pod"]
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -1216,50 +1219,55 @@ class ProvDeployK8sCortxLib:
             service_status = self.check_service_status(master_node_list[0])
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
-            if self.cortx_server_image:
-                resp = self.verfiy_installed_rpms(master_node_list, common_const.RGW_CONTAINER_NAME,
-                                                  self.deploy_cfg["rgw_rpm"])
-                assert_utils.assert_true(resp[0], resp[1])
             row.append(service_status[-1])
-        if setup_client_config_flag:
-            resp = system_utils.execute_cmd(
-                common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
-            eth1_ip = resp[1].strip("'\\n'b'")
-            if self.service_type == "NodePort":
-                resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                self.deploy_cfg['iface'])
-                if not resp[0]:
-                    LOGGER.debug("Did not get expected response: %s", resp)
-                ext_ip = resp[1]
-                port = resp[2]
-                ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+":{}".format(port)
-                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
-            else:
-                LOGGER.info("Configure HAproxy on client")
-                ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
-                                                           master_node_list[0].username,
-                                                           master_node_list[0].password,
-                                                           eth1_ip, self.deploy_cfg['iface'])
-                ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
-            LOGGER.info("Step to Create S3 account and configure credentials")
-            if self.s3_engine == "2":
-                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-                assert_utils.assert_true(resp[0], resp[1])
-                access_key, secret_key = S3H_OBJ.get_local_keys()
+            if self.deployment_type != "data-only":
+                if self.cortx_server_image:
+                    resp = self.verfiy_installed_rpms(master_node_list,
+                                                      common_const.RGW_CONTAINER_NAME,
+                                                      self.deploy_cfg["rgw_rpm"])
+                    assert_utils.assert_true(resp[0], resp[1])
+        if self.deployment_type not in self.exclusive_pod_list:
+            if setup_client_config_flag:
+                resp = system_utils.execute_cmd(
+                    common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+                eth1_ip = resp[1].strip("'\\n'b'")
                 if self.service_type == "NodePort":
-                    s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                        endpoint_url=ext_port_ip)
+                    resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
+                                                                    self.deploy_cfg['iface'])
+                    if not resp[0]:
+                        LOGGER.debug("Did not get expected response: %s", resp)
+                    ext_ip = resp[1]
+                    port = resp[2]
+                    ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
+                                  ":{}".format(port)
+                    LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
                 else:
-                    s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
-            if run_basic_s3_io_flag:
-                LOGGER.info("Step to Perform basic IO operations")
-                bucket_name = "bucket-" + str(int(time.time()))
-                self.basic_io_write_read_validate(s3t_obj, bucket_name)
-            if run_s3bench_workload_flag:
-                LOGGER.info("Step to Perform S3bench IO")
-                bucket_name = "bucket-" + str(int(time.time()))
-                self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
+                    LOGGER.info("Configure HAproxy on client")
+                    ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                               master_node_list[0].username,
+                                                               master_node_list[0].password,
+                                                               eth1_ip, self.deploy_cfg['iface'])
+                    ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
+                LOGGER.info("Step to Create S3 account and configure credentials")
+                if self.s3_engine == "2":
+                    resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+                    assert_utils.assert_true(resp[0], resp[1])
+                    access_key, secret_key = S3H_OBJ.get_local_keys()
+                    if self.service_type == "NodePort":
+                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=ext_port_ip)
+                    else:
+                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+
+                if run_basic_s3_io_flag:
+                    LOGGER.info("Step to Perform basic IO operations")
+                    bucket_name = "bucket-" + str(int(time.time()))
+                    self.basic_io_write_read_validate(s3t_obj, bucket_name)
+                if run_s3bench_workload_flag:
+                    LOGGER.info("Step to Perform S3bench IO")
+                    bucket_name = "bucket-" + str(int(time.time()))
+                    self.io_workload(access_key=access_key, secret_key=secret_key,
+                                     bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
@@ -1308,25 +1316,33 @@ class ProvDeployK8sCortxLib:
         """
         resp = self.check_pods_status(master_node_obj)
         assert_utils.assert_true(resp, "All Pods are not in Running state")
-        data_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                 common_const.POD_NAME_PREFIX)
-        server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                   common_const.SERVER_POD_NAME_PREFIX)
-        LOGGER.debug("THE DATA and SERVER POD LIST ARE %s, %s",
-                     data_pod_list, server_pod_list)
-        assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
-        assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
+        if self.deployment_type in self.data_only_list:
+            data_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                     common_const.POD_NAME_PREFIX)
+            assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
+            pod_count = len(data_pod_list)
+            LOGGER.debug("THE DATA POD LIST ARE %s", data_pod_list)
+        if self.deployment_type in self.server_only_list:
+            server_pod_list = LogicalNode.get_all_pods(master_node_obj,
+                                                       common_const.SERVER_POD_NAME_PREFIX)
+            assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
+            pod_count = len(server_pod_list)
+            LOGGER.debug("THE SERVER POD LIST ARE %s", server_pod_list)
+
         start_time = int(time.time())
-        end_time = start_time + 70 * (len(data_pod_list) * 2)  # 32 mins timeout
+        end_time = start_time + 70 * (pod_count*2)  # max 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
-            for pod_name in data_pod_list:
-                resp = self.get_hctl_status(master_node_obj, pod_name)
-                hctl_status.update({pod_name: resp[0]})
-            for server_pod_name in server_pod_list:
-                resp = self.get_hctl_status(master_node_obj, server_pod_name)
-                hctl_status.update({server_pod_name: resp[0]})
+            if self.deployment_type in self.data_only_list:
+                for pod_name in data_pod_list:
+                    resp = self.get_hctl_status(master_node_obj, pod_name)
+                    hctl_status.update({pod_name: resp[0]})
+            if self.deployment_type in self.server_only_list:
+                for server_pod_name in server_pod_list:
+                    resp = self.get_hctl_status(master_node_obj, server_pod_name)
+                    hctl_status.update({server_pod_name: resp[0]})
+
             status = all(element is True for element in list(hctl_status.values()))
             if status:
                 time_taken = time.time() - start_time
