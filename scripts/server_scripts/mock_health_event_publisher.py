@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=redefined-outer-name, import-error, broad-except, unspecified-encoding
-# pylint: disable=protected-access, inconsistent-return-statements
+# pylint: disable=import-error
 
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -60,6 +59,7 @@ def is_container_env() -> bool:
     return False
 
 
+# pylint: disable=redefined-outer-name
 def get_data_nodes() -> list:
     """Fetches data node ids using HA wrapper class and displays the result.
 
@@ -85,6 +85,7 @@ def get_server_nodes() -> list:
     return server_node_ids
 
 
+# pylint: disable=redefined-outer-name
 def get_disks(args: argparse.Namespace) -> None:
     """
     Fetches disk ids using ConfStore search API and displays the result.
@@ -97,6 +98,7 @@ def get_disks(args: argparse.Namespace) -> None:
     print(disk_ids)
 
 
+# pylint: disable=redefined-outer-name
 def get_cvgs(args: argparse.Namespace) -> None:
     """
     Fetches cvg ids using ConfStore search API and displays the result.
@@ -109,7 +111,8 @@ def get_cvgs(args: argparse.Namespace) -> None:
     print(cvg_ids)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, redefined-outer-name, broad-except, unspecified-encoding,
+# pylint: disable=protected-access, inconsistent-return-statements
 def publish(args: argparse.Namespace) -> None:
     """
     publishes the message on the message bus.
