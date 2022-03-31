@@ -2971,11 +2971,11 @@ class TestPodRestart:
         LOGGER.debug("Background S3bench responses : %s", responses)
         if not responses["pass_res"]:
             assert_utils.assert_true(False,
-                                     "No background IOs passed while event was cleared")
+                                     "No background IOs response while event was cleared")
         nonbkgrd_logs = list(x[1] for x in responses["pass_res"])
         if not responses["fail_res"]:
             assert_utils.assert_true(False,
-                                     "No background IOs passed while event was set")
+                                     "No background IOs response while event was set")
         bkgrd_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=nonbkgrd_logs)
         assert_utils.assert_false(len(resp[1]), "Non Background Logs which contain failures"
