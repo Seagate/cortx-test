@@ -179,10 +179,9 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29301'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: IOs are started successfully.")
+        LOGGER.info("Step 2: IOs are completed successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
@@ -208,7 +207,7 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: IOs running successfully with new S3 account.")
+        LOGGER.info("Step 6: IOs completed successfully with new S3 account.")
 
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
@@ -329,10 +328,9 @@ class TestClusterShutdownStart:
             self.test_prefix = 'test-29468-1'
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True)
+                                                        log_prefix=self.test_prefix)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 7: IOs running successfully with new S3 account.")
+            LOGGER.info("Step 7: IOs completed successfully with new S3 account.")
             LOGGER.info("Cluster restart was successful for %s count", loop)
 
         LOGGER.info(
@@ -613,8 +611,8 @@ class TestClusterShutdownStart:
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29470'
         self.s3_clean = self.s3bench_cleanup = users
-        resp = self.ha_obj.ha_s3_workload_operation(
-            s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
@@ -628,8 +626,8 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
         LOGGER.info("STEP 4: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB). "
                     "Verify READs and DI on the written data.")
-        resp = self.ha_obj.ha_s3_workload_operation(
-            s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs with variable sizes objects."
                     "Verified READs and verified DI on the written data.")
@@ -975,10 +973,9 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29479'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: IOs are started successfully.")
+        LOGGER.info("Step 2: IOs are completed successfully.")
 
         LOGGER.info(
             "Step 3: Restart the cluster and check cluster status.")
@@ -998,8 +995,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29479-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: IOs running successfully with new S3 account.")
 
@@ -1030,10 +1026,9 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29480'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: IOs are started successfully.")
+        LOGGER.info("Step 2: IOs are completed successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
@@ -1080,8 +1075,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29480-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
 
@@ -1292,8 +1286,7 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29478-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Created 10 buckets and ran S3 IOs on variable size objects.")
         LOGGER.info("Completed: Test to check IOs during cluster restart.")
