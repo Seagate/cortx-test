@@ -22,13 +22,7 @@
 
 import logging
 import os
-import time
-<<<<<<< HEAD
-=======
-import queue
->>>>>>> b7f9474 (F9Aup)
 import pytest
-
 from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -92,10 +86,7 @@ class TestK8CortxUpgrade:
                                                             self.deploy_conf['k8s_dir'])
 
     @pytest.mark.lc
-<<<<<<< HEAD
     @pytest.mark.cortx_upgrade_disruptive
-=======
->>>>>>> b7f9474 (F9Aup)
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
         """
@@ -116,12 +107,9 @@ class TestK8CortxUpgrade:
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         if int(upgrade_version) <= int(installed_version):
-<<<<<<< HEAD
             assert False, "Installed version is same or higher than installing version."
-=======
             assert_utils.assert_true(resp[0],
                                      "Installed version is same or higher than installing version.")
->>>>>>> b7f9474 (F9Aup)
         else:
             LOGGER.info("Installed version is lower than installing version.")
         LOGGER.info("Step 4: Check cluster health.")
@@ -155,10 +143,7 @@ class TestK8CortxUpgrade:
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
-<<<<<<< HEAD
     @pytest.mark.cortx_upgrade_disruptive
-=======
->>>>>>> b7f9474 (F9Aup)
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
         """
@@ -180,13 +165,10 @@ class TestK8CortxUpgrade:
         upgrade_version = upgrade_image_version.split("-")[1]
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         # TO DO BUG #CORTX-29184
-<<<<<<< HEAD
         LOGGER.info("Step 3: Start upgrade.")
         resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
         assert_utils.assert_False(resp[0], resp[1])
-=======
         if int(upgrade_version) <= int(installed_version):
             assert_utils.assert_true(resp[0],
                                      "Installed version is same or higher than installing version.")
->>>>>>> b7f9474 (F9Aup)
         LOGGER.info("Test Completed.")
