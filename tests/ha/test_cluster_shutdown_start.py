@@ -28,7 +28,7 @@ import random
 import threading
 import time
 from http import HTTPStatus
-from multiprocessing import Process, Queue
+from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
@@ -185,7 +185,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
@@ -274,7 +274,7 @@ class TestClusterShutdownStart:
 
             LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
             resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                         resource="cluster")
+                                                              resource="cluster")
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
@@ -378,7 +378,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
@@ -783,6 +783,7 @@ class TestClusterShutdownStart:
         LOGGER.info("STARTED: Test to verify copy object to other buckets before cluster shutdown "
                     "and download and verify checksum after cluster starts.")
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        event = threading.Event()
         bkt_obj_dict = dict()
         for i in range(bkt_cnt):
             bkt_obj_dict["ha-bkt{}-{}".format(i, self.random_time)] = \
@@ -803,19 +804,19 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 1: Create multiple buckets and upload object to %s and copy to other "
                     "buckets", self.bucket_name)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
@@ -835,14 +836,15 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 5: Create multiple buckets and run IOs")
+        LOGGER.info("Step 5: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29475-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 5: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify copy object to other buckets before cluster shutdown "
                     "and download and verify checksum after cluster starts.")
@@ -857,6 +859,7 @@ class TestClusterShutdownStart:
         This test tests copy object to other buckets during cluster restart
         """
         LOGGER.info("STARTED: Test to verify copy object to other buckets during cluster restart")
+        event = threading.Event()
         bkt_obj_dict = dict()
         bkt_obj_dict["ha-bkt-{}".format(self.random_time)] = "ha-obj-{}".format(self.random_time)
         output = Queue()
@@ -876,12 +879,12 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 1: Create multiple buckets and upload object to %s and copy to other "
                     "buckets", self.bucket_name)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other buckets", self.bucket_name)
@@ -893,7 +896,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         bkt_obj_dict1 = dict()
-        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         for cnt in range(bkt_cnt):
             rd_time = perf_counter_ns()
             s3_test_obj.create_bucket(f"ha-bkt{cnt}-{rd_time}")
@@ -905,31 +908,63 @@ class TestClusterShutdownStart:
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict1, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
                 'put_etag': put_etag}
-        prc = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
-        prc.start()
-        LOGGER.info("Step 3: Successfully started background process")
+        thread = threading.Thread(target=self.ha_obj.create_bucket_copy_obj, args=(event,),
+                                  kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 3: Successfully started background process for copy object")
+        # While loop to sync this operation with background thread to achieve expected scenario
+        LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
+        bkt_list = list()
+        timeout = time.time() + 60 * 3
+        while len(bkt_list) < bkt_cnt:
+            time.sleep(HA_CFG["common_params"]["20sec_delay"])
+            bkt_list = s3_test_obj.bucket_list()[1]
+            if timeout < time.time():
+                LOGGER.error("Bucket creation is taking longer than 3 mins")
+                assert_utils.assert_true(False, "Please check background process logs")
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
         LOGGER.info("Step 4: Restart the cluster and check cluster status.")
+        event.set()
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Cluster restarted successfully and all Pods are online.")
 
-        prc.join()
-        if output.empty():
-            LOGGER.error("Failed in Copy Object process")
-            LOGGER.info("Retrying copy object to buckets %s", list(bkt_obj_dict1.keys()))
-            resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        event.clear()
+        LOGGER.info("Step 5: Checking response from background process of copy object")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 3:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do copy object")
+
+        put_etag = responses[0]
+        exp_fail_bkt_obj_dict = responses[1]
+        failed_bkts = responses[2]
+        LOGGER.debug("Responses received from background process:\nput_etag: "
+                     "%s\nexp_fail_bkt_obj_dict: %s\nfailed_bkts: %s", put_etag,
+                     exp_fail_bkt_obj_dict, failed_bkts)
+        if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
+            LOGGER.info("Copy object operation for all the buckets completed successfully. ")
+        elif failed_bkts:
+            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
+                                            f"state. Failed buckets: {failed_bkts}")
+        elif exp_fail_bkt_obj_dict:
+            LOGGER.info("Step 5.1: Retrying copy object to buckets %s",
+                        list(exp_fail_bkt_obj_dict.keys()))
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                       bucket_name=self.bucket_name,
                                                       object_name=self.object_name,
-                                                      bkt_obj_dict=bkt_obj_dict1,
-                                                      file_path=self.multipart_obj_path,
+                                                      bkt_obj_dict=exp_fail_bkt_obj_dict,
                                                       bkt_op=False, put_etag=put_etag)
-            assert_utils.assert_true(resp[0], resp[1])
-        else:
-            res = output.get()
-            put_etag = res[1]
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            put_etag = resp[1]
+        LOGGER.info("Step 5: Successfully checked responses from background process.")
 
-        LOGGER.info("Step 5: Download the uploaded object and verify checksum")
+        LOGGER.info("Step 6: Download the uploaded object and verify checksum")
         for k, v in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=k, key=v)
             LOGGER.info("Get object response: %s", resp)
@@ -937,16 +972,17 @@ class TestClusterShutdownStart:
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {v} of bucket {k}. Put and Get "
                                                           "Etag mismatch")
-        LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 6: Create multiple buckets and run IOs")
+        LOGGER.info("Step 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29476-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify copy object to other buckets during cluster restart")
 
@@ -1032,7 +1068,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
+                                                          resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
