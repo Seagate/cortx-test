@@ -37,9 +37,8 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 LOGGER = logging.getLogger(__name__)
 
 class TestK8CortxUpgrade:
-    """
-    Test K8s CORTX Software Upgrade.
-    """
+    '''Test K8s CORTX Software Upgrade.'''
+    
 
     @classmethod
     def setup_class(cls):
