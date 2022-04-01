@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 class TestK8CortxUpgrade:
     """
-    Test K8s CORTX Software Upgrade
+    Test K8s CORTX Software Upgrade.
     """
 
     @classmethod
