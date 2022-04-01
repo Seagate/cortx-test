@@ -46,7 +46,7 @@ class TestProvK8CortxColdUpgrade:
         """Setup class"""
         LOGGER.info("STARTED: Setup Module operations")
         cls.cortx_all_image = os.getenv("CORTX_ALL_IMAGE", None)
-        cls.cortx_rgw_image = os.getenv("CORTX_RGW_IMAGE", None)   
+        cls.cortx_rgw_image = os.getenv("CORTX_RGW_IMAGE", None)
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
@@ -56,9 +56,9 @@ class TestProvK8CortxColdUpgrade:
         cls.host_list = []
         cls.local_sol_path = cons.LOCAL_SOLUTION_PATH
 
-        for node in cls.num_nodes: 
-            node_obj = LogicalNode(hostname=node["hostname"], 
-            username=node["username"], password=node["password"])
+        for node in cls.num_nodes:
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"], password=node["password"])
             cls.host_list.append(node_obj)
             if node["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
@@ -82,11 +82,14 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
-        LOGGER.info("Step 2: Check if installing version is higher than installed version.")
+        LOGGER.info(
+            "Step 2: Check if installing version is higher than installed version.")
         installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
+        installing_version = installing_version[0] + \
+            "-" + installing_version[1]
         LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(installing_version,installed_version)
+        self.deploy_lc_obj.compare_version(
+            installing_version, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -95,12 +98,15 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 3: Done.")
 
         LOGGER.info("Step 4: Change image version in solution.yaml.")
-        remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + "solution.yaml"
+        remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + \
+            "solution.yaml"
         solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
-        image_dict = {"all_image": self.cortx_all_image, "rgw_image": self.cortx_rgw_image}
-        local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
+        image_dict = {"all_image": self.cortx_all_image,
+                      "rgw_image": self.cortx_rgw_image}
+        local_path = self.deploy_lc_obj.update_sol_with_image(
+            self.local_sol_path, image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
             resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
@@ -112,21 +118,26 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 5: Pull the images for upgrade.")
         for node_obj in self.host_list:
             for image in image_dict:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
+                resp = self.deploy_lc_obj.pull_image(
+                    node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
         LOGGER.info("Step 6: Start upgrade.")
-        LOGGER.info("Upgrading CORTX image to version: %s.", self.cortx_all_image)
+        LOGGER.info("Upgrading CORTX image to version: %s.",
+                    self.cortx_all_image)
         resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"], upgrade_type="cold")
+                                                   self.prov_deploy_cfg["git_remote_path"],
+                                                   upgrade_type="cold")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
-        LOGGER.info("Step 7: Check if installed version is equals to installing version.")
+        LOGGER.info(
+            "Step 7: Check if installed version is equals to installing version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        new_installed_version = self.deploy_lc_obj.get_installed_version(
+            resp[1])
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
                                    "Installing version is equal to new installed version.")
@@ -142,53 +153,66 @@ class TestProvK8CortxColdUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Make sure pods are in crashloopbackoff state.")
-        resp = self.master_node_obj.execute_cmd(commands.CMD_POD_STATUS, read_lines=True)
+        resp = self.master_node_obj.execute_cmd(
+            commands.CMD_POD_STATUS, read_lines=True)
         LOGGER.info(type(resp))
         for output in resp:
-                output = output.split("\n")
-                resp = str(resp)
-                # TODO : Command for Crashloopbackoff state needs to be implemented
-                if("Init:ImagePullBackOf") in output[0]:
-                    LOGGER.info(output)
-                    LOGGER.info("Step 1: Done.")
-        
-                    LOGGER.info("Step 2: Get installed version.")
-                    resp = HAK8s.get_config_value(self.master_node_obj)
+            output = output.split("\n")
+            resp = str(resp)
+            # TODO : Command for Crashloopbackoff state needs to be implemented
+            if ("Init:ImagePullBackOf") in output[0]:
+                LOGGER.info(output)
+                LOGGER.info("Step 1: Done.")
+
+                LOGGER.info("Step 2: Get installed version.")
+                resp = HAK8s.get_config_value(self.master_node_obj)
+                assert_utils.assert_true(resp[0], resp[1])
+                installed_version = self.deploy_lc_obj.get_installed_version(
+                    resp[1])
+                LOGGER.info("Current version: %s", installed_version)
+                LOGGER.info("Step 2: Done.")
+
+                LOGGER.info(
+                    "Step 3: Check if installing version is higher than installed version.")
+                installing_version = self.cortx_all_image.split(":")[
+                    1].split("-")
+                installing_version = installing_version[0] + \
+                    "-" + installing_version[1]
+                LOGGER.info("Installing CORTX image verson: %s",
+                            installing_version)
+                self.deploy_lc_obj.compare_version(
+                    installing_version, installed_version)
+                LOGGER.info("Step 3: Done.")
+
+                LOGGER.info("Step 4: Check cluster health.")
+                resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+                assert_utils.assert_true(resp[0], resp[1])
+                LOGGER.info("Step 4: Done.")
+
+                LOGGER.info("Step 5: Change image version in solution.yaml.")
+                remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + \
+                    "solution.yaml"
+                solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
+                                                                        local_path=self.local_sol_path)
+                assert_utils.assert_true(solution_path[0], solution_path[1])
+                image_dict = {"all_image": self.cortx_all_image,
+                              "rgw_image": self.cortx_rgw_image}
+                local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path,
+                                                                      image_dict)
+                assert_utils.assert_true(local_path[0], local_path[1])
+                for node_obj in self.host_list:
+                    resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                            remote_code_path=self.
+                                                            prov_deploy_cfg["git_remote_path"])
                     assert_utils.assert_true(resp[0], resp[1])
-                    installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
-                    LOGGER.info("Current version: %s", installed_version)
-                    LOGGER.info("Step 2: Done.")
+                LOGGER.info("Step 5: Done.")
 
-                    LOGGER.info("Step 3: Check if installing version is higher than installed version.")
-                    installing_version = self.cortx_all_image.split(":")[1].split("-")
-                    installing_version = installing_version[0] + "-" + installing_version[1]
-                    LOGGER.info("Installing CORTX image verson: %s", installing_version)
-                    self.deploy_lc_obj.compare_version(installing_version,installed_version)
-                    LOGGER.info("Step 3: Done.")
-
-                    LOGGER.info("Step 4: Check cluster health.")
-                    resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
-                    assert_utils.assert_true(resp[0], resp[1])
-                    LOGGER.info("Step 4: Done.")
-
-                    LOGGER.info("Step 5: Change image version in solution.yaml.")
-                    remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + "solution.yaml"
-                    solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
-                                                                            local_path=self.local_sol_path)
-                    assert_utils.assert_true(solution_path[0], solution_path[1])
-                    image_dict = {"all_image": self.cortx_all_image, "rgw_image": self.cortx_rgw_image}
-                    local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
-                    assert_utils.assert_true(local_path[0], local_path[1])
-                    for node_obj in self.host_list:
-                        resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                                remote_code_path=self.
-                                                                prov_deploy_cfg["git_remote_path"])
-                        assert_utils.assert_true(resp[0], resp[1])
-                    LOGGER.info("Step 5: Done.")
-
-                    LOGGER.info("Step 6: Start upgrade and verify pod went into crashloopbackoffstate or not")
-                    LOGGER.info("Upgrading CORTX image to version: %s.", self.cortx_all_image)
-                    resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                            self.prov_deploy_cfg["git_remote_path"], upgrade_type="cold")
-                    LOGGER.info("Step 6: Done.")
-                    LOGGER.info("Test Completed.")
+                LOGGER.info(
+                    "Step 6: Start upgrade and verify pod went into crashloopbackoffstate or not")
+                LOGGER.info("Upgrading CORTX image to version: %s.",
+                            self.cortx_all_image)
+                resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
+                                                           self.prov_deploy_cfg["git_remote_path"],
+                                                           upgrade_type="cold")
+                LOGGER.info("Step 6: Done.")
+                LOGGER.info("Test Completed.")
