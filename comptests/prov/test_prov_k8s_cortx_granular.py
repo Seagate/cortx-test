@@ -36,8 +36,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProvK8CortxGranular:
-    
     """
+    
     This class contains Provisioner Component level test cases for K8s
     CORTX Software Granular Type Upgrade.
     """
