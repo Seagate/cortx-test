@@ -15,6 +15,7 @@ common_params:
   30sec_delay: 30
   60sec_delay: 60
   90sec_delay: 90
+  degraded_wait_delay: 200
   thread_join_delay: 120.0
 
 s3_operation_data:
