@@ -42,9 +42,8 @@ class TestK8CortxUpgrade:
 
     @classmethod
     def setup_class(cls):
-        """
-        Setup class.
-        """
+        """Setup class."""
+
         LOGGER.info("STARTED: Setup Module operations")
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
@@ -75,9 +74,8 @@ class TestK8CortxUpgrade:
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
-        """
-        Teardown method
-        """
+        """Teardown method."""
+
         if self.collect_sb:
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
