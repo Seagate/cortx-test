@@ -36,14 +36,14 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
+
 class TestK8CortxUpgrade:
     """Test K8s CORTX Software Upgrade."""
 
     @classmethod
     def setup_class(cls):
-        """
-        Setup class.
-        """
+        """Setup class."""
+
         LOGGER.info("STARTED: Setup Module operations")
         cls.repo_clone_path = "root"
         cls.deployment_version = os.getenv("DEPLOYMENT_VERSION")
