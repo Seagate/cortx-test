@@ -84,9 +84,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.cortx_upgrade_disruptive
     @pytest.mark.tags("TEST-33660")
     def test_33660(self):
-        """
-        Verify CORTX Software upgrade.
-        """
+        """Verify CORTX Software upgrade."""
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
