@@ -38,9 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestK8CortxUpgrade:
-    """
-    Test K8s CORTX Software Upgrade.
-    """
+    """Test K8s CORTX Software Upgrade."""
 
     @classmethod
     def setup_class(cls):
@@ -109,8 +107,6 @@ class TestK8CortxUpgrade:
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
         if int(upgrade_version) <= int(installed_version):
             assert False, "Installed version is same or higher than installing version."
-            assert_utils.assert_true(resp[0],
-                                     "Installed version is same or higher than installing version.")
         else:
             LOGGER.info("Installed version is lower than installing version.")
         LOGGER.info("Step 4: Check cluster health.")
@@ -168,7 +164,7 @@ class TestK8CortxUpgrade:
         # TO DO BUG #CORTX-29184
         LOGGER.info("Step 3: Start upgrade.")
         resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
-        assert_utils.assert_False(resp[0], resp[1])
+        assert_utils.assert_false(resp[0], resp[1])
         if int(upgrade_version) <= int(installed_version):
             assert_utils.assert_true(resp[0],
                                      "Installed version is same or higher than installing version.")
