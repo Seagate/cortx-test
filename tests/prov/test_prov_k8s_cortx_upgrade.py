@@ -38,6 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestK8CortxUpgrade:
+
     """Test K8s CORTX Software Upgrade."""
 
     @classmethod
@@ -138,7 +139,8 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
         """Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
-        lower version."""
+        lower version.
+        """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
         resp = HAK8s.get_config_value(self.master_node_obj)
