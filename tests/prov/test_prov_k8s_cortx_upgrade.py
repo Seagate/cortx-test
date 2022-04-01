@@ -38,8 +38,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestK8CortxUpgrade:
-
     """Test K8s CORTX Software Upgrade."""
+
 
     @classmethod
     def setup_class(cls):
