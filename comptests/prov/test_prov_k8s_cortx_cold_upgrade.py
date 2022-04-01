@@ -36,6 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProvK8CortxColdUpgrade:
+
     """
     This class contains Provisioner Component level test cases for K8s
     CORTX Software Cold Upgrade.
@@ -43,7 +44,7 @@ class TestProvK8CortxColdUpgrade:
 
     @classmethod
     def setup_class(cls):
-        """Setup class"""
+        """Setup class."""
         LOGGER.info("STARTED: Setup Module operations")
         cls.cortx_all_image = os.getenv("CORTX_ALL_IMAGE", None)
         cls.cortx_rgw_image = os.getenv("CORTX_RGW_IMAGE", None)
@@ -160,7 +161,7 @@ class TestProvK8CortxColdUpgrade:
             output = output.split("\n")
             resp = str(resp)
             # TODO : Command for Crashloopbackoff state needs to be implemented
-            if ("Init:ImagePullBackOf") in output[0]:
+            if "Init:ImagePullBackOf" in output[0]:
                 LOGGER.info(output)
                 LOGGER.info("Step 1: Done.")
 
@@ -193,7 +194,7 @@ class TestProvK8CortxColdUpgrade:
                 remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + \
                     "solution.yaml"
                 solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
-                                                                        local_path=self.local_sol_path)
+                                                                local_path=self.local_sol_path)
                 assert_utils.assert_true(solution_path[0], solution_path[1])
                 image_dict = {"all_image": self.cortx_all_image,
                               "rgw_image": self.cortx_rgw_image}
