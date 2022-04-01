@@ -139,8 +139,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.cortx_upgrade_disruptive
     @pytest.mark.tags("TEST-33669")
     def test_33669(self):
-        """
-        Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
+        """Verify Hotfix upgrade fails when we try to perform CORTX SW upgrade to same or
         lower version.
         """
         LOGGER.info("Test Started.")
