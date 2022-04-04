@@ -75,8 +75,8 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.create_user.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -92,8 +92,8 @@ class IamTestLib(IamLib):
             response = response["Users"]
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.list_users.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.list_users.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -111,8 +111,8 @@ class IamTestLib(IamLib):
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.create_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -131,8 +131,8 @@ class IamTestLib(IamLib):
             # Adding sleep in ms due to ldap sync issue EOS-25140
             time.sleep(S3_CFG["access_key_delay"])
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.delete_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.delete_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -148,8 +148,8 @@ class IamTestLib(IamLib):
             response = poll(super().delete_user, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.delete_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.delete_user.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -165,8 +165,8 @@ class IamTestLib(IamLib):
             response = poll(super().list_access_keys, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.list_access_keys.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.list_access_keys.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -185,8 +185,8 @@ class IamTestLib(IamLib):
             response = poll(super().update_access_key, access_key_id, status, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.update_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.update_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -203,8 +203,8 @@ class IamTestLib(IamLib):
             response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.update_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.update_user.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -229,7 +229,10 @@ class IamTestLib(IamLib):
             user_dict['password_reset_required'] = login_profile.password_reset_required
             LOGGER.debug(user_dict)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_user_login_profile.__name__, error)
+            LOGGER.exception(
+                "Error in %s: %s",
+                IamTestLib.create_user_login_profile.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, user_dict
@@ -250,7 +253,10 @@ class IamTestLib(IamLib):
             response = poll(super().update_user_login_profile, user_name, password, password_reset)
             LOGGER.debug(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.update_user_login_profile.__name__, error)
+            LOGGER.exception(
+                "Error in %s: %s",
+                IamTestLib.update_user_login_profile.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -269,8 +275,8 @@ class IamTestLib(IamLib):
             response = poll(super().update_user_login_profile_no_pwd_reset, user_name, password)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         IamTestLib.update_user_login_profile_no_pwd_reset.__name__, error)
+            LOGGER.exception("Error in %s: %s",
+                             IamTestLib.update_user_login_profile_no_pwd_reset.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -291,7 +297,7 @@ class IamTestLib(IamLib):
             user_dict['password_reset_required'] = login_profile.password_reset_required
             LOGGER.info(user_dict)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.get_user_login_profile.__name__, error)
+            LOGGER.exception("Error in %s: %s", IamTestLib.get_user_login_profile.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, user_dict
@@ -305,7 +311,10 @@ class IamTestLib(IamLib):
         try:
             response = poll(super().delete_user_login_profile, user_name)
         except ClientError as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.delete_user_login_profile.__name__, error)
+            LOGGER.exception(
+                "Error in %s: %s",
+                IamTestLib.delete_user_login_profile.__name__,
+                error)
             raise CTException(err.S3_CLIENT_ERROR, error)
 
         return True, response
@@ -320,7 +329,7 @@ class IamTestLib(IamLib):
         :return: (Boolean, response).
         """
         try:
-            user_dict = dict()
+            user_dict = {}
             response = self.create_user(user_name=user_name)
             user_dict.update(response[1])
             response = self.create_user_login_profile(user_name, password, password_reset)
@@ -329,7 +338,7 @@ class IamTestLib(IamLib):
             user_dict.update(response[1])
             LOGGER.debug(user_dict)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_iam_user.__name__, error)
+            LOGGER.exception("Error in %s: %s", IamTestLib.create_iam_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, user_dict
@@ -338,7 +347,7 @@ class IamTestLib(IamLib):
         """Delete iam user with login profile and access key."""
         try:
             response = self.list_access_keys(user_name)
-            access_keys = list()
+            access_keys = []
             for key in response[1].get("AccessKeyMetadata", []):
                 access_keys.append(key.get("AccessKeyId"))
             LOGGER.info(access_keys)
@@ -348,8 +357,8 @@ class IamTestLib(IamLib):
             #     self.delete_user_login_profile(user_name)  # OperationNotSupported in cortx.
             response = self.delete_user(user_name)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.delete_iam_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.delete_iam_user.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -382,7 +391,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Completed CRUD operations for s3 Data Path")
             response = {"AccountName": user_name, "BucketName": bucket_name}
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.s3_user_operation.__name__, error)
+            LOGGER.exception("Error in %s: %s", IamTestLib.s3_user_operation.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -410,9 +419,9 @@ class IamTestLib(IamLib):
             verify_acc_key = poll(super().list_access_keys, user_name)
             LOGGER.debug(verify_acc_key)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         IamTestLib.create_modify_delete_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s",
+                             IamTestLib.create_modify_delete_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, user_name
 
@@ -442,8 +451,11 @@ class IamTestLib(IamLib):
             LOGGER.debug(response)
             LOGGER.info("Deleted bucket")
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.s3_ops_using_temp_auth_creds.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception(
+                "Error in %s: %s",
+                IamTestLib.s3_ops_using_temp_auth_creds.__name__,
+                error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, s3_resource
 
@@ -462,13 +474,13 @@ class IamTestLib(IamLib):
         acc_li = []
         user_li = []
         for _ in range(int(acc_count)):
-            account_name = "testacc{}".format(str(time.time()))
-            email = "testacc{}{}".format(str(time.time()), "@seagate.com")
+            account_name = f"testacc{str(time.perf_counter_ns())}"
+            email = f"testacc{str(time.perf_counter_ns())}{'@seagate.com'}"
             self.create_account(account_name, email, LDAP_USERNAME, LDAP_PASSWD)
             acc_li.append(account_name)
             iam_obj = IamLib(access_key=access_key, secret_key=secret_key)
             for _ in range(int(user_count)):
-                user_name = "testusr{}".format(str(time.time()))
+                user_name = f"testusr{str(time.perf_counter_ns())}"
                 iam_obj.create_user(user_name)
                 user_li.append(user_name)
         LOGGER.debug("Account list: %d", len(acc_li))
@@ -516,8 +528,8 @@ class IamTestLib(IamLib):
         LOGGER.info("Create new account.")
         LOGGER.info("Parameters: %s, %s, %s, %s", account_name, email_id, ldap_user_id,
                     ldap_password)
-        ACC_ACCESS_KEY = list()
-        ACC_SECRET_KEY = list()
+        acc_access_key = []
+        acc_secret_key = []
         # TODO: create_account
         status, result = False, "TODO: create_account."
         # Adding sleep in sec due to ldap sync issue EOS-5924
@@ -529,13 +541,13 @@ class IamTestLib(IamLib):
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
-                ACC_ACCESS_KEY.append(response[1].strip(' '))
-                LOGGER.info("Access Key Id : %s", ACC_ACCESS_KEY)
+                acc_access_key.append(response[1].strip(' '))
+                LOGGER.info("Access Key Id : %s", acc_access_key)
                 acc_dict['access_key'] = response[1].strip(' ')
             elif "SecretKey" in i:
                 response = i.split('=')
-                ACC_SECRET_KEY.append(response[1].strip(' '))
-                LOGGER.info("Secret Key : %s", ACC_SECRET_KEY)
+                acc_secret_key.append(response[1].strip(' '))
+                LOGGER.info("Secret Key : %s", acc_secret_key)
                 acc_dict['secret_key'] = response[1].strip(' ')
             elif "CanonicalId" in i:
                 response = i.split('=')
@@ -842,8 +854,8 @@ class IamTestLib(IamLib):
         """
         LOGGER.debug("Parameters: %s, %s, %s", account_name, account_password, duration)
         LOGGER.info("Get temp auth credential for %s account.", account_name)
-        ACC_ACCESS_KEY = list()
-        ACC_SECRET_KEY = list()
+        acc_access_key = []
+        acc_secret_key = []
         # TODO: get temp auth credentials account
         status, result = False, "error: 'TODO: get temp auth credentials account'"
         LOGGER.info("output = %s", str(result))
@@ -858,13 +870,13 @@ class IamTestLib(IamLib):
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
-                ACC_ACCESS_KEY.append(response[1].strip(' '))
-                LOGGER.debug("Access Key Id : %s", ACC_ACCESS_KEY)
+                acc_access_key.append(response[1].strip(' '))
+                LOGGER.debug("Access Key Id : %s", acc_access_key)
                 temp_auth_dict['access_key'] = response[1].strip(' ')
             elif "SecretAccessKey" in i:
                 response = i.split('=')
-                ACC_SECRET_KEY.append(response[1].strip(' '))
-                LOGGER.debug("Secret Key : %s", ACC_SECRET_KEY)
+                acc_secret_key.append(response[1].strip(' '))
+                LOGGER.debug("Secret Key : %s", acc_secret_key)
                 temp_auth_dict['secret_key'] = response[1].strip(' ')
             elif "SessionToken" in i:
                 response = i.split('=')
@@ -888,8 +900,8 @@ class IamTestLib(IamLib):
         """
         LOGGER.debug("Parameters: %s, %s, %s, %s", account_name, user_name, password, duration)
         LOGGER.info("Get temp auth credential for %s user.", user_name)
-        ACC_ACCESS_KEY = list()
-        ACC_SECRET_KEY = list()
+        acc_access_key = []
+        acc_secret_key = []
         # TODO: get temp auth credentials user.
         status, result = False, "An error occurred: 'TODO: get temp auth credentials user.'"
         LOGGER.info("output = %s", str(result))
@@ -904,13 +916,13 @@ class IamTestLib(IamLib):
         for i in new_result:
             if "AccessKeyId" in i:
                 response = i.split('=')
-                ACC_ACCESS_KEY.append(response[1].strip(' '))
-                LOGGER.info("Access Key Id : %s", ACC_ACCESS_KEY)
+                acc_access_key.append(response[1].strip(' '))
+                LOGGER.info("Access Key Id : %s", acc_access_key)
                 temp_auth_dict['access_key'] = response[1].strip(' ')
             elif "SecretAccessKey" in i:
                 response = i.split('=')
-                ACC_SECRET_KEY.append(response[1].strip(' '))
-                LOGGER.info("Secret Key : %s", ACC_SECRET_KEY)
+                acc_secret_key.append(response[1].strip(' '))
+                LOGGER.info("Secret Key : %s", acc_secret_key)
                 temp_auth_dict['secret_key'] = response[1].strip(' ')
             elif "SessionToken" in i:
                 response = i.split('=')
@@ -932,8 +944,8 @@ class IamTestLib(IamLib):
             LOGGER.info("Change current IAM user's password")
             self.change_password(old_pwd, new_pwd)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.change_user_password.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.change_user_password.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, "Change Password Request is Successful"
 
@@ -972,7 +984,7 @@ class IamTestLib(IamLib):
         """
         LOGGER.debug(acc_list)
         LOGGER.info("Deleting accounts in the given list....")
-        deleted_acc_dict = dict()
+        deleted_acc_dict = {}
         for acc in acc_list:
             LOGGER.info("Deleting account : %s", acc)
             result = self.reset_access_key_and_delete_account(acc)
@@ -999,7 +1011,8 @@ class IamTestLib(IamLib):
             LOGGER.debug(del_acc)
             return status, [acc, del_acc]
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_and_delete_account.__name__, error)
+            LOGGER.exception(
+                "Error in %s: %s", IamTestLib.create_and_delete_account.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
     def reset_access_key_and_delete_account(
@@ -1031,7 +1044,7 @@ class IamTestLib(IamLib):
         :return: (Boolean, response)
         """
         LOGGER.info("Creating a user and access key in default account")
-        response = list()
+        response = []
         try:
             create_user = self.create_user(user_name)
             create_acc_key = self.create_access_key(user_name)
@@ -1039,8 +1052,8 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["create_user_access_key_delay"])
             response.append({"User": create_user, "Keys": create_acc_key})
         except CTException as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_user_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception("Error in %s: %s", IamTestLib.create_user_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
 
@@ -1064,8 +1077,9 @@ class IamTestLib(IamLib):
                 self.delete_user(user)
                 LOGGER.info("Deleted user from default account: %s", user)
         except CTException as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.delete_users_with_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+            LOGGER.exception(
+                "Error in %s: %s", IamTestLib.delete_users_with_access_key.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True
 
@@ -1082,12 +1096,12 @@ class IamTestLib(IamLib):
         acc_li = []
         try:
             for _ in range(int(acc_count)):
-                account_name = "{}{}".format(name_prefix, str(time.time()))
-                email = "{}{}".format(account_name, S3_CFG["email_suffix"])
+                account_name = f"{name_prefix}{str(time.perf_counter_ns())}"
+                email = f"{account_name}{S3_CFG['email_suffix']}"
                 resp = self.create_account(account_name, email, LDAP_USERNAME, LDAP_PASSWD)
                 acc_li.append(resp)
         except CTException as error:
-            LOGGER.error("Error in %s: %s", IamTestLib.create_multiple_accounts.__name__, error)
+            LOGGER.exception("Error in %s: %s", IamTestLib.create_multiple_accounts.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error)
 
         return True, acc_li

@@ -146,7 +146,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         return True/False, Response s3 accounts dict.
         """
         try:
-            accounts = dict()
+            accounts = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -182,7 +182,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.debug(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -198,8 +198,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         """
         Create s3 account user using csm user(default with admin role).
 
-        # :param csm_user: Name of the csm user.
-        # :param passwd: password of the csm user.
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
         :param s3_user: Name of the s3 account user.
         :param email: Email id of the s3 account user.
         :param s3_passwd: Password of the s3 account user.
@@ -208,7 +208,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         csm_user = kwargs.get("csm_user", None)
         passwd = kwargs.get("passwd", None)
         try:
-            acc_details = dict()
+            acc_details = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -273,7 +273,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = response["users"]
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.info(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -390,7 +390,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         :param account_name: s3 account name.
         :return: create account cortxcli response.
         """
-        acc_details = dict()
+        acc_details = {}
         try:
             start = time.perf_counter()
             self.login_cortx_cli()
@@ -430,7 +430,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
             else:
-                accounts = dict()
+                accounts = {}
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.list_accounts_cortxcli.__name__,
@@ -532,7 +532,7 @@ class _IamUser(CortxCliIamUser):
         :return: (Boolean/Response)
         :return: create user using cortxcli response.
         """
-        user_details = dict()
+        user_details = {}
         confirm_password = confirm_password if confirm_password else password
         try:
             kwargs.setdefault("sleep_time", 10)
