@@ -111,7 +111,7 @@ def get_cvgs(args: argparse.Namespace) -> None:
     print(cvg_ids)
 
 
-# pylint: disable=too-many-locals, redefined-outer-name, broad-except, unspecified-encoding,
+# pylint: disable=too-many-locals, redefined-outer-name, broad-except, unspecified-encoding
 # pylint: disable=protected-access, inconsistent-return-statements
 def publish(args: argparse.Namespace) -> None:
     """
