@@ -130,7 +130,7 @@ Its a REST service which provides APIs to stores build wise test results and agg
 ```
 
 # Hardware Configuration for test automation setup
-VMs or Physical machines with Linux flavor having 16-32 GB RAM and 8-16 logical cores would be a decent configuration for a test machine. Minimal test machine configuration is 4 GB RAM and 2 logical cores  which is suitable for development environment. The deployment view [Test Execution Deployment](Test-Execution-Deployment-View.md) discusses more about the deployment structure. The least requirement is that there should be a network connectivity of these Cloud Form Vms or physical machines to the Cortx setups in labs or public cloud services like AWS EC2 .
+VMs or Physical machines with Linux flavor having 16-32 GB RAM and 8-16 logical cores would be a decent configuration for a test machine. Minimal test machine configuration is 4 GB RAM and 2 logical cores  which is suitable for development environment. The deployment view [Test Execution Deployment](Test-Execution-Deployment-View.md) discusses more about the deployment structure. The least requirement is that there should be a network connectivity of these client VMs i.e Cloud Form Vms, virtualization platform VMs or physical machines to the Cortx setups in labs or public cloud services like AWS EC2.
 
 # Abbreviations and Definitions: 
 
@@ -144,24 +144,24 @@ Kafka.
 
 * Test Executor framework: Same as a test execution framework. 
 
-* Dist Runner: Test execution framework module loosely couple for test framework and consumer module of execution framework.  It is responsible for collecting test metadata from Jira and creating an optimized test execution plan as per Jira Test Plans. 
+* Dist Runner: Test execution framework module loosely coupled for test framework and consumer module of execution framework.  It is responsible for collecting test metadata from Jira and creating an optimized test execution plan as per Jira Test Plans. 
 
 * Chaos and destructive testing framework: A sub framework responsible for implementing libraries to generate destructive test scenarios and chaos in Target deployments. 
 
 * Object Store Data Integrity framework: A sub framework which stores s3 client state and provides library to test versioned object Store data integrity interleaved across object store version upgrade and after object store downtime.  
 
-* HA Tests: High availability test cases which tests Consistency, Availability and Reliability of Object Store. 
+* HA Tests: High availability test cases which test Consistency, Availability and Reliability of Object Store. 
 
 * Test Client: A separate VM or Container configured with Python Environment and prerequisites Linux and Python site packages to run automated test cases.      
 
 
 # Introduction: 
 
-Cortx-Test is distributed test execution framework comprising multiple test runners called autobots. These autobots runs heterogeneous tests of several types (functional, limits, scale, HA tests) on different targets in optimized manner and collect test results at central database (MongoDB). The test types supported are component or system level, functional tests, load tests, security tests, etc.  
+Cortx-Test is distributed test execution framework comprising multiple test runners called autobots. These autobots run heterogeneous tests of several types (functional, limit, scale and HA tests) on different targets in optimized manner and collect test results at a central database (MongoDB). The test types supported are component tests or system level, functional, load, security tests, etc.  
 
 # Background: 
 
-For QA certification of an enterprise product, it is always a challenge to execute the test universe within a day especially since the test universe has hundreds of thousands of tests cases of several types including component, system, and performance tests. Job schedulers and CI tools like Jenkins solve this problem to an extent by providing functionality to executing multiple tests on different machines, however it is always hard to monitor numerous test executions and deploy and manage targets and complete certification of a build within a day. The algorithms and methods mentioned in the paper explain design and implementation of test executor framework which solves this problem with automatic test configuration management, parallel test execution, reporting and storage efficiency.       
+For QA certification of an enterprise product, it is always a challenge to execute the test universe within a finite timeframe (typically a day) especially since the test universe has thousands of test cases of several types including component, system, and performance tests. Job schedulers and CI tools like Jenkins solve this problem to an extent by providing functionality to executing multiple tests on different machines, however it is always hard to monitor numerous test executions and deploy and manage targets and complete certification of a build within a day. The algorithms and methods mentioned in the paper explain design and implementation of test executor framework which solves this problem with automatic test configuration management, parallel test execution, reporting and storage efficiency.       
 
 
 # Framework Components: 
@@ -199,7 +199,7 @@ The following diagram shows all components/modules present in framework.
 
  
 
-*   Config Management: All test data which required for test execution is managed by this module. Target specific config data is stored in MongoDB, test suite specific config data is stored in Jira/database, and test specific data is stored locally. This module captures and aggregates config data and makes that data/config maps available to all tests during execution. 	 
+*   Config Management: All the test data which is required for test execution is managed by this module. Target specific config data is stored in MongoDB, test suite specific config data is stored in Jira/database, and test specific data is stored locally. This module captures and aggregates config data and makes that data/config maps available to all tests during execution. 	 
 
  
 
@@ -221,11 +221,11 @@ For any parallel test execution request, priority will be system with shared loc
 
 ## Framework Deployment Flow: 
 
-This framework can be deployed and used in two ways. In multi auto bot setup mode and single auto bot setup mode. 
+This framework can be deployed and used in two ways. In multi autobot setup mode and single autobot setup mode. 
 
  
 
-## Multi Auto bot's setup: 
+## Multi Autobot's setup: 
 
  
 
@@ -235,9 +235,9 @@ sequence 1 to 6 is explained below in points.
 
 Jenkins/Scheduler triggers a job which supplies parameters like targets and config to distributed executor i.e., master autobot. 
 
-Master Autobot runs in distributed mode and creates an execution plan which determines the sequence of test execution and which tests can be run in parallel. This execution plan entries are feed to Kafka topic cortx-test-jobs in JSON format. 
+Master Autobot runs in distributed mode and creates an execution plan which determines the sequence of test execution and which tests can be run in parallel. This execution plan's entries are fed to Kafka topic cortx-test-jobs in JSON format. 
 
-Test runners (single autobot) are running in distributed mode on one or more virtual machines which have Kafka consumer. They belong to the same consumer group, and it guaranteed that a test will be executed only once by any of the test runners. 
+Test runners (single autobot) are running in distributed mode on one or more virtual machines which have Kafka consumer. They belong to the same consumer group, and it is guaranteed that a test will be executed only once by any of the test runners. 
 
 The deserialized JSON is parsed, and test metadata is sent to autobots (using pytest runner) to run either test with a parallel tag in parallel or other tests in serial order. Autobot also decides the target (Setup) to run tests against it from parsed JSON. 
 

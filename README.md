@@ -16,10 +16,10 @@ You need a separate client VM with any Linux flavour (prefer CentOS 7+ ) to inst
 
 ## Git process
 Typically, a member contributing to test framework would follow the review process as follows:
-	1. Commits happen on your forked repository(origin).  
-	2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream)
-	3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
-	4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process
+1. Commits happen on your forked repository(origin).  
+2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). PRs can be raised even if you have read-only access to Seagate Repositories.
+3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
+4. Team member can check-in and raise the PR to upstream feature branch. Feature lead would raise the pull request to main.
 
 ## Get the Sources
 Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
@@ -162,7 +162,7 @@ make clean --makefile=scripts/s3_tools/Makefile
 ## MongoDB as Configuration Management Database
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
-based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
+based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is fed to the database and pulled when developer will run test automation with test runner. The pulled templates merge with static yaml files to build the CMN_CFG and other component level configs.
 If you don't want to store or use MongoDB configuration entry, you may create `setups.json` locally in project root cortx-test whch will be used to build and load configs in test run process.
 While testing with cortx-test in dev environment or Community you may like to have setups.json created and skip MongoDB interaction. 
 
