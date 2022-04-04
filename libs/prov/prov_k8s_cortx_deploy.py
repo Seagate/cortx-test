@@ -1413,12 +1413,10 @@ class ProvDeployK8sCortxLib:
         :return: True/False
         """
         LOGGER.info("Upgrading CORTX image version.")
-        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         if upgrade_type == "rolling":
-            cmd = "cd {}; {}".format(git_remote_path,
-                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
+            cmd = common_cmd.UPGRADE_CLUSTER_CMD.format(git_remote_path,granular_type)
         else:
-            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
+            cmd = common_cmd.UPGRADE_COLD_CLUSTER_CMD.format(git_remote_path)
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
