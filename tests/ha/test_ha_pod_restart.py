@@ -27,7 +27,7 @@ import os
 import random
 import threading
 import time
-from multiprocessing import Process, Queue
+from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
@@ -444,8 +444,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(wr_resp) != 3:
+            wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
@@ -478,8 +478,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(remain_bkt), wr_bucket - del_bucket,
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -498,8 +498,8 @@ class TestPodRestart:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(rd_resp) != 4:
+            rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -521,8 +521,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = ()
-        while len(wr_resp) != 3: wr_resp = wr_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(wr_resp) != 3:
+            wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         new_bkts = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(new_bkts) - len(remain_bkt), wr_bucket,
@@ -535,8 +535,8 @@ class TestPodRestart:
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = ()
-        while len(del_resp) != 2: del_resp = del_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         buckets1 = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets1), wr_bucket - del_bucket + len(remain_bkt),
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -556,8 +556,8 @@ class TestPodRestart:
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = ()
-        while len(rd_resp) != 4: rd_resp = rd_output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(rd_resp) != 4:
+            rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -917,6 +917,7 @@ class TestPodRestart:
         LOGGER.info("STARTED: Test to verify copy object after data pod restart.")
 
         LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
+        event = threading.Event()
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
@@ -976,12 +977,12 @@ class TestPodRestart:
         LOGGER.info("Step 5: Create and list buckets. Upload object to %s & copy object from the"
                     " same bucket to %s and verify copy object etags",
                     self.bucket_name, bucket2)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 5: Successfully created multiple buckets and uploaded object to %s "
                     "and copied to %s and verified copy object etags", self.bucket_name, bucket2)
@@ -1017,13 +1018,13 @@ class TestPodRestart:
         bkt_obj_dict[bucket3] = object3
         LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
                     "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   put_etag=put_etag,
                                                   bkt_op=False)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
@@ -1137,8 +1138,8 @@ class TestPodRestart:
 
         LOGGER.info("Verifying responses from background process")
         responses = {}
-        while len(responses) != 2: responses = output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -1738,6 +1739,7 @@ class TestPodRestart:
         bkt_obj_dict = dict()
         bkt_obj_dict["ha-bkt-{}".format(self.random_time)] = "ha-obj-{}".format(self.random_time)
         output = Queue()
+        event = threading.Event()
 
         LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
         LOGGER.info("Get pod name to be deleted")
@@ -1795,18 +1797,18 @@ class TestPodRestart:
 
         LOGGER.info("Step 5: Create multiple buckets and upload object to %s and copy to other "
                     "bucket", self.bucket_name)
-        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 5: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other bucket", self.bucket_name)
 
         bkt_obj_dict1 = {}
-        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         for cnt in range(bkt_cnt):
             rd_time = perf_counter_ns()
             s3_test_obj.create_bucket(f"ha-bkt{cnt}-{rd_time}")
@@ -1818,14 +1820,25 @@ class TestPodRestart:
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict1, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
                 'put_etag': put_etag}
-        prc = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
-        prc.start()
-        LOGGER.info("Step 6: Successfully started background process")
-
-        # Delay added to sync this operation with background thread to achieve expected scenario
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        thread = threading.Thread(target=self.ha_obj.create_bucket_copy_obj, args=(event,),
+                                  kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 6: Successfully started background process for copy object")
+        # While loop to sync this operation with background thread to achieve expected scenario
+        LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
+        bkt_list = list()
+        timeout = time.time() + 60 * 3
+        while len(bkt_list) < bkt_cnt:
+            time.sleep(HA_CFG["common_params"]["20sec_delay"])
+            bkt_list = s3_test_obj.bucket_list()[1]
+            if timeout < time.time():
+                LOGGER.error("Bucket creation is taking longer than 3 mins")
+                assert_utils.assert_true(False, "Please check background process logs")
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
         LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
+        event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -1841,18 +1854,40 @@ class TestPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
+        event.clear()
 
-        LOGGER.info("Step 6: Checking responses from background process")
-        prc.join()
-        if output.empty():
-            LOGGER.error("Failed in Copy Object process")
-            assert_utils.assert_true(False, "Expected copy object to be passed")
-        else:
-            res = output.get()
-            put_etag = res[1]
-        LOGGER.info("Step 6: Successfully executed copy object in background")
+        LOGGER.info("Step 9: Checking responses from background process")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 3:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
 
-        LOGGER.info("Step 9: Download the uploaded object and verify checksum")
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do copy object")
+
+        put_etag = responses[0]
+        exp_fail_bkt_obj_dict = responses[1]
+        failed_bkts = responses[2]
+        LOGGER.debug("Responses received from background process:\nput_etag: "
+                     "%s\nexp_fail_bkt_obj_dict: %s\nfailed_bkts: %s", put_etag,
+                     exp_fail_bkt_obj_dict, failed_bkts)
+        if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
+            LOGGER.info("Copy object operation for all the buckets completed successfully. ")
+        elif failed_bkts:
+            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
+                                            f"state. Failed buckets: {failed_bkts}")
+        elif exp_fail_bkt_obj_dict:
+            LOGGER.info("Step 9.1: Retrying copy object to buckets %s",
+                        list(exp_fail_bkt_obj_dict.keys()))
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=exp_fail_bkt_obj_dict,
+                                                      bkt_op=False, put_etag=put_etag)
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            put_etag = resp[1]
+
+        LOGGER.info("Step 10: Download the uploaded object and verify checksum")
         for key, val in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
@@ -1860,9 +1895,9 @@ class TestPodRestart:
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {val} of bucket {key}. Put and "
                                                           f"Get Etag mismatch")
-        LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 10: Create s3 account, create multiple buckets and run IOs")
+        LOGGER.info("Step 11: Create s3 account, create multiple buckets and run IOs")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
         self.test_prefix = 'test-34084-1'
@@ -1870,7 +1905,7 @@ class TestPodRestart:
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 10: Successfully created s3 account and multiple buckets and ran IOs")
+        LOGGER.info("Step 11: Successfully created s3 account and multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify copy object during data pod restart")
 
@@ -2230,8 +2265,8 @@ class TestPodRestart:
 
         LOGGER.info("Step 8: Verifying writes from background process")
         responses = {}
-        while len(responses) != 2: responses = output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -2341,8 +2376,8 @@ class TestPodRestart:
 
         LOGGER.info("Step 8: Verifying read/writes from background process")
         responses = {}
-        while len(responses) != 2: responses = output.get(
-            timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(responses) != 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -2843,7 +2878,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True, nclients=5, nsamples=5)
+                                                    skipcleanup=True, nclients=20, nsamples=20)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
@@ -2894,14 +2929,15 @@ class TestPodRestart:
             "Step 6: Perform READs and verify DI on the written data in background during "
             "pod restart using %s method", self.restore_method)
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
                 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        # TODO Need to update timing once we get stability in degraded IOs performance
+        time.sleep(HA_CFG["common_params"]["degraded_wait_delay"])
         LOGGER.info("Step 6: Successfully started READs and verified DI on the written data in "
                     "background")
 
@@ -2925,12 +2961,21 @@ class TestPodRestart:
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
         event.clear()
         thread.join()
-
+        LOGGER.debug("Event is cleared and thread has joined.")
         LOGGER.info("Verifying responses from background process")
         responses = {}
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Background S3bench Failures")
+        LOGGER.debug("Background S3bench responses : %s", responses)
+        if not responses["pass_res"]:
+            assert_utils.assert_true(False,
+                                     "No background IOs response while event was cleared")
         nonbkgrd_logs = list(x[1] for x in responses["pass_res"])
+        if not responses["fail_res"]:
+            assert_utils.assert_true(False,
+                                     "No background IOs response while event was set")
         bkgrd_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=nonbkgrd_logs)
         assert_utils.assert_false(len(resp[1]), "Non Background Logs which contain failures"

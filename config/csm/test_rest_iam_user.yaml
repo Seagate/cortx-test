@@ -8,7 +8,26 @@ test_36448:
 test_38088:
   error_code: 12288
   message_id: "NoSuchUser"  
-
+test_38914:
+  payloads:
+    - {"system":null}
+    - {"caps":[]}
+    - {"type":"rgw"}
+    - {"tenant":""}
+    - {"system":"false"}
+    - {"admin":"false"}
+    - {"random":"acbv"}
+  error_code: 4099
+  message_id: "empty key"  
+test_38092:
+  error_code: 4099
+  message_id: "empty key"
+test_38969:
+  error_code: 12288
+  message_id: "KeyExists"
+test_38971:
+  error_code: 12288
+  message_id: "KeyExists"
 test_39028:
   error_code: 12288
   message_id: "InvalidCapability"

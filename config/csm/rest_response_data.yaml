@@ -36,6 +36,7 @@
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
     - "Uid: Field may not be null."
+    - "{}: Unknown field."
   InvalidKeyType:
     - "Invalid key type specified. Must be one of S3, shift"
     - "Max_buckets: Not a valid integer."
@@ -46,12 +47,17 @@
     - "User already exists:"
   EmailExists:
     - "Provided email address exists"
+39401:
+  users_already_exists:
+    - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
     - 'Provided access key exists and belongs to another user.'
   NoSuchUser:
     - "User does not exist."
+  KeyExists:
+    - 'Provided access key exists and belongs to another user.'
   InvalidCapability:
     - "Attempt to grant invalid admin capability."
 

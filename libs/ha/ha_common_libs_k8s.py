@@ -594,11 +594,12 @@ class HAK8s:
 
     # pylint: disable-msg=too-many-locals
     @staticmethod
-    def create_bucket_copy_obj(s3_test_obj=None, bucket_name=None, object_name=None,
+    def create_bucket_copy_obj(event, s3_test_obj=None, bucket_name=None, object_name=None,
                                bkt_obj_dict=None, output=None, **kwargs):
         """
         Function create multiple buckets and upload and copy objects (Can be used to start
         background process for the same)
+        :param event: Thread event to be sent in case of parallel IOs
         :param s3_test_obj: s3 test lib object
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -610,6 +611,9 @@ class HAK8s:
         background = kwargs.get("background", False)
         bkt_op = kwargs.get("bkt_op", True)
         put_etag = kwargs.get("put_etag", None)
+        exp_fail_bkt_obj_dict = dict()
+        failed_bkts = list()
+        event_clear_flg = False
         if bkt_op:
             LOGGER.info("Create bucket and put object.")
             resp = s3_test_obj.create_bucket(bucket_name)
@@ -637,9 +641,8 @@ class HAK8s:
             if not resp[0] or object_name not in resp[1]:
                 return resp if not background else sys.exit(1)
 
-        # Delay added to sync this operation with main thread to achieve expected scenario
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Copy object to different bucket with different object name.")
+        LOGGER.info("Creating buckets for copy object to different bucket with different object "
+                    "name.")
         for bkt_name, obj_name in bkt_obj_dict.items():
             resp, bktlist = s3_test_obj.bucket_list()
             LOGGER.info("Bucket list: %s", bktlist)
@@ -648,21 +651,40 @@ class HAK8s:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     return resp if not background else sys.exit(1)
-            status, response = s3_test_obj.copy_object(source_bucket=bucket_name,
-                                                       source_object=object_name,
-                                                       dest_bucket=bkt_name,
-                                                       dest_object=obj_name)
-            LOGGER.info("Response: %s", response)
-            copy_etag = response['CopyObjectResult']['ETag']
-            if put_etag == copy_etag:
-                LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
-                            object_name, bkt_name, obj_name)
-            else:
-                LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
-                            object_name, bkt_name, obj_name)
-                return False, response if not background else sys.exit(1)
 
-        return True, put_etag if not background else output.put((True, put_etag))
+        LOGGER.info("Start copy object to buckets: %s", list(bkt_obj_dict.keys()))
+        for bkt_name, obj_name in bkt_obj_dict.items():
+            try:
+                status, response = s3_test_obj.copy_object(source_bucket=bucket_name,
+                                                           source_object=object_name,
+                                                           dest_bucket=bkt_name,
+                                                           dest_object=obj_name)
+                LOGGER.info("Response: %s", response)
+                copy_etag = response['CopyObjectResult']['ETag']
+                if put_etag == copy_etag:
+                    LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
+                                object_name, bkt_name, obj_name)
+                else:
+                    LOGGER.error("Etags don't match for copy object %s to bucket %s with object "
+                                 "name %s", object_name, bkt_name, obj_name)
+            except CTException as error:
+                LOGGER.error("Error: %s", error)
+                if event.is_set():
+                    exp_fail_bkt_obj_dict[bkt_name] = obj_name
+                    event_clear_flg = True
+                else:
+                    if event_clear_flg:
+                        exp_fail_bkt_obj_dict[bkt_name] = obj_name
+                        event_clear_flg = False
+                        continue
+                    failed_bkts.append(bkt_name)
+                LOGGER.info("Failed to copy object to bucket %s", bkt_name)
+
+        if failed_bkts and not background:
+            return False, failed_bkts
+
+        return True, put_etag if not background else output.put((put_etag, exp_fail_bkt_obj_dict,
+                                                                 failed_bkts))
 
     # pylint: disable-msg=too-many-locals
     def start_random_mpu(self, event, s3_data, bucket_name, object_name, file_size, total_parts,
@@ -886,13 +908,14 @@ class HAK8s:
         :rtype: Boolean, list
         """
         log_list = []
-        resp = False
+        resp = (False, "Logs not found")
         for log in file_paths:
             LOGGER.info("Parsing log file %s", log)
             resp = system_utils.validate_s3bench_parallel_execution(log_path=log)
             if not resp[0] and pass_logs:
                 LOGGER.error(resp[1])
-            log_list.append(log) if (pass_logs and not resp) or (not pass_logs and resp) else log
+            log_list.append(log) if (pass_logs and not resp[0]) or \
+                                    (not pass_logs and resp[0]) else log
 
         return resp[0], log_list
 
