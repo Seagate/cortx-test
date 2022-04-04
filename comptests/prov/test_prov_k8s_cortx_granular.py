@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -36,9 +35,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProvK8CortxGranular:
+
     """
-    
-    This class contains Provisioner Component level test cases for K8s
+    This class contains Provisioner Component level test cases for K8s.
     CORTX Software Granular Type Upgrade.
     """
 
