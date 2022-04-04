@@ -1108,7 +1108,7 @@ class TestPodFailure:
         LOGGER.info("STEP 9: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26445'
+        self.test_prefix = 'test-26445-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
@@ -1206,7 +1206,7 @@ class TestPodFailure:
         LOGGER.info("STEP 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26441'
+        self.test_prefix = 'test-26441-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
@@ -2373,7 +2373,7 @@ class TestPodFailure:
         LOGGER.info("STEP 10: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32447'
+        self.test_prefix = 'test-32447-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
@@ -3475,7 +3475,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 10: Start IOs create s3 account, buckets and upload objects")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-35297'
+        self.test_prefix = 'test-35297-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
