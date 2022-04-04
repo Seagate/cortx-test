@@ -2,10 +2,10 @@
 CORTX-TEST is a repository for multiple automation projects developed for testing [CORTX](https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems. These frameworks are reusable for any opensource object stores with minimal configurations. 
 
 It is logically divided into following components:
-*	Test Automation framework (Autobot)
-*	Test Execution Framework  (drunner)
-*	Robot framework UI Tests and
-*	Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
+*  Test Automation framework (Autobot)
+*  Test Execution Framework  (drunner)
+*  Robot framework UI Tests and
+*  Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
 
 [Architectural Overview](https://github.com/Seagate/cortx-test/blob/main/docs/Architectural-Overview.md) page describes the architectural considerations and repository layout. [Test Execution Deployment View](https://github.com/Seagate/cortx-test/blob/main/docs/Test-Execution-Deployment-View.md) describes the deployment design view of the test framework in distributed mode. [Test Framework Design Document](https://github.com/Seagate/cortx-test/blob/main/docs/Design-Document-Test-Framework.md)  describes in details the design of the framework in distributed mode.
 
@@ -16,10 +16,10 @@ You need a separate client VM with any Linux flavour (prefer CentOS 7+ ) to inst
 
 ## Git process
 Typically, a member contributing to test framework would follow the review process as follows:
-1. Commits happen on your forked repository(origin).  
-2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). PRs can be raised even if you have read-only access to Seagate Repositories.
-3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
-4. Team member can check-in and raise the PR to upstream feature branch. Feature lead would raise the pull request to main.
+1.  Commits happen on your forked repository(origin).  
+2.  Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). PRs can be raised even if you have read-only access to Seagate Repositories.
+3.  Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
+4.  Team member can check-in and raise the PR to upstream feature branch. Feature lead would raise the pull request to main.
 
 ## Get the Sources
 Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
