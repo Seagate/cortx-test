@@ -17,9 +17,11 @@
 # cortx-questions@seagate.com.
 
 
-"""Module helps in generating the mock health event and publishing it to the message bus."""
-# This script is provided by HA. If any changes are done by HA Dev team, script needs to be
-# copied from cortx-ha/ha/util/health_generator/mock_health_event_publisher.py
+"""
+Module helps in generating the mock health event and publishing it to the message bus.
+It is provided by HA. If any changes are done by HA Dev team, this needs to be
+copied from cortx-ha/ha/util/health_generator/mock_health_event_publisher.py
+"""
 
 
 import argparse
