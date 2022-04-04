@@ -171,7 +171,7 @@ For QA certification of an enterprise product, it is always a challenge to execu
 The following diagram shows all components/modules present in framework.  
 
 
-*   Master autobot: This module reads test execution data from test management tool. From this test execution data, it identifies which tests need to be executed. It performs analytics on test data and divides test cases into different chucks. Those chucks are executed by individual execution autobot. 
+*   Master autobot: This module reads test execution data from test management tool. From this test execution data, it identifies which tests need to be executed. It performs analytics on test data and divides test cases into different chunks. Those chunks are executed by individual execution autobot. 
 
  
 
