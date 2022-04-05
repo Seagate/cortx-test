@@ -68,6 +68,7 @@ class ProvDeployK8sCortxLib:
         self.s3_engine = os.getenv("S3_ENGINE")
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
+        self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
         self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
         self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
@@ -318,6 +319,8 @@ class ProvDeployK8sCortxLib:
         worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
         if self.cortx_server_image:
             worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_server_image))
+        if self.cortx_data_image:
+            worker_obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_data_image))
         return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -356,6 +359,7 @@ class ProvDeployK8sCortxLib:
             each.join()
 
         self.prereq_git(master_node_list[0], git_tag)
+        self.checkout_update_deploy_script(master_node_list[0], self.git_script_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
@@ -382,10 +386,30 @@ class ProvDeployK8sCortxLib:
         Method to checkout solution.yaml file
         param: git tag: tag of service repo
         """
-        url = self.deploy_cfg["git_k8_repo_file"].format(git_tag)
+        url = self.deploy_cfg["git_k8_repo_file"].format(git_tag, self.deploy_cfg["new_file_path"])
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
+
+    def checkout_update_deploy_script(self, node_obj: LogicalNode, git_tag):
+        """
+        This method edits the deploy script to update the workarounds
+        returns the Path of the updated file
+        """
+        url = self.deploy_cfg["git_k8_repo_file"].format(git_tag,
+                                                         self.deploy_cfg["deploy_file"])
+        cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file"], url)
+        system_utils.execute_cmd(cmd=cmd)
+        # Update deploy file
+        string_to_replace = "waitForAllDeploymentsAvailable 120s"
+        new_string = "waitForAllDeploymentsAvailable 360s"
+        update_line = common_cmd.LINUX_REPLACE_STRING.format(string_to_replace, new_string,
+                                                             self.deploy_cfg['deploy_file'])
+        system_utils.execute_cmd(update_line)
+        remote_path = os.path.join(self.deploy_cfg['k8s_dir'], self.deploy_cfg['deploy_file'])
+        if system_utils.path_exists(self.deploy_cfg['deploy_file']):
+            node_obj.copy_file_to_remote(self.deploy_cfg['deploy_file'], remote_path)
+            return True, f"Files copied at {remote_path}"
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -428,6 +452,7 @@ class ProvDeployK8sCortxLib:
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
         cortx_server_image = kwargs.get("cortx_server_image", None)
+        cortx_data_image = kwargs.get("cortx_data_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         size = kwargs.get("size", self.deploy_cfg['setup_size'])
         service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
@@ -508,7 +533,7 @@ class ProvDeployK8sCortxLib:
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
                                                         third_party_images_dict,
-                                                        cortx_server_image)
+                                                        cortx_server_image, cortx_data_image)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -644,7 +669,7 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict,
-                                      cortx_server_image):
+                                      cortx_server_image, cortx_data_image):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
@@ -660,6 +685,8 @@ class ProvDeployK8sCortxLib:
         for image_key in self.deploy_cfg['cortx_images_key']:
             if self.cortx_server_image and image_key == "cortxserver":
                 cortx_im[image_key] = cortx_server_image
+            elif self.cortx_data_image and image_key == "cortxdata":
+                cortx_im[image_key] = cortx_data_image
             else:
                 cortx_im[image_key] = cortx_image
         with open(filepath) as soln:
@@ -1198,6 +1225,7 @@ class ProvDeployK8sCortxLib:
                                         size_metadata=metadata_disk_size,
                                         log_path=log_path,
                                         cortx_server_image=self.cortx_server_image,
+                                        cortx_data_image=self.cortx_data_image,
                                         service_type=self.service_type,
                                         https_port=self.nodeport_https,
                                         http_port=self.nodeport_http,

@@ -71,6 +71,7 @@ CMD_UPDATE_FILE = "echo {} > {}"
 CMD_TOUCH_FILE = "touch {}"
 LSSCSI_CMD = "lsscsi > {}"
 LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
+LINUX_REPLACE_STRING = "sed -i 's/{}/{}/g' {}"
 LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
