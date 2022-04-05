@@ -156,15 +156,11 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 1: Make sure pods are in crashloopbackoff state.")
         resp = self.master_node_obj.execute_cmd(
             commands.CMD_POD_STATUS, read_lines=True)
-        LOGGER.info(type(resp))
         for output in resp:
-            output = output.split("\n")
-            resp = str(resp)
-            # TODO : Command for Crashloopbackoff state needs to be implemented
-            if "Init:ImagePullBackOf" in output[0]:
+            if(("cortx" in output) and ("Init:CrashLoopBackOff" in output)):
                 LOGGER.info(output)
-                LOGGER.info("Step 1: Done.")
-
+                LOGGER.info("pods are in crashloopbackoff state")
+                LOGGER.info("Step 1: Done")
                 LOGGER.info("Step 2: Get installed version.")
                 resp = HAK8s.get_config_value(self.master_node_obj)
                 assert_utils.assert_true(resp[0], resp[1])
