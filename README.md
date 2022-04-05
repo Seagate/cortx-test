@@ -1,23 +1,25 @@
 # cortx-test
-CORTX-TEST is a repository for multiple automation projects developed for CORTX (QSG Ref: https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems.
+CORTX-TEST is a repository for multiple automation projects developed for testing [CORTX](https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems. These frameworks are reusable for any opensource object stores with minimal configurations. 
 
 It is logically divided into following components:
-	*	Test Automation framework
-	*	Test Execution Framework
-	*	Robot framework and
-	*	Tools (reporting, DI, clone TP etc.)
+*  Test Automation framework (Autobot)
+*  Test Execution Framework  (drunner)
+*  Robot framework UI Tests and
+*  Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
+
+[Architectural Overview](https://github.com/Seagate/cortx-test/blob/main/docs/Architectural-Overview.md) page describes the architectural considerations and repository layout. [Test Execution Deployment View](https://github.com/Seagate/cortx-test/blob/main/docs/Test-Execution-Deployment-View.md) describes the deployment design view of the test framework in distributed mode. [Test Framework Design Document](https://github.com/Seagate/cortx-test/blob/main/docs/Design-Document-Test-Framework.md)  describes in details the design of the framework in distributed mode.
 
 ## Getting Started
-This document assumes that you are aware about Github and if you are coming from svn or other versioning system it is recommended to follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+This document assumes that you are aware about Github and if you are coming from SVN or other code versioning system it is recommended to follow the link [Github Process Readme](https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md) to configure git on your local machine. Following Readme document will give you enough insights to start contributing.
 
-You can have a separate client VM with any Linux flavour to install client side pre-requisites and start using automation framework on the same VM. This VM should have connectivity to Cortx Cluster OR CORTX OVA deployment. Alternatively you may use one of the nodes as client (less recommended).     
+You need a separate client VM with any Linux flavour (prefer CentOS 7+ ) to install client side pre-requisites and start running automation framework on the same VM. This VM should have network connectivity to a Cortx Cluster OR CORTX OVA deployment. Alternatively you may use one of the nodes as client (less recommended).     
 
 ## Git process
-Typically a member contributing to test framework would follow the review process as follows:
-	1. We are following the concept of upstream and downstream where commits happen on your forked repository (downstream)
-	2. Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream)
-	3. Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
-	4. Team member should be able to check-in and raise the PR to upstream even if they have read-only access to Seagate Repositories using this process
+Typically, a member contributing to test framework would follow the review process as follows:
+1.  Commits happen on your forked repository(origin).  
+2.  Then you can raise a PR to merge it to Seagate Cortx-Test repository (Upstream). PRs can be raised even if you have read-only access to Seagate Repositories.
+3.  Moderators of Cortx-Test can create server side feature branch if multiple developers are working on same feature branch
+4.  Team member can check-in and raise the PR to upstream feature branch. Feature lead would raise the pull request to main.
 
 ## Get the Sources
 Fork local repository from Seagate's Cortx-Test repository and then clone Cortx-Test repository from Seagate repository. 
@@ -27,7 +29,7 @@ git clone https://github.com/Seagate/cortx-test.git
 cd cortx-test/
 git status
 git branch
-git checkout dev
+git checkout main
 git remote -v
 git remote add upstream https://github.com/Seagate/cortx-test.git
 git remote -v
@@ -42,7 +44,7 @@ Issuing the above command again will return output as shown:
 Then fetch upstream...
 ```
 git fetch upstream
-git pull upstream dev
+git pull upstream main
 ``` 
 
 ## Setting up dev environment
@@ -83,16 +85,6 @@ Following steps help in setting up client side env, where test framework will ru
     
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
 
-## Steps to copy certificate
-```
-mkdir -p /etc/ssl/stx
-
-mkdir -p /etc/ssl/stx-s3-clients/s3/
-
-curl https://raw.githubusercontent.com/Seagate/cortx-s3server/kubernetes/scripts/haproxy/ssl/s3.seagate.com.crt -o /etc/ssl/stx-s3-clients/s3/ca.crt
-
-curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/srv/components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem
-```
 
 ## Script to set up client environment (Alternate option to manual steps)
 Change dir to your local repository root folder. If you have checked out your code 
@@ -103,6 +95,17 @@ in clean_dev directory created in your home on Linux machine (RHEL Flavour), the
  # ./cortx-test/ci_tools/client_setup.sh 
 ```
 This script should handle client setup. However, note that python configures does not have switch --enable-loadable-sqlite-extensions in script.
+
+## Steps to copy certificate
+```
+mkdir -p /etc/ssl/stx
+
+mkdir -p /etc/ssl/stx-s3-clients/s3/
+
+curl https://raw.githubusercontent.com/Seagate/cortx-s3server/kubernetes/scripts/haproxy/ssl/s3.seagate.com.crt -o /etc/ssl/stx-s3-clients/s3/ca.crt
+
+curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/srv/components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem
+```
 
 ## Steps to set up s3 client
 To set up s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
@@ -159,135 +162,295 @@ make clean --makefile=scripts/s3_tools/Makefile
 ## MongoDB as Configuration Management Database
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
-based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
+based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is fed to the database and pulled when developer will run test automation with test runner. The pulled templates merge with static yaml files to build the CMN_CFG and other component level configs.
+If you don't want to store or use MongoDB configuration entry, you may create `setups.json` locally in project root cortx-test whch will be used to build and load configs in test run process.
+While testing with cortx-test in dev environment or Community you may like to have setups.json created and skip MongoDB interaction. 
 
+Setups.json format is shown below. Sample MongoDB entry under `A sample MongoDB entry for a target setup.` is placed in value part of LC_Setup dict shown below. 
+```json
+{"LC_Setup": { 
+            }
+
+}
+```
+A sample MongoDB entry for a target setup. 
 ```json
 
-    {
-    "setupname":"T2",
+{
+    "setupname":"LC_Setup",
+    "setup_type":"VM",
     "setup_in_useby": "",
     "in_use_for_parallel": false,
     "parallel_client_cnt": 0,
     "is_setup_free": true,
+    "product_family": "LC",
+    "s3_engine": 1,
+    "product_type": "k8s",
+    "lb": "FQDN without protocol(http/s)",
     "nodes":[
         {
-            "host": "eos-node-0",
+            "host": "srv-node-0",
             "hostname": "node 0 hostname",
             "ip": "node 0 ip",
+            "fqdn": "node 0 fqdn",
             "username": "node 0 username",
-            "password": "node 0 password"
+            "password": "node 0 password",
+            "public_data_ip":"",
+            "private_data_ip":"",
+            "node_type":"master",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
         },
         {
-            "host": "eos-node-1",
+            "host": "srv-node-1",
             "hostname": "node 1 hostname",
             "ip": "node 1 ip address",
+            "fqdn": "node 0 fqdn",
             "username": "node 1 username",
-            "password": "node 1 password"
+            "password": "node 1 password",
+            "public_data_ip":"",
+            "private_data_ip":"",
+            "node_type":"worker",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        },
+        {
+            "host": "srv-node-2",
+            "hostname": "node 2 hostname",
+            "ip": "node 2 ip address",
+            "fqdn": "node 0 fqdn",
+            "username": "node 2 username",
+            "password": "node 2 password",
+            "public_data_ip":"",
+            "private_data_ip":"",
+            "node_type":"worker",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+            },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+            },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+            },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+            },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+            }
         }
     ],
     
-    "enclosure":
+    "csm":
     {
-        "primary_enclosure_ip": "10.0.0.2",
-        "secondary_enclosure_ip": "10.0.0.3",
-        "enclosure_user": "",
-        "enclosure_pwd": ""
-    },
-    
-    "pdu":{
-        "ip": "",
+      "mgmt_vip": "fqdn",
+      "port": "31169",
+      "csm_admin_user":{
         "username": "",
-        "password": "",
-        "power_on": "on",
-        "power_off": "off",
-        "sleep_time": 120
+        "password": ""
+      }
     },
-    
-    "gem_controller":
-    {
-        "ip": "",
-        "username": "",
-        "password": "",
-        "port1": "9012",
-        "port2": "9014"
-    },
-    
     "bmc":
     {
         "username": "",
         "password": ""
     },
-    
-    "ldap":
+    "s3endpoints":
     {
-        "username": "",
-        "password": "",
-        "sspl_pass": ""
-    },
+        "s3_io": "fqdn:port",
+        "s3_auth": "fqdn:port"
+    }
+}
+```
+Following json shows a minimal example setup configuration. You may want to refer full json at `tools/setup_update/setup_entry_lc.sample.json`.  
+```json
+
+{
+    "setupname":"Unique_name/FQDN",
+    "setup_type":"VM",
+    "product_family": "LC",
+    "product_type": "k8s",
+    "s3_engine": 2,
+    "lb": "FQDN of LB or K8S SVC",
+    "nodes":[
+        {
+            "host": "srv-node-0",
+            "hostname": "FQDN",
+            "ip": "IPV4",
+            "fqdn": "FQDN",
+            "username": "root",
+            "password": "",
+            "public_data_ip":"",
+            "private_data_ip":"",
+            "node_type":"master",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        },
+        {
+            "host": "srv-node-1",
+            "hostname": "FQDN",
+            "ip": "IPV4",
+            "fqdn": "FQDN",
+            "username": "root",
+            "password": "",
+            "public_data_ip":"",
+            "private_data_ip":"",
+            "node_type":"worker",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        }
+        
+    ],
     
     "csm":
     {
-      "mgmt_vip": "",
+      "mgmt_vip": "FQDN",
+      "port": "31169",
       "csm_admin_user":{
-        "username": "",
+        "username": "<csm_uid>",
         "password": ""
       }
-    
     },
-    "s3":
+    "bmc":
     {
-        "s3_server_ip": "",
-        "s3_server_user": "",
-        "s3_server_pwd": ""
+        "username": "",
+        "password": ""
     }
-    }
-```   
-```
-An example setup json configuration is shown below:
-{"setupname": "RAS-Monitor",
-"setup_type": "VM",
-"setup_in_useby": "",
-"in_use_for_parallel": false,
-"parallel_client_cnt": 0,
-"is_setup_free": true,
-"nodes": [   {"host": "eosnode-1",
-              "hostname": "ssc-vm-2793.colo.seagate.com",
-              "ip": "10.230.248.51",
-              "username": "root",
-              "password": "",
-              "public_data_ip": "192.168.61.218"},
-             {"host": "eos-node-1",
-             "hostname": "node 1 hostname",
-             "ip": "node 1 ip address",
-             "username": "node 1 username",
-             "password": "node 1 password",
-             "public_data_ip": "172.19.19.7"}
-             ],
-"enclosure": {"primary_enclosure_ip": "10.0.0.2",
-              "secondary_enclosure_ip": "10.0.0.3",
-              "enclosure_user": "manage",
-              "enclosure_pwd": ""},
-"pdu": {"ip": "",
-      "username": "",
-      "password": "",
-      "power_on": "on",
-      "power_off": "off",
-      "sleep_time": 120},
-"gem_controller": {"ip": "",
-      "username": "",
-      "password": "",
-      "port1": "9012",
-      "port2": "9014"},
-"bmc": {"username": "",
-       "password": ""},
-"ldap": {"username": "sgiamadmin",
-         "password": "",
-         "sspl_pass": ""},
-"csm": {"mgmt_vip": "ssc-vm-2793.colo.seagate.com",
-        "csm_admin_user": {"username": "admin",
-                            "password": ""}
-                            },
-"s3": {"s3_server_ip": "10.230.248.51", "s3_server_user": "root", "s3_server_pwd": ""}}
+}
+
 ```
 
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
