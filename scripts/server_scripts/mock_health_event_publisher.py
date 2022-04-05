@@ -63,7 +63,8 @@ def is_container_env() -> bool:
 
 # pylint: disable=redefined-outer-name
 def get_data_nodes() -> list:
-    """Fetches data node ids using HA wrapper class and displays the result.
+    """
+    Fetches data node ids using HA wrapper class and displays the result.
 
     Args:
     conf_store: ConftStoreSearch object
