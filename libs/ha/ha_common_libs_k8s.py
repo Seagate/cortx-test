@@ -30,6 +30,7 @@ from multiprocessing import Process
 from time import perf_counter_ns
 import yaml
 import json
+from ast import literal_eval
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -1227,46 +1228,42 @@ class HAK8s:
         :param node_obj: Object for node
         :return: Bool
         """
-        # TODO: Revisit once RPM for mock_health_event_publisher is available
         LOGGER.info("Get HA pod name for setting up mock monitor")
         ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
-        LOGGER.info("Install git inside ha pod %s", ha_pod)
+        LOGGER.info("Copying file %s to %s", common_const.MOCK_MONITOR_LOCAL_PATH,
+                    common_const.MOCK_MONITOR_REMOTE_PATH)
+        resp = node_obj.copy_file_to_remote(local_path=common_const.MOCK_MONITOR_LOCAL_PATH,
+                                            remote_path=common_const.MOCK_MONITOR_REMOTE_PATH)
+        if not resp[0]:
+            LOGGER.error("Failed in copy file due to : %s", resp[1])
+            return resp[0]
+
         try:
-            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                                  command_suffix="yum install git -y", decode=True)
+            LOGGER.info("Convert script in linux compatible format")
+            node_obj.execute_cmd(cmd=common_cmd.DOS2UNIX_CMD.format(
+                common_const.MOCK_MONITOR_REMOTE_PATH))
+            LOGGER.info("Changing access mode of file")
+            node_obj.execute_cmd(cmd=common_cmd.FILE_MODE_CHANGE_CMD.format(
+                common_const.MOCK_MONITOR_REMOTE_PATH))
+            LOGGER.info("Copying file inside pod %s", ha_pod)
+            node_obj.execute_cmd(common_cmd.HA_COPY_CMD.format(
+                common_const.MOCK_MONITOR_REMOTE_PATH, ha_pod,
+                common_const.MOCK_MONITOR_REMOTE_PATH))
         except IOError as error:
-            LOGGER.error("Failed to install git inside ha pod %s due to error: %s", ha_pod, error)
+            LOGGER.error("Failed to copy %s inside ha pod %s due to error: %s",
+                         common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod, error)
             return False
-
-        LOGGER.info("Clone HA repo inside ha pod %s to get mock_health_event_publisher.py", ha_pod)
-        try:
-            node_obj.send_k8s_cmd(
-                operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"test -f {common_const.MOCK_MONITOR_PATH}",
-                decode=True)
-        except IOError as error:
-            LOGGER.info("%s file doesn't exist. Error: %s", common_const.MOCK_MONITOR_PATH, error)
-            try:
-                node_obj.send_k8s_cmd(
-                    operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                    command_suffix="git clone -b fault_k8s https://github.com/Seagate/cortx-ha.git",
-                    decode=True)
-            except IOError as error:
-                LOGGER.error("Failed to clone repo cortx-ha.git inside ha pod %s due to error: %s",
-                             ha_pod, error)
-                return False
-
         return True
 
-    @staticmethod
-    def simulate_disk_cvg_failure(node_obj, source, resource_status, resource_type,
-                                  resource_cnt=1, node_cnt=1, delay=None):
+    def simulate_disk_cvg_failure(self, node_obj, source, resource_status, resource_type,
+                                  node_type='data', resource_cnt=1, node_cnt=1, delay=None):
         """
         :param node_obj: Object for node
         :param source: Source of the event, monitor, ha, hare, etc.
         :param resource_status: recovering, online, failed, unknown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
+        :param node_type: Type of the node (data, server)
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
         :param delay: Delay between two events (Optional)
@@ -1293,15 +1290,22 @@ class HAK8s:
         config_json_file = "config.json"
         config_dict = dict()
         config_dict["events"] = {}
-        # TODO: Get node id list using with -gdt/-gs arguments.
-        node_id_list = []
-        # TODO: Get resource id list using with -gdt/-gs/get-cvgs/get-disks options.
-        resource_id_list = []
-        if len(node_id_list) < node_cnt or len(resource_id_list) < resource_cnt:
-            LOGGER.error("Please provide correct count for resource/node")
-            return False, (node_id_list, resource_id_list)
+        node_id_list = self.get_node_resource_ids(node_obj=node_obj, r_type='node',
+                                                  n_type=node_type)
+        if len(node_id_list) < node_cnt:
+            LOGGER.error("Please provide correct count for nodes")
+            return False, node_id_list
         count = 0
         for n_cnt in range(node_cnt):
+            if resource_type != 'node':
+                resource_id_list = self.get_node_resource_ids(node_obj=node_obj,
+                                                              r_type=resource_type,
+                                                              node_id=node_id_list[n_cnt])
+            else:
+                resource_id_list = node_id_list
+            if len(resource_id_list) < resource_cnt:
+                LOGGER.error("Please provide correct count for resources")
+                return False, resource_id_list
             for d_cnt in range(resource_cnt):
                 count += 1
                 config_dict["events"][f"{count}"] = {}
@@ -1322,12 +1326,59 @@ class HAK8s:
         ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
         LOGGER.info("Publishing event %s for %s resource type through ha pod %s", resource_status,
                     resource_type, ha_pod)
-        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_PATH, config_json_file)
+        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH, config_json_file)
         try:
-            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod, namespace=common_const.NAMESPACE,
-                                  command_suffix=cmd, decode=True)
+            node_obj.send_k8s_cmd(operation="exec", pod=ha_pod,
+                                  namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
+                                  decode=True)
         except IOError as error:
             LOGGER.error("Failed to publish the event due to error: %s", error)
             return False, error
 
         return True, config_dict
+
+    @staticmethod
+    def get_node_resource_ids(node_obj, r_type, n_type=None, node_id=None):
+        """
+        :param node_obj: Object of master node
+        :param r_type: Type of resource (node, disk, cvg)
+        :param n_type: Type of the node (data, server)
+        :param node_id: ID of node from which resource IDs to be extracted (Required only for
+        disk and cvg)
+        :return: List
+        """
+        switcher = {
+            'node': {
+                'data': {
+                    'cmd': common_cmd.GET_DATA_NODE_ID_CMD.format(
+                        common_const.MOCK_MONITOR_REMOTE_PATH)},
+                'server': {
+                    'cmd': common_cmd.GET_SERVER_NODE_ID_CMD.format(
+                        common_const.MOCK_MONITOR_REMOTE_PATH)}},
+            'disk': {
+                'cmd': common_cmd.GET_DISK_ID_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH,
+                                                         node_id)},
+            'cvg': {
+                'cmd': common_cmd.GET_CVG_ID_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH,
+                                                        node_id)}
+        }
+
+        LOGGER.info("Get HA pod name for publishing event")
+        ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
+        if r_type == 'node':
+            cmd = switcher[r_type][n_type]['cmd']
+        else:
+            cmd = switcher[r_type]['cmd']
+        LOGGER.info("Running command %s on pod %s", cmd, ha_pod)
+        try:
+            resp = node_obj.send_k8s_cmd(operation="exec", pod=ha_pod,
+                                         namespace=common_const.NAMESPACE + " -- ",
+                                         command_suffix=cmd, decode=True)
+            resp = literal_eval(resp)
+        except IOError as error:
+            LOGGER.error("Failed to get resource IDs for %s", r_type)
+            LOGGER.error("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
+            raise error
+
+        LOGGER.info("Resource IDs for %s are: %s", r_type, resp)
+        return resp

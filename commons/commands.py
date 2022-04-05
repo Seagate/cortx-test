@@ -86,6 +86,7 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--config \'json:///opt/seagate/cortx_configs/provisioner_cluster.json\' " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
+DOS2UNIX_CMD = "yum install dos2unix -y; dos2unix {}"
 
 CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
 
