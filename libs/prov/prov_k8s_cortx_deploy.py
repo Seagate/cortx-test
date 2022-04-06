@@ -395,6 +395,8 @@ class ProvDeployK8sCortxLib:
         """
         This method edits the deploy script to update the workarounds
         returns the Path of the updated file
+        params: node_obj: node obj of master node.
+        params: git_tag: Services release tag
         """
         url = self.deploy_cfg["git_k8_repo_file"].format(git_tag,
                                                          self.deploy_cfg["deploy_file"])
@@ -410,6 +412,8 @@ class ProvDeployK8sCortxLib:
         if system_utils.path_exists(self.deploy_cfg['deploy_file']):
             node_obj.copy_file_to_remote(self.deploy_cfg['deploy_file'], remote_path)
             return True, f"Files copied at {remote_path}"
+        else
+            return False, f"Failed to find the file on {self.deploy_cfg['deploy_file']}"
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
