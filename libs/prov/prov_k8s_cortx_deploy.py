@@ -1251,7 +1251,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
             row.append(service_status[-1])
-            if self.deployment_type != "data-only":
+            if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
                 if self.cortx_server_image:
                     resp = self.verfiy_installed_rpms(master_node_list,
                                                       common_const.RGW_CONTAINER_NAME,
