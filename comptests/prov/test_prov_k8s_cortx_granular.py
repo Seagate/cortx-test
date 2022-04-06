@@ -79,9 +79,7 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -153,9 +151,7 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -228,9 +224,7 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -302,9 +296,7 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 

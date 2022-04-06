@@ -51,6 +51,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
+from libs.ha.ha_common_libs_k8s import HAK8s
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -69,8 +70,6 @@ class ProvDeployK8sCortxLib:
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
-        self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
-        self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
         self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
         self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
@@ -1574,12 +1573,14 @@ class ProvDeployK8sCortxLib:
         return True, file_path
 
     @staticmethod
-    def get_installed_version(resp):
+    def get_installed_version(master_node_obj):
         """
         Get installed version for image
         return : image version
         """
-        return resp['cortx']['common']['release']['version']
+        resp = HAK8s.get_config_value(master_node_obj)
+        version = resp[1]['cortx']['common']['release']['version']
+        return version
 
     @staticmethod
     def compare_version(installing_version, installed_version):

@@ -76,10 +76,8 @@ class TestProvK8CortxColdUpgrade:
         Verify CORTX Software Cold upgrade.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = self.deploy_lc_obj.get_installed_version(resp[1])
+        LOGGER.info("Step 1: Get installed version.")  
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -135,10 +133,7 @@ class TestProvK8CortxColdUpgrade:
 
         LOGGER.info(
             "Step 7: Check if installed version is equals to installing version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = self.deploy_lc_obj.get_installed_version(
-            resp[1])
+        new_installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
                                    "Installing version is equal to new installed version.")
@@ -162,10 +157,7 @@ class TestProvK8CortxColdUpgrade:
                 LOGGER.info("pods are in crashloopbackoff state")
                 LOGGER.info("Step 1: Done")
                 LOGGER.info("Step 2: Get installed version.")
-                resp = HAK8s.get_config_value(self.master_node_obj)
-                assert_utils.assert_true(resp[0], resp[1])
-                installed_version = self.deploy_lc_obj.get_installed_version(
-                    resp[1])
+                installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
                 LOGGER.info("Current version: %s", installed_version)
                 LOGGER.info("Step 2: Done.")
 
