@@ -213,3 +213,5 @@ class TestProvK8CortxColdUpgrade:
                                                            upgrade_type="cold")
                 LOGGER.info("Step 6: Done.")
                 LOGGER.info("Test Completed.")
+            else:
+                return False, "Pod is not in crashloopbackoff state."
