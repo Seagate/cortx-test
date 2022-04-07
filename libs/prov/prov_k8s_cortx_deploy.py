@@ -1586,7 +1586,7 @@ class ProvDeployK8sCortxLib:
     def compare_version(installing_version, installed_version):
         """ 
         Compare two version 
-        return : greater version
+        return : none
         
         """
         if(installing_version > installed_version):
