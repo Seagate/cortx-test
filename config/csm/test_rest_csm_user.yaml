@@ -214,7 +214,7 @@ test_25276:
     message: "Only {} user can create other {} users"
     message_id: "user_permission_denied"
 test_25286:
-    error_code: 4101
+    error_code: 4104
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_25283:
@@ -222,7 +222,7 @@ test_25283:
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_25285:
-    error_code: 4101
+    error_code: 4104
     message1: "Cannot delete the last {} user"
     message2: "Normal user cannot delete other user"
     message_id: "user_permission_denied"
@@ -266,7 +266,7 @@ test_32178:
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
     email_id: "test@seagate.com"
 test_32180:
-    error_code: 4101
+    error_code: 4104
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_32181:

@@ -1,9 +1,4 @@
 4101:
-  user_permission_denied:
-    - "Cannot change roles for super user"
-    - "Non super user cannot change roles for self"
-    - "Cannot delete the last {} user"
-    - "Normal user cannot delete other user"
   users_not_found:
     - "User does not exist:"
   update_not_allowed:
@@ -17,6 +12,12 @@
   Access denied for account:
     - "Access denied. Cannot modify another S3 account."
     - "Access denied."
+4104:
+  user_permission_denied:
+    - "Cannot change roles for super user"
+    - "Non super user cannot change roles for self"
+    - "Cannot delete the last {} user"
+    - "Normal user cannot delete other user"
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"

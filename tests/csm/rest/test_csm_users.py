@@ -4928,7 +4928,7 @@ class TestCsmUser():
         assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             assert response.json()["message"] == msg.format("admin"), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 6: Perform GET users operation")
         response = self.csm_obj.list_csm_users(
             expect_status_code=const.SUCCESS_STATUS,
