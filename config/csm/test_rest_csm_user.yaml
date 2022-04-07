@@ -257,7 +257,7 @@ test_28509:
 test_28508:
     status_code: 400
 test_32171:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
 test_32174:
