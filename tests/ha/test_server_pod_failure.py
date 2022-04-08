@@ -18,7 +18,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""HA test suite for Server Pod Failure"""
+"""
+HA test suite for Server Pod Failure.
+"""
 
 import logging
 import os
@@ -57,7 +59,9 @@ LOGGER = logging.getLogger(__name__)
 # pylint: disable=R0902
 # pylint: disable=R0904
 class TestPodFailure:
-    """Test suite for Server Pod Failure"""
+    """
+    Test suite for Server Pod Failure
+    """
 
     @classmethod
     def setup_class(cls):
