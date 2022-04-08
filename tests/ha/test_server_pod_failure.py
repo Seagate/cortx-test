@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-""" HA test suite for Server Pod Failure """
+"""HA test suite for Server Pod Failure"""
 
 import logging
 import os
