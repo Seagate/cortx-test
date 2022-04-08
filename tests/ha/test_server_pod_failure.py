@@ -109,7 +109,7 @@ class TestPodFailure:
         cls.multipart_obj_path = None
 
     def setup_method(self):
-        """This function will be invoked prior to each test case."""
+        """Following function steps will be invoked prior to each test case."""
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         self.restore_node = False
@@ -134,7 +134,7 @@ class TestPodFailure:
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
-        """This function will be invoked after each test function in the module."""
+        """Following function steps will be invoked after each test function in the module."""
         LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
@@ -200,7 +200,7 @@ class TestPodFailure:
     @pytest.mark.tags("TEST-39902")
     @CTFailOn(error_handler)
     def test_degraded_reads_safe_server_pod_shutdown(self):
-        """This test verifies degraded READs after server pod down - safe pod shutdown."""
+        """Following test steps tests degraded READs after server pod down -safe pod shutdown."""
         LOGGER.info("STARTED: Test to verify degraded reads after safe server pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
@@ -267,7 +267,7 @@ class TestPodFailure:
     @pytest.mark.tags("TEST-39903")
     @CTFailOn(error_handler)
     def test_degraded_reads_unsafe_server_pod_shutdown(self):
-        """This test tests degraded READs after server pod down - unsafe shutdown."""
+        """Following test steps tests degraded READs after server pod down - unsafe shutdown."""
         LOGGER.info("STARTED: Test to verify degraded reads after unsafe server pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
@@ -339,7 +339,7 @@ class TestPodFailure:
     @pytest.mark.tags("TEST-39904")
     @CTFailOn(error_handler)
     def test_continuous_reads_during_server_pod_down(self):
-        """This test tests degraded reads while server pod is going down."""
+        """Following test steps tests degraded reads while server pod is going down."""
         LOGGER.info("STARTED: Test to verify degraded reads during server pod is going down.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
 
@@ -439,7 +439,7 @@ class TestPodFailure:
     @pytest.mark.tags("TEST-39905")
     @CTFailOn(error_handler)
     def test_degraded_writes_safe_server_pod_shutdown(self):
-        """This test tests degraded writes after safe server pod shutdown."""
+        """Following test steps tests degraded writes after safe server pod shutdown."""
         LOGGER.info("STARTED: Test to verify degraded writes after safe server pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
