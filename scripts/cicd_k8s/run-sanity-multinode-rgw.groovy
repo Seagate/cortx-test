@@ -57,7 +57,7 @@ deactivate
 	    }
 		stage('COPY_TP_TE') {
 			steps{
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
@@ -71,7 +71,7 @@ deactivate
 			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -120,7 +120,7 @@ deactivate
 				script {
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -157,7 +157,7 @@ deactivate
 				script {
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -199,7 +199,7 @@ deactivate
             		  env.Current_TP = records[0][0]
             		  env.new_TP = records[0][0]
         		  }
-        		   withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+        		   withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}

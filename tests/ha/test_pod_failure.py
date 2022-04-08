@@ -3484,3 +3484,76 @@ class TestPodFailure:
         LOGGER.info("Step 10: Successfully completed IOs.")
 
         LOGGER.info("ENDED: Test chunk upload during pod down")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.nightly_regression
+    @pytest.mark.tags("TEST-39976")
+    @CTFailOn(error_handler)
+    def test_object_crud_pod_failure(self):
+        """
+        Verify object CRUDs before and after pod failure; pod shutdown by making replicas=0
+        """
+        LOGGER.info("STARTED: Verify object CRUDs before and after pod failure; pod shutdown "
+                    "by making replicas=0")
+
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + ("
+                    "1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-39976'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
+        LOGGER.info("Get pod name to be shutdown")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
+        LOGGER.info("Shutdown pod %s", pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to shutdown pod {pod_name} by making "
+                                           "replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", pod_name)
+        self.deployment_name = resp[1]
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod are in offline state")
+
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+        LOGGER.info("Step 6: Perform READs-Verify with variable object sizes on already "
+                    "written data")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed READs-Verify on already written data.")
+
+        LOGGER.info("Step 7: Create new objects and run IOs")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: IOs ran successfully.")
+
+        LOGGER.info("Completed: Verify object CRUDs before and after pod failure; pod shutdown "
+                    "by making replicas=0")
