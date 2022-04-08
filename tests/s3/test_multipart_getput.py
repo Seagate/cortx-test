@@ -28,10 +28,16 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.s3_utils import get_precalculated_parts, assert_s3_err_msg
-from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import path_exists
+from commons.utils.s3_utils import get_precalculated_parts
+from commons.utils.s3_utils import assert_s3_err_msg
+from commons.utils.system_utils import backup_or_restore_files
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons import error_messages as errmsg
 
@@ -316,19 +322,24 @@ class TestMultipartUploadGetPut:
         self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info(" Complete the multipart with first and last part upload")
         uploaded_parts[1].reverse()
-        try:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, uploaded_parts[1],
                                                                   self.bucket_name,
                                                                   self.object_name)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            assert_s3_err_msg(errmsg.RGW_ERR_WRONG_JSON, errmsg.CORTX_ERR_WRONG_JSON,
-                              CMN_CFG["s3_engine"], error)
-            self.log.info("Failed to complete the multipart with incomplete part details ")
-        self.log.info("Aborting multipart uploads")
-        self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,
-                                                    self.object_name, mpu_id)
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            try:
+                resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, uploaded_parts[1],
+                                                                      self.bucket_name,
+                                                                      self.object_name)
+                assert_utils.assert_false(resp[0], resp[1])
+            except CTException as error:
+                self.log.error(error)
+                assert_utils.assert_equal(errmsg.CORTX_ERR_WRONG_JSON, error.message, error.message)
+                self.log.info("Failed to complete the multipart with incomplete part details ")
+            self.log.info("Aborting multipart upload")
+            self.s3_mpu_test_obj.abort_multipart_upload(self.bucket_name,
+                                                        self.object_name, mpu_id)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()

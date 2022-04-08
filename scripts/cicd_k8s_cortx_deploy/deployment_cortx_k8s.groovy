@@ -97,7 +97,7 @@ while IFS=' ' read -r target te
     do
 		echo "$target"
 		echo "$te"
-		python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NUMBER} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES
+		python3 -u testrunner.py -te=$te -tp=${TEST_PLAN_NUMBER} -tg=$target -b=${BUILD} -t='stable' -d='False' -hc='True' -s='True' -c='True' -p='0' --force_serial_run 'True' --data_integrity_chk='False' -tt $TEST_TYPES --validate_certs False
 	done <$ALL_SETUP_ENTRY
 export PYTHONPATH="$PWD"
 status=`python3 scripts/cicd_k8s_cortx_deploy/result.py`

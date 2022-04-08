@@ -1,5 +1,6 @@
 #!/bin/sh
 secrets_json_path=/root/secrets.json
+WORKSPACE=/root
 cp $secrets_json_path "$WORKSPACE/cortx-test/secrets.json"
 cd cortx-test
 
@@ -79,9 +80,22 @@ yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make s
 if [[ ! -f "/usr/bin/python3.7" ]]
 then
   cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm -f Python-3.7.9.tgz
-  cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations
+  cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-loadable-sqlite-extensions
   cd /usr/src/Python-3.7.9 && make altinstall
   echo 'alias python3="/usr/bin/python3.7"' >> ~/.bashrc
+fi
+
+cd /usr/bin
+
+if [[ -f "/usr/bin/python3.7" ]]
+then
+  ln -s /usr/bin/python3.7 python37
+fi
+
+if [[ -f "/usr/local/bin/python3.7" ]]
+then
+  ln -s /usr/local/bin/python3.7 python3.7
+
 fi
 
 yum install -y python3-devel librdkafka python3-tkinter

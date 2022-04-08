@@ -546,7 +546,7 @@ class TestS3Concurrency:
         self.start_concurrent_clients(client_lst, self.resp_lst)
         self.log.info(
             "Step 2: Delete bucket operation will get completed successfully on one of the "
-            "s3 client and on other s3 client will failed saying bucket doesn't exist")
+            "s3 client and on other s3 client will fail saying bucket doesn't exist")
         self.log.info(
             "ENDED: Parallel deletion of bucket from 2 different clients")
 

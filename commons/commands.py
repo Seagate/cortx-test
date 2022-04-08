@@ -20,6 +20,7 @@ CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
+LS_LH_CMD = "ls -lhR {}"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
@@ -85,6 +86,7 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--config \'json:///opt/seagate/cortx_configs/provisioner_cluster.json\' " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
+DOS2UNIX_CMD = "yum install dos2unix -y; dos2unix {}"
 
 CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
 
@@ -524,13 +526,14 @@ HELM_ROLLBACK = "helm rollback {} {}"
 HELM_GET_VALUES = "helm get values {}"
 
 # LC commands
-CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
-CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
 DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 
 # Incomplete commands
