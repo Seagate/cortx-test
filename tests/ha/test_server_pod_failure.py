@@ -238,7 +238,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 4: Cluster has some failures due to server pod %s has gone down.",
+                    pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -309,7 +310,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 4: Cluster has some failures due to server pod %s has gone down.",
+                    pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -390,7 +392,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 4: Cluster has some failures due to server pod %s has gone down.",
+                    pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on serve pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -425,8 +428,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Successfully completed READs & verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 7: Create IAM user with multiple buckets and run IOs when Cluster has "
-                    "server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 7: Create IAM user with multiple buckets and run IOs when cluster has "
+                    "some failures due to server pod %s going down.", pod_name)
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
         self.test_prefix = 'test-39904-1'
@@ -434,8 +437,8 @@ class TestServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and "
-                    "ran IOs when Cluster has server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and ran IOs "
+                    "when cluster has some failures due to server pod %s has gone down.", pod_name)
         LOGGER.info("ENDED: Test to verify degraded reads during server pod is going down.")
 
     # pylint: disable=too-many-statements
@@ -476,7 +479,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Cluster has server pod %s's service offline state", pod_name)
+        LOGGER.info("Step 3: Cluster has some failures due to server pod %s has gone down.",
+                    pod_name)
 
         LOGGER.info("Step 4: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
