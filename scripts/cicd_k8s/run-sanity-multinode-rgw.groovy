@@ -13,6 +13,7 @@ pipeline {
 		Original_TP = 'TEST-37457'
 		Sanity_TE = 'TEST-37458'
 		Data_Path_TE = 'TEST-39283'
+		Failure_TE = 'TEST-40061'
 		Setup_Type = 'NightlySanity'
 		Platform_Type = 'VM'
 		Nodes_In_Target = "${NUM_NODES}"
@@ -131,7 +132,7 @@ IFS=','
 while read tp_id te_id old_te
 do
     old_te=$(echo $old_te | sed -e 's/\r//g')
-    if [ "${old_te}" != "${Sanity_TE}" ] && [ "${old_te}" != "${Data_Path_TE}" ]
+    if [ "${old_te}" != "${Sanity_TE}" ] && [ "${old_te}" != "${Data_Path_TE}" ] && ["${old_te}" != "${Failure_TE}"]
 		then
 			echo "Running Regression Tests"
 			echo "tp_id : $tp_id"
@@ -185,6 +186,43 @@ deactivate
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
                         error('Aborted IO Path due to bad health of deployment')
+                    }
+				}
+			}
+		}
+		stage('FAILURE_DOMAIN_TEST_EXECUTION') {
+			steps {
+				script {
+			        env.Health = 'OK'
+
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
+source venv/bin/activate
+set +x
+INPUT=cloned_tp_info.csv
+OLDIFS=$IFS
+IFS=','
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read tp_id te_id old_te
+do
+    old_te=$(echo $old_te | sed -e 's/\r//g')
+    if [ "${old_te}" == "${Failure_TE}" ]
+		then
+			echo "Running Failure Domain Tests"
+			echo "tp_id : $tp_id"
+			echo "te_id : $te_id"
+			echo "old_te : $old_te"
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
+		fi
+done < $INPUT
+IFS=$OLDIFS
+deactivate
+''' )
+				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Failure Domain Path due to bad health of deployment')
                     }
 				}
 			}
