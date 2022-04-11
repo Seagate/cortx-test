@@ -238,7 +238,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster is in degraded state")
+        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -309,7 +309,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster is in degraded state")
+        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -339,7 +339,7 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39904")
     @CTFailOn(error_handler)
-    def test_continuous_reads_during_server_pod_down(self):
+    def test_reads_during_server_pod_down(self):
         """Following test steps tests degraded reads while server pod is going down."""
         LOGGER.info("STARTED: Test to verify degraded reads during server pod is going down.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
@@ -390,7 +390,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster is in degraded state")
+        LOGGER.info("Step 4: Cluster has server pod %s's service offline state", pod_name)
 
         LOGGER.info("Step 5: Check services status that were running on serve pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -425,13 +425,17 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Successfully completed READs & verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 7: Create multiple buckets and run IOs on degraded cluster")
+        LOGGER.info("Step 7: Create IAM user with multiple buckets and run IOs when Cluster has "
+                    "server pod %s's service offline state", pod_name)
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
         self.test_prefix = 'test-39904-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs on degraded cluster")
+        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and "
+                    "ran IOs when Cluster has server pod %s's service offline state", pod_name)
         LOGGER.info("ENDED: Test to verify degraded reads during server pod is going down.")
 
     # pylint: disable=too-many-statements
@@ -472,7 +476,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Cluster is in degraded state")
+        LOGGER.info("Step 3: Cluster has server pod %s's service offline state", pod_name)
 
         LOGGER.info("Step 4: Check services status that were running on server pod %s", pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
@@ -494,14 +498,5 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed WRITEs, READs & verify DI on the already "
                     "created bucket")
-
-        LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
-                    "512MB) on new buckets when cluster is in degraded state.")
-        self.test_prefix = 'test-39905-1'
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects on new "
-                    "buckets when cluster is in degraded state.")
 
         LOGGER.info("ENDED: Test to verify degraded writes after safe server pod shutdown.")
