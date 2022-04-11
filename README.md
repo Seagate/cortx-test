@@ -57,7 +57,18 @@ Following steps help in setting up client side env, where test framework will ru
     3. `cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz`
     
     4. `cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations`
-        
+    4a. Note if you get an error message:
+	configure: error: in `/usr/src/Python-3.7.9':
+	configure: error: no acceptable C compiler found in $PATH
+	See `config.log' for more details
+	You need to install gcc:
+	- Redhat base:
+	`yum groupinstall "Development Tools"`
+	- Debian base:
+	`apt-get install build-essential`
+	- openSUSE base:
+	`zypper install --type pattern devel_basis`
+	
     5. `cd /usr/src/Python-3.7.9 && make altinstall`
     5a. Right here at this point you can check python is installed correctly by going in interactive mode. You can issue command "pip3 install pysqlite3" and type "import sqlite3" to confirm that sqlite3 is installed. This will save a lot of your time if you run into issues later for python installation. In some linux flavours you need --enable-loadable-sqlite-extensions switch to be added while configuring python.   
     cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-loadable-sqlite-extensions
