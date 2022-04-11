@@ -2878,7 +2878,7 @@ class TestPodRestart:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True, nclients=5, nsamples=5)
+                                                    skipcleanup=True, nclients=20, nsamples=20)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
@@ -2929,14 +2929,15 @@ class TestPodRestart:
             "Step 6: Perform READs and verify DI on the written data in background during "
             "pod restart using %s method", self.restore_method)
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
                 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        # TODO Need to update timing once we get stability in degraded IOs performance
+        time.sleep(HA_CFG["common_params"]["degraded_wait_delay"])
         LOGGER.info("Step 6: Successfully started READs and verified DI on the written data in "
                     "background")
 
@@ -2960,12 +2961,21 @@ class TestPodRestart:
         LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
         event.clear()
         thread.join()
-
+        LOGGER.debug("Event is cleared and thread has joined.")
         LOGGER.info("Verifying responses from background process")
         responses = {}
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Background S3bench Failures")
+        LOGGER.debug("Background S3bench responses : %s", responses)
+        if not responses["pass_res"]:
+            assert_utils.assert_true(False,
+                                     "No background IOs response while event was cleared")
         nonbkgrd_logs = list(x[1] for x in responses["pass_res"])
+        if not responses["fail_res"]:
+            assert_utils.assert_true(False,
+                                     "No background IOs response while event was set")
         bkgrd_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=nonbkgrd_logs)
         assert_utils.assert_false(len(resp[1]), "Non Background Logs which contain failures"

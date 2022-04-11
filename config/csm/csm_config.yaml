@@ -1,7 +1,7 @@
 # Configurations for Rest API
 Restcall:
   secure: True
-  msg_check: "enable"    #Set msg check to enable or disable
+  msg_check: "disable"    #Set msg check to enable or disable
   port : 443
   jsonfile : 'rest_call.json'
   csm_user_manage:
