@@ -79,19 +79,9 @@ class TestFailureHandlingPodFailure:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        pod_name = pod_list[0]
-        ha_container = [common_const.HA_K8S_CONTAINER_NAME,
-                        common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
-                        common_const.HA_HEALTH_MONITOR_CONTAINER_NAME]
-        for container in ha_container:
-            res = self.node_master_list[0].send_k8s_cmd(
-                operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {container} -- {common_cmd.SERVICE_HA_STATUS}", decode=True)
-            assert_utils.assert_true(res, "HA services are not running")
-        self.restore_pod = self.restore_method = self.deployment_name = None
-        self.deployment_backup = None
-        self.restored = True
+        LOGGER.info("Checking if all the ha services are up and running")
+        resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
+        assert_utils.assert_true(resp, "HA services are not running")
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -108,7 +98,7 @@ class TestFailureHandlingPodFailure:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
@@ -134,15 +124,16 @@ class TestFailureHandlingPodFailure:
                                       f"Resource status of {generation_id_list[index]} "
                                       "is not failed")
 
-    @pytest.mark.skip(reason="CORTX-28823")
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-28823")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-30218")
     def test_delete_pod(self):
         """
-        This test tests Publish the pod failure event to Hare - Delete pod)
+        This TC tests Publish the pod failure event to Hare - Delete pod(kubectl delete))
         """
-        LOGGER.info("STARTED: Publish the pod failure event in message bus to Hare - Delete pod.")
+        LOGGER.info("STARTED: Publish the pod failure event in message bus to Hare - Delete pod."
+                    "(kubectl delete)")
 
         datapod_list = self.node_master_list[0]. \
             get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
@@ -163,32 +154,19 @@ class TestFailureHandlingPodFailure:
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 2: New data pod created automatically by kubernetes")
 
-        LOGGER.info("Step 3: Check pod failure alert.")
-        LOGGER.info("Step 4: Correct event and content should be published to component Hare.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)
-        pod_nameha = pod_list[0]
-        ha_hostname = self.node_master_list[0].get_pods_node_fqdn(pod_nameha)
-        LOGGER.info("Cortx HA pod running on: %s ", ha_hostname[pod_nameha])
-        node_obj = None
-        for node in range(self.num_nodes):
-            if CMN_CFG["nodes"][node]["hostname"] == ha_hostname[pod_nameha]:
-                node_obj = LogicalNode(hostname=ha_hostname[pod_nameha],
-                                       username=CMN_CFG["nodes"][node]["username"],
-                                       password=CMN_CFG["nodes"][node]["password"])
-        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        hapvc = None
-        for hapvc in pvc_list:
-            if common_const.HA_POD_NAME_PREFIX in hapvc:
-                hapvc = hapvc.replace("\n", "")
-                LOGGER.info("HA log pvc list %s", hapvc)
-                break
-        cmd_halog = "tail -5 /mnt/fs-local-volume/local-path-provisioner/" \
-                    + hapvc + "/log/ha/*/health_monitor.log | grep 'to component hare'"
-        output = node_obj.execute_cmd(cmd_halog)
-        LOGGER.info("Events output :%s", output)
+        LOGGER.info("Step 3: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True,
+                                                     kubectl_delete=True, status='failed')
+        resp = self.get_node_status_log(resp_dict)
+        LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
-        # TODO: Pod failure alert verification - EOS-28560
-        # TODO: Correct event and contents published to component Hare - EOS-28560
+        LOGGER.info("Step 4: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 4: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - Delete pod.")
 
@@ -197,7 +175,7 @@ class TestFailureHandlingPodFailure:
     @pytest.mark.tags("TEST-30220")
     def test_delete_pod_replicaset_down(self):
         """
-        This test tests delete pod by scaling down pod(replica=0)
+        This TC tests delete pod by scaling down pod(replica=0)
         """
         LOGGER.info(
             "STARTED: Publish the pod failure event in message bus to Hare - "
@@ -245,7 +223,7 @@ class TestFailureHandlingPodFailure:
     @pytest.mark.tags("TEST-30222")
     def test_delete_pod_deployment(self):
         """
-        This test tests delete pod by deleting deployment
+        This TC tests delete pod by deleting deployment
         """
         LOGGER.info(
             "STARTED: Publish the pod failure event in message bus to Hare - "
@@ -292,13 +270,13 @@ class TestFailureHandlingPodFailure:
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod deployment - delete deployment")
 
-    @pytest.mark.skip(reason="CORTX-28823")
+    @pytest.mark.skip(reason="No way of testing this currently - need fix CORTX-28823")
     @pytest.mark.comp_ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-30219")
     def test_delete_pod_forcefully(self):
         """
-        This test tests delete pod using kubectl delete forcefully
+        This TC tests delete pod using kubectl delete forcefully
         """
         LOGGER.info("STARTED: Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")
@@ -323,8 +301,20 @@ class TestFailureHandlingPodFailure:
         assert_utils.assert_equal(after_del, before_del, "New data pod didn't gets created")
         LOGGER.info("Step 2: New data pod created automatically by kubernetes")
 
-        # TODO: Pod failure alert verification - CORTX-28823
-        # TODO: Correct event and contents published to component Hare - CORTX-28823
+        LOGGER.info("Step 3: Check pod failure alert.")
+        LOGGER.info("Step 3: Check pod failed alert in health monitor log")
+        node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
+        resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
+                                                     kvalue=1, health_monitor=True,
+                                                     kubectl_delete=True, status='failed')
+        resp = self.get_node_status_log(resp_dict)
+        LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
+
+        LOGGER.info("Step 4: Check for publish action event")
+        resp = self.ha_comp_obj.check_string_in_log_file(node_obj, "to component hare",
+                                                         common_const.HA_SHUTDOWN_LOGS[2], lines=4)
+        assert_utils.assert_true(resp[0], "Alert not sent to hare")
+        LOGGER.info("Step 4: Successfully sent action event to hare")
 
         LOGGER.info("COMPLETED:Publish the pod failure event in message bus to Hare - "
                     "Delete pod forcefully.")

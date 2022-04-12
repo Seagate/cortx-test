@@ -1644,8 +1644,7 @@ class TestIamUserRGW():
         payload.update({"display_name":(uid+"1")})
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
-        assert response.json()["error_code"] == resp_error_code, (
-            "Error code check failed.")
+        assert response.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             assert response.json()["message"] == msg , "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
@@ -2647,8 +2646,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, (
-            "Error code check failed.")
+        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
@@ -2664,8 +2662,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, (
-            "Error code check failed.")
+        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."

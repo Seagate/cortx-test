@@ -192,21 +192,21 @@ test_25282:
     message_id: "update_not_allowed"
     email_id: "testuser@seagate.com"
 test_25275:
-    error_code: 4101
+    error_code: 4104
     message: "Only {} user can create other {} users"
     message_id: "Cannot create other users"
 test_25279:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the password for {}"
     message_id: "update_not_allowed"
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25281:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the email id for {}"
     message_id: "update_not_allowed"
     email_id: "testuser@seagate.com"
 test_25277:
-    error_code: 4101
+    error_code: 4104
     message: "Cannot change role for the last {} user"
     message_id: "update_not_allowed"
 test_25276:
@@ -214,15 +214,15 @@ test_25276:
     message: "Only {} user can create other {} users"
     message_id: "user_permission_denied"
 test_25286:
-    error_code: 4101
+    error_code: 4104
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_25283:
-    error_code: 4101 
+    error_code: 4104
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_25285:
-    error_code: 4101
+    error_code: 4104
     message1: "Cannot delete the last {} user"
     message2: "Normal user cannot delete other user"
     message_id: "user_permission_denied"
@@ -257,7 +257,7 @@ test_28509:
 test_28508:
     status_code: 400
 test_32171:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
 test_32174:
@@ -266,7 +266,7 @@ test_32178:
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
     email_id: "test@seagate.com"
 test_32180:
-    error_code: 4101
+    error_code: 4104
     message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
 test_32181:
