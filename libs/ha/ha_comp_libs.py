@@ -211,3 +211,26 @@ class HAK8SCompLib:
             resp_dict['node_id'].append(node_id)
             resp_dict['resource_id'].append(resource_id)
         return resp_dict
+
+    @staticmethod
+    def get_word_count(node_obj, log_index: int):
+        '''
+        Helper function to get word count of a file
+        :param node_obj: Master node(Logical Node object)
+        :param index: name of the log
+        0 - k8s | 1 - fault_tolerance | 2 - health_monitor
+        '''
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        hapvc = None
+        for hapvc in pvc_list:
+            if common_const.HA_POD_NAME_PREFIX in hapvc:
+                hapvc = hapvc.replace("\n", "")
+                LOGGER.info("hapvc list %s", hapvc)
+                break
+        wc_count_cmd = common_const.HA_LOG + hapvc + "/log/ha/*/" + \
+                          common_const.HA_SHUTDOWN_LOGS[log_index]
+        wc_count_cmd = common_cmd.LINE_COUNT_CMD.format(wc_count_cmd)
+        ha_wc_count = node_obj.execute_cmd(wc_count_cmd)
+        if isinstance(ha_wc_count, bytes):
+            wc_count = str(ha_wc_count, 'UTF-8')
+        return wc_count
