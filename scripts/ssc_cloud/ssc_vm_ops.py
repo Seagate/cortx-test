@@ -66,7 +66,7 @@ def requests_retry_session(retries=MAX_RETRY_FOR_SESSION,
     retry = Retry(total=retries, read=retries, connect=retries,
                   backoff_factor=back_off_factor,
                   status_forcelist=status_force_list,
-                  method_whitelist=frozenset(['GET', 'POST']))
+                  allowed_methods=frozenset(['GET', 'POST']))
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
     session.mount('https://', adapter)

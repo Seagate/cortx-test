@@ -1582,3 +1582,16 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             pointer.close()
         return True, file_path
+
+    @staticmethod
+    def service_upgrade_software(node_obj: LogicalNode, upgrade_image_version: str) -> tuple:
+        """
+        Helper function to upgrade.
+        :param node_obj: Master node(Logical Node object)
+        :param upgrade_image_version: Version Image to Upgrade.
+        :return: True/False
+        """
+        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
+        resp = node_obj.execute_cmd(common_cmd.UPGRADE_CLUSTER_DESTRUPTIVE_CMD.format(
+            PROV_CFG['k8s_cortx_deploy']["k8s_dir"]), read_lines=True)
+        return resp

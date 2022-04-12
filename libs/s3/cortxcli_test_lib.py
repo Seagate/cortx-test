@@ -95,7 +95,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_update_role(self, user_name, password, role):
         """
-        This function will update role of user.
+        Function will update role of user.
 
         :param user_name: Name of a csm user whose role to be updated.
         :param role: Role to be updated.
@@ -146,7 +146,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         return True/False, Response s3 accounts dict.
         """
         try:
-            accounts = dict()
+            accounts = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -167,7 +167,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_show_s3accounts(self, csm_user=None, passwd=None):
         """
-        s3accounts using csm user(default with admin role).
+        Show s3accounts using csm user(default with admin role).
 
         :param csm_user: Name of the csm user.
         :param passwd: password of the csm user.
@@ -182,7 +182,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.debug(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -194,7 +194,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, accounts
 
-    def csm_user_create_s3account(self, s3_user, email, s3_passwd, csm_user=None, passwd=None):
+    def csm_user_create_s3account(self, s3_user, email, s3_passwd, **kwargs):
         """
         Create s3 account user using csm user(default with admin role).
 
@@ -205,8 +205,10 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         :param s3_passwd: Password of the s3 account user.
         return True/False, Response.
         """
+        csm_user = kwargs.get("csm_user", None)
+        passwd = kwargs.get("passwd", None)
         try:
-            acc_details = dict()
+            acc_details = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -271,7 +273,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = response["users"]
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.info(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -388,7 +390,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         :param account_name: s3 account name.
         :return: create account cortxcli response.
         """
-        acc_details = dict()
+        acc_details = {}
         try:
             start = time.perf_counter()
             self.login_cortx_cli()
@@ -428,7 +430,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
             else:
-                accounts = dict()
+                accounts = {}
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.list_accounts_cortxcli.__name__,
@@ -530,7 +532,7 @@ class _IamUser(CortxCliIamUser):
         :return: (Boolean/Response)
         :return: create user using cortxcli response.
         """
-        user_details = dict()
+        user_details = {}
         confirm_password = confirm_password if confirm_password else password
         try:
             kwargs.setdefault("sleep_time", 10)
@@ -573,8 +575,8 @@ class _IamUser(CortxCliIamUser):
                                         iamuser_name: str,
                                         new_password: str) -> tuple:
         """
-        This function will update password for specified s3
-        iam user to new_password using CORTX CLI.
+        Update iam user password to new password using CORTX CLI.
+
         :param iamuser_name: IAM user name for which password should be updated
         :param new_password: New password for IAM user
         :return: True/False and Response returned by CORTX CLI

@@ -276,7 +276,7 @@ class IamLib(IAMRest):
 
     def delete_user_login_profile(self, user_name):
         """
-        Deletes the password for the specified IAM user.
+        Delete the password for the specified IAM user.
 
         :param user_name: The name of the user whose password you want to delete.
         """
@@ -546,7 +546,7 @@ class IamRole(IAMRest):
 
     def attach_role_policy(self, role_name: str = None, policy_arn: str = None):
         """
-        Attache the specified managed policy to the specified IAM role.
+        Attach the specified managed policy to the specified IAM role.
 
         :param role_name: The name(friendly name, not ARN) of the role to attach the policy to.
         :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
