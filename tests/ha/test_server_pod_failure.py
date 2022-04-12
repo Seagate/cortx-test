@@ -367,7 +367,8 @@ class TestServerPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 2: Successfully started READs & verified DI on the written data in "
-                    "background")
+                    "background. Sleeping for %s sec for s3bench setup check.",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 3: Shutdown the server pod by deleting deployment (unsafe)")
