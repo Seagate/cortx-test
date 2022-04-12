@@ -76,6 +76,7 @@ class ProvDeployK8sCortxLib:
         self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
                                                 self.deploy_cfg["control_port_https"])
+        self.client_instance = os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance'])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
@@ -463,8 +464,10 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
                                             self.deploy_cfg['control_port_https'])
+
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
+        LOGGER.debug("Client instances are %s", self.client_instance)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -530,7 +533,8 @@ class ProvDeployK8sCortxLib:
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
                                                       deployment_type=self.deployment_type,
-                                                      lb_count=self.lb_count)
+                                                      lb_count=self.lb_count,
+                                                      client_instance=self.client_instance)
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -733,6 +737,7 @@ class ProvDeployK8sCortxLib:
                                             self.deploy_cfg['control_port_https'])
         lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
         deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
+        client_instance = kwargs.get('client_instance', self.deploy_cfg['client_instance'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -740,10 +745,11 @@ class ProvDeployK8sCortxLib:
                 parent_key['deployment_type'] = deployment_type
             content = parent_key['secrets']['content']
             common = parent_key['common']
-            LOGGER.debug("common is %s", common)
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             common['container_path']['log'] = log_path
             common['setup_size'] = size
+            motr_config = common['motr']
+            motr_config['num_client_inst'] = client_instance
             s3_service = common['external_services']['s3']
             control_service = common['external_services']['control']
             s3_service['type'] = service_type
