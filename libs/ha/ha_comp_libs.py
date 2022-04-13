@@ -213,12 +213,13 @@ class HAK8SCompLib:
         return resp_dict
 
     @staticmethod
-    def get_word_count(node_obj, log_index: int):
+    def get_ha_log_wc(node_obj, log_index: int):
         '''
         Helper function to get word count of a file
         :param node_obj: Master node(Logical Node object)
-        :param index: name of the log
+        :param log_index: name of the log
         0 - k8s | 1 - fault_tolerance | 2 - health_monitor
+        :return: wc_count(Word count of a ha log file)
         '''
         pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         hapvc = None
