@@ -17,7 +17,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Test Bucket CRUD Operations"""
+"""Test Bucket CRUD Operations."""
 
 import logging
 import time
@@ -31,6 +31,7 @@ from config import S3_CFG
 from libs.s3 import s3_test_lib
 
 class TestRgwBucketCrudOperations:
+
     """Bucket CRUD Operations Test suite."""
 
     @classmethod
@@ -43,27 +44,20 @@ class TestRgwBucketCrudOperations:
 
     @classmethod
     def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
+        """Function will be invoked after completion of all test case.
+           It will clean up resources which are getting created during test suite setup."""
         cls.log.info("STARTED: Teardown test suite operations.")
-        del cls.s3_test_obj 
+        del cls.s3_test_obj
         cls.log.info("ENDED: Teardown test suite operations.")
 
     def setup_method(self):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test steps if any.
-        """
+        """Function will be invoked prior to each test case.
+           It will perform all prerequisite test steps if any."""
         self.log.info("STARTED: Setup operations")
         self.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
         self.bucket_list = []
         self.log.info("ENDED: Setup operations")
         
-
     def teardown_method(self):
         """Function to perform the clean up for each test."""
         self.log.info("STARTED: Cleanup test operations.")
@@ -76,13 +70,15 @@ class TestRgwBucketCrudOperations:
         self.log.info("ENDED: Cleanup test operations.")
 
 
-    @pytest.mark.parallel
-    @pytest.mark.s3_ops
-    @pytest.mark.s3_bucket_ops
+    @pytest.mark.comp_s3
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-36100")
     @CTFailOn(error_handler)
     def test_create_list_delete_1000_buckets(self):
-        """Verification of max. no. of buckets(1000) user can create and then list and delete them"""
+
+        """Verification of max. no. of buckets(1000) user can create and then list and delete them
+           TODO: User creation to be done using rgw rest api."""
+
         self.log.info(
             "STARTED: Verification of max. no. of buckets(1000) user can create and then list and delete them")
         self.log.info("Creating 1000 max buckets")
@@ -111,13 +107,14 @@ class TestRgwBucketCrudOperations:
         self.log.info("Verified that 1000 buckets are created")
         self.log.info("ENDED: Verification of max. no. of buckets(1000) user can create and then list and delete them")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3_ops
-    @pytest.mark.s3_bucket_ops
+    @pytest.mark.comp_s3
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-36157")
     @CTFailOn(error_handler)
     def test_listbkt_bktname_3to63_chars_long(self):
-        """List bucket with bucket name within range 3to63 chars long and  with less than 3 characters and more than 63 characters"""
+        """List bucket with bucket name within range 3to63 chars long and  with less than 3 characters and more than 63 characters
+           TODO: User creation to be done using rgw rest api."""
+
         self.log.info(
             "STARTED: List bucket with bucket name within range 3to63 chars long and with less than 3 characters and more than 63 characters")
         self.log.info(
