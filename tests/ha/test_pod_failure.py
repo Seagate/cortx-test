@@ -3550,9 +3550,12 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Create new objects and run IOs")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: IOs ran successfully.")
+        LOGGER.info("IOs completed, delete objects.")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: IOs ran successfully and objects deleted.")
 
         LOGGER.info("Completed: Verify object CRUDs before and after pod failure; pod shutdown "
                     "by making replicas=0")
