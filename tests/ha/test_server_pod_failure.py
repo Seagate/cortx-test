@@ -524,7 +524,7 @@ class TestServerPodFailure:
         del_output = Queue()
         LOGGER.info("Step 1: Create %s buckets & perform WRITEs with variable size objects.",
                     wr_bucket)
-        LOGGER.info("Create IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -536,7 +536,7 @@ class TestServerPodFailure:
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
 
         LOGGER.info("Create %s buckets & put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -546,7 +546,7 @@ class TestServerPodFailure:
         wr_resp = ()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains IAM data for passed buckets
+        s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket,
                                   f"Failed to create {wr_bucket} number of buckets."
@@ -561,7 +561,7 @@ class TestServerPodFailure:
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
         LOGGER.info("Deleting server pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-        LOGGER.debug("Delete Deployment for server pod %s response: %s", pod_name, resp)
+        LOGGER.debug("Response: %s", pod_name, resp)
         assert_utils.assert_false(resp[0],
                                   f"Failed to delete server pod {pod_name} by Delete Deployment")
         self.deployment_backup = resp[1]
@@ -664,7 +664,7 @@ class TestServerPodFailure:
         del_output = Queue()
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]      # 150 buckets
         del_bucket = wr_bucket - 10
-        LOGGER.info("Create IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -676,7 +676,7 @@ class TestServerPodFailure:
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
 
         LOGGER.info("Step 1: Create %s buckets and put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -770,11 +770,10 @@ class TestServerPodFailure:
         self.s3_clean.update(users)
         self.test_prefix = 'test-39910-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    log_prefix=self.test_prefix,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Successfully created IAM user with multiple buckets and ran IOs "
-                    "when cluster has some failures due to server pod %s has gone down.", pod_name)
+        LOGGER.info("Step 8: Successfully created IAM user with multiple buckets and ran IOs.")
 
         LOGGER.info("ENDED: Test to verify continuous DELETEs during server pod down by delete "
                     "deployment.")
@@ -864,7 +863,7 @@ class TestServerPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
-        LOGGER.info("Step 6: Verified status for In-flight READs & WRITEs while server pod is "
+        LOGGER.info("Step 6: Verified status for In-flight READs & WRITEs while server pod %s is "
                     "going down is failed/error.", pod_name)
 
         LOGGER.info("Step 7: Create IAM user with multiple buckets and run IOs when cluster has "
@@ -876,7 +875,6 @@ class TestServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and ran IOs "
-                    "when cluster has some failures due to server pod %s has gone down.", pod_name)
+        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify READs and WRITEs during server pod down by "
                     "delete deployment.")
