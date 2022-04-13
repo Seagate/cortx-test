@@ -236,7 +236,7 @@ class HAK8s:
         This function deletes all s3 buckets objects for the s3 account
         and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
-        :param obj_crud: If true, it will perform only object CURD operation
+        :param obj_crud: If true, it will delete only objects of all buckets
         :return: (bool, response)
         """
         try:
