@@ -683,14 +683,14 @@ class TestServerPodFailure:
         Following test tests degraded deletes after safe server pod shutdown
         """
         LOGGER.info("STARTED: Test to verify degraded deletes after safe server pod shutdown.")
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]      # 150 Buckets
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = wr_bucket - 10
         event = threading.Event()
         wr_output = Queue()
         del_output = Queue()
         LOGGER.info("Step 1: Create %s buckets & perform WRITEs with variable size objects.",
                     wr_bucket)
-        LOGGER.info("Create IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -702,7 +702,7 @@ class TestServerPodFailure:
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created IAM account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
 
         LOGGER.info("Create %s buckets & put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -712,7 +712,7 @@ class TestServerPodFailure:
         wr_resp = ()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains IAM data for passed buckets
+        s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket,
                                   f"Failed to create {wr_bucket} number of buckets."
