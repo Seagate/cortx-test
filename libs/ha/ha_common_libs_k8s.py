@@ -1271,7 +1271,9 @@ class HAK8s:
         return True
 
     def simulate_disk_cvg_failure(self, node_obj, source, resource_status, resource_type,
-                                  node_type='data', resource_cnt=1, node_cnt=1, delay=None):
+                              node_type='data', resource_cnt=1, node_cnt=1, delay=None,
+                              specific_info=False, generation_id=None, node_id=None,
+                              resource_id=None):
         """
         :param node_obj: Object for node
         :param source: Source of the event, monitor, ha, hare, etc.
@@ -1282,6 +1284,10 @@ class HAK8s:
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
         :param delay: Delay between two events (Optional)
+        :param specific_info: Dictionary with blank value or generation_id (Optional)
+        :param generation_id: generation_id is pod name
+        :param node_id: node_id of the pod
+        :param resource_id: resource_id of the pod
         Format of events file:
         {
         "events":
@@ -1302,11 +1308,11 @@ class HAK8s:
         }
         :return: Bool, config_dict/error
         """
-        config_json_file = "config.json"
+        config_json_file = "config_mock.json"
         config_dict = dict()
         config_dict["events"] = {}
         node_id_list = self.get_node_resource_ids(node_obj=node_obj, r_type='node',
-                                                  n_type=node_type)
+                                                n_type=node_type)
         if len(node_id_list) < node_cnt:
             LOGGER.error("Please provide correct count for nodes")
             return False, node_id_list
@@ -1314,8 +1320,8 @@ class HAK8s:
         for n_cnt in range(node_cnt):
             if resource_type != 'node':
                 resource_id_list = self.get_node_resource_ids(node_obj=node_obj,
-                                                              r_type=resource_type,
-                                                              node_id=node_id_list[n_cnt])
+                                                            r_type=resource_type,
+                                                            node_id=node_id_list[n_cnt])
             else:
                 resource_id_list = node_id_list
             if len(resource_id_list) < resource_cnt:
@@ -1327,9 +1333,27 @@ class HAK8s:
                 config_dict["events"][f"{count}"]["resource_type"] = resource_type
                 config_dict["events"][f"{count}"]["source"] = source
                 config_dict["events"][f"{count}"]["resource_status"] = resource_status
-                config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
-                config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
-
+                if node_id and resource_id:
+                    # If user provide node_id and resource_id
+                    config_dict["events"][f"{count}"]["node_id"] = node_id
+                    config_dict["events"][f"{count}"]["resource_id"] = resource_id
+                elif node_id and resource_type == 'node':
+                    # If user provide node_id
+                    config_dict["events"][f"{count}"]["node_id"] = node_id
+                    config_dict["events"][f"{count}"]["resource_id"] = node_id
+                elif resource_id and resource_type == 'node':
+                    # If user provide resource_id
+                    config_dict["events"][f"{count}"]["node_id"] = resource_id
+                    config_dict["events"][f"{count}"]["resource_id"] = resource_id
+                else:
+                    # If user don't provide anything
+                    config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
+                    config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
+                if specific_info:
+                    config_dict["events"][f"{count}"]["specific_info"] = {}
+                    config_dict["events"][f"{count}"]["specific_info"]['generation_id'] = generation_id
+                else:
+                    config_dict["events"][f"{count}"]["specific_info"] = dict()
         if delay:
             config_dict["delay"] = delay
 
@@ -1341,11 +1365,21 @@ class HAK8s:
         ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
         LOGGER.info("Publishing event %s for %s resource type through ha pod %s", resource_status,
                     resource_type, ha_pod)
-        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH, config_json_file)
+        resp = node_obj.copy_file_to_remote(local_path=config_json_file,
+                                            remote_path=common_const.HA_CONFIG_FILE)
+        if not resp[0]:
+            LOGGER.error("Failed in copy file due to : %s", resp[1])
+            return resp[0]
+        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH,
+                                            common_const.HA_CONFIG_FILE)
         try:
+            node_obj.execute_cmd(
+                cmd=common_cmd.K8S_CP_TO_CONTAINER_CMD.format
+                (common_const.HA_CONFIG_FILE, ha_pod,
+                common_const.HA_CONFIG_FILE, common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME))
             node_obj.send_k8s_cmd(operation="exec", pod=ha_pod,
-                                  namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
-                                  decode=True)
+                                namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
+                                decode=True)
         except IOError as error:
             LOGGER.error("Failed to publish the event due to error: %s", error)
             return False, error
