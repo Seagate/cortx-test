@@ -57,7 +57,7 @@ class TestShutdownCluster:
         cls.ha_obj = HAK8s()
         cls.ha_system_obj = SystemHealth()
         cls.restored = True
-        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.restore_pod = cls.start_cluster = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
@@ -100,10 +100,8 @@ class TestShutdownCluster:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            LOGGER.debug("Cluster status: %s", resp)
+        if self.start_cluster:
+            LOGGER.info("Starting the cluster")
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
@@ -139,9 +137,6 @@ class TestShutdownCluster:
         node_obj = self.get_ha_node_object(self.node_master_list[0])
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         assert_utils.assert_true(resp[0], "Error during Stopping cluster")
-        LOGGER.info("Check all Pods are offline.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Step 1: Shutdown entire cortx Cluster successfully")
 
         LOGGER.info("Step 2:Verify all HA logs for SIGTERM alert message")
@@ -150,6 +145,7 @@ class TestShutdownCluster:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2:Verified all HA logs for SIGTERM alert message %s",
                     common_const.HA_SHUTDOWN_LOGS)
+        self.start_cluster = True
 
         LOGGER.info("Completed: Stopped Cluster - Shutdown cluster, verified HA alerts log SIGTERM")
 
@@ -193,7 +189,6 @@ class TestShutdownCluster:
         LOGGER.info("Step 4: Shutdown entire cortx Cluster")
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         assert_utils.assert_true(resp[0], "Error during Stopping cluster")
-        LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 4: Stopped the cluster successfully")
 
         LOGGER.info("Step 5: Verify the cluster_stop_key is deleted (kubectl exec -it <<>>.)")
@@ -204,6 +199,7 @@ class TestShutdownCluster:
         assert_utils.assert_in("NotFound", ha_cmd_output[1][0], "Key not deleted")
         LOGGER.info("Step 5: Successfully verified the cluster_stop_key is deleted "
                     "(kubectl exec -it <<>>.)")
+        self.start_cluster = True
 
         LOGGER.info("Completed:Consul key updated cluster_stop_key when receiving shutdown signal")
 
@@ -242,6 +238,8 @@ class TestShutdownCluster:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4:Verified all HA logs for SIGTERM alert message %s",
                     common_const.HA_SHUTDOWN_LOGS)
+        self.start_cluster = True
+
         LOGGER.info("COMPETED: Shutdown entire Cluster with prior message sent to HA logs")
 
     # pylint: disable=too-many-statements
@@ -324,7 +322,6 @@ class TestShutdownCluster:
         LOGGER.info("Step 9: Shutdown entire cortx Cluster")
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
         assert_utils.assert_true(resp[0], "Error during Stopping cluster")
-        LOGGER.info("Check all Pods are offline.")
         LOGGER.info("Step 9: Shutdown entire cortx Cluster successfully")
 
         LOGGER.info("Step 10:Verify the HA logs for SIGTERM alert message")
@@ -333,5 +330,6 @@ class TestShutdownCluster:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10:Verify all HA logs for SIGTERM alert message %s",
                     common_const.HA_SHUTDOWN_LOGS)
+        self.start_cluster = True
 
         LOGGER.info("COMPETED: Sent shutdown signal and Health monitor should not receive alert")
