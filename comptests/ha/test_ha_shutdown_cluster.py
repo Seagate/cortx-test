@@ -187,7 +187,8 @@ class TestShutdownCluster:
                                                     common_cmd.HA_CONSUL_STR, read_lines=True))
         ha_consul_update_cmd = ha_consul_update_cmd.strip().decode("utf-8")
         assert_utils.assert_in(ha_consul_update_cmd, common_const.HA_CONSUL_VERIFY, "Key not found")
-        LOGGER.info("Step 3: Verified the cluster_stop_key is seen (kubectl exec -it <<>>.)")
+        LOGGER.info("Step 3: Successfully verified the cluster_stop_key is seen "
+                    "(kubectl exec -it <<>>.)")
 
         LOGGER.info("Step 4: Shutdown entire cortx Cluster")
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
@@ -201,7 +202,8 @@ class TestShutdownCluster:
                         format(pod_name, common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME,
                                common_cmd.HA_CONSUL_STR), read_lines=True, exc=False)
         assert_utils.assert_in("NotFound", ha_cmd_output[1][0], "Key not deleted")
-        LOGGER.info("Step 5: Verified the cluster_stop_key is deleted (kubectl exec -it <<>>.)")
+        LOGGER.info("Step 5: Successfully verified the cluster_stop_key is deleted "
+                    "(kubectl exec -it <<>>.)")
 
         LOGGER.info("Completed:Consul key updated cluster_stop_key when receiving shutdown signal")
 
@@ -227,7 +229,7 @@ class TestShutdownCluster:
         resp = HAK8SCompLib.check_string_in_log_file(node_obj, "cluster_stop_key",
                                                      common_const.HA_SHUTDOWN_LOGS[1])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Verified fault tolerance for cluster stop key message.")
+        LOGGER.info("Step 2: Successfully verified fault tolerance for cluster stop key message.")
 
         LOGGER.info("Step 3: Shutdown entire cortx Cluster")
         resp = self.ha_obj.cortx_stop_cluster(pod_obj=self.master_node_obj)
