@@ -781,13 +781,14 @@ class TestServerPodFailure:
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully created bucket, uploaded an object to the bucket")
 
+        LOGGER.info("Step 2: Create multiple buckets and copy object from %s to other buckets in "
+                    "background", self.bucket_name)
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         for cnt in range(bkt_cnt):
             rd_time = perf_counter_ns()
-            s3_test_obj.create_bucket(f"ha-bkt{cnt}-{rd_time}")
-            bkt_obj_dict[f"ha-bkt{cnt}-{rd_time}"] = f"ha-obj{cnt}-{rd_time}"
-        LOGGER.info("Step 2: Create multiple buckets and copy object from %s to other buckets in "
-                    "background", self.bucket_name)
+            cp_bucket = "ha-bkt{}-{}".format(cnt, rd_time)
+            s3_test_obj.create_bucket(cp_bucket)
+            bkt_obj_dict[cp_bucket] = cp_bucket
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
@@ -827,7 +828,6 @@ class TestServerPodFailure:
         self.deployment_name = resp[2]
         self.restore_pod = self.deploy = True
         self.restore_method = const.RESTORE_DEPLOYMENT_K8S
-        event.clear()
 
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -847,6 +847,7 @@ class TestServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Verified services on remaining pods are in online state")
+        event.clear()
 
         LOGGER.info("Step 7: Checking responses from background process")
         thread.join()
@@ -866,8 +867,8 @@ class TestServerPodFailure:
         if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts:
-            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
-                                            f"state. Failed buckets: {failed_bkts}")
+            assert_utils.assert_true(False, "Failed to do copy object when one server pod was down "
+                                            f"Failed buckets: {failed_bkts}")
         elif exp_fail_bkt_obj_dict:
             LOGGER.info("Step 7.1: Retrying copy object to buckets %s",
                         list(exp_fail_bkt_obj_dict.keys()))
