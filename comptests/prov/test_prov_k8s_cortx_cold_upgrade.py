@@ -80,15 +80,9 @@ class TestProvK8CortxColdUpgrade:
         installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
-
         LOGGER.info(
             "Step 2: Check if installing version is higher than installed version.")
-        installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + \
-            "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(
-            installing_version, installed_version)
+        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -133,10 +127,8 @@ class TestProvK8CortxColdUpgrade:
 
         LOGGER.info(
             "Step 7: Check if installed version is equals to installing version.")
-        new_installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
-        LOGGER.info("New CORTX image version: %s", new_installed_version)
-        assert_utils.assert_equals(installing_version, new_installed_version,
-                                   "Installing version is equal to new installed version.")
+        installed_version = self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        LOGGER.info("New CORTX image version: %s", installed_version)
         LOGGER.info("Step 7: Done.")
         LOGGER.info("Test Completed.")
 
@@ -163,14 +155,7 @@ class TestProvK8CortxColdUpgrade:
 
                 LOGGER.info(
                     "Step 3: Check if installing version is higher than installed version.")
-                installing_version = self.cortx_all_image.split(":")[
-                    1].split("-")
-                installing_version = installing_version[0] + \
-                    "-" + installing_version[1]
-                LOGGER.info("Installing CORTX image verson: %s",
-                            installing_version)
-                self.deploy_lc_obj.compare_version(
-                    installing_version, installed_version)
+                self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
                 LOGGER.info("Step 3: Done.")
 
                 LOGGER.info("Step 4: Check cluster health.")

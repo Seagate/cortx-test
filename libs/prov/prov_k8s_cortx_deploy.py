@@ -75,6 +75,7 @@ class ProvDeployK8sCortxLib:
         self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
                                                 self.deploy_cfg["control_port_https"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
+        self.cortx_all_image = os.getenv("CORTX_ALL_IMAGE", None)
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -1593,4 +1594,35 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Installing version is higher than installed version.")
         else:
             LOGGER.info("Installing version is not higher than installed version.")
-  
+
+    @staticmethod
+    def generate_and_compare_version(input_installing_version, installed_version):
+        """ 
+        Compare two version 
+        return : none
+        """
+        installing_version = input_installing_version.split(":")[1].split("-")
+        installing_version = installing_version[0] + "-" + installing_version[1]
+        LOGGER.info("Installing CORTX image verson: %s", installing_version)
+        if(installing_version > installed_version):
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+
+    @staticmethod
+    def generate_and_compare_both_version(input_installing_version, installed_version):
+        """ 
+        Compare two version 
+        return : none
+        """
+        installing_version = input_installing_version.split(":")[1].split("-")
+        installing_version = installing_version[0] + "-" + installing_version[1]
+        LOGGER.info("Installing CORTX image verson: %s", installing_version)
+        if(installing_version > installed_version):
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+        return installing_version
+
+
+        

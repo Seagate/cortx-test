@@ -84,10 +84,7 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(installing_version, installed_version)
+        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -134,11 +131,9 @@ class TestProvK8CortxGranular:
         LOGGER.info(resp)
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
-        LOGGER.info(new_version)
-        LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
-                    installing_version)
-        assert_utils.assert_equals(installing_version, new_version,
-                                   "Installing version is not equal to new installed version.")
+        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
+        assert_utils.assert_equals(new_version, installing_version,"Installing version is equal to new installed version.")
+        LOGGER.info("New CORTX image version: %s", new_version)
         LOGGER.info("Step 7: Done.")
         LOGGER.info("Test Completed.")
 
@@ -156,10 +151,7 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(installing_version, installed_version)
+        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -208,6 +200,7 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
+        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,
@@ -229,10 +222,7 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(installing_version, installed_version)
+        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -280,6 +270,7 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
+        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,
@@ -301,10 +292,7 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        installing_version = self.cortx_all_image.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        self.deploy_lc_obj.compare_version(installing_version, installed_version)
+        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -353,6 +341,7 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-rgw:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
+        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,
