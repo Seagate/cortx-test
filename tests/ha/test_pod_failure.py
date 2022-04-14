@@ -3518,7 +3518,7 @@ class TestPodFailure:
                                            "replicas=0")
         LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", pod_name)
         self.deployment_name = resp[1]
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = const.RESTORE_SCALE_REPLICAS
 
         LOGGER.info("Step 3: Check cluster status")

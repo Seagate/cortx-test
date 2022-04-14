@@ -132,7 +132,7 @@ IFS=','
 while read tp_id te_id old_te
 do
     old_te=$(echo $old_te | sed -e 's/\r//g')
-    if [ "${old_te}" != "${Sanity_TE}" ] && [ "${old_te}" != "${Data_Path_TE}" ] && ["${old_te}" != "${Failure_TE}"]
+    if [ "${old_te}" != "${Sanity_TE}" ] && [ "${old_te}" != "${Data_Path_TE}" ] && [ "${old_te}" != "${Failure_TE}" ]
 		then
 			echo "Running Regression Tests"
 			echo "tp_id : $tp_id"
