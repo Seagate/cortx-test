@@ -334,8 +334,10 @@ class MotrCoreK8s():
         """
         Get MD5SUM of a file
 
-        :file: File name
-        :node: Node where the file is present
+        :param file: Absolute Path of the file inside container
+        :param node: Cortx node where the file is present
+        :returns: md5sum of the file
+        :rtype: str
         """
 
         cmd = common_cmd.GET_MD5SUM.format(file)
@@ -471,6 +473,9 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     def shutdown_cluster(self):
+        """
+        This will shutdown cluster and update the node_pod dict 
+        """
         resp = self.ha_obj.restart_cluster(self.node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         log.info("Cluster restarted fine and all Pods online.")
