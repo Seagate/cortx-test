@@ -23,11 +23,13 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
+from pickle import NONE
 from config import CMN_CFG
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons import commands as common_cmd
 from commons import constants as common_const
+from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.pods_helper import LogicalNode
 
 log = logging.getLogger(__name__)
@@ -53,6 +55,7 @@ class MotrCoreK8s():
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
+        self.ha_obj = HAK8s()
 
     @property
     def _get_cluster_info(self):
@@ -221,7 +224,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num):
+    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
         """
         M0CP command creation
 
@@ -252,7 +255,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num):
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
         """
         M0CAT command creation
 
@@ -282,7 +285,7 @@ class MotrCoreK8s():
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
-    def unlink_cmd(self, obj, layout, node, client_num):
+    def unlink_cmd(self, obj, layout, node, client_num=None):
         """
         M0UNLINK command creation
 
@@ -326,6 +329,25 @@ class MotrCoreK8s():
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
+
+    def get_md5sum(self, file, node):
+        """
+        Get MD5SUM of a file
+
+        :file: File name
+        :node: Node where the file is present
+        """
+
+        cmd = common_cmd.GET_MD5SUM.format(file)
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                          namespace=common_const.NAMESPACE,
+                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                         f"-- {cmd}", decode=True)
+        log.info("Resp: %s", resp)
+        assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                   f'"{cmd}" Failed, Please check the log')
+        chksum = resp.split()[0]
+        return chksum
 
     def md5sum_cmd(self, file1, file2, node):
         """
@@ -447,3 +469,10 @@ class MotrCoreK8s():
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
+
+    def shutdown_cluster(self):
+        resp = self.ha_obj.restart_cluster(self.node_obj)
+        assert_utils.assert_true(resp[0], resp[1])
+        log.info("Cluster restarted fine and all Pods online.")
+        # Updating the node_pod dict after cluster shutdown
+        self.node_pod_dict = self.get_node_pod_dict()
