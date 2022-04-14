@@ -23,7 +23,6 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
-from pickle import NONE
 from config import CMN_CFG
 from commons.utils import assert_utils
 from commons.utils import system_utils
