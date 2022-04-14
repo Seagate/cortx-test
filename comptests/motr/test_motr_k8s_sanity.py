@@ -30,7 +30,7 @@ import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons import constants as common_const
-from libs.motr import TEMP_PATH
+from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,26 @@ class TestExecuteK8Sanity:
     def teardown_class(self):
         """Teardown of Node object"""
         del self.motr_obj
+    
+    def update_m0crate_config(self, config_file, node):
+        """ 
+        This will modify the m0crate workload config yaml with the node details 
+        param: confile_file: Path of m0crate workload config yaml
+        param: node: Cortx node on which m0crate utility to be executed
+        """
+        m0cfg = config_utils.read_yaml(config_file)[1]
+        node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
+        # modify m0cfg and write back to file
+        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
+        m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
+        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
+        source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
+        file_size = source_file.split('/')[-1]
+        count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
+        self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
+        config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
 
     def test_motr_k8s_lib(self):
         """
@@ -182,3 +202,58 @@ class TestExecuteK8Sanity:
                                                f'"{cmd}" Failed, Please check the log')
 
         logger.info("Stop: Verified multiple m0kv operations")
+
+    @pytest.mark.tags("TEST-29708")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_m0cp(self):
+        """
+        This will test if the data written remains intact after cluster shutdown
+        """
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        object_md5sum_dict = {}
+        object_layout_dict = {}
+        try:
+            for node in self.motr_obj.get_node_pod_dict():
+                for b_size in BSIZE_LAYOUT_MAP.keys():
+                    object_id = str(self.system_random.randint(1, 100)) + ":" + \
+                                    str(self.system_random.randint(1, 1000))
+                    self.motr_obj.dd_cmd(b_size, '4', infile, node)
+                    self.motr_obj.cp_cmd(b_size, '4', object_id, BSIZE_LAYOUT_MAP[b_size],
+                        infile, node)
+                    md5sum = self.motr_obj.get_md5sum(infile, node)
+                    object_layout_dict[object_id] = BSIZE_LAYOUT_MAP[b_size]
+                    object_md5sum_dict[object_id] = md5sum
+            # Triggering Cluster shutdown
+            self.motr_obj.shutdown_cluster()
+            for obj_id in object_layout_dict:
+                self.motr_obj.cat_cmd(list(BSIZE_LAYOUT_MAP.keys())
+                    [list(BSIZE_LAYOUT_MAP.values()).index(object_layout_dict[obj_id])], 
+                    '4', obj_id, object_layout_dict[obj_id], outfile, node)
+                md5sum = self.motr_obj.get_md5sum(outfile, node)
+                assert_utils.assert_equal(object_md5sum_dict[obj_id], md5sum, 
+                        'Failed, Checksum did not match after cluster shutdown')
+        except Exception as e:
+            logger.exception(f"Test has failed with execption: {e}")
+            raise e
+        finally:
+            node = self.system_random.choice(self.motr_obj.cortx_node_list)
+            # Deleting Objects at the end
+            for obj_id in object_layout_dict:
+                self.motr_obj.unlink_cmd(obj_id, object_layout_dict[obj_id], node)
+
+    @pytest.mark.tags("TEST-29707")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_m0crate(self):
+        """
+        This will test cluster health with m0crate IOs after cluster shutdown
+        """
+        config_file = os.path.join(os.getcwd(), "config/motr/test_29707_m0crate_workload.yaml")
+        remote_file = TEMP_PATH + config_file.split("/")[-1]
+        for node in self.motr_obj.get_node_pod_dict():
+            self.update_m0crate_config(config_file, node)
+            self.motr_obj.m0crate_run(config_file, remote_file, node)
+        self.motr_obj.shutdown_cluster()
+        for node in self.motr_obj.get_node_pod_dict():
+            self.update_m0crate_config(config_file, node)
+            self.motr_obj.m0crate_run(config_file, remote_file, node)
