@@ -95,7 +95,7 @@ class TestIOWorkloadDegradedPath:
             for size, samples in workloads:
                 bucket_name = f"{log_file_prefix}-bucket-{loop}-{str(int(time.time()))}".lower()
                 skip_cleanup = False
-                if buckets_created:
+                if buckets_created is not None:
                     bucket_name = buckets_created[loop % len(buckets_created)]
                     skip_cleanup = True
                 if samples == 0:
@@ -118,7 +118,14 @@ class TestIOWorkloadDegradedPath:
                 if skip_cleanup:
                     self.log.info("Delete Created Objects")
                     resp = self.s3t_obj.object_list(bucket_name=bucket_name)
-                    self.s3t_obj.delete_multiple_objects(bucket_name, resp[1])
+                    obj_list = resp[0]
+                    while len(obj_list):
+                        if len(obj_list) > 1000:
+                            self.s3t_obj.delete_multiple_objects(bucket_name, obj_list=obj_list[0:1000])
+                            obj_list = obj_list[1000:]
+                        else:
+                            self.s3t_obj.delete_multiple_objects(bucket_name=bucket_name, obj_list=obj_list)
+                            obj_list = []
                     self.log.info("Deleted objects :")
             loop += 1
 
@@ -131,7 +138,8 @@ class TestIOWorkloadDegradedPath:
         bucket_creation_healthy_mode = self.test_cfg['test_40172']['bucket_creation_healthy_mode']
         bucket_list = None
         if bucket_creation_healthy_mode:
-            self.s3t_obj.create_multiple_buckets(50, 'test-40172')
+            resp = self.s3t_obj.create_multiple_buckets(50, 'test-40172')
+            bucket_list = resp[1]
             self.log.info("Step 1: Bucket created in healthy mode ")
         else:
             self.log.info("Step 1: Skipped bucket creation in healthy mode ")
