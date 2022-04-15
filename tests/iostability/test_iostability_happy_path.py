@@ -18,15 +18,20 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """Test Suite for IO stability Happy Path workloads."""
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 
 import pytest
 
 from commons import configmanager
+from commons.constants import K8S_SCRIPTS_PATH
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LATEST_LOG_FOLDER
+from commons.utils import support_bundle_utils, assert_utils, system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from conftest import LOG_DIR
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
 
@@ -53,6 +58,15 @@ class TestIOWorkload:
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/iostability_test.yaml")
         cls.setup_type = CMN_CFG["setup_type"]
         cls.test_completed = False
+
+    def teardown_class(self):
+        """Teardown class"""
+        if not self.test_completed:
+            self.log.info("Test Failure observed, collecting support bundle")
+            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
+                                                                   scripts_path=K8S_SCRIPTS_PATH)
+            assert_utils.assert_true(resp)
 
     def execute_workload_distribution(self, distribution, clients, total_obj,
                                       duration_in_days, log_file_prefix):
@@ -86,6 +100,7 @@ class TestIOWorkload:
                 self.log.info("Log Path %s", resp[1])
                 assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload failed in loop {loop}. Please read log file {resp[1]}"
+                system_utils.remove_file(resp[1])
             loop += 1
 
     @pytest.mark.lc
@@ -102,4 +117,4 @@ class TestIOWorkload:
         self.execute_workload_distribution(distribution=workload_distribution, clients=clients,
                                            total_obj=total_obj, duration_in_days=duration_in_days,
                                            log_file_prefix='test-40039')
-        self.test_complete = True
+        self.test_completed = True

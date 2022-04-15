@@ -118,7 +118,7 @@ class TestIOWorkloadDegradedPath:
                 if skip_cleanup:
                     self.log.info("Delete Created Objects")
                     resp = self.s3t_obj.object_list(bucket_name=bucket_name)
-                    obj_list = resp[0]
+                    obj_list = resp[1]
                     while len(obj_list):
                         if len(obj_list) > 1000:
                             self.s3t_obj.delete_multiple_objects(bucket_name, obj_list=obj_list[0:1000])
@@ -126,7 +126,7 @@ class TestIOWorkloadDegradedPath:
                         else:
                             self.s3t_obj.delete_multiple_objects(bucket_name=bucket_name, obj_list=obj_list)
                             obj_list = []
-                    self.log.info("Deleted objects :")
+                    self.log.info("Objects deletion completed")
             loop += 1
 
     @pytest.mark.lc
