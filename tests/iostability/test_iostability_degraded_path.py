@@ -25,8 +25,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from commons import configmanager, const
-from commons.constants import K8S_SCRIPTS_PATH
+from commons import configmanager
+from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -57,7 +57,7 @@ class TestIOWorkloadDegradedPath:
                                    password=node["password"])
             if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
-                cls.hlth_master_list.append(Health(hostname=node["host"],
+                cls.hlth_master_list.append(Health(hostname=node["hostname"],
                                                    username=node["username"],
                                                    password=node["password"]))
             else:
@@ -131,14 +131,14 @@ class TestIOWorkloadDegradedPath:
         bucket_creation_healthy_mode = self.test_cfg['test_40172']['bucket_creation_healthy_mode']
         bucket_list = None
         if bucket_creation_healthy_mode:
-            _, bucket_list = self.s3t_obj.create_multiple_buckets(50, 'test-40172')
+            self.s3t_obj.create_multiple_buckets(50, 'test-40172')
             self.log.info("Step 1: Bucket created in healthy mode ")
         else:
             self.log.info("Step 1: Skipped bucket creation in healthy mode ")
 
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0")
         self.log.info("Get pod name to be deleted")
-        pod_list = self.master_node_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_list = self.master_node_list[0].get_all_pods(pod_prefix=POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         hostname = self.master_node_list[0].get_pod_hostname(pod_name=pod_name)
 

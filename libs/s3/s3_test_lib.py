@@ -527,7 +527,11 @@ class S3TestLib(S3Lib):
                 bucket_name = "{}-{}-{}".format(bucket_prefix,
                                                 str(count), str(time.time()))
                 resp_bucket = self.create_bucket(bucket_name)
-                response.append(resp_bucket)
+                if not resp_bucket[0]:
+                    LOGGER.error('Bucket name does not match as requested,'
+                                    ' Expected : %s, Received : %s',bucket_name,resp_bucket[1])
+                    raise Exception('Bucket name does not match')
+                response.append(resp_bucket[1])
         except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
