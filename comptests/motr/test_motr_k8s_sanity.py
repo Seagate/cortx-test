@@ -65,10 +65,10 @@ class TestExecuteK8Sanity:
     def teardown_class(self):
         """Teardown of Node object"""
         del self.motr_obj
-    
+
     def update_m0crate_config(self, config_file, node):
-        """ 
-        This will modify the m0crate workload config yaml with the node details 
+        """
+        This will modify the m0crate workload config yaml with the node details
         param: confile_file: Path of m0crate workload config yaml
         param: node: Cortx node on which m0crate utility to be executed
         """
@@ -212,7 +212,7 @@ class TestExecuteK8Sanity:
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         object_md5sum_dict = {}
-        object_layout_dict = {}
+        object_bsize_dict = {}
         try:
             for node in self.motr_obj.get_node_pod_dict():
                 for b_size in BSIZE_LAYOUT_MAP.keys():
@@ -222,16 +222,15 @@ class TestExecuteK8Sanity:
                     self.motr_obj.cp_cmd(b_size, '4', object_id, BSIZE_LAYOUT_MAP[b_size],
                         infile, node)
                     md5sum = self.motr_obj.get_md5sum(infile, node)
-                    object_layout_dict[object_id] = BSIZE_LAYOUT_MAP[b_size]
+                    object_bsize_dict[object_id] = b_size
                     object_md5sum_dict[object_id] = md5sum
             # Triggering Cluster shutdown
             self.motr_obj.shutdown_cluster()
-            for obj_id in object_layout_dict:
-                self.motr_obj.cat_cmd(list(BSIZE_LAYOUT_MAP.keys())
-                    [list(BSIZE_LAYOUT_MAP.values()).index(object_layout_dict[obj_id])], 
-                    '4', obj_id, object_layout_dict[obj_id], outfile, node)
+            for obj_id in object_bsize_dict:
+                self.motr_obj.cat_cmd(object_bsize_dict[obj_id],
+                    '4', obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], outfile, node)
                 md5sum = self.motr_obj.get_md5sum(outfile, node)
-                assert_utils.assert_equal(object_md5sum_dict[obj_id], md5sum, 
+                assert_utils.assert_equal(object_md5sum_dict[obj_id], md5sum,
                         'Failed, Checksum did not match after cluster shutdown')
         except Exception as e:
             logger.exception(f"Test has failed with execption: {e}")
@@ -239,8 +238,8 @@ class TestExecuteK8Sanity:
         finally:
             node = self.system_random.choice(self.motr_obj.cortx_node_list)
             # Deleting Objects at the end
-            for obj_id in object_layout_dict:
-                self.motr_obj.unlink_cmd(obj_id, object_layout_dict[obj_id], node)
+            for obj_id in object_bsize_dict:
+                self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], node)
 
     @pytest.mark.tags("TEST-29707")
     @pytest.mark.motr_sanity

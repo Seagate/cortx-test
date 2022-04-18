@@ -473,7 +473,7 @@ class MotrCoreK8s():
     
     def shutdown_cluster(self):
         """
-        This will shutdown cluster and update the node_pod dict 
+        This will shutdown cluster and update the node_pod dict
         """
         resp = self.ha_obj.restart_cluster(self.node_obj)
         assert_utils.assert_true(resp[0], resp[1])
