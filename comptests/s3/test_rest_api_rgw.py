@@ -121,7 +121,7 @@ class TestRestApiRgw:
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info("END: Tested create new IAM user.")
+        self.log.info("END: Test create iam user specifying uid and display name and email. : %s",test_case_name)
         """self.log.info(
             "Step 3: Deleting a IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
