@@ -26,6 +26,7 @@ import os
 import csv
 import logging
 from random import SystemRandom
+from tkinter import E
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -232,9 +233,9 @@ class TestExecuteK8Sanity:
                 md5sum = self.motr_obj.get_md5sum(outfile, node)
                 assert_utils.assert_equal(object_md5sum_dict[obj_id], md5sum,
                         'Failed, Checksum did not match after cluster shutdown')
-        except Exception as e:
-            logger.exception(f"Test has failed with execption: {e}")
-            raise e
+        except Exception as exc:
+            logger.exception("Test has failed with execption: %s", exc)
+            raise exc
         finally:
             node = self.system_random.choice(self.motr_obj.cortx_node_list)
             # Deleting Objects at the end

@@ -352,9 +352,9 @@ class MotrCoreK8s():
 
     def get_md5sum(self, file, node):
         """
-        Get MD5SUM of a file
+        Get MD5SUM of a file from hax container
 
-        :param file: Absolute Path of the file inside container
+        :param file: Absolute Path of the file inside hax container
         :param node: Cortx node where the file is present
         :returns: md5sum of the file
         :rtype: str
@@ -480,4 +480,3 @@ class MotrCoreK8s():
         log.info("Cluster restarted fine and all Pods online.")
         # Updating the node_pod dict after cluster shutdown
         self.node_pod_dict = self.get_node_pod_dict()
-
