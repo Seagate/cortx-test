@@ -517,7 +517,7 @@ class TestServerPodFailure:
         Following test tests degraded deletes after unsafe server pod shutdown
         """
         LOGGER.info("STARTED: Test to verify degraded deletes after unsafe server pod shutdown.")
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]      # 150 Buckets
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = wr_bucket - 10
         event = threading.Event()
         wr_output = Queue()
@@ -662,7 +662,7 @@ class TestServerPodFailure:
         event = threading.Event()  # Event to be used to send when data pod restart start
         wr_output = Queue()
         del_output = Queue()
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]      # 150 buckets
+        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = wr_bucket - 10
         LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
