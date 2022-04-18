@@ -26,7 +26,6 @@ import os
 import csv
 import logging
 from random import SystemRandom
-from tkinter import E
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
