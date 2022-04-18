@@ -231,25 +231,40 @@ class HAK8s:
         return True, f"cluster/rack/site status is {csr_sts} and \
         pod-{pod_id+1} is {pod_sts} in Cortx REST"
 
-    def delete_s3_acc_buckets_objects(self, s3_data: dict):
+    def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False):
         """
         This function deletes all s3 buckets objects for the s3 account
         and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
+        :param obj_crud: If true, it will delete only objects of all buckets
         :return: (bool, response)
         """
         try:
-            for details in s3_data.values():
-                s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
-                                   access_key=details['accesskey'],
-                                   secret_key=details['secretkey'])
-                response = s3_del.delete_all_buckets()
-                if not response[0]:
-                    return response
-                response = self.s3_rest_obj.delete_s3_account(details['user_name'])
-                if not response[0]:
-                    return response
-            return True, "Successfully performed S3 operation clean up"
+            if obj_crud:
+                for details in s3_data.values():
+                    s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
+                                       access_key=details['accesskey'],
+                                       secret_key=details['secretkey'])
+                    bucket_list = s3_del.bucket_list()[1]
+                    for _bucket in bucket_list:
+                        obj_list = s3_del.object_list(_bucket)
+                        LOGGER.debug("List of object response for %s bucket is %s", _bucket,
+                                     obj_list)
+                        response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
+                        LOGGER.debug("Delete multiple objects response %s", response)
+                return True, "Successfully performed Objects Delete operation"
+            else:
+                for details in s3_data.values():
+                    s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
+                                       access_key=details['accesskey'],
+                                       secret_key=details['secretkey'])
+                    response = s3_del.delete_all_buckets()
+                    if not response[0]:
+                        return response
+                    response = self.s3_rest_obj.delete_s3_account(details['user_name'])
+                    if not response[0]:
+                        return response
+                return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
@@ -368,7 +383,7 @@ class HAK8s:
                 bucket=f"bucket-{workload.lower()}-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
-                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
+                skip_cleanup=skipcleanup, log_file_prefix=log_prefix.upper(),
                 end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
             resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
             if not resp[0]:
