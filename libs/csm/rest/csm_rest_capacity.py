@@ -306,3 +306,21 @@ class SystemCapacity(RestTestLib):
         result = (data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and
                   critical_eq and damaged_eq and repaired_eq and total_chk)
         return result
+
+    def get_dataframe_failure_recovery(self, num_nodes: int):
+        """
+        Creates dataframe for the storing degraded capacity for csm, hctl, consul
+        """
+
+        col = ["consul_healthy", "consul_degraded", "consul_critical", "consul_damaged",
+           "consul_repaired", "hctl_healthy", "hctl_degraded", "hctl_critical", "hctl_damaged",
+           "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
+           "csm_repaired"]
+        row = ["No failure"]
+        self.row_temp1 = "N{} fail beforeIO"
+        self.row_temp2 = "N{} fail afterIO"
+        for node in range(num_nodes):
+            row.append(self.row_temp1.format(node))
+            row.append(self.row_temp2.format(node))
+        cap_df = pd.DataFrame(columns=col, index=row)
+        return cap_df
