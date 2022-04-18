@@ -2085,7 +2085,7 @@ class TestSystemCapacity():
             self.log.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
         self.log.info("Get pod name to be deleted")
-        deploy_name = self.master.get_deployment_name(test_cfg["num_nodes"])
+        deploy_name = self.master.get_deployment_name(self.num_nodes)
         self.log.info("Get deployment names")
         for node in reversed(range(self.kvalue)):
             if node>0:
@@ -2547,7 +2547,7 @@ class TestSystemCapacity():
             self.log.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
         self.log.info("Get pod name to be deleted")
-        deploy_name = self.master.get_deployment_name(test_cfg["num_nodes"])
+        deploy_name = self.master.get_deployment_name(self.num_nodes)
         self.log.info("Get deployment names")
         for node in reversed(range(self.kvalue)):
             if node>0:

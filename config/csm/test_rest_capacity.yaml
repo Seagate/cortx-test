@@ -49,13 +49,7 @@ test_34698:
     stop_range: 100
 test_39924:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
   obj_size: 12288
 test_39923:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
   obj_size: 12288
