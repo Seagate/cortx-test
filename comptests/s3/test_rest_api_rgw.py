@@ -22,8 +22,9 @@ import asyncio
 import time
 import logging
 import pytest
-#testcode
+
 from libs.s3.s3_iam_rest_rgw import RestApiRgw
+from http import HTTPStatus
 
 class TestRestApiRgw:
     """
@@ -39,6 +40,30 @@ class TestRestApiRgw:
         cls.obj = RestApiRgw()
         cls.user_name_prefix = "user"
         cls.email_id = "{}@seagate.com"
+        cls.created_users = []
+
+    def teardown_method(self):
+        """
+        Teardown for deleting resources like users,object and bucket created as part of testcases
+        """
+        self.log.info("[STARTED] ######### Teardown #########")
+        self.log.info("Deleting all users created as part of test")
+        delete_failed = []
+        delete_success = []
+        for usr in self.created_users:
+            self.log.info("Sending request to delete user %s", usr)
+            try:
+                response = self.obj.delete_user(usr)
+                if response.status_code != HTTPStatus.OK:
+                    delete_failed.append(usr)
+                else:
+                    delete_success.append(usr)
+            except BaseException as err:
+                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+        for usr in delete_success:
+            self.created_users.remove(usr)
+        self.log.info("csm delete success list %s", delete_success)
+        self.log.info("csm delete failed list %s", delete_failed)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36622')
@@ -85,12 +110,15 @@ class TestRestApiRgw:
             "Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        assert status == HTTPStatus.OK , "Not able to create user . Test Failed"
         print(user_info)
         self.log.info(
             "Step 2: Verifying that new IAM user is created successfully")
-        assert status == 200
+        status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
+        assert status == 200 , "Not able to Get user Info"
+        self.created_users.append(user_params)
         self.log.info("END: Tested create new IAM user.")
-        self.log.info(
+        """self.log.info(
             "Step 3: Deleting a IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status , user_info = loop.run_until_complete(self.obj.delete_user(user_params))
@@ -99,6 +127,7 @@ class TestRestApiRgw:
         assert status == 200
         self.log.info(
             "END: Deleted created user : %s", user_name) 
+        """
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36632')
