@@ -223,3 +223,16 @@ class RestApiRgw:
         status, user_info = await rgwcli.signed_http_request(
             'DELETE', '/admin/user', query_params=user_params)
         return status, user_info
+
+    async def get_user_info(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
+        """
+        Illustrate S3Client signed_http_request work.
+        Create IAM user by specifying parameters, HTTP method and path.
+        :returns: HTTP status code and user information as parsed json.
+        """
+
+        rgwcli = S3Client(
+            self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
+        status, user_info = await rgwcli.signed_http_request(
+            'GET', '/admin/user', query_params=user_params)
+        return status, user_info
