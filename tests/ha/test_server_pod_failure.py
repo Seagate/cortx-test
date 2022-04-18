@@ -575,7 +575,6 @@ class TestServerPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded WRITEs after unsafe server pod shutdown.")
 
-    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39907")
@@ -810,7 +809,6 @@ class TestServerPodFailure:
                     remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded DELETEs after safe server pod shutdown.")
 
-    # pylint: disable=C0321
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -914,7 +912,8 @@ class TestServerPodFailure:
         thread1.join()
         thread2.join()
 
-        LOGGER.info("Step 6: Verifying responses from WRITEs background process")
+        LOGGER.info("Step 6: Verify responses from WRITEs and DELETEs background processes")
+        LOGGER.info("Step 6.1: Verifying responses from WRITEs background process")
         wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -926,7 +925,7 @@ class TestServerPodFailure:
                                                      f"clear {fail_put_bkt}.")
         LOGGER.info("Failed buckets while in-flight WRITEs operation : %s", event_put_bkt)
 
-        LOGGER.info("Step 6: Verifying responses from DELETEs background process")
+        LOGGER.info("Step 6.2: Verifying responses from DELETEs background process")
         del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -1065,7 +1064,7 @@ class TestServerPodFailure:
         thread2.start()
         thread1.start()
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 1: Started continuous WRITEs and DELETEs with variable object sizes "
+        LOGGER.info("Step 1: Started continuous READs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Step 2: Shutdown the server pod by deleting deployment (unsafe)")
@@ -1108,7 +1107,8 @@ class TestServerPodFailure:
         thread2.join()
 
         LOGGER.info("Background READs and DELETEs threads joined successfully.")
-        LOGGER.info("Step 6: Verifying responses from READs background process")
+        LOGGER.info("Step 6: Verify responses from READs and DELETEs background processes")
+        LOGGER.info("Step 6.1: Verifying responses from READs background process")
         rd_resp = tuple()
         LOGGER.info("Waiting for READ process output from Queue. Sleeping for %s",
                     HA_CFG["common_params"]["60sec_delay"])
@@ -1128,7 +1128,7 @@ class TestServerPodFailure:
         LOGGER.info("Failed buckets while in-flight READs operation : %s", event_bkt_get)
         LOGGER.info("Failed buckets while in-flight DI check operation : %s", event_di_bkt)
 
-        LOGGER.info("Step 6: Verifying responses from DELETEs background process")
+        LOGGER.info("Step 6.2: Verifying responses from DELETEs background process")
         del_resp = tuple()
         LOGGER.info("Waiting for DELETE process output from Queue. Sleeping for %s",
                     HA_CFG["common_params"]["60sec_delay"])
@@ -1332,7 +1332,6 @@ class TestServerPodFailure:
                     "the same.", remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded deletes after unsafe server pod shutdown.")
 
-    # pylint: disable=C0321
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -1843,7 +1842,7 @@ class TestServerPodFailure:
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         for cnt in range(bkt_cnt):
             rd_time = perf_counter_ns()
-            cp_bucket = "ha-bkt{}-{}".format(cnt, rd_time)
+            cp_bucket = f"ha-bkt{cnt}-{rd_time}"
             s3_test_obj.create_bucket(cp_bucket)
             bkt_obj_dict[cp_bucket] = cp_bucket
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
