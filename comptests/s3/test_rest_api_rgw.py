@@ -118,7 +118,7 @@ class TestRestApiRgw:
         self.log.info(
             "Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
-        assert status == 200 , "Not able to Get user Info. Test Failed"
+        assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
         self.log.info("END: Tested create new IAM user.")
