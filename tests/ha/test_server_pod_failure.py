@@ -709,7 +709,7 @@ class TestServerPodFailure:
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
@@ -760,7 +760,7 @@ class TestServerPodFailure:
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        del_resp = ()
+        del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
@@ -779,7 +779,7 @@ class TestServerPodFailure:
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        rd_resp = ()
+        rd_resp = tuple()
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
@@ -845,14 +845,14 @@ class TestServerPodFailure:
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': del_total_bkt, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
-        buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equal(len(buckets), del_total_bkt,
+        written_bck = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(written_bck), del_total_bkt,
                                   f"Failed to create {del_total_bkt} number of buckets."
-                                  f"Created {len(buckets)} number of buckets")
+                                  f"Created {len(written_bck)} number of buckets")
         LOGGER.info("Performed WRITEs on %s buckets for background DELETEs", del_total_bkt)
 
         LOGGER.info("Starting WRITEs on %s buckets in background", wr_bucket)
@@ -862,8 +862,6 @@ class TestServerPodFailure:
                                    args=(event, s3_test_obj,), kwargs=args)
 
         LOGGER.info("Starting DELETEs of %s buckets in background", del_bucket)
-        # Get the list of buckets name from already written buckets
-        written_bck = list(s3_data.keys())
         get_random_buck = random.sample(written_bck, del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck,
@@ -922,7 +920,6 @@ class TestServerPodFailure:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not wr_resp:
             assert_utils.assert_true(False, "Background process failed to do WRITEs")
-        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]  # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]  # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_put_bkt), "No WRITEs failure expected when event was "
@@ -1026,23 +1023,24 @@ class TestServerPodFailure:
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': del_total_bkt, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equal(len(buckets), del_total_bkt,
+        s3_data_del = wr_resp[0]  # Contains IAM user data for passed buckets
+        written_bck = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(written_bck), del_total_bkt,
                                   f"Failed to create {del_total_bkt} number of buckets."
-                                  f"Created {len(buckets)} number of buckets")
+                                  f"Created {len(written_bck)} number of buckets")
         LOGGER.info("Performed WRITEs on %s buckets for background DELETEs", del_total_bkt)
 
         LOGGER.info("Perform WRITEs on %s buckets for background READs", rd_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': rd_bucket, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
+        s3_data_rd = wr_resp[0]  # Contains IAM user data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), rd_bucket,
                                   f"Failed to create {rd_bucket} number of buckets."
@@ -1051,14 +1049,12 @@ class TestServerPodFailure:
 
         LOGGER.info("Starting READs on %s buckets in background", rd_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipdel': True, 's3_data': s3_data,
+                'skipput': True, 'skipdel': True, 's3_data': s3_data_rd,
                 'di_check': True, 'output': rd_output}
         thread1 = threading.Thread(target=self.ha_obj.put_get_delete,
                                    args=(event, s3_test_obj,), kwargs=args)
 
         LOGGER.info("Starting DELETEs of %s buckets in background", del_bucket)
-        # Get the list of buckets name from already written buckets
-        written_bck = list(s3_data.keys())
         get_random_buck = random.sample(written_bck, del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck,
@@ -1152,17 +1148,18 @@ class TestServerPodFailure:
             "Step 7: Check READs-DI on remaining buckets of DELETEs operation: %s", remain_bkts)
         new_s3data = {}
         for bkt in remain_bkts:
-            new_s3data[bkt] = s3_data[bkt]
+            new_s3data[bkt] = s3_data_del[bkt]
 
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        rd_resp = ()
+        rd_resp = tuple()
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
-            assert_utils.assert_true(False, "Failed to READ/Verify remaining buckets.")
+            assert_utils.assert_true(False,
+                                     "Failed to get READ/Verify response on remaining buckets.")
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
