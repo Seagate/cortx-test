@@ -268,7 +268,7 @@ class TestShutdownCluster:
         LOGGER.info("Step 2: Verified fault tolerance log for cluster stop key message")
 
         LOGGER.info('Take word count of health monitor logs before pod operation')
-        wc_before = HAK8SCompLib.get_word_count(node_obj, log_index=2)
+        wc_before = HAK8SCompLib.get_ha_log_wc(node_obj, log_index=2)
 
         LOGGER.info("Step 3: Shutdown pod using replica set")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=common_const.POD_NAME_PREFIX)
@@ -290,7 +290,7 @@ class TestShutdownCluster:
 
         LOGGER.info("Step 5: Verify HealthMonitor should not send degraded alert to comp Hare ")
         LOGGER.info('Take word count of health monitor logs after pod operation')
-        wc_after = HAK8SCompLib.get_word_count(node_obj, log_index=2)
+        wc_after = HAK8SCompLib.get_ha_log_wc(node_obj, log_index=2)
         assert_utils.assert_equal(wc_before, wc_after,
                                   "Failed:cluster degraded alert sent to Hare.")
         LOGGER.info("Step 5: Successfully verified HealthMonitor should not send degraded alert "
@@ -314,7 +314,7 @@ class TestShutdownCluster:
 
         LOGGER.info("Step 8:Verify HealthMonitor should not send degraded alert to comp Hare")
         LOGGER.info('Take word count of health monitor logs after pod operation')
-        wc_after = HAK8SCompLib.get_word_count(node_obj, log_index=2)
+        wc_after = HAK8SCompLib.get_ha_log_wc(node_obj, log_index=2)
         assert_utils.assert_equal(wc_before, wc_after,
                                   "Failed:cluster degraded alert sent to Hare.")
         LOGGER.info("Step 8:Verified HealthMonitor should not send degraded alert to comp Hare")

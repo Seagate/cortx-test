@@ -17,7 +17,9 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """
 This script will be sending a mock shutdown signal to HA
+This has to be executed inside HA container
 """
+
 from cortx.utils.conf_store import Conf
 from ha import const
 from ha.util.message_bus import MessageBus
