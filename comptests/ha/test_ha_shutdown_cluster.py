@@ -57,7 +57,8 @@ class TestShutdownCluster:
         cls.ha_obj = HAK8s()
         cls.ha_system_obj = SystemHealth()
         cls.restored = True
-        cls.restore_pod = cls.start_cluster = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.restore_pod = cls.start_cluster = cls.deployment_backup = \
+            cls.deployment_name = cls.restore_method = None
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
