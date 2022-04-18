@@ -806,7 +806,8 @@ class TestServerPodFailure:
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
                                   f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
-        LOGGER.info("Step 7: Successfully performed READs/DELETEs on the remaining %s buckets", remain_bkt)
+        LOGGER.info("Step 7: Successfully performed READs/DELETEs on the remaining %s buckets",
+                    remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded DELETEs after safe server pod shutdown.")
 
     # pylint: disable-msg=too-many-locals
