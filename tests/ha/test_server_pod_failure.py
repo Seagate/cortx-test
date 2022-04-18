@@ -970,7 +970,6 @@ class TestServerPodFailure:
 
         if resp is None:
             assert_utils.assert_true(False, "Background process of chunk upload failed")
-
         LOGGER.info("Step 7: Successfully verified response of background process")
 
         # Failure expected during server pod going down
@@ -1006,15 +1005,4 @@ class TestServerPodFailure:
                                   f"Expected checksum: {upload_checksum},"
                                   f"Actual checksum: {download_checksum}")
         LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
-
-        LOGGER.info("Step 10: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B "
-                    "+ (1KB - 512MB) after server pod shutdown.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-39922-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 10: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
         LOGGER.info("ENDED: Verify chunk upload during server pod shutdown")
