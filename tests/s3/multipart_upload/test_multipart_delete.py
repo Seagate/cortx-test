@@ -37,7 +37,6 @@ from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_common_test_lib import get_cortx_capacity
-from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import upload_random_size_objects
 from libs.s3.s3_common_test_lib import create_s3_account_get_s3lib_objects
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
