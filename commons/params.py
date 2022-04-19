@@ -132,3 +132,6 @@ S3TESTS_CONF_ENV = "S3TEST_CONF"
 S3TESTS_CONF_FILE = "s3tests.conf"
 REPORTS_DIR = "reports"
 VIRTUALENV_DIR = "virtualenv"
+
+# IAM paths
+IAM_USER = "/admin/user"
