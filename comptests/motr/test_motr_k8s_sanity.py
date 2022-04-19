@@ -239,7 +239,8 @@ class TestExecuteK8Sanity:
         finally:
             # Deleting Objects at the end
             for obj_id in object_bsize_dict:
-                self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], cortx_node)
+                self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]],
+                cortx_node)
 
     @pytest.mark.tags("TEST-29707")
     @pytest.mark.motr_sanity
