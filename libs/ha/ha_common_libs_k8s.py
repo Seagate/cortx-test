@@ -796,9 +796,10 @@ class HAK8s:
                 command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
                                f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
             for line in res.split("\n"):
-                if "failed" in line or "offline" in line or "unknown" in line:
-                    LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
-                    return False, f"Cortx HCTL status has Failures in pod {pod_name}"
+                if 'm0_client' not in line:
+                    if "failed" in line or "offline" in line or "unknown" in line:
+                        LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
+                        return False, f"Cortx HCTL status has Failures in pod {pod_name}"
         return True, "K8s and cortx both cluster up and clean."
 
     @staticmethod
