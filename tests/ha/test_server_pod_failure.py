@@ -1683,7 +1683,8 @@ class TestServerPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
+        LOGGER.info("Step 7: Create new bucket and perform multipart upload and "
+                    "then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
         object_name = "mp-obj-{}".format(self.random_time)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -1811,7 +1812,8 @@ class TestServerPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
+        LOGGER.info("Step 7: Create new bucket and perform multipart upload and "
+                    "then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
         object_name = "mp-obj-{}".format(self.random_time)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -1927,6 +1929,7 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 6: Checking response from background process")
         thread.join()
+        event.clear()
         responses = tuple()
         while len(responses) < 4:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -2001,8 +2004,8 @@ class TestServerPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("COMPLETED: Test to verify multipart upload during server pod shutdown by delete "
-                    "deployment")
+        LOGGER.info("COMPLETED: Test to verify multipart upload during server pod shutdown "
+                    "by delete deployment")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2129,8 +2132,8 @@ class TestServerPodFailure:
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 8: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
 
-        LOGGER.info("Step 9: Completing multipart upload Completing multipart upload and check "
-                    "upload size is %s", file_size * const.Sizes.MB)
+        LOGGER.info("Step 9: Completing multipart upload and check upload size is %s",
+                    file_size * const.Sizes.MB)
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
                                                        self.object_name)
         assert_utils.assert_true(res[0], res)
@@ -2156,5 +2159,5 @@ class TestServerPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after server pod unsafe "
-                    "shutdown by deleting deployment")
+        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after server "
+                    "pod unsafe shutdown by deleting deployment.")
