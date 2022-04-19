@@ -24,6 +24,7 @@ import boto3
 from botocore.exceptions import ClientError
 from logging.handlers import SysLogHandler
 from config import DATA_PATH_CFG
+from config import CMN_CFG
 from commons.utils import assert_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.params import S3_ENDPOINT
@@ -78,7 +79,7 @@ def _init_s3_conn(access_key, secret_key, user_name):
     s3 = None
     try:
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                            endpoint_url=S3_ENDPOINT)
+                            endpoint_url=CMN_CFG.get('s3_url', S3_ENDPOINT))
         LOGGER.info(f's3 resource created for user {user_name}')
     except (ClientError, Exception) as exc:
         LOGGER.error(
