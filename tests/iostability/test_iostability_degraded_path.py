@@ -36,6 +36,7 @@ from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestIOWorkloadDegradedPath:
+
     """Test Class for IO Stability in Degraded path."""
 
     @classmethod
@@ -65,7 +66,7 @@ class TestIOWorkloadDegradedPath:
         cls.test_completed = False
 
     def teardown_class(self):
-        """Teardown class method"""
+        """Teardown class method."""
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)

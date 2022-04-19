@@ -33,6 +33,7 @@ from libs.iostability.iostability_lib import IOStabilityLib
 
 
 class TestIOWorkload:
+
     """Test Class for IO workloads."""
 
     @classmethod
@@ -70,8 +71,8 @@ class TestIOWorkload:
     @pytest.mark.tags("TEST-40039")
     def test_bucket_object_crud_s3bench(self):
         """Perform Bucket and  Object CRUD operations in loop using S3bench for 30 days."""
-        self.log.info(
-            "STARTED: Test for Bucket and  Object CRUD operations in loop using S3bench for 30 days")
+        self.log.info("STARTED: Test for Bucket and  Object CRUD operations in loop using "
+                      "S3bench for 30 days")
         duration_in_days = self.test_cfg['happy_path_duration_days']
         workload_distribution = self.test_cfg['workloads_distribution']
         clients = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
