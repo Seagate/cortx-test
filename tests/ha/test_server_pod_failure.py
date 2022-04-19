@@ -963,7 +963,7 @@ class TestServerPodFailure:
         """
         LOGGER.info(
             "STARTED: Test to verify DELETEs during server pod down by deleting deployment.")
-        event = threading.Event()  # Event to be used to send when server pod restart start
+        event = threading.Event()  # Event to be used to send when server pod down starts
         wr_output = Queue()
         del_output = Queue()
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
@@ -2132,7 +2132,7 @@ class TestServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0],
                                   f"Failed to delete server pod {pod_name} by deleting deployment")
-        LOGGER.info("Step 3: Shutdown server pod %s by deleting deployment", pod_name)
+        LOGGER.info("Step 3: Shutdown/Deleted server pod %s by deleting deployment", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
         self.restore_pod = self.deploy = True
