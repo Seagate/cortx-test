@@ -1272,13 +1272,12 @@ class HAK8s:
 
     def simulate_disk_cvg_failure(self, node_obj, source: str, resource_status: str,
                                   resource_type: str, node_type: str = 'data',
-                                  resource_cnt: int = 1, node_cnt: int = 1, delay: int = None,
-                                  specific_info: dict = None, node_id: str = None,
-                                  resource_id: str = None):
+                                  resource_cnt: int = 1, node_cnt: int = 1, **kwargs):
         """
         :param node_obj: Object for node
         :param source: Source of the event | monitor, ha, hare, etc.
-        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
+        :param resource_status: recovering, online, failed, un
+        nown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
         :param node_type: Type of the node (data, server)
@@ -1311,6 +1310,10 @@ class HAK8s:
         }
         :return: Bool, config_dict/error
         """
+        delay = kwargs.get("delay", None)
+        specific_info = kwargs.get("specific_info", None)
+        node_id = kwargs.get("node_id", None)
+        resource_id = kwargs.get("resource_id", None)
         config_json_file = "config_mock.json"
         config_dict = dict()
         config_dict["events"] = {}
@@ -1320,6 +1323,23 @@ class HAK8s:
             LOGGER.error("Please provide correct count for nodes")
             return False, node_id_list
         count = 0
+        user_val = False
+        if node_id and resource_id:
+            # If user provide node_id and resource_id
+            n_id = node_id
+            r_id = resource_id
+            user_val = True
+        elif node_id and resource_type == 'node':
+            # If user provide node_id
+            n_id = node_id
+            r_id = node_id
+            user_val = True
+        elif resource_id and resource_type == 'node':
+            # If user provide resource_id
+            n_id = resource_id
+            r_id = resource_id
+            user_val = True
+        specific_info = specific_info if specific_info else dict()
         for n_cnt in range(node_cnt):
             if resource_type != 'node':
                 resource_id_list = self.get_node_resource_ids(node_obj=node_obj,
@@ -1336,26 +1356,14 @@ class HAK8s:
                 config_dict["events"][f"{count}"]["resource_type"] = resource_type
                 config_dict["events"][f"{count}"]["source"] = source
                 config_dict["events"][f"{count}"]["resource_status"] = resource_status
-                if node_id and resource_id:
-                    # If user provide node_id and resource_id
-                    config_dict["events"][f"{count}"]["node_id"] = node_id
-                    config_dict["events"][f"{count}"]["resource_id"] = resource_id
-                elif node_id and resource_type == 'node':
-                    # If user provide node_id
-                    config_dict["events"][f"{count}"]["node_id"] = node_id
-                    config_dict["events"][f"{count}"]["resource_id"] = node_id
-                elif resource_id and resource_type == 'node':
-                    # If user provide resource_id
-                    config_dict["events"][f"{count}"]["node_id"] = resource_id
-                    config_dict["events"][f"{count}"]["resource_id"] = resource_id
+                if user_val:
+                    config_dict["events"][f"{count}"]["node_id"] = n_id
+                    config_dict["events"][f"{count}"]["resource_id"] = r_id
                 else:
                     # If user don't provide anything
                     config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
                     config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
-                if specific_info:
-                    config_dict["events"][f"{count}"]["specific_info"] = specific_info
-                else:
-                    config_dict["events"][f"{count}"]["specific_info"] = dict()
+                config_dict["events"][f"{count}"]["specific_info"] = specific_info
         if delay:
             config_dict["delay"] = delay
         with open(config_json_file, "w") as outfile:
