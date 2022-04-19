@@ -1644,7 +1644,8 @@ class TestServerPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
-        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown/deleted server pod %s by making replicas=0",
+                    pod_name)
         self.deployment_name = resp[1]
         self.restore_pod = self.deploy = True
         self.restore_method = const.RESTORE_SCALE_REPLICAS
@@ -1770,8 +1771,8 @@ class TestServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
                                            " (unsafe)")
-        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
+        LOGGER.info("Step 2: Successfully shutdown/deleted server pod %s by deleting "
+                    "deployment (unsafe)", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
         self.restore_pod = self.deploy = True
@@ -1970,8 +1971,8 @@ class TestServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
                                            " (unsafe)")
-        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
+        LOGGER.info("Step 2: Successfully shutdown/deleted server pod %s by deleting "
+                    "deployment (unsafe)", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
         self.restore_pod = self.deploy = True
@@ -1998,8 +1999,8 @@ class TestServerPodFailure:
         LOGGER.info("Step 5: Services status on remaining pods %s are in online state", pod_list)
 
         LOGGER.info("Step 6: Checking response from background process")
-        thread.join()
         event.clear()
+        thread.join()
         responses = tuple()
         while len(responses) < 4:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
