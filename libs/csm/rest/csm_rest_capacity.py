@@ -205,7 +205,7 @@ class SystemCapacity(RestTestLib):
                 self.log.error(msg)
             result_msg = result_msg + msg
             result_flag = result_flag and flag
-            return result_flag, result_msg
+        return result_flag, result_msg
 
     def get_capacity_consul(self, node=0):
         """

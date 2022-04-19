@@ -1338,6 +1338,10 @@ class TestSystemCapacity():
         assert resp, "Put object Failed"
         self.log.info("[End] Start some IOs")
 
+        self.log.info("[Start] Sleep %s", test_cfg["update_seconds"])
+        time.sleep(test_cfg["update_seconds"])
+        self.log.info("[End] Sleep %s", test_cfg["update_seconds"])
+
         self.log.info("[Start] Fetch degraded capacity on Consul with 0 Pod failure")
         resp = self.csm_obj.get_capacity_consul()
 
@@ -1347,8 +1351,9 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
         #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0, critical=0,
+        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0, critical=0,
             damaged=0, err_margin=test_cfg["err_margin"])
+        assert resp[0], resp[1]
         self.log.info("[End] Fetch degraded capacity on Consul with 0 Pod failure")
 
         self.log.info("[Start] Fetch degraded capacity on HCTL with 0 Pod failure")
@@ -1359,10 +1364,11 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
         #cap_df.loc["No failure"]["hctl_repaired"] = resp["repaired"]
-        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
                                                      critical=0, damaged=0,
                                                      err_margin=test_cfg["err_margin"],
                                                      total=total_written)
+        assert resp[0], resp[1]
         self.log.info("[End] Fetch degraded capacity on HCTL with 0 Pod failure")
 
         self.log.info("[Start] Fetch degraded capacity on CSM with 0 Pod failure")
@@ -1432,10 +1438,11 @@ class TestSystemCapacity():
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
             #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-            assert self.csm_obj.verify_degraded_capacity(
+            resp = self.csm_obj.verify_degraded_capacity(
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0,
                 err_margin=test_cfg["err_margin"],
                 total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on Consul with %s pod failure", pod_name)
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with %s pod failure", pod_name)
@@ -1446,10 +1453,11 @@ class TestSystemCapacity():
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
             #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.csm_obj.verify_degraded_capacity(
+            resp = self.csm_obj.verify_degraded_capacity(
                 resp, healthy=0, degraded=total_written, critical=0, damaged=0,
                 err_margin=test_cfg["err_margin"],
                 total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on HCTL with %s pod failure", pod_name)
 
             self.log.info("[Start] Fetch degraded capacity on CSM")
@@ -1492,10 +1500,11 @@ class TestSystemCapacity():
             cap_df.loc[index]["consul_critical"] = resp["critical"]
             cap_df.loc[index]["consul_damaged"] = resp["damaged"]
             #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-            assert self.csm_obj.verify_degraded_capacity(
+            resp = self.csm_obj.verify_degraded_capacity(
                 resp, healthy=total_written, degraded=0, critical=0, damaged=0,
                 err_margin=test_cfg["err_margin"],
                 total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on Consul with 0 pod failure")
 
             self.log.info("[Start] Fetch degraded capacity on HCTL with 0 pod failure")
@@ -1506,10 +1515,11 @@ class TestSystemCapacity():
             cap_df.loc[index]["hctl_critical"] = resp["critical"]
             cap_df.loc[index]["hctl_damaged"] = resp["damaged"]
             #cap_df.loc[index]["hctl_repaired"] = resp["repaired"]
-            assert self.csm_obj.verify_degraded_capacity(
+            resp = self.csm_obj.verify_degraded_capacity(
                 resp, healthy=total_written, degraded=0, critical=0, damaged=0,
                 err_margin=test_cfg["err_margin"],
                 total=total_written)
+            assert resp[0], resp[1]
             self.log.info("[End] Fetch degraded capacity on HCTL with 0 pod failure")
 
             self.log.info("[Start] Fetch degraded capacity on CSM with 0 pod failure")
