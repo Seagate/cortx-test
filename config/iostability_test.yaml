@@ -1,0 +1,18 @@
+workloads_distribution:
+  0Kb: 2
+  1Kb: 24.79
+  10Kb: 18.84
+  100Kb: 17.87
+  1Mb: 18.2
+  10Mb: 16.7
+  100Mb: 1.56
+  1Gb: 0.03
+  2Gb: 0.01
+sessions_per_node_vm: 20
+sessions_per_node_hw: 150
+
+happy_path_duration_days: 30
+degraded_path_durations_days: 7
+
+test_40172:
+  bucket_creation_healthy_mode: True

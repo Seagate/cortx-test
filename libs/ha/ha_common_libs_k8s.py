@@ -1436,3 +1436,47 @@ class HAK8s:
 
         LOGGER.info("Resource IDs for %s are: %s", r_type, resp)
         return resp
+
+    def delete_single_pod_setting_replica_0(self, master_node_obj, health_obj,
+                                            pod_prefix=common_const.POD_NAME_PREFIX):
+        """
+        Delete Single pod by setting replica set to 0. Check service status is in degraded mode.
+        :param master_node_obj: Master node object list
+        :param health_obj: Health object
+        :param pod_prefix: Pod prefix to be deleted.
+        return : tuple
+        """
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = master_node_obj.get_all_pods(pod_prefix=pod_prefix)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = master_node_obj.get_pod_hostname(pod_name=pod_name)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod_name)
+        if resp[0]:
+            return False, f"Failed to delete pod {pod_name} by making replicas=0"
+        LOGGER.info("Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+
+        LOGGER.info("Check cluster status")
+        resp = self.check_cluster_status(master_node_obj)
+        if resp[0]:
+            return False,resp
+        LOGGER.info("Cluster is in degraded state")
+
+        LOGGER.info(" Check services status that were running on pod %s", pod_name)
+        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
+        LOGGER.debug("Response: %s", resp)
+        if not resp[0]:
+            return False,resp
+
+        LOGGER.info("Services of pod are in offline state")
+        pod_list.remove(pod_name)
+
+        LOGGER.info("Check services status on remaining pods %s", pod_list)
+        resp = health_obj.get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        if not resp[0]:
+            return False, resp
+        LOGGER.info("Services of pod are in online state")
+        return True, pod_name
