@@ -11,9 +11,8 @@ workloads_distribution:
 sessions_per_node_vm: 20
 sessions_per_node_hw: 150
 
-test_40039:
-  duration_days: 30
+happy_path_duration_days: 30
+degraded_path_durations_days: 7
 
 test_40172:
-  duration_days: 7
   bucket_creation_healthy_mode: True
