@@ -226,20 +226,20 @@ class TestExecuteK8Sanity:
                     object_md5sum_dict[object_id] = md5sum
             # Triggering Cluster shutdown
             self.motr_obj.shutdown_cluster()
+            cortx_node = self.system_random.choice(self.motr_obj.cortx_node_list)
             for obj_id in object_bsize_dict:
                 self.motr_obj.cat_cmd(object_bsize_dict[obj_id],
-                    '4', obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], outfile, node)
-                md5sum = self.motr_obj.get_md5sum(outfile, node)
+                    '4', obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], outfile, cortx_node)
+                md5sum = self.motr_obj.get_md5sum(outfile, cortx_node)
                 assert_utils.assert_equal(object_md5sum_dict[obj_id], md5sum,
                         'Failed, Checksum did not match after cluster shutdown')
         except Exception as exc:
             logger.exception("Test has failed with execption: %s", exc)
             raise exc
         finally:
-            node = self.system_random.choice(self.motr_obj.cortx_node_list)
             # Deleting Objects at the end
             for obj_id in object_bsize_dict:
-                self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], node)
+                self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]], cortx_node)
 
     @pytest.mark.tags("TEST-29707")
     @pytest.mark.motr_sanity
