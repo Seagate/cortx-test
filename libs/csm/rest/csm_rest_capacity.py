@@ -229,7 +229,7 @@ class SystemCapacity(RestTestLib):
         self.log.info("Parsed response : %s", resp)
         return json.loads(resp)
 
-    def get_dataframe_all(self, num_nodes: int):
+    def get_dataframe_all(self, num_nodes: int=None, rows:list=None):
         """
         Creates dataframe for the storing degraded capacity for csm, hctl, consul
         """
@@ -238,8 +238,12 @@ class SystemCapacity(RestTestLib):
                "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
                "csm_repaired"]
         row = ["No failure"]
-        for node in range(num_nodes):
-            row.append(self.row_temp.format(node))
+        if rows is not None:
+            for tmp_row in rows:
+                row.append(tmp_row)
+        else:
+            for node in range(num_nodes):
+                row.append(self.row_temp.format(node))
         cap_df = pd.DataFrame(columns=col, index=row)
         return cap_df
 
