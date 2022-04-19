@@ -213,3 +213,68 @@ class TestRestApiRgw:
         self.created_users.append(user_params2)
         self.log.info("END: Test create using uid which already exist. : %s",test_case_name)
 
+    @pytest.mark.api_user_ops
+    @pytest.mark.tags('TEST-36664')
+    def test_user_create_36664(self):
+        """Create new IAM user."""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("START: Test create using email which already exist.")
+        user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
+        user_name2 = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
+        email=f"{user_name}@seagate.com"
+        user_params = {
+            'display-name': user_name,
+            'email' : email,
+            'uid' : user_name
+        }
+        user_params2 = {
+            'display-name': user_name2,
+            'email' : email,
+            'uid' : user_name2
+        }
+        self.log.info(
+            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        loop = asyncio.get_event_loop()
+        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
+        self.log.info("Created user details: %s",user_info)
+        self.log.info(
+            "Step 2: Verifying that new IAM user is created successfully")
+        status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
+        assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
+        self.log.info("Get user info output: %s",user_info)
+        self.created_users.append(user_params)
+        self.log.info(
+            "Step 3: Creating another IAM user with same email %s", str(email))
+        loop = asyncio.get_event_loop()
+        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
+        self.log.info("END: Test create using uid which already exist. : %s",test_case_name)
+
+    @pytest.mark.api_user_ops
+    @pytest.mark.tags('TEST-36665')
+    def test_user_create_36665(self):
+        """Create new IAM user."""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("START: Test create user with uid containing special characters.")
+        user_name = '#user##@%@%%@#%^@#%12313223new'
+        user_params = {
+            'display-name': user_name,
+            'uid' : user_name
+        }
+        self.log.info(
+            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        loop = asyncio.get_event_loop()
+        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
+        self.log.info("Created user details: %s",user_info)
+        self.log.info(
+            "Step 2: Verifying that new IAM user is created successfully")
+        status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
+        assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
+        self.log.info("Get user info output: %s",user_info)
+        self.created_users.append(user_params)
+        self.log.info("END: Test create user with uid containing special characters. : %s",test_case_name)
+
