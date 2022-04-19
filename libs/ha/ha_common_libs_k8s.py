@@ -1270,18 +1270,23 @@ class HAK8s:
             return False
         return True
 
-    def simulate_disk_cvg_failure(self, node_obj, source, resource_status, resource_type,
-                                  node_type='data', resource_cnt=1, node_cnt=1, delay=None):
+    def simulate_disk_cvg_failure(self, node_obj, source: str, resource_status: str,
+                                  resource_type: str, node_type: str = 'data',
+                                  resource_cnt: int = 1, node_cnt: int = 1, **kwargs):
         """
         :param node_obj: Object for node
-        :param source: Source of the event, monitor, ha, hare, etc.
-        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
+        :param source: Source of the event | monitor, ha, hare, etc.
+        :param resource_status: recovering, online, failed, un
+        nown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
         :param node_type: Type of the node (data, server)
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
         :param delay: Delay between two events (Optional)
+        :param specific_info: Dictionary with Key-value pairs e.g. "generation_id": "xxxx"(Optional)
+        :param node_id: node_id of the pod (Optional)
+        :param resource_id: resource_id of the pod (Optional)
         Format of events file:
         {
         "events":
@@ -1302,7 +1307,11 @@ class HAK8s:
         }
         :return: Bool, config_dict/error
         """
-        config_json_file = "config.json"
+        delay = kwargs.get("delay", None)
+        specific_info = kwargs.get("specific_info", dict())
+        node_id = kwargs.get("node_id", None)
+        resource_id = kwargs.get("resource_id", None)
+        config_json_file = "config_mock.json"
         config_dict = dict()
         config_dict["events"] = {}
         node_id_list = self.get_node_resource_ids(node_obj=node_obj, r_type='node',
@@ -1311,6 +1320,22 @@ class HAK8s:
             LOGGER.error("Please provide correct count for nodes")
             return False, node_id_list
         count = 0
+        user_val = False
+        if node_id and resource_id:
+            # If user provide node_id and resource_id
+            n_id = node_id
+            r_id = resource_id
+            user_val = True
+        elif node_id and resource_type == 'node':
+            # If user provide node_id
+            n_id = node_id
+            r_id = node_id
+            user_val = True
+        elif resource_id and resource_type == 'node':
+            # If user provide resource_id
+            n_id = resource_id
+            r_id = resource_id
+            user_val = True
         for n_cnt in range(node_cnt):
             if resource_type != 'node':
                 resource_id_list = self.get_node_resource_ids(node_obj=node_obj,
@@ -1327,22 +1352,35 @@ class HAK8s:
                 config_dict["events"][f"{count}"]["resource_type"] = resource_type
                 config_dict["events"][f"{count}"]["source"] = source
                 config_dict["events"][f"{count}"]["resource_status"] = resource_status
-                config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
-                config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
-
+                if user_val:
+                    config_dict["events"][f"{count}"]["node_id"] = n_id
+                    config_dict["events"][f"{count}"]["resource_id"] = r_id
+                else:
+                    # If user don't provide anything
+                    config_dict["events"][f"{count}"]["node_id"] = node_id_list[n_cnt]
+                    config_dict["events"][f"{count}"]["resource_id"] = resource_id_list[d_cnt]
+                config_dict["events"][f"{count}"]["specific_info"] = specific_info
         if delay:
             config_dict["delay"] = delay
-
         with open(config_json_file, "w") as outfile:
             json.dump(config_dict, outfile)
-
         LOGGER.info("Publishing mock events: %s", config_dict)
         LOGGER.info("Get HA pod name for publishing event")
         ha_pod = node_obj.get_all_pods(pod_prefix=common_const.HA_POD_NAME_PREFIX)[0]
         LOGGER.info("Publishing event %s for %s resource type through ha pod %s", resource_status,
                     resource_type, ha_pod)
-        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH, config_json_file)
+        resp = node_obj.copy_file_to_remote(local_path=config_json_file,
+                                            remote_path=common_const.HA_CONFIG_FILE)
+        if not resp[0]:
+            LOGGER.error("Failed in copy file due to : %s", resp[1])
+            return resp[0]
+        cmd = common_cmd.PUBLISH_CMD.format(common_const.MOCK_MONITOR_REMOTE_PATH,
+                                            common_const.HA_CONFIG_FILE)
         try:
+            node_obj.execute_cmd(
+                cmd=common_cmd.K8S_CP_TO_CONTAINER_CMD.format
+                (common_const.HA_CONFIG_FILE, ha_pod,
+                 common_const.HA_CONFIG_FILE, common_const.HA_FAULT_TOLERANCE_CONTAINER_NAME))
             node_obj.send_k8s_cmd(operation="exec", pod=ha_pod,
                                   namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
                                   decode=True)
