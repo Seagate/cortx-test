@@ -47,6 +47,7 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
@@ -1764,7 +1765,6 @@ class TestServerPodFailure:
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
-
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
@@ -1841,6 +1841,76 @@ class TestServerPodFailure:
                     "with 5GB object")
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after server pod"
                     " unsafe shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-39921")
+    @CTFailOn(error_handler)
+    def test_ios_unsafe_server_pod_shutdown(self):
+        """
+        Verify WRITEs-READs-Verify-DELETEs before and after server pod failure; server pod delete
+        deployment shutdown.
+        """
+        LOGGER.info("STARTED: Verify IOs before & after server pod shutdown by delete deployment.")
+
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
+                    "1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-39921'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the server pod by deleting deployment (unsafe)")
+        LOGGER.info("Get server pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
+
+        LOGGER.info("Deleting server pod %s", pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0],
+                                  f"Failed to delete server pod {pod_name} by deleting deployment")
+        LOGGER.info("Step 2: Shutdown/Deleted server pod %s by deleting deployment", pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info(
+            "Step 3: Cluster has some failures due to server pod %s has gone down.", pod_name)
+
+        LOGGER.info("Step 4: Check services status that were running on server pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
+
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services on remaining pods are in online state")
+
+        LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
+                    "1KB - 512MB) after server pod delete deployment shutdown.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-39921-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("ENDED: Verify IOs before & after server pod shutdown by delete deployment.")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2006,6 +2076,133 @@ class TestServerPodFailure:
 
         LOGGER.info("COMPLETED: Test to verify multipart upload during server pod shutdown "
                     "by delete deployment")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-39922")
+    @CTFailOn(error_handler)
+    def test_chunk_upload_during_server_pod_shutdown(self):
+        """
+        Test chunk upload during server pod shutdown (using jclient) by delete deployment
+        """
+        LOGGER.info("STARTED: Verify chunk upload during server pod shutdown")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        download_file = "test_chunk_upload" + "_download"
+        download_path = os.path.join(self.test_dir_path, download_file)
+        chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
+        upload_op = Queue()
+
+        LOGGER.info("Step 1: Perform setup steps for jclient")
+        jc_obj = JCloudClient()
+        resp = self.ha_obj.setup_jclient(jc_obj)
+        assert_utils.assert_true(resp, "Failed in setting up jclient")
+        LOGGER.info("Step 1: Successfully setup jcloud/jclient on runner")
+
+        LOGGER.info("Step 2: Create IAM user with name %s, bucket %s and start chunk upload in "
+                    "background", self.s3acc_name, self.bucket_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-39922'
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
+                'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
+
+        thread = threading.Thread(target=self.ha_obj.create_bucket_chunk_upload, kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 2: Successfully started chuck upload in background")
+
+        LOGGER.info("Step 3: Shutdown the server pod by deleting deployment (unsafe)")
+        LOGGER.info("Get server pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
+
+        LOGGER.info("Deleting server pod %s", pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0],
+                                  f"Failed to delete server pod {pod_name} by deleting deployment")
+        LOGGER.info("Step 3: Shutdown server pod %s by deleting deployment", pod_name)
+        self.deployment_backup = resp[1]
+        self.deployment_name = resp[2]
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info(
+            "Step 4: Cluster has some failures due to server pod %s has gone down.", pod_name)
+
+        LOGGER.info("Step 5: Check services status that were running on server pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                           hostname=hostname)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
+
+        pod_list.remove(pod_name)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 6: Services on remaining pods are in online state")
+
+        LOGGER.info("Step 7: Verifying response of background chunk upload process")
+        thread.join()
+        while True:
+            resp = upload_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            if isinstance(resp, bool):
+                break
+
+        if resp is None:
+            assert_utils.assert_true(False, "Background process of chunk upload failed")
+        LOGGER.info("Step 7: Successfully verified response of background process")
+
+        # Failure expected during server pod going down
+        if not resp:
+            LOGGER.info("Step 8: Chunk upload failed during server pod %s going down, Re-trying "
+                        "chunk upload", pod_name)
+            self.ha_obj.create_bucket_chunk_upload(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   file_size=file_size,
+                                                   chunk_obj_path=chunk_obj_path,
+                                                   output=upload_op,
+                                                   bkt_op=False)
+
+            while True:
+                resp = upload_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+                if isinstance(resp, bool):
+                    break
+
+            if not resp or resp is None:
+                assert_utils.assert_true(False, "Retried chunk upload failed")
+            LOGGER.info("Step 8: Retried chunk upload successfully")
+
+        LOGGER.info("Step 9: Download object and verify checksum")
+        LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
+                                                           compare=False)[0]
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Expected checksum: {upload_checksum},"
+                                  f"Actual checksum: {download_checksum}")
+        LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
+        LOGGER.info("ENDED: Verify chunk upload during server pod shutdown")
 
     @pytest.mark.ha
     @pytest.mark.lc
