@@ -1285,11 +1285,8 @@ class HAK8s:
         :param node_cnt: Count of the nodes on which failure to be simulated
         :param delay: Delay between two events (Optional)
         :param specific_info: Dictionary with Key-value pairs e.g. "generation_id": "xxxx"(Optional)
-        If not given it picks empty dictionary
         :param node_id: node_id of the pod (Optional)
-        If not given it pick runtime value
         :param resource_id: resource_id of the pod (Optional)
-        If not given it pick runtime value
         Format of events file:
         {
         "events":
@@ -1311,7 +1308,7 @@ class HAK8s:
         :return: Bool, config_dict/error
         """
         delay = kwargs.get("delay", None)
-        specific_info = kwargs.get("specific_info", None)
+        specific_info = kwargs.get("specific_info", dict())
         node_id = kwargs.get("node_id", None)
         resource_id = kwargs.get("resource_id", None)
         config_json_file = "config_mock.json"
@@ -1339,7 +1336,6 @@ class HAK8s:
             n_id = resource_id
             r_id = resource_id
             user_val = True
-        specific_info = specific_info if specific_info else dict()
         for n_cnt in range(node_cnt):
             if resource_type != 'node':
                 resource_id_list = self.get_node_resource_ids(node_obj=node_obj,
