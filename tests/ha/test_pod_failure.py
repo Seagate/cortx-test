@@ -1542,7 +1542,7 @@ class TestPodFailure:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
-                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
+                                  f"Failed to delete buckets: {event_del_bkt} OR {fail_del_bkt}")
 
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
@@ -1719,7 +1719,7 @@ class TestPodFailure:
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
-            assert_utils.assert_true(False, "Background process failed to do reads")
+            assert_utils.assert_true(False, "Failed to READ/Verify remaining buckets.")
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1742,7 +1742,7 @@ class TestPodFailure:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
-            assert_utils.assert_true(False, "Background process failed to do deletes")
+            assert_utils.assert_true(False, "Failed to DELETE remaining buckets.")
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
