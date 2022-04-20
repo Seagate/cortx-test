@@ -43,10 +43,8 @@ from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from commons import constants as const
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
-from config import CMN_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import CMN_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
