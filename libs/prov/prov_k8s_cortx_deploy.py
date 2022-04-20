@@ -26,6 +26,7 @@ import logging
 import math
 import os
 import re
+import shutil
 import signal
 import time
 from threading import Thread
@@ -71,12 +72,13 @@ class ProvDeployK8sCortxLib:
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
         self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
-        self.lb_count = os.getenv("LB_COUNT", self.deploy_cfg["lb_count"])
-        self.nodeport_https = os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"])
-        self.nodeport_http = os.getenv("HTTP_PORT", self.deploy_cfg["http_port"])
-        self.control_nodeport_https = os.getenv("CONTROL_HTTPS_PORT",
-                                                self.deploy_cfg["control_port_https"])
-        self.client_instance = os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance'])
+        self.namespace = os.getenv("NAMESPACE", self.deploy_cfg["namespace"])
+        self.lb_count = int(os.getenv("LB_COUNT", self.deploy_cfg["lb_count"]))
+        self.nodeport_https = int(os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"]))
+        self.nodeport_http = int(os.getenv("HTTP_PORT", self.deploy_cfg["http_port"]))
+        self.control_nodeport_https = int(os.getenv("CONTROL_HTTPS_PORT",
+                                                    self.deploy_cfg["control_port_https"]))
+        self.client_instance = int(os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance']))
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
@@ -368,7 +370,8 @@ class ProvDeployK8sCortxLib:
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         master_node_list[0].copy_file_to_local(remote_path, local_path)
-        pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+        pod_status = master_node_list[0].execute_cmd(cmd=
+                                                     common_cmd.K8S_GET_PODS.format(self.namespace),
                                                      read_lines=True)
         LOGGER.debug("\n=== POD STATUS ===\n")
         LOGGER.debug(pod_status)
@@ -390,7 +393,8 @@ class ProvDeployK8sCortxLib:
         url = self.deploy_cfg["git_k8_repo_file"].format(git_tag, self.deploy_cfg["new_file_path"])
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
-        return self.deploy_cfg["new_file_path"]
+        shutil.copyfile(self.deploy_cfg["new_file_path"], self.deploy_cfg['solution_file'])
+        return self.deploy_cfg["solution_file"]
 
     def checkout_update_deploy_script(self, node_obj: LogicalNode, git_tag):
         """
@@ -525,18 +529,19 @@ class ProvDeployK8sCortxLib:
             sys_disk_pernode.update(schema)
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
-        # Update the solution yaml file with password,service_type and ports
-        resp_passwd = self.update_miscellaneous_param(filepath, log_path, size,
+        # Update the solution yaml file with service_type,deployment type, ports,namespace
+        resp_passwd = self.update_miscellaneous_param(filepath, log_path,
                                                       nodeport_http=self.nodeport_http,
                                                       nodeport_https=self.nodeport_https,
                                                       control_nodeport_https=
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
                                                       deployment_type=self.deployment_type,
+                                                      namespace=self.namespace,
                                                       lb_count=self.lb_count,
                                                       client_instance=self.client_instance)
         if not resp_passwd[0]:
-            return False, "Failed to update passwords and setup size in solution file"
+            return False, "Failed to update service type,deployment type, ports in solution file"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
                                                         third_party_images_dict,
@@ -718,10 +723,10 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     # pylint: disable-msg=too-many-locals
-    def update_miscellaneous_param(self, filepath, log_path, size,
+    def update_miscellaneous_param(self, filepath, log_path,
                                    **kwargs):
         """
-        This Method update the password in solution.yaml file
+        This Method update the miscellaneous params in solution.yaml file
         Param: filepath: filename with complete path
         Param: log_path: to change the log path inside pods
         Param: size: to change the disk size to be used for data and metadata
@@ -737,17 +742,18 @@ class ProvDeployK8sCortxLib:
                                             self.deploy_cfg['control_port_https'])
         lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
         deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
+        namespace = kwargs.get('namespace', self.deploy_cfg['namespace'])
         client_instance = kwargs.get('client_instance', self.deploy_cfg['client_instance'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
             if deployment_type:
                 parent_key['deployment_type'] = deployment_type
-            content = parent_key['secrets']['content']
+            parent_key['namespace'] = namespace
             common = parent_key['common']
+            content = parent_key['secrets']['content']
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             common['container_path']['log'] = log_path
-            common['setup_size'] = size
             motr_config = common['motr']
             motr_config['num_client_inst'] = client_instance
             s3_service = common['external_services']['s3']
@@ -817,7 +823,7 @@ class ProvDeployK8sCortxLib:
             return False, output['result']
 
     @staticmethod
-    def get_hctl_status(node_obj, pod_name: str) -> tuple:
+    def get_hctl_status(node_obj, pod_name: str, namespace) -> tuple:
         """
         Get hctl status for cortx.
         param: master_node: Master node(Logical Node object)
@@ -827,7 +833,7 @@ class ProvDeployK8sCortxLib:
         try:
             LOGGER.info("Get Cluster status")
             cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
-                                                  format(pod_name)).decode('UTF-8')
+                                                  format(pod_name, namespace)).decode('UTF-8')
         finally:
             node_obj.disconnect()
         cluster_status = json.loads(cluster_status)
@@ -1130,15 +1136,15 @@ class ProvDeployK8sCortxLib:
             return True, data_pod_list
         return False, "Data PODS are not retrieved for cluster."
 
-    @staticmethod
-    def check_pods_status(node_obj) -> bool:
+    def check_pods_status(self, node_obj) -> bool:
         """
         Helper function to check pods status.
         :param node_obj: Master node(Logical Node object)
         :return: True/False
         """
         LOGGER.info("Checking all Pods are online.")
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS, read_lines=True)
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS.format(self.namespace),
+                                    read_lines=True)
         for line in range(1, len(resp)):
             if "Running" not in resp[line]:
                 return False
@@ -1270,7 +1276,8 @@ class ProvDeployK8sCortxLib:
                 eth1_ip = resp[1].strip("'\\n'b'")
                 if self.service_type == "NodePort":
                     resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                    self.deploy_cfg['iface'])
+                                                                    self.deploy_cfg['iface'],
+                                                                    self.namespace)
                     if not resp[0]:
                         LOGGER.debug("Did not get expected response: %s", resp)
                     ext_ip = resp[1]
@@ -1328,7 +1335,7 @@ class ProvDeployK8sCortxLib:
         while int(time.time()) < end_time:
             pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
             assert_utils.assert_true(pod_name[0], pod_name[1])
-            resp = self.get_hctl_status(master_node_obj, pod_name[1])
+            resp = self.get_hctl_status(master_node_obj, pod_name[1], self.namespace)
             if resp[0]:
                 time_taken = (int(time.time()) - start_time)
                 LOGGER.info("All the services are online. Time Taken : %s", time_taken)
@@ -1337,7 +1344,8 @@ class ProvDeployK8sCortxLib:
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
             server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX)
+                                                       common_const.SERVER_POD_NAME_PREFIX,
+                                                       self.namespace)
             assert_utils.assert_true(server_pod_list)
             LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
@@ -1355,13 +1363,15 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_true(resp, "All Pods are not in Running state")
         if self.deployment_type in self.data_only_list:
             data_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                     common_const.POD_NAME_PREFIX)
+                                                     common_const.POD_NAME_PREFIX,
+                                                     self.namespace)
             assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
             pod_count = len(data_pod_list)
             LOGGER.debug("THE DATA POD LIST ARE %s", data_pod_list)
         if self.deployment_type in self.server_only_list:
             server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX)
+                                                       common_const.SERVER_POD_NAME_PREFIX,
+                                                       self.namespace)
             assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
             pod_count = len(server_pod_list)
             LOGGER.debug("THE SERVER POD LIST ARE %s", server_pod_list)
@@ -1373,11 +1383,11 @@ class ProvDeployK8sCortxLib:
         while int(time.time()) < end_time:
             if self.deployment_type in self.data_only_list:
                 for pod_name in data_pod_list:
-                    resp = self.get_hctl_status(master_node_obj, pod_name)
+                    resp = self.get_hctl_status(master_node_obj, pod_name, self.namespace)
                     hctl_status.update({pod_name: resp[0]})
             if self.deployment_type in self.server_only_list:
                 for server_pod_name in server_pod_list:
-                    resp = self.get_hctl_status(master_node_obj, server_pod_name)
+                    resp = self.get_hctl_status(master_node_obj, server_pod_name, self.namespace)
                     hctl_status.update({server_pod_name: resp[0]})
 
             status = all(element is True for element in list(hctl_status.values()))
@@ -1515,8 +1525,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
 
-    @staticmethod
-    def verfiy_installed_rpms(master_node_list, container_name, rpm_name):
+    def verfiy_installed_rpms(self, master_node_list, container_name, rpm_name):
         """
         This method is to verify the installed rpms in the pods.
         param: master_node_list: master node obj.
@@ -1525,11 +1534,13 @@ class ProvDeployK8sCortxLib:
         returns True
         """
         server_pods_list = LogicalNode.get_all_pods(master_node_list[0],
-                                                    common_const.SERVER_POD_NAME_PREFIX)
+                                                    common_const.SERVER_POD_NAME_PREFIX,
+                                                    self.namespace)
         installed_rpm = []
         for server_pod in server_pods_list:
             resp = master_node_list[0].execute_cmd(
-                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name),
+                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, self.namespace,
+                                                  rpm_name),
                 read_lines=True)
         for element in resp:
             installed_rpm.append(element.strip())

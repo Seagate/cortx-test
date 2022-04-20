@@ -477,45 +477,45 @@ FI_TEST = 'test'
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
                     + " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
 K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
-K8S_SVC_CMD = "kubectl get svc"
+K8S_SVC_CMD = "kubectl get svc -n {}"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
 K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
 K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
-K8S_GET_PODS = "kubectl get pods"
-K8S_GET_MGNT = "kubectl get pods -o wide"
-K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
+K8S_GET_PODS = "kubectl get pods -n {}"
+K8S_GET_MGNT = "kubectl get pods -o wide -n {}"
+K8S_DELETE_POD = "kubectl delete pod {} -n {}"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -n {} -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_MASTER_NODE = "kubectl get nodes -l node-role.kubernetes.io/master | awk '{print $1}'"
-K8S_GET_SVC_JSON = "kubectl get svc -o json"
-K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
+K8S_GET_SVC_JSON = "kubectl get svc -o json -n {}"
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -n {} -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
-K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
+K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -n {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
-KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
-KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
+KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}' -n {}"
+KUBECTL_GET_POD_IPS = 'kubectl get pods -n {} --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'
-KUBECTL_GET_POD_NAMES = 'kubectl get pods --no-headers -o custom-columns=":metadata.name"'
+KUBECTL_GET_POD_NAMES = 'kubectl get pods --no-headers -o custom-columns=":metadata.name" -n {}'
 KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
 KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
 KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
 KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
-KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -n {} -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
 KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
-KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
+KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -n {} -- rpm -qa|grep -i {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -540,8 +540,8 @@ UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
-CMD_POD_STATUS = "kubectl get pods"
-CMD_SRVC_STATUS = "kubectl get services"
+CMD_POD_STATUS = "kubectl get pods -n {}"
+CMD_SRVC_STATUS = "kubectl get services -n {}"
 CMD_GET_NODE = "kubectl get nodes"
 
 # LC deployment

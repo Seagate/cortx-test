@@ -47,7 +47,7 @@ def execute_cmd(cmd) -> tuple:
 
 
 # pylint: disable=too-many-arguments,too-many-locals
-def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine) -> str:
+def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, port) -> str:
     """
     Create setup entry in Database
     hosts: Multiple Hosts string received input from jenkins
@@ -91,7 +91,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine) ->
     json_data["nodes"] = host_list
 
     json_data["csm"]["mgmt_vip"] = host_list[1]["hostname"]
-    json_data["csm"]["port"] = cfg["csm_port"]
+    json_data["csm"]["port"] = port # cfg["csm_port"]
     json_data["csm"]["csm_admin_user"].update(username=admin_user, password=admin_pswd)
 
     print("New Entry Details : ", json_data)
@@ -111,6 +111,7 @@ def main():
         admin_user = os.getenv("ADMIN_USER")
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         test_exe_no = os.getenv("TEST_EXECUTION_NUMBER", None)
+        port = os.getenv("CONTROL_HTTPS_PORT")
         if test_exe_no is not None:
             jira_id = os.environ['JIRA_ID']
             jira_pswd = os.environ['JIRA_PASSWORD']
@@ -125,7 +126,8 @@ def main():
         cfg = ""
         with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
             cfg = yaml.safe_load(file)
-        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine)
+        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine,
+                                    port)
 
         print(f"target_name: {setupname}")
         with open("secrets.json", 'r') as file:
@@ -150,7 +152,7 @@ def main():
                 file.write(setupname)
 
     except Exception as ex:
-        print(f"Exception Occured : {ex}")
+        print(f"Exception Occurred : {ex}")
         sys.exit(1)
     sys.exit(0)
 

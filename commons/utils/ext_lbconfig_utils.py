@@ -205,7 +205,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
         file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com "
                    "sts.cloud.seagate.com\n".format(ext_ip))
 
-def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
+def configure_nodeport_lb(node_obj: LogicalNode, iface: str, namespace):
     """
     Helper function to get node port ports and external IP from master node.
     :param node_obj: Master node object
@@ -215,7 +215,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
     resp = node_obj.execute_cmd(cmd=cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
     ext_ip = resp[0].strip("\n")
     LOGGER.info("Data IP from master node: %s", ext_ip)
-    resp = node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON, read_lines=False).decode("utf-8")
+    resp = node_obj.execute_cmd(cmd=cm_cmd.K8S_GET_SVC_JSON.format(namespace), read_lines=False).decode("utf-8")
     if not resp[0]:
         return False, "Not getting expected response for kubectl get svc command"
     resp = json.loads(resp)

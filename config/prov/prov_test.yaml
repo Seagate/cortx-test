@@ -129,6 +129,7 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   setup_size: "small"
+  namespace: "default"
   https_protocol: "https://{}"
   https_port: 30443
   http_port: 30080
@@ -142,7 +143,8 @@ k8s_cortx_deploy:
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/{}"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
-  new_file_path: "solution.yaml"
+  new_file_path: "solution.example.yaml"
+  solution_file: "solution.yaml"
   deploy_file: "deploy-cortx-cloud.sh"
   report_file: "deployment_report.csv"
   log_file: "deployment.log"
