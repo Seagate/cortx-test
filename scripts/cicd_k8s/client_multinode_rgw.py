@@ -171,16 +171,18 @@ def main():
     print("Creating new dir for kube config.")
     sysutils.execute_cmd(cmd="mkdir -p /root/.kube")
     print("Copying config from Master node.")
-    m_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
     local_conf = os.path.join("/root/.kube", "config")
     if os.path.exists(local_conf):
         os.remove(local_conf)
-    resp = m_obj.copy_file_to_local(remote_path=local_conf, local_path=local_conf)
+    resp = node_obj.copy_file_to_local(remote_path=local_conf, local_path=local_conf)
     if not resp[0]:
         print("Failed to copy config file, security tests might fail.")
     print("Listing contents of kube dir")
     resp = sysutils.execute_cmd(cmd="ls -l /root/.kube/")
     print(resp)
+    print("Setting the current namespace")
+    resp_ns = node_obj.execute_cmd(cmd=com_cmds.KUBECTL_SET_CONTEXT, read_lines=True)
+    print(resp_ns)
     print("Mutlinode Server-Client Setup Done.")
 
 
