@@ -51,11 +51,13 @@ class TestRestApiRgw:
         self.log.info("Deleting all users created as part of test")
         delete_failed = []
         delete_success = []
+        self.log.debug("created_users list : %s",self.created_users)
         for usr in self.created_users:
             self.log.info("Sending request to delete user %s", usr)
             try:
-                response = self.obj.delete_user(usr)
-                if response.status_code != HTTPStatus.OK:
+                loop = asyncio.get_event_loop()
+                status = loop.run_until_complete(self.obj.delete_user(usr))
+                if status[0] != HTTPStatus.OK:
                     delete_failed.append(usr)
                 else:
                     delete_success.append(usr)
