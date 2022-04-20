@@ -79,22 +79,7 @@ class ProvDeployK8sCortxLib:
                                                 self.deploy_cfg["control_port_https"])
         self.client_instance = os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance'])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
-<<<<<<< HEAD
-        self.cortx_all_image = os.getenv("CORTX_ALL_IMAGE", None)
-=======
-        self.data_only_list = ["data-only", "standard"]
-        self.server_only_list = ["server-only", "standard"]
-        self.exclusive_pod_list = ["data-only", "server-pod"]
->>>>>>> d6fe3d78dec61714d5ada4d7b0e757df7c633639
-
-    @staticmethod
-    def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
                           taint_master: bool = True) -> tuple:
-        """
-        Setup k8s cluster using RE jenkins job
-        param: master_node_list : List of all master nodes(Logical Node object)
-        param: worker_node_list : List of all worker nodes(Logical Node object)
-        param: taint_master : Taint master - boolean
         return : True/False and success/failure message
         """
         k8s_deploy_cfg = PROV_CFG["k8s_cluster_deploy"]
