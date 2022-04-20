@@ -1,11 +1,15 @@
 4101:
+  users_not_found:
+    - "User does not exist:"
+  Access denied for account:
+    - "Access denied. Cannot modify another S3 account."
+    - "Access denied."
+4104:
   user_permission_denied:
     - "Cannot change roles for super user"
     - "Non super user cannot change roles for self"
     - "Cannot delete the last {} user"
     - "Normal user cannot delete other user"
-  users_not_found:
-    - "User does not exist:"
   update_not_allowed:
     - "{} can not update the role for {}"
     - "{} can not update the password for {}"
@@ -14,9 +18,6 @@
     - "{} can not update {}"
   Cannot create other users:
     - "Only {} user can create other {} users"
-  Access denied for account:
-    - "Access denied. Cannot modify another S3 account."
-    - "Access denied."
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
@@ -36,6 +37,7 @@
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
     - "Uid: Field may not be null."
+    - "{}: Unknown field."
   InvalidKeyType:
     - "Invalid key type specified. Must be one of S3, shift"
     - "Max_buckets: Not a valid integer."
@@ -46,12 +48,17 @@
     - "User already exists:"
   EmailExists:
     - "Provided email address exists"
+39401:
+  users_already_exists:
+    - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
     - 'Provided access key exists and belongs to another user.'
   NoSuchUser:
     - "User does not exist."
+  KeyExists:
+    - 'Provided access key exists and belongs to another user.'
   InvalidCapability:
     - "Attempt to grant invalid admin capability."
 
