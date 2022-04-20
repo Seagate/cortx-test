@@ -37,7 +37,6 @@ from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_common_test_lib import get_cortx_capacity
-from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import upload_random_size_objects
 from libs.s3.s3_common_test_lib import create_s3_account_get_s3lib_objects
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -54,7 +53,6 @@ class TestMultipartUploadDelete:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations.")
-        check_cluster_health()
         self.bucket_name = "s3-bkt-{}".format(perf_counter_ns())
         self.object_name = "s3-upload-obj-{}".format(perf_counter_ns())
         self.acc_name = "s3-acc-{}"
@@ -100,7 +98,6 @@ class TestMultipartUploadDelete:
     def test_29163(self):
         """
         Delete multipart object limit test.
-
         Abort multipart upload completed object with size 5TB and max parts 10000 and then
         delete that object.
         """
@@ -164,7 +161,6 @@ class TestMultipartUploadDelete:
     def test_29169(self):
         """
         Delete multipart.
-
         Initiate multipart and try to delete the object before even uploading parts to it, Then
         upload parts and complete multipart upload
         """
@@ -215,7 +211,6 @@ class TestMultipartUploadDelete:
     def test_29171(self):
         """
         Delete multipart.
-
         Delete multiple objects in bucket which are uploaded and not uploaded completely
         """
         self.log.info("STARTED: Delete multiple objects in bucket which are uploaded and not"
@@ -274,7 +269,6 @@ class TestMultipartUploadDelete:
     def test_29172(self):
         """
         Delete multipart.
-
         Upload object2 in bucket1 of accnt1 from accnt 2 and try to delete object from both
         accnt1 and accnt2.
         """
@@ -328,7 +322,6 @@ class TestMultipartUploadDelete:
     def test_29173(self):
         """
         Delete multipart.
-
         Check Space reclaim after Deleting an object 1hr.
         """
         self.log.info("STARTED: Check Space reclaim after Deleting an object 1hr.")

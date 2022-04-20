@@ -123,40 +123,45 @@ k8s_cortx_deploy:
     memory: 16
   clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
+  3rd_party_data_dir: "/var/data/3rd-party/"
+  3rd_party_dir: "/etc/3rd-party/"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   setup_size: "small"
-  protocol: "http://{}:{}"
+  https_protocol: "https://{}"
   https_port: 30443
   http_port: 30080
   control_port_https: 31169
   iface: "eth1"
   service_type: "LoadBalancer"
+  lb_count: 1
+  deployment_type: "standard"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
-  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
+  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/{}"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
+  deploy_file: "deploy-cortx-cloud.sh"
   report_file: "deployment_report.csv"
   log_file: "deployment.log"
   rgw_rpm: "cortx-rgw"
   status_log_file: "status.log"
   pre_req_log: "pre_req_log.log"
+  deployment_type_data: "data-only"
+  client_instance: 0
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
-    openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
-    consul: 'ghcr.io/seagate/consul:1.10.0'
+    consul: 'ghcr.io/seagate/consul:1.11.4'
     kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
     zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
     rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
     busybox: 'ghcr.io/seagate/busybox:latest'
-  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata',
-                      'cortxserver', 'cortxha', 'cortxclient' ]
+  cortx_images_key: [ 'cortxcontrol', 'cortxdata', 'cortxserver',
+                      'cortxha', 'cortxclient' ]
   password:
-    openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
     kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
     consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
     common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
