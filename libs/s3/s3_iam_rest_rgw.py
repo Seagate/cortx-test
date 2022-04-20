@@ -220,9 +220,9 @@ class RestApiRgw:
 
         rgwcli = S3Client(
             self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
-        status, user_info = await rgwcli.signed_http_request(
+        status = await rgwcli.signed_http_request(
             'DELETE', '/admin/user', query_params=user_params)
-        return status, user_info
+        return status
 
     async def get_user_info(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
