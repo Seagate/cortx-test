@@ -29,9 +29,8 @@ test_33929:
     stop_range: 100
 test_33925:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
+  object_size: 16
+  update_seconds: 60
 test_33926:
   err_margin: 0
   object_size:
