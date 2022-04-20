@@ -1350,8 +1350,8 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
         #cap_df.loc["No failure"]["consul_repaired"] = resp["repaired"]
-        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0, critical=0,
-            damaged=0, err_margin=test_cfg["err_margin"])
+        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"])
         assert resp[0], resp[1]
         self.log.info("[End] Fetch degraded capacity on Consul with 0 Pod failure")
 
@@ -1717,8 +1717,8 @@ class TestSystemCapacity():
         cap_df.loc[index]["consul_critical"] = resp["critical"]
         cap_df.loc[index]["consul_damaged"] = resp["damaged"]
         #cap_df.loc["No failure"]["csm_repaired"] = resp["repaired"]
-        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0, critical=0,
-            damaged=0, err_margin=test_cfg["err_margin"])
+        resp = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"])
         assert resp[0], resp[1]
         self.log.info("[End] Fetch degraded capacity on Consul before cluster restart")
 
@@ -1880,7 +1880,7 @@ class TestSystemCapacity():
         self.log.info("Step-1: Change csm config auth variable to False in csm config")
         # TODO : change variable in csm config file to False
         self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        resp = self.csm_obj.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Get header for admin user")
         header = self.csm_obj.get_headers(self.username, self.user_pass)
@@ -1930,7 +1930,7 @@ class TestSystemCapacity():
         self.log.info("Step-1: Change csm config auth variable to False in csm config")
         # TODO : change variable in csm config file to False
         self.log.info("Step 2: Delete control pod and wait for restart")
-        resp = self.csm_cluster.restart_control_pod(self.nd_obj)
+        resp = self.csm_obj.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Get header for admin user")
         header = self.csm_obj.get_headers(self.username, self.user_pass)
