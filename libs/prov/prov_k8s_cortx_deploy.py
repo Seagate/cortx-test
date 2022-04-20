@@ -51,7 +51,6 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
-from libs.ha.ha_common_libs_k8s import HAK8s
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -79,7 +78,18 @@ class ProvDeployK8sCortxLib:
                                                 self.deploy_cfg["control_port_https"])
         self.client_instance = os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance'])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
+        self.data_only_list = ["data-only", "standard"]
+        self.server_only_list = ["server-only", "standard"]
+        self.exclusive_pod_list = ["data-only", "server-pod"]
+
+    @staticmethod
+    def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
                           taint_master: bool = True) -> tuple:
+        """
+        Setup k8s cluster using RE jenkins job
+        param: master_node_list : List of all master nodes(Logical Node object)
+        param: worker_node_list : List of all worker nodes(Logical Node object)
+        param: taint_master : Taint master - boolean
         return : True/False and success/failure message
         """
         k8s_deploy_cfg = PROV_CFG["k8s_cluster_deploy"]
@@ -523,12 +533,8 @@ class ProvDeployK8sCortxLib:
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
                                                       deployment_type=self.deployment_type,
-<<<<<<< HEAD
-                                                      lb_count=self.lb_count)
-=======
                                                       lb_count=self.lb_count,
                                                       client_instance=self.client_instance)
->>>>>>> d6fe3d78dec61714d5ada4d7b0e757df7c633639
         if not resp_passwd[0]:
             return False, "Failed to update passwords and setup size in solution file"
         # Update the solution yaml file with images
@@ -731,10 +737,7 @@ class ProvDeployK8sCortxLib:
                                             self.deploy_cfg['control_port_https'])
         lb_count = int(kwargs.get('lb_count', self.deploy_cfg['lb_count']))
         deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
-<<<<<<< HEAD
-=======
         client_instance = kwargs.get('client_instance', self.deploy_cfg['client_instance'])
->>>>>>> d6fe3d78dec61714d5ada4d7b0e757df7c633639
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -1254,33 +1257,6 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("service resp is %s", service_status)
             assert_utils.assert_true(service_status[0], service_status[1])
             row.append(service_status[-1])
-<<<<<<< HEAD
-        if setup_client_config_flag:
-            resp = system_utils.execute_cmd(
-                common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
-            eth1_ip = resp[1].strip("'\\n'b'")
-            if self.service_type == "NodePort":
-                resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                self.deploy_cfg['iface'])
-                if not resp[0]:
-                    LOGGER.debug("Did not get expected response: %s", resp)
-                ext_ip = resp[1]
-                port = resp[2]
-                ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+":{}".format(port)
-                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
-            else:
-                LOGGER.info("Configure HAproxy on client")
-                ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
-                                                           master_node_list[0].username,
-                                                           master_node_list[0].password,
-                                                           eth1_ip, self.deploy_cfg['iface'])
-                ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
-            LOGGER.info("Step to Create S3 account and configure credentials")
-            if self.s3_engine == "2":
-                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-                assert_utils.assert_true(resp[0], resp[1])
-                access_key, secret_key = S3H_OBJ.get_local_keys()
-=======
             if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
                 if self.cortx_server_image:
                     resp = self.verfiy_installed_rpms(master_node_list,
@@ -1292,7 +1268,6 @@ class ProvDeployK8sCortxLib:
                 resp = system_utils.execute_cmd(
                     common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
                 eth1_ip = resp[1].strip("'\\n'b'")
->>>>>>> d6fe3d78dec61714d5ada4d7b0e757df7c633639
                 if self.service_type == "NodePort":
                     resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
                                                                     self.deploy_cfg['iface'])
@@ -1491,10 +1466,12 @@ class ProvDeployK8sCortxLib:
         :return: True/False
         """
         LOGGER.info("Upgrading CORTX image version.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         if upgrade_type == "rolling":
-            cmd = common_cmd.UPGRADE_CLUSTER_CMD.format(git_remote_path,granular_type)
+            cmd = "cd {}; {}".format(git_remote_path,
+                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
         else:
-            cmd = common_cmd.UPGRADE_COLD_CLUSTER_CMD.format(git_remote_path)
+            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
         resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -1618,7 +1595,7 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(common_cmd.UPGRADE_CLUSTER_DESTRUPTIVE_CMD.format(
             PROV_CFG['k8s_cortx_deploy']["k8s_dir"]), read_lines=True)
         return resp
-    
+
     @staticmethod
     def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
         """
