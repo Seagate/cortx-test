@@ -65,6 +65,7 @@ HA_CONSUL_NOKEY = "NotFound"
 HA_TMP = "/root"
 HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
 HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
+HA_CONFIG_FILE = "/root/config.json"
 
 # RAS Paths
 BYTES_TO_READ = 8000
