@@ -29,6 +29,7 @@ import logging
 import os
 
 from commons import commands as com_cmds
+from commons import constants as const
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils as sysutils
 from commons.utils import ext_lbconfig_utils as ext_lb
@@ -181,7 +182,8 @@ def main():
     resp = sysutils.execute_cmd(cmd="ls -l /root/.kube/")
     print(resp)
     print("Setting the current namespace")
-    resp_ns = node_obj.execute_cmd(cmd=com_cmds.KUBECTL_SET_CONTEXT, read_lines=True)
+    resp_ns = node_obj.execute_cmd(cmd=com_cmds.KUBECTL_SET_CONTEXT.format(const.NAMESPACE),
+                                   read_lines=True)
     print(resp_ns)
     print("Mutlinode Server-Client Setup Done.")
 
