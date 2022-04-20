@@ -409,7 +409,7 @@ class ProvDeployK8sCortxLib:
         system_utils.execute_cmd(cmd=cmd)
         # Update deploy file
         string_to_replace = "waitForAllDeploymentsAvailable 120s"
-        new_string = "waitForAllDeploymentsAvailable 360s"
+        new_string = "waitForAllDeploymentsAvailable 500s"
         update_line = common_cmd.LINUX_REPLACE_STRING.format(string_to_replace, new_string,
                                                              self.deploy_cfg['deploy_file'])
         system_utils.execute_cmd(update_line)
