@@ -1612,7 +1612,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         for image in image_dict:
             if image == "cortxcontrol":
-                parent_key['images'][image] = image_dict['cortxcontrol'] 
+                parent_key['images'][image] = image_dict['cortxcontrol']
             elif image == "cortxha":
                 parent_key['images'][image] = image_dict['cortxha']
             elif image == "cortxdata":
@@ -1641,19 +1641,19 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def compare_version(installing_version, installed_version):
-        """ 
-        Compare two version 
-        return : none      
         """
-        if(installing_version > installed_version):
+        Compare two version
+        return : none
+        """
+        if installing_version > installed_version:
             LOGGER.info("Installing version is higher than installed version.")
         else:
             LOGGER.info("Installing version is not higher than installed version.")
 
     @staticmethod
     def generate_and_compare_version(input_installing_version, installed_version):
-        """ 
-        Compare two version 
+        """
+        Compare two version
         return : none
         """
         installing_version = input_installing_version.split(":")[1].split("-")
@@ -1666,8 +1666,8 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def generate_and_compare_both_version(input_installing_version, installed_version):
-        """ 
-        Compare two version 
+        """
+        Compare two version
         return : none
         """
         installing_version = input_installing_version.split(":")[1].split("-")
