@@ -370,7 +370,7 @@ class ProvDeployK8sCortxLib:
         resp_ns = master_node_list[0].execute_cmd(
             cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
             read_lines=True)
-        LOGGER.debug("response is %,", resp_ns)
+        LOGGER.debug("response is %s,", resp_ns)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         master_node_list[0].copy_file_to_local(remote_path, local_path)
@@ -1466,7 +1466,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("The nodes count mismatched need to deploy new K8s cluster")
         return False
 
-    def verfiy_installed_rpms(self, master_node_list, container_name, rpm_name):
+    @staticmethod
+    def verfiy_installed_rpms(master_node_list, container_name, rpm_name):
         """
         This method is to verify the installed rpms in the pods.
         param: master_node_list: master node obj.
