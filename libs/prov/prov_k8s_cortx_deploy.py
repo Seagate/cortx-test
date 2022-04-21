@@ -443,7 +443,6 @@ class ProvDeployK8sCortxLib:
         :Keyword: skip_disk_count_check: disk count check
         :Keyword: third_party_image: dict of third party image
         :Keyword: log_path: to provide custom log path
-        :Keyword: setup_size: to provide custom size large/small/medium
         :Keyword: cortx_server_image: to provide cortx server image
         :Keyword: service_type: to provide service type as LoadBalancer/NodePort
         returns the status, filepath and system reserved disk
@@ -465,7 +464,6 @@ class ProvDeployK8sCortxLib:
         cortx_server_image = kwargs.get("cortx_server_image", None)
         cortx_data_image = kwargs.get("cortx_data_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
-        size = kwargs.get("size", self.deploy_cfg['setup_size'])
         service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
         nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
