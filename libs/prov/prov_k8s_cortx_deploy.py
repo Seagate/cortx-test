@@ -1673,7 +1673,7 @@ class ProvDeployK8sCortxLib:
         installing_version = input_installing_version.split(":")[1].split("-")
         installing_version = installing_version[0] + "-" + installing_version[1]
         LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        if(installing_version > installed_version):
+        if installing_version > installed_version:
             LOGGER.info("Installing version is higher than installed version.")
         else:
             LOGGER.info("Installing version is not higher than installed version.")
