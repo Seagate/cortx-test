@@ -1,0 +1,3 @@
+# mail configs
+mail_server : "mailhost.seagate.com"
+port : 587
