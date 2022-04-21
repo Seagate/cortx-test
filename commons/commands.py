@@ -518,6 +518,8 @@ KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:m
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
+GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
+
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -538,6 +540,7 @@ DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
+UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
 
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
