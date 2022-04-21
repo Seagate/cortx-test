@@ -374,8 +374,7 @@ class ProvDeployK8sCortxLib:
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         master_node_list[0].copy_file_to_local(remote_path, local_path)
-        pod_status = master_node_list[0].execute_cmd(cmd=
-                                                     common_cmd.K8S_GET_PODS.format(self.namespace),
+        pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                      read_lines=True)
         LOGGER.debug("\n=== POD STATUS ===\n")
         LOGGER.debug(pod_status)
@@ -827,7 +826,7 @@ class ProvDeployK8sCortxLib:
             return False, output['result']
 
     @staticmethod
-    def get_hctl_status(node_obj, pod_name: str, namespace) -> tuple:
+    def get_hctl_status(node_obj, pod_name: str) -> tuple:
         """
         Get hctl status for cortx.
         param: master_node: Master node(Logical Node object)
@@ -837,7 +836,7 @@ class ProvDeployK8sCortxLib:
         try:
             LOGGER.info("Get Cluster status")
             cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
-                                                  format(pod_name, namespace)).decode('UTF-8')
+                                                  format(pod_name)).decode('UTF-8')
         finally:
             node_obj.disconnect()
         cluster_status = json.loads(cluster_status)
@@ -878,65 +877,6 @@ class ProvDeployK8sCortxLib:
         # pylint: disable=broad-except
         except BaseException as error:
             return False, error
-
-    @staticmethod
-    # pylint: disable-msg=too-many-locals
-    def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
-        """
-        Configure MetalLB on the master node
-        param: node_obj : Master node object
-        param: data_ip : List of data IPs.
-        param: control_ip : List of control IPs.
-        return : Boolean
-        """
-        LOGGER.info("Configuring MetaLB: ")
-        metallb_cfg = PROV_CFG['config_metallb']
-        LOGGER.info("Enable strict ARP mode")
-        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_ARP'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-        resp = node_obj.execute_cmd(cmd=metallb_cfg['enable_strict_ARP'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        LOGGER.info("Apply manifest")
-        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_namespace'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_metalb'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        LOGGER.info("Check metallb-system namespace")
-        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_namespace'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        LOGGER.info("Update config file with the provided IPs")
-        ip_list = data_ip + control_ip
-        filepath = metallb_cfg['config_path']
-        with open(filepath) as soln:
-            conf = yaml.safe_load(soln)
-            new_dict = conf['data']
-            ori_value = conf['data']['config']
-            temp1 = ori_value.split('addresses:')[1]
-            ips = ' \n\t'.join(f'- {each}-{each}' for each in ip_list)
-            temp2 = '\n\t' + ips
-            new_value = ori_value.replace(temp1, temp2)
-            schema = {'config': f'| {new_value}'}
-            new_dict.update(schema)
-        noalias_dumper = yaml.dumper.SafeDumper
-        noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(metallb_cfg['new_config_file'], 'w') as soln:
-            yaml.dump(conf, soln, default_flow_style=False,
-                      sort_keys=False, Dumper=noalias_dumper)
-
-        LOGGER.info("Copy metalLB config file to master node")
-        resp = node_obj.copy_file_to_remote(metallb_cfg['new_config_file'],
-                                            metallb_cfg['remote_path'])
-        if not resp:
-            return resp
-
-        LOGGER.info("Apply metalLB config")
-        resp = node_obj.execute_cmd(metallb_cfg['apply_config'], read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        return True
 
     @staticmethod
     def post_deployment_steps_lc(s3_engine, endpoint):
@@ -1140,14 +1080,15 @@ class ProvDeployK8sCortxLib:
             return True, data_pod_list
         return False, "Data PODS are not retrieved for cluster."
 
-    def check_pods_status(self, node_obj) -> bool:
+    @staticmethod
+    def check_pods_status(node_obj) -> bool:
         """
         Helper function to check pods status.
         :param node_obj: Master node(Logical Node object)
         :return: True/False
         """
         LOGGER.info("Checking all Pods are online.")
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS.format(self.namespace),
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS,
                                     read_lines=True)
         for line in range(1, len(resp)):
             if "Running" not in resp[line]:
@@ -1280,8 +1221,7 @@ class ProvDeployK8sCortxLib:
                 eth1_ip = resp[1].strip("'\\n'b'")
                 if self.service_type == "NodePort":
                     resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                    self.deploy_cfg['iface'],
-                                                                    self.namespace)
+                                                                    self.deploy_cfg['iface'])
                     if not resp[0]:
                         LOGGER.debug("Did not get expected response: %s", resp)
                     ext_ip = resp[1]
@@ -1339,7 +1279,7 @@ class ProvDeployK8sCortxLib:
         while int(time.time()) < end_time:
             pod_name = master_node_obj.get_pod_name(pod_prefix=pod_prefix)
             assert_utils.assert_true(pod_name[0], pod_name[1])
-            resp = self.get_hctl_status(master_node_obj, pod_name[1], self.namespace)
+            resp = self.get_hctl_status(master_node_obj, pod_name[1])
             if resp[0]:
                 time_taken = (int(time.time()) - start_time)
                 LOGGER.info("All the services are online. Time Taken : %s", time_taken)
@@ -1348,8 +1288,7 @@ class ProvDeployK8sCortxLib:
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
             server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX,
-                                                       self.namespace)
+                                                       common_const.SERVER_POD_NAME_PREFIX)
             assert_utils.assert_true(server_pod_list)
             LOGGER.debug("The Server pod list is %s", server_pod_list)
             LOGGER.info("s3 Server Status Check Completed")
@@ -1367,15 +1306,13 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_true(resp, "All Pods are not in Running state")
         if self.deployment_type in self.data_only_list:
             data_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                     common_const.POD_NAME_PREFIX,
-                                                     self.namespace)
+                                                     common_const.POD_NAME_PREFIX)
             assert_utils.assert_not_equal(len(data_pod_list), 0, "No cortx-data Pods found")
             pod_count = len(data_pod_list)
             LOGGER.debug("THE DATA POD LIST ARE %s", data_pod_list)
         if self.deployment_type in self.server_only_list:
             server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX,
-                                                       self.namespace)
+                                                       common_const.SERVER_POD_NAME_PREFIX)
             assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
             pod_count = len(server_pod_list)
             LOGGER.debug("THE SERVER POD LIST ARE %s", server_pod_list)
@@ -1387,11 +1324,11 @@ class ProvDeployK8sCortxLib:
         while int(time.time()) < end_time:
             if self.deployment_type in self.data_only_list:
                 for pod_name in data_pod_list:
-                    resp = self.get_hctl_status(master_node_obj, pod_name, self.namespace)
+                    resp = self.get_hctl_status(master_node_obj, pod_name)
                     hctl_status.update({pod_name: resp[0]})
             if self.deployment_type in self.server_only_list:
                 for server_pod_name in server_pod_list:
-                    resp = self.get_hctl_status(master_node_obj, server_pod_name, self.namespace)
+                    resp = self.get_hctl_status(master_node_obj, server_pod_name)
                     hctl_status.update({server_pod_name: resp[0]})
 
             status = all(element is True for element in list(hctl_status.values()))
@@ -1538,13 +1475,11 @@ class ProvDeployK8sCortxLib:
         returns True
         """
         server_pods_list = LogicalNode.get_all_pods(master_node_list[0],
-                                                    common_const.SERVER_POD_NAME_PREFIX,
-                                                    self.namespace)
+                                                    common_const.SERVER_POD_NAME_PREFIX)
         installed_rpm = []
         for server_pod in server_pods_list:
             resp = master_node_list[0].execute_cmd(
-                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, self.namespace,
-                                                  rpm_name),
+                common_cmd.KUBECTL_GET_RPM.format(server_pod, container_name, rpm_name),
                 read_lines=True)
         for element in resp:
             installed_rpm.append(element.strip())

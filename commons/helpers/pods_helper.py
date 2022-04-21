@@ -404,15 +404,15 @@ class LogicalNode(Host):
             pod_name = output[0].strip()
         return pod_name
 
-    def get_all_pods(self, pod_prefix=None, namespace="default") -> list:
+    def get_all_pods(self, pod_prefix=None) -> list:
         """
         Helper function to get all pods name with pod_prefix
         :param: pod_prefix: Prefix to define the pod category
         :return: list
         """
         pods_list = []
-        log.debug("Executing : %s", commands.KUBECTL_GET_POD_NAMES.format(namespace))
-        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_NAMES.format(namespace),
+        log.debug("Executing : %s", commands.KUBECTL_GET_POD_NAMES)
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_NAMES,
                                   read_lines=True)
         pods = [line.strip().replace("\n", "") for line in output]
         if pod_prefix is not None:
