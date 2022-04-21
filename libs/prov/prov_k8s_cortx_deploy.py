@@ -51,6 +51,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
+from libs.ha.ha_common_libs_k8s import HAK8s
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -1642,8 +1643,7 @@ class ProvDeployK8sCortxLib:
     def compare_version(installing_version, installed_version):
         """ 
         Compare two version 
-        return : none
-        
+        return : none      
         """
         if(installing_version > installed_version):
             LOGGER.info("Installing version is higher than installed version.")
