@@ -366,7 +366,11 @@ class ProvDeployK8sCortxLib:
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
-
+        LOGGER.info("Setting the current namespace")
+        resp_ns = master_node_list[0].execute_cmd(
+            cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
+            read_lines=True)
+        LOGGER.debug("response is %,", resp_ns)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
         remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
         master_node_list[0].copy_file_to_local(remote_path, local_path)
