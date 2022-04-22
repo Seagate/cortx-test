@@ -521,7 +521,7 @@ KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
 KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
                           "NAME:.metadata.name,TAINTS:.spec.taints --no-headers > {}"
 KUBECTL_GET_ALL = "kubectl get all -A >> {}"
-KUBECTL_GET_SECRET = "kubectl get secret -A >> {}"
+KUBECTL_GET_SECRET = "kubectl get {} -A >> {}"
 KUBECTL_GET_PVC = "kubectl get pvc -A >> {}"
 KUBECTL_GET_PV = "kubectl get pv >> {}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"

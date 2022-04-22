@@ -881,6 +881,65 @@ class ProvDeployK8sCortxLib:
             return False, error
 
     @staticmethod
+    # pylint: disable-msg=too-many-locals
+    def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
+        """
+        Configure MetalLB on the master node
+        param: node_obj : Master node object
+        param: data_ip : List of data IPs.
+        param: control_ip : List of control IPs.
+        return : Boolean
+        """
+        LOGGER.info("Configuring MetaLB: ")
+        metallb_cfg = PROV_CFG['config_metallb']
+        LOGGER.info("Enable strict ARP mode")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_ARP'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['enable_strict_ARP'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Apply manifest")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_namespace'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_metalb'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Check metallb-system namespace")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_namespace'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Update config file with the provided IPs")
+        ip_list = data_ip + control_ip
+        filepath = metallb_cfg['config_path']
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            new_dict = conf['data']
+            ori_value = conf['data']['config']
+            temp1 = ori_value.split('addresses:')[1]
+            ips = ' \n\t'.join(f'- {each}-{each}' for each in ip_list)
+            temp2 = '\n\t' + ips
+            new_value = ori_value.replace(temp1, temp2)
+            schema = {'config': f'| {new_value}'}
+            new_dict.update(schema)
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(metallb_cfg['new_config_file'], 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+
+        LOGGER.info("Copy metalLB config file to master node")
+        resp = node_obj.copy_file_to_remote(metallb_cfg['new_config_file'],
+                                            metallb_cfg['remote_path'])
+        if not resp:
+            return resp
+
+        LOGGER.info("Apply metalLB config")
+        resp = node_obj.execute_cmd(metallb_cfg['apply_config'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        return True
+
+    @staticmethod
     def post_deployment_steps_lc(s3_engine, endpoint):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
@@ -1564,20 +1623,21 @@ class ProvDeployK8sCortxLib:
         """
         taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format(self.deploy_cfg["pre_check_log"])
         all_resource = common_cmd.KUBECTL_GET_ALL.format(self.deploy_cfg["pre_check_log"])
-        get_secret = common_cmd.KUBECTL_GET_SECRET.format(self.deploy_cfg["pre_check_log"])
+        get_secret = common_cmd.KUBECTL_GET_SECRET.format("secret",
+                                                          self.deploy_cfg["pre_check_log"])
         get_pv = common_cmd.KUBECTL_GET_PV.format(self.deploy_cfg["pre_check_log"])
         get_pvc = common_cmd.KUBECTL_GET_PVC.format(self.deploy_cfg["pre_check_log"])
         list_pre_check = [taint_cmd, all_resource, get_secret, get_pvc, get_pv]
         LOGGER.info("======== Running Pre-checks before deployment ==========")
         for cmd in list_pre_check:
-            resp = master_node_list.execute_cmd(cmd, read_lines=True)
+            master_node_list.execute_cmd(cmd, read_lines=True)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, self.deploy_cfg["pre_check_log"])
         if master_node_list.path_exists(self.deploy_cfg["pre_check_log"]):
             master_node_list.copy_file_to_local(remote_path=self.deploy_cfg["pre_check_log"],
                                                 local_path=local_path)
             master_node_list.execute_cmd(
                 common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["pre_check_log"]))
-        return True, resp
+        return True, local_path
 
     @staticmethod
     def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
