@@ -1483,9 +1483,12 @@ class HAK8s:
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
-        Takes a dict with nested lists and dicts,
-        and searches all dicts for a key of the field
-        provided.
+        Function to find value from nested dicts and lists for given key and replace it
+        :param search_dict: Dict in which key to be searched
+        :param field: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: str (value)
         """
         fields_found = []
 
@@ -1515,7 +1518,13 @@ class HAK8s:
     def update_deployment_yaml(self, pod_obj, pod_name, find_key, replace_key=None,
                                replace_val=None):
         """
-
+        Function to find and replace key from deployment yaml file
+        :param pod_obj: Object of pod
+        :param pod_name: Name of the pod
+        :param find_key: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: bool, str, str (status, new path, backup path)
         """
         resp = pod_obj.get_deploy_replicaset(pod_name)
         deploy = resp[1]
@@ -1542,7 +1551,11 @@ class HAK8s:
     @staticmethod
     def failover_pod(pod_obj, pod_name, failover_node):
         """
-
+        Function to failover given pod
+        :param pod_obj: Object of the pod
+        :param pod_name: Name of the pod to be failed over
+        :param failover_node: Node to which pod is to be failed over
+        :return: bool, str (status, response)
         """
         cur_node = pod_obj.get_pods_node_fqdn(common_const.CONTROL_POD_NAME_PREFIX).get(pod_name)
         LOGGER.info("Current pod %s is hosted on %s", pod_name, cur_node)
