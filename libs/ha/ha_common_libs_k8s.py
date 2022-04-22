@@ -50,6 +50,7 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 from config.s3 import S3_BLKBOX_CFG
+from commons.utils import config_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1464,8 +1465,7 @@ class HAK8s:
         LOGGER.info("Cluster is in degraded state")
 
         LOGGER.info(" Check services status that were running on pod %s", pod_name)
-        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=hostname)
+        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
             return False,resp
@@ -1480,3 +1480,82 @@ class HAK8s:
             return False, resp
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
+
+    def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
+        """
+        Takes a dict with nested lists and dicts,
+        and searches all dicts for a key of the field
+        provided.
+        """
+        fields_found = []
+
+        for key, value in search_dict.items():
+
+            if key == field:
+                fields_found.append(value)
+                if replace_key:
+                    search_dict[replace_key] = search_dict.pop(key)
+                    search_dict[replace_key] = replace_val
+
+            elif isinstance(value, dict):
+                results = self.get_replace_recursively(value, field, replace_key, replace_val)
+                for result in results:
+                    fields_found.append(result)
+
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        more_results = self.get_replace_recursively(item, field, replace_key,
+                                                                    replace_val)
+                        for another_result in more_results:
+                            fields_found.append(another_result)
+
+        return fields_found
+
+    def update_deployment_yaml(self, pod_obj, pod_name, find_key, replace_key=None,
+                               replace_val=None):
+        """
+
+        """
+        resp = pod_obj.get_deploy_replicaset(pod_name)
+        deploy = resp[1]
+        LOGGER.info("Deployment for pod %s is %s", pod_name, deploy)
+        LOGGER.info("Taking deployment backup")
+        resp = pod_obj.backup_deployment(deploy)
+        yaml_path = resp[1]
+        LOGGER.info("Copy deployment yaml file to local system")
+        resp = pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=yaml_path)
+        if not resp[0]:
+            return resp
+        resp = config_utils.read_yaml(yaml_path)
+        if not resp[0]:
+            return resp
+        data = resp[1]
+        LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
+        self.get_replace_recursively(data, find_key, replace_key, replace_val)
+        resp = config_utils.write_yaml(fpath=yaml_path, write_data=data, backup=True,
+                                       sort_keys=False)
+        LOGGER.debug("Response: %s", resp)
+
+        return resp, f'{yaml_path}.bkp'
+
+    @staticmethod
+    def failover_pod(pod_obj, pod_name, failover_node):
+        """
+
+        """
+        cur_node = pod_obj.get_pods_node_fqdn(common_const.CONTROL_POD_NAME_PREFIX).get(pod_name)
+        LOGGER.info("Current pod %s is hosted on %s", pod_name, cur_node)
+
+        LOGGER.info("Failing over pod %s to node %s", pod_name, failover_node)
+        deploy = pod_obj.get_deploy_replicaset(pod_name)[1]
+        cmd = common_cmd.CHANGE_POD_NODE.format(deploy, failover_node)
+        try:
+            LOGGER.debug("Running command: %s", cmd)
+            resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+        except IOError as error:
+            LOGGER.error("Failed to failover pod due to error: %s", error)
+            return False, error
+
+        return True, resp

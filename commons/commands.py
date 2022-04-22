@@ -88,6 +88,9 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 DOS2UNIX_CMD = "yum install dos2unix -y; dos2unix {}"
+CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' -p='[{'op':'replace', "\
+                  "'path':'/spec/template/spec/nodeSelector', "\
+                  "'value':{'kubernetes.io/hostname':'{}'} }]'"
 
 CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
 
@@ -477,47 +480,49 @@ FI_TEST = 'test'
 # Kubernetes commands to interact with service/pods.
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
                     + " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
-K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
-K8S_SVC_CMD = "kubectl get svc"
-K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
-K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
-K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
-K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
-K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
-K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
-K8S_GET_PODS = "kubectl get pods"
-K8S_GET_MGNT = "kubectl get pods -o wide"
-K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
+K8S_LDAP_CMD = "kubectl exec -it openldap-0 -n cortx -- /bin/bash -c \"{}\""
+K8S_SVC_CMD = "kubectl get svc -n cortx"
+K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule -n cortx"
+K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule- -n cortx"
+K8S_CHK_TAINT = "kubectl describe node {} -n cortx | grep Taints"
+K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {} -n cortx"
+K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {} -n cortx"
+K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {} -n cortx"
+K8S_GET_PODS = "kubectl get pods -n cortx"
+K8S_GET_MGNT = "kubectl get pods -o wide -n cortx"
+K8S_DELETE_POD = "kubectl delete pod {} -n cortx"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json -n cortx"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_MASTER_NODE = "kubectl get nodes -l node-role.kubernetes.io/master | awk '{print $1}'"
-K8S_GET_SVC_JSON = "kubectl get svc -o json"
-K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
+K8S_GET_SVC_JSON = "kubectl get svc -o json -n cortx"
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -n cortx -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
-K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
+K8S_CONSUL_UPDATE_CMD = 'kubectl -n cortx exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
-KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
+KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}' -n cortx"
 KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'
-KUBECTL_GET_POD_NAMES = 'kubectl get pods --no-headers -o custom-columns=":metadata.name"'
-KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
-KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
-KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
-KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
-KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
-KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
-KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
-KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
+KUBECTL_GET_POD_NAMES = 'kubectl get pods --no-headers -o custom-columns=":metadata.name" -n cortx'
+KUBECTL_GET_REPLICASET = "kubectl get rs -n cortx | grep '{}'"
+KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels -n cortx | grep '{}'"
+KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{} -n cortx"
+KUBECTL_DEL_DEPLOY = "kubectl delete deployment {} -n cortx"
+KUBECTL_DEPLOY_BACKUP = "kubectl -n cortx get deployment {} -o yaml > {}"
+KUBECTL_RECOVER_DEPLOY = "kubectl -n cortx create -f {}"
+KUBECTL_GET_POD_HOSTNAME = "kubectl -n cortx exec -it {} -c cortx-hax -- hostname"
+KUBECTL_GET_RECENT_POD = "kubectl get pods -n cortx --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
-KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
-KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
+KUBECTL_GET_POD_DEPLOY = "kubectl get pods -n cortx -l app={} -o custom-columns=:metadata.name"
+KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -n cortx -l app={} -o " \
+                                "custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
-KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
-KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
+
+KUBECTL_GET_RPM = "kubectl -n cortx exec -it {} -c {} -- rpm -qa|grep -i {}"
+KUBECTL_SET_CONTEXT = "kubectl -n cortx config set-context --current --namespace={}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 
 # Fetch logs of a pod/service in a namespace.
@@ -545,9 +550,9 @@ UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
-CMD_POD_STATUS = "kubectl get pods"
-CMD_SRVC_STATUS = "kubectl get services"
-CMD_GET_NODE = "kubectl get nodes"
+CMD_POD_STATUS = "kubectl get pods -n cortx"
+CMD_SRVC_STATUS = "kubectl get services -n cortx"
+CMD_GET_NODE = "kubectl get nodes -n cortx"
 
 # LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
