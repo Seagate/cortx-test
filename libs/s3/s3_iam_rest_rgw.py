@@ -32,13 +32,15 @@ from time import gmtime, strftime
 from aiohttp import ClientSession, ClientError
 
 from config import CMN_CFG
-from comptests.s3.exceptions.http_client_exception import HttpClientException
+from commons import params
+from comptests.s3.exceptions.s3_client_exception import HttpClientException
 from comptests.s3.exceptions.s3_client_exception import S3ClientException
 
 class HttpClient:
-    '''Base HTTP client for CORTX utils.
+    '''
+     Base HTTP client for CORTX utils.
      Enable user to asynchronously send HTTP requests.
-     '''
+    '''
     #pylint: disable-msg=too-many-arguments
     def __init__(
         self, host: str = 'localhost', port: int = 30080,
@@ -208,7 +210,7 @@ class RestApiRgw:
         rgwcli = S3Client(
            self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
         status, body = await rgwcli.signed_http_request(
-            'PUT', '/admin/user', query_params=user_params)
+            'PUT', params.IAM_USER, query_params=user_params)
         user_info = json.loads(body)
         return status, user_info
     async def delete_user(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
@@ -221,7 +223,7 @@ class RestApiRgw:
         rgwcli = S3Client(
             self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
         status = await rgwcli.signed_http_request(
-            'DELETE', '/admin/user', query_params=user_params)
+            'DELETE', params.IAM_USER, query_params=user_params)
         return status
 
     async def get_user_info(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
@@ -234,5 +236,5 @@ class RestApiRgw:
         rgwcli = S3Client(
             self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
         status, user_info = await rgwcli.signed_http_request(
-            'GET', '/admin/user', query_params=user_params)
+            'GET', params.IAM_USER, query_params=user_params)
         return status, user_info
