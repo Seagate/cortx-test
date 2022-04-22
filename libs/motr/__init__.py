@@ -39,3 +39,6 @@ TEMP_128M_FILE_PATH = "/tmp/128M"
 #Read test workload
 WORKLOAD_CFG = config_utils.read_yaml("config/motr/test_workload.yaml")
 
+# Motr configs
+BSIZE_LAYOUT_MAP = {'4K':1, '8K':2, '16K':3, '32K':4, '64K':5, '128K':6, '256K':7,
+                        '512K':8, '1M':9, '2M':10, '4M':11, '8M':12, '16M':13}

@@ -202,7 +202,7 @@ class TestPodFailure:
             LOGGER.info("Cleanup: Cluster deployment successfully")
 
         LOGGER.info("Cleanup: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
 
@@ -1515,7 +1515,7 @@ class TestPodFailure:
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
-            assert_utils.assert_true(False, "Background process failed to do reads")
+            assert_utils.assert_true(False, "Failed to do reads")
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1538,11 +1538,11 @@ class TestPodFailure:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
-            assert_utils.assert_true(False, "Background process failed to do deletes")
+            assert_utils.assert_true(False, "Failed to do deletes")
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
-                                  f"Failed to delete buckets: {event_del_bkt} and {fail_del_bkt}")
+                                  f"Failed to delete buckets: {event_del_bkt} OR {fail_del_bkt}")
 
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
@@ -1598,7 +1598,7 @@ class TestPodFailure:
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not wr_resp:
-            assert_utils.assert_true(False, "Background process failed to do writes")
+            assert_utils.assert_true(False, "Failed to do writes")
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         event_put_bkt = wr_resp[1]  # Contains buckets when event was set
         fail_put_bkt = wr_resp[2]  # Contains buckets which failed when event was clear
@@ -1719,7 +1719,7 @@ class TestPodFailure:
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not rd_resp:
-            assert_utils.assert_true(False, "Background process failed to do reads")
+            assert_utils.assert_true(False, "Failed to READ/Verify remaining buckets.")
         event_bkt_get = rd_resp[0]
         fail_bkt_get = rd_resp[1]
         event_di_bkt = rd_resp[2]
@@ -1742,7 +1742,7 @@ class TestPodFailure:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
-            assert_utils.assert_true(False, "Background process failed to do deletes")
+            assert_utils.assert_true(False, "Failed to DELETE remaining buckets.")
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),

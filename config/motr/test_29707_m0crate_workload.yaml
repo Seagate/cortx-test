@@ -1,0 +1,33 @@
+CrateConfig_Sections:
+- MOTR_CONFIG
+- WORKLOAD_SPEC
+MOTR_CONFIG:
+  MOTR_LOCAL_ADDR: inet:tcp:cortx-data-headless-svc-ssc-vm-rhev4-2209@21501
+  MOTR_HA_ADDR: inet:tcp:cortx-data-headless-svc-ssc-vm-rhev4-2209@22001
+  PROF: 0x7000000000000001:0x192
+  PROCESS_FID: 0x7200000000000001:0x51
+  LAYOUT_ID: 4
+  IS_OOSTORE: 1
+  IS_READ_VERIFY: 0
+  TM_RECV_QUEUE_MIN_LEN: 16
+  MAX_RPC_MSG_SIZE: 262144
+  IDX_SERVICE_ID: 1
+  ADDB_INIT: 1
+WORKLOAD_SPEC:
+- WORKLOAD:
+    WORKLOAD_TYPE: 1
+    WORKLOAD_SEED: tstamp
+    OPCODE: 3
+    IOSIZE: 128m
+    BLOCK_SIZE: 4m
+    BLOCKS_PER_OP: 1
+    RAND_IO: 1
+    MAX_NR_OPS: 1
+    NR_OBJS: 5
+    NR_THREADS: 5
+    MODE: 1
+    THREAD_OPS: 0
+    NR_ROUNDS: 1
+    EXEC_TIME: unlimited
+    SOURCE_FILE: /tmp/128M
+    LOG_LEVEL: 2

@@ -52,6 +52,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
+from libs.ha.ha_common_libs_k8s import HAK8s
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -1569,3 +1570,85 @@ class ProvDeployK8sCortxLib:
             resp = master_node_list.execute_cmd(cmd, read_lines=True)
             resp_list.append(resp[1])
         return True, resp_list
+
+    def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: image_dict: Dict with images
+        :return: True/False and local file
+        """
+        LOGGER.info("Pull Cortx image.")
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            soln.close()
+        for image in image_dict:
+            if image == "cortxcontrol":
+                parent_key['images'][image] = image_dict['cortxcontrol']
+            elif image == "cortxha":
+                parent_key['images'][image] = image_dict['cortxha']
+            elif image == "cortxdata":
+                parent_key['images'][image] = image_dict['cortxdata']
+            elif image == "cortxserver":
+                parent_key['images'][image] = image_dict['cortxserver']
+            else:
+                LOGGER.info("Error")
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
+
+    @staticmethod
+    def get_installed_version(master_node_obj):
+        """
+        Get installed version for image
+        return : image version
+        """
+        resp = HAK8s.get_config_value(master_node_obj)
+        version = resp[1]['cortx']['common']['release']['version']
+        return version
+
+    @staticmethod
+    def compare_version(installing_version, installed_version):
+        """
+        Compare two version
+        return : none
+        """
+        if installing_version > installed_version:
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+
+    @staticmethod
+    def generate_and_compare_version(input_installing_version, installed_version):
+        """
+        Compare two version
+        return : none
+        """
+        installing_version = input_installing_version.split(":")[1].split("-")
+        installing_version = installing_version[0] + "-" + installing_version[1]
+        LOGGER.info("Installing CORTX image verson: %s", installing_version)
+        if installing_version > installed_version:
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+
+    @staticmethod
+    def generate_and_compare_both_version(input_installing_version, installed_version):
+        """
+        Compare two version
+        return : none
+        """
+        installing_version = input_installing_version.split(":")[1].split("-")
+        installing_version = installing_version[0] + "-" + installing_version[1]
+        LOGGER.info("Installing CORTX image verson: %s", installing_version)
+        if installing_version > installed_version:
+            LOGGER.info("Installing version is higher than installed version.")
+        else:
+            LOGGER.info("Installing version is not higher than installed version.")
+        return installing_version
+
