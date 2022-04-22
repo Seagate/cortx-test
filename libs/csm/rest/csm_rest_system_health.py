@@ -636,22 +636,22 @@ class SystemHealth(RestTestLib):
         """
         This method POST resource failure/shutdown event/signal to cluster
         :param req_body: POST operation request body
-        :param resource: Post request body info
+        :param resource: POST request body info
         :return: bool, POST API response
         """
-        # Building request url to POST node failure signal
+        # Building request url to POST resource failure signal
         ep = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
         headers = self.headers
         conf_headers = self.config["Login_headers"]
         headers.update(conf_headers)
-        self.log.info("Post event for %s endpoint is %s", resource, ep)
+        self.log.info("POST REST API Endpoint :", ep)
         # Fetching api response
         response = self.restapi.rest_call("post", endpoint=ep, data=json.dumps(req_body),
                                           headers=headers)
         if response.status_code != HTTPStatus.OK:
             self.log.error("POST REST API response : %s", response)
             return False, response
-        self.log.info("POST REST API response : %s", response)
+        self.log.info("POST REST API response : %s", response.json())
         return True, response.json()
 
     @RestTestLib.authenticate_and_login
@@ -662,18 +662,18 @@ class SystemHealth(RestTestLib):
             resource: str = "node"):
         """
         This method GET resource status
-        :param resource: resource type (eg. node)
-        :param resource_id: ID of the resource for which user want to fetch status
+        :param resource: Resource type (eg. node)
+        :param resource_id: Resource ID for which user want to fetch status
         :return: bool, GET API response
         """
         pass
         # Building request url to GET resource status
         self.log.info("GET the status for %s", resource)
         ep = "{}/{}/{}".format(self.config["cluster_status_endpoint"], resource, resource_id)
-        self.log.info("Endpoint for GET %s status operation is %s", resource, ep)
+        self.log.info("GET REST API Endpoint: %s", ep)
         # Fetching api response
         response = self.restapi.rest_call(request_type="get", endpoint=ep, headers=self.headers)
         if response.status_code != HTTPStatus.OK:
             return False, response
-        self.log.info("GET %s status operation response = %s", resource, response.json())
+        self.log.info("GET API %s status response = %s", resource, response.json())
         return True, response.json()
