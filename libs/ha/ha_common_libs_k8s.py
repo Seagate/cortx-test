@@ -1512,13 +1512,11 @@ class HAK8s:
                                                                    resource=rsc)
                     pod_info[pod]['status'] = resp[0]
             for pod in pod_info.keys():
-                if pod_info[pod]['status']:
-                    return True, "Expected cluster status is offline"
-            return False, "Expected cluster status is degraded"
+                if not pod_info[pod]['status']:
+                    return False, "Expected cluster status is degraded"
+            return True, "Expected cluster status is offline"
 
-        mark_fail = True
-        if go_random:
-            mark_fail = self.system_random.choice([True, False])
+        mark_fail = random.choice([True, False]) if go_random else True
         if mark_fail:
             data_val = {"operation": rsc_opt,
                         "arguments": {"id": f"{pod_info[list(pod_info.keys())[0]]['id']}"}}
