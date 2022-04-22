@@ -1549,28 +1549,26 @@ class ProvDeployK8sCortxLib:
             PROV_CFG['k8s_cortx_deploy']["k8s_dir"]), read_lines=True)
         return resp
 
-    @staticmethod
-    def pre_check(master_node_list):
+    def pre_check(self, master_node_list):
         """
         This method will dump all the info before deployment starts
         It will capture the taint nodes is any stale entries left out like
         services or any other resources.
         Param: master_node_list: node obj for master node.
-        returns true, resp
+        returns true, resp_list
         """
-        taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format("\n")
-        all_resource = common_cmd.KUBECTL_GET_ALL
-        get_secret = common_cmd.KUBECTL_GET_SECRET
-        get_pv = common_cmd.KUBECTL_GET_PV
-        get_pvc = common_cmd.KUBECTL_GET_PVC
+        taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format(self.deploy_cfg["pre_check_log"])
+        all_resource = common_cmd.KUBECTL_GET_ALL.format(self.deploy_cfg["pre_check_log"])
+        get_secret = common_cmd.KUBECTL_GET_SECRET.format(self.deploy_cfg["pre_check_log"])
+        get_pv = common_cmd.KUBECTL_GET_PV.format(self.deploy_cfg["pre_check_log"])
+        get_pvc = common_cmd.KUBECTL_GET_PVC.format(self.deploy_cfg["pre_check_log"])
         list_pre_check = [taint_cmd, all_resource, get_secret, get_pvc, get_pv]
         LOGGER.info("======== Running Pre-checks before deployment ==========")
-        resp_list = []
         for cmd in list_pre_check:
             resp = master_node_list.execute_cmd(cmd, read_lines=True)
-            resp_list.append(resp[1])
-        return True, resp_list
+        return True
 
+    @staticmethod
     def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
         """
         Helper function to update image in solution.yaml.
