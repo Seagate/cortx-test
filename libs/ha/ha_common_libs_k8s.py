@@ -1491,20 +1491,16 @@ class HAK8s:
         :return: str (value)
         """
         fields_found = []
-
         for key, value in search_dict.items():
-
             if key == field:
                 fields_found.append(value)
                 if replace_key:
                     search_dict[replace_key] = search_dict.pop(key)
                     search_dict[replace_key] = replace_val
-
             elif isinstance(value, dict):
                 results = self.get_replace_recursively(value, field, replace_key, replace_val)
                 for result in results:
                     fields_found.append(result)
-
             elif isinstance(value, list):
                 for item in value:
                     if isinstance(item, dict):

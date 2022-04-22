@@ -483,7 +483,7 @@ LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
 K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
 K8S_SVC_CMD = "kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
-K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule- "
+K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
 K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
@@ -516,8 +516,7 @@ KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"
-KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o " \
-                                "custom-columns=:metadata.name " \
+KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
 
