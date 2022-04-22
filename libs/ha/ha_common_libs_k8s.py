@@ -1484,46 +1484,39 @@ class HAK8s:
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
 
-    def mark_node_failure(self, pod_info: dict, go_random: bool = False, multinode: bool = False,
+    def mark_node_failure(self, mnode_obj, pod_list: list, go_random: bool = False,
                           rsc_opt: str = "mark_node_failure", rsc: str = "node"):
         """
         Helper function to set node/pod (or multi-node/pod) status to Failed random if go_random.
-        :param pod_info: Dictionary with pod info for POST operation
+        :param pod_list: List of pod/nodes to be marked as failed
         :param go_random: If True, send mark failure signal to node/pod randomly
-        :param multinode: If True, send mark failure signal multi-node/pod randomly
+        :param mnode_obj: Master node object to fetch the pod/node ID
         :param rsc_opt = Operation to be performed on resource (eg. mark_node_failure)
         :param rsc = resource type (eg. node)
         :return: bool, response
         """
-        if multinode:                                       # For K node failure Testing
-            if go_random:
-                for pod in pod_info.keys():
-                    if self.system_random.choice([True, False]):
-                        data_val = {"operation": rsc_opt,
-                                    "arguments": {"id": f"{pod_info[pod]['id']}"}}
-                        resp = self.system_health.post_resource_signal(req_body=data_val,
-                                                                       resource=rsc)
-                        pod_info[pod]['status'] = resp[0]
-            else:
-                for pod in pod_info.keys():
+        pod_info = {}
+        pod_data = {'id': None, 'status': False}
+        for pod in pod_list:
+            pod_info[pod] = pod_data.copy()
+            pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+
+        if go_random:
+            for pod in pod_list:
+                if self.system_random.choice([True, False]):
                     data_val = {"operation": rsc_opt,
                                 "arguments": {"id": f"{pod_info[pod]['id']}"}}
                     resp = self.system_health.post_resource_signal(req_body=data_val,
                                                                    resource=rsc)
                     pod_info[pod]['status'] = resp[0]
-            for pod in pod_info.keys():
-                if not pod_info[pod]['status']:
-                    return False, "Expected cluster status is degraded"
-            return True, "Expected cluster status is offline"
-
-        mark_fail = random.choice([True, False]) if go_random else True
-        if mark_fail:
-            data_val = {"operation": rsc_opt,
-                        "arguments": {"id": f"{pod_info[list(pod_info.keys())[0]]['id']}"}}
-            resp = self.system_health.post_resource_signal(req_body=data_val,
-                                                           resource=rsc)
-            if resp[0]:                                 # node/pod will be Failed state
-                pod_info[list(pod_info.keys())[0]]['status'] = resp[0]
-                return True, resp[1]['message']
-            # node/pod will be offline state
-            return False, f"Failed to mark {list(pod_info.keys())[0]} status as Failed"
+        else:
+            for pod in pod_list:
+                data_val = {"operation": rsc_opt,
+                            "arguments": {"id": f"{pod_info[pod]['id']}"}}
+                resp = self.system_health.post_resource_signal(req_body=data_val,
+                                                               resource=rsc)
+                pod_info[pod]['status'] = resp[0]
+        for pod in pod_list:
+            if not pod_info[pod]['status']:
+                return False, pod_info, "Some of pods status is offline"
+        return True, pod_info, f"{pod_list} marked as failed"
