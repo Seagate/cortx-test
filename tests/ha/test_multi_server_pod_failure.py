@@ -57,7 +57,7 @@ LOGGER = logging.getLogger(__name__)
 # 4pylint: disable=R090
 class TestMultiServerPodFailure:
     """
-    Test suite for Multiple (K) Server Pods Failure
+    Test suite for Multiple Server Pods Failure
     """
 
     @classmethod
@@ -236,7 +236,7 @@ class TestMultiServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40567")
     @CTFailOn(error_handler)
-    def test_degraded_reads_kserverpods_fail(self):
+    def test_reads_kserver_pods_fail(self):
         """
         Test to verify degraded READs after all K server pods are failed.
         """
@@ -259,7 +259,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
-        LOGGER.info("Step 3: Shutdown the server pod by deleting deployment (unsafe)")
+        LOGGER.info("Step 3: Shutdown %s server pod by deleting deployment (unsafe)", self.kvalue)
         LOGGER.info("Get pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         self.pod_name_list = random.sample(pod_list, self.kvalue)
@@ -283,7 +283,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 4: Cluster has some failures due to %s server pod has gone down.",
+        LOGGER.info("Step 4: Cluster has some failures due to %s server pods has gone down.",
                     self.kvalue)
 
         LOGGER.info("Step 5: Check services status that were running on server pods"
