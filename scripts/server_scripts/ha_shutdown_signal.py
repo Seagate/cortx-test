@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,11 +16,19 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""HttpClientException  Module."""
-class HttpClientException(Exception):
+"""
+This script will be sending a mock shutdown signal to HA.
+This has to be executed inside HA container.
+"""
 
-    """Base class for HTTP client's exceptions."""
-
-class S3ClientException(HttpClientException):
-
-    """Base class for S3Client exceptions."""
+from cortx.utils.conf_store import Conf
+from ha import const
+from ha.util.message_bus import MessageBus
+from ha.core.config.config_manager import ConfigManager
+ConfigManager.init("test_Cluster_stop_sigterm")
+confstore = ConfigManager.get_confstore()
+MessageBus.init()
+PRODUCER_ID="csm_producer"
+message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const.HA_DELIM}message_type')
+producer = MessageBus.get_producer(producer_id=PRODUCER_ID, message_type=message_type)
+producer.publish({"start_cluster_shutdown":1})
