@@ -20,17 +20,19 @@
 """
 HA common utility methods
 """
+import copy
+import json
 import logging
 import os
 import random
+import secrets
 import sys
 import time
-import copy
+from ast import literal_eval
 from multiprocessing import Process
 from time import perf_counter_ns
+
 import yaml
-import json
-from ast import literal_eval
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -41,6 +43,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
+from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -49,7 +52,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,6 +78,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
+        self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
 
     def polling_host(self,
@@ -1495,7 +1498,7 @@ class HAK8s:
         if multinode:                                       # For K node failure Testing
             if go_random:
                 for pod in pod_info.keys():
-                    if random.choice([True, False]):
+                    if self.system_random.choice([True, False]):
                         data_val = {"operation": rsc_opt,
                                     "arguments": {"id": f"{pod_info[pod]['id']}"}}
                         resp = self.system_health.post_resource_signal(req_body=data_val,
@@ -1512,17 +1515,17 @@ class HAK8s:
                 if pod_info[pod]['status']:
                     return True, "Expected cluster status is offline"
             return False, "Expected cluster status is degraded"
-        else:
-            mark_fail = True
-            if go_random:
-                mark_fail = random.choice([True, False])
-            if mark_fail:
-                data_val = {"operation": rsc_opt,
-                            "arguments": {"id": f"{pod_info[list(pod_info.keys())[0]]['id']}"}}
-                resp = self.system_health.post_resource_signal(req_body=data_val,
-                                                               resource=rsc)
-                if resp[0]:                                 # node/pod will be Failed state
-                    pod_info[list(pod_info.keys())[0]]['status'] = resp[0]
-                    return True, resp[1]['message']
-                else:                                       # node/pod will be offline state
-                    return False, f"Failed to mark {list(pod_info.keys())[0]} status as Failed"
+
+        mark_fail = True
+        if go_random:
+            mark_fail = self.system_random.choice([True, False])
+        if mark_fail:
+            data_val = {"operation": rsc_opt,
+                        "arguments": {"id": f"{pod_info[list(pod_info.keys())[0]]['id']}"}}
+            resp = self.system_health.post_resource_signal(req_body=data_val,
+                                                           resource=rsc)
+            if resp[0]:                                 # node/pod will be Failed state
+                pod_info[list(pod_info.keys())[0]]['status'] = resp[0]
+                return True, resp[1]['message']
+            # node/pod will be offline state
+            return False, f"Failed to mark {list(pod_info.keys())[0]} status as Failed"

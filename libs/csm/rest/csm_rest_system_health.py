@@ -640,13 +640,13 @@ class SystemHealth(RestTestLib):
         :return: bool, POST API response
         """
         # Building request url to POST resource failure signal
-        ep = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
         headers = self.headers
         conf_headers = self.config["Login_headers"]
         headers.update(conf_headers)
-        self.log.info("POST REST API Endpoint :", ep)
+        self.log.info("POST REST API Endpoint :", endpoint)
         # Fetching api response
-        response = self.restapi.rest_call("post", endpoint=ep, data=json.dumps(req_body),
+        response = self.restapi.rest_call("post", endpoint=endpoint, data=json.dumps(req_body),
                                           headers=headers)
         if response.status_code != HTTPStatus.OK:
             self.log.error("POST REST API response : %s", response)
@@ -666,13 +666,13 @@ class SystemHealth(RestTestLib):
         :param resource_id: Resource ID for which user want to fetch status
         :return: bool, GET API response
         """
-        pass
         # Building request url to GET resource status
         self.log.info("GET the status for %s", resource)
-        ep = "{}/{}/{}".format(self.config["cluster_status_endpoint"], resource, resource_id)
-        self.log.info("GET REST API Endpoint: %s", ep)
+        endpoint = "{}/{}/{}".format(self.config["cluster_status_endpoint"], resource, resource_id)
+        self.log.info("GET REST API Endpoint: %s", endpoint)
         # Fetching api response
-        response = self.restapi.rest_call(request_type="get", endpoint=ep, headers=self.headers)
+        response = self.restapi.rest_call(request_type="get",
+                                          endpoint=endpoint, headers=self.headers)
         if response.status_code != HTTPStatus.OK:
             return False, response
         self.log.info("GET API %s status response = %s", resource, response.json())
