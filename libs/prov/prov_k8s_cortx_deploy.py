@@ -1566,7 +1566,13 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("======== Running Pre-checks before deployment ==========")
         for cmd in list_pre_check:
             resp = master_node_list.execute_cmd(cmd, read_lines=True)
-        return True
+        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, self.deploy_cfg["pre_check_log"])
+        if master_node_list.path_exists(self.deploy_cfg["pre_check_log"]):
+            master_node_list.copy_file_to_local(remote_path=self.deploy_cfg["pre_check_log"],
+                                                local_path=local_path)
+            master_node_list.execute_cmd(
+                common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["pre_check_log"]))
+        return True, resp
 
     @staticmethod
     def update_sol_with_image_any_pod(file_path: str, image_dict: dict) -> tuple:
