@@ -1218,6 +1218,11 @@ class ProvDeployK8sCortxLib:
                     assert_utils.assert_true(resp[0], resp[1])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
+                LOGGER.info("Setting the current namespace")
+                resp_ns = master_node_list[0].execute_cmd(
+                    cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
+                    read_lines=True)
+                LOGGER.debug("response is %s,", resp_ns)
                 resp = system_utils.execute_cmd(
                     common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
                 eth1_ip = resp[1].strip("'\\n'b'")
