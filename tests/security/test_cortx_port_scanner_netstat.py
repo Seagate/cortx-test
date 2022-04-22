@@ -21,6 +21,7 @@ import os
 import pytest
 from kubernetes import client, config
 from kubernetes.stream import stream
+from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,12 +72,12 @@ def test_cortx_port_scanner_netstat():
                 LOGGER.info(list_each_con.name)
                 LOGGER.info(" Installing net-tools")
                 resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, \
-                              item.metadata.name, "default", container=list_each_con.name, \
+                              item.metadata.name, const.NAMESPACE, container=list_each_con.name, \
                               command=cmd_install_net_tool, stderr=True, stdin=False, \
                               stdout=True, tty=False, _preload_content=True)
                 LOGGER.info("Executing netstat")
                 resp = stream(client.CoreV1Api().connect_get_namespaced_pod_exec, \
-                              item.metadata.name, "default", container=list_each_con.name, \
+                              item.metadata.name, const.NAMESPACE, container=list_each_con.name, \
                               command=cmd_run_netstat, stderr=True, stdin=False, \
                               stdout=True, tty=False, _preload_content=True)
                 for each_port in resp.splitlines():

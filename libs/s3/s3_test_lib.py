@@ -513,6 +513,35 @@ class S3TestLib(S3Lib):
 
         return True, response
 
+    def create_multiple_buckets(self,bucket_count: int, bucket_prefix: str ) -> tuple:
+        """
+        Create given number of buckets with specified prefix.
+
+        :param bucket_count: No. of buckets to create.
+        :param bucket_prefix: Prefix for bucket name.
+        :return: list of created buckets.
+        """
+        response = list()
+        try:
+            for count in range(bucket_count):
+                bucket_name = "{}-{}-{}".format(bucket_prefix,
+                                                str(count), str(time.time()))
+                resp_bucket = self.create_bucket(bucket_name)
+                if not resp_bucket[0]:
+                    LOGGER.error('Bucket name does not match as requested,'
+                                    ' Expected : %s, Received : %s',bucket_name,resp_bucket[1])
+                    raise Exception('Bucket name does not match')
+                response.append(resp_bucket[1])
+        except (ClientError, Exception) as error:
+            LOGGER.error(
+                "Error in %s: %s",
+                S3TestLib.create_multiple_buckets.__name__,
+                error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+
     def put_random_size_objects(self,
                                 bucket_name: str = None,
                                 object_name: str = None,
