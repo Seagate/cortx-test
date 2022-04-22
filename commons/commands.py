@@ -517,6 +517,13 @@ KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:m
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
+
+KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
+                          "NAME:.metadata.name,TAINTS:.spec.taints --no-headers"
+KUBECTL_GET_ALL = "kubectl get all -A"
+KUBECTL_GET_SECRET = "kubectl get secret -A"
+KUBECTL_GET_PVC = "kubectl get pvc -A"
+KUBECTL_GET_PV = "kubectl get pv"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 

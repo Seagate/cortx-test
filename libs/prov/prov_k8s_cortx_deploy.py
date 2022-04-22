@@ -364,8 +364,11 @@ class ProvDeployK8sCortxLib:
         self.prereq_git(master_node_list[0], git_tag)
         self.checkout_update_deploy_script(master_node_list[0], self.git_script_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
+        pre_check_resp = self.pre_check(master_node_list[0])
+        LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
+
         LOGGER.info("Setting the current namespace")
         resp_ns = master_node_list[0].execute_cmd(
             cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
@@ -1163,13 +1166,13 @@ class ProvDeployK8sCortxLib:
                 LOGGER.info("Step to Perform k8s Cluster Deployment")
                 resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
                 assert_utils.assert_true(resp[0], resp[1])
+
+        if cortx_cluster_deploy_flag:
             LOGGER.info("Step to Taint master nodes if not already done.")
             for node in master_node_list:
                 resp = self.validate_master_tainted(node)
                 if not resp:
                     self.taint_master(node)
-
-        if cortx_cluster_deploy_flag:
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
@@ -1544,3 +1547,25 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(common_cmd.UPGRADE_CLUSTER_DESTRUPTIVE_CMD.format(
             PROV_CFG['k8s_cortx_deploy']["k8s_dir"]), read_lines=True)
         return resp
+
+    @staticmethod
+    def pre_check(master_node_list):
+        """
+        This method will dump all the info before deployment starts
+        It will capture the taint nodes is any stale entries left out like
+        services or any other resources.
+        Param: master_node_list: node obj for master node.
+        returns true, resp
+        """
+        taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format("\n")
+        all_resource = common_cmd.KUBECTL_GET_ALL
+        get_secret = common_cmd.KUBECTL_GET_SECRET
+        get_pv = common_cmd.KUBECTL_GET_PV
+        get_pvc = common_cmd.KUBECTL_GET_PVC
+        list_pre_check = [taint_cmd, all_resource, get_secret, get_pvc, get_pv]
+        LOGGER.info("======== Running Pre-checks before deployment ==========")
+        resp_list = []
+        for cmd in list_pre_check:
+            resp = master_node_list.execute_cmd(cmd, read_lines=True)
+            resp_list.append(resp[1])
+        return True, resp_list
