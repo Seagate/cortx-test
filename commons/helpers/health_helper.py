@@ -78,15 +78,16 @@ class Health(Host):
 
     def get_disk_usage(self, dir_path: str, field_val: int = 3,
                        pod_name: str = None,
-                       container_name: str = const.HAX_CONTAINER_NAME) -> float:
+                       container_name: str = const.HAX_CONTAINER_NAME,
+                       namespace: str = const.NAMESPACE) -> float:
         """
         Function will return disk usage associated with given path.
-
         :param dir_path: Directory path of which size is to be calculated
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
         percent used space respectively
-        :pod_name: name of the pod
-        :container_name: name of the container
+        :param pod_name: name of the pod
+        :param container_name: name of the container
+        :param namespace: namespace name
         :return: float value of the disk usage
         """
 
@@ -99,7 +100,6 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             if pod_name is None:
@@ -115,12 +115,14 @@ class Health(Host):
         return float(res.replace('\n', ''))
 
     def get_cpu_usage(self, pod_name: str = None,
-                      container_name: str = const.HAX_CONTAINER_NAME) -> float:
+                      container_name: str = const.HAX_CONTAINER_NAME,
+                      namespace: str = const.NAMESPACE) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
 
-        :pod_name: name of the pod
-        :container_name: name of the container
+        :param pod_name: name of the pod
+        :param container_name: name of the container
+        :param namespace: namespace name
         :return: system cpu usage
         """
         LOG.debug("Fetching system cpu usage from node %s", self.hostname)
@@ -131,7 +133,6 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             if pod_name is None:
@@ -146,9 +147,10 @@ class Health(Host):
         cpu_usage = float(res.replace('\n', ''))
         return cpu_usage
 
-    def get_memory_usage(self):
+    def get_memory_usage(self, namespace: str = const.NAMESPACE):
         """
         Function with fetch the system memory usage percentage from remote host
+        :param namespace: namespace name
         :return: system memory usage in percent
         """
         LOG.debug(
@@ -161,7 +163,6 @@ class Health(Host):
             res = res.decode("utf-8")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             container = const.HAX_CONTAINER_NAME
-            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
@@ -276,10 +277,11 @@ class Health(Host):
                     return False
         return True
 
-    def is_machine_already_configured(self) -> bool:
+    def is_machine_already_configured(self, namespace: str = const.NAMESPACE) -> bool:
         """
         This method checks that machine is already configured or not.
         ex - mero_status_cmd = "hctl status"
+        :param namespace: namespace name
         :return: boolean
         """
         motr_status_cmd = commands.MOTR_STATUS_CMD
@@ -297,7 +299,6 @@ class Health(Host):
             LOG.debug("Machine is already configured..!")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             container = const.HAX_CONTAINER_NAME
-            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
@@ -355,11 +356,12 @@ class Health(Host):
                 return False, "Services are not online"
         return True, "Server is Online"
 
-    def hctl_status_json(self, pod_name=None):
+    def hctl_status_json(self, pod_name=None, namespace: str = const.NAMESPACE):
         """
         This will Check Node status, Logs the output in debug.log file and
         returns the response in json format.
         :param pod_name: Running data pod name to fetch the hctl status
+        :param namespace: namespace name
         :return: Json response of stdout
         :rtype: dict
         """
@@ -378,7 +380,6 @@ class Health(Host):
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             LOG.info("Executing command for LC product family....")
             container = const.HAX_CONTAINER_NAME
-            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             if pod_name is None:
