@@ -21,10 +21,10 @@
 import asyncio
 import time
 import logging
+from http import HTTPStatus
 import pytest
 
 from libs.s3.s3_iam_rest_rgw import RestApiRgw
-from http import HTTPStatus
 from commons import cortxlogging
 
 class TestRestApiRgw:
