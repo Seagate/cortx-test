@@ -61,12 +61,12 @@ class MotrCoreK8s():
         """
         Returns all the cortx nodes endpoints in a dict format
         """
-        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
+        client_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
         node_dict = {}
         if self.cortx_node_list is None:
             self.cortx_node_list = []
         response = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
+            operation="exec", pod=client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME}"
                            f" -- {common_cmd.HCTL_STATUS_CMD_JSON}",
             decode=True)
@@ -75,26 +75,26 @@ class MotrCoreK8s():
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
-                if 'data' in node['name']:
+                if 'client' in node['name']:
                     nodename = node["name"]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
-                    node_dict[nodename]['m0client'] = []
+                    node_dict[nodename]['motr_client'] = []
                     for svc in node["svcs"]:
                         if svc["name"] == "hax":
                             node_dict[nodename]['hax_fid'] = svc["fid"]
                             node_dict[nodename]['hax_ep'] = svc["ep"]
-                        if svc["name"] == "m0_client":
-                            node_dict[nodename]['m0client'].append({"ep": svc["ep"],
+                        if svc["name"] == "motr_client":
+                            node_dict[nodename]['motr_client'].append({"ep": svc["ep"],
                                                                     "fid": svc["fid"]})
         return node_dict
 
     def get_node_pod_dict(self):
         """
-        Returns all the node and data pod names in dict format
+        Returns all the node and motr client pod names in dict format
         """
         node_pod_dict = {}
-        cmd = "| awk '/cortx-data/ {print $1}'"
+        cmd = "| awk '/cortx-client/ {print $1}'"
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
@@ -111,7 +111,7 @@ class MotrCoreK8s():
         :returns: Primary(RC) node name in the cluster
         :rtype: str
         """
-        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
+        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
@@ -140,30 +140,25 @@ class MotrCoreK8s():
                 return self.node_dict[key]
         return None
 
-    def get_number_of_m0clients(self, cluster_info_dic=None):
+    def get_number_of_m0clients(self):
         """
-        To get the number of m0clients in a node
-
-        :param cluster_info_dic- Dictionray containing cluster info
-        :type: dictionary
-        :returns: Number of m0clients present in given node
+        To get the number of motr_clients in a node
+        :returns: Number of motr_clients present in given node
         :rtype: integer
         """
-        if cluster_info_dic is None:
-            return len(self.node_dict[self.get_primary_cortx_node()]["m0client"])
-        return len(cluster_info_dic[self.get_primary_cortx_node()]["m0client"])
+        return len(self.node_dict[list(self.node_pod_dict.keys())[0]]["motr_client"])
 
-    def get_node_name_from_pod_name(self, data_pod=None):
+    def get_node_name_from_pod_name(self, client_pod=None):
         """
-        To get Node name from data_pod
-        :param data_pod: Name of the data pod
+        To get Node name from client_pod
+        :param client_pod: Name of the data pod
         :type: str
         :returns: Corresponding Node name
         :rtype: str
         """
         cmd = "hostname"
         node_name = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
+            operation="exec", pod=client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {cmd}",
             decode=True)
@@ -233,14 +228,14 @@ class MotrCoreK8s():
         :layout: Layout ID
         :file: Output file name
         :node: on which node m0cp cmd need to perform
-        :client_num: perform operation on m0client
+        :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP.format(node_dict["m0client"][client_num]["ep"],
+        cmd = common_cmd.M0CP.format(node_dict["motr_client"][client_num]["ep"],
                                      node_dict["hax_ep"],
-                                     node_dict["m0client"][client_num]["fid"],
+                                     node_dict["motr_client"][client_num]["fid"],
                                      self.profile_fid, b_size.lower(),
                                      count, obj, layout, file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
@@ -264,14 +259,14 @@ class MotrCoreK8s():
         :layout: Layout ID
         :file: Output file name
         :node: on which node m0cp cmd need to perform
-        :client_num: perform operation on m0client
+        :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CAT.format(node_dict["m0client"][client_num]["ep"],
+        cmd = common_cmd.M0CAT.format(node_dict["motr_client"][client_num]["ep"],
                                       node_dict["hax_ep"],
-                                      node_dict["m0client"][client_num]["fid"],
+                                      node_dict["motr_client"][client_num]["fid"],
                                       self.profile_fid, b_size.lower(),
                                       count, obj, layout, file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
@@ -291,14 +286,14 @@ class MotrCoreK8s():
         :obj: Object ID
         :layout: Layout ID
         :node: on which node m0cp cmd need to perform
-        :client_num: perform operation on m0client
+        :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0UNLINK.format(node_dict["m0client"][client_num]["ep"],
+        cmd = common_cmd.M0UNLINK.format(node_dict["motr_client"][client_num]["ep"],
                                          node_dict["hax_ep"],
-                                         node_dict["m0client"][client_num]["fid"],
+                                         node_dict["motr_client"][client_num]["fid"],
                                          self.profile_fid, obj, layout)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
@@ -452,14 +447,14 @@ class MotrCoreK8s():
 
         :param: Input Parameters
         :node: on which node m0cp cmd need to perform
-        :client_num: perform operation on m0client
+        :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0KV.format(node_dict["m0client"][client_num]["ep"],
+        cmd = common_cmd.M0KV.format(node_dict["motr_client"][client_num]["ep"],
                                      node_dict["hax_ep"],
-                                     node_dict["m0client"][client_num]["fid"],
+                                     node_dict["motr_client"][client_num]["fid"],
                                      self.profile_fid, param)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
@@ -480,3 +475,4 @@ class MotrCoreK8s():
         log.info("Cluster restarted fine and all Pods online.")
         # Updating the node_pod dict after cluster shutdown
         self.node_pod_dict = self.get_node_pod_dict()
+
