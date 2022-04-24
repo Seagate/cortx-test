@@ -517,7 +517,7 @@ class RestIamUser(RestTestLib):
         :return: response
         """
         self.log.info("Creating IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+        endpoint = self.config["s3_iam_user_endpoint"]
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
@@ -554,8 +554,7 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user_rgw(self, uid, header, purge_data=False, payload: dict = {},
-                            auth_header=True):
+    def delete_iam_user_rgw(self, uid, header, purge_data=False):
         """
         Delete IAM user
         :param uid: userid
@@ -569,18 +568,13 @@ class RestIamUser(RestTestLib):
         if purge_data:
             payload = {"purge_data": True}
 
-        if auth_header:
-            header = self.headers
-        else:
-            header = None
-
         response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
                                           headers=header)
         self.log.info("Delete IAM user request successfully sent...")
         return response
 
     @RestTestLib.authenticate_and_login
-    def get_iam_user_rgw(self, uid, header, payload: dict = {}, auth_header=True):
+    def get_iam_user_rgw(self, uid, header):
         """
         Get IAM user
         :param uid: userid
@@ -589,13 +583,8 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Get IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
-        if auth_header:
-            header = self.headers
-        else:
-            header = None
-
         response = self.restapi.rest_call("get", endpoint=endpoint,
-                                          json_dict=payload,
+                                          json_dict=None,
                                           headers=header)
         self.log.info("Get IAM user request successfully sent...")
         return response
@@ -705,7 +694,7 @@ class RestIamUser(RestTestLib):
         return result, resp
 
     @RestTestLib.authenticate_and_login
-    def modify_iam_user_rgw(self, uid, payload: dict):
+    def modify_iam_user_rgw(self, uid, payload: dict, auth_header=True):
         """
         Modify IAM User parameters.
         :param uid: userid
@@ -714,26 +703,12 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Modifying IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
-        response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
-                                          headers=self.headers)
-        self.log.info("IAM user request successfully sent...")
-        return response
-
-    @RestTestLib.authenticate_and_login
-    def modify_iam_user_keys_rgw(self, uid, payload: dict, auth_header=True):
-        """
-            Modify IAM user info.
-        """
-        self.log.info("Creating IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
-
         if auth_header:
             headers = self.headers
         else:
             headers = None
-
         response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
-                                              headers=headers)
+                                          headers=headers)
         self.log.info("IAM user request successfully sent...")
         return response
 
@@ -801,5 +776,3 @@ class RestIamUser(RestTestLib):
             value = cap_values[value_index]
             random_cap = random_cap + cap_keys[index] + "=" + value + ";"
         return random_cap[:-1]
-
-

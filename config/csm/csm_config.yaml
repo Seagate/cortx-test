@@ -26,8 +26,6 @@ Restcall:
   s3_bucket_endpoint : "/api/v2/s3/bucket"
   IAM_users_endpoint : "/api/v2/iam_users"
   s3_iam_user_endpoint : "/api/v2/s3/iam/users"
-  s3_iam_keys_endpoint : "/api/v2/s3/iam/keys"
-  s3_iam_caps_endpoint : "/api/v2/s3/iam/caps"
   csmuser_endpoint : "/api/v2/csm/users"
   csmuser_permission_endpoint: "/api/v2/permissions"
   bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"
@@ -100,4 +98,3 @@ Restcall_LC:
                        ['stats','timestamp','date']]
   percentage_compare: 10
   cluster_operation_endpoint: "/api/v2/system/management"
-
