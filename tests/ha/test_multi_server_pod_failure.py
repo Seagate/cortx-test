@@ -27,11 +27,9 @@ import os
 import random
 import time
 from time import perf_counter_ns
-import secrets
 import pytest
 
 from config import CMN_CFG
-from config import HA_CFG
 from config.s3 import S3_CFG
 from commons import constants as const
 from commons.ct_fail_on import CTFailOn
@@ -41,10 +39,8 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
-from commons import commands as cmd
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -77,22 +73,14 @@ class TestMultiServerPodFailure:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.pod_name_list = []
-        cls.node_name_list = []
-        cls.node_ip_list = []
-        cls.srv_pod_host_list = []
-        cls.data_pod_host_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = None
-        cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
+        cls.deploy = cls.kvalue = None
         cls.pod_dict = {}
-        cls.ip_dict = {}
         cls.mgnt_ops = ManagementOPs()
-        cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -124,8 +112,6 @@ class TestMultiServerPodFailure:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
-        self.restore_node = False
-        self.restore_ip = False
         self.deploy = False
         self.s3_clean = {}
         LOGGER.info("Check the overall status of the cluster.")
@@ -180,23 +166,6 @@ class TestMultiServerPodFailure:
                                                   "{self.restore_method} way")
                 LOGGER.info("Successfully restored pod %s by %s way",
                             pod_name, self.restore_method)
-        if self.restore_node:
-            for node_name in self.node_name_list:
-                LOGGER.info("Cleanup: Power on the %s down node.", node_name)
-                resp = self.ha_obj.host_power_on(host=node_name)
-                assert_utils.assert_true(resp, "Host f{node_name} is not powered on")
-                LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
-                            " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
-                time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
-        if self.restore_ip:
-            for node_ip in self.node_ip_list:
-                LOGGER.info("Cleanup: Get the network interface up for %s ip", node_ip)
-                node_iface = self.ip_dict.get(node_ip)[0]
-                worker_obj = self.ip_dict.get(node_ip)[1]
-                worker_obj.execute_cmd(cmd=cmd.IP_LINK_CMD.format(node_iface, "up"),
-                                       read_lines=True)
-                resp = sysutils.check_ping(host=node_ip)
-                assert_utils.assert_true(resp, "Interface is still not up.")
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
         # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
@@ -225,7 +194,7 @@ class TestMultiServerPodFailure:
             LOGGER.info("Cleanup: Cluster deployment successfully")
 
         LOGGER.info("Cleanup: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
 
@@ -238,9 +207,10 @@ class TestMultiServerPodFailure:
     @CTFailOn(error_handler)
     def test_reads_kserver_pods_fail(self):
         """
-        Test to verify degraded READs after all K server pods are failed.
+        Test to verify degraded READs after all K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded READs after all K server pods are failed.")
+        LOGGER.info("Started: Test to verify degraded READs after all K server pods "
+                    "down - unsafe shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -269,15 +239,15 @@ class TestMultiServerPodFailure:
             LOGGER.info("Deleting %s pod %s", count, pod_name)
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_false(resp[0], "Failed to delete {count} server pod {pod_name} "
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} server pod {pod_name} "
                                                " by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
-            self.restore_pod = self.deploy = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s server pod %s by deleting deployment (unsafe)", count,
                         pod_name)
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("Step 3: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 4: Check cluster status")
@@ -313,4 +283,5 @@ class TestMultiServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
-        LOGGER.info("Completed: Test to verify degraded READs after all K server pods are failed.")
+        LOGGER.info("Completed: Test to verify degraded READs after all K server pods "
+                    "down - unsafe shutdown.")
