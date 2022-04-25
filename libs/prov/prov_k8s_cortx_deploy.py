@@ -1720,4 +1720,3 @@ class ProvDeployK8sCortxLib:
         else:
             LOGGER.info("Installing version is not higher than installed version.")
         return installing_version
-
