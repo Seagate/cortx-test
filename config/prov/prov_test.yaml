@@ -157,10 +157,10 @@ k8s_cortx_deploy:
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
     consul: 'ghcr.io/seagate/consul:1.11.4'
-    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
-    zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
-    rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
-    busybox: 'ghcr.io/seagate/busybox:latest'
+  kafka: "ghcr.io/seagate/kafka:3.0.0-debian-10-r97"
+  zookeeper: "ghcr.io/seagate/zookeeper:3.8.0-debian-10-r9"
+  rancher: "ghcr.io/seagate/local-path-provisioner:v0.0.20"
+  busybox: "ghcr.io/seagate/busybox:latest"
   cortx_images_key: [ 'cortxcontrol', 'cortxdata', 'cortxserver',
                       'cortxha', 'cortxclient' ]
   password:
