@@ -20,17 +20,18 @@
 """
 HA common utility methods
 """
+import copy
+import json
 import logging
 import os
 import random
 import sys
 import time
-import copy
+from ast import literal_eval
 from multiprocessing import Process
 from time import perf_counter_ns
+
 import yaml
-import json
-from ast import literal_eval
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -38,9 +39,11 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
+from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -49,8 +52,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from config.s3 import S3_BLKBOX_CFG
-from commons.utils import config_utils
 
 LOGGER = logging.getLogger(__name__)
 
