@@ -328,7 +328,8 @@ class ProvDeployK8sCortxLib:
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
-                             git_tag, namespace) -> tuple:
+                             git_tag, namespace: str =
+                             PROV_CFG["k8s_cortx_deploy"]["namespace"]) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
