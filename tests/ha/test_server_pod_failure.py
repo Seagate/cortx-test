@@ -2740,3 +2740,72 @@ class TestServerPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded partial multipart upload after server "
                     "pod unsafe shutdown by deleting deployment.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-32461")
+    @CTFailOn(error_handler)
+    def test_server_pod_failure(self):
+        """
+        Verify IOs before and after server pod failure (pod shutdown by making replicas=0)
+        """
+        LOGGER.info("STARTED: Verify IOs before and after server pod failure; pod shutdown by "
+                    "making replicas=0")
+
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-32461'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the server pod safely by making replicas=0")
+        LOGGER.info("Get server pod name to be shutdown")
+        server_pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_pod_name = random.sample(server_pod_list, 1)[0]
+        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=server_pod_name)
+        LOGGER.info("Shutdown pod %s", server_pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=server_pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to shutdown Server pod {server_pod_name} "
+                                           "by making replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", server_pod_name)
+        self.deployment_name = resp[1]
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_SCALE_REPLICAS
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
+                                                           fail=True, hostname=pod_host)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of %s are in offline state", server_pod_name)
+
+        server_pod_list.remove(server_pod_name)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", server_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_pod_list, fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+        LOGGER.info("STEP 6: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-32461-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
+                    "by making replicas 0")
