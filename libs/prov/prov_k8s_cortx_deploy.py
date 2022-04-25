@@ -73,7 +73,6 @@ class ProvDeployK8sCortxLib:
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
         self.deployment_type = os.getenv("DEPLOYMENT_TYPE", self.deploy_cfg["deployment_type"])
-        self.namespace = os.getenv("NAMESPACE", self.deploy_cfg["namespace"])
         self.lb_count = int(os.getenv("LB_COUNT", self.deploy_cfg["lb_count"]))
         self.nodeport_https = int(os.getenv("HTTPS_PORT", self.deploy_cfg["https_port"]))
         self.nodeport_http = int(os.getenv("HTTP_PORT", self.deploy_cfg["http_port"]))
@@ -329,7 +328,7 @@ class ProvDeployK8sCortxLib:
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
-                             git_tag) -> tuple:
+                             git_tag, namespace) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
@@ -372,7 +371,7 @@ class ProvDeployK8sCortxLib:
 
         LOGGER.info("Setting the current namespace")
         resp_ns = master_node_list[0].execute_cmd(
-            cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
+            cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
             read_lines=True)
         LOGGER.debug("response is %s,", resp_ns)
         local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
@@ -1267,7 +1266,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
-                                             self.git_script_tag)
+                                             self.git_script_tag, namespace)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Check  ALL service status")
             time.sleep(60)
@@ -1285,7 +1284,7 @@ class ProvDeployK8sCortxLib:
             if setup_client_config_flag:
                 LOGGER.info("Setting the current namespace")
                 resp_ns = master_node_list[0].execute_cmd(
-                    cmd=common_cmd.KUBECTL_SET_CONTEXT.format(self.namespace),
+                    cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
                     read_lines=True)
                 LOGGER.debug("response is %s,", resp_ns)
                 resp = system_utils.execute_cmd(
