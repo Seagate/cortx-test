@@ -41,7 +41,7 @@ class RestTestLib:
         self.restapi = RestClient(CSM_REST_CFG)
         self.user_type = ("valid", "duplicate", "invalid", "missing")
         self.headers = {}
-        self.seed = int(time.time)
+        self.seed = int(time.time())
         self.random_gen = Random(self.seed)
         self.log.info("Seed : %s", self.seed)
 

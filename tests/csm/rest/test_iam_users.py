@@ -678,7 +678,7 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
-        max_buckets = randint(1, 1000)
+        max_buckets = self.csm_obj.random_gen.randint(1, 10)
         payload.update({"max_buckets": max_buckets})
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp1)
