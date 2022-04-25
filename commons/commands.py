@@ -88,9 +88,6 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 DOS2UNIX_CMD = "yum install dos2unix -y; dos2unix {}"
-CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
-                  "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
-                  "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
 
 CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
 
@@ -523,6 +520,10 @@ KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:m
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
+K8s_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
+                      "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
+                      "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
+
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""

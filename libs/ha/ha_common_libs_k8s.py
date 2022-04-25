@@ -1537,34 +1537,51 @@ class HAK8s:
             return resp
         data = resp[1]
         LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
-        self.get_replace_recursively(data, find_key, replace_key, replace_val)
+        val = self.get_replace_recursively(data, find_key, replace_key, replace_val)
+        if not val:
+            return False, f"Failed to find key {find_key} in deployment yaml {yaml_path} of pod " \
+                          f"{pod_name}"
         resp = config_utils.write_yaml(fpath=yaml_path, write_data=data, backup=True,
                                        sort_keys=False)
         LOGGER.debug("Response: %s", resp)
+        if not resp[0]:
+            return resp
+        LOGGER.info("Copying files %s and %s to master node", yaml_path, f'{yaml_path}.bkp')
+        resp = pod_obj.copy_file_to_remote(local_path=yaml_path, remote_path=yaml_path)
+        if not resp[0]:
+            return resp
+        resp = pod_obj.copy_file_to_remote(local_path=f'{yaml_path}.bkp',
+                                           remote_path=f'{yaml_path}.bkp')
+        if not resp[0]:
+            return resp
 
-        return resp, f'{yaml_path}.bkp'
+        LOGGER.info("Successfully updated deployment yaml file for pod %s", pod_name)
+        return True, yaml_path, f'{yaml_path}.bkp'
 
     @staticmethod
-    def failover_pod(pod_obj, pod_name, failover_node):
+    def failover_pod(pod_obj, pod_list, failover_node):
         """
         Function to failover given pod
         :param pod_obj: Object of the pod
-        :param pod_name: Name of the pod to be failed over
+        :param pod_list: List of the pods to be failed over
         :param failover_node: Node to which pod is to be failed over
         :return: bool, str (status, response)
         """
-        cur_node = pod_obj.get_pods_node_fqdn(common_const.CONTROL_POD_NAME_PREFIX).get(pod_name)
-        LOGGER.info("Current pod %s is hosted on %s", pod_name, cur_node)
+        for pod in pod_list:
+            pod_prefix = '-'.join(pod.split("-")[:2])
+            cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
+            LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
 
-        LOGGER.info("Failing over pod %s to node %s", pod_name, failover_node)
-        deploy = pod_obj.get_deploy_replicaset(pod_name)[1]
-        cmd = common_cmd.CHANGE_POD_NODE.format(deploy, failover_node)
-        try:
-            LOGGER.debug("Running command: %s", cmd)
-            resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
-            LOGGER.debug("Response: %s", resp)
-        except IOError as error:
-            LOGGER.error("Failed to failover pod due to error: %s", error)
-            return False, error
-
-        return True, resp
+            LOGGER.info("Failing over pod %s to node %s", pod, failover_node)
+            deploy = pod_obj.get_deploy_replicaset(pod)[1]
+            cmd = common_cmd.K8s_CHANGE_POD_NODE.format(deploy, failover_node)
+            try:
+                LOGGER.debug("Running command: %s", cmd)
+                resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
+                LOGGER.debug("Response: %s", resp)
+                LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
+                return True, resp
+            except IOError as error:
+                LOGGER.error("Failed to failover pod %s to %s due to error: %s", pod,
+                             failover_node, error)
+                return False, error
