@@ -1337,11 +1337,6 @@ class ProvDeployK8sCortxLib:
                 response.append(time_taken)
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
-            server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX)
-            assert_utils.assert_true(server_pod_list)
-            LOGGER.debug("The Server pod list is %s", server_pod_list)
-            LOGGER.info("s3 Server Status Check Completed")
         if len(response) == 0:
             return False, "All Services are not started."
         return response
@@ -1678,3 +1673,40 @@ class ProvDeployK8sCortxLib:
         else:
             LOGGER.info("Installing version is not higher than installed version.")
         return installing_version
+
+    def update_sol_for_granular_deploy(self, file_path: str, host_list: list,
+                                       image: str, deployment_type: str) -> tuple:
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: host_list: List of setup hosts
+        :param: image: Image to be used for deployment
+        :param: deployment_type: Type of deployment(Standard/Data-Only)
+        :return: True/False and local file
+        """
+        LOGGER.debug("Update nodes section with setup details.")
+        resp = self.update_nodes_sol_file(file_path, host_list)
+        if not resp[0]:
+            return False, "solution.yaml is not updated properly."
+        LOGGER.debug("Update storage section and deployment type.")
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            storage_key = parent_key["storage"]
+            cvg_key = storage_key["cvg1"]["devices"]["data"]
+            soln.close()
+        parent_key["deployment_type"] = deployment_type
+        if "data" in deployment_type:
+            parent_key["images"]["cortxdata"] = image
+        else:
+            # Extend else condition when a different granular deployment type is available.
+            pass
+        storage_key.pop("cvg2")
+        cvg_key.pop("d7")
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
