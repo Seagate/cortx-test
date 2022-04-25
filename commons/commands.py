@@ -357,7 +357,7 @@ CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
 CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
-                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
@@ -521,7 +521,7 @@ KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
 KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
                           "NAME:.metadata.name,TAINTS:.spec.taints --no-headers > {}"
 KUBECTL_GET_ALL = "kubectl get all -A >> {}"
-KUBECTL_GET_SECRET = "kubectl get {} -A >> {}"
+KUBECTL_GET_SCT = "kubectl get {} -A >> {}"
 KUBECTL_GET_PVC = "kubectl get pvc -A >> {}"
 KUBECTL_GET_PV = "kubectl get pv >> {}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
@@ -592,7 +592,7 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 
 # LC Support Bundle
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
-              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+                    "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
 
 # SNS repair

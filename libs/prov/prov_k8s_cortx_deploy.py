@@ -449,6 +449,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: log_path: to provide custom log path
         :Keyword: cortx_server_image: to provide cortx server image
         :Keyword: service_type: to provide service type as LoadBalancer/NodePort
+        :Keyword: namespace: to provide custom namespace
         returns the status, filepath and system reserved disk
         """
         cvg_count = kwargs.get("cvg_count", 2)
@@ -469,6 +470,7 @@ class ProvDeployK8sCortxLib:
         cortx_data_image = kwargs.get("cortx_data_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
+        namespace = kwargs.get("namespace", self.deploy_cfg['namepsace'])
         nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
@@ -542,7 +544,7 @@ class ProvDeployK8sCortxLib:
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
                                                       deployment_type=self.deployment_type,
-                                                      namespace=self.namespace,
+                                                      namespace=namespace,
                                                       lb_count=self.lb_count,
                                                       client_instance=self.client_instance)
         if not resp_passwd[0]:
@@ -1184,6 +1186,7 @@ class ProvDeployK8sCortxLib:
         keyword:log_path:log_path of cortx cluster
         keyword:data_disk_size: data disk size
         keyword:meta_disk_size: metadata disk size
+        keyword:namespace: custom namespace
         keyword:custom_repo_path: Custom repo path to be used for ONLY DESTROY cortx cluster
         """
         setup_k8s_cluster_flag = \
@@ -1202,6 +1205,7 @@ class ProvDeployK8sCortxLib:
         destroy_setup_flag = kwargs.get("destroy_setup_flag", self.deploy_cfg['destroy_setup_flag'])
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         custom_repo_path = kwargs.get("custom_repo_path", self.deploy_cfg["k8s_dir"])
+        namespace = kwargs.get("namespace", self.deploy_cfg["namespace"])
         report_path = kwargs.get("report_filepath", self.deploy_cfg["report_file"])
         data_disk_size = kwargs.get("data_disk_size", self.deploy_cfg["data_disk_size"])
         metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
@@ -1212,6 +1216,7 @@ class ProvDeployK8sCortxLib:
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
         sns = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)
         dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)
+        LOGGER.debug("The deployment NAMESPACE is %s", namespace)
         row.append(sns)
         row.append(dix)
         LOGGER.debug("setup_k8s_cluster_flag = %s", setup_k8s_cluster_flag)
@@ -1248,6 +1253,7 @@ class ProvDeployK8sCortxLib:
                                         cortx_server_image=self.cortx_server_image,
                                         cortx_data_image=self.cortx_data_image,
                                         service_type=self.service_type,
+                                        namespace=namespace,
                                         https_port=self.nodeport_https,
                                         http_port=self.nodeport_http,
                                         control_https_port=self.control_nodeport_https)
