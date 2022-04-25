@@ -469,7 +469,7 @@ class ProvDeployK8sCortxLib:
         cortx_data_image = kwargs.get("cortx_data_image", None)
         log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
-        namespace = kwargs.get("namespace", self.deploy_cfg['namepsace'])
+        namespace = kwargs.get("namespace", self.deploy_cfg['namespace'])
         nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
