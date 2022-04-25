@@ -1483,7 +1483,7 @@ class HAK8s:
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
-        Function to find value from nested dicts and lists for given key and replace it
+        Function to find value from nested dicts and nested lists for given key and replace it
         :param search_dict: Dict in which key to be searched
         :param field: Key to be searched
         :param replace_key: Key with which older key to be replaced
@@ -1529,13 +1529,12 @@ class HAK8s:
         resp = pod_obj.backup_deployment(deploy)
         yaml_path = resp[1]
         LOGGER.info("Copy deployment yaml file to local system")
-        resp = pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=yaml_path)
-        if not resp[0]:
-            return resp
+        pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=yaml_path)
         resp = config_utils.read_yaml(yaml_path)
         if not resp[0]:
             return resp
         data = resp[1]
+        system_utils.remove_file(yaml_path)
         LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
         val = self.get_replace_recursively(data, find_key, replace_key, replace_val)
         if not val:
@@ -1574,9 +1573,8 @@ class HAK8s:
 
             LOGGER.info("Failing over pod %s to node %s", pod, failover_node)
             deploy = pod_obj.get_deploy_replicaset(pod)[1]
-            cmd = common_cmd.K8s_CHANGE_POD_NODE.format(deploy, failover_node)
+            cmd = common_cmd.K8S_CHANGE_POD_NODE.format(deploy, failover_node)
             try:
-                LOGGER.debug("Running command: %s", cmd)
                 resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
                 LOGGER.debug("Response: %s", resp)
                 LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
