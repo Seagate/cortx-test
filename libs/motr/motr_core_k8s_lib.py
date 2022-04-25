@@ -475,4 +475,3 @@ class MotrCoreK8s():
         log.info("Cluster restarted fine and all Pods online.")
         # Updating the node_pod dict after cluster shutdown
         self.node_pod_dict = self.get_node_pod_dict()
-
