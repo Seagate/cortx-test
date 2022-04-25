@@ -32,10 +32,12 @@ from commons.greenlet_worker import GeventPool
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import cal_percent
 from commons.utils import s3_utils
+from commons.utils import assert_utils
 
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_multipart import Multipart
+from libs.s3.s3_common_test_lib import S3BackgroundIO
 
 LOGGER = logging.getLogger(__name__)
 
@@ -626,3 +628,39 @@ class S3MultipartTestLib(Multipart):
             raise CTException(err.S3_CLIENT_ERROR, error)
 
         return response
+
+    def create_mpu_get_precalc_parts(
+            self,
+            mp_config: dict,
+            obj_path: str,
+            bucket_name: str,
+            object_name: str,
+            **kwargs):
+        """
+        This creates file, starts IOs, Initiates mpu and gets the precalculated parts for uploading
+        to multipart upload
+        :param mp_config: configuration dict for multipart upload
+        :param mp_obj_path: path to object file
+        :param bucket_name: Name of the s3 bucket.
+        :param object_name: Name of the s3 object.
+        :param log_prefix: prefix to be attached to log file
+        :param duration: duration for ios to run
+        """
+        mkey = kwargs.get("mkey", None)
+        mval = kwargs.get("mval", None)
+        log_prefix = kwargs.get("log_prefix", None)
+        duration = kwargs.get("duration", None)
+        s3_test_obj = kwargs.get("s3_test_lib_obj", "s3_test_lib_obj")
+        if os.path.exists(obj_path):
+            os.remove(obj_path)
+        create_file(obj_path, mp_config["file_size"])
+        s3_background_io = S3BackgroundIO(s3_test_lib_obj=s3_test_obj)
+        LOGGER.info("start s3 IO's")
+        s3_background_io.start(log_prefix, duration)
+        res = self.create_multipart_upload(bucket_name, object_name, m_key=mkey, m_value=mval)
+        mpu_id = res[1]["UploadId"]
+        LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        uploaded_parts = s3_utils.get_precalculated_parts(obj_path, mp_config["part_sizes"],
+                                                 chunk_size=mp_config["chunk_size"])
+        keys = list(uploaded_parts.keys())
+        return mpu_id, uploaded_parts, keys, s3_background_io

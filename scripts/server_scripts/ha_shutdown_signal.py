@@ -1,4 +1,4 @@
-"""Performance tabs integrated UI central file"""
+#!/usr/bin/python
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
@@ -15,26 +15,20 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
 
-from __future__ import absolute_import
-from Performance.graphs.graphs_layouts import graphs_perf_tabs, graphs_input_options
-import dash_html_components as html
-from Performance.statistics.statistics_layouts import statistics_perf_tabs, stats_input_options
+"""
+This script will be sending a mock shutdown signal to HA.
+This has to be executed inside HA container.
+"""
 
-perf_stats_page = html.Div(
-    [
-        html.Div(stats_input_options),
-        html.Div(statistics_perf_tabs)
-    ]
-)
-
-
-perf_graphs_page = html.Div(
-    [
-        html.Div(graphs_input_options),
-        html.Div(graphs_perf_tabs)
-    ]
-)
+from cortx.utils.conf_store import Conf
+from ha import const
+from ha.util.message_bus import MessageBus
+from ha.core.config.config_manager import ConfigManager
+ConfigManager.init("test_Cluster_stop_sigterm")
+confstore = ConfigManager.get_confstore()
+MessageBus.init()
+PRODUCER_ID="csm_producer"
+message_type = Conf.get(const.HA_GLOBAL_INDEX, f'CLUSTER_STOP_MON{const.HA_DELIM}message_type')
+producer = MessageBus.get_producer(producer_id=PRODUCER_ID, message_type=message_type)
+producer.publish({"start_cluster_shutdown":1})
