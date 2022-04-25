@@ -111,7 +111,7 @@ def main():
         admin_user = os.getenv("ADMIN_USER")
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         test_exe_no = os.getenv("TEST_EXECUTION_NUMBER", None)
-        port = os.getenv("CONTROL_HTTPS_PORT", 31169)
+        port = int(os.getenv("CONTROL_HTTPS_PORT", "31169"))
         if test_exe_no is not None:
             jira_id = os.environ['JIRA_ID']
             jira_pswd = os.environ['JIRA_PASSWORD']
