@@ -1529,34 +1529,31 @@ class HAK8s:
         LOGGER.info("Taking deployment backup")
         resp = pod_obj.backup_deployment(deploy)
         yaml_path = resp[1]
+        modified_yaml = os.path.join("/root", f"{pod_name}_modified.yaml")
         LOGGER.info("Copy deployment yaml file to local system")
-        pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=yaml_path)
-        resp = config_utils.read_yaml(yaml_path)
+        pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=modified_yaml)
+        resp = config_utils.read_yaml(modified_yaml)
         if not resp[0]:
             return resp
         data = resp[1]
-        system_utils.remove_file(yaml_path)
         LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
         val = self.get_replace_recursively(data, find_key, replace_key, replace_val)
         if not val:
             return False, f"Failed to find key {find_key} in deployment yaml {yaml_path} of pod " \
                           f"{pod_name}"
-        resp = config_utils.write_yaml(fpath=yaml_path, write_data=data, backup=True,
+        resp = config_utils.write_yaml(fpath=modified_yaml, write_data=data, backup=True,
                                        sort_keys=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
             return resp
-        LOGGER.info("Copying files %s and %s to master node", yaml_path, f'{yaml_path}.bkp')
-        resp = pod_obj.copy_file_to_remote(local_path=yaml_path, remote_path=yaml_path)
-        if not resp[0]:
-            return resp
-        resp = pod_obj.copy_file_to_remote(local_path=f'{yaml_path}.bkp',
-                                           remote_path=f'{yaml_path}.bkp')
+        LOGGER.info("Copying files %s to master node", modified_yaml)
+        resp = pod_obj.copy_file_to_remote(local_path=modified_yaml, remote_path=modified_yaml)
         if not resp[0]:
             return resp
 
+        system_utils.remove_file(modified_yaml)
         LOGGER.info("Successfully updated deployment yaml file for pod %s", pod_name)
-        return True, yaml_path, f'{yaml_path}.bkp'
+        return True, modified_yaml, yaml_path
 
     @staticmethod
     def failover_pod(pod_obj, pod_list, failover_node):
