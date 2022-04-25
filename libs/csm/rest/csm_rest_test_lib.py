@@ -19,6 +19,8 @@
 #
 """ REST API Alert operation Library. """
 import logging
+import time
+from random import Random
 from string import Template
 
 import commons.errorcodes as err
@@ -39,6 +41,9 @@ class RestTestLib:
         self.restapi = RestClient(CSM_REST_CFG)
         self.user_type = ("valid", "duplicate", "invalid", "missing")
         self.headers = {}
+        self.seed = int(time.time)
+        self.random_gen = Random(self.seed)
+        self.log.info("Seed : %s", self.seed)
 
     def rest_login(self, login_as):
         """
