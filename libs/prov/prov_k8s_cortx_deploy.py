@@ -1628,7 +1628,7 @@ class ProvDeployK8sCortxLib:
         """
         taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format(self.deploy_cfg["pre_check_log"])
         all_resource = common_cmd.KUBECTL_GET_ALL.format(self.deploy_cfg["pre_check_log"])
-        get_secret = common_cmd.KUBECTL_GET_SECRET.format("secret",
+        get_secret = common_cmd.KUBECTL_GET_SCT.format("secret",
                                                           self.deploy_cfg["pre_check_log"])
         get_pv = common_cmd.KUBECTL_GET_PV.format(self.deploy_cfg["pre_check_log"])
         get_pvc = common_cmd.KUBECTL_GET_PVC.format(self.deploy_cfg["pre_check_log"])
