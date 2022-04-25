@@ -24,7 +24,7 @@ import logging
 import time
 from http import HTTPStatus
 import os
-from random import SystemRandom, randint
+from random import SystemRandom
 import pytest
 from botocore.exceptions import ClientError
 from commons import configmanager
@@ -2703,7 +2703,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp3.status_code == HTTPStatus.CONFLICT,
                                  "Patch request status code failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(resp.json()["message"] ==
+            assert_utils.assert_true(resp3.json()["message"] ==
                                      self.rest_resp_conf[39401]['users_already_exists'][0]
                                      , "Response message check failed")
         self.log.info("[END]Try Creating IAM users with same UID")
