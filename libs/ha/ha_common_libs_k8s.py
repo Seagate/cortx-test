@@ -1484,39 +1484,56 @@ class HAK8s:
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
 
-    def mark_node_failure(self, mnode_obj, pod_list: list, go_random: bool = False,
+    def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = False,
                           rsc_opt: str = "mark_node_failure", rsc: str = "node"):
         """
-        Helper function to set node/pod (or multi-node/pod) status to Failed random if go_random.
-        :param pod_list: List of pod/nodes to be marked as failed
-        :param go_random: If True, send mark failure signal to node/pod randomly
-        :param mnode_obj: Master node object to fetch the pod/node ID
+        Helper function to set resource status to Failed random if go_random.
+        :param pod_list: List of resource to be marked as failed
+        :param go_random: If True, send mark failure signal to resource randomly
+        :param mnode_obj: Master node object to fetch the resource ID
         :param rsc_opt = Operation to be performed on resource (eg. mark_node_failure)
         :param rsc = resource type (eg. node)
         :return: bool, response
         """
-        pod_info = {}
-        pod_data = {'id': None, 'status': False}
-        for pod in pod_list:
-            pod_info[pod] = pod_data.copy()
-            pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
-
-        if go_random:
+        if rsc == 'node':
+            pod_info = {}
+            pod_data = {'id': None, 'status': False}
             for pod in pod_list:
-                if self.system_random.choice([True, False]):
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+
+            if go_random:
+                for pod in pod_list:
+                    if self.system_random.choice([True, False]):
+                        LOGGER.info('Marking %s pod as failed', pod)
+                        data_val = {"operation": rsc_opt,
+                                    "arguments": {"id": f"{pod_info[pod]['id']}"}}
+                        resp = self.system_health.set_resource_signal(req_body=data_val)
+                        pod_info[pod]['status'] = resp[0]
+            else:
+                for pod in pod_list:
+                    LOGGER.info('Marking %s pod as failed', pod)
                     data_val = {"operation": rsc_opt,
                                 "arguments": {"id": f"{pod_info[pod]['id']}"}}
-                    resp = self.system_health.post_resource_signal(req_body=data_val,
-                                                                   resource=rsc)
+                    resp = self.system_health.set_resource_signal(req_body=data_val)
                     pod_info[pod]['status'] = resp[0]
-        else:
             for pod in pod_list:
-                data_val = {"operation": rsc_opt,
-                            "arguments": {"id": f"{pod_info[pod]['id']}"}}
-                resp = self.system_health.post_resource_signal(req_body=data_val,
-                                                               resource=rsc)
-                pod_info[pod]['status'] = resp[0]
-        for pod in pod_list:
-            if not pod_info[pod]['status']:
-                return False, pod_info, "Some of pods status is offline"
-        return True, pod_info, f"{pod_list} marked as failed"
+                if not pod_info[pod]['status']:
+                    resp = self.system_health.get_resource_status(resource_id=pod_info[pod]['id'])
+                    if not resp[0]:
+                        return False, pod_info, f"Failed to get node status for {pod}"
+                    status = resp[1]['status']
+                    poll = time.time() + HA_CFG["common_params"]["get_status_time"]
+                    sleep_time = 2
+                    while status != 'failed' and poll > time.time():
+                        time.sleep(sleep_time)
+                        resp = self.system_health.get_resource_status(
+                            resource_id=pod_info[pod]['id'])
+                        if not resp[0]:
+                            return False, pod_info, f"Failed to get node status for {pod}"
+                        status = resp[1]['status']
+                        # Gradually increase in time by multiple of 2 to get node/pod status
+                        sleep_time = sleep_time * 2
+            return True, pod_info, f"{pod_list} marked as failed"
+        else:
+            return False, f"Mark failure for {rsc} is not supported yet"

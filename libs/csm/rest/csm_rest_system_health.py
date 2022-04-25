@@ -629,14 +629,14 @@ class SystemHealth(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     @RestTestLib.rest_logout
-    def post_resource_signal(
+    def set_resource_signal(
             self,
             req_body: dict,
             resource: str):
         """
-        This method POST resource failure/shutdown event/signal to cluster
+        This method POST resource failure/shutdown signal to cluster
         :param req_body: POST operation request body
-        :param resource: POST request body info
+        :param resource: Resource type (eg. node)
         :return: bool, POST API response
         """
         # Building request url to POST resource failure signal
@@ -661,9 +661,9 @@ class SystemHealth(RestTestLib):
             resource_id: str,
             resource: str = "node"):
         """
-        This method GET resource status
+        This method GETs resource status
         :param resource: Resource type (eg. node)
-        :param resource_id: Resource ID for which user want to fetch status
+        :param resource_id: Resource ID for which user wants to fetch status
         :return: bool, GET API response
         """
         # Building request url to GET resource status
