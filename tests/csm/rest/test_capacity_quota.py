@@ -20,24 +20,22 @@
 """Tests System capacity scenarios using REST API
 """
 import logging
-import time
 import math
-from random import SystemRandom
-from http import HTTPStatus
-import pytest
 import random
-import os
+import time
+from http import HTTPStatus
+from random import SystemRandom
+from time import perf_counter_ns
+
+import pytest
+
 from commons import configmanager
 from commons import cortxlogging
-from time import perf_counter_ns
-from commons import constants as const
-from config import CMN_CFG
-from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3 import s3_misc, S3H_OBJ, s3_test_lib
+from commons.utils import assert_utils
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_quota import GetSetQuota
-from commons.utils import assert_utils
-
+from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3 import s3_misc, s3_test_lib
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -54,7 +52,6 @@ class TestSystemCapacity():
         cls.quota_obj = GetSetQuota()
         cls.created_iam_users = set()
         cls.s3_obj = s3_test_lib.S3TestLib()
-        cls.ha_obj = HAK8s()
         cls.buckets_created = []
         cls.user_id = None
         cls.display_name = None
@@ -75,11 +72,12 @@ class TestSystemCapacity():
         self.skey = resp.json()["secret_key"]
         self.bucket = "iam-user-bucket-" + str(int(time.time()))
         self.obj_name_prefix = "created_obj"
-        self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
+        self.obj_name = "{0}{1}".format(self.obj_name_prefix, perf_counter_ns())
         self.user_id = "iam-user-id-" + str(int(time.time_ns()))
         self.display_name = "iam-display-name-" + str(int(time.time_ns()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
+        self.cryptogen = SystemRandom()
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
 
     def teardown_method(self):
@@ -161,7 +159,7 @@ class TestSystemCapacity():
                                           self.akey, self.skey, object_size=max_size)
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
+        random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -175,7 +173,6 @@ class TestSystemCapacity():
                                               self.akey, self.skey, object_size=small_size)
             assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -226,7 +223,7 @@ class TestSystemCapacity():
                                           self.akey, self.skey, object_size=max_size)
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
+        random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -240,7 +237,6 @@ class TestSystemCapacity():
                                               self.akey, self.skey, object_size=small_size)
             assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -293,7 +289,7 @@ class TestSystemCapacity():
                                               self.akey, self.skey, object_size=max_size)
             assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-            random_size = random.randint(1,max_size)
+            random_size = self.cryptogen.randrange(1, max_size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                               self.akey, self.skey, object_size=random_size)
             assert_utils.assert_true(resp, "Put object Failed")
@@ -307,7 +303,6 @@ class TestSystemCapacity():
                                                   self.akey, self.skey, object_size=small_size)
                 assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-            random_size = random.randint(1,max_size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                               self.akey, self.skey, object_size=random_size)
             assert_utils.assert_true(resp, "Put object Failed")
@@ -359,7 +354,7 @@ class TestSystemCapacity():
                                           self.akey, self.skey, object_size=max_size)
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
+        random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -373,7 +368,6 @@ class TestSystemCapacity():
                                               self.akey, self.skey, object_size=small_size)
             assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-        random_size = random.randint(1,max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
@@ -428,7 +422,7 @@ class TestSystemCapacity():
                                               self.akey, self.skey, object_size=max_size)
             assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-            random_size = random.randint(1, max_size)
+            random_size = self.cryptogen.randrange(1, max_size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                               self.akey, self.skey, object_size=random_size)
             assert_utils.assert_true(resp, "Put object Failed")
@@ -442,7 +436,6 @@ class TestSystemCapacity():
                                                   self.akey, self.skey, object_size=small_size)
                 assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-            random_size = random.randint(1, max_size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                               self.akey, self.skey, object_size=random_size)
             assert_utils.assert_true(resp, "Put object Failed")
