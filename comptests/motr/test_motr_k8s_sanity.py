@@ -145,8 +145,8 @@ class TestExecuteK8Sanity:
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        m0client_num = self.motr_obj.get_number_of_m0clients()
-        for client_num in range(m0client_num):
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
                               '2', '4', '2', '3', '4', '8', '4', '1024']

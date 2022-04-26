@@ -140,7 +140,7 @@ class MotrCoreK8s():
                 return self.node_dict[key]
         return None
 
-    def get_number_of_m0clients(self):
+    def get_number_of_motr_clients(self):
         """
         To get the number of motr_clients in a node
         :returns: Number of motr_clients present in given node
