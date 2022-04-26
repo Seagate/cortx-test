@@ -20,17 +20,18 @@
 """
 HA common utility methods
 """
+import copy
+import json
 import logging
 import os
 import random
 import sys
 import time
-import copy
+from ast import literal_eval
 from multiprocessing import Process
 from time import perf_counter_ns
+
 import yaml
-import json
-from ast import literal_eval
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -38,9 +39,11 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
+from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -49,7 +52,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1464,8 +1466,7 @@ class HAK8s:
         LOGGER.info("Cluster is in degraded state")
 
         LOGGER.info(" Check services status that were running on pod %s", pod_name)
-        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=hostname)
+        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
             return False,resp
@@ -1480,3 +1481,103 @@ class HAK8s:
             return False, resp
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
+
+    def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
+        """
+        Function to find value from nested dicts and nested lists for given key and replace it
+        :param search_dict: Dict in which key to be searched
+        :param field: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: str (value)
+        """
+        fields_found = []
+        for key, value in search_dict.items():
+            if key == field:
+                fields_found.append(value)
+                if replace_key:
+                    search_dict[replace_key] = search_dict.pop(key)
+                    search_dict[replace_key] = replace_val
+            elif isinstance(value, dict):
+                results = self.get_replace_recursively(value, field, replace_key, replace_val)
+                for result in results:
+                    fields_found.append(result)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        more_results = self.get_replace_recursively(item, field, replace_key,
+                                                                    replace_val)
+                        for another_result in more_results:
+                            fields_found.append(another_result)
+
+        return fields_found
+
+    def update_deployment_yaml(self, pod_obj, pod_name, find_key, replace_key=None,
+                               replace_val=None):
+        """
+        Function to find and replace key from deployment yaml file
+        :param pod_obj: Object of pod
+        :param pod_name: Name of the pod
+        :param find_key: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: bool, str, str (status, new path, backup path)
+        """
+        resp = pod_obj.get_deploy_replicaset(pod_name)
+        deploy = resp[1]
+        LOGGER.info("Deployment for pod %s is %s", pod_name, deploy)
+        LOGGER.info("Taking deployment backup")
+        resp = pod_obj.backup_deployment(deploy)
+        yaml_path = resp[1]
+        modified_yaml = os.path.join("/root", f"{pod_name}_modified.yaml")
+        LOGGER.info("Copy deployment yaml file to local system")
+        pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=modified_yaml)
+        resp = config_utils.read_yaml(modified_yaml)
+        if not resp[0]:
+            return resp
+        data = resp[1]
+        LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
+        val = self.get_replace_recursively(data, find_key, replace_key, replace_val)
+        if not val:
+            return False, f"Failed to find key {find_key} in deployment yaml {yaml_path} of pod " \
+                          f"{pod_name}"
+        resp = config_utils.write_yaml(fpath=modified_yaml, write_data=data, backup=True,
+                                       sort_keys=False)
+        LOGGER.debug("Response: %s", resp)
+        if not resp[0]:
+            return resp
+        LOGGER.info("Copying files %s to master node", modified_yaml)
+        resp = pod_obj.copy_file_to_remote(local_path=modified_yaml, remote_path=modified_yaml)
+        if not resp[0]:
+            return resp
+
+        system_utils.remove_file(modified_yaml)
+        LOGGER.info("Successfully updated deployment yaml file for pod %s", pod_name)
+        return True, modified_yaml, yaml_path
+
+    @staticmethod
+    def failover_pod(pod_obj, pod_list, failover_node):
+        """
+        Function to failover given pod
+        :param pod_obj: Object of the pod
+        :param pod_list: List of the pods to be failed over
+        :param failover_node: Node to which pod is to be failed over
+        :return: bool, str (status, response)
+        """
+        for pod in pod_list:
+            pod_prefix = '-'.join(pod.split("-")[:2])
+            cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
+            LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
+
+            LOGGER.info("Failing over pod %s to node %s", pod, failover_node)
+            deploy = pod_obj.get_deploy_replicaset(pod)[1]
+            cmd = common_cmd.K8S_CHANGE_POD_NODE.format(deploy, failover_node)
+            try:
+                resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
+                LOGGER.debug("Response: %s", resp)
+                LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
+                return True, resp
+            except IOError as error:
+                LOGGER.error("Failed to failover pod %s to %s due to error: %s", pod,
+                             failover_node, error)
+                return False, error
