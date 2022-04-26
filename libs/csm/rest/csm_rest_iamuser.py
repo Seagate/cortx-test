@@ -481,6 +481,29 @@ class RestIamUser(RestTestLib):
         self.log.info("Payload : %s", payload)
         return payload
 
+    def get_iam_user_payload(self, param=None):
+        """
+        Creates selected parameters IAM user payload.
+        """
+        time.sleep(1)
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        if param == "email":
+            email = user_id + "@seagate.com"
+            return user_id, display_name, email
+        elif param == "a_key":
+            access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            return user_id, display_name, access_key
+        elif param == "s_key":
+            secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            return user_id, display_name, secret_key
+        elif param == "keys":
+            access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            return user_id, display_name, access_key, secret_key
+        else:
+            return user_id, display_name
+
     @staticmethod
     def compare_iam_payload_response(rest_response, payload):
         """
@@ -726,7 +749,7 @@ class RestIamUser(RestTestLib):
         del payload["user_caps"]
         optional_payload = payload.copy()
         ran_sel = random.sample(range(0, len(optional_payload)),
-                                    self.cryptogen.randrange(0, len(optional_payload)))
+                                self.cryptogen.randrange(0, len(optional_payload)))
         for i, (k, _) in enumerate(payload.items()):
             if i not in ran_sel:
                 del optional_payload[k]
