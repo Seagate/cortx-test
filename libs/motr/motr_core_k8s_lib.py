@@ -112,7 +112,8 @@ class MotrCoreK8s():
         :returns: Primary(RC) node name in the cluster
         :rtype: str
         """
-        motr_client_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
+        motr_client_pod = self.node_obj.get_pod_name(
+            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
