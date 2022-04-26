@@ -2764,7 +2764,7 @@ class TestPodRestart:
         LOGGER.info("STARTED: Verify IOs before and after data pod failure, "
                     "pod shutdown by deleting pod using kubectl delete.")
 
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32456'
@@ -2786,21 +2786,12 @@ class TestPodRestart:
         assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete", pod_name)
 
-        LOGGER.info("Waiting for %s seconds before taking cluster status",
-                    HA_CFG["common_params"]["20sec_delay"])
-        time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Cluster is in degraded state")
 
-        LOGGER.info("Step 5: Check services status on all pods", pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Services of all pods are in online state")
-
-        LOGGER.info("STEP 6: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 4: Create new user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32456-1'
@@ -2808,7 +2799,7 @@ class TestPodRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 4: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure, "
                     "pod shutdown by deleting pod using kubectl delete.")
