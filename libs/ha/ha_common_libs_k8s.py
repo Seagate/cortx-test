@@ -1614,8 +1614,10 @@ class HAK8s:
                     if not resp[0]:
                         return False, pod_info, f"Failed to set failure status for {pod}"
                     pod_info[pod]['status'] = 'failed'
+                    LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
                     time.sleep(HA_CFG["common_params"]["30sec_delay"])
             if validate_set:
+                LOGGER.inf("Validating nodes/pods status is SET as expected.")
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
@@ -1634,8 +1636,9 @@ class HAK8s:
         if rsc == "node":
             if not isinstance(rsc_info, dict):
                 # Get the node ID and set expected status if only list of pods is passed
+                LOGGER.info("Get the nodes ID for GET API.")
                 pod_info = {}
-                pod_data = {'id': None, 'status': "offline"}
+                pod_data = {'id': None, 'status': "online"}
                 for pod in rsc_info:
                     pod_info[pod] = pod_data.copy()
                     pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
@@ -1649,8 +1652,9 @@ class HAK8s:
                     return False, f"Failed to get expected status for {pod}"
         elif rsc == "cluster":
             # Get the cluster ID and verify the cluster status to Expected
-            LOGGER.info("Get the cluster ID for GET API.")
+            LOGGER.info("Get the cluster ID for GET API and verify cluster status.")
             data = self.get_config_value(mnode_obj)
+
             if not data[0]:
                 return False, "Failed to get cluster ID"
             if not exp_sts and isinstance(rsc_info, dict):
