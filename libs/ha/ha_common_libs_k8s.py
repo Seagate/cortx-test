@@ -1484,7 +1484,7 @@ class HAK8s:
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
 
-    def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = False,
+    def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = True,
                               rsc_opt: str = "mark_node_failure", rsc: str = "node",
                               validate_set: bool = True):
         """
@@ -1514,17 +1514,19 @@ class HAK8s:
                     if not resp[0]:
                         return False, pod_info, f"Failed to set failure status for {pod}"
                     pod_info[pod]['status'] = 'failed'
+            HA_CFG["common_params"]["30sec_delay"]
             if validate_set:
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
 
-    def get_validate_resource_status(self, rsc_info=None, exp_sts: str = "failed",
+    def get_validate_resource_status(self, exp_sts: str, rsc_info,
                                      mnode_obj=None, rsc: str = "node"):
         """
         Helper function to get and validate resource status
         :param exp_sts: Expected status of resource.
-        :param rsc_info: Required resource to get its status
+        :param rsc_info: Required resource to get its status,
+        dict with {pod1:{'id':, 'status':},..} or list of pods
         :param rsc: resource type (eg. node, cluster)
         :param mnode_obj: Master node object to fetch the resource ID
         :return: bool, response
@@ -1542,27 +1544,31 @@ class HAK8s:
                 pod_info = rsc_info.copy()
             for pod in pod_info.keys():
                 resp = self.poll_to_get_resource_status(exp_sts=pod_info[pod]['status'], rsc=rsc,
-                                                        rsc_id=pod_info[pod]['id'],
-                                                        timeout=HA_CFG["common_params"][
-                                                            "get_status_time"])
+                                                        rsc_id=pod_info[pod]['id'])
                 if not resp:
                     return False, f"Failed to get expected status for {pod}"
             return True, "All pods/nodes status is as expected"
+        elif rsc == "cluster":
+            # Get the cluster ID and verify the cluster status to Expected
+            LOGGER.info("Get the cluster ID for GET API.")
+            data = self.get_config_value(mnode_obj)
+            if not data[0]:
+                return False, "Failed to get cluster ID"
+            if not exp_sts and isinstance(rsc_info, dict):
+                exp_sts = "online"
+                for pod in rsc_info.keys():
+                    # If 1 node is offline, cluster will be in degraded
+                    if rsc_info[pod]['status'] == "offline" or rsc_info[pod]['status'] == "failed":
+                        exp_sts = "degraded"
+                        break
+            resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
+                                                    rsc_id=data[1]["cluster"]["id"])
+            if not resp:
+                return False, "Failed to get expected status for Cluster"
+            return True, "Got expected status for cluster"
 
-        # Get the cluster ID and verify the cluster status to Expected
-        LOGGER.info("Get the cluster ID for GET API.")
-        data = self.get_config_value(mnode_obj)
-        if not data[0]:
-            return False, "Failed to get cluster ID"
-        resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
-                                                rsc_id=data[1]["cluster"]["id"],
-                                                timeout=HA_CFG["common_params"][
-                                                    "get_status_time"])
-        if not resp:
-            return False, "Failed to get expected status for Cluster"
-        return True, "Got expected status for cluster"
-
-    def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id, timeout):
+    def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id,
+                                    timeout=HA_CFG["common_params"]["90sec_delay"]):
         """
         Helper function to GET and Poll for expected resource status till timeout
         :param exp_sts: Expected status of resource.
@@ -1576,7 +1582,7 @@ class HAK8s:
             return False
         status = resp[1]['status']
         poll = time.time() + timeout
-        sleep_time = 2
+        sleep_time = HA_CFG["common_params"]["2sec_delay"]
         while status != exp_sts and poll > time.time():
             time.sleep(sleep_time)
             resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
