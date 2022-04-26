@@ -1647,7 +1647,6 @@ class HAK8s:
                                                         rsc_id=pod_info[pod]['id'])
                 if not resp:
                     return False, f"Failed to get expected status for {pod}"
-            return True, "All pods/nodes status is as expected"
         elif rsc == "cluster":
             # Get the cluster ID and verify the cluster status to Expected
             LOGGER.info("Get the cluster ID for GET API.")
@@ -1665,7 +1664,7 @@ class HAK8s:
                                                     rsc_id=data[1]["cluster"]["id"])
             if not resp:
                 return False, "Failed to get expected status for Cluster"
-            return True, "Got expected status for cluster"
+        return True, f"Got expected status for {rsc}"
 
     def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id,
                                     timeout=HA_CFG["common_params"]["90sec_delay"]):
