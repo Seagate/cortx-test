@@ -2778,7 +2778,6 @@ class TestPodRestart:
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
@@ -2789,7 +2788,7 @@ class TestPodRestart:
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Cluster is in degraded state")
+        LOGGER.info("Step 3: Cluster is in healthy state.")
 
         LOGGER.info("STEP 4: Create new user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")

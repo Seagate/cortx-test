@@ -2781,7 +2781,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Cluster is in degraded state")
+        LOGGER.info("Step 3: Some services in cluster are offline as %s pod is down", server_pod_name)
 
         LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
@@ -2798,7 +2798,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
         LOGGER.info("STEP 6: Create new user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+                    "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461-1'
         self.s3_clean.update(users)
