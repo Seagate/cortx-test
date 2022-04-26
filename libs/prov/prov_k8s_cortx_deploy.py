@@ -48,6 +48,7 @@ from commons.utils import ext_lbconfig_utils
 from config import PROV_CFG
 from config import S3_CFG
 from config import PROV_TEST_CFG
+from config import CMN_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -67,7 +68,7 @@ class ProvDeployK8sCortxLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
-        self.s3_engine = int(os.getenv("S3_ENGINE"))
+        self.s3_engine = int(os.getenv("S3_ENGINE", CMN_CFG["s3_engine"]))
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
