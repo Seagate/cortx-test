@@ -338,6 +338,7 @@ class ProvDeployK8sCortxLib:
         param: docker_username: Docker Username
         param: docker_password: Docker password
         param: git tag: tag of service repo
+        namespace: defines the custom namespace for deployment of cortx stack on k8s
         return : True/False and resp
         """
         if len(master_node_list) == 0:
@@ -403,6 +404,7 @@ class ProvDeployK8sCortxLib:
         shutil.copyfile(self.deploy_cfg["new_file_path"], self.deploy_cfg['solution_file'])
         return self.deploy_cfg["solution_file"]
 
+    # this will be reverted once the bug CORTX-29667 is Resolved.
     def checkout_update_deploy_script(self, node_obj: LogicalNode, git_tag):
         """
         This method edits the deploy script to update the workarounds

@@ -161,7 +161,7 @@ k8s_cortx_deploy:
     zookeeper: 'ghcr.io/seagate/zookeeper:3.8.0-debian-10-r9'
     rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
     busybox: 'ghcr.io/seagate/busybox:latest'
-    cortx_images_key: [ 'cortxcontrol', 'cortxdata', 'cortxserver',
+  cortx_images_key: [ 'cortxcontrol', 'cortxdata', 'cortxserver',
                       'cortxha', 'cortxclient' ]
   password:
     csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='

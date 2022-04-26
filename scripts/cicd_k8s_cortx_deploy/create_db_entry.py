@@ -56,6 +56,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     admin_user : Admin username for CSM admin
     admin_pswd: Admin Password for CSM admin
     nodes_cnt: Number of Nodes to be used for db_entry from the hosts pool.
+    port: port no to establish connection for https/http
     return: setup_name :
     """
     print("********Creating DB entry for setup**************")
