@@ -80,14 +80,14 @@ class MotrCoreK8s():
                     nodename = node["name"]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
-                    node_dict[nodename]['motr_client'] = []
+                    node_dict[nodename][common_const.MOTR_CLIENT] = []
                     for svc in node["svcs"]:
                         if svc["name"] == "hax":
                             node_dict[nodename]['hax_fid'] = svc["fid"]
                             node_dict[nodename]['hax_ep'] = svc["ep"]
-                        if svc["name"] == "motr_client":
-                            node_dict[nodename]['motr_client'].append({"ep": svc["ep"],
-                                                                    "fid": svc["fid"]})
+                        if svc["name"] == common_const.MOTR_CLIENT:
+                            node_dict[nodename][common_const.MOTR_CLIENT].append(
+                                {"ep": svc["ep"], "fid": svc["fid"]})
         return node_dict
 
     def get_node_pod_dict(self):
@@ -158,13 +158,16 @@ class MotrCoreK8s():
         :returns: Corresponding Node name
         :rtype: str
         """
-        cmd = "hostname"
-        node_name = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {cmd}",
-            decode=True)
-        return node_name
+        if motr_client_pod:
+            cmd = "hostname"
+            node_name = self.node_obj.send_k8s_cmd(
+                operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                               f"-- {cmd}",
+                decode=True)
+             return node_name
+        log.error("Missing motr client pod name. Please check cluster again")
+        return None
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
         """
@@ -235,9 +238,9 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP.format(node_dict["motr_client"][client_num]["ep"],
+        cmd = common_cmd.M0CP.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                                      node_dict["hax_ep"],
-                                     node_dict["motr_client"][client_num]["fid"],
+                                     node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
                                      self.profile_fid, b_size.lower(),
                                      count, obj, layout, file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
@@ -266,9 +269,9 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CAT.format(node_dict["motr_client"][client_num]["ep"],
+        cmd = common_cmd.M0CAT.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                                       node_dict["hax_ep"],
-                                      node_dict["motr_client"][client_num]["fid"],
+                                      node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
                                       self.profile_fid, b_size.lower(),
                                       count, obj, layout, file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
@@ -293,9 +296,9 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0UNLINK.format(node_dict["motr_client"][client_num]["ep"],
+        cmd = common_cmd.M0UNLINK.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                                          node_dict["hax_ep"],
-                                         node_dict["motr_client"][client_num]["fid"],
+                                         node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
                                          self.profile_fid, obj, layout)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
@@ -454,9 +457,9 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0KV.format(node_dict["motr_client"][client_num]["ep"],
+        cmd = common_cmd.M0KV.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                                      node_dict["hax_ep"],
-                                     node_dict["motr_client"][client_num]["fid"],
+                                     node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
                                      self.profile_fid, param)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
