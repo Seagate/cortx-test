@@ -61,12 +61,13 @@ class MotrCoreK8s():
         """
         Returns all the cortx nodes endpoints in a dict format
         """
-        client_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
+        motr_client_pod = self.node_obj.get_pod_name(
+            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
         node_dict = {}
         if self.cortx_node_list is None:
             self.cortx_node_list = []
         response = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=client_pod, namespace=common_const.NAMESPACE,
+            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME}"
                            f" -- {common_cmd.HCTL_STATUS_CMD_JSON}",
             decode=True)
@@ -111,10 +112,10 @@ class MotrCoreK8s():
         :returns: Primary(RC) node name in the cluster
         :rtype: str
         """
-        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
+        motr_client_pod = self.node_obj.get_pod_name(pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
+            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
             decode=True)
@@ -148,17 +149,17 @@ class MotrCoreK8s():
         """
         return len(self.node_dict[list(self.node_pod_dict.keys())[0]]["motr_client"])
 
-    def get_node_name_from_pod_name(self, client_pod=None):
+    def get_node_name_from_pod_name(self, motr_client_pod=None):
         """
-        To get Node name from client_pod
-        :param client_pod: Name of the data pod
+        To get Node name from Motr client_pod
+        :param motr_client_pod: Name of the motr client pod
         :type: str
         :returns: Corresponding Node name
         :rtype: str
         """
         cmd = "hostname"
         node_name = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=client_pod, namespace=common_const.NAMESPACE,
+            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {cmd}",
             decode=True)
