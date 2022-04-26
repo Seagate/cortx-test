@@ -1485,55 +1485,107 @@ class HAK8s:
         return True, pod_name
 
     def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = False,
-                          rsc_opt: str = "mark_node_failure", rsc: str = "node"):
+                              rsc_opt: str = "mark_node_failure", rsc: str = "node",
+                              validate_set: bool = True):
         """
         Helper function to set resource status to Failed random if go_random.
         :param pod_list: List of resource to be marked as failed
         :param go_random: If True, send mark failure signal to resource randomly
         :param mnode_obj: Master node object to fetch the resource ID
-        :param rsc_opt = Operation to be performed on resource (eg. mark_node_failure)
-        :param rsc = resource type (eg. node)
+        :param rsc_opt: Operation to be performed on resource (eg. mark_node_failure)
+        :param rsc: resource type (eg. node, cluster)
+        :param validate_set: If set to TRUE, its validate SET failure for resource
         :return: bool, response
         """
         if rsc == 'node':
             pod_info = {}
-            pod_data = {'id': None, 'status': False}
+            pod_data = {'id': None, 'status': 'offline'}
             for pod in pod_list:
                 pod_info[pod] = pod_data.copy()
                 pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
 
-            if go_random:
-                for pod in pod_list:
-                    if self.system_random.choice([True, False]):
-                        LOGGER.info('Marking %s pod as failed', pod)
-                        data_val = {"operation": rsc_opt,
-                                    "arguments": {"id": f"{pod_info[pod]['id']}"}}
-                        resp = self.system_health.set_resource_signal(req_body=data_val)
-                        pod_info[pod]['status'] = resp[0]
-            else:
-                for pod in pod_list:
+            for pod in pod_list:
+                set_fail = self.system_random.choice([True, False]) if go_random else True
+                if set_fail:
                     LOGGER.info('Marking %s pod as failed', pod)
                     data_val = {"operation": rsc_opt,
                                 "arguments": {"id": f"{pod_info[pod]['id']}"}}
                     resp = self.system_health.set_resource_signal(req_body=data_val)
-                    pod_info[pod]['status'] = resp[0]
-            for pod in pod_list:
-                if not pod_info[pod]['status']:
-                    resp = self.system_health.get_resource_status(resource_id=pod_info[pod]['id'])
                     if not resp[0]:
-                        return False, pod_info, f"Failed to get node status for {pod}"
-                    status = resp[1]['status']
-                    poll = time.time() + HA_CFG["common_params"]["get_status_time"]
-                    sleep_time = 2
-                    while status != 'failed' and poll > time.time():
-                        time.sleep(sleep_time)
-                        resp = self.system_health.get_resource_status(
-                            resource_id=pod_info[pod]['id'])
-                        if not resp[0]:
-                            return False, pod_info, f"Failed to get node status for {pod}"
-                        status = resp[1]['status']
-                        # Gradually increase in time by multiple of 2 to get node/pod status
-                        sleep_time = sleep_time * 2
+                        return False, pod_info, f"Failed to set failure status for {pod}"
+                    pod_info[pod]['status'] = 'failed'
+            if validate_set:
+                return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
-        else:
-            return False, f"Mark failure for {rsc} is not supported yet"
+        return False, f"Mark failure for {rsc} is not supported yet"
+
+    def get_validate_resource_status(self, rsc_info=None, exp_sts: str = "failed",
+                                     mnode_obj=None, rsc: str = "node"):
+        """
+        Helper function to get and validate resource status
+        :param exp_sts: Expected status of resource.
+        :param rsc_info: Required resource to get its status
+        :param rsc: resource type (eg. node, cluster)
+        :param mnode_obj: Master node object to fetch the resource ID
+        :return: bool, response
+        """
+        if rsc == "node":
+            if not isinstance(rsc_info, dict):
+                # Get the node ID and set expected status if only list of pods is passed
+                pod_info = {}
+                pod_data = {'id': None, 'status': "offline"}
+                for pod in rsc_info:
+                    pod_info[pod] = pod_data.copy()
+                    pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+                    pod_info[pod]['status'] = exp_sts
+            else:
+                pod_info = rsc_info.copy()
+            for pod in pod_info.keys():
+                resp = self.poll_to_get_resource_status(exp_sts=pod_info[pod]['status'], rsc=rsc,
+                                                        rsc_id=pod_info[pod]['id'],
+                                                        timeout=HA_CFG["common_params"][
+                                                            "get_status_time"])
+                if not resp:
+                    return False, f"Failed to get expected status for {pod}"
+            return True, "All pods/nodes status is as expected"
+
+        # Get the cluster ID and verify the cluster status to Expected
+        LOGGER.info("Get the cluster ID for GET API.")
+        data = self.get_config_value(mnode_obj)
+        if not data[0]:
+            return False, "Failed to get cluster ID"
+        resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
+                                                rsc_id=data[1]["cluster"]["id"],
+                                                timeout=HA_CFG["common_params"][
+                                                    "get_status_time"])
+        if not resp:
+            return False, "Failed to get expected status for Cluster"
+        return True, "Got expected status for cluster"
+
+    def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id, timeout):
+        """
+        Helper function to GET and Poll for expected resource status till timeout
+        :param exp_sts: Expected status of resource.
+        :param rsc_id: Required resource ID to GET the resource status
+        :param rsc: resource type (eg. node, cluster)
+        :param timeout: Poll for expected status till timeout
+        :return: bool
+        """
+        resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+        if not resp[0]:
+            return False
+        status = resp[1]['status']
+        poll = time.time() + timeout
+        sleep_time = 2
+        while status != exp_sts and poll > time.time():
+            time.sleep(sleep_time)
+            resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+            if not resp[0]:
+                return False
+            status = resp[1]['status']
+            # Gradually increase in time by multiple of 2 to get node/pod status
+            sleep_time = sleep_time * 2
+        # Verify we got the expected status within Polling time
+        if status != exp_sts:
+            return False
+        return True
