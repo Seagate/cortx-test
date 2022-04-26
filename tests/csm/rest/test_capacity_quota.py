@@ -21,7 +21,6 @@
 """
 import logging
 import math
-import random
 import time
 from http import HTTPStatus
 from random import SystemRandom
@@ -34,9 +33,9 @@ from commons import cortxlogging
 from commons.utils import assert_utils
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_quota import GetSetQuota
-from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc, s3_test_lib
 
+# pylint: disable=too-many-instance-attributes
 class TestSystemCapacity():
     """System Capacity Testsuite"""
 
@@ -373,6 +372,7 @@ class TestSystemCapacity():
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
