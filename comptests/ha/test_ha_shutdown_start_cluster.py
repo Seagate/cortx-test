@@ -196,7 +196,7 @@ class TestShutdownStartCluster:
                     common_const.HA_SHUTDOWN_LOGS)
 
         LOGGER.info("Step 9: Start the cluster")
-        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully started the cluster")
         self.restore_pod = False
@@ -270,7 +270,7 @@ class TestShutdownStartCluster:
                     "(kubectl exec -it <<>>.)")
 
         LOGGER.info("Step 7: Start the cluster")
-        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully started the cluster")
 
@@ -352,7 +352,7 @@ class TestShutdownStartCluster:
                     common_const.HA_SHUTDOWN_LOGS)
 
         LOGGER.info("Step 8: Start the cluster")
-        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully started the cluster")
         self.restore_pod = False
@@ -457,7 +457,7 @@ class TestShutdownStartCluster:
                     common_const.HA_SHUTDOWN_LOGS)
 
         LOGGER.info("Step 11: Start the cluster")
-        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 11: Successfully started the cluster")
 
