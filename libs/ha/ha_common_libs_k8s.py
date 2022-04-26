@@ -1647,6 +1647,7 @@ class HAK8s:
             else:
                 pod_info = rsc_info.copy()
             for pod in pod_info.keys():
+                LOGGER.info("Get and verify pod %s status is as expected", pod)
                 resp = self.poll_to_get_resource_status(exp_sts=pod_info[pod]['status'], rsc=rsc,
                                                         rsc_id=pod_info[pod]['id'])
                 if not resp:
@@ -1664,6 +1665,7 @@ class HAK8s:
                     if rsc_info[pod]['status'] == "offline" or rsc_info[pod]['status'] == "failed":
                         exp_sts = "degraded"
                         break
+            LOGGER.info("Get and verify cluster status is set to %s", exp_sts)
             resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
                                                     rsc_id=data[1]["cluster"]["id"])
             if not resp:
@@ -1687,6 +1689,7 @@ class HAK8s:
         poll = time.time() + timeout
         sleep_time = HA_CFG["common_params"]["2sec_delay"]
         while status != exp_sts and poll > time.time():
+            LOGGER.info("Current %s status is %s. Sleeping for %s sec", rsc, status, sleep_time)
             time.sleep(sleep_time)
             resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
             if not resp[0]:
