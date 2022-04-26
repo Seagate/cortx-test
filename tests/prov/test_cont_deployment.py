@@ -68,6 +68,7 @@ class TestContDeployment:
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH", cls.deploy_cfg["k8s_dir"])
+        cls.namespace = os.getenv("NAMESPACE", cls.deploy_cfg["namespace"])
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -153,6 +154,7 @@ class TestContDeployment:
         self.log.debug("DIX %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
         self.log.debug("CVG per node are %s \n Data disk per cvg are %s",
                        self.cvg_per_node, self.data_disk_per_cvg)
+        self.log.debug("THE NAMESPACE is %s", self.namespace)
         iteration = 0
         while iteration < count:
             self.log.info("The iteration no is %s", (iteration + 1))
@@ -176,6 +178,7 @@ class TestContDeployment:
                                                run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                                                destroy_setup_flag=self.destroy_setup_flag,
                                                custom_repo_path=self.custom_repo_path,
+                                               namespace=self.namespace,
                                                report_filepath=self.report_file,
                                                data_disk_size=self.data_disk_size,
                                                meta_disk_size=self.meta_disk_size)
