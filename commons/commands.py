@@ -516,6 +516,7 @@ KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata
 KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
+
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
 KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
@@ -525,6 +526,10 @@ KUBECTL_GET_SCT = "kubectl get {} -A >> {}"
 KUBECTL_GET_PVC = "kubectl get pvc -A >> {}"
 KUBECTL_GET_PV = "kubectl get pv >> {}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
+K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
+                      "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
+                      "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
+
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
