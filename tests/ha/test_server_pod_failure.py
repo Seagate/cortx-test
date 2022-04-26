@@ -2773,7 +2773,7 @@ class TestServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to shutdown Server pod {server_pod_name} "
                                            "by making replicas=0")
-        LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", server_pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s by making replicas=0", server_pod_name)
         self.deployment_name = resp[1]
         self.restore_pod = self.deploy = True
         self.restore_method = const.RESTORE_SCALE_REPLICAS
@@ -2783,7 +2783,7 @@ class TestServerPodFailure:
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Some services in cluster are offline as %s pod is down", server_pod_name)
 
-        LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
+        LOGGER.info("Step 4: Check services status that were running on server pod %s", server_pod_name)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
                                                            fail=True, hostname=pod_host)
         LOGGER.debug("Response: %s", resp)
