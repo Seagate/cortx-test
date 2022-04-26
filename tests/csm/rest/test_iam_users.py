@@ -754,7 +754,7 @@ class TestIamUserRGW():
             assert bucket_created, "More than allowed bucket created."
         except ClientError as error:
             self.log.info("Expected exception received %s", error)
-            assert "TooManyBuckets" == error.response['Error']['Code'], "Error check failed."
+            assert error.response['Error']['Code'] == "TooManyBuckets", "Error check failed."
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
