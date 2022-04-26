@@ -165,7 +165,7 @@ class MotrCoreK8s():
                 command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                f"-- {cmd}",
                 decode=True)
-             return node_name
+            return node_name
         log.error("Missing motr client pod name. Please check cluster again")
         return None
 
