@@ -23,6 +23,7 @@ from http import HTTPStatus
 import os
 from random import SystemRandom
 import pytest
+from botocore.exceptions import ClientError
 from commons import configmanager
 from commons import cortxlogging
 from commons import commands as common_cmd
@@ -37,6 +38,7 @@ from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3 import s3_misc
 
 class TestIamUser():
     """REST API Test cases for IAM users"""
@@ -2070,7 +2072,8 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
         payload.update({"uid": uid})
         payload.update({"display_name": uid})
-        payload.update({"max_buckets": 1})
+        max_buckets = self.csm_obj.random_gen.randint(1, 10)
+        payload.update({"max_buckets": max_buckets})
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp1)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
@@ -2078,40 +2081,30 @@ class TestIamUserRGW():
         self.created_iam_users.add(resp1.json()['tenant'] + "$" + uid)
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         assert_utils.assert_true(resp[0], resp[1])
-        for bucket_cnt in range(2):
-            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
+        access_key=resp1.json()["keys"][0]["access_key"]
+        secret_key=resp1.json()["keys"][0]["secret_key"]
+        test_file = "test-object.txt"
+        for bucket_cnt in range(max_buckets):
+            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time_ns()))
             # Create bucket with bucket_name and perform IO
-            s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
-                               secret_key=resp1.json()["keys"][0]["secret_key"])
-            if bucket_cnt == 0:
-                status, resp = s3_obj.create_bucket(bucket_name)
-                assert_utils.assert_true(status, resp)
-                test_file = "test-object.txt"
-                file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-                if os.path.exists(file_path_upload):
-                    os.remove(file_path_upload)
-                if not os.path.isdir(TEST_DATA_FOLDER):
-                    self.log.debug("File path not exists, create a directory")
-                    system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-                system_utils.create_file(file_path_upload, self.file_size)
-                resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
-                                         file_path=file_path_upload)
-                self.log.info("Removing uploaded object from a local path.")
-                os.remove(file_path_upload)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Step: Verify get object.")
-                resp = s3_obj.get_object(bucket_name, test_file)
-                assert_utils.assert_true(resp[0], resp)
-            else:
-                try:
-                    status, resp = s3_obj.create_bucket(bucket_name)
-                    self.log.info("Printing response %s", resp.json())
-                    assert_utils.assert_false(status, resp)
-                except Exception as error:
-                    self.log.info("Expected exception received %s", error)
-        self.log.info("[END]Creating IAM user with max bucket 1")
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket_name, access_key, secret_key)
+            bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
+            assert bucket_created, "Failed to create bucket"
+            resp = s3_misc.create_put_objects(
+            test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
+            assert_utils.assert_true(resp, "Put object Failed")
+        try:
+            self.log.info("Create one more than allowed bucket")
+            bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
+            assert bucket_created, "More than allowed bucket created."
+        except ClientError as error:
+            self.log.info("Expected exception received %s", error)
+            assert error.response['Error']['Code'] == "TooManyBuckets", "Error check failed."
+        self.log.info("[END]Creating IAM user with max bucket %s", max_buckets)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Bug CORTX-30999")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2133,32 +2126,29 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
-        for bucket_cnt in range(const.MAX_BUCKETS+1):
-            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time()))
+        # Create bucket with bucket_name and perform IO
+        access_key=resp1.json()["keys"][0]["access_key"]
+        secret_key=resp1.json()["keys"][0]["secret_key"]
+        test_file = "test-object.txt"
+        for bucket_cnt in range(const.MAX_BUCKETS):
+            self.log.info("[START] Iteration %s", bucket_cnt)
+            bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time_ns()))
             # Create bucket with bucket_name and perform IO
-            s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
-                               secret_key=resp1.json()["keys"][0]["secret_key"])
-            status, resp = s3_obj.create_bucket(bucket_name)
-            if bucket_cnt < const.MAX_BUCKETS:
-                assert_utils.assert_true(status, resp)
-                test_file = "test-object.txt"
-                file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
-                if os.path.exists(file_path_upload):
-                    os.remove(file_path_upload)
-                if not os.path.isdir(TEST_DATA_FOLDER):
-                    self.log.debug("File path not exists, create a directory")
-                    system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
-                system_utils.create_file(file_path_upload, self.file_size)
-                resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
-                                         file_path=file_path_upload)
-                self.log.info("Removing uploaded object from a local path.")
-                os.remove(file_path_upload)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Step: Verify get object.")
-                resp = s3_obj.get_object(bucket_name, test_file)
-                assert_utils.assert_true(resp[0], resp)
-            else:
-                assert_utils.assert_false(status, resp)
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                          bucket_name, access_key, secret_key)
+            bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
+            assert bucket_created, "Failed to create bucket"
+            resp = s3_misc.create_put_objects(
+            test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
+            assert_utils.assert_true(resp, "Put object Failed")
+            self.log.info("[END] Iteration %s", bucket_cnt)
+        try:
+            self.log.info("Create one more than allowed bucket")
+            bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
+            assert bucket_created, "More than allowed bucket created."
+        except ClientError as error:
+            self.log.info("Expected exception received %s", error)
+            assert error.response['Error']['Code'] == "TooManyBuckets", "Error check failed."
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -2291,6 +2281,7 @@ class TestIamUserRGW():
         uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         resp = resp.json()
+
         self.log.info("Create bucket and perform IO")
         s3_obj = S3TestLib(access_key=resp["keys"][0]["access_key"],
                            secret_key=resp["keys"][0]["secret_key"])
@@ -3120,6 +3111,7 @@ class TestIamUserRGW():
         self.log.info("[END]Update request with uid and generate-key")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Needs test fix")
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -4105,7 +4097,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp3.status_code == HTTPStatus.CONFLICT,
                                  "Patch request status code failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(resp.json()["message"] ==
+            assert_utils.assert_true(resp3.json()["message"] ==
                                      self.rest_resp_conf[39401]['users_already_exists'][0]
                                      , "Response message check failed")
         self.log.info("[END]Try Creating IAM users with same UID")
