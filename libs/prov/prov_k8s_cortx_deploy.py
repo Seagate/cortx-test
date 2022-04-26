@@ -67,7 +67,7 @@ class ProvDeployK8sCortxLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
-        self.s3_engine = os.getenv("S3_ENGINE")
+        self.s3_engine = int(os.getenv("S3_ENGINE"))
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
@@ -963,7 +963,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Configure AWS on Client")
             resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
             LOGGER.debug("resp : %s", resp)
-            if int(s3_engine) == common_const.S3_ENGINE_RGW:
+            if s3_engine == common_const.S3_ENGINE_RGW:
                 LOGGER.info("Configure AWS keys on Client %s", s3_engine)
                 resp = system_utils.execute_cmd(
                     common_cmd.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
@@ -1310,7 +1310,7 @@ class ProvDeployK8sCortxLib:
                                                                eth1_ip, self.deploy_cfg['iface'])
                     ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
                 LOGGER.info("Step to Create S3 account and configure credentials")
-                if self.s3_engine == "2":
+                if self.s3_engine == 2:
                     resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
                     assert_utils.assert_true(resp[0], resp[1])
                     access_key, secret_key = S3H_OBJ.get_local_keys()
