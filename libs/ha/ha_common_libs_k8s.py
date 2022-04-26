@@ -1622,6 +1622,7 @@ class HAK8s:
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
 
+    # pylint: disable=W1624
     def get_validate_resource_status(self, rsc_info, exp_sts=None,
                                      mnode_obj=None, rsc: str = "node"):
         """
@@ -1654,7 +1655,6 @@ class HAK8s:
             # Get the cluster ID and verify the cluster status to Expected
             LOGGER.info("Get the cluster ID for GET API and verify cluster status.")
             data = self.get_config_value(mnode_obj)
-
             if not data[0]:
                 return False, "Failed to get cluster ID"
             if not exp_sts and isinstance(rsc_info, dict):
