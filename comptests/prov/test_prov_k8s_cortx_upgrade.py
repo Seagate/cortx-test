@@ -32,7 +32,6 @@ from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
-from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
@@ -50,8 +49,10 @@ class TestProvK8CortxRollingUpgrade:
         LOGGER.info("STARTED: Setup Module operations")
         cls.cortx_all_image = os.getenv("CORTX_ALL_IMAGE", None)
         cls.cortx_rgw_image = os.getenv("CORTX_RGW_IMAGE", None)
+        cls.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         cls.cortx_all_parallel_image = os.getenv("CORTX_ALL_UPGRADE", None)
         cls.cortx_rgw_parallel_image = os.getenv("CORTX_RGW_UPGRADE", None)
+        cls.cortx_data_parallel_image = os.getenv("CORTX_DATA_UPGRADE", None)
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
@@ -90,9 +91,7 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = resp[1]['cortx']['common']['release']['version']
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -100,7 +99,7 @@ class TestProvK8CortxRollingUpgrade:
         # TODO : Better way to compare two versions.
         installing_version = self.cortx_all_image.split(":")[1].split("-")
         installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
+        LOGGER.info("Installing CORTX image version: %s", installing_version)
         assert installing_version > installed_version, \
             "Installed version is higher than installing version."
         LOGGER.info("Step 2: Done.")
@@ -115,7 +114,9 @@ class TestProvK8CortxRollingUpgrade:
         solution_path = self.master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
-        image_dict = {"all_image": self.cortx_all_image, "rgw_image": self.cortx_rgw_image}
+        image_dict = {"all_image": self.cortx_all_image,
+                      "rgw_image": self.cortx_rgw_image,
+                      "data_image": self.cortx_data_image}
         local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
@@ -140,9 +141,7 @@ class TestProvK8CortxRollingUpgrade:
         LOGGER.info("Step 6: Done.")
 
         LOGGER.info("Step 7: Check if installed version is equals to installing version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]['cortx']['common']['release']['version']
+        new_installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("New CORTX image version: %s", new_installed_version)
         assert_utils.assert_equals(installing_version, new_installed_version,
                                    "Installing version is not equal to new installed version.")
@@ -225,9 +224,7 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_obj)
-        assert_utils.assert_true(resp[0], resp[1])
-        installed_version = resp[1]['cortx']['common']['release']['version']
+        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
@@ -252,7 +249,8 @@ class TestProvK8CortxRollingUpgrade:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"all_image": self.cortx_all_parallel_image,
-                      "rgw_image": self.cortx_rgw_parallel_image}
+                      "rgw_image": self.cortx_rgw_parallel_image,
+                      "data_image": self.cortx_data_parallel_image}
         local_path = self.deploy_lc_obj.update_sol_with_image(self.local_sol_path, image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
@@ -298,6 +296,11 @@ class TestProvK8CortxRollingUpgrade:
             resp = str(resp, 'UTF-8')
         resp = "".join(resp).replace("\\n", "\n")
         assert_utils.assert_in("Invalid argument provided", resp)
+        LOGGER.info("Remove upgrade pid file for next TC.")
+        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
+            self.master_node_obj.remove_file(filename=
+                                             self.prov_deploy_cfg["upgrade_process_file_path"]
+                                             )
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -316,6 +319,11 @@ class TestProvK8CortxRollingUpgrade:
             resp = str(resp, 'UTF-8')
         resp = "".join(resp).replace("\\n", "\n")
         assert_utils.assert_in(error_msg, resp)
+        LOGGER.info("Remove upgrade pid file for next TC.")
+        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
+            self.master_node_obj.remove_file(filename=
+                                             self.prov_deploy_cfg["upgrade_process_file_path"]
+                                             )
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -347,4 +355,9 @@ class TestProvK8CortxRollingUpgrade:
         pod_delete_thread.join()
         assert_utils.assert_in("Ensure all pods are in a healthy state", resp[1])
         LOGGER.info("Step 3: Done")
+        LOGGER.info("Remove upgrade pid file for next TC.")
+        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
+            self.master_node_obj.remove_file(filename=
+                                             self.prov_deploy_cfg["upgrade_process_file_path"]
+                                             )
         LOGGER.info("Test Completed.")
