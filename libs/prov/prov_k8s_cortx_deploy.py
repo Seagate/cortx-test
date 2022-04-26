@@ -736,7 +736,6 @@ class ProvDeployK8sCortxLib:
         This Method update the miscellaneous params in solution.yaml file
         Param: filepath: filename with complete path
         Param: log_path: to change the log path inside pods
-        Param: size: to change the disk size to be used for data and metadata
         Param: nodeport_http: http Port for node port service for s3
         Param: nodeport_https: https Port for node port service for s3
         Param: control_nodeport_https: https Port for node port service for control
