@@ -150,7 +150,7 @@ class MotrCoreK8s():
         """
         return len(self.node_dict[list(self.node_pod_dict.keys())[0]]["motr_client"])
 
-    def get_node_name_from_pod_name(self, motr_client_pod=None):
+    def get_node_name_from_pod_name(self, motr_client_pod):
         """
         To get Node name from Motr client_pod
         :param motr_client_pod: Name of the motr client pod
@@ -158,16 +158,13 @@ class MotrCoreK8s():
         :returns: Corresponding Node name
         :rtype: str
         """
-        if motr_client_pod:
-            cmd = "hostname"
-            node_name = self.node_obj.send_k8s_cmd(
-                operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                               f"-- {cmd}",
-                decode=True)
-            return node_name
-        log.error("Missing motr client pod name. Please check cluster again")
-        return None
+        cmd = "hostname"
+        node_name = self.node_obj.send_k8s_cmd(
+            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                           f"-- {cmd}",
+            decode=True)
+        return node_name
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
         """
