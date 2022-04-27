@@ -83,7 +83,7 @@ class TestMultiServerPodFailure:
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.deploy = cls.kvalue = None
-        cls.pod_dict = {}
+        cls.pod_dict = dict()
         cls.mgnt_ops = ManagementOPs()
 
         for node in range(cls.num_nodes):
@@ -117,7 +117,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         self.deploy = False
-        self.s3_clean = {}
+        self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -422,7 +422,7 @@ class TestMultiServerPodFailure:
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
@@ -493,7 +493,7 @@ class TestMultiServerPodFailure:
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        del_resp = ()
+        del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
@@ -505,14 +505,14 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 7: Perform READs and verify DI on the remaining %s "
                     "buckets.", remain_bkt)
         rd_output = Queue()
-        new_s3data = {}
+        new_s3data = dict()
         for bkt in remain_bkt:
             new_s3data[bkt] = s3_data[bkt]
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        rd_resp = ()
+        rd_resp = tuple()
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
