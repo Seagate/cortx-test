@@ -458,8 +458,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 3: Cluster has some failures due to %s server pods has gone down.",
                     self.kvalue)
 
-        LOGGER.info("Step 4: Check services status that were running on server pod %s "
-                    "which are deleted.", pod_name)
+        LOGGER.info("Step 4: Check services status that were running on server pods "
+                    "which are deleted.")
         counter = 0
         for pod_name in self.pod_name_list:
             hostname = self.pod_dict.get(pod_name)[0]
@@ -469,8 +469,8 @@ class TestMultiServerPodFailure:
             if not resp[0]:
                 counter += 1
             pod_list.remove(pod_name)
-        assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
-        LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
+        assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
+        LOGGER.info("Step 4: Services of server pods are in offline state")
 
         LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
