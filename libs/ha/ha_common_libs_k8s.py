@@ -221,7 +221,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(int(self.num_pods))]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -833,6 +833,7 @@ class HAK8s:
         :param timeout: Timeout value
         :return: bool, response
         """
+        resp = False
         LOGGER.info("Polling cluster status")
         start_time = int(time.time())
         while timeout > int(time.time()) - start_time:
@@ -855,6 +856,7 @@ class HAK8s:
         :param restore_params: Dict which has parameters required to restore pods
         :return: Bool, response
         """
+        resp = False
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
 
@@ -1477,7 +1479,7 @@ class HAK8s:
                 return False, f"Failed to delete pod {pod_name} by deleting deployment (unsafe)"
             LOGGER.info("Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                         pod_name)
-            test_server_pod_failure.py['deployment_backup'] = resp[1]
+            down_info['deployment_backup'] = resp[1]
             down_info['deployment_name'] = resp[2]
         down_info['method'] = down_method
         LOGGER.info("Successfully deleted pod %s by %s method", pod_name, down_method)
