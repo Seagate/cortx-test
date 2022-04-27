@@ -21,6 +21,7 @@
 """
 import logging
 import math
+import os
 import time
 from http import HTTPStatus
 from random import SystemRandom
@@ -30,13 +31,16 @@ import pytest
 
 from commons import configmanager
 from commons import cortxlogging
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
-from libs.csm.rest.csm_rest_quota import GetSetQuota
-from libs.s3 import s3_misc, s3_test_lib
+from libs.s3 import s3_misc
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 # pylint: disable=too-many-instance-attributes
-class TestSystemCapacity():
+class TestCapacityQuota():
     """System Capacity Testsuite"""
 
     @classmethod
@@ -48,12 +52,15 @@ class TestSystemCapacity():
         cls.cryptogen = SystemRandom()
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
-        cls.quota_obj = GetSetQuota()
         cls.created_iam_users = set()
-        cls.s3_obj = s3_test_lib.S3TestLib()
         cls.buckets_created = []
         cls.user_id = None
         cls.display_name = None
+        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.test_file = "mp_obj"
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUpload")
+        cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def setup_method(self):
         """
@@ -113,6 +120,39 @@ class TestSystemCapacity():
         assert_utils.assert_true(len(self.created_iam_users) == 0, "IAM deletion failed")
         self.log.info("[ENDED] ######### Teardown #########")
 
+    def create_bucket_to_upload_parts(
+            self,
+            bucket_name,
+            object_name,
+            file_size,
+            total_parts):
+        """Create bucket, initiate multipart upload and upload parts."""
+        self.log.info("Creating a bucket with name : %s", bucket_name)
+        res = self.s3_test_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", bucket_name)
+        self.log.info("Initiating multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(
+            bucket_name, object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info(
+            "Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("Uploading parts into bucket")
+        res = self.s3_mp_test_obj.upload_parts(
+            mpu_id,
+            bucket_name,
+            object_name,
+            file_size,
+            total_parts=total_parts,
+            multipart_obj_path=self.mp_obj_path)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]), total_parts, res[1])
+        parts = res[1]
+        self.log.info("Uploaded parts into bucket: %s", parts)
+        return mpu_id, parts
+
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -125,7 +165,7 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Creating IAM user with login as manage user")
+        self.log.info("Step 1: Creating IAM user with login as admin user")
         payload = self.csm_obj.iam_user_payload_rgw("random")
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
@@ -148,10 +188,10 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_40632"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        resp3 = self.quota_obj.set_user_quota(uid, "user","true", max_size, max_objects)
+        resp3 = self.csm_obj.set_user_quota(uid, "user","true", max_size, max_objects)
         assert_utils.assert_true(resp3[0],resp3[1])
         self.log.info("Step 4: Perform GET API to get user level quota")
-        resp4 = self.quota_obj.get_user_quota(uid, "user")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("Step 5: Perform Put operation for 1 object of max size")
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
@@ -202,7 +242,7 @@ class TestSystemCapacity():
         self.log.info("Step 2: Create bucket under above IAM user")
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
-        self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket_name, self.akey, self.skey)
         bucket_created = s3_misc.create_bucket(self.bucket_name, self.akey, self.skey)
@@ -212,10 +252,10 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_40633"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        resp3 = self.quota_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
         assert_utils.assert_true(resp3[0], resp3[1])
         self.log.info("Step 4: Perform GET API to get user level quota")
-        resp4 = self.quota_obj.get_user_quota(uid, "user")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("Step 5: Perform Put operation for 1 object of max size")
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
@@ -266,7 +306,7 @@ class TestSystemCapacity():
         self.log.info("Step 2: Create bucket under above IAM user")
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
-        self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket_name, self.akey, self.skey)
         bucket_created = s3_misc.create_bucket(self.bucket_name, self.akey, self.skey)
@@ -276,12 +316,12 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_40634"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        resp3 = self.quota_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
         assert_utils.assert_true(resp3[0], resp3[1])
         test_cfg = self.csm_conf["test_40634"]
         for _ in range(0, test_cfg["num_iterations"]):
             self.log.info("Step 4: Perform GET API to get user level quota")
-            resp4 = self.quota_obj.get_user_quota(uid, "user")
+            resp4 = self.csm_obj.get_user_quota(uid, "user")
             assert_utils.assert_true(resp4[0], resp4[1])
             self.log.info("Step 5: Perform Put operation for 1 object of max size")
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
@@ -333,7 +373,7 @@ class TestSystemCapacity():
         self.log.info("Step 2: Create bucket under above IAM user")
         self.akey = resp.json()["access_key"]
         self.skey = resp.json()["secret_key"]
-        self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket_name, self.akey, self.skey)
         bucket_created = s3_misc.create_bucket(self.bucket_name, self.akey, self.skey)
@@ -343,10 +383,10 @@ class TestSystemCapacity():
         test_cfg = self.csm_conf["test_40635"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        resp3 = self.quota_obj.set_user_quota(uid, "user", "false", max_size, max_objects)
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "false", max_size, max_objects)
         assert_utils.assert_true(resp3[0], resp3[1])
         self.log.info("Step 4: Perform GET API to get user level quota")
-        resp4 = self.quota_obj.get_user_quota(uid, "user")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("Step 5: Perform Put operation for 1 object of max size")
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
@@ -403,7 +443,7 @@ class TestSystemCapacity():
             self.log.info("Step 2: Create bucket under above IAM user")
             self.akey = resp.json()["access_key"]
             self.skey = resp.json()["secret_key"]
-            self.bucket_name = "iam-user-bucket-" + str(int(time.time()))
+            self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
             self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                           self.bucket_name, self.akey, self.skey)
             bucket_created = s3_misc.create_bucket(self.bucket_name, self.akey, self.skey)
@@ -412,10 +452,10 @@ class TestSystemCapacity():
             test_cfg = self.csm_conf["test_40636"]
             max_size = test_cfg["max_size"]
             max_objects = test_cfg["max_objects"]
-            resp3 = self.quota_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
+            resp3 = self.csm_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
             assert_utils.assert_true(resp3[0], resp3[1])
             self.log.info("Step 4: Perform GET API to get user level quota")
-            resp4 = self.quota_obj.get_user_quota(uid, "user")
+            resp4 = self.csm_obj.get_user_quota(uid, "user")
             assert_utils.assert_true(resp4[0], resp4[1])
             self.log.info("Step 5: Perform Put operation for 1 object of max size")
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
@@ -439,4 +479,300 @@ class TestSystemCapacity():
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
                                               self.akey, self.skey, object_size=random_size)
             assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40637')
+    def test_40637(self):
+        """
+        Test set & get API for User level quota & capacity for S3 user
+        have already exceeded capacity
+        """
+        test_case_name = cortxlogging.get_frame()
+        test_cfg = self.csm_conf["test_40637"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating IAM user with login as admin user")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
+        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
+        self.log.info("Printing response %s", resp1)
+        assert_utils.assert_true(resp1[0], resp1[1])
+        self.log.info("Step 2: Create bucket under above IAM user")
+        self.akey = resp.json()["access_key"]
+        self.skey = resp.json()["secret_key"]
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      self.bucket_name, self.akey, self.skey)
+        bucket_created = s3_misc.create_bucket(self.bucket_name, self.akey, self.skey)
+        assert bucket_created, "Failed to create bucket"
+        self.log.info("Step 3: Perform s3 operation")
+        random_size = self.cryptogen.randrange(1, max_size)
+        resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
+                                          self.akey, self.skey, object_size=random_size)
+        assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("Step 3: Perform PUT API to set user level quota less than used")
+        uid = resp1.json()['tenant'] + "$" + payload["uid"]
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", (max_size-random_size), max_objects)
+        assert_utils.assert_true(resp3[0], resp3[1])
+        self.log.info("Step 4: Perform GET API to get user level quota")   #Expected Outcome is not known yet
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp4[0], resp4[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40638')
+    def test_40638(self):
+        """
+        Test set & get API for User level quota & capacity for
+        S3 user have Multipart upload in-progress and then Aborted
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_40638"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        self.log.info("Step 1: Creating IAM user with login as admin user")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
+        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
+        self.log.info("Printing response %s", resp1)
+        assert_utils.assert_true(resp1[0], resp1[1])
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
+        self.log.info("Step 3: Start Multipart upload S3 operations of X Mb"
+                      "X=(max_size+x)")
+        res = self.create_bucket_to_upload_parts(
+            self.bucket_name,
+            self.obj_name,
+            (max_size+test_cfg["extra_bytes"]),
+            test_cfg["total_parts"])
+        mpu_id, parts = res
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(
+            mpu_id,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),
+                                  test_cfg["total_parts"], res[1])
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id,
+            parts,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.obj_name, res[1], res[1])
+        self.log.info("Multipart upload completed")
+        self.log.info("Step 3: Perform PUT API to set user level quota less then used")
+        uid = resp.json()['tenant'] + "$" + payload["uid"]
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
+        assert_utils.assert_true(resp3[0], resp3[1])
+        self.log.info("Step 4: Perform GET API to get user level quota")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp4[0], resp4[1])
+        self.log.info("Step 5: Abort Multipart upload S3 operations")
+        res = self.s3_mp_test_obj.abort_multipart_upload(
+            self.bucket_name,
+            self.obj_name,
+            mpu_id)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_mp_test_obj.list_multipart_uploads(
+            self.bucket_name)
+        assert_utils.assert_not_in(mpu_id, res[1], res[1])
+        self.log.info(
+            "Aborted multipart upload with upload ID: %s", mpu_id)
+        self.log.info("Step 6: Perform PUT API to set user level quota "
+                      "less than used")
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", max_size, max_objects)
+        assert_utils.assert_true(resp3[0], resp3[1])
+        self.log.info("Step 7: Perform GET API to get user level quota")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp4[0], resp4[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40639')
+    def test_40639(self):
+        """
+        Test set & get API for User level quota & capacity for S3
+        user have Multipart upload in-progress and then completed
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_40639"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        self.log.info("Step 1: Creating IAM user with login as admin user")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
+        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
+        self.log.info("Printing response %s", resp1)
+        assert_utils.assert_true(resp1[0], resp1[1])
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
+        self.log.info("Step 2: Start Multipart upload S3 operations of X Mb")
+        res = self.create_bucket_to_upload_parts(
+            self.bucket_name,
+            self.obj_name,
+            max_size,
+            test_cfg["total_parts"])
+        mpu_id, parts = res
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(
+            mpu_id,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),
+                                  test_cfg["total_parts"], res[1])
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id,
+            parts,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.obj_name, res[1], res[1])
+        self.log.info("Multipart upload completed")
+        self.log.info("Step 3: Perform GET API to get user level quota")
+        uid = resp.json()['tenant'] + "$" + payload["uid"]
+        resp = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Perform PUT API to set user level quota less than used")
+        less_size = self.cryptogen.randrange(1, max_size)
+        resp = self.csm_obj.set_user_quota(uid, "user", "true", less_size, max_objects)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Perform GET API to get user level quota")
+        resp = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id,
+            parts,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.obj_name, res[1], res[1])
+        self.log.info("Multipart upload completed")
+        self.log.info("Step 7: Perform PUT API to set user level quota less than used")
+        resp = self.csm_obj.set_user_quota(uid, "user", "true",
+                                             less_size, max_objects)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 8: Perform GET API to get user level quota")
+        resp = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40640')
+    def test_40640(self):
+        """
+        Test set & get API for User level quota & capacity for S3 user
+        with Multipart Abort and Simple IO in parallel.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_40639"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        self.log.info("Step 1: Creating IAM user with login as admin user")
+        payload = self.csm_obj.iam_user_payload_rgw("random")
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+                                 "IAM user creation failed")
+        self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
+        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
+        self.log.info("Printing response %s", resp1)
+        assert_utils.assert_true(resp1[0], resp1[1])
+        self.bucket_name = "iam-user-bucket-" + str(int(time.time_ns()))
+        self.log.info("Step 2: Perform PUT API to set user level quota")
+        uid = resp.json()['tenant'] + "$" + payload["uid"]
+        less_size = self.cryptogen.randrange(1, max_size)
+        resp = self.csm_obj.set_user_quota(uid, "user", "true", less_size, max_objects)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Perform GET API to get user level quota")
+        resp = self.csm_obj.get_user_quota(uid, "user")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Start Multipart upload S3 operations of X Mb")
+        res = self.create_bucket_to_upload_parts(
+            self.bucket_name,
+            self.obj_name,
+            max_size,
+            test_cfg["total_parts"])
+        mpu_id, parts = res
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(
+            mpu_id,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),
+                                  test_cfg["total_parts"], res[1])
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id,
+            parts,
+            self.bucket_name,
+            self.obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.obj_name, res[1], res[1])
+        self.log.info("Multipart upload completed")
+        self.log.info("Step 5: Perform Put operation for 1 object of max size")
+        resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
+                                          self.akey, self.skey, object_size=max_size)
+        assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("Step 6: Abort Multipart upload S3 operations")
+        res = self.s3_mp_test_obj.abort_multipart_upload(
+            self.bucket_name,
+            self.obj_name,
+            mpu_id)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_mp_test_obj.list_multipart_uploads(
+            self.bucket_name)
+        assert_utils.assert_not_in(mpu_id, res[1], res[1])
+        self.log.info(
+            "Aborted multipart upload with upload ID: %s", mpu_id)
+        self.log.info("Step 7: Perform Put operation for 1 object of max size")
+        resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
+                                          self.akey, self.skey, object_size=max_size)
+        assert_utils.assert_true(resp, "Put object Failed")
+        self.log.info("Step 8: Perform Put operation of Random size and 1 object")
+        random_size = self.cryptogen.randrange(1, max_size)
+        resp = s3_misc.create_put_objects(self.obj_name, self.bucket_name,
+                                          self.akey, self.skey, object_size=random_size)
+        assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)

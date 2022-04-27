@@ -47,15 +47,32 @@ test_34698:
     start_range: 10
     stop_range: 100
 test_40632:
-  max_size:
-  max_objects:
+  max_size: 5G
+  max_objects: 10
 test_40633:
-  max_size:
-  max_objects:
+  max_size: 5G
+  max_objects: 10
 test_40634:
-  max_size:
-  max_objects:
+  max_size: 5G
+  max_objects: 10
   num_iterations:
 test_40635:
-  max_size:
-  max_objects:
+  max_size: 5G
+  max_objects: 10
+test_40636:
+  max_size: 5G
+  max_objects: 10
+test_40637:
+  max_size: 5G
+  max_objects: 10
+test_40638:
+  max_size: 5G
+  max_objects: 10
+  extra_bytes: 5M
+  total_parts: 5
+test_40639:
+  max_size: 5G
+  max_objects: 10
+test_40640:
+  max_size: 5G
+  max_objects: 10
