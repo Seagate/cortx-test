@@ -95,7 +95,7 @@ class MotrCoreK8s():
         Returns all the node and motr client pod names in dict format
         """
         node_pod_dict = {}
-        cmd = "| awk '/cortx-client/ {print $1}'"
+        cmd = "| grep \"{}\" |awk '{{print $1}}'".format(common_const.CLIENT_POD_NAME_PREFIX)
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
