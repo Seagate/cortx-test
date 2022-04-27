@@ -548,7 +548,7 @@ class Health(Host):
                 for svcs in node_data['svcs']:
                     temp_svc = svcs_elem.copy()
                     is_data = False
-                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                    if svcs['name'] != const.MOTR_CLIENT and svcs['status'] != 'started':
                         temp_svc['service'] = svcs['name']
                         temp_svc['status'] = svcs['status']
                         is_data = True
