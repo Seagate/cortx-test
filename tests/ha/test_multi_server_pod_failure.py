@@ -338,8 +338,6 @@ class TestMultiServerPodFailure:
                                                "by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
-            self.restore_pod = self.deploy = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Step 3: Deleted %s server pod %s by deleting deployment (unsafe)",
                         count, pod_name)
@@ -350,14 +348,14 @@ class TestMultiServerPodFailure:
             LOGGER.info("Step 4: Cluster has some failures due to %s server pods has gone down.",
                         count)
 
-            LOGGER.info("Step 5: Check services status that were running on server pods which "
-                        "are deleted")
+            LOGGER.info("Step 5: Check services status that were running on server pod %s which "
+                        "are deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             pod_list.remove(pod_name)
-            LOGGER.info("Step 5: Services of server pods are in offline state")
+            LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
@@ -373,6 +371,8 @@ class TestMultiServerPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("%s (K) server pods shutdown one by one successfully and read/verify "
                     "after each pod down verified", self.kvalue)
 
@@ -458,8 +458,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 3: Cluster has some failures due to %s server pods has gone down.",
                     self.kvalue)
 
-        LOGGER.info("Step 4: Check services status that were running on server pods "
-                    "which are deleted.")
+        LOGGER.info("Step 4: Check services status that were running on server pod %s "
+                    "which are deleted.", pod_name)
         counter = 0
         for pod_name in self.pod_name_list:
             hostname = self.pod_dict.get(pod_name)[0]
@@ -470,7 +470,7 @@ class TestMultiServerPodFailure:
                 counter += 1
             pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some pods not stopped.")
-        LOGGER.info("Step 4: Services of server pods are in offline state")
+        LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
 
         LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
@@ -492,7 +492,8 @@ class TestMultiServerPodFailure:
                                   f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
         LOGGER.info("Step 6: Successfully performed DELETEs on random %s buckets", del_bucket)
 
-        LOGGER.info("Step 7: Perform READs on the remaining %s buckets.", remain_bkt)
+        LOGGER.info("Step 7: Perform READs and verify DI on the remaining %s "
+                    "buckets.", remain_bkt)
         rd_output = Queue()
         new_s3data = {}
         for bkt in remain_bkt:
@@ -515,7 +516,7 @@ class TestMultiServerPodFailure:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 7: Successfully performed READs on the remaining "
+        LOGGER.info("Step 7: Successfully performed READs and verify DI on the remaining "
                     "%s buckets.", remain_bkt)
 
         LOGGER.info("ENDED: Test to verify DELETEs after %s (K) server pods down"
@@ -545,7 +546,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        LOGGER.info("Shutdown %s (K) server pods one by one and verify write/read/verify "
+        LOGGER.info("Shutdown %s (K) server pods one by one and verify WRITEs  "
                     "after each server pod down on new and existing buckets", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
@@ -561,8 +562,6 @@ class TestMultiServerPodFailure:
                                                "by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
-            self.restore_pod = self.deploy = True
-            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Step 2: Deleted %s server pod %s by deleting deployment (unsafe)",
                         count, pod_name)
@@ -573,14 +572,14 @@ class TestMultiServerPodFailure:
             LOGGER.info("Step 3: Cluster has some failures due to %s server pods has gone down.",
                         count)
 
-            LOGGER.info("Step 4: Check services status that were running on server pods which "
-                        "are deleted")
+            LOGGER.info("Step 4: Check services status that were running on server pod %s which "
+                        "are deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             pod_list.remove(pod_name)
-            LOGGER.info("Step 4: Services of server pods are in offline state")
+            LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
@@ -594,8 +593,8 @@ class TestMultiServerPodFailure:
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True, nsamples=2, nclients=2)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the "
-                        "written data")
+            LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on "
+                        "already created bucket")
 
             LOGGER.info("Step 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + ("
                         "1KB - 512MB)")
@@ -609,8 +608,11 @@ class TestMultiServerPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        LOGGER.info("%s (K) server pods shutdown one by one successfully and write/read/verify "
-                    "after each pod down on new and existing buckets verified", self.kvalue)
+        self.restore_pod = self.deploy = True
+        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+        LOGGER.info("%s (K) server pods shutdown one by one successfully and WRITEs "
+                    "after each server pod down on new and existing buckets "
+                    "verified", self.kvalue)
 
         LOGGER.info("Completed: Test to verify degraded WRITEs after each pod failure till K "
                     "server pods down - unsafe shutdown.")
