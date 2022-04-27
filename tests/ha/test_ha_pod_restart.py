@@ -2751,6 +2751,58 @@ class TestPodRestart:
 
         LOGGER.info("COMPLETED: Verify IOs after server pod restart (kubectl delete)")
 
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.skip(reason="Blocked until F-22A is available")
+    @pytest.mark.tags("TEST-32456")
+    @CTFailOn(error_handler)
+    def test_pod_shutdown_kubectl_delete(self):
+        """
+        Verify IOs before and after data pod failure; pod shutdown deleting pod
+        using kubectl delete.
+        """
+        LOGGER.info("STARTED: Verify IOs before and after data pod failure, "
+                    "pod shutdown by deleting pod using kubectl delete.")
+
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-32456'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the data pod by kubectl delete.")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        pod_name = random.sample(pod_list, 1)[0]
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete", pod_name)
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in healthy state.")
+
+        LOGGER.info("STEP 4: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-32456-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+
+        LOGGER.info("Completed: Verify IOs before and after data pod failure, "
+                    "pod shutdown by deleting pod using kubectl delete.")
+
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
     @pytest.mark.ha
