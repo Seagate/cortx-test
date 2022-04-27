@@ -221,7 +221,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(int(self.num_pods))]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -613,6 +613,8 @@ class HAK8s:
         return parts
 
     # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable-msg=too-many-statements
     @staticmethod
     def create_bucket_copy_obj(event, s3_test_obj=None, bucket_name=None, object_name=None,
                                bkt_obj_dict=None, output=None, **kwargs):
@@ -835,6 +837,7 @@ class HAK8s:
         """
         LOGGER.info("Polling cluster status")
         start_time = int(time.time())
+        resp = False
         while timeout > int(time.time()) - start_time:
             time.sleep(60)
             resp = self.check_cluster_status(pod_obj)
@@ -857,7 +860,7 @@ class HAK8s:
         """
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
-
+        resp = False
         if restore_method == common_const.RESTORE_SCALE_REPLICAS:
             resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
         elif restore_method == common_const.RESTORE_DEPLOYMENT_K8S:
@@ -1237,9 +1240,12 @@ class HAK8s:
         if not resp[0]:
             LOGGER.error("Error: Failed to copy cluster.conf to local")
             return False, resp
-        conf_fd = open(local_conf, 'r')
-        data = yaml.safe_load(conf_fd)
-
+        try:
+            with open(local_conf, 'r') as file_data:
+                data = yaml.safe_load(file_data)
+        except IOError as error:
+            LOGGER.error("Error: Not able to read local config file")
+            return False, error
         return True, data
 
     @staticmethod
@@ -1617,13 +1623,12 @@ class HAK8s:
                     LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
                     time.sleep(HA_CFG["common_params"]["30sec_delay"])
             if validate_set:
-                LOGGER.inf("Validating nodes/pods status is SET as expected.")
+                LOGGER.info("Validating nodes/pods status is SET as expected.")
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
 
-    # pylint: disable=W1624
-    def get_validate_resource_status(self, rsc_info, exp_sts=None,
+    def get_validate_resource_status(self, rsc_info=None, exp_sts=None,
                                      mnode_obj=None, rsc: str = "node"):
         """
         Helper function to get and validate resource status
