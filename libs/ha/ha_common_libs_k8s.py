@@ -1442,47 +1442,67 @@ class HAK8s:
         return resp
 
     def delete_single_pod_setting_replica_0(self, master_node_obj, health_obj,
-                                            pod_prefix=common_const.POD_NAME_PREFIX):
+                                            pod_prefix=common_const.POD_NAME_PREFIX,
+                                            down_method=common_const.RESTORE_SCALE_REPLICAS):
         """
         Delete Single pod by setting replica set to 0. Check service status is in degraded mode.
         :param master_node_obj: Master node object list
         :param health_obj: Health object
         :param pod_prefix: Pod prefix to be deleted.
+        :param down_method: Pod shutdown/delete method.
         return : tuple
         """
+
+        down_info = {"method": None, "deployment_name": None, "deployment_backup": None}
+        remaining = list()
         LOGGER.info("Get pod name to be deleted")
         pod_list = master_node_obj.get_all_pods(pod_prefix=pod_prefix)
         pod_name = random.sample(pod_list, 1)[0]
         hostname = master_node_obj.get_pod_hostname(pod_name=pod_name)
+        total_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
+        total_type.remove(pod_prefix)
+        for pod_t in total_type:
+            remaining.extend(master_node_obj.get_all_pods(pod_prefix=pod_t))
 
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod_name)
-        if resp[0]:
-            return False, f"Failed to delete pod {pod_name} by making replicas=0"
-        LOGGER.info("Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        LOGGER.info("Deleting pod %s by %s method", pod_name, down_method)
+        if down_method == common_const.RESTORE_SCALE_REPLICAS:
+            resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod_name)
+            if resp[0]:
+                return False, f"Failed to delete pod {pod_name} by making replicas=0"
+            LOGGER.info("Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+            down_info['deployment_name'] = resp[1]
+        elif down_method == common_const.RESTORE_DEPLOYMENT_K8S:
+            resp = master_node_obj.delete_deployment(pod_name=pod_name)
+            if resp[0]:
+                return False, f"Failed to delete pod {pod_name} by deleting deployment (unsafe)"
+            LOGGER.info("Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                        pod_name)
+            test_server_pod_failure.py['deployment_backup'] = resp[1]
+            down_info['deployment_name'] = resp[2]
+        down_info['method'] = down_method
+        LOGGER.info("Successfully deleted pod %s by %s method", pod_name, down_method)
 
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False, resp
+            return False, resp, down_info
         LOGGER.info("Cluster is in degraded state")
 
-        LOGGER.info(" Check services status that were running on pod %s", pod_name)
+        LOGGER.info("Check services status that were running on pod %s", pod_name)
         resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False, resp
+            return False, resp, down_info
 
-        LOGGER.info("Services of pod are in offline state")
+        LOGGER.info("Services of pod %s are in offline state", pod_name)
         pod_list.remove(pod_name)
-
-        LOGGER.info("Check services status on remaining pods %s", pod_list)
-        resp = health_obj.get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.info("Check services status on remaining pods %s", pod_list + remaining)
+        resp = health_obj.get_pod_svc_status(pod_list=pod_list + remaining, fail=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False, resp
-        LOGGER.info("Services of pod are in online state")
-        return True, pod_name
+            return False, resp, down_info
+        LOGGER.info("Services of remaining pods are in online state")
+        return True, pod_name, down_info
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
@@ -1617,7 +1637,7 @@ class HAK8s:
                     LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
                     time.sleep(HA_CFG["common_params"]["30sec_delay"])
             if validate_set:
-                LOGGER.inf("Validating nodes/pods status is SET as expected.")
+                LOGGER.info("Validating nodes/pods status is SET as expected.")
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
