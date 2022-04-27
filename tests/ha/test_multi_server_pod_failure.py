@@ -236,7 +236,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 3: Shutdown %s server pod by deleting deployment (unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
                                                (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
@@ -328,7 +328,7 @@ class TestMultiServerPodFailure:
                     "after each pod down", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
                                                (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
@@ -437,7 +437,7 @@ class TestMultiServerPodFailure:
                     "unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
                                                (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
@@ -560,7 +560,7 @@ class TestMultiServerPodFailure:
                     "after each server pod down on new and existing buckets", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
                                                (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
