@@ -829,3 +829,60 @@ class TestMultipartUploadGetPut:
         s3_background_io.stop()
         s3_background_io.cleanup()
         self.log.info("ENDED: Test Simple and Multipart upload of an object")
+
+    @pytest.mark.tags('TEST-40265')
+    @pytest.mark.s3_ops
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_40265(self):
+        """
+        This test is for bulk delete of 1000 objects
+        """
+        mp_config = MPART_CFG["test_40265"]
+        self.log.info("STARTED: Test delete 1000 multipart uploaded objects using bulk delete")
+        mpu_id, parts, keys, s3_background_io = \
+            self.s3_mpu_test_obj.create_mpu_get_precalc_parts(
+                mp_config, self.mp_obj_path, self.bucket_name, self.object_name,
+                log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
+                s3_test_lib_obj=self.s3_test_obj)
+        obj_list = []
+        self.log.info("Uploading parts")
+        status, new_parts = self.s3_mpu_test_obj.upload_parts_parallel(mpu_id, mpu_id,
+                                                                       self.bucket_name,
+                                                                       self.object_name,
+                                                                       parts=parts)
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
+        self.list_parts_completempu(mpu_id, self.bucket_name, object_name = self.object_name,
+                                    parts_list=sorted_part_list)
+        obj_list.append(self.object_name)
+        for cnt in range(999):
+            res = self.create_multipart_upload(self.bucket_name, self.object_name+str(cnt))
+            obj_list.append(self.object_name+str(cnt))
+            mpu_id = res[1]["UploadId"]
+            status, new_parts = self.s3_mpu_test_obj.upload_parts_parallel(mpu_id,
+                                                                           self.bucket_name,
+                                                                           self.object_name+str(
+                                                                               cnt),
+                                                                           parts=sorted_part_list)
+            assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
+            self.log.info("Listing parts of multipart upload")
+            res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name,
+                                                  self.object_name+str(cnt))
+            assert_utils.assert_true(res[0], res[1])
+            self.log.info("Listed parts of multipart upload: %s", res[1])
+            sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
+            self.log.info("Complete the multipart upload")
+            try:
+                resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id, sorted_part_list,
+                                                                  self.bucket_name,
+                                                                  self.object_name+str(cnt))
+                assert_utils.assert_true(resp[0], resp[1])
+            except CTException as error:
+                self.log.error(error)
+                self.log.info("Failed to complete the multipart")
+        self.log.info("Delete all 1000 objects using bulk delete")
+        res = self.s3_test_obj.delete_multiple_objects(self.bucket_name, obj_list=obj_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test delete 1000 multipart uploaded objects using bulk delete")

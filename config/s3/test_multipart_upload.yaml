@@ -327,3 +327,13 @@ test_32702_2:
           count: 1
         - part_size: 29.5
           count: 1
+
+test_40265:
+  file_size: 6
+  chunk_size: 1048576
+  part_sizes:
+    - part_size: 5
+      count: 1
+    - part_size: 1
+      count: 1
+
