@@ -192,14 +192,18 @@ class HAK8SCompLib:
         resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [],
                      'node_id': [], 'resource_id': []}
         for line in output:
-            source = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')
-            resource_type = line.split("{")[4].split(",")[6].split(":")[1].strip().replace("'", '')
-            resource_status = line.split("{")[4].split(",")[8].split(":")[1].\
-                strip().replace("'", '')
-            generation_id = line.split("{")[5].split(",")[0].split(":")[1].strip().\
-                replace("'", '').replace('}', '')
-            node_id = line.split("{")[4].split(",")[5].split(":")[1].strip().replace("'", '')
-            resource_id = line.split("{")[4].split(",")[7].split(":")[1].strip().replace("'", '')
+            source = line.split("{")[3].split(",")[0].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_type = line.split("{")[3].split(",")[6].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_status = line.split("{")[3].split(",")[8].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
+            generation_id = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')\
+                .replace('}', '').replace('"', '')
+            node_id = line.split("{")[3].split(",")[5].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
+            resource_id = line.split("{")[3].split(",")[7].split(":")[1].strip().replace("'", '')\
+                .replace('"', '')
             resp_dict['source'].append(source)
             resp_dict['resource_status'].append(resource_status)
             resp_dict['resource_type'].append(resource_type)
@@ -207,3 +211,27 @@ class HAK8SCompLib:
             resp_dict['node_id'].append(node_id)
             resp_dict['resource_id'].append(resource_id)
         return resp_dict
+
+    @staticmethod
+    def get_ha_log_wc(node_obj, log_index: int):
+        '''
+        Helper function to get word count of a file
+        :param node_obj: Master node(Logical Node object)
+        :param log_index: name of the log
+        0 - k8s | 1 - fault_tolerance | 2 - health_monitor
+        :return: wc_count(Word count of a ha log file)
+        '''
+        pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
+        hapvc = None
+        for hapvc in pvc_list:
+            if common_const.HA_POD_NAME_PREFIX in hapvc:
+                hapvc = hapvc.replace("\n", "")
+                LOGGER.info("hapvc list %s", hapvc)
+                break
+        wc_count_cmd = common_const.HA_LOG + hapvc + "/log/ha/*/" + \
+                          common_const.HA_SHUTDOWN_LOGS[log_index]
+        wc_count_cmd = common_cmd.LINE_COUNT_CMD.format(wc_count_cmd)
+        ha_wc_count = node_obj.execute_cmd(wc_count_cmd)
+        if isinstance(ha_wc_count, bytes):
+            wc_count = str(ha_wc_count, 'UTF-8')
+        return wc_count

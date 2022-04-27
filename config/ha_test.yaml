@@ -9,13 +9,16 @@ common_params:
   pod_eviction_time: 360
   pod_joinback_time: 180
   1sec_delay: 1
+  2sec_delay: 2
   5sec_delay: 5
   10sec_delay: 10
   20sec_delay: 20
   30sec_delay: 30
   60sec_delay: 60
   90sec_delay: 90
+  degraded_wait_delay: 200
   thread_join_delay: 120.0
+  bucket_creation_delay: 180
 
 s3_operation_data:
   no_csm_users: 10
@@ -34,6 +37,7 @@ s3_bucket_data:
   no_buckets_for_deg_deletes: 150
   workload_sizes_mbs: [1, 2, 4, 8, 16, 32, 64, 128]
   no_bck_background_deletes: 300
+  no_bck_writes: 100
 
 s3_bench_workloads: ["0b", "1Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
                      "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"]

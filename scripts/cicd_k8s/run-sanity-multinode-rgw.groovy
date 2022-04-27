@@ -12,6 +12,8 @@ pipeline {
 		Sequential_Execution = true
 		Original_TP = 'TEST-37457'
 		Sanity_TE = 'TEST-37458'
+		Data_Path_TE = 'TEST-39283'
+		Failure_TE = 'TEST-40061'
 		Setup_Type = 'NightlySanity'
 		Platform_Type = 'VM'
 		Nodes_In_Target = "${NUM_NODES}"
@@ -25,7 +27,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -38,6 +40,7 @@ export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}
@@ -55,7 +58,7 @@ deactivate
 	    }
 		stage('COPY_TP_TE') {
 			steps{
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
@@ -69,7 +72,7 @@ deactivate
 			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -89,7 +92,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False --use_ssl False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -118,7 +121,7 @@ deactivate
 				script {
 			        env.Health = 'OK'
 
-				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -129,13 +132,13 @@ IFS=','
 while read tp_id te_id old_te
 do
     old_te=$(echo $old_te | sed -e 's/\r//g')
-    if [ "${old_te}" != "${Sanity_TE}" ]
+    if [ "${old_te}" != "${Sanity_TE}" ] && [ "${old_te}" != "${Data_Path_TE}" ] && [ "${old_te}" != "${Failure_TE}" ]
 		then
 			echo "Running Regression Tests"
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False --use_ssl False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -150,6 +153,80 @@ deactivate
 				}
 			}
 		}
+		stage('IO_PATH_TEST_EXECUTION') {
+			steps {
+				script {
+			        env.Health = 'OK'
+
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
+source venv/bin/activate
+set +x
+INPUT=cloned_tp_info.csv
+OLDIFS=$IFS
+IFS=','
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read tp_id te_id old_te
+do
+    old_te=$(echo $old_te | sed -e 's/\r//g')
+    if [ "${old_te}" == "${Data_Path_TE}" ]
+		then
+			echo "Running IO Path Tests"
+			echo "tp_id : $tp_id"
+			echo "te_id : $te_id"
+			echo "old_te : $old_te"
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
+		fi
+done < $INPUT
+IFS=$OLDIFS
+deactivate
+''' )
+				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted IO Path due to bad health of deployment')
+                    }
+				}
+			}
+		}
+		stage('FAILURE_DOMAIN_TEST_EXECUTION') {
+			steps {
+				script {
+			        env.Health = 'OK'
+
+				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
+source venv/bin/activate
+set +x
+INPUT=cloned_tp_info.csv
+OLDIFS=$IFS
+IFS=','
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read tp_id te_id old_te
+do
+    old_te=$(echo $old_te | sed -e 's/\r//g')
+    if [ "${old_te}" == "${Failure_TE}" ]
+		then
+			echo "Running Failure Domain Tests"
+			echo "tp_id : $tp_id"
+			echo "te_id : $te_id"
+			echo "old_te : $old_te"
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
+		fi
+done < $INPUT
+IFS=$OLDIFS
+deactivate
+''' )
+				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Failure Domain Path due to bad health of deployment')
+                    }
+				}
+			}
+		}
     }
 	post {
 		always {
@@ -160,7 +237,7 @@ deactivate
             		  env.Current_TP = records[0][0]
             		  env.new_TP = records[0][0]
         		  }
-        		   withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+        		   withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}

@@ -840,15 +840,13 @@ class TestR2SupportBundle:
                         else:
                             assert_utils.assert_true(False, "No motr log file "
                                                             "found in support bundle")
-                    if comp == "s3":
-                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path +
-                                                                  constants.SB_EXTRACTED_PATH +
-                                                                  "s3/" + machine_id, "s3server")
+                    if comp == "rgw":
+                        resp = sb.file_with_prefix_exists_on_path(comp_dir_path, "rgw")
                         if resp:
-                            self.LOGGER.info("s3server logs are present in support Bundle")
+                            self.LOGGER.info("rgw logs are present in support Bundle")
                         else:
-                            assert_utils.assert_true(False, "No s3server log file "
-                                                            "found in support bundle")
+                            assert_utils.assert_true(False, "No rgw log file found in "
+                                                            "support bundle")
                     if comp == "utils":
                         resp = sb.file_with_prefix_exists_on_path(comp_dir_path + "/logs", "utils")
                         if resp:

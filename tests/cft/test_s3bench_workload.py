@@ -40,24 +40,25 @@ class TestWorkloadS3Bench:
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
         cls.setup_type = CMN_CFG["setup_type"]
 
-    @pytest.mark.longevity
-    @pytest.mark.tags("TEST-19658")
-    def test_19658(self):
-        """Longevity Test with distributed workload"""
-        test_cfg = self.cft_test_cfg["test_12345"]
+    def execute_workload_distribution(self, test, log_file_prefix):
+        """Execution given workload distribution.
+
+        :param test: Test name for yaml config
+        :param log_file_prefix: Log file prefix for s3bench
+        """
+        test_cfg = self.cft_test_cfg[test]
         distribution = test_cfg["workloads_distribution"]
+        loops = test_cfg["loops"]
+        clients = test_cfg["clients"]
         if self.setup_type == "HW":
             total_obj = 10000
         else:
             total_obj = 1000
-        loops = test_cfg["loops"]
-        clients = test_cfg["clients"]
         workloads = [(size, int(total_obj * percent / 100)) for size, percent in
                      distribution.items()]
-
         for loop in range(loops):
             for size, samples in workloads:
-                bucket_name = f"test-19658-bucket-{loop}-{str(int(time.time()))}"
+                bucket_name = f"{log_file_prefix}-bucket-{loop}-{str(int(time.time()))}".lower()
                 if samples == 0:
                     continue
                 if clients > samples:
@@ -66,14 +67,26 @@ class TestWorkloadS3Bench:
                                        num_clients=clients, num_sample=samples,
                                        obj_name_pref="loadgen_test_", obj_size=size,
                                        skip_cleanup=False, duration=None,
-                                       log_file_prefix="TEST-19658", end_point=S3_CFG["s3_url"],
+                                       log_file_prefix=log_file_prefix, end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
-                self.log.info(
-                    f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
-                    f"clients.")
-                self.log.info(f"Log Path {resp[1]}")
+                self.log.info("Loop: %s Workload: %s objects of %s with %s parallel clients.",
+                              loop, samples, size, clients)
+                self.log.info("Log Path %s", resp[1])
                 assert not s3bench.check_log_file_error(resp[1]), \
-                    f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
+                    f"S3bench workload failed in loop {loop}. Please read log file {resp[1]}"
+
+    @pytest.mark.longevity
+    @pytest.mark.tags("TEST-19658")
+    def test_19658(self):
+        """Longevity Test with distributed workload."""
+        self.execute_workload_distribution("test_19658", "TEST-19658")
+
+    @pytest.mark.lc
+    @pytest.mark.s3_data_path
+    @pytest.mark.tags("TEST-39216")
+    def test_distributed_workload_39216(self):
+        """IO test with distributed workload."""
+        self.execute_workload_distribution("test_39216", "TEST-39216")
 
     @pytest.mark.scalability
     @pytest.mark.tags("TEST-19471")
