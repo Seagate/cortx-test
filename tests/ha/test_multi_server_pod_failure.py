@@ -249,11 +249,11 @@ class TestMultiServerPodFailure:
                                                " by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s server pod %s by deleting deployment (unsafe)", count,
                         pod_name)
-        self.restore_pod = self.deploy = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("Step 3: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 4: Check cluster status")
@@ -344,6 +344,8 @@ class TestMultiServerPodFailure:
                                                "by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Step 3: Deleted %s server pod %s by deleting deployment (unsafe)",
                         count, pod_name)
@@ -378,8 +380,6 @@ class TestMultiServerPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 7: Performed READs and verified DI on the written data")
 
-        self.restore_pod = self.deploy = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("%s (K) server pods shutdown one by one successfully and read/verify "
                     "after each pod down verified", self.kvalue)
 
@@ -453,11 +453,11 @@ class TestMultiServerPodFailure:
                                                "by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s server pod %s by deleting deployment "
                         "(unsafe)", count, pod_name)
-        self.restore_pod = self.deploy = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("Step 2: Successfully shutdown %s (K) server pods one by one by deleting "
                     "deployment (unsafe)", self.kvalue)
 
@@ -574,6 +574,8 @@ class TestMultiServerPodFailure:
                                                "by deleting deployment (unsafe)")
             pod_data.append(resp[1])  # deployment_backup
             pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Step 2: Deleted %s server pod %s by deleting deployment (unsafe)",
                         count, pod_name)
@@ -621,8 +623,6 @@ class TestMultiServerPodFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        self.restore_pod = self.deploy = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         LOGGER.info("%s (K) server pods shutdown one by one successfully and WRITEs "
                     "after each server pod down on new and existing buckets "
                     "verified", self.kvalue)
