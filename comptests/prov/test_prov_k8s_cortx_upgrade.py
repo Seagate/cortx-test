@@ -73,6 +73,18 @@ class TestProvK8CortxRollingUpgrade:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
+    def teardown_method(self):
+        """
+        This function will be invoked after each test function in the module.
+        """
+        LOGGER.info("STARTED: Teardown Operations.")
+        LOGGER.info("Remove upgrade pid file.")
+        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
+            self.master_node_obj.remove_file(filename=
+                                             self.prov_deploy_cfg["upgrade_process_file_path"]
+                                             )
+        LOGGER.info("Done: Setup operations.")
+
     def perform_upgrade(self, exc: bool = True, output=None):
         """Function calls upgrade and put return value in queue object."""
         LOGGER.info("Calling upgrade.")
@@ -296,11 +308,6 @@ class TestProvK8CortxRollingUpgrade:
             resp = str(resp, 'UTF-8')
         resp = "".join(resp).replace("\\n", "\n")
         assert_utils.assert_in("Invalid argument provided", resp)
-        LOGGER.info("Remove upgrade pid file for next TC.")
-        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
-            self.master_node_obj.remove_file(filename=
-                                             self.prov_deploy_cfg["upgrade_process_file_path"]
-                                             )
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -319,11 +326,6 @@ class TestProvK8CortxRollingUpgrade:
             resp = str(resp, 'UTF-8')
         resp = "".join(resp).replace("\\n", "\n")
         assert_utils.assert_in(error_msg, resp)
-        LOGGER.info("Remove upgrade pid file for next TC.")
-        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
-            self.master_node_obj.remove_file(filename=
-                                             self.prov_deploy_cfg["upgrade_process_file_path"]
-                                             )
         LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
@@ -355,9 +357,4 @@ class TestProvK8CortxRollingUpgrade:
         pod_delete_thread.join()
         assert_utils.assert_in("Ensure all pods are in a healthy state", resp[1])
         LOGGER.info("Step 3: Done")
-        LOGGER.info("Remove upgrade pid file for next TC.")
-        if self.master_node_obj.path_exists(path=self.prov_deploy_cfg["upgrade_process_file_path"]):
-            self.master_node_obj.remove_file(filename=
-                                             self.prov_deploy_cfg["upgrade_process_file_path"]
-                                             )
         LOGGER.info("Test Completed.")
