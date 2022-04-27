@@ -521,14 +521,16 @@ class TestCapacityQuota():
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 3: Perform PUT API to set user level quota less than used")
+        less_size = self.cryptogen.randrange(1, max_size)
         uid = resp1.json()['tenant'] + "$" + payload["uid"]
-        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", (max_size-random_size), max_objects)
+        resp3 = self.csm_obj.set_user_quota(uid, "user", "true", less_size, max_objects)
         assert_utils.assert_true(resp3[0], resp3[1])
-        self.log.info("Step 4: Perform GET API to get user level quota")   #Expected Outcome is not known yet
-        resp4 = self.csm_obj.get_user_quota(uid, "user")
+        self.log.info("Step 4: Perform GET API to get user level quota")
+        resp4 = self.csm_obj.get_user_quota(uid, "user")  #Expected Outcome is not known yet
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -609,6 +611,8 @@ class TestCapacityQuota():
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -691,6 +695,8 @@ class TestCapacityQuota():
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
