@@ -236,6 +236,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 3: Shutdown %s server pod by deleting deployment (unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -270,15 +272,17 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
         LOGGER.info("Step 5: Services of server pods are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                           fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 6: Services of remaining pods are in online state")
+        LOGGER.info("Step 6: Services of remaining pods %s are in "
+                    "online state", server_data_pod_list)
 
         LOGGER.info("Step 7: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -324,6 +328,8 @@ class TestMultiServerPodFailure:
                     "after each pod down", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -354,11 +360,12 @@ class TestMultiServerPodFailure:
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
             LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
 
-            LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list)
-            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+            LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                               fail=False)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
             LOGGER.info("Step 6: Services of remaining pods are in online state")
@@ -418,7 +425,7 @@ class TestMultiServerPodFailure:
         wr_resp = ()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        s3_data = wr_resp[0]  # Contains IAM user data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
                                                            f"of buckets. Created {len(buckets)} "
@@ -430,6 +437,8 @@ class TestMultiServerPodFailure:
                     "unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -468,12 +477,13 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
         LOGGER.info("Step 4: Services of server pods are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+        LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                           fail=False)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
@@ -550,6 +560,8 @@ class TestMultiServerPodFailure:
                     "after each server pod down on new and existing buckets", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_data_pod_list = pod_list.append(self.node_master_list[0].get_all_pods
+                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
@@ -578,11 +590,12 @@ class TestMultiServerPodFailure:
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
             LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
 
-            LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
-            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
+            LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                               fail=False)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], resp)
             LOGGER.info("Step 5: Services of remaining pods are in online state")
