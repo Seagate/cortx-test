@@ -98,12 +98,10 @@ class TestProvK8DataOnlyDeploy:
                                                                  ])
         assert_utils.assert_true(resp[0])
         for node_obj in self.host_list:
-            print(resp[1])
-            print(self.prov_deploy_cfg["git_remote_path"] + self.deploy_cfg["new_file_path"])
             res = node_obj.copy_file_to_remote(local_path=resp[1],
                                                remote_path=self.prov_deploy_cfg[
                                                                "git_remote_path"
-                                                           ] + self.deploy_cfg["new_file_path"])
+                                                           ] + self.deploy_cfg["solution_file"])
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Step 2: Done.")
 

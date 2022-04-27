@@ -1735,6 +1735,7 @@ class ProvDeployK8sCortxLib:
         :return: True/False and local file
         """
         LOGGER.debug("Update nodes section with setup details.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         resp = self.update_nodes_sol_file(file_path, host_list)
         if not resp[0]:
             return False, "solution.yaml is not updated properly."
@@ -1743,7 +1744,6 @@ class ProvDeployK8sCortxLib:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']
             storage_key = parent_key["storage"]
-            cvg_key = storage_key["cvg1"]["devices"]["data"]
             soln.close()
         parent_key["deployment_type"] = deployment_type
         if "data" in deployment_type:
@@ -1751,8 +1751,12 @@ class ProvDeployK8sCortxLib:
         else:
             # Extend else condition when a different granular deployment type is available.
             pass
-        storage_key.pop("cvg2")
-        cvg_key.pop("d7")
+        for cvg in prov_deploy_cfg["cvg_config"]:
+            if cvg == "cvg1":
+                cvg_key = storage_key[cvg]["devices"]["data"]
+                cvg_key.pop("d7")
+            else:
+                storage_key.pop(cvg)
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(file_path, 'w') as pointer:

@@ -6,3 +6,4 @@ k8s_prov_cortx_deploy:
   cold_upgrade: "./upgrade-cortx-cloud.sh -cold"
   destroy_cluster: "./destroy-cortx-cloud.sh"
   images_key: [ "cortxcontrol", "cortxdata", "cortxserver", "cortxha", "cortxclient" ]
+  cvg_config: ["cvg1", "cvg2"]
