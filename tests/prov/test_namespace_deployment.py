@@ -24,7 +24,7 @@ import os
 import secrets
 import pytest
 from commons.params import LOG_DIR, LATEST_LOG_FOLDER
-from commons.utils import assert_utils, support_bundle_utils
+from commons.utils import assert_utils, support_bundle_utils, system_utils
 from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from config import PROV_CFG
@@ -142,7 +142,8 @@ class TestNamespaceDeployment:
     @pytest.mark.tags("TEST-40442")
     def test_40442(self):
         """
-        Test to verify the CORTX deployment in max char in name of custom namespace
+        Test to verify the CORTX deployment in supported char in
+         name of custom namespace upto max length
         """
 
         custom_namespace = self.deploy_lc_obj.aphanumeric_string_generator(43)
@@ -173,10 +174,11 @@ class TestNamespaceDeployment:
     @pytest.mark.tags("TEST-40443")
     def test_40443(self):
         """
-        Test to verify the CORTX deployment in unsupported name of custom namespace
+        Test to verify the CORTX deployment in unsupported chars in
+        name of custom namespace
         """
 
-        custom_namespace = self.deploy_lc_obj.aphanumeric_string_generator(63)
+        custom_namespace = system_utils.random_string_generator(23)
         self.log.info("NAMESPACE is %s", custom_namespace)
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)

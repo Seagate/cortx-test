@@ -86,6 +86,7 @@ class ProvDeployK8sCortxLib:
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
+        self.patterns = ['RFC 1123', '63 characters']
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -291,12 +292,12 @@ class ProvDeployK8sCortxLib:
             node_obj.kill_remote_process(cmd)
         except IOError as error:
             LOGGER.exception("The exception occurred is %s", error)
-            msg = re.compile("must be no more than 63 characters")
-            match = msg.search(str(error))
-            if match:
-                LOGGER.debug("Match found in : %s", error)
-                return True, str(error)
-            return False, error
+            # msg = re.compile("Invalid value:")
+            # match = msg.search(str(error))
+            # if match:
+            #     LOGGER.debug("Match found in : %s", error)
+            #     return True, str(error)
+            return False, str(error)
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
@@ -382,7 +383,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
-        if not re.search("63 characters", resp[1]):
+        matches = [re.compile(pat) for pat in self.patterns]
+        if not (m.match(resp[1]) for m in matches):
             LOGGER.info("Setting the current namespace")
             resp_ns = master_node_list[0].execute_cmd(
                 cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
@@ -1285,8 +1287,13 @@ class ProvDeployK8sCortxLib:
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag, namespace)
-            assert_utils.assert_true(resp[0], resp[1])
-            if not re.search("63 characters", resp[1]):
+            if len(namespace) >= 63 or bool(re.match(r'\w*[A-Z]\w*', namespace)):
+                LOGGER.debug("Negative Test Scenario")
+                assert_utils.assert_false(resp[0], resp[1])
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+            matches = [re.compile(pat) for pat in self.patterns]
+            if not (m.match(resp[1]) for m in matches):
                 LOGGER.info("Step to Check  ALL service status")
                 time.sleep(60)
                 service_status = self.check_service_status(master_node_list[0])
@@ -1760,8 +1767,7 @@ class ProvDeployK8sCortxLib:
         if namespace in resp:
             LOGGER.debug("The namespace is %s", resp)
             return namespace
-        else:
-            return False, f"Failed to create namespace: {resp}"
+        return False, f"Failed to create namespace: {resp}"
 
     @staticmethod
     def del_namespace(master_node_list, namespace):
@@ -1789,6 +1795,7 @@ class ProvDeployK8sCortxLib:
         param: size : length of string
         returns Alphanumeric String with `-`
         """
+        # Bandit=Standard pseudo-random generators are not suitable for security/cryptographic purposes.
         char = string.ascii_lowercase + string.digits
         generated_string = ''.join(random.choice(char) for _ in range(size))
         string_len = int(len(generated_string) / 2)
