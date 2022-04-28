@@ -93,17 +93,14 @@ if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
         '--csm_checks' if '--csm_checks' in pytest_args else None))
     CSM_CHECKS = pytest_args[
         pytest_args.index(_csm_checks) + 1] if _csm_checks else False
+    data = {'True': True, 'False': False , True : True , False : False }
+    CSM_CHECKS = bool(data)
 
     _validate_certs = ('-c' if '-c' in pytest_args else (
         '----validate_certs' if '----validate_certs' in pytest_args else None))
     validate_certs = pytest_args[
         pytest_args.index(_validate_certs) + 1] if _validate_certs else True
     os.environ["VALIDATE_CERTS"] = str(validate_certs)
-
-def parse(string) -> bool:
-    """This function will return bool value for even string True or False """
-    data = {'True': True, 'False': False , True : True , False : False }
-    return data.get(string, string)
 
 def build_s3_endpoints() -> dict:
     """This function will create s3/iam url based on certificates availability and ssl usages."""
@@ -146,7 +143,7 @@ else:
         fpath=CSM_CONFIG, config_key="Restcall", target=target, target_key="csm")
 
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
-if parse(CSM_CHECKS):
+if CSM_CHECKS:
     CSM_REST_CFG["msg_check"] = "enable"
     CSM_CFG["Restcall"]["msg_check"] = "enable"
 RAS_VAL = configmanager.get_config_wrapper(
