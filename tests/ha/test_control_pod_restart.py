@@ -48,6 +48,7 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
@@ -102,6 +103,7 @@ class TestControlPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
+        cls.rest_obj = S3AccountOperations()
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
         backup_path = cls.node_master_list[0].backup_deployment(
