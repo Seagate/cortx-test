@@ -882,15 +882,21 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster with new user")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32455-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if HA_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
+                        "1KB - 512MB) on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32455-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object sizes. 0B + ("
+                        "1KB - 512MB) on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "by deleting deployment.")
@@ -899,6 +905,7 @@ class TestPodFailure:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26445")
     @CTFailOn(error_handler)
     def test_deletes_during_pod_down(self):
@@ -1124,15 +1131,20 @@ class TestPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
                     "failed/error.")
 
-        LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26441-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if HA_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-26441-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
@@ -1192,15 +1204,20 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster with new user")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32454-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if HA_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
+                        "1KB - 512MB) on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32454-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "by making replicas 0")
@@ -1291,15 +1308,20 @@ class TestPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
                     "down is failed/error.")
 
-        LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26442-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if HA_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-26442-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify Continuous READs and WRITEs during data pod down by "
                     "delete deployment.")
 
@@ -1307,6 +1329,7 @@ class TestPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26446")
     @CTFailOn(error_handler)
     def test_writes_deletes_during_pod_down(self):
@@ -1483,6 +1506,7 @@ class TestPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26447")
     @CTFailOn(error_handler)
     def test_reads_deletes_during_pod_down(self):
