@@ -1560,7 +1560,7 @@ class HAK8s:
     @staticmethod
     def change_pod_node(pod_obj, pod_list, failover_node):
         """
-        Function to  change the node of given pod list (NodeSelector)
+        Function to change the node of given pod list (NodeSelector)
         :param pod_obj: Object of the pod
         :param pod_list: List of the pods to be failed over
         :param failover_node: Node to which pod is to be failed over

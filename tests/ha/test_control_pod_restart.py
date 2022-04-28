@@ -26,14 +26,11 @@ import logging
 import os
 import random
 import secrets
-import threading
 import time
-from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
 
-from commons import commands as cmd
 from commons import constants as const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -47,14 +44,10 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_test_lib import S3TestLib
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
-from http import HTTPStatus
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -92,7 +85,6 @@ class TestControlPodRestart:
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
         cls.rest_iam_user = RestIamUser()
 
         for node in range(cls.num_nodes):
@@ -136,7 +128,7 @@ class TestControlPodRestart:
         self.restore_node = False
         self.restore_ip = False
         self.deploy = False
-        self.s3_clean = {}
+        self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -187,8 +179,8 @@ class TestControlPodRestart:
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restore_node:
-            LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
-            resp = self.ha_obj.host_power_on(host=self.node_name)
+            LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
+            resp = self.ha_obj.host_power_on(host=self.control_node)
             assert_utils.assert_true(resp, "Host is not powered on")
             LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                         " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
@@ -230,6 +222,8 @@ class TestControlPodRestart:
         self.node_master_list[0].remove_remote_file(self.backup_yaml)
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40368")
@@ -267,7 +261,7 @@ class TestControlPodRestart:
                 data_pod_name = pod_name
                 break
         for server_pod, node in server_pods.items():
-            if node == self.node_name:
+            if node == self.control_node:
                 serverpod_name = server_pod
                 break
         LOGGER.info("%s node has data pod %s and server pod %s", self.control_node, data_pod_name,
