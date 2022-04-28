@@ -972,8 +972,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 11: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B "
-                    "+ (1KB - 512MB)")
+        LOGGER.info("Step 11: Perform WRITEs-READs-Verify-DELETEs with variable object sizes."
+                    "(1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40584-1'
         self.s3_clean.update(users)
