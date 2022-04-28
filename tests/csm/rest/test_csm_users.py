@@ -132,6 +132,7 @@ class TestCsmUser():
         self.log.info("s3 users except pre-defined ones deleted.")
         self.log.info("[COMPLETED] ######### Teardown #########")
 
+    @pytest.mark.skip("CORTX-28746")
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.csmrest
