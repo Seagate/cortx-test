@@ -673,16 +673,18 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Uploaded object of size %s for %s", obj_size, self.bucket_name)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
         upload_checksum = str(resp[2])
-        LOGGER.info("Step 1: Successfully performed multipart upload for size size %sMB.",
+        LOGGER.info("Step 1: Successfully performed multipart upload for size %sMB.",
                     file_size)
 
         LOGGER.info("Step 2: Shutdown the %s (K) server pods by deleting deployment (unsafe)",
                     self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
@@ -844,9 +846,11 @@ class TestMultiServerPodFailure:
                     "5GB object in multiple parts with every server pod shutdown", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             LOGGER.info("Step 2: Shutdown %s server pod %s by deleting deployment (unsafe)",
@@ -873,7 +877,7 @@ class TestMultiServerPodFailure:
                         count)
 
             LOGGER.info("Step 4: Check services status that were running on "
-                        "server pod %s which are deleted", pod_name)
+                        "server pod %s which is deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
@@ -969,7 +973,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 11: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B "
-                    "+ (1KB - 512MB) on degraded cluster")
+                    "+ (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40584-1'
         self.s3_clean.update(users)
