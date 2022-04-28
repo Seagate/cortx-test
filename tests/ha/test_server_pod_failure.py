@@ -209,13 +209,14 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 3: Shutdown random server pod safely by making replicas=0 and verify "
                     "cluster & remaining pods status")
-        resp = self.ha_obj.delete_single_pod_setting_replica_0(
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=const.SERVER_POD_NAME_PREFIX)
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX])
         assert_utils.assert_false(resp[0], resp)
-        self.deployment_name = resp[2]['deployment_name']
+        pod_name = resp[1][0]
+        self.deployment_name = resp[2][pod_name]['deployment_name']
         self.restore_pod = self.deploy = True
-        self.restore_method = resp[2]['method']
+        self.restore_method = resp[2][pod_name]['method']
         LOGGER.info("Step 3: Successfully shutdown random server pod safely by making replicas=0 "
                     "and verified cluster & remaining pods status")
 
@@ -255,14 +256,15 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 3: Shutdown random server pod safely by deleting deployment and "
                     "verify cluster & remaining server pods status")
-        resp = self.ha_obj.delete_single_pod_setting_replica_0(
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, pod_prefix=const.SERVER_POD_NAME_PREFIX)
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
         assert_utils.assert_false(resp[0], resp)
-        self.deployment_name = resp[2]['deployment_name']
-        self.deployment_backup = resp[2]['deployment_backup']
+        pod_name = resp[1][0]
+        self.deployment_name = resp[2][pod_name]['deployment_name']
+        self.deployment_backup = resp[2][pod_name]['deployment_backup']
         self.restore_pod = self.deploy = True
-        self.restore_method = resp[2]['method']
+        self.restore_method = resp[2][pod_name]['method']
         LOGGER.info("Step 3: Successfully shutdown random server pod safely by deleting deployment "
                     "and verified cluster & remaining server pods status")
 
