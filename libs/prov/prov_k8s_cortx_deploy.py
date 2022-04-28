@@ -26,11 +26,11 @@ import logging
 import math
 import os
 import re
+import secrets
 import shutil
 import signal
 import string
 import time
-import random
 from threading import Thread
 from typing import List
 
@@ -1784,8 +1784,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("The namespace is %s", resp.pop(0))
         if namespace in resp:
             return False, f"Failed to del namespace {namespace}"
-        else:
-            return True, f"Successfully deleted the NAMESPACE {namespace}"
+        return True, f"Successfully deleted the NAMESPACE {namespace}"
 
     @staticmethod
     def aphanumeric_string_generator(size):
@@ -1795,9 +1794,8 @@ class ProvDeployK8sCortxLib:
         param: size : length of string
         returns Alphanumeric String with `-`
         """
-        # Bandit=Standard pseudo-random generators are not suitable for security/cryptographic purposes.
         char = string.ascii_lowercase + string.digits
-        generated_string = ''.join(random.choice(char) for _ in range(size))
+        generated_string = ''.join(secrets.choice(char) for _ in range(size))
         string_len = int(len(generated_string) / 2)
         string_alpha = generated_string[:string_len] + "-" + generated_string[string_len:]
         LOGGER.info("The string is %s", string_alpha)
