@@ -369,7 +369,7 @@ class TestMultiServerPodFailure:
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 5: Services of server pod %s is in offline state", pod_name)
+            LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -603,7 +603,7 @@ class TestMultiServerPodFailure:
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 4: Services of server pod %s is in offline state", pod_name)
+            LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -829,7 +829,7 @@ class TestMultiServerPodFailure:
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 4: Services of server pod %s is in offline state", pod_name)
+            LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 5: Check services status on remaining "
                         "pods %s", server_data_pod_list)
