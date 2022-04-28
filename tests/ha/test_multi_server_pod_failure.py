@@ -995,9 +995,8 @@ class TestMultiServerPodFailure:
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {key} of bucket {val}. "
-                                                          "Put and Get Etag mismatch")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {key} of bucket {val}.")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
         bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
