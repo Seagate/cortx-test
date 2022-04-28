@@ -485,7 +485,7 @@ K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
 K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
 K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
-K8S_GET_PODS = "kubectl get pods -n default"
+K8S_GET_PODS = "kubectl get pods"
 K8S_GET_MGNT = "kubectl get pods -o wide"
 K8S_DELETE_POD = "kubectl delete pod {}"
 K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-hax -- hctl status --json"
@@ -556,7 +556,7 @@ UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
-CMD_POD_STATUS = "kubectl get pods -n default"
+CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
 CMD_GET_NODE = "kubectl get nodes"
 
