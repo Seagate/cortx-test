@@ -216,7 +216,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Started: Test to verify degraded READs after all K server pods "
                     "down - unsafe shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40567'
         self.s3_clean = users
@@ -311,7 +311,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Started: Test to verify degraded READs after each pod failure till K "
                     "server pods down - unsafe shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40568'
         self.s3_clean = users
@@ -553,8 +553,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Started: Test to verify degraded Writes after each pod failure till K "
                     "server pods down - unsafe shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + "
-                    "(1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40578'
         self.s3_clean = users
@@ -621,8 +620,7 @@ class TestMultiServerPodFailure:
             LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on "
                         "already created bucket")
 
-            LOGGER.info("Step 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + ("
-                        "1KB - 512MB)")
+            LOGGER.info("Step 7: Perform WRITEs-READs-Verify with variable object sizes.")
             users_new = self.mgnt_ops.create_account_users(nusers=1)
             test_prefix_new = f'test-40578-{count}'
             self.s3_clean.update(users_new)
@@ -652,8 +650,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Started: Test to verify degraded WRITEs after all K server pods "
                     "down - unsafe shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object "
-                    "sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40579'
         self.s3_clean = users
@@ -724,8 +721,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify and verified DI on the written data")
 
-        LOGGER.info("Step 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + ("
-                    "1KB - 512MB) ")
+        LOGGER.info("Step 7: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40579-1'
         self.s3_clean.update(users)
