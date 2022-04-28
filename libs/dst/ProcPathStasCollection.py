@@ -21,16 +21,15 @@
 """Procpath memory stats collector """
 
 import logging
+import os.path
 from datetime import datetime
 from multiprocessing import Process
+
+from commons.constants import PID_WATCH_LIST, REQUIRED_MODULES
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LOG_DIR_NAME, LATEST_LOG_FOLDER
+from commons.commands import PROC_CMD
 
-
-proc_cmd = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
-           "record -i 45 -d {} -p $pid"
-
-pid_watch_list = ['m0d', 'radosgw', 'hax']
-required_modules = ["Procpath", "apsw-wheels"]
 
 # check and set pytest logging level as Globals.LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
@@ -40,9 +39,12 @@ class EnableProcPathStatsCollection:
 
     def __init__(self, cmn_cfg):
         """Initialize connection to Nodes or Pods.
-        #param cmn_cfg: Common config
+        :param cmn_cfg: Common config
         """
         self.cmn_cfg = cmn_cfg
+        self.dst_log_folder = 'dst'
+        self.log_path = os.path.join(LOG_DIR_NAME, LATEST_LOG_FOLDER, self.dst_log_folder)
+        os.makedirs(self.log_path, exist_ok=True)
         self.nodes = cmn_cfg["nodes"]
         self.worker_node_list = list()
         self.worker_stat_files_dict = dict()
@@ -57,8 +59,8 @@ class EnableProcPathStatsCollection:
     @staticmethod
     def exe_cmd(worker: LogicalNode, cmd: str):
         """function to execute command collection
-        #param worker: Object of Logical node
-        #param cmd: command to be executed on worker node
+        :param worker: Object of Logical node
+        :param cmd: command to be executed on worker node
         """
         LOGGER.debug("executing procpath cmd for stat collection")
         worker.execute_cmd(cmd=cmd)
@@ -66,8 +68,8 @@ class EnableProcPathStatsCollection:
     @staticmethod
     def get_pids(worker, watch_list):
         """function to get pids
-        #param worker: Logical node object
-        #param watch_list: list of string to be used in grepping command
+        :param worker: Logical node object
+        :param watch_list: list of string to be used in grepping command
         """
         pid_dict = {}
         for proc in watch_list:
@@ -79,12 +81,13 @@ class EnableProcPathStatsCollection:
     def collect_pids(self, worker_stat_files_dict: dict):
         """
         function to collect pids and write them to a file
-        #param worker_stat_files_dict: dictionary containing filename and worker object
+        :param worker_stat_files_dict: dictionary containing filename and worker object
         """
         for file_name, worker in worker_stat_files_dict.items():
-            pid_dict = self.get_pids(worker=worker, watch_list=pid_watch_list)
-            with open("{}".format(worker.hostname), 'a') as fp:
-                fp.write(f'pids : {pid_dict} file_name : {file_name}')
+            pid_dict = self.get_pids(worker=worker, watch_list=PID_WATCH_LIST)
+            file_path = os.path.join(self.log_path, worker.hostname)
+            with open("{}".format(file_path), 'a') as fp:
+                fp.write(f"\npids : {pid_dict} file_name : {file_name}\n")
 
     def setup_requirement(self):
         """Install required modules on worker nodes for procpath collection"""
@@ -92,7 +95,7 @@ class EnableProcPathStatsCollection:
         for worker_node in self.worker_node_list:
             resp = worker_node.execute_cmd("pip list")
             LOGGER.debug(resp)
-            for module in required_modules:
+            for module in REQUIRED_MODULES:
                 if module in str(resp):
                     LOGGER.info("already installed module {}".format(module))
                 else:
@@ -107,7 +110,7 @@ class EnableProcPathStatsCollection:
                             LOGGER.info("retrying installation of {}".format(module))
                             retry += 1
                     if retry >= 2:
-                        assert False
+                        return False
 
     def start_collection(self):
         """trigger command for collection stats"""
@@ -117,7 +120,7 @@ class EnableProcPathStatsCollection:
                                               str(datetime.now().strftime("%m_%d_%Y_%H_%M_%S")))
             self.worker_stat_files_dict[file_name] = worker
             self.stat_collection.append(Process(target=self.exe_cmd,
-                                                args=(worker, proc_cmd.format(file_name))))
+                                                args=(worker, PROC_CMD.format(file_name))))
         self.collect_pids(self.worker_stat_files_dict)
         for proc in self.stat_collection:
             proc.start()
@@ -150,6 +153,7 @@ class EnableProcPathStatsCollection:
             if not worker.path_exists(file_name):
                 return False, "log files are missing"
             else:
-                resp = worker.copy_file_to_local(remote_path=file_name, local_path=file_name)
+                file_path = os.path.join(self.log_path, file_name)
+                resp = worker.copy_file_to_local(remote_path=file_name, local_path=file_path)
                 LOGGER.info(resp)
         return True, "log files are copied to local machine"
