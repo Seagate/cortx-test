@@ -398,7 +398,7 @@ class TestMultiServerPodFailure:
         """
         LOGGER.info("STARTED: Test to verify DELETEs after %s (K) server pods down - "
                     "unsafe shutdown", self.kvalue)
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        wr_bucket = self.kvalue * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = wr_bucket - 10
         event = threading.Event()
         wr_output = Queue()
