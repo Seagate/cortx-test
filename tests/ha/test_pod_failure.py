@@ -47,7 +47,6 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -90,7 +89,6 @@ class TestPodFailure:
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -3076,7 +3074,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Get the RC node data pod and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        rc_node = self.motr_obj.get_primary_cortx_node()
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
         LOGGER.info("RC Node is running on %s node", self.node_name)
@@ -3126,7 +3124,7 @@ class TestPodFailure:
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for RC node failed over node.")
-        rc_node = self.motr_obj.get_primary_cortx_node()
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
         assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
