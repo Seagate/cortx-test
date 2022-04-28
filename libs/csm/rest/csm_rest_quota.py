@@ -53,7 +53,7 @@ class GetSetQuota(RestTestLib):
             header = kwargs["headers"]
         else:
             header = self.headers
-        endpoint = CSM_REST_CFG["get_set_quota"]
+        endpoint = self.config["get_set_quota"]
         endpoint = endpoint.format(uid, quota_type)
         response = self.restapi.rest_call("get", endpoint=endpoint,
                                           headers=header)
@@ -76,13 +76,13 @@ class GetSetQuota(RestTestLib):
             header = kwargs["headers"]
         else:
             header = self.headers
-        endpoint = CSM_REST_CFG["get_set_quota"]
+        endpoint = self.config["get_set_quota"]
         endpoint = endpoint.format(uid, quota_type)
-        set_quota_payload = {"enabled": enabled,
+        set_quota_payload = {"quota_type": quota_type,"enabled": enabled,
                "max_size": max_size,
                "max_objects" : max_objects}
         response = self.restapi.rest_call("put", endpoint=endpoint,
-                                          data=json.dumps(set_quota_payload),
+                                          json_dict=json.dumps(set_quota_payload),
                                           headers=header)
         self.log.info("Set user quota request successfully sent...")
         return response
