@@ -28,7 +28,9 @@ import os
 import re
 import shutil
 import signal
+import string
 import time
+import random
 from threading import Thread
 from typing import List
 
@@ -242,6 +244,10 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
             resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
+            if node_obj.path_exists(self.deploy_cfg["mnt_path"]):
+                resp = node_obj.execute_cmd(
+                        common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
+                LOGGER.debug(resp)
             LOGGER.info("\n %s", resp1)
         if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
             openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
@@ -285,6 +291,11 @@ class ProvDeployK8sCortxLib:
             node_obj.kill_remote_process(cmd)
         except IOError as error:
             LOGGER.exception("The exception occurred is %s", error)
+            msg = re.compile("must be no more than 63 characters")
+            match = msg.search(str(error))
+            if match:
+                LOGGER.debug("Match found in : %s", error)
+                return True, str(error)
             return False, error
 
     @staticmethod
@@ -371,27 +382,27 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         log_file = self.deploy_cfg['log_file']
-
-        LOGGER.info("Setting the current namespace")
-        resp_ns = master_node_list[0].execute_cmd(
-            cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
-            read_lines=True)
-        LOGGER.debug("response is %s,", resp_ns)
-        local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
-        remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
-        master_node_list[0].copy_file_to_local(remote_path, local_path)
-        pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                                     read_lines=True)
-        LOGGER.debug("\n=== POD STATUS ===\n")
-        LOGGER.debug(pod_status)
-        if not resp[0]:
-            with open(local_path, 'r') as file:
-                lines = file.read()
-                LOGGER.debug(lines)
-        if resp[0]:
-            LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
-            resp = self.validate_cluster_status(master_node_list[0],
-                                                self.deploy_cfg["k8s_dir"])
+        if not re.search("63 characters", resp[1]):
+            LOGGER.info("Setting the current namespace")
+            resp_ns = master_node_list[0].execute_cmd(
+                cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
+                read_lines=True)
+            LOGGER.debug("response is %s,", resp_ns)
+            local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
+            remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
+            master_node_list[0].copy_file_to_local(remote_path, local_path)
+            pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
+                                                         read_lines=True)
+            LOGGER.debug("\n=== POD STATUS ===\n")
+            LOGGER.debug(pod_status)
+            if not resp[0]:
+                with open(local_path, 'r') as file:
+                    lines = file.read()
+                    LOGGER.debug(lines)
+            if resp[0]:
+                LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
+                resp = self.validate_cluster_status(master_node_list[0],
+                                                    self.deploy_cfg["k8s_dir"])
         return resp
 
     def checkout_solution_file(self, git_tag):
@@ -873,12 +884,16 @@ class ProvDeployK8sCortxLib:
                                                timeout=self.deploy_cfg['timeout']['destroy'])
             LOGGER.debug("resp : %s", resp)
             for worker in worker_node_obj:
+                if worker.path_exists(self.deploy_cfg["mnt_path"]):
+                    resp_mnt = worker.execute_cmd(
+                        common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
+                    LOGGER.debug(resp_mnt)
                 if worker.path_exists(self.deploy_cfg['3rd_party_dir']):
-                    resp = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
+                    resp_ls = worker.execute_cmd(cmd=list_etc_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp_ls)
                 if worker.path_exists(self.deploy_cfg['3rd_party_data_dir']):
-                    resp = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
-                    LOGGER.debug("resp : %s", resp)
+                    resp_data = worker.execute_cmd(cmd=list_data_3rd_party, read_lines=True)
+                    LOGGER.debug("resp : %s", resp_data)
             return True, resp
         # pylint: disable=broad-except
         except BaseException as error:
@@ -1271,18 +1286,19 @@ class ProvDeployK8sCortxLib:
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag, namespace)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step to Check  ALL service status")
-            time.sleep(60)
-            service_status = self.check_service_status(master_node_list[0])
-            LOGGER.info("service resp is %s", service_status)
-            assert_utils.assert_true(service_status[0], service_status[1])
-            row.append(service_status[-1])
-            if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
-                if self.cortx_server_image:
-                    resp = self.verfiy_installed_rpms(master_node_list,
-                                                      common_const.RGW_CONTAINER_NAME,
-                                                      self.deploy_cfg["rgw_rpm"])
-                    assert_utils.assert_true(resp[0], resp[1])
+            if not re.search("63 characters", resp[1]):
+                LOGGER.info("Step to Check  ALL service status")
+                time.sleep(60)
+                service_status = self.check_service_status(master_node_list[0])
+                LOGGER.info("service resp is %s", service_status)
+                assert_utils.assert_true(service_status[0], service_status[1])
+                row.append(service_status[-1])
+                if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
+                    if self.cortx_server_image:
+                        resp = self.verfiy_installed_rpms(master_node_list,
+                                                          common_const.RGW_CONTAINER_NAME,
+                                                          self.deploy_cfg["rgw_rpm"])
+                        assert_utils.assert_true(resp[0], resp[1])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
                 LOGGER.info("Setting the current namespace")
@@ -1728,3 +1744,54 @@ class ProvDeployK8sCortxLib:
         else:
             LOGGER.info("Installing version is not higher than installed version.")
         return installing_version
+
+    @staticmethod
+    def create_namespace(master_node_list, namespace):
+        """
+        This method is used for creating custom namespace
+        param: master_node_list: node object for primary node
+        param: namespace: custom namespace [a-z][0-9] `-``characters
+        returns True, namespace created message
+        """
+        LOGGER.debug("The namespace to be created is %s", namespace)
+        master_node_list.execute_cmd(common_cmd.KUBECTL_CREATE_NAMESPACE.format(namespace),
+                                     read_lines=True)
+        resp = master_node_list.execute_cmd(common_cmd.KUBECTL_GET_NAMESPACE, read_lines=True)
+        if namespace in resp:
+            LOGGER.debug("The namespace is %s", resp)
+            return namespace
+        else:
+            return False, f"Failed to create namespace: {resp}"
+
+    @staticmethod
+    def del_namespace(master_node_list, namespace):
+        """
+        This method is used for delete custom namespace
+        param: master_node_list: node object for primary node
+        param: namespace: custom namespace [a-z][0-9] `-``characters
+        returns True
+        """
+        LOGGER.debug("The namespace to be deleted is %s", namespace)
+        master_node_list.execute_cmd(common_cmd.KUBECTL_DEL_NAMESPACE.format(namespace),
+                                     read_lines=True)
+        resp = master_node_list.execute_cmd(common_cmd.KUBECTL_GET_NAMESPACE, read_lines=True)
+        LOGGER.debug("The namespace is %s", resp.pop(0))
+        if namespace in resp:
+            return False, f"Failed to del namespace {namespace}"
+        else:
+            return True, f"Successfully deleted the NAMESPACE {namespace}"
+
+    @staticmethod
+    def aphanumeric_string_generator(size):
+        """
+        This method generate random string with combination of lowercase,digit,`-`
+        and returns aphanumeric string
+        param: size : length of string
+        returns Alphanumeric String with `-`
+        """
+        char = string.ascii_lowercase + string.digits
+        generated_string = ''.join(random.choice(char) for _ in range(size))
+        string_len = int(len(generated_string) / 2)
+        string_alpha = generated_string[:string_len] + "-" + generated_string[string_len:]
+        LOGGER.info("The string is %s", string_alpha)
+        return string_alpha

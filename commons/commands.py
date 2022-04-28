@@ -529,7 +529,9 @@ GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
                       "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
                       "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
-
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
