@@ -246,7 +246,7 @@ class DiskFailureRecoveryLib:
         # Get available data disk space
         health_obj = Health(master_obj.hostname, master_obj.username, master_obj.password)
         total_cap, avail_cap, used_cap = health_obj.get_sys_capacity()
-        current_usage_per = int(used_cap / total_cap * 100)
+        current_usage_per = round(used_cap / total_cap * 100)
 
         if memory_percent > current_usage_per:
             # Get SNS configuration to retrieve available user data space
@@ -272,12 +272,14 @@ class DiskFailureRecoveryLib:
             return True, 0
 
     @staticmethod
-    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str) -> tuple:
+    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str,
+                                     client: int) -> tuple:
         """
         Perform write operation till the memory is filled to given percentage
         :param s3userinfo: S3user dictionary with access/secret key
         :param user_data_writes: Write operation to be performed for specific bytes
         :param bucket_prefix: Bucket prefix for the data written
+        :param client: number of clients
         :return : list of dictionary
                 format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
                      'obj_size': obj_size, 'num_sample': sample}]
@@ -287,33 +289,35 @@ class DiskFailureRecoveryLib:
             workload.extend([1024,2048,3072,4096])
 
         mb = 1024 * 1024
-        client = 10
         workload = [each * mb for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
         return_list = []
         for obj_size in workload:
             samples = int(each_workload_byte / obj_size)
             if samples > 0:
+                temp_client = client
+                if temp_client > samples:
+                    temp_client = samples
                 bucket_name = f'{bucket_prefix}-{obj_size}b'
                 obj_name = f'obj_{obj_size}'
                 resp = s3bench.s3bench(s3userinfo['accesskey'],
                                        s3userinfo['secretkey'],
                                        bucket=bucket_name,
-                                       num_clients=client,
+                                       num_clients=temp_client,
                                        num_sample=samples,
-                                       obj_name_pref=obj_name, obj_size=obj_size,
+                                       obj_name_pref=obj_name, obj_size=f"{obj_size}b",
                                        skip_cleanup=True, duration=None,
                                        log_file_prefix=f"workload_{obj_size}mb",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
                 LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,
-                            obj_size, client)
+                            obj_size, temp_client)
                 LOGGER.info(f"Log Path {resp[1]}")
                 if s3bench.check_log_file_error(resp[1]):
-                    return False,f"S3bench workload for failed for {obj_size}." \
+                    return False, f"S3bench workload for failed for {obj_size}." \
                                  f" Please read log file {resp[1]}"
                 return_list.append(
-                    {'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
+                    {'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': temp_client,
                      'obj_size': obj_size, 'num_sample': samples})
             else:
                 continue
@@ -336,7 +340,8 @@ class DiskFailureRecoveryLib:
                                    bucket=each['bucket'],
                                    num_clients=each['num_clients'],
                                    num_sample=each['num_sample'],
-                                   obj_name_pref=each['obj_name_pref'], obj_size=each['obj_size'],
+                                   obj_name_pref=each['obj_name_pref'],
+                                   obj_size=f"{each['obj_size']}b",
                                    skip_cleanup=skipcleanup,
                                    skip_write=True,
                                    skip_read=skipread,
