@@ -55,6 +55,7 @@ pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
 pytest_args = split_args(pytest_args)  # sanitize
+csm_checks = False
 if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_args:
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
