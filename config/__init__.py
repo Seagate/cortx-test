@@ -94,7 +94,7 @@ if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
     CSM_CHECKS = pytest_args[
         pytest_args.index(_csm_checks) + 1] if _csm_checks else False
     data = {'True': True, 'False': False , True : True , False : False }
-    CSM_CHECKS = bool(data)
+    CSM_CHECKS = data.get(CSM_CHECKS)
 
     _validate_certs = ('-c' if '-c' in pytest_args else (
         '----validate_certs' if '----validate_certs' in pytest_args else None))
