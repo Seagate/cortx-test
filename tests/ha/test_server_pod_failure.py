@@ -255,7 +255,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
         LOGGER.info("Step 3: Shutdown random server pod safely by deleting deployment and "
-                    "verify cluster & remaining server pods status")
+                    "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
@@ -266,7 +266,7 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
         LOGGER.info("Step 3: Successfully shutdown random server pod safely by deleting deployment "
-                    "and verified cluster & remaining server pods status")
+                    "and verified cluster & remaining pods status")
 
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
