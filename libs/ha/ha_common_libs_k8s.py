@@ -1712,7 +1712,8 @@ class HAK8s:
         """
         data_pod = node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
-        rc_node = node_obj.send_k8s_cmd(operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
+        rc_node = node_obj.send_k8s_cmd(operation="exec", pod=data_pod,
+                                        namespace=common_const.NAMESPACE,
                                         command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                         f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}", decode=True)
         return rc_node
