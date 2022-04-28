@@ -236,9 +236,13 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 3: Shutdown %s server pod by deleting deployment (unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
+
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = []
@@ -328,9 +332,11 @@ class TestMultiServerPodFailure:
                     "after each pod down", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             LOGGER.info("Step 3: Shutdown %s server pod %s by deleting deployment (unsafe)",
@@ -357,13 +363,13 @@ class TestMultiServerPodFailure:
                         count)
 
             LOGGER.info("Step 5: Check services status that were running on server pod %s which "
-                        "are deleted", pod_name)
+                        "is deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
+            LOGGER.info("Step 5: Services of server pod %s is in offline state", pod_name)
 
             LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -437,9 +443,11 @@ class TestMultiServerPodFailure:
                     "unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             LOGGER.info("Shutdown %s server pod %s by deleting deployment "
@@ -560,9 +568,11 @@ class TestMultiServerPodFailure:
                     "after each server pod down on new and existing buckets", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             LOGGER.info("Step 2: Shutdown %s server pod %s by deleting deployment (unsafe)",
@@ -587,13 +597,13 @@ class TestMultiServerPodFailure:
                         count)
 
             LOGGER.info("Step 4: Check services status that were running on server pod %s which "
-                        "are deleted", pod_name)
+                        "is deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
+            LOGGER.info("Step 4: Services of server pod %s is in offline state", pod_name)
 
             LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -656,9 +666,11 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 2: Shutdown the server pod by deleting deployment (unsafe)")
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
@@ -738,7 +750,7 @@ class TestMultiServerPodFailure:
         """
         LOGGER.info("Started: Test to verify degraded Deletes after each pod failure till "
                     "K server pods down - unsafe shutdown.")
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        wr_bucket = self.kvalue * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = 20
         event = threading.Event()
         wr_output = Queue()
@@ -780,9 +792,11 @@ class TestMultiServerPodFailure:
                     self.kvalue, del_bucket)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             LOGGER.info("Step 2: Shutdown %s server pod %s by deleting deployment (unsafe)",
@@ -809,13 +823,13 @@ class TestMultiServerPodFailure:
                         "gone down.", pod_name)
 
             LOGGER.info("Step 4: Check services status that were running "
-                        "on server pod %s which are deleted", pod_name)
+                        "on server pod %s which is deleted", pod_name)
             hostname = self.pod_dict.get(pod_name)[0]
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 4: Services of server pod %s are in offline state", pod_name)
+            LOGGER.info("Step 4: Services of server pod %s is in offline state", pod_name)
 
             LOGGER.info("Step 5: Check services status on remaining "
                         "pods %s", server_data_pod_list)
@@ -915,18 +929,21 @@ class TestMultiServerPodFailure:
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        assert_utils.assert_true(resp[0], f"Create Bucket copy "
+                                          f"object failed with: {resp[1]}")
         put_etag = resp[1]
-        LOGGER.info("Step 1: successfully create and list buckets and perform upload and copy"
+        LOGGER.info("Step 1: successfully created and listed buckets and performed upload and copy"
                     "object from %s bucket to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Shutdown the %s (K) server pods by deleting deployment "
                     "(unsafe)", self.kvalue)
         LOGGER.info("Get server pod names to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_data_pod_list = pod_list.extend(self.node_master_list[0].get_all_pods
-                                               (pod_prefix=const.POD_NAME_PREFIX))
         self.pod_name_list = random.sample(pod_list, self.kvalue)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
