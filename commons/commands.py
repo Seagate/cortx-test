@@ -556,7 +556,7 @@ UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
 
-CMD_POD_STATUS = "kubectl get pods"
+CMD_POD_STATUS = "kubectl get pods -n default"
 CMD_SRVC_STATUS = "kubectl get services"
 CMD_GET_NODE = "kubectl get nodes"
 
