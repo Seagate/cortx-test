@@ -176,13 +176,13 @@ class TestPutBucketVersioning:
     def test_put_unversioned_bucket_versioning_unversioned_bucket_32747(self):
         """ Test PUT Unversioned/Disable bucket versioning when versioning not set. """
         self.log.info("STARTED: PUT Disabled bucket versioning by non bucket owner.")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name, 
-                                                                email=self.email_id, 
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
+                                                                email=self.email_id,
                                                                 password=self.s3acc_password)
         try:
             self.log.info("Step 1: PUT Disabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                            status="Disabled")
+            res = s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                        status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Suspended bucket versioning")
@@ -192,7 +192,7 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Disabled")
         try:
             self.log.info("Step 2: PUT Unversioned bucket versioning by bucket owner.")
-            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+            res = self.s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status="Unversioned")
             self.log.info("response: %s", res)
         except CTException as error:
@@ -218,13 +218,13 @@ class TestPutBucketVersioning:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("response: %s", res)
         self.log.info("Creating new account.")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name, 
-                                                                email=self.email_id, 
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
+                                                                email=self.email_id,
                                                                 password=self.s3acc_password)
         try:
             self.log.info("Step 2: PUT Disabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                            status="Disabled")
+            res = s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                        status="Disabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Disabled bucket versioning")
@@ -235,7 +235,7 @@ class TestPutBucketVersioning:
                           "Disabled by non bucket owner")
         try:
             self.log.info("Step 3: PUT Unversioned bucket versioning by  bucket owner.")
-            res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+            res = self.s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status="Unversioned")
             self.log.info("response: %s", res)
         except CTException as error:
