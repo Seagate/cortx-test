@@ -45,7 +45,6 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -85,7 +84,6 @@ class TestServerPodFailure:
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
