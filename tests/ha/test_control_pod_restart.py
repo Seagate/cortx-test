@@ -161,17 +161,17 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
-        # if self.restore_pod:
-        #     LOGGER.info("Restoring control pod to its original state using yaml file %s",
-        #                 self.original_backup)
-        #     control_pod_name = self.node_master_list[0].get_all_pods(
-        #         const.CONTROL_POD_NAME_PREFIX)[0]
-        #     pod_yaml = {control_pod_name: self.original_backup}
-        #     resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-        #                                     failover_node=self.original_control_node)
-        #     LOGGER.debug("Response: %s", resp)
-        #     assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        #     LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        if self.restore_pod:
+            LOGGER.info("Restoring control pod to its original state using yaml file %s",
+                        self.original_backup)
+            control_pod_name = self.node_master_list[0].get_all_pods(
+                const.CONTROL_POD_NAME_PREFIX)[0]
+            pod_yaml = {control_pod_name: self.original_backup}
+            resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
+                                            failover_node=self.original_control_node)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
@@ -475,6 +475,7 @@ class TestControlPodRestart:
         thread_wr.daemon = True  # Daemonize thread
         thread_wr.start()
         LOGGER.info("Step 4: Successfully started WRITEs with variable sizes objects in background")
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])    # delay to allow s3bench installation
 
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
@@ -522,8 +523,6 @@ class TestControlPodRestart:
         thread_del.join()
         LOGGER.info("Step 8.1: Verify status for In-flight DELETEs during control pod "
                     "failover to %s", failover_node)
-        import pdb
-        pdb.set_trace()
         del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
