@@ -23,6 +23,7 @@ import csv
 import distutils.util
 import logging
 import os
+import re
 
 import pytest
 
@@ -69,6 +70,10 @@ class TestContDeployment:
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH", cls.deploy_cfg["k8s_dir"])
         cls.namespace = os.getenv("NAMESPACE", cls.deploy_cfg["namespace"])
+        if len(cls.namespace) >= cls.deploy_cfg["max_size_namespace"] or \
+                bool(re.match(r'\w*[A-Z]\w*', cls.namespace)):
+            assert False, "Please Provide valid NAMESPACE name, " \
+                          "it should contain lowercase and digit with `-` only"
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []

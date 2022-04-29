@@ -108,7 +108,7 @@ class TestNamespaceDeployment:
         Test to verify the CORTX deployment in pre defined custom namespace
         """
         self.log.info("Creating the namespace")
-        custom_namespace = self.deploy_lc_obj.aphanumeric_string_generator(8)
+        custom_namespace = self.deploy_lc_obj.namespace_name_generator(8)
         self.deploy_lc_obj.create_namespace(self.master_node_list[0], custom_namespace)
         self.log.info("NAMESPACE is created %s", custom_namespace)
 
@@ -146,7 +146,7 @@ class TestNamespaceDeployment:
          name of custom namespace upto max length
         """
 
-        custom_namespace = self.deploy_lc_obj.aphanumeric_string_generator(43)
+        custom_namespace = self.deploy_lc_obj.namespace_name_generator(43)
         self.log.info("NAMESPACE is %s", custom_namespace)
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)

@@ -1282,7 +1282,8 @@ class ProvDeployK8sCortxLib:
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag, namespace)
-            if len(namespace) >= 63 or bool(re.match(r'\w*[A-Z]\w*', namespace)):
+            if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
+                    bool(re.match(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
                 assert_utils.assert_false(resp[0], resp[1])
             else:
@@ -1290,7 +1291,7 @@ class ProvDeployK8sCortxLib:
             matches = [re.compile(pat) for pat in self.patterns]
             if not (m.match(resp[1]) for m in matches):
                 LOGGER.info("Step to Check  ALL service status")
-                time.sleep(60)
+                time.sleep(self.deploy_cfg["sleep_time"])
                 service_status = self.check_service_status(master_node_list[0])
                 LOGGER.info("service resp is %s", service_status)
                 assert_utils.assert_true(service_status[0], service_status[1])
@@ -1782,16 +1783,16 @@ class ProvDeployK8sCortxLib:
         return True, f"Successfully deleted the NAMESPACE {namespace}"
 
     @staticmethod
-    def aphanumeric_string_generator(size):
+    def namespace_name_generator(size):
         """
         This method generate random string with combination of lowercase,digit,`-`
-        and returns aphanumeric string
+        and returns alphanumeric string
         param: size : length of string
         returns Alphanumeric String with `-`
         """
         char = string.ascii_lowercase + string.digits
-        generated_string = ''.join(secrets.choice(char) for _ in range(size))
+        generated_string = system_utils.random_string_generator(size, char)
         string_len = int(len(generated_string) / 2)
         string_alpha = generated_string[:string_len] + "-" + generated_string[string_len:]
-        LOGGER.info("The string is %s", string_alpha)
+        LOGGER.info("The string is %s and length is %s", string_alpha, len(string_alpha))
         return string_alpha
