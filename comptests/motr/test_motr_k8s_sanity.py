@@ -24,13 +24,15 @@ Test class that contains MOTR K8s tests.
 
 import os
 import csv
+import time
 import logging
+import multiprocessing
 from random import SystemRandom
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons import constants as common_const
-from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP
+from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP, FILE_BLOCK_COUNT
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,45 @@ class TestExecuteK8Sanity:
         count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
         self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
+
+    def run_motr_io(self, node, block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True):
+        """
+        Run m0cp, m0cat and m0unlink on a node for all the motr clients and deletes the objects
+        anyway at the end
+        :param: str node: Cortx node on which utilities to be executed
+        :param: tuple block_count: Tuple containing the integer values. If block count is 1,
+                then size of object file will vary from 4K to 32M,
+                i.e multiple of supported object block sizes
+        :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
+        :param: bool delete_objs: if True, will delete the created objects
+        """
+        object_bsize_dict = {}
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        try:
+            for count in block_count:
+                for b_size in BSIZE_LAYOUT_MAP.keys():
+                    object_id = str(self.system_random.randint(1, 9999)) + ":" + \
+                                    str(self.system_random.randint(1, 9999))
+                    object_bsize_dict[object_id] = b_size
+                    self.motr_obj.dd_cmd(b_size, str(count), infile, node)
+                    self.motr_obj.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
+                        infile, node)
+                    if run_m0cat:
+                        self.motr_obj.cat_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
+                            outfile, node)
+                        self.motr_obj.md5sum_cmd(infile, outfile, node)
+                    if delete_objs:
+                        self.motr_obj.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
+        except Exception as exc:
+            logger.exception("Test has failed with execption: %s", exc)
+            raise exc
+        finally:
+            if not delete_objs:
+                cortx_node = self.system_random.choice(self.motr_obj.cortx_node_list)
+                for obj_id in object_bsize_dict:
+                    self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]],
+                    cortx_node)
 
     def test_motr_k8s_lib(self):
         """
@@ -257,3 +298,18 @@ class TestExecuteK8Sanity:
         for node in self.motr_obj.get_node_pod_dict():
             self.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
+
+    @pytest.mark.tags("TEST-29706", "TEST-29709")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_intrupted_motr_io(self):
+        try:
+            for node in self.motr_obj.cortx_node_list:
+                p = multiprocessing.Process(target=self.run_motr_io, args=[node, [4],
+                    False, True])
+                p.start()
+        except Exception as exc:
+            logger.exception("Ignoring exception %s as this is expected to fail during shutdown",
+                 exc)
+        logger.info("Let the motr IO run on all the nodes for 120 sec")
+        time.sleep(120)
+        self.motr_obj.shutdown_cluster()
