@@ -46,7 +46,6 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
 # Global Constants
@@ -66,8 +65,6 @@ class TestControlPodRestart:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations.")
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
@@ -79,10 +76,10 @@ class TestControlPodRestart:
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
-        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.s3acc_name = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = None
-        cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
+        cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -105,7 +102,6 @@ class TestControlPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
@@ -126,7 +122,6 @@ class TestControlPodRestart:
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
         self.restore_node = False
-        self.restore_ip = False
         self.deploy = False
         self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
@@ -136,7 +131,6 @@ class TestControlPodRestart:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         self.restore_pod = self.restore_method = self.deployment_name = None
