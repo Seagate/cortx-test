@@ -328,7 +328,7 @@ class JiraTask:
         Add comment to the mentioned jira id.
         """
         try:
-            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(test_run_id)
+            url = f"https://jts.seagate.com/rest/raven/1.0/api/testrun/{test_run_id}/comment"
 
             response = requests.request("PUT", url, data=comment,
                                         auth=(self.jira_id, self.jira_password),

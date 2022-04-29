@@ -33,7 +33,7 @@ HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 HA_CONSUL_STR = 'consul kv get ' \
-                '-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 ' \
+                '-http-addr=consul-server:8500 ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"

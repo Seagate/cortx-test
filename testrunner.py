@@ -59,6 +59,8 @@ def parse_args():
     parser.add_argument("-u", "--jira_update", type=str_to_bool,
                         default=True,
                         help="Update Jira. Can be false in case Jira is down")
+    parser.add_argument("-csm", "--csm_checks", type=str_to_bool, default=False,
+                        help="Execute tests with error code & msg check enabled.")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -214,6 +216,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
                            '--product_family=' + args.product_family,
                            '--validate_certs=' + str(args.validate_certs),
                            '--use_ssl=' + str(args.use_ssl),
+                           '--csm_checks=' + str(args.csm_checks),
                            '--health_check=' + str(args.health_check)]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
