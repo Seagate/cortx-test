@@ -148,7 +148,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created IAM users and buckets.")
-            if HA_CFG["dtm0_disabled"]:
+            if CMN_CFG["dtm0_disabled"]:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             else:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean, obj_crud=True)
@@ -813,7 +813,7 @@ class TestPodFailure:
                     "background")
 
         LOGGER.info("Step 7: Run IOs with variable object sizes on a degraded cluster.")
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
             self.test_prefix = 'test-32444-1'
@@ -880,7 +880,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
                         "on degraded cluster with new user")
             users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1129,7 +1129,7 @@ class TestPodFailure:
                     "failed/error.")
 
         LOGGER.info("STEP 7: Perform IOs with variable object sizes on degraded cluster")
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-26441-1'
             self.s3_clean.update(users)
@@ -1196,7 +1196,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
                         "on degraded cluster with new user")
             users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1300,7 +1300,7 @@ class TestPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
                     "down is failed/error.")
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
                         "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
@@ -2772,7 +2772,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("STEP 6: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                         "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
@@ -2862,7 +2862,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("STEP 6: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                         "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
@@ -3129,7 +3129,7 @@ class TestPodFailure:
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
 
-        if HA_CFG["dtm0_disabled"]:
+        if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 7: Create new IAM user and Perform WRITEs-READs-Verify-DELETEs with "
                         "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
