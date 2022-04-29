@@ -96,8 +96,8 @@ class TestIOWorkloadDegradedPath:
                       "check degraded status.")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
                                                             self.hlth_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Deleted pod : %s", resp[1][0])
+        assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
+        self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
         self.log.info("Step 3: Perform IO's using S3bench")
         duration_in_days = self.test_cfg['degraded_path_durations_days']

@@ -205,10 +205,10 @@ class TestServerPodFailure:
             pod_prefix=[const.SERVER_POD_NAME_PREFIX])
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[2].keys())[0]
-        self.deployment_name = resp[2][pod_name]['deployment_name']
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = self.deploy = True
-        self.restore_method = resp[2][pod_name]['method']
+        self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
                     "has some failure & remaining pods status is online.", pod_name)
@@ -254,11 +254,11 @@ class TestServerPodFailure:
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[2].keys())[0]
-        self.deployment_name = resp[2][pod_name]['deployment_name']
-        self.deployment_backup = resp[2][pod_name]['deployment_backup']
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.deployment_backup = resp[1][pod_name]['deployment_backup']
         self.restore_pod = self.deploy = True
-        self.restore_method = resp[2][pod_name]['method']
+        self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
                     "has some failure & remaining pods status is online.", pod_name)
