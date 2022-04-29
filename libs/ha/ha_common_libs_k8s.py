@@ -1558,15 +1558,14 @@ class HAK8s:
         return True, modified_yaml, yaml_path
 
     @staticmethod
-    def change_pod_node(pod_obj, pod_list, failover_node):
+    def change_pod_node(pod_obj, pod_node):
         """
         Function to change the node of given pod list (NodeSelector)
         :param pod_obj: Object of the pod
-        :param pod_list: List of the pods to be failed over
-        :param failover_node: Node to which pod is to be failed over
+        :param pod_node: Dict of the pod: failover_node (Node to which pod is to be failed over)
         :return: bool, str (status, response)
         """
-        for pod in pod_list:
+        for pod, failover_node in pod_node.items():
             pod_prefix = '-'.join(pod.split("-")[:2])
             cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
             LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
@@ -1738,7 +1737,7 @@ class HAK8s:
                 return resp
             new_pod = pod_obj.get_recent_pod_name(deployment_name=deploy)
             LOGGER.info("Changing host node of pod %s to %s", pod, failover_node)
-            resp = self.change_pod_node(pod_obj, [new_pod], failover_node)
+            resp = self.change_pod_node(pod_obj, pod_node={new_pod: failover_node})
             if not resp[0]:
                 return resp
             LOGGER.info("Check cluster status")

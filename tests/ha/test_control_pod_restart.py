@@ -185,8 +185,8 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                         " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
             time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
-        # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
-        #  every test
+        # TODO: As control node is restarted, Need to redeploy cluster after every test (We may
+        #  need this after control pod deployment file is changed)
         if self.deploy:
             LOGGER.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
@@ -226,7 +226,7 @@ class TestControlPodRestart:
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.tags("TEST-40368")
+    @pytest.mark.tags("TEST-32459")
     @CTFailOn(error_handler)
     def test_restart_control_node(self):
         """
@@ -239,7 +239,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with "
                     "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40368'
+        self.test_prefix = 'test-32459'
         self.s3_clean = users
         uids = list(users.keys())
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -332,7 +332,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 9: Create new IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40368-1'
+        self.test_prefix = 'test-32459-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
