@@ -23,11 +23,9 @@ HA test suite for Control Pod Restart
 """
 
 import logging
-import os
 import random
 import secrets
 import time
-from time import perf_counter_ns
 
 import pytest
 
@@ -36,16 +34,13 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
-from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 
 # Global Constants
@@ -75,8 +70,8 @@ class TestControlPodRestart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = cls.random_time = None
-        cls.restore_pod = cls.deployment_name = cls.restore_method = None
+        cls.s3_clean = cls.test_prefix = None
+        cls.restore_pod = cls.restore_method = None
         cls.restore_node = cls.deploy = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
@@ -100,8 +95,6 @@ class TestControlPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.test_file = "ha-mp_obj"
-        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
         backup_path = cls.node_master_list[0].backup_deployment(
@@ -116,7 +109,6 @@ class TestControlPodRestart:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.restore_node = False
         self.deploy = False
         self.s3_clean = dict()
@@ -127,9 +119,6 @@ class TestControlPodRestart:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         self.restore_pod = self.restore_method = None
-        if not os.path.exists(self.test_dir_path):
-            sysutils.make_dirs(self.test_dir_path)
-        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Updating control pod deployment yaml")
         self.control_pods = self.node_master_list[0].get_pods_node_fqdn(
             const.CONTROL_POD_NAME_PREFIX)
@@ -202,7 +191,6 @@ class TestControlPodRestart:
         LOGGER.info("Cleanup: Cluster status checked successfully")
 
         LOGGER.info("Removing extra files")
-        sysutils.remove_dirs(self.test_dir_path)
         sysutils.remove_file(self.modified_yaml)
         self.node_master_list[0].remove_remote_file(self.modified_yaml)
         self.node_master_list[0].remove_remote_file(self.backup_yaml)
