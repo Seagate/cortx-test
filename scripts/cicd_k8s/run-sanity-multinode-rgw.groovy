@@ -147,8 +147,8 @@ deactivate
 				    }
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
-                        def new_lines = failures.readLines()
-                        if (len(new_lines) > len(lines)) {
+                        def rlines = failures.readLines()
+                        if (len(rlines) > len(lines)) {
                             echo "Regression Test Failed"
                             env.Regression_Failed = true
                             currentBuild.result = 'FAILURE'
@@ -193,8 +193,8 @@ deactivate
 				    }
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
-                        def io_lines = failures.readLines()
-                        if (len(io_lines) > len(new_lines)) {
+                        def ilines = failures.readLines()
+                        if (len(ilines) > len(rlines)) {
                             echo "IO_PATH_TEST Test Failed"
                             env.Io_Path_Failed = true
                             currentBuild.result = 'FAILURE'
@@ -239,8 +239,8 @@ deactivate
 				    }
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
-                        def fd_lines = failures.readLines()
-                        if (len(fd_lines) > len(io_lines)) {
+                        def flines = failures.readLines()
+                        if (len(flines) > len(ilines)) {
                             echo "FAILURE DOMAIN Test Failed"
                             env.Failure_Domain_Failed = true
                             currentBuild.result = 'FAILURE'
