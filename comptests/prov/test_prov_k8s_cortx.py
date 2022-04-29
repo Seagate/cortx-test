@@ -67,7 +67,7 @@ class TestProvK8Cortx:
                 cls.master_node_obj.execute_cmd(cmd=commands.SET_NAMESPACE.format("default"),
                 read_lines=True)
             else:
-                cls.worker_node_list.append(node_obj)       
+                cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
 
     # pylint: disable=R0915
