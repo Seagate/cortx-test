@@ -237,7 +237,7 @@ class TestControlPodRestart:
                     " node hosting control pod")
 
         LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32459'
         self.s3_clean = users
@@ -330,7 +330,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 8: Performed READ-Verify-DELETE on already written data")
 
         LOGGER.info("Step 9: Create new IAM user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32459-1'
         self.s3_clean.update(users)
@@ -355,7 +355,7 @@ class TestControlPodRestart:
                     "pod failover. (using kubectl command)")
 
         LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40369'
         self.s3_clean = users
@@ -367,8 +367,8 @@ class TestControlPodRestart:
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
 
-        failover_node = random.choice([ele for ele in self.host_worker_list if ele !=
-                                       self.control_node])
+        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
+                                                   self.control_node])
         LOGGER.debug("Fail over node is: %s", failover_node)
 
         LOGGER.info("Step 2: Failover control pod %s to node %s and check cluster status",
@@ -398,7 +398,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 4: Performed READ-Verify-DELETE on already written data")
 
         LOGGER.info("Step 5: Create new IAM user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40369-1'
         self.s3_clean.update(users)
