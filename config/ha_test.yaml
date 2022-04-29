@@ -48,4 +48,3 @@ bg_bucket_ops:
   no_del_buckets: 100
 
 near_full_system_percent: 60
-
