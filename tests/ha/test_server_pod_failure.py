@@ -203,14 +203,13 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX])
-        # If len of resp is 2, there is failure in shutdown, No need of pod restore
-        if len(resp) == 2 and not resp[0]:
-            assert_utils.assert_false(resp[0], resp)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[2].keys())[0]
         self.deployment_name = resp[2][pod_name]['deployment_name']
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
-        assert_utils.assert_false(resp[0], resp)
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
                     "has some failure & remaining pods status is online.", pod_name)
 
@@ -253,14 +252,14 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
-        if len(resp) == 2 and not resp[0]:
-            assert_utils.assert_false(resp[0], resp)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[2].keys())[0]
         self.deployment_name = resp[2][pod_name]['deployment_name']
         self.deployment_backup = resp[2][pod_name]['deployment_backup']
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
-        assert_utils.assert_false(resp[0], resp)
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
                     "has some failure & remaining pods status is online.", pod_name)
 

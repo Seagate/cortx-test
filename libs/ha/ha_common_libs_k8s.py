@@ -1474,35 +1474,35 @@ class HAK8s:
 
         LOGGER.info("Delete %s by %s method", delete_pods, down_method)
         for pod in delete_pods:
-            pod_info[pod] = pod_data.copy()
-            pod_info[pod]['hostname'] = master_node_obj.get_pod_hostname(pod_name=pod)
+            hostname = master_node_obj.get_pod_hostname(pod_name=pod)
             LOGGER.info("Deleting pod %s by %s method", pod, down_method)
             if down_method == common_const.RESTORE_SCALE_REPLICAS:
                 resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
                 if resp[0]:
-                    # Failure here, required no pod restore in main test
-                    return False, f"Failed to delete pod {pod} by making replicas=0"
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
                 pod_info[pod]['deployment_name'] = resp[1]
             elif down_method == common_const.RESTORE_DEPLOYMENT_K8S:
                 resp = master_node_obj.delete_deployment(pod_name=pod)
                 if resp[0]:
-                    # Failure here, required no pod restore in main test
-                    return False, f"Failed to delete pod {pod} by deleting deployment"
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
                 pod_info[pod]['deployment_backup'] = resp[1]
                 pod_info[pod]['deployment_name'] = resp[2]
             pod_info[pod]['method'] = down_method
+            pod_info[pod]['hostname'] = hostname
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
             LOGGER.debug("Response: %s", resp)
             if not resp[0]:
-                return resp, pod_info
+                return False, pod_info
         LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False, resp[1], pod_info
+            return False, pod_info
         LOGGER.info("Cluster has failures as pod %s has been shutdown", delete_pods)
 
         # Get the remaining pods except deleted one, to check it's service status not affected
@@ -1511,9 +1511,9 @@ class HAK8s:
         resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return resp, pod_info
+            return False, pod_info
         LOGGER.info("Services of remaining pods are in online state")
-        return True, delete_pods, pod_info
+        return True, pod_info
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
