@@ -72,6 +72,7 @@ class TestContDeployment:
         cls.namespace = os.getenv("NAMESPACE", cls.deploy_cfg["namespace"])
         if len(cls.namespace) >= cls.deploy_cfg["max_size_namespace"] or \
                 bool(re.match(r'\w*[A-Z]\w*', cls.namespace)):
+            cls.log.error("The NAMESPACE contains invalid chars %s", cls.namespace)
             assert False, "Please Provide valid NAMESPACE name, " \
                           "it should contain lowercase and digit with `-` only"
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
