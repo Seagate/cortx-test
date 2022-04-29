@@ -21,7 +21,7 @@ pipeline {
 		Enclosure_Type = '5U84'
 		DB_Update = false
 		Current_TP = "None"
-		Sanity_Failed = 'Failed'
+		Sanity_Failed = true
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -69,7 +69,7 @@ deactivate
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
 				script {
-			        env.Sanity_Failed = 'Passed'
+			        env.Sanity_Failed = false
 			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
@@ -99,19 +99,19 @@ IFS=$OLDIFS
 deactivate
 '''	)
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Sanity due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
                         if (lines) {
                             echo "Sanity Test Failed"
-                            env.Sanity_Failed = 'Failed'
+                            env.Sanity_Failed = true
                             currentBuild.result = 'FAILURE'
                         }
+                    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Sanity due to bad health of deployment')
                     }
 				}
 			}
@@ -120,7 +120,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-                    env.Regression_Failed = 'Passed'
+                    env.Regression_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -145,19 +145,19 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Regression due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def new_lines = failures.readLines()
                         if (len(new_lines) > len(lines)) {
                             echo "Regression Test Failed"
-                            env.Regression_Failed = 'Failed'
+                            env.Regression_Failed = true
                             currentBuild.result = 'FAILURE'
                         }
+                    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Regression due to bad health of deployment')
                     }
 				}
 			}
@@ -166,7 +166,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-                    env.Io_Path_Failed = 'Passed'
+                    env.Io_Path_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -191,19 +191,19 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted IO Path due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def io_lines = failures.readLines()
                         if (len(io_lines) > len(new_lines)) {
                             echo "IO_PATH_TEST Test Failed"
-                            env.Io_Path_Failed = 'Failed'
+                            env.Io_Path_Failed = true
                             currentBuild.result = 'FAILURE'
                         }
+                    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted IO Path due to bad health of deployment')
                     }
 				}
 			}
@@ -212,7 +212,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-                    env.Failure_Domain_Failed = 'Passed'
+                    env.Failure_Domain_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -237,19 +237,19 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Failure Domain Path due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def fd_lines = failures.readLines()
                         if (len(fd_lines) > len(io_lines)) {
                             echo "FAILURE DOMAIN Test Failed"
-                            env.Failure_Domain_Failed = 'Failed'
+                            env.Failure_Domain_Failed = true
                             currentBuild.result = 'FAILURE'
                         }
+                    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Failure Domain Path due to bad health of deployment')
                     }
 				}
 			}
@@ -305,7 +305,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v1.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'akshay.s.mankar@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
