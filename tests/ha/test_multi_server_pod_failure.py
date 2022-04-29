@@ -784,7 +784,7 @@ class TestMultiServerPodFailure:
     @pytest.mark.skip(reason="Multipart feature F-20C targeted for PI-7")
     @pytest.mark.tags("TEST-40584")
     @CTFailOn(error_handler)
-    def test_part_mpu_after_kserver_pods_fail(self):
+    def test_part_mpu_till_kserver_pods_fail(self):
         """
         This test tests partial multipart upload after each server pod is failed till K
         pods and complete upload after all K server pods are down - unsafe shutdown
