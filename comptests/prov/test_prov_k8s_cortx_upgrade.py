@@ -83,7 +83,7 @@ class TestProvK8CortxRollingUpgrade:
             self.master_node_obj.remove_file(filename=
                                              self.prov_deploy_cfg["upgrade_process_file_path"]
                                              )
-        LOGGER.info("Done: Setup operations.")
+        LOGGER.info("Done: Teardown Operations.")
 
     def perform_upgrade(self, exc: bool = True, output=None):
         """Function calls upgrade and put return value in queue object."""
