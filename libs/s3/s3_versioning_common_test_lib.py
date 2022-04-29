@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-"""Python library contains common methods for S3 Versioning tests."""
+"""Contains common functions for S3 Versioning tests."""
 import logging
 
 from commons.utils import assert_utils
@@ -43,17 +43,16 @@ def create_s3_user_get_s3lib_object(
     secret_key and S3 objects which required to perform further operations.
     """
     rest_obj = S3AccountOperationsRestAPI()
-    LOG.info(
-        "Step : Creating account with name %s and email_id %s",
-        account_name, email_id)
+    LOG.info("Creating account with name %s and email_id %s",
+             account_name, email_id)
     new_user = rest_obj.create_s3_account(user_name=user_name, 
-                                             email_id=email_id,
-                                             passwd=password)
+                                          email_id=email_id,
+                                          passwd=password)
     assert_utils.assert_true(new_user[0], new_user[1])
     access_key = new_user[1]["access_key"]
     secret_key = new_user[1]["secret_key"]
     del rest_obj
-    LOG.info("Step Successfully created the S3 account")
+    LOG.info("Successfully created the S3 account")
     s3_obj = s3_versioning_test_lib.S3VersioningTestLib(access_key=access_key, 
                                                         secret_key=secret_key,
                                                         endpoint_url=S3_CFG["s3_url"])
