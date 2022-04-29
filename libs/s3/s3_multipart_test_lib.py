@@ -32,7 +32,6 @@ from commons.greenlet_worker import GeventPool
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import cal_percent
 from commons.utils import s3_utils
-from commons.utils import assert_utils
 
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -629,22 +628,16 @@ class S3MultipartTestLib(Multipart):
 
         return response
 
+    @staticmethod
     def start_ios_get_precalc_parts(
-            self,
             mp_config: dict,
             obj_path: str,
-            bucket_name: str,
-            object_name: str,
             **kwargs):
         """
         This creates file, starts IOs, Initiates mpu and gets the precalculated parts for uploading
         to multipart upload
         :param mp_config: configuration dict for multipart upload
-        :param mp_obj_path: path to object file
-        :param bucket_name: Name of the s3 bucket.
-        :param object_name: Name of the s3 object.
-        :param log_prefix: prefix to be attached to log file
-        :param duration: duration for ios to run
+        :param obj_path: path to object file
         """
         log_prefix = kwargs.get("log_prefix", None)
         duration = kwargs.get("duration", None)
