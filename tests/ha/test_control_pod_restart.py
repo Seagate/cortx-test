@@ -23,7 +23,6 @@ HA test suite for Control Pod Restart
 """
 
 import logging
-import os
 import random
 import secrets
 import threading
@@ -38,12 +37,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
-from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -120,7 +117,6 @@ class TestControlPodRestart:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.restore_node = False
         self.deploy = False
         self.s3_clean = dict()
