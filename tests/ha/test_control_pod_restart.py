@@ -587,14 +587,19 @@ class TestControlPodRestart:
 
         LOGGER.info("Step 1: Create and list buckets and perform multipart upload for size 5GB.")
         LOGGER.info("Creating IAM user...")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean.update(users)
-        uids = list(users.keys())
-        access_key = list(users.values())[0]['accesskey']
-        secret_key = list(users.values())[0]['secretkey']
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.debug("Response: %s", resp)
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created IAM user with name %s", uids[0])
+        uids = [self.s3acc_name]
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=self.bucket_name,
                                                          object_name=self.object_name,
