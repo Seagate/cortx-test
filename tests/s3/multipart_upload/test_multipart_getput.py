@@ -140,6 +140,7 @@ class TestMultipartUploadGetPut:
         self.log.info("ENDED: Teardown operations")
 
     # pylint: disable=no-self-use
+    # pylint: disable-msg=too-many-locals
     def initiate_upload_list_complete_mpu(self, bucket_name, object_name, **kwargs):
         """
         This initialises multipart, upload parts, list parts, complete mpu and return the
