@@ -44,11 +44,11 @@ from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
@@ -78,9 +78,9 @@ class TestControlPodRestart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = None
-        cls.restore_pod = cls.restore_method = None
-        cls.restore_node = cls.deploy = None
+        cls.s3_clean = cls.test_prefix = cls.random_time = None
+        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
+        cls.restore_node = cls.deploy = cls.restore_pod = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -104,6 +104,8 @@ class TestControlPodRestart:
                                                         password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
+        cls.test_file = "ha-mp_obj"
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
         backup_path = cls.node_master_list[0].backup_deployment(
@@ -112,8 +114,6 @@ class TestControlPodRestart:
         cls.node_master_list[0].rename_file(old_filename=backup_path,
                                             new_filename=cls.original_backup)
         cls.original_control_node = control_pods.get(ctrl_pod)
-        cls.test_file = "ha-mp_obj"
-        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         cls.multipart_obj_path = None
 
     def setup_method(self):
@@ -132,6 +132,13 @@ class TestControlPodRestart:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
+        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
+        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
+        self.object_name = "ha-mp-obj-{}".format(self.random_time)
+        if not os.path.exists(self.test_dir_path):
+            sysutils.make_dirs(self.test_dir_path)
+        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Updating control pod deployment yaml")
         self.control_pods = self.node_master_list[0].get_pods_node_fqdn(
             const.CONTROL_POD_NAME_PREFIX)
@@ -145,13 +152,6 @@ class TestControlPodRestart:
         self.modified_yaml = resp[1]
         self.backup_yaml = resp[2]
 
-        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
-        self.object_name = "ha-mp-obj-{}".format(self.random_time)
-        if not os.path.exists(self.test_dir_path):
-            sysutils.make_dirs(self.test_dir_path)
-        self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -172,8 +172,8 @@ class TestControlPodRestart:
             resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
                                             failover_node=self.original_control_node)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+            assert_utils.assert_true(resp[0], f"Failed to restore control pod to original state")
+            LOGGER.info("Successfully restored control pod to original state")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
