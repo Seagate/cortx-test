@@ -77,7 +77,7 @@ class TestServerPodFailure:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = cls.deploy = cls.multipart_obj_path = None
+        cls.deploy = cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -106,7 +106,6 @@ class TestServerPodFailure:
         """Following function steps will be invoked prior to each test case."""
         LOGGER.info("STARTED: Setup Operations")
         self.random_time = int(time.time())
-        self.restore_node = False
         self.deploy = False
         self.s3_clean = {}
         LOGGER.info("Check the overall status of the cluster.")
@@ -142,13 +141,6 @@ class TestServerPodFailure:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        if self.restore_node:
-            LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
-            resp = self.ha_obj.host_power_on(host=self.node_name)
-            assert_utils.assert_true(resp, "Host is not powered on")
-            LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
-                        " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
-            time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
         # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
@@ -212,11 +204,13 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX])
-        assert_utils.assert_false(resp[0], resp)
-        pod_name = resp[1][0]
+        if len(resp) == 2 and not resp[0]:
+            assert_utils.assert_false(resp[0], resp)
+        pod_name = list(resp[2].keys())[0]
         self.deployment_name = resp[2][pod_name]['deployment_name']
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
+        assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Successfully shutdown random server pod safely by making replicas=0 "
                     "and verified cluster & remaining pods status")
 
@@ -259,12 +253,14 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
-        assert_utils.assert_false(resp[0], resp)
-        pod_name = resp[1][0]
+        if len(resp) == 2 and not resp[0]:
+            assert_utils.assert_false(resp[0], resp)
+        pod_name = list(resp[2].keys())[0]
         self.deployment_name = resp[2][pod_name]['deployment_name']
         self.deployment_backup = resp[2][pod_name]['deployment_backup']
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
+        assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 3: Successfully shutdown random server pod safely by deleting deployment "
                     "and verified cluster & remaining pods status")
 
