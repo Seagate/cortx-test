@@ -76,10 +76,8 @@ class TestControlPodRestart:
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
-        cls.s3acc_name = cls.bucket_name = cls.object_name = None
-        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.restore_node = cls.node_name = cls.deploy = None
-        cls.node_iface = cls.new_worker_obj = cls.node_ip = None
+        cls.restore_pod = cls.deployment_name = cls.restore_method = None
+        cls.restore_node = cls.deploy = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -102,7 +100,6 @@ class TestControlPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
@@ -113,7 +110,6 @@ class TestControlPodRestart:
         cls.node_master_list[0].rename_file(old_filename=backup_path,
                                             new_filename=cls.original_backup)
         cls.original_control_node = control_pods.get(ctrl_pod)
-        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
@@ -130,11 +126,7 @@ class TestControlPodRestart:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
-        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
-        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
-        self.object_name = "ha-mp-obj-{}".format(self.random_time)
-        self.restore_pod = self.restore_method = self.deployment_name = None
-        self.deployment_backup = None
+        self.restore_pod = self.restore_method = None
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
@@ -177,7 +169,7 @@ class TestControlPodRestart:
             resp = self.ha_obj.host_power_on(host=self.control_node)
             assert_utils.assert_true(resp, "Host is not powered on")
             LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
-                        " node", self.node_name, HA_CFG["common_params"]["pod_joinback_time"])
+                        " node", self.control_node, HA_CFG["common_params"]["pod_joinback_time"])
             time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
         # TODO: As control node is restarted, Need to redeploy cluster after every test (We may
         #  need this after control pod deployment file is changed)
