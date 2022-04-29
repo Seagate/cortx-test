@@ -74,7 +74,7 @@ class TestServerPodFailure:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = cls.random_time = None
+        cls.s3_clean = cls.test_prefix = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.deploy = cls.multipart_obj_path = None
@@ -105,7 +105,6 @@ class TestServerPodFailure:
     def setup_method(self):
         """Following function steps will be invoked prior to each test case."""
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.deploy = False
         self.s3_clean = {}
         LOGGER.info("Check the overall status of the cluster.")
@@ -116,8 +115,8 @@ class TestServerPodFailure:
         LOGGER.info("Cluster status is online.")
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
-        self.bucket_name = f"ha-mp-bkt-{self.random_time}"
-        self.object_name = f"ha-mp-obj-{self.random_time}"
+        self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
         self.restore_pod = self.restore_method = self.deployment_name = None
         self.deployment_backup = None
         if not os.path.exists(self.test_dir_path):
@@ -169,7 +168,7 @@ class TestServerPodFailure:
             LOGGER.info("Cleanup: Cluster deployment successfully")
 
         LOGGER.info("Cleanup: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
         LOGGER.info("Done: Teardown completed.")
@@ -204,6 +203,7 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX])
+        # If len of resp is 2, there is failure in shutdown, No need of pod restore
         if len(resp) == 2 and not resp[0]:
             assert_utils.assert_false(resp[0], resp)
         pod_name = list(resp[2].keys())[0]
@@ -211,8 +211,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Successfully shutdown random server pod safely by making replicas=0 "
-                    "and verified cluster & remaining pods status")
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
+                    "has some failure & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Perform READs & verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -261,8 +261,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[2][pod_name]['method']
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Successfully shutdown random server pod safely by deleting deployment "
-                    "and verified cluster & remaining pods status")
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
+                    "has some failure & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1514,7 +1514,7 @@ class TestServerPodFailure:
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = {}
         for cnt in range(bkt_cnt):
-            bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] = f"ha-obj{cnt}-{self.random_time}"
+            bkt_obj_dict[f"ha-bkt-{int(perf_counter_ns())}"] = f"ha-obj-{int(perf_counter_ns())}"
         event = threading.Event()
 
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
@@ -1630,8 +1630,8 @@ class TestServerPodFailure:
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = {}
         for cnt in range(bkt_cnt):
-            bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] = \
-                f"ha-obj{cnt}-{self.random_time}"
+            bkt_obj_dict[f"ha-bkt-{int(perf_counter_ns())}"] = \
+                f"ha-obj-{int(perf_counter_ns())}"
         event = threading.Event()
 
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
@@ -2003,8 +2003,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 7: Create new bucket and perform multipart upload and "
                     "then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        bucket_name = "mp-bkt-{}".format(int(perf_counter_ns()))
+        object_name = "mp-obj-{}".format(int(perf_counter_ns()))
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -2131,8 +2131,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 7: Create new bucket and perform multipart upload and "
                     "then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        bucket_name = "mp-bkt-{}".format(int(perf_counter_ns()))
+        object_name = "mp-obj-{}".format(int(perf_counter_ns()))
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,

@@ -1459,17 +1459,17 @@ class HAK8s:
         if pod_prefix is None:
             pod_prefix = [common_const.POD_NAME_PREFIX]
         pod_info = dict()
-        total_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
+        total_pod_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
         pod_data = {"method": None, "deployment_name": None, "deployment_backup": None,
                     "hostname": None}
         remaining = delete_pods = list()
         for ptype in pod_prefix:
             pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
-            remaining.extend(pod_list)
+            # Get the list of Kvalue pods to be deleted for given pod_prefix list
             delete_pods.extend(random.sample(pod_list, kvalue))
-        remaining_type = list(set(total_type) - set(pod_prefix))
-        LOGGER.info("Get all the pods of remaining pod types.")
-        for ptype in remaining_type:
+
+        LOGGER.info("Get the list of all pods of total pod types.")
+        for ptype in total_pod_type:
             remaining.extend(master_node_obj.get_all_pods(pod_prefix=ptype))
 
         LOGGER.info("Delete %s by %s method", delete_pods, down_method)
@@ -1480,11 +1480,13 @@ class HAK8s:
             if down_method == common_const.RESTORE_SCALE_REPLICAS:
                 resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
                 if resp[0]:
+                    # Failure here, required no pod restore in main test
                     return False, f"Failed to delete pod {pod} by making replicas=0"
                 pod_info[pod]['deployment_name'] = resp[1]
             elif down_method == common_const.RESTORE_DEPLOYMENT_K8S:
                 resp = master_node_obj.delete_deployment(pod_name=pod)
                 if resp[0]:
+                    # Failure here, required no pod restore in main test
                     return False, f"Failed to delete pod {pod} by deleting deployment"
                 pod_info[pod]['deployment_backup'] = resp[1]
                 pod_info[pod]['deployment_name'] = resp[2]
@@ -1501,8 +1503,9 @@ class HAK8s:
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
             return False, resp[1], pod_info
-        LOGGER.info("Cluster is in degraded state")
+        LOGGER.info("Cluster has failures as pod %s has been shutdown", delete_pods)
 
+        # Get the remaining pods except deleted one, to check it's service status not affected
         remaining_pods = list(set(remaining) - set(delete_pods))
         LOGGER.info("Check services status on remaining pods %s", remaining_pods)
         resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
