@@ -269,9 +269,10 @@ class Health(Host):
                 pod_name = node["name"]
                 services = node["svcs"]
                 for service in services:
-                    if service["status"] != "started":
-                        LOG.error("%s service not started on pod %s", service["name"], pod_name)
-                        return False
+                    if service["name"] != const.MOTR_CLIENT:
+                        if service["status"] != "started":
+                            LOG.error("%s service not started on pod %s", service["name"], pod_name)
+                            return False
                 if not services:
                     LOG.critical("No service found on pod %s", pod_name)
                     return False
@@ -548,7 +549,7 @@ class Health(Host):
                 for svcs in node_data['svcs']:
                     temp_svc = svcs_elem.copy()
                     is_data = False
-                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                    if svcs['name'] != const.MOTR_CLIENT and svcs['status'] != 'started':
                         temp_svc['service'] = svcs['name']
                         temp_svc['status'] = svcs['status']
                         is_data = True
