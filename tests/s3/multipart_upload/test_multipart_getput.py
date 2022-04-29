@@ -139,6 +139,7 @@ class TestMultipartUploadGetPut:
         self.log.info("Deleted a backup file and directory")
         self.log.info("ENDED: Teardown operations")
 
+    # pylint: disable=no-self-use
     def initiate_upload_list_complete_mpu(self, bucket_name, object_name, **kwargs):
         """
         This initialises multipart, upload parts, list parts, complete mpu and return the
@@ -154,6 +155,7 @@ class TestMultipartUploadGetPut:
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        parts_details =[]
         if is_part_upload and is_lst_complete_mpu:
             self.log.info("Uploading parts")
             status, new_parts = self.s3_mpu_test_obj.upload_parts_parallel(mpu_id,
@@ -161,13 +163,15 @@ class TestMultipartUploadGetPut:
                                                                            object_name,
                                                                            parts=parts)
             assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
-            sorted_lst = sorted(new_parts, key=lambda x: x['PartNumber'])
+            for i in new_parts['Parts']:
+                parts_details.append({"PartNumber": i['PartNumber'],
+                                      "ETag": i["ETag"]})
+            sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
             resp = self.list_parts_completempu(mpu_id, self.bucket_name,
                                                object_name=self.object_name,
                                                parts_list=sorted_lst)
             return mpu_id, resp
-        else:
-            return mpu_id
+        return mpu_id
 
     @staticmethod
     def create_file_mpu(multipart_obj_size: int = None, object_path: str = None):
@@ -374,9 +378,9 @@ class TestMultipartUploadGetPut:
                                         chunk_size=mp_config["chunk_size"])
         keys = list(parts.keys())
         random.shuffle(keys)
-        mpu_id,resp = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
-                                                        parts=parts, is_part_upload=True,
-                                                        is_lst_complete_mpu=True)
+        _, resp = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
+                                                         parts=parts, is_part_upload=True,
+                                                         is_lst_complete_mpu=True)
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
@@ -782,10 +786,7 @@ class TestMultipartUploadGetPut:
                 log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
                 s3_test_lib_obj=self.s3_test_obj)
         obj_list = []
-        self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name, parts=parts,
-                                               is_part_upload=True, is_lst_complete_mpu=True)
-        obj_list.append(self.object_name)
-        for cnt in range(999):
+        for cnt in range(1000):
             obj_list.append(self.object_name+str(cnt))
             self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
                                                    is_part_upload=True,
