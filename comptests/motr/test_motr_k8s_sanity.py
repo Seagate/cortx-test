@@ -93,7 +93,7 @@ class TestExecuteK8Sanity:
         Run m0cp, m0cat and m0unlink on a node for all the motr clients and deletes the objects
         anyway at the end
         :param: str node: Cortx node on which utilities to be executed
-        :param: tuple block_count: Tuple containing the integer values. If block count is 1,
+        :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
         :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
@@ -302,6 +302,10 @@ class TestExecuteK8Sanity:
     @pytest.mark.tags("TEST-29706", "TEST-29709")
     @pytest.mark.motr_sanity
     def test_cluster_shutdown_with_intrupted_motr_io(self):
+        """
+        This test will run the motr io on all the nodes in parallel and
+        verify the services after cluster shutdown
+        """
         try:
             for node in self.motr_obj.cortx_node_list:
                 p = multiprocessing.Process(target=self.run_motr_io, args=[node, [4],
