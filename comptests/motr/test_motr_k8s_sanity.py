@@ -112,8 +112,8 @@ class TestExecuteK8Sanity:
                     self.motr_obj.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
                         infile, node)
                     if run_m0cat:
-                        self.motr_obj.cat_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
-                            outfile, node)
+                        self.motr_obj.cat_cmd(b_size, str(count), object_id,
+                            BSIZE_LAYOUT_MAP[b_size], outfile, node)
                         self.motr_obj.md5sum_cmd(infile, outfile, node)
                     if delete_objs:
                         self.motr_obj.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
@@ -308,12 +308,12 @@ class TestExecuteK8Sanity:
         """
         try:
             for node in self.motr_obj.cortx_node_list:
-                p = multiprocessing.Process(target=self.run_motr_io, args=[node, [4],
+                node_process = multiprocessing.Process(target=self.run_motr_io, args=[node, [4],
                     False, True])
-                p.start()
-        except Exception as exc:
+                node_process.start()
+        except (OSError, IOError, AssertionError) as exc:
             logger.exception("Ignoring exception %s as this is expected to fail during shutdown",
-                 exc)
+                exc)
         logger.info("Let the motr IO run on all the nodes for 120 sec")
         time.sleep(120)
         self.motr_obj.shutdown_cluster()
