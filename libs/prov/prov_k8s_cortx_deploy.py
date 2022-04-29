@@ -1282,7 +1282,7 @@ class ProvDeployK8sCortxLib:
                                              worker_node_list, system_disk_dict,
                                              self.git_script_tag, namespace)
             if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
-                    bool(re.match(r'\w*[A-Z]\w*', namespace)):
+                    bool(re.findall(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
                 assert_utils.assert_false(resp[0], resp[1])
             else:
