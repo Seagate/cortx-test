@@ -1494,13 +1494,13 @@ class HAK8s:
                                                  hostname=pod_info[pod]['hostname'])
             LOGGER.debug("Response: %s", resp)
             if not resp[0]:
-                return False, resp, pod_info
+                return resp, pod_info
         LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False, resp, pod_info
+            return False, resp[1], pod_info
         LOGGER.info("Cluster is in degraded state")
 
         remaining_pods = list(set(remaining) - set(delete_pods))
@@ -1508,7 +1508,7 @@ class HAK8s:
         resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False, resp, pod_info
+            return resp, pod_info
         LOGGER.info("Services of remaining pods are in online state")
         return True, delete_pods, pod_info
 
