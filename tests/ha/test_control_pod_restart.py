@@ -252,7 +252,7 @@ class TestControlPodRestart:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
-        LOGGER.info("Get the data pod running on %s node", self.control_node)
+        LOGGER.info("Get the data and server pod running on %s node", self.control_node)
         data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
         server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
         data_pod_name = serverpod_name = None
