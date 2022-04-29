@@ -95,8 +95,8 @@ class TestGetBucketVersioning:
         """Verify that bucket versioning status is not returned to non-owner user."""
         self.log.info("STARTED: Verify bucket versioning status is not returned to non-owner user")
         self.log.info("Prerequisite: New S3 account creation for non-owner user actions")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name, 
-                                                                email=self.email_id, 
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
+                                                                email=self.email_id,
                                                                 password=self.s3acc_password)
         err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")

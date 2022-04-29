@@ -105,7 +105,7 @@ class TestPutBucketVersioning:
         """ Test PUT Suspended bucket versioning. """
         self.log.info("STARTED: Test PUT Suspended bucket versioning.")
         self.log.info("Step 1: Suspend the bucket versioning")
-        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name, 
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                          status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: Get bucket versioning status")
@@ -123,13 +123,13 @@ class TestPutBucketVersioning:
     def test_put_bucket_versioning_non_bucket_owner_32718(self):
         """ Test PUT Enabled/Suspended bucket versioning by non bucket owner. """
         self.log.info("STARTED: PUT Enabled/Suspended bucket versioning by non bucket owner")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name, 
-                                                                email=self.email_id, 
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
+                                                                email=self.email_id,
                                                                 password=self.s3acc_password)
         try:
             self.log.info("Step 1: PUT Enabled bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                            status="Enabled")
+            res = s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                        status="Enabled")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Enabled bucket versioning")
@@ -139,8 +139,8 @@ class TestPutBucketVersioning:
             self.log.info("Verified that bucket versioning can not be Enabled")
         try:
             self.log.info("Step 2: PUT Suspended bucket versioning by non bucket owner.")
-            res = s3_new_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                            status="Suspended")
+            res = s3_new_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+                                                        status="Suspended")
             self.log.info("response: %s", res)
         except CTException as error:
             self.log.info("Verify Access Denied error with Suspended bucket versioning")
