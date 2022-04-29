@@ -260,7 +260,7 @@ def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwa
         if my_bucket_object.key != obj_name:
             result = True
             break
-    if result == True:
+    if result is True:
         LOGGER.debug("Verified that Object: %s is deleted", obj_name)
     else:
         LOGGER.debug("Object %s is not deleted", obj_name)

@@ -174,33 +174,18 @@ class TestCapacityQuota():
         test_cfg = self.csm_conf["test_40632"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        resp3 = self.csm_obj.set_user_quota(self.user_id, "user","true", max_size, max_objects)
-        assert_utils.assert_true(resp3[0],resp3[1])
-        self.log.info("Step 4: Perform GET API to get user level quota")
-        resp4 = self.csm_obj.get_user_quota(self.user_id, "user")
-        assert_utils.assert_true(resp4[0], resp4[1])
-        self.log.info("Step 5: Perform Put operation for 1 object of max size")
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=max_size)
-        assert_utils.assert_true(resp, "Put object Failed")
-        self.log.info("Step 6: Perform Put operation of Random size and 1 object")
-        random_size = self.cryptogen.randrange(1, max_size)
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
-        assert_utils.assert_false(resp, "Put object did not fail")
+        payload = self.csm_obj.iam_user_quota_payload()
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                               verify_response=True)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 5: Perform put object of max size")
+        self.csm_obj.verify_max_size(max_size)
         self.log.info("Step 7: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
-        self.log.info("Step 8: Perform Put operation of small size and N object")
-        small_size = math.floor(max_size/max_objects)
-        for _ in range(0, max_objects):
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=small_size)
-            assert_utils.assert_true(resp, "Put object Failed")
-        self.log.info("Step 9: Perform Put operation of Random size and 1 object")
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
-        assert_utils.assert_false(resp, "Put object did not fail")
+        self.log.info("Step 8: Perform put objects of small size")
+        self.csm_obj.verify_max_objects(max_size, max_objects)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -454,7 +439,7 @@ class TestCapacityQuota():
         resp3 = self.csm_obj.set_user_quota(self.user_id, "user", "true", less_size, max_objects)
         assert_utils.assert_true(resp3[0], resp3[1])
         self.log.info("Step 4: Perform GET API to get user level quota")
-        resp4 = self.csm_obj.get_user_quota(self.user_id, "user")  #Expected Outcome is not known yet
+        resp4 = self.csm_obj.get_user_quota(self.user_id, "user")  #Expected Result not known yet
         assert_utils.assert_true(resp4[0], resp4[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
