@@ -114,7 +114,6 @@ class TestControlPodRestart:
         cls.node_master_list[0].rename_file(old_filename=backup_path,
                                             new_filename=cls.original_backup)
         cls.original_control_node = control_pods.get(ctrl_pod)
-        cls.multipart_obj_path = None
 
     def setup_method(self):
         """
