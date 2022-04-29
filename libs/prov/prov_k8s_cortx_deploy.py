@@ -292,11 +292,6 @@ class ProvDeployK8sCortxLib:
             node_obj.kill_remote_process(cmd)
         except IOError as error:
             LOGGER.exception("The exception occurred is %s", error)
-            # msg = re.compile("Invalid value:")
-            # match = msg.search(str(error))
-            # if match:
-            #     LOGGER.debug("Match found in : %s", error)
-            #     return True, str(error)
             return False, str(error)
 
     @staticmethod
