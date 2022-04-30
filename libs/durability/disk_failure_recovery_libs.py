@@ -307,7 +307,7 @@ class DiskFailureRecoveryLib:
                                        num_sample=samples,
                                        obj_name_pref=obj_name, obj_size=f"{obj_size}b",
                                        skip_cleanup=True, duration=None,
-                                       log_file_prefix=f"workload_{obj_size}mb",
+                                       log_file_prefix=f"workload_{obj_size}b",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
                 LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,

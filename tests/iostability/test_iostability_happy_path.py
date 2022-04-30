@@ -19,6 +19,7 @@
 """Test Suite for IO stability Happy Path workloads."""
 import logging
 import os
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -32,7 +33,6 @@ from conftest import LOG_DIR
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.iostability.iostability_lib import IOStabilityLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-from datetime import datetime, timedelta
 
 
 class TestIOWorkload:
@@ -101,9 +101,9 @@ class TestIOWorkload:
         resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
                                                      memory_percent=10)
         self.log.info(f"{resp[1]} bytes")
-        if resp[1] is not 0:
-            self.log.info(f"Need to add {resp[1]} for required percentage")
-            self.log.info(f"performing writes till we reach required percentage")
+        if resp[1] != 0:
+            self.log.info("Need to add %s for required percentage", resp[1])
+            self.log.info("performing writes till we reach required percentage")
             s3userinfo = dict()
             s3userinfo['accesskey'] = ACCESS_KEY
             s3userinfo['secretkey'] = SECRET_KEY
@@ -114,19 +114,19 @@ class TestIOWorkload:
                                                                       client=20)
             if ret[0]:
                 assert False, "Errors in write operations"
-            self.log.debug(f"{ret}")
+            self.log.debug("write operation dats: %s", ret)
             end_time = datetime.now() + timedelta(days=30)
             loop = 1
             while datetime.now() < end_time:
-                self.log.info(f"{end_time - datetime.now()} remaining time for reading loop")
+                self.log.info("%s remaining time for reading loop", end_time - datetime.now())
                 read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
                                                                         s3userinfo=s3userinfo,
                                                                         workload_info=ret[1],
                                                                         skipread=False,
                                                                         validate=True,
                                                                         skipcleanup=True)
+                self.log.info("%s interation is done", loop)
                 loop += 1
-                self.log.info(f"{loop} interation is done")
                 if read_ret[0]:
                     assert False, "Errors in write operations"
             del_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
