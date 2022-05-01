@@ -20,17 +20,19 @@
 """
 HA common utility methods
 """
+import copy
+import json
 import logging
 import os
 import random
+import secrets
 import sys
 import time
-import copy
+from ast import literal_eval
 from multiprocessing import Process
 from time import perf_counter_ns
+
 import yaml
-import json
-from ast import literal_eval
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -38,9 +40,11 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG, HA_CFG
+from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -49,7 +53,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from config.s3 import S3_BLKBOX_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,6 +79,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
+        self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
 
     def polling_host(self,
@@ -796,7 +800,7 @@ class HAK8s:
                 command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
                                f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
             for line in res.split("\n"):
-                if 'm0_client' not in line:
+                if common_const.MOTR_CLIENT not in line:
                     if "failed" in line or "offline" in line or "unknown" in line:
                         LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
                         return False, f"Cortx HCTL status has Failures in pod {pod_name}"
@@ -1460,15 +1464,14 @@ class HAK8s:
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False,resp
+            return False, resp
         LOGGER.info("Cluster is in degraded state")
 
         LOGGER.info(" Check services status that were running on pod %s", pod_name)
-        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=hostname)
+        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False,resp
+            return False, resp
 
         LOGGER.info("Services of pod are in offline state")
         pod_list.remove(pod_name)
@@ -1480,3 +1483,237 @@ class HAK8s:
             return False, resp
         LOGGER.info("Services of pod are in online state")
         return True, pod_name
+
+    def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
+        """
+        Function to find value from nested dicts and nested lists for given key and replace it
+        :param search_dict: Dict in which key to be searched
+        :param field: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: str (value)
+        """
+        fields_found = []
+        for key, value in search_dict.items():
+            if key == field:
+                fields_found.append(value)
+                if replace_key:
+                    search_dict[replace_key] = search_dict.pop(key)
+                    search_dict[replace_key] = replace_val
+            elif isinstance(value, dict):
+                results = self.get_replace_recursively(value, field, replace_key, replace_val)
+                for result in results:
+                    fields_found.append(result)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        more_results = self.get_replace_recursively(item, field, replace_key,
+                                                                    replace_val)
+                        for another_result in more_results:
+                            fields_found.append(another_result)
+
+        return fields_found
+
+    def update_deployment_yaml(self, pod_obj, pod_name, find_key, replace_key=None,
+                               replace_val=None):
+        """
+        Function to find and replace key from deployment yaml file
+        :param pod_obj: Object of pod
+        :param pod_name: Name of the pod
+        :param find_key: Key to be searched
+        :param replace_key: Key with which older key to be replaced
+        :param replace_val: Value with which older value to be replaced
+        :return: bool, str, str (status, new path, backup path)
+        """
+        resp = pod_obj.get_deploy_replicaset(pod_name)
+        deploy = resp[1]
+        LOGGER.info("Deployment for pod %s is %s", pod_name, deploy)
+        LOGGER.info("Taking deployment backup")
+        resp = pod_obj.backup_deployment(deploy)
+        yaml_path = resp[1]
+        modified_yaml = os.path.join("/root", f"{pod_name}_modified.yaml")
+        LOGGER.info("Copy deployment yaml file to local system")
+        pod_obj.copy_file_to_local(remote_path=yaml_path, local_path=modified_yaml)
+        resp = config_utils.read_yaml(modified_yaml)
+        if not resp[0]:
+            return resp
+        data = resp[1]
+        LOGGER.info("Update %s of deployment yaml with %s : %s", find_key, replace_key, replace_val)
+        val = self.get_replace_recursively(data, find_key, replace_key, replace_val)
+        if not val:
+            return False, f"Failed to find key {find_key} in deployment yaml {yaml_path} of pod " \
+                          f"{pod_name}"
+        resp = config_utils.write_yaml(fpath=modified_yaml, write_data=data, backup=True,
+                                       sort_keys=False)
+        LOGGER.debug("Response: %s", resp)
+        if not resp[0]:
+            return resp
+        LOGGER.info("Copying files %s to master node", modified_yaml)
+        resp = pod_obj.copy_file_to_remote(local_path=modified_yaml, remote_path=modified_yaml)
+        if not resp[0]:
+            return resp
+
+        system_utils.remove_file(modified_yaml)
+        LOGGER.info("Successfully updated deployment yaml file for pod %s", pod_name)
+        return True, modified_yaml, yaml_path
+
+    @staticmethod
+    def failover_pod(pod_obj, pod_list, failover_node):
+        """
+        Function to failover given pod
+        :param pod_obj: Object of the pod
+        :param pod_list: List of the pods to be failed over
+        :param failover_node: Node to which pod is to be failed over
+        :return: bool, str (status, response)
+        """
+        for pod in pod_list:
+            pod_prefix = '-'.join(pod.split("-")[:2])
+            cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
+            LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
+
+            LOGGER.info("Failing over pod %s to node %s", pod, failover_node)
+            deploy = pod_obj.get_deploy_replicaset(pod)[1]
+            cmd = common_cmd.K8S_CHANGE_POD_NODE.format(deploy, failover_node)
+            try:
+                resp = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
+                LOGGER.debug("Response: %s", resp)
+                LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
+                return True, resp
+            except IOError as error:
+                LOGGER.error("Failed to failover pod %s to %s due to error: %s", pod,
+                             failover_node, error)
+                return False, error
+
+    def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = True,
+                              rsc_opt: str = "mark_node_failure", rsc: str = "node",
+                              validate_set: bool = True):
+        """
+        Helper function to set resource status to Failed random if go_random.
+        :param pod_list: List of resource to be marked as failed
+        :param go_random: If True, send mark failure signal to resource randomly
+        :param mnode_obj: Master node object to fetch the resource ID
+        :param rsc_opt: Operation to be performed on resource (eg. mark_node_failure)
+        :param rsc: resource type (eg. node, cluster)
+        :param validate_set: If set to TRUE, its validate SET failure for resource
+        :return: bool, response
+        """
+        if rsc == 'node':
+            pod_info = {}
+            pod_data = {'id': None, 'status': 'offline'}
+            for pod in pod_list:
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+
+            for pod in pod_list:
+                set_fail = self.system_random.choice([True, False]) if go_random else True
+                if set_fail:
+                    LOGGER.info('Marking %s pod as failed', pod)
+                    data_val = {"operation": rsc_opt,
+                                "arguments": {"id": f"{pod_info[pod]['id']}"}}
+                    resp = self.system_health.set_resource_signal(req_body=data_val)
+                    if not resp[0]:
+                        return False, pod_info, f"Failed to set failure status for {pod}"
+                    pod_info[pod]['status'] = 'failed'
+                    LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
+                    time.sleep(HA_CFG["common_params"]["30sec_delay"])
+            if validate_set:
+                LOGGER.inf("Validating nodes/pods status is SET as expected.")
+                return self.get_validate_resource_status(rsc_info=pod_info)
+            return True, pod_info, f"{pod_list} marked as failed"
+        return False, f"Mark failure for {rsc} is not supported yet"
+
+    # pylint: disable=W1624
+    def get_validate_resource_status(self, rsc_info, exp_sts=None,
+                                     mnode_obj=None, rsc: str = "node"):
+        """
+        Helper function to get and validate resource status
+        :param exp_sts: Expected status of resource.
+        :param rsc_info: Required resource to get its status,
+        dict with {pod1:{'id':, 'status':},..} or list of pods
+        :param rsc: resource type (eg. node, cluster)
+        :param mnode_obj: Master node object to fetch the resource ID
+        :return: bool, response
+        """
+        if rsc == "node":
+            if not isinstance(rsc_info, dict):
+                # Get the node ID and set expected status if only list of pods is passed
+                LOGGER.info("Get the nodes ID for GET API.")
+                pod_info = {}
+                pod_data = {'id': None, 'status': "online"}
+                for pod in rsc_info:
+                    pod_info[pod] = pod_data.copy()
+                    pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+                    pod_info[pod]['status'] = exp_sts
+            else:
+                pod_info = rsc_info.copy()
+            for pod in pod_info.keys():
+                LOGGER.info("Get and verify pod %s status is as expected", pod)
+                resp = self.poll_to_get_resource_status(exp_sts=pod_info[pod]['status'], rsc=rsc,
+                                                        rsc_id=pod_info[pod]['id'])
+                if not resp:
+                    return False, f"Failed to get expected status for {pod}"
+        elif rsc == "cluster":
+            # Get the cluster ID and verify the cluster status to Expected
+            LOGGER.info("Get the cluster ID for GET API and verify cluster status.")
+            data = self.get_config_value(mnode_obj)
+            if not data[0]:
+                return False, "Failed to get cluster ID"
+            if not exp_sts and isinstance(rsc_info, dict):
+                exp_sts = "online"
+                for pod in rsc_info.keys():
+                    # If 1 node is offline, cluster will be in degraded
+                    if rsc_info[pod]['status'] == "offline" or rsc_info[pod]['status'] == "failed":
+                        exp_sts = "degraded"
+                        break
+            LOGGER.info("Get and verify cluster status is set to %s", exp_sts)
+            resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
+                                                    rsc_id=data[1]["cluster"]["id"])
+            if not resp:
+                return False, "Failed to get expected status for Cluster"
+        return True, f"Got expected status for {rsc}"
+
+    def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id,
+                                    timeout=HA_CFG["common_params"]["90sec_delay"]):
+        """
+        Helper function to GET and Poll for expected resource status till timeout
+        :param exp_sts: Expected status of resource.
+        :param rsc_id: Required resource ID to GET the resource status
+        :param rsc: resource type (eg. node, cluster)
+        :param timeout: Poll for expected status till timeout
+        :return: bool
+        """
+        resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+        if not resp[0]:
+            return False
+        status = resp[1]['status']
+        poll = time.time() + timeout
+        sleep_time = HA_CFG["common_params"]["2sec_delay"]
+        while status != exp_sts and poll > time.time():
+            LOGGER.info("Current %s status is %s. Sleeping for %s sec", rsc, status, sleep_time)
+            time.sleep(sleep_time)
+            resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+            if not resp[0]:
+                return False
+            status = resp[1]['status']
+            # Gradually increase in time by multiple of 2 to get node/pod status
+            sleep_time = sleep_time * 2
+        # Verify we got the expected status within Polling time
+        if status != exp_sts:
+            return False
+        return True
+
+    @staticmethod
+    def get_rc_node(node_obj):
+        """
+        To get the primary cortx node name (RC node)
+        :param node_obj: object for master node
+        :return: Primary(RC) node name in the cluster
+        :rtype: str
+        """
+        data_pod = node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
+        cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
+        rc_node = node_obj.send_k8s_cmd(operation="exec", pod=data_pod,
+                                        namespace=common_const.NAMESPACE,
+                                        command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                        f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}", decode=True)
+        return rc_node

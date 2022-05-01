@@ -77,8 +77,8 @@ class TestExecuteK8Sanity:
         # modify m0cfg and write back to file
         m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
         m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
         b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
         source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
         file_size = source_file.split('/')[-1]
@@ -124,8 +124,8 @@ class TestExecuteK8Sanity:
                     file_size = value
         m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
         m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
         m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE'] = source_file
         logger.info(m0cfg['MOTR_CONFIG'])
         logger.info(m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'])
@@ -145,8 +145,8 @@ class TestExecuteK8Sanity:
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        m0client_num = self.motr_obj.get_number_of_m0clients()
-        for client_num in range(m0client_num):
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
                               '2', '4', '2', '3', '4', '8', '4', '1024']

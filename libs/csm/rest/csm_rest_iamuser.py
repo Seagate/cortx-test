@@ -1,7 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -520,7 +517,7 @@ class RestIamUser(RestTestLib):
         :return: response
         """
         self.log.info("Creating IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+        endpoint = self.config["s3_iam_user_endpoint"]
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
@@ -556,6 +553,7 @@ class RestIamUser(RestTestLib):
         self.log.info("Removing user capabilities from user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
     def delete_iam_user_rgw(self, uid, header, purge_data=False):
         """
         Delete IAM user
@@ -574,6 +572,7 @@ class RestIamUser(RestTestLib):
         self.log.info("Delete IAM user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
     def get_iam_user_rgw(self, uid, header):
         """
         Get IAM user
@@ -693,7 +692,7 @@ class RestIamUser(RestTestLib):
         return result, resp
 
     @RestTestLib.authenticate_and_login
-    def modify_iam_user_rgw(self, uid, payload: dict):
+    def modify_iam_user_rgw(self, uid, payload: dict, auth_header=True):
         """
         Modify IAM User parameters.
         :param uid: userid
@@ -702,8 +701,12 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Modifying IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        if auth_header:
+            headers = self.headers
+        else:
+            headers = None
         response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
-                                          headers=self.headers)
+                                          headers=headers)
         self.log.info("IAM user request successfully sent...")
         return response
 
