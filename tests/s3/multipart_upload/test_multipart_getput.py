@@ -233,6 +233,7 @@ class TestMultipartUploadGetPut:
         """
         obj_name = kwargs.get("object_name")
         all_parts = kwargs.get("parts_list")
+        self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
@@ -552,12 +553,10 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG['test_28535']
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
-        uploaded_parts, _, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(mp_config, self.mp_obj_path,
-                                                             log_prefix="TEST-28535_s3bench_ios",
-                                                             duration="0h2m",
-                                                             s3_test_lib_obj=self.s3_test_obj)
-        mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
+        mpu_id, uploaded_parts, _, s3_background_io = \
+            self.s3_mpu_test_obj.create_mpu_get_precalc_parts(
+            mp_config, self.mp_obj_path, self.bucket_name, self.object_name,
+            log_prefix="TEST-28535_s3bench_ios", duration="0h2m", s3_test_lib_obj=self.s3_test_obj)
         all_parts = []
         pool = multiprocessing.Pool(processes=8)
         all_parts = pool.starmap(self.multiprocess_uploads,
