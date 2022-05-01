@@ -490,11 +490,20 @@ class HAK8s:
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
                                             secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = s3_test_obj.create_bucket(bucket_name)
-        if not res[0] or res[1] != bucket_name:
-            return res, "Failed in bucket creation"
-        LOGGER.info("Created a bucket with name : %s", bucket_name)
+        LOGGER.info("Checking if bucket %s already exists", bucket_name)
+        bkt_flag = True
+        resp = s3_test_obj.bucket_list()
+        for bucket in resp[1]:
+            if bucket == bucket_name:
+                LOGGER.info("Bucket %s already exists.", bucket_name)
+                bkt_flag = False
+                break
+        if bkt_flag:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                return res, "Failed in bucket creation"
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
         res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
         if not res[0]:

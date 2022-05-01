@@ -1789,8 +1789,12 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
+        LOGGER.info("Step 7: Multipart upload and then download 5GB object")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Creating new bucket for new upload")
+            bucket_name = "mp-bkt-{}".format(self.random_time)
+        else:
+            bucket_name = self.bucket_name
         object_name = "mp-obj-{}".format(self.random_time)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
@@ -1814,8 +1818,7 @@ class TestPodFailure:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 7: Successfully created bucket and did multipart upload and download "
-                    "with 5GB object")
+        LOGGER.info("Step 7: Did multipart upload and download with 5GB object")
 
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " safe shutdown.")
@@ -1916,8 +1919,12 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
+        LOGGER.info("Step 7: Multipart upload and then download 5GB object")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Creating new bucket for new upload")
+            bucket_name = "mp-bkt-{}".format(self.random_time)
+        else:
+            bucket_name = self.bucket_name
         object_name = "mp-obj-{}".format(self.random_time)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
@@ -1940,8 +1947,7 @@ class TestPodFailure:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 7: Successfully created bucket and did multipart upload and download "
-                    "with 5GB object")
+        LOGGER.info("Step 7: Did multipart upload and download with 5GB object")
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " unsafe shutdown.")
 
@@ -2554,28 +2560,29 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
+                        "copy object etags", self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                          f"for object {object3} of bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
                     "(make replicas=0) ")
@@ -2674,29 +2681,30 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
+                        "copy object etags", self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict,
+                                                      put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                          f"for object {object3} of bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - "
                     "pod unsafe shutdown (by deleting deployment) ")
@@ -3027,28 +3035,29 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 8: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
+                        "copy object etags", self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                          f"for object {object3} of bucket {bucket3}.")
+            LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify copy object during data pod shutdown (delete deployment)")
 
@@ -3340,13 +3349,19 @@ class TestPodFailure:
                                   f" {download_checksum}")
         LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
 
-        LOGGER.info("Step 10: Start IOs create IAM user, buckets and upload objects")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-35297-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    nsamples=10, skipcleanup=True)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 10: Create IAM user, buckets and upload objects on degraded cluster.")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35297-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=10)
+        else:
+            LOGGER.info("Perform IOs with variable object sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean,
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=10, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Successfully completed IOs.")
 
