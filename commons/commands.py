@@ -33,7 +33,7 @@ HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 HA_CONSUL_STR = 'consul kv get ' \
-                '-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 ' \
+                '-http-addr=consul-server:8500 ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
@@ -357,7 +357,7 @@ CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
 CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
-                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
@@ -393,6 +393,7 @@ M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
 DIFF = "diff {} {}"
 MD5SUM = "md5sum {} {}"
+GET_MD5SUM = "md5sum {}"
 GETRPM = "rpm -qa| grep {}"
 LIBFAB_VERSION = "fi_info --version | grep libfabric: |cut -d ' ' -f 2 | tr -d [:space:]"
 LIBFAB_TCP = "fi_info -p tcp"
@@ -516,7 +517,23 @@ KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata
 KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name " \
                                 "--sort-by=.metadata.creationTimestamp -o " \
                                 "jsonpath='{{.items[-1:].metadata.name}}'"
+
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
+KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
+KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
+                          "NAME:.metadata.name,TAINTS:.spec.taints --no-headers > {}"
+KUBECTL_GET_ALL = "kubectl get all -A >> {}"
+KUBECTL_GET_SCT = "kubectl get {} -A >> {}"
+KUBECTL_GET_PVC = "kubectl get pvc -A >> {}"
+KUBECTL_GET_PV = "kubectl get pv >> {}"
+GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
+K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
+                      "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
+                      "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
+
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -537,6 +554,7 @@ DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
+UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
 
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
@@ -582,7 +600,7 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 
 # LC Support Bundle
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
-              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+                    "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
 
 # SNS repair

@@ -43,6 +43,9 @@ parser.add_argument('--dbpassword',
 parser.add_argument('--new_entry',
                     default="True",
                     help='True for new entry , False for update')
+parser.add_argument('--delete_target',
+                    default=None,
+                    help='Specify target to be deleted.')
 args = parser.parse_args()
 
 FPATH = args.fpath
@@ -54,15 +57,12 @@ DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
 DBUSER = args.dbuser
 DBPSWD = args.dbpassword
+LOG = logging.getLogger(__name__)
 
-
-def insert_new_setup():
-    new_entry_check = ast.literal_eval(args.new_entry.capitalize())
-    LOG = logging.getLogger(__name__)
-    with open(FPATH, 'rb') as json_file:
-        data = json.loads(json_file.read())
-    setupname = data['setupname']
-    setup_query = {"setupname": setupname}
+def get_db_client():
+    """
+    Create a db client object
+    """
     LOG.debug("Database hostname: %s", DB_HOSTNAME)
     LOG.debug("Database name: %s", DB_NAME)
     LOG.debug("Collection name: %s", SYS_INFO_COLLECTION)
@@ -70,9 +70,28 @@ def insert_new_setup():
     uri = mongodburi.format(quote_plus(DBUSER), quote_plus(DBPSWD), DB_HOSTNAME)
     LOG.debug("URI : %s", uri)
     client = MongoClient(uri)
+    return client
+
+def get_collection_obj():
+    """
+    Creates collection object
+    """
+    client = get_db_client()
     setup_db = client[DB_NAME]
     collection_obj = setup_db[SYS_INFO_COLLECTION]
     LOG.debug("Collection obj for DB interaction %s", collection_obj)
+    return collection_obj
+
+def insert_new_setup():
+    """
+    Insert or update existing entry
+    """
+    new_entry_check = ast.literal_eval(args.new_entry.capitalize())
+    with open(FPATH, 'rb') as json_file:
+        data = json.loads(json_file.read())
+    setupname = data['setupname']
+    setup_query = {"setupname": setupname}
+    collection_obj = get_collection_obj()
     LOG.debug("Setup query : %s", setup_query)
     LOG.debug("Data to be updated : %s", data)
     entry_exist = collection_obj.find(setup_query).count()
@@ -85,7 +104,6 @@ def insert_new_setup():
             print(f"Record entry {rdata.inserted_id} is inserted successfully")
         except Exception as err:
             print("An exception occurred ::", err)
-        return None
     else:
         try:
             rdata = collection_obj.update_one(setup_query, {'$set': data})
@@ -93,11 +111,33 @@ def insert_new_setup():
             LOG.debug("Data is updated successfully")
         except Exception as err:
             print("An exception occurred ::", err)
-        return None
+
     setup_details = collection_obj.find_one(setup_query)
     print(f'Modified or inserted setup details {setup_details} ')
     return setup_details
 
+def delete_target_entry():
+    """
+    Deletes the existing entry
+    """
+    setupname = args.delete_target
+    collection_obj = get_collection_obj()
+    setup_query = {"setupname": setupname}
+    entry_exist = collection_obj.find(setup_query).count()
+    if entry_exist:
+        resp1 = collection_obj.delete_many(setup_query)
+        resp2 = collection_obj.find(setup_query)
+        if resp1.deleted_count>0 and resp2.count()==0:
+            LOG.error("Successfully deleted : %s", setupname)
+        else:
+            LOG.error("Delete operation failed for : %s", setupname)
+    else:
+        LOG.error("target %s doesnt exits", setupname)
 
 if __name__ == '__main__':
-    insert_new_setup()
+    if args.delete_target is not None:
+        print("Performing delete operation")
+        delete_target_entry()
+    else:
+        print("Performing write db operation")
+        insert_new_setup()

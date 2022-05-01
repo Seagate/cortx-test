@@ -55,8 +55,9 @@ HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
 HAX_CONTAINER_NAME = "cortx-hax"
 RGW_CONTAINER_NAME = "cortx-rgw"
 HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
-NAMESPACE = "default"
+NAMESPACE = "cortx"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
+CLIENT_POD_NAME_PREFIX = "cortx-client"
 HA_SHUTDOWN_SIGNAL_PATH = "scripts/server_scripts/ha_shutdown_signal.py"
 MOCK_MONITOR_REMOTE_PATH = "/root/mock_health_event_publisher.py"
 MOCK_MONITOR_LOCAL_PATH = "scripts/server_scripts/mock_health_event_publisher.py"
@@ -65,6 +66,8 @@ HA_CONSUL_NOKEY = "NotFound"
 HA_TMP = "/root"
 HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
 HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
+HA_CONFIG_FILE = "/root/config.json"
+MOTR_CLIENT="motr_client"
 
 # RAS Paths
 BYTES_TO_READ = 8000

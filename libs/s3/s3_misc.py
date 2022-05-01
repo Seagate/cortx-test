@@ -167,7 +167,7 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
 def create_put_objects(object_name: str, bucket_name: str,
                        access_key: str, secret_key: str, object_size:int=10, **kwargs):
     """
-    PUT object in the given bucket with access key and secret key.
+    PUT and GET object in the given bucket with access key and secret key.
     :param object_size: size of the file in MB.
     """
 
