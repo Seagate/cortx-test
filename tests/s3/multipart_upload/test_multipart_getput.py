@@ -230,6 +230,7 @@ class TestMultipartUploadGetPut:
         """
         obj_name = kwargs.get("object_name")
         all_parts = kwargs.get("parts_list")
+        self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
