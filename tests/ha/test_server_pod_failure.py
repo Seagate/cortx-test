@@ -382,7 +382,6 @@ class TestServerPodFailure:
                     "when cluster has some failures due to server pod %s has gone down.", pod_name)
         LOGGER.info("ENDED: Test to verify degraded reads during server pod is going down.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39905")
@@ -424,7 +423,6 @@ class TestServerPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded writes after safe server pod shutdown.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39906")
@@ -475,12 +473,12 @@ class TestServerPodFailure:
     @CTFailOn(error_handler)
     def test_writes_during_server_pod_down(self):
         """
-        Following test tests Continuous WRITEs during server pod down (delete deployment)
+        Following test tests WRITEs during server pod down (delete deployment)
         """
-        LOGGER.info("STARTED: Test to verify continuous WRITEs during server pod down by delete "
+        LOGGER.info("STARTED: Test to verify WRITEs during server pod down by delete "
                     "deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
-        LOGGER.info("Step 1: Perform continuous WRITEs with variable object sizes during server "
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes during server "
                     "pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39907'
@@ -563,7 +561,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and ran IOs "
                     "when cluster has some failures due to server pod %s has gone down.", pod_name)
 
-        LOGGER.info("ENDED: Test to verify continuous WRITEs during server pod down by "
+        LOGGER.info("ENDED: Test to verify WRITEs during server pod down by "
                     "delete deployment.")
 
     # pylint: disable-msg=too-many-locals
@@ -693,7 +691,7 @@ class TestServerPodFailure:
         """
         This test tests WRITEs and DELETEs during server pod down (delete deployment)
         """
-        LOGGER.info("STARTED: Test to verify continuous WRITEs and DELETEs during server pod down "
+        LOGGER.info("STARTED: Test to verify WRITEs and DELETEs during server pod down "
                     "by delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
         del_total_bkt = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
@@ -711,7 +709,7 @@ class TestServerPodFailure:
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Step 1: Start continuous WRITEs and DELETEs with variable object sizes "
+        LOGGER.info("Step 1: Start WRITEs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
@@ -745,7 +743,7 @@ class TestServerPodFailure:
         thread2.start()
         thread1.start()
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
-        LOGGER.info("Step 1: Started continuous WRITEs and DELETEs with variable object sizes "
+        LOGGER.info("Step 1: Started WRITEs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Step 2: Shutdown the server pod by deleting deployment (unsafe)")
@@ -890,7 +888,7 @@ class TestServerPodFailure:
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Step 1: Start continuous READs and DELETEs with variable object sizes "
+        LOGGER.info("Step 1: Start READs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
@@ -939,7 +937,7 @@ class TestServerPodFailure:
         thread2.start()
         thread1.start()
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 1: Started continuous READs and DELETEs with variable object sizes "
+        LOGGER.info("Step 1: Started READs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Step 2: Shutdown the server pod by deleting deployment (unsafe)")
@@ -1192,7 +1190,7 @@ class TestServerPodFailure:
     @CTFailOn(error_handler)
     def test_deletes_during_server_pod_down(self):
         """
-        Following test tests continuous DELETEs during server pod down by deleting deployment
+        Following test tests DELETEs during server pod down by deleting deployment
         """
         LOGGER.info(
             "STARTED: Test to verify DELETEs during server pod down by deleting deployment.")
@@ -1312,8 +1310,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully created IAM user with multiple buckets and ran IOs.")
 
-        LOGGER.info("ENDED: Test to verify continuous DELETEs during server pod down by delete "
-                    "deployment.")
+        LOGGER.info("ENDED: Test to verify DELETEs during server pod down by delete deployment.")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -1326,7 +1323,7 @@ class TestServerPodFailure:
         LOGGER.info("STARTED: Test to verify READs/WRITEs during server pod down by "
                     "delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
-        LOGGER.info("Step 1: Perform continuous READs/WRITEs with variable object sizes during "
+        LOGGER.info("Step 1: Perform READs/WRITEs with variable object sizes during "
                     "server pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39911'
@@ -1430,7 +1427,7 @@ class TestServerPodFailure:
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = {}
-        for cnt in range(bkt_cnt):
+        for _ in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt-{int(perf_counter_ns())}"] = f"ha-obj-{int(perf_counter_ns())}"
         event = threading.Event()
 
@@ -1527,7 +1524,7 @@ class TestServerPodFailure:
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = {}
-        for cnt in range(bkt_cnt):
+        for _ in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt-{int(perf_counter_ns())}"] = \
                 f"ha-obj-{int(perf_counter_ns())}"
         event = threading.Event()
