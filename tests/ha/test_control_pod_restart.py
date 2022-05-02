@@ -169,7 +169,7 @@ class TestControlPodRestart:
             resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
                                             failover_node=self.original_control_node)
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore control pod to original state")
+            assert_utils.assert_true(resp[0], "Failed to restore control pod to original state")
             LOGGER.info("Successfully restored control pod to original state")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
