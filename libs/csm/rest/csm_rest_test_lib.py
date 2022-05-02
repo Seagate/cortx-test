@@ -296,5 +296,5 @@ class RestTestLib:
         """
         Search for {<search_key>:<search_val>} in [{<search_key>:<search_val>,..}, {}, {}...]
         """
-        self.log.info("Search dict %s:% in %s", search_key, search_val, search_in)
+        self.log.info("Search dict %s:%s in %s", search_key, search_val, search_in)
         return list(filter(lambda key: key[search_key] == search_val, search_in))
