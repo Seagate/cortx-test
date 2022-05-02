@@ -1928,7 +1928,7 @@ class TestMultiServerPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
-        LOGGER.info("Waiting for %s seconds for multipart upload of 5GB object in"
+        LOGGER.info("Waiting for %s seconds for multipart upload to start in "
                     " background ", HA_CFG["common_params"]["60sec_delay"])
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
@@ -2408,7 +2408,7 @@ class TestMultiServerPodFailure:
         rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
         assert_utils.assert_false(len(fail_del_bkt),
                                   f"Bucket deletion failed when cluster was online {fail_del_bkt}")
-        assert_utils.assert_true(len(rem_bkts_aftr_del) < del_bucket,
+        assert_utils.assert_true(remaining_bkt < len(rem_bkts_aftr_del) < del_bucket,
                                  "Some bucket deletion expected during pods going down")
         LOGGER.info("Step 7: Verified status for In-flight DELETEs while %s (K) server pods were"
                     "going down", self.kvalue)
