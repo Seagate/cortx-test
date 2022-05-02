@@ -47,7 +47,6 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -90,7 +89,6 @@ class TestPodFailure:
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -149,8 +147,11 @@ class TestPodFailure:
         """
         LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            LOGGER.info("Cleanup: Cleaning created IAM users and buckets.")
+            if CMN_CFG["dtm0_disabled"]:
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            else:
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean, obj_crud=True)
             assert_utils.assert_true(resp[0], resp[1])
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -159,7 +160,8 @@ class TestPodFailure:
                                                            "deployment_backup":
                                                                self.deployment_backup})
             LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
+                                              "way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.node_name)
@@ -212,7 +214,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32443")
     @CTFailOn(error_handler)
-    def test_degraded_reads_safe_pod_shutdown(self):
+    def test_reads_safe_pod_shutdown(self):
         """
         This test tests degraded reads before and after safe pod shutdown
         """
@@ -281,7 +283,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-23553")
     @CTFailOn(error_handler)
-    def test_degraded_reads_unsafe_pod_shutdown(self):
+    def test_reads_unsafe_pod_shutdown(self):
         """
         This test tests degraded reads before and after unsafe pod shutdown
         """
@@ -313,8 +315,8 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           "deployment (unsafe)")
         LOGGER.info("Step 3: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -355,14 +357,13 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-23552")
     @CTFailOn(error_handler)
-    def test_degraded_writes_safe_pod_shutdown(self):
+    def test_writes_safe_pod_shutdown(self):
         """
         This test tests degraded writes before and after safe pod shutdown
         """
         LOGGER.info("STARTED: Test to verify degraded writes before and after safe pod shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
-                    "512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-23552'
         self.s3_clean = users
@@ -411,16 +412,6 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
 
-        LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
-                    "512MB)")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-23552-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify with variable sizes objects.")
-
         LOGGER.info("ENDED: Test to verify degraded writes before and after safe pod shutdown.")
 
     # pylint: disable=too-many-statements
@@ -428,7 +419,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26440")
     @CTFailOn(error_handler)
-    def test_degraded_writes_unsafe_pod_shutdown(self):
+    def test_writes_unsafe_pod_shutdown(self):
         """
         This test tests degraded writes before and after unsafe pod shutdown
         """
@@ -489,24 +480,15 @@ class TestPodFailure:
         LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
                     "data")
 
-        LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-264401-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
         LOGGER.info("ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
 
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26444")
     @CTFailOn(error_handler)
-    def test_degraded_deletes_safe_pod_shutdown(self):
+    def test_deletes_safe_pod_shutdown(self):
         """
         This test tests degraded deletes before and after safe pod shutdown
         """
@@ -518,7 +500,7 @@ class TestPodFailure:
         del_output = Queue()
         LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
                     wr_bucket)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -530,7 +512,7 @@ class TestPodFailure:
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
 
         LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -614,14 +596,16 @@ class TestPodFailure:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.", remain_bkt)
+        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.",
+                    remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded deletes before & after safe pod shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26644")
     @CTFailOn(error_handler)
-    def test_degraded_deletes_unsafe_pod_shutdown(self):
+    def test_deletes_unsafe_pod_shutdown(self):
         """
         This test tests degraded deletes before and after unsafe pod shutdown
         """
@@ -634,7 +618,7 @@ class TestPodFailure:
         del_output = Queue()
         LOGGER.info("Step 1: Create %s buckets and perform WRITEs with variable size objects.",
                     wr_bucket)
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -646,7 +630,7 @@ class TestPodFailure:
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
 
         LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -732,7 +716,8 @@ class TestPodFailure:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.", remain_bkt)
+        LOGGER.info("Step 7: Successfully performed READs on the remaining %s buckets.",
+                    remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded deletes before and after unsafe "
                     "pod shutdown.")
 
@@ -741,7 +726,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32444")
     @CTFailOn(error_handler)
-    def test_continuous_reads_during_pod_down(self):
+    def test_reads_during_pod_down(self):
         """
         This test tests degraded reads while pod is going down
         """
@@ -784,8 +769,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           "deployment (unsafe)")
         LOGGER.info("Step 3: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -829,13 +814,16 @@ class TestPodFailure:
         LOGGER.info("Step 2: Successfully completed READs and verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 7: Create multiple buckets and run IOs")
-        self.test_prefix = 'test-32444-1'
+        LOGGER.info("Step 7: Run IOs with variable object sizes on a degraded cluster.")
+        if CMN_CFG["dtm0_disabled"]:
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users)
+            self.test_prefix = 'test-32444-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 7: Successfully ran IOs")
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")
 
     @pytest.mark.ha
@@ -849,8 +837,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Verify IOs before and after data pod failure; pod shutdown "
                     "by deleting deployment.")
 
-        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB)")
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32455'
         self.s3_clean = users
@@ -894,100 +881,41 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32455-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
+                        "on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32455-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object "
+                        "sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "by deleting deployment.")
-
-    @pytest.mark.ha
-    @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
-    @pytest.mark.tags("TEST-32456")
-    @CTFailOn(error_handler)
-    def test_pod_shutdown_kubectl_delete(self):
-        """
-        Verify IOs before and after data pod failure; pod shutdown deleting pod
-        using kubectl delete.
-        """
-        LOGGER.info("STARTED: Verify IOs before and after data pod failure, "
-                    "pod shutdown by deleting pod using kubectl delete.")
-
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32456'
-        self.s3_clean = users
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("Step 2: Shutdown the data pod by kubectl delete.")
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
-
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
-        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by kubectl delete", pod_name)
-
-        LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Cluster is in degraded state")
-
-        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=hostname)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in offline state")
-
-        pod_list.remove(pod_name)
-        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Services of remaining pods are in online state")
-
-        LOGGER.info("STEP 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32456-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("Completed: Verify IOs before and after data pod failure, "
-                    "pod shutdown by deleting pod using kubectl delete.")
 
     # pylint: disable=C0321
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26445")
     @CTFailOn(error_handler)
-    def test_continuous_deletes_during_pod_down(self):
+    def test_deletes_during_pod_down(self):
         """
         This test tests continuous DELETEs during data pod down by deleting deployment
         """
         LOGGER.info("STARTED: Test to verify continuous DELETEs during data pod down by "
                     "deleting deployment.")
         event = threading.Event()  # Event to be used to send intimation of pod deletion
-        LOGGER.info("Create s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -1043,8 +971,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           "deployment (unsafe)")
         LOGGER.info("Step 4: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -1105,7 +1033,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3_clean.pop('s3_acc')
 
-        LOGGER.info("STEP 9: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 9: Create new user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26445-1'
@@ -1123,15 +1051,15 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26441")
     @CTFailOn(error_handler)
-    def test_continuous_writes_during_pod_down(self):
+    def test_writes_during_pod_down(self):
         """
         This test tests Continuous WRITEs during data pod down (delete deployment)
         """
         LOGGER.info("STARTED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
         event = threading.Event()  # Event to be used to send intimation of pod deletion
-        LOGGER.info("Step 1: Perform Continuous WRITEs with variable object sizes. 0B + (1KB - "
-                    "512MB) during data pod down by delete deployment.")
+        LOGGER.info("Step 1: Perform Continuous WRITEs with variable object sizes. "
+                    "during data pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26441'
         self.s3_clean = users
@@ -1158,8 +1086,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           " deployment (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -1203,15 +1131,15 @@ class TestPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
                     "failed/error.")
 
-        LOGGER.info("STEP 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26441-1'
-        self.s3_clean.update(users)
+        LOGGER.info("STEP 7: Perform IOs with variable object sizes on degraded cluster")
+        if CMN_CFG["dtm0_disabled"]:
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-26441-1'
+            self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify Continuous WRITEs during data pod down by delete "
                     "deployment.")
@@ -1220,15 +1148,14 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32454")
     @CTFailOn(error_handler)
-    def test_io_operation_pod_shutdown_scale_replicas(self):
+    def test_pod_shutdown_scale_replicas(self):
         """
         Verify IOs before and after data pod failure; pod shutdown by making replicas=0
         """
         LOGGER.info("STARTED: Verify IOs before and after data pod failure; pod shutdown "
                     "by making replicas=0")
 
-        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB)")
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32454'
         self.s3_clean = users
@@ -1271,15 +1198,22 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32454-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
+                        "on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32454-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object sizes on "
+                        "degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "by making replicas 0")
@@ -1290,15 +1224,15 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26442")
     @CTFailOn(error_handler)
-    def test_continuous_reads_writes_during_pod_down(self):
+    def test_reads_writes_during_pod_down(self):
         """
         This test tests Continuous READs and WRITEs during data pod down (delete deployment)
         """
         LOGGER.info("STARTED: Test to verify Continuous READs and WRITEs during data pod down by "
                     "delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of pod deletion
-        LOGGER.info("Step 1: Perform Continuous READs and WRITEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) during data pod down by delete deployment.")
+        LOGGER.info("Step 1: Perform Continuous READs and WRITEs with variable object sizes. "
+                    "during data pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26442'
         self.s3_clean = users
@@ -1370,15 +1304,22 @@ class TestPodFailure:
         LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
                     "down is failed/error.")
 
-        LOGGER.info("STEP 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-26442-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-26442-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("STEP 7: Perform WRITEs-READs-Verify with variable object sizes "
+                        "on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify Continuous READs and WRITEs during data pod down by "
                     "delete deployment.")
 
@@ -1386,21 +1327,22 @@ class TestPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26446")
     @CTFailOn(error_handler)
-    def test_continuous_writes_deletes_during_pod_down(self):
+    def test_writes_deletes_during_pod_down(self):
         """
         This test tests Continuous WRITEs and DELETEs during data pod down (delete deployment)
         """
-        LOGGER.info("STARTED: Test to verify Continuous WRITEs and DELETEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("STARTED: Test to verify Continuous WRITEs and DELETEs during data pod down "
+                    "by delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of pod deletion
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         wr_output = Queue()
         del_output = Queue()
 
-        LOGGER.info("Creating s3 account")
+        LOGGER.info("Creating IAM user")
         users = self.mgnt_ops.create_account_users(nusers=1)
         access_key = list(users.values())[0]["accesskey"]
         secret_key = list(users.values())[0]["secretkey"]
@@ -1410,7 +1352,7 @@ class TestPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
 
         LOGGER.info("Step 1: Performing Continuous WRITEs and DELETEs with variable object sizes. "
-                    "0B + (1KB - 512MB) during data pod down by delete deployment.")
+                    "during data pod down by delete deployment.")
 
         LOGGER.info("Starting WRITEs on %s buckets", wr_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -1443,8 +1385,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           " deployment (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -1546,7 +1488,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 7: Successfully deleted remaining buckets.")
 
-        LOGGER.info("STEP 8: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 8: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26446-1'
@@ -1562,14 +1504,15 @@ class TestPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26447")
     @CTFailOn(error_handler)
-    def test_continuous_reads_deletes_during_pod_down(self):
+    def test_reads_deletes_during_pod_down(self):
         """
         This test tests Continuous READs and DELETEs during data pod down (delete deployment)
         """
-        LOGGER.info("STARTED: Test to verify Continuous READs and DELETEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("STARTED: Test to verify Continuous READs and DELETEs during data pod down "
+                    "by delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of pod deletion
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
@@ -1577,7 +1520,7 @@ class TestPodFailure:
         rd_output = Queue()
         del_output = Queue()
 
-        LOGGER.info("Creating s3 account")
+        LOGGER.info("Creating IAM user")
         users = self.mgnt_ops.create_account_users(nusers=1)
         access_key = list(users.values())[0]["accesskey"]
         secret_key = list(users.values())[0]["secretkey"]
@@ -1639,8 +1582,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           " deployment (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -1765,7 +1708,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32445")
     @CTFailOn(error_handler)
-    def test_degraded_mpu_after_safe_pod_shutdown(self):
+    def test_mpu_after_safe_pod_shutdown(self):
         """
         This test tests degraded multipart upload after data pod safe shutdown
         """
@@ -1777,7 +1720,7 @@ class TestPodFailure:
         download_path = os.path.join(self.test_dir_path, download_file)
 
         LOGGER.info("Step 1: Create and list buckets and perform multipart upload for size 5GB.")
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -1787,7 +1730,7 @@ class TestPodFailure:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -1852,9 +1795,13 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        LOGGER.info("Step 7: Do Multipart upload and then download 5GB object")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Creating new bucket for new upload")
+            bucket_name = "mp-bkt-{}".format(perf_counter_ns())
+        else:
+            bucket_name = self.bucket_name
+        object_name = "mp-obj-{}".format(perf_counter_ns())
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -1877,8 +1824,7 @@ class TestPodFailure:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 7: Successfully created bucket and did multipart upload and download "
-                    "with 5GB object")
+        LOGGER.info("Step 7: Did multipart upload and download with 5GB object")
 
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " safe shutdown.")
@@ -1887,7 +1833,7 @@ class TestPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32446")
     @CTFailOn(error_handler)
-    def test_degraded_mpu_after_unsafe_pod_shutdown(self):
+    def test_mpu_after_unsafe_pod_shutdown(self):
         """
         This test tests degraded multipart upload after data pod unsafe shutdown
         """
@@ -1899,7 +1845,7 @@ class TestPodFailure:
         download_path = os.path.join(self.test_dir_path, download_file)
 
         LOGGER.info("Step 1: Create and list buckets and perform multipart upload for size 5GB.")
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -1909,7 +1855,7 @@ class TestPodFailure:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -1979,9 +1925,13 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Create new bucket and multipart upload and then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        LOGGER.info("Step 7: Do Multipart upload and then download 5GB object")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Creating new bucket for new upload")
+            bucket_name = "mp-bkt-{}".format(perf_counter_ns())
+        else:
+            bucket_name = self.bucket_name
+        object_name = "mp-obj-{}".format(perf_counter_ns())
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -2003,114 +1953,9 @@ class TestPodFailure:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 7: Successfully created bucket and did multipart upload and download "
-                    "with 5GB object")
+        LOGGER.info("Step 7: Did multipart upload and download with 5GB object")
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " unsafe shutdown.")
-
-    @pytest.mark.ha
-    @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
-    @pytest.mark.tags("TEST-32459")
-    @CTFailOn(error_handler)
-    def test_control_pod_failover(self):
-        """
-        Verify IOs before and after control pod failure, pod shutdown by making worker node down.
-        """
-        LOGGER.info("STARTED: Verify IOs before and after control pod failure, "
-                    "pod shutdown by making worker node down.")
-
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32459'
-        self.s3_clean = users
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("Step 2: Check the node which has the control pod running and shutdown "
-                    "the node.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        control_pods = self.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
-        control_pod_name = list(control_pods.keys())[0]
-        node_fqdn = control_pods.get(control_pod_name)
-        self.node_name = node_fqdn
-        LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, node_fqdn)
-        LOGGER.info("Get the data pod running on %s node", node_fqdn)
-        data_pods = self.node_master_list[0].get_pods_node_fqdn(const.POD_NAME_PREFIX)
-        server_pods = self.node_master_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
-        data_pod_name = serverpod_name = None
-        for pod_name, node in data_pods.items():
-            if node == node_fqdn:
-                data_pod_name = pod_name
-                break
-        for server_pod, node in server_pods.items():
-            if node == self.node_name:
-                serverpod_name = server_pod
-                break
-        LOGGER.info("%s node has data pod: %s", node_fqdn, data_pod_name)
-        LOGGER.info("Shutdown the node: %s", node_fqdn)
-        hostname = self.node_master_list[0].get_pod_hostname(pod_name=data_pod_name)
-        resp = self.ha_obj.host_safe_unsafe_power_off(host=node_fqdn)
-        assert_utils.assert_true(resp, "Host is not powered off")
-        LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", node_fqdn)
-        self.restore_node = self.deploy = True
-
-        LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
-            "pod_eviction_time"])
-        time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
-        pod_list.remove(data_pod_name)
-        running_pod = random.sample(pod_list, 1)[0]
-        server_list.remove(serverpod_name)
-
-        LOGGER.info("Step 3: Check cluster status is in degraded state.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0], pod_list=pod_list)
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Checked cluster is in degraded state")
-
-        LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
-                    "pod %s", data_pod_name, serverpod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
-                                                           fail=True, hostname=hostname,
-                                                           pod_name=running_pod)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
-                    "pod %s are in offline state", data_pod_name, serverpod_name)
-
-        online_pods = pod_list + server_list
-        LOGGER.info("Step 5: Check services status on remaining pods %s", online_pods)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=online_pods, fail=False,
-                                                           pod_name=running_pod)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
-
-        LOGGER.info("Step 6: Check for control pod failed over node.")
-        control_pods_new = self.node_master_list[0].get_pods_node_fqdn(
-            const.CONTROL_POD_NAME_PREFIX)
-        assert_utils.assert_true(control_pods_new,
-                                 "Control pod has not failed over to any other node.")
-        control_pod_name_new = list(control_pods_new.keys())[0]
-        node_fqdn_new = control_pods_new.get(control_pod_name_new)
-        LOGGER.info("Step 6: %s pod has been failed over to %s node",
-                    control_pod_name_new, node_fqdn_new)
-
-        LOGGER.info("STEP 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32459-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("COMPLETED: Verify IOs before and after control pod failure, "
-                    "pod shutdown by making worker node down.")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2124,7 +1969,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Verify IOs before and after HA pod failure, "
                     "pod shutdown by making worker node down.")
 
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32460'
@@ -2137,7 +1982,8 @@ class TestPodFailure:
         LOGGER.info("Step 2: Check the node which has the ha pod running and shutdown"
                     "the node.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        server_list = \
+            self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         ha_pods = self.node_master_list[0].get_pods_node_fqdn(const.HA_POD_NAME_PREFIX)
         ha_pod_name = list(ha_pods.keys())[0]
         node_fqdn = ha_pods.get(ha_pod_name)
@@ -2171,8 +2017,9 @@ class TestPodFailure:
 
         LOGGER.info("Step 4: Check services status that were running on data pod %s and server "
                     "pod %s", data_pod_name, serverpod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
-                                                           fail=True, hostname=hostname)
+        resp = \
+            self.hlth_master_list[0].get_pod_svc_status(pod_list=[data_pod_name, serverpod_name],
+                                                        fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Checked services status that were running on data pod %s and server "
@@ -2195,7 +2042,7 @@ class TestPodFailure:
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
                     ha_pod_name_new, node_fqdn_new)
 
-        LOGGER.info("STEP 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 7: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32460-1'
@@ -2230,7 +2077,7 @@ class TestPodFailure:
         download_path = os.path.join(self.test_dir_path, download_file)
         event = threading.Event()  # Event to be used to send intimation of pod shutdown
 
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -2241,7 +2088,7 @@ class TestPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
                                             endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
@@ -2265,8 +2112,8 @@ class TestPodFailure:
         event.set()
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           " deployment (unsafe)")
         LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -2370,18 +2217,8 @@ class TestPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("STEP 10: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32447-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 10: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown by delete "
-                    "deployment")
+        LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown by delete"
+                    " deployment")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -2410,7 +2247,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially for %s parts out of total %s", part_numbers, total_parts)
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -2421,7 +2258,7 @@ class TestPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
                                             endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
@@ -2453,8 +2290,8 @@ class TestPodFailure:
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
+                                           " deployment (unsafe)")
         LOGGER.info("Step 3: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
                     pod_name)
         self.deployment_backup = resp[1]
@@ -2535,24 +2372,15 @@ class TestPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("Step 11: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B "
-                    "+ (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32449-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe "
-                    "shutdown by deleting deployment")
+        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe"
+                    " shutdown by deleting deployment")
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-32450")
     @CTFailOn(error_handler)
-    def test_degraded_copy_object_safe_pod_shutdown(self):
+    def test_copy_object_safe_pod_shutdown(self):
         """
         Verify degraded copy object after data pod down - pod shutdown (make replicas=0)
         """
@@ -2565,7 +2393,7 @@ class TestPodFailure:
             bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] = f"ha-obj{cnt}-{self.random_time}"
         event = threading.Event()
 
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -2574,7 +2402,7 @@ class TestPodFailure:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
@@ -2636,37 +2464,42 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
+                        "and verify copy object etags",
+                        self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {object3} "
+                                                          f"of bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
+                        object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
                     "(make replicas=0) ")
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-32451")
     @CTFailOn(error_handler)
-    def test_degraded_copy_object_unsafe_pod_shutdown(self):
+    def test_copy_object_unsafe_pod_shutdown(self):
         """
         Verify degraded copy object after data pod down - pod unsafe
         shutdown (by deleting deployment)
@@ -2681,7 +2514,7 @@ class TestPodFailure:
                 f"ha-obj{cnt}-{self.random_time}"
         event = threading.Event()
 
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -2690,7 +2523,7 @@ class TestPodFailure:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
@@ -2755,29 +2588,33 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
+                        "and verify copy object etags",
+                        self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict,
+                                                      put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+            LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
+                                                          f"for object {object3} of "
+                                                          f"bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
+                        object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - "
                     "pod unsafe shutdown (by deleting deployment) ")
@@ -2793,8 +2630,8 @@ class TestPodFailure:
         LOGGER.info("STARTED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node down.")
 
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32458'
         self.s3_clean = users
@@ -2853,15 +2690,22 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
-        LOGGER.info("STEP 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32458-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 6: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32458-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes on "
+                        "degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node down.")
@@ -2879,7 +2723,7 @@ class TestPodFailure:
         LOGGER.info("STARTED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node network down.")
 
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32457'
@@ -2938,24 +2782,32 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
-        LOGGER.info("STEP 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32457-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 6: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-32457-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes "
+                        "on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node network down.")
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-32452")
     @CTFailOn(error_handler)
-    def test_degraded_copy_object_during_pod_shutdown(self):
+    def test_copy_object_during_pod_shutdown(self):
         """
         Verify copy object during data pod shutdown (delete deployment)
         """
@@ -2965,7 +2817,7 @@ class TestPodFailure:
         output = Queue()
         event = threading.Event()
 
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -2974,7 +2826,7 @@ class TestPodFailure:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
@@ -3073,8 +2925,8 @@ class TestPodFailure:
         if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts:
-            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
-                                            f"state. Failed buckets: {failed_bkts}")
+            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded"
+                                            f" state. Failed buckets: {failed_bkts}")
         elif exp_fail_bkt_obj_dict:
             LOGGER.info("Step 7.1: Retrying copy object to buckets %s",
                         list(exp_fail_bkt_obj_dict.keys()))
@@ -3097,99 +2949,34 @@ class TestPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 8: Successfully download the uploaded objects & verify etags")
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.clear()
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
-                                                  object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                  bkt_op=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        if CMN_CFG["dtm0_disabled"]:
+            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            bkt_obj_dict.clear()
+            bkt_obj_dict[bucket3] = object3
+            LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s "
+                        "and verify copy object etags",
+                        self.object_name, self.bucket_name, bucket3)
+            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                      bucket_name=self.bucket_name,
+                                                      object_name=self.object_name,
+                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                      bkt_op=False)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
+                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-        LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {object3} of "
+                                                          f"bucket {bucket3}.")
+            LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.",
+                        object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify copy object during data pod shutdown (delete deployment)")
-
-    @pytest.mark.ha
-    @pytest.mark.lc
-    @pytest.mark.tags("TEST-32461")
-    @CTFailOn(error_handler)
-    def test_server_pod_failure(self):
-        """
-        Verify IOs before and after server pod failure (pod shutdown by making replicas=0)
-        """
-        LOGGER.info("STARTED: Verify IOs before and after server pod failure; pod shutdown by "
-                    "making replicas=0")
-
-        LOGGER.info("STEP 1: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32461'
-        self.s3_clean = users
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("Step 2: Shutdown the server pod safely by making replicas=0")
-        LOGGER.info("Get server pod name to be shutdown")
-        server_pod_list = self.node_master_list[0].get_all_pods(
-            pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        server_pod_name = random.sample(server_pod_list, 1)[0]
-        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=server_pod_name)
-        LOGGER.info("Shutdown pod %s", server_pod_name)
-        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=server_pod_name)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to shutdown Server pod {server_pod_name} "
-                                           "by making replicas=0")
-        LOGGER.info("Step 2: Successfully shutdown pod %s by making replicas=0", server_pod_name)
-        self.deployment_name = resp[1]
-        self.restore_pod = self.deploy = True
-        self.restore_method = const.RESTORE_SCALE_REPLICAS
-
-        LOGGER.info("Step 3: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 3: Cluster is in degraded state")
-
-        LOGGER.info("Step 4: Check services status that were running on pod %s", server_pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[server_pod_name],
-                                                           fail=True, hostname=pod_host)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of %s are in offline state", server_pod_name)
-
-        server_pod_list.remove(server_pod_name)
-        LOGGER.info("Step 5: Check services status on remaining pods %s", server_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Services of remaining pods are in online state")
-
-        LOGGER.info("STEP 6: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-32461-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
-        LOGGER.info("Completed: Verify IOs before and after server pod failure; pod shutdown "
-                    "by making replicas 0")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -3201,8 +2988,7 @@ class TestPodFailure:
         """
         LOGGER.info("STARTED: Verify IOs before & after pod failure by making RC node down")
 
-        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB)")
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-33209'
         self.s3_clean = users
@@ -3213,7 +2999,7 @@ class TestPodFailure:
 
         LOGGER.info("Step 2: Get the RC node data pod and shutdown the same.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        rc_node = self.motr_obj.get_primary_cortx_node()
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
         LOGGER.info("RC Node is running on %s node", self.node_name)
@@ -3252,8 +3038,8 @@ class TestPodFailure:
                                                            fail=True, hostname=hostname)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s "
-                    "are in offline state", self.node_name, rc_datapod)
+        LOGGER.info("Step 4: Checked services status that were running on RC node %s's data pod %s"
+                    " are in offline state", self.node_name, rc_datapod)
 
         LOGGER.info("Step 5: Check services status on remaining pods %s are in online state",
                     pod_list)
@@ -3263,28 +3049,36 @@ class TestPodFailure:
         LOGGER.info("Step 5: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 6: Check for RC node failed over node.")
-        rc_node = self.motr_obj.get_primary_cortx_node()
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
         assert_utils.assert_true(len(rc_node), "Couldn't fine new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         LOGGER.info("Step 6: RC node has been failed over to %s node", list(rc_info.values())[0])
 
-        LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-33209-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 7: Create new IAM user and Perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-33209-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix)
+        else:
+            LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
+                        "on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
 
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Need to be shifted to F-26C test file")
     @pytest.mark.tags("TEST-34827")
     @CTFailOn(error_handler)
-    def test_background_io_during_control_pod_restart(self):
+    def test_io_during_control_pod_restart(self):
         """
         Test control pod deletion should not affect existing user I/O
         """
@@ -3368,7 +3162,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp, "Failed in setting up jclient")
         LOGGER.info("Step 1: Successfully setup jcloud/jclient on runner")
 
-        LOGGER.info("Step 2: Create s3 account with name %s, bucket %s and start chunk upload in "
+        LOGGER.info("Step 2: Create IAM user with name %s, bucket %s and start chunk upload in "
                     "background", self.s3acc_name, self.bucket_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -3473,13 +3267,20 @@ class TestPodFailure:
                                   f" {download_checksum}")
         LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
 
-        LOGGER.info("Step 10: Start IOs create s3 account, buckets and upload objects")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-35297-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    nsamples=10, skipcleanup=True)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 10: Create IAM user, buckets and upload objects on degraded "
+                        "cluster.")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35297-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=10)
+        else:
+            LOGGER.info("Perform IOs with variable object sizes on degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean,
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=10, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Successfully completed IOs.")
 
