@@ -293,4 +293,7 @@ class RestTestLib:
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
     def search_list_of_dict(self, search_key:str, search_val:str, search_in: list):
+        """
+        Search for {<search_key>:<search_val>} in [{<search_key>:<search_val>,..}, {}, {}...]
+        """
         return list(filter(lambda key: key[search_key] == search_val, search_in))
