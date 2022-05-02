@@ -32,7 +32,7 @@ import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons import constants as common_const
-from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP, FILE_BLOCK_COUNT
+from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
@@ -67,65 +67,6 @@ class TestExecuteK8Sanity:
     def teardown_class(self):
         """Teardown of Node object"""
         del self.motr_obj
-
-    def update_m0crate_config(self, config_file, node):
-        """
-        This will modify the m0crate workload config yaml with the node details
-        param: confile_file: Path of m0crate workload config yaml
-        param: node: Cortx node on which m0crate utility to be executed
-        """
-        m0cfg = config_utils.read_yaml(config_file)[1]
-        node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
-        # modify m0cfg and write back to file
-        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
-        m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
-        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
-        source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
-        file_size = source_file.split('/')[-1]
-        count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
-        self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
-
-    def run_motr_io(self, node, block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True):
-        """
-        Run m0cp, m0cat and m0unlink on a node for all the motr clients and deletes the objects
-        anyway at the end
-        :param: str node: Cortx node on which utilities to be executed
-        :param: list block_count: List containing the integer values. If block count is 1,
-                then size of object file will vary from 4K to 32M,
-                i.e multiple of supported object block sizes
-        :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
-        :param: bool delete_objs: if True, will delete the created objects
-        """
-        object_bsize_dict = {}
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
-        try:
-            for count in block_count:
-                for b_size in BSIZE_LAYOUT_MAP.keys():
-                    object_id = str(self.system_random.randint(1, 9999)) + ":" + \
-                                    str(self.system_random.randint(1, 9999))
-                    object_bsize_dict[object_id] = b_size
-                    self.motr_obj.dd_cmd(b_size, str(count), infile, node)
-                    self.motr_obj.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
-                        infile, node)
-                    if run_m0cat:
-                        self.motr_obj.cat_cmd(b_size, str(count), object_id,
-                            BSIZE_LAYOUT_MAP[b_size], outfile, node)
-                        self.motr_obj.md5sum_cmd(infile, outfile, node)
-                    if delete_objs:
-                        self.motr_obj.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
-        except Exception as exc:
-            logger.exception("Test has failed with execption: %s", exc)
-            raise exc
-        finally:
-            if not delete_objs:
-                cortx_node = self.system_random.choice(self.motr_obj.cortx_node_list)
-                for obj_id in object_bsize_dict:
-                    self.motr_obj.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]],
-                    cortx_node)
 
     def test_motr_k8s_lib(self):
         """
@@ -292,11 +233,11 @@ class TestExecuteK8Sanity:
         config_file = os.path.join(os.getcwd(), "config/motr/test_29707_m0crate_workload.yaml")
         remote_file = TEMP_PATH + config_file.split("/")[-1]
         for node in self.motr_obj.get_node_pod_dict():
-            self.update_m0crate_config(config_file, node)
+            self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
         self.motr_obj.shutdown_cluster()
         for node in self.motr_obj.get_node_pod_dict():
-            self.update_m0crate_config(config_file, node)
+            self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
 
     @pytest.mark.tags("TEST-29706", "TEST-29709")
@@ -308,8 +249,8 @@ class TestExecuteK8Sanity:
         """
         try:
             for node in self.motr_obj.cortx_node_list:
-                node_process = multiprocessing.Process(target=self.run_motr_io, args=[node, [4],
-                    False, True])
+                node_process = multiprocessing.Process(target=self.motr_obj.run_motr_io,
+                    args=[node, [4], False, True])
                 node_process.start()
         except (OSError, IOError, AssertionError) as exc:
             logger.exception("Ignoring exception %s as this is expected to fail during shutdown",

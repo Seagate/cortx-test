@@ -23,13 +23,14 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
+from random import SystemRandom
 from config import CMN_CFG
-from commons.utils import assert_utils
-from commons.utils import system_utils
 from commons import commands as common_cmd
 from commons import constants as common_const
+from commons.utils import config_utils, system_utils, assert_utils
 from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.pods_helper import LogicalNode
+from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP, FILE_BLOCK_COUNT
 
 log = logging.getLogger(__name__)
 
@@ -477,3 +478,62 @@ class MotrCoreK8s():
         log.info("Cluster restarted fine and all Pods online.")
         # Updating the node_pod dict after cluster shutdown
         self.node_pod_dict = self.get_node_pod_dict()
+
+    def update_m0crate_config(self, config_file, node):
+        """
+        This will modify the m0crate workload config yaml with the node details
+        param: confile_file: Path of m0crate workload config yaml
+        param: node: Cortx node on which m0crate utility to be executed
+        """
+        m0cfg = config_utils.read_yaml(config_file)[1]
+        node_enpts = self.get_cortx_node_endpoints(node)
+        # modify m0cfg and write back to file
+        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
+        m0cfg['MOTR_CONFIG']['PROF'] = self.profile_fid
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
+        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
+        source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
+        file_size = source_file.split('/')[-1]
+        count = self.byte_conversion(file_size) // self.byte_conversion(b_size)
+        self.dd_cmd(b_size.upper(), str(count), source_file, node)
+        config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
+
+    def run_motr_io(self, node, block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True):
+        """
+        Run m0cp, m0cat and m0unlink on a node for all the motr clients and deletes the objects
+        anyway at the end
+        :param: str node: Cortx node on which utilities to be executed
+        :param: list block_count: List containing the integer values. If block count is 1,
+                then size of object file will vary from 4K to 32M,
+                i.e multiple of supported object block sizes
+        :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
+        :param: bool delete_objs: if True, will delete the created objects
+        """
+        object_bsize_dict = {}
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        try:
+            for count in block_count:
+                for b_size in BSIZE_LAYOUT_MAP.keys():
+                    object_id = str(SystemRandom().randint(1, 9999)) + ":" + \
+                                    str(SystemRandom().randint(1, 9999))
+                    object_bsize_dict[object_id] = b_size
+                    self.dd_cmd(b_size, str(count), infile, node)
+                    self.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
+                        infile, node)
+                    if run_m0cat:
+                        self.cat_cmd(b_size, str(count), object_id,
+                            BSIZE_LAYOUT_MAP[b_size], outfile, node)
+                        self.md5sum_cmd(infile, outfile, node)
+                    if delete_objs:
+                        self.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
+        except Exception as exc:
+            log.exception("Test has failed with execption: %s", exc)
+            raise exc
+        finally:
+            if not delete_objs:
+                cortx_node = self.system_random.choice(self.cortx_node_list)
+                for obj_id in object_bsize_dict:
+                    self.unlink_cmd(obj_id, BSIZE_LAYOUT_MAP[object_bsize_dict[obj_id]],
+                    cortx_node)
