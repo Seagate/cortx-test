@@ -183,7 +183,7 @@ class TestServerPodFailure:
         """
         LOGGER.info("STARTED: Test to verify degraded reads after safe server pod shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39902'
         self.s3_clean = users
@@ -212,8 +212,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Perform READs & verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -232,7 +232,7 @@ class TestServerPodFailure:
         """Following test steps tests degraded READs after server pod down - unsafe shutdown."""
         LOGGER.info("STARTED: Test to verify degraded reads after unsafe server pod shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39903'
         self.s3_clean = users
@@ -262,8 +262,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -286,7 +286,7 @@ class TestServerPodFailure:
         LOGGER.info("STARTED: Test to verify degraded reads during server pod is going down.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
 
-        LOGGER.info("Step 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39904'
         self.s3_clean = users
@@ -391,8 +391,7 @@ class TestServerPodFailure:
         """Following test steps tests degraded writes after safe server pod shutdown."""
         LOGGER.info("STARTED: Test to verify degraded writes after safe server pod shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. 0B + (1KB - "
-                    "512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39905'
         self.s3_clean = users
@@ -413,8 +412,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Perform WRITEs, READs & verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -436,8 +435,7 @@ class TestServerPodFailure:
         """
         LOGGER.info("STARTED: Test to verify degraded WRITEs after unsafe server pod shutdown.")
 
-        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes. "
-                    "0B + (1KB - 512MB)")
+        LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39906'
         self.s3_clean = users
@@ -459,8 +457,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Perform WRITEs, READs & verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -482,8 +480,8 @@ class TestServerPodFailure:
         LOGGER.info("STARTED: Test to verify continuous WRITEs during server pod down by delete "
                     "deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
-        LOGGER.info("Step 1: Perform continuous WRITEs with variable object sizes. 0B + (1KB - "
-                    "512MB) during server pod down by delete deployment.")
+        LOGGER.info("Step 1: Perform continuous WRITEs with variable object sizes during server "
+                    "pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39907'
         self.s3_clean = users
@@ -627,8 +625,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Perform DELETEs on random %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -1129,8 +1127,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Perform DELETEs on random %s buckets", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -1328,8 +1326,8 @@ class TestServerPodFailure:
         LOGGER.info("STARTED: Test to verify READs/WRITEs during server pod down by "
                     "delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
-        LOGGER.info("Step 1: Perform continuous READs/WRITEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) during server pod down by delete deployment.")
+        LOGGER.info("Step 1: Perform continuous READs/WRITEs with variable object sizes during "
+                    "server pod down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39911'
         self.s3_clean = users
@@ -1475,8 +1473,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Download the uploaded objects & verify etags")
         for key, val in bkt_obj_dict.items():
@@ -1574,8 +1572,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Download the uploaded objects & verify etags")
         for key, val in bkt_obj_dict.items():
@@ -1843,8 +1841,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Download the uploaded object and verify checksum")
         resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
@@ -1951,8 +1949,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Download the uploaded object and verify checksum")
         resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
@@ -2011,8 +2009,7 @@ class TestServerPodFailure:
         """
         LOGGER.info("STARTED: Verify IOs before & after server pod shutdown by delete deployment.")
 
-        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB)")
+        LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39921'
         self.s3_clean = users
@@ -2034,11 +2031,11 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
-        LOGGER.info("Step 3: Perform WRITEs-READs-Verify-DELETEs with variable object sizes. 0B + ("
-                    "1KB - 512MB) after server pod delete deployment shutdown.")
+        LOGGER.info("Step 3: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
+                    "after server pod delete deployment shutdown.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39921-1'
         self.s3_clean.update(users)
@@ -2271,8 +2268,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Verifying response of background chunk upload process")
         thread.join()
@@ -2395,8 +2392,8 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Upload remaining parts")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
@@ -2465,7 +2462,7 @@ class TestServerPodFailure:
                     "making replicas=0")
 
         LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461'
         self.s3_clean = users
@@ -2486,11 +2483,11 @@ class TestServerPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster "
-                    "has some failure & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("STEP 3: Create new user and perform WRITEs-READs-Verify-DELETEs with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32461-1'
         self.s3_clean.update(users)
