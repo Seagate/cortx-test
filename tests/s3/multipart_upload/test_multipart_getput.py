@@ -230,7 +230,6 @@ class TestMultipartUploadGetPut:
         """
         obj_name = kwargs.get("object_name")
         all_parts = kwargs.get("parts_list")
-        self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
@@ -828,8 +827,6 @@ class TestMultipartUploadGetPut:
         process_mpu.join()
         process_put.join()
         res = self.s3_test_obj.object_list(self.bucket_name)
-        if self.object_name not in res[1] or object_put not in res[1]:
-            self.log.error("Failed to list the uploaded objects")
         if self.object_name not in res[1] or object_put not in res[1]:
             self.log.error("Failed to list the uploaded objects")
         self.log.info("Stop and validate parallel S3 IOs")
