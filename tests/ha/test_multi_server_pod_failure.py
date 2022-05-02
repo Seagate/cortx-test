@@ -2461,12 +2461,12 @@ class TestMultiServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40575")
     @CTFailOn(error_handler)
-    def test_conti_writes_during_kserver_pods_down(self):
+    def test_writes_during_kserver_pods_down(self):
         """
         This test tests continuous WRITEs while pods are failing till K server
         pods down - unsafe shutdown
         """
-        LOGGER.info("STARTED: Test to verify continuous WRITEs during %s (K) "
+        LOGGER.info("STARTED: Test to verify WRITEs during %s (K) "
                     "server pods down - unsafe shutdown", self.kvalue)
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes in background")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -2571,7 +2571,7 @@ class TestMultiServerPodFailure:
                                                     nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
-        LOGGER.info("ENDED: Test to verify continuous WRITEs during %s (K) server "
+        LOGGER.info("ENDED: Test to verify WRITEs during %s (K) server "
                     "pods down - unsafe shutdown", self.kvalue)
 
     # pylint: disable=too-many-locals
@@ -2579,12 +2579,11 @@ class TestMultiServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40574")
     @CTFailOn(error_handler)
-    def test_conti_reads_during_kserver_pods_down(self):
+    def test_reads_during_kserver_pods_down(self):
         """
-        This test tests continuous READs while pods are failing till K
-        server pods down - unsafe shutdown
+        This test READs while pods are failing till K server pods down - unsafe shutdown
         """
-        LOGGER.info("STARTED: Test to verify continuous READs during %s (K) "
+        LOGGER.info("STARTED: Test to verify READs during %s (K) "
                     "server pods down - unsafe shutdown", self.kvalue)
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -2696,7 +2695,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
-        LOGGER.info("ENDED: Test to verify continuous READs during %s (K) server pods "
+        LOGGER.info("ENDED: Test to verify READs during %s (K) server pods "
                     "down - unsafe shutdown", self.kvalue)
 
     # pylint: disable=too-many-locals
