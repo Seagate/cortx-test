@@ -58,6 +58,7 @@ HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_m
 NAMESPACE = "cortx"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
 CLIENT_POD_NAME_PREFIX = "cortx-client"
+MOTR_CONTAINER_NAME_PREFIX = "cortx-motr-io"
 HA_SHUTDOWN_SIGNAL_PATH = "scripts/server_scripts/ha_shutdown_signal.py"
 MOCK_MONITOR_REMOTE_PATH = "/root/mock_health_event_publisher.py"
 MOCK_MONITOR_LOCAL_PATH = "scripts/server_scripts/mock_health_event_publisher.py"
