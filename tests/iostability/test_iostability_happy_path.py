@@ -19,8 +19,8 @@
 """Test Suite for IO stability Happy Path workloads."""
 import logging
 import os
-from datetime import datetime, timedelta
-
+from datetime import datetime
+from datetime import timedelta
 import pytest
 
 from commons import configmanager
@@ -32,7 +32,8 @@ from config import CMN_CFG
 from conftest import LOG_DIR
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.iostability.iostability_lib import IOStabilityLib
-from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 
 
 class TestIOWorkload:
@@ -98,12 +99,12 @@ class TestIOWorkload:
     def test_disk_near_full_s3bench(self):
         """Perform disk storage near full once and read in loop for 30 days."""
         self.log.info("STARTED: Perform disk storage near full once and read in loop for 30 days.")
+        self.log.info("Step 1: calculating byte count for required percentage")
         resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
-                                                     memory_percent=10)
-        self.log.info(f"{resp[1]} bytes")
+                                                     memory_percent=95)
         if resp[1] != 0:
             self.log.info("Need to add %s for required percentage", resp[1])
-            self.log.info("performing writes till we reach required percentage")
+            self.log.info("Step 2: performing writes till we reach required percentage")
             s3userinfo = dict()
             s3userinfo['accesskey'] = ACCESS_KEY
             s3userinfo['secretkey'] = SECRET_KEY
@@ -113,25 +114,26 @@ class TestIOWorkload:
                                                                       bucket_prefix=bucket_prefix,
                                                                       client=20)
             if ret[0]:
-                assert False, "Errors in write operations"
-            self.log.debug("write operation dats: %s", ret)
-            end_time = datetime.now() + timedelta(days=30)
-            loop = 1
-            while datetime.now() < end_time:
-                self.log.info("%s remaining time for reading loop", end_time - datetime.now())
-                read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
-                                                                        s3userinfo=s3userinfo,
-                                                                        workload_info=ret[1],
-                                                                        skipread=False,
-                                                                        validate=True,
-                                                                        skipcleanup=True)
-                self.log.info("%s interation is done", loop)
-                loop += 1
-                if read_ret[0]:
-                    assert False, "Errors in write operations"
-            del_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
-                s3userinfo=s3userinfo, workload_info=ret[1], skipread=True, validate=False,
-                skipcleanup=False)
-            if del_ret[0]:
-                assert False, "Errors in delete operations"
-            self.log.info("ENDED: Perform disk storage near full once and read in loop for 30 days")
+                assert False, "Errors in write operations."
+            else:
+                self.log.debug("write operation data: %s", ret)
+                end_time = datetime.now() + timedelta(days=30)
+                loop = 1
+                while datetime.now() < end_time:
+                    self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
+                    read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                                                                            s3userinfo=s3userinfo,
+                                                                            workload_info=ret[1],
+                                                                            skipread=False,
+                                                                            validate=True,
+                                                                            skipcleanup=True)
+                    self.log.info("%s interation is done", loop)
+                    loop += 1
+                    if read_ret[0]:
+                        assert False, "Errors in read operations"
+                del_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                    s3userinfo=s3userinfo, workload_info=ret[1], skipread=True, validate=False,
+                    skipcleanup=False)
+                if del_ret[0]:
+                    assert False, "Errors in delete operations"
+        self.log.info("ENDED: Perform disk storage near full once and read in loop for 30 days")
