@@ -214,7 +214,7 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size) 
+        self.csm_obj.verify_max_size(max_size)
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
