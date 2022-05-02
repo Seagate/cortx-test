@@ -797,3 +797,77 @@ class TestMultipartUploadGetPut:
         s3_background_io.stop()
         s3_background_io.cleanup()
         self.log.info("ENDED: Test delete 1000 multipart uploaded objects using bulk delete")
+
+    @pytest.mark.tags('TEST-40745')
+    @pytest.mark.s3_ops
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_40745(self):
+        """
+        This test is for parallel upload of different objects via simple and multipart upload
+        """
+        mp_config = MPART_CFG["test_28539"]
+        self.log.info("STARTED: test head-object of multipart uploaded object")
+        uploaded_parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            mp_config, self.mp_obj_path, log_prefix="TEST-40745_s3bench_ios", duration="0h3m",
+            s3_test_lib_obj=self.s3_test_obj)
+        random.shuffle(keys)
+        object_put = self.object_name + "put"
+        process_mpu = multiprocessing.Process(target=self.initiate_multipart,
+                                              args=(self.bucket_name, self.object_name),
+                                              kwargs={"parts": uploaded_parts,
+                                                      "is_part_upload": True,
+                                                      "is_lst_complete_mpu": True})
+        process_put = multiprocessing.Process(target=self.s3_test_obj.put_object,
+                                              args=(self.bucket_name, self.object_name + str("put"),
+                                                    self.mp_obj_path))
+        process_mpu.start()
+        process_put.start()
+        process_mpu.join()
+        process_put.join()
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1] or object_put not in res[1]:
+            self.log.info("Failed to list the uploaded objects")
+        if self.object_name not in res[1] or object_put not in res[1]:
+            self.log.error("Failed to list the uploaded objects")
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test Parallel upload of different Simple and Multipart uploaded "
+                      "objects")
+
+    @pytest.mark.tags('TEST-40993')
+    @pytest.mark.s3_ops
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_40993(self):
+        """
+        This test is for parallel upload of same objects via simple and multipart upload
+        """
+        mp_config = MPART_CFG["test_28539"]
+        self.log.info("STARTED: test head-object of multipart uploaded object")
+        uploaded_parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
+            s3_test_lib_obj=self.s3_test_obj)
+        object_put = self.mp_obj_path.join("_putobj")
+        create_file(object_put, 170)
+        random.shuffle(keys)
+        process_mpu = multiprocessing.Process(target=self.initiate_upload_list_complete_mpu,
+                                              args=(self.bucket_name, self.object_name),
+                                              kwargs={"parts": uploaded_parts,
+                                                      "is_part_upload": True,
+                                                      "is_lst_complete_mpu": True})
+
+        process_put = multiprocessing.Process(target=self.s3_test_obj.put_object,
+                                              args=(self.bucket_name, self.object_name,
+                                                    object_put))
+        process_mpu.start()
+        process_put.start()
+        process_mpu.join()
+        process_put.join()
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1]:
+            self.log.error("Failed to list the uploaded object")
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test parallel upload of same simple and multipart uploaded of "
+                      "objects")
