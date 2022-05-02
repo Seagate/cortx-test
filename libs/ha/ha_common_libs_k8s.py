@@ -1462,7 +1462,8 @@ class HAK8s:
         total_pod_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
         pod_data = {"method": None, "deployment_name": None, "deployment_backup": None,
                     "hostname": None}
-        remaining = delete_pods = list()
+        delete_pods = list()
+        remaining = list()
         for ptype in pod_prefix:
             pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
             # Get the list of Kvalue pods to be deleted for given pod_prefix list
