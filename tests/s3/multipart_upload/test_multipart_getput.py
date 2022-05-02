@@ -855,6 +855,34 @@ class TestMultipartUploadGetPut:
         s3_background_io.cleanup()
         self.log.info("ENDED: Test Simple and Multipart upload of an object")
 
+    @pytest.mark.tags('TEST-40265')
+    @pytest.mark.s3_ops
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_40265(self):
+        """
+        This test is for bulk delete of 1000 objects
+        """
+        mp_config = MPART_CFG["test_40265"]
+        self.log.info("STARTED: Test delete 1000 multipart uploaded objects using bulk delete")
+        parts, _, s3_background_io = \
+            self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+                mp_config, self.mp_obj_path, log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
+                s3_test_lib_obj=self.s3_test_obj)
+        obj_list = []
+        for cnt in range(1000):
+            obj_list.append(self.object_name + str(cnt))
+            self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
+                                                   is_part_upload=True,
+                                                   is_lst_complete_mpu=True,
+                                                   parts=parts)
+        self.log.info("Delete all 1000 objects using bulk delete")
+        resp = self.s3_test_obj.delete_multiple_objects(self.bucket_name, obj_list=obj_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: Test delete 1000 multipart uploaded objects using bulk delete")
+
     @pytest.mark.tags('TEST-40745')
     @pytest.mark.s3_ops
     @CTFailOn(error_handler)
@@ -868,6 +896,7 @@ class TestMultipartUploadGetPut:
             mp_config, self.mp_obj_path, log_prefix="TEST-40745_s3bench_ios", duration="0h3m",
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
+        object_put = self.object_name + "put"
         process_mpu = multiprocessing.Process(target=self.initiate_multipart,
                                 args=(self.bucket_name, self.object_name),
                                 kwargs={"parts": uploaded_parts,
@@ -880,8 +909,8 @@ class TestMultipartUploadGetPut:
         process_mpu.join()
         process_put.join()
         res = self.s3_test_obj.object_list(self.bucket_name)
-        if (self.object_name and self.object_name+str("put")) not in res[1]:
-            self.log.info("Failed to list the uploaded objects")
+        if self.object_name not in res[1] or object_put not in res[1]:
+            self.log.error("Failed to list the uploaded objects")
         if self.object_name not in res[1] or object_put not in res[1]:
             self.log.error("Failed to list the uploaded objects")
         self.log.info("Stop and validate parallel S3 IOs")
