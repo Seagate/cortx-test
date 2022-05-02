@@ -148,7 +148,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def rlines = failures.readLines()
-                        if (len(rlines) > len(lines)) {
+                        if ( len(rlines) > len(lines) ) {
                             echo "Regression Test Failed"
                             env.Regression_Failed = true
                         }
@@ -193,7 +193,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def ilines = failures.readLines()
-                        if (len(ilines) > len(rlines)) {
+                        if ( len(ilines) > len(rlines) ) {
                             echo "IO_PATH_TEST Test Failed"
                             env.Io_Path_Failed = true
                         }
@@ -238,7 +238,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def flines = failures.readLines()
-                        if (len(flines) > len(ilines)) {
+                        if ( len(flines) > len(ilines) ) {
                             echo "FAILURE DOMAIN Test Failed"
                             env.Failure_Domain_Failed = true
                         }
@@ -302,7 +302,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext ( body: '''${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}''', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com' )
+				emailext  body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
