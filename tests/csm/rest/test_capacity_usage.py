@@ -62,7 +62,6 @@ class TestSystemCapacity():
         cls.s3_user = ""
         cls.bucket = ""
         cls.row_temp = "N{} failure"
-        cls.ha_obj = HAK8s()
         cls.node_list = []
         cls.host_list = []
         cls.num_nodes = len(CMN_CFG["nodes"])
@@ -113,6 +112,14 @@ class TestSystemCapacity():
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
+        self.log.info("Get the value of K for the given cluster.")
+        resp = self.ha_obj.get_config_value(self.master)
+        if resp[0]:
+            self.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
+        else:
+            self.log.info("Failed to get parity value, will use 1.")
+            self.kvalue = 1
+
 
     def teardown_method(self):
         """
@@ -134,47 +141,6 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             self.log.info("Successfully restored pod by %s way", self.restore_method)
-
-    def s3_ios(self,
-               bucket=None,
-               log_file_prefix="parallel_io",
-               duration="0h3m",
-               obj_size="24Kb",
-               **kwargs):
-        """
-        Perform io's for specific durations.
-
-        1. Create bucket.
-        2. perform io's for specified durations.
-        3. Check executions successful.
-        """
-        kwargs.setdefault("num_clients", 5)
-        kwargs.setdefault("num_sample", 20)
-        kwargs.setdefault("obj_name_pref", "loadgen_")
-        kwargs.setdefault("end_point", S3_CFG["s3_url"])
-        self.log.info("STARTED: s3 io's operations.")
-        bucket = bucket if bucket else self.io_bucket_name
-        resp = self.s3_obj.create_bucket(bucket)
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key, secret_key = S3H_OBJ.get_local_keys()
-        resp = s3bench.s3bench(
-            access_key,
-            secret_key,
-            bucket=bucket,
-            end_point=S3_CFG["s3_url"],
-            num_clients=kwargs["num_clients"],
-            num_sample=kwargs["num_sample"],
-            obj_name_pref=kwargs["obj_name_pref"],
-            obj_size=obj_size,
-            duration=duration,
-            log_file_prefix=log_file_prefix,
-            validate_certs=S3_CFG["validate_certs"])
-        self.log.info(resp)
-        assert_utils.assert_true(
-            os.path.exists(
-                resp[1]),
-            f"failed to generate log: {resp[1]}")
-        self.log.info("ENDED: s3 io's operations.")
 
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -2048,7 +2014,7 @@ class TestSystemCapacity():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("CORTX-30810")
+    @pytest.mark.skip("Feature Not Ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2071,7 +2037,7 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
                                                      critical=0, damaged=0,
                                                      err_margin=test_cfg["err_margin"])
         self.log.info(
@@ -2084,7 +2050,7 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
         assert self.csm_obj.verify_degraded_capacity(
-            resp, healthy=None, degraded=0, critical=0, damaged=0,
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
             err_margin=test_cfg["err_margin"],
             total=total_written)
         self.log.info(
@@ -2099,19 +2065,12 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
         healthy_count = resp["healthy"]
         assert self.csm_obj.verify_degraded_capacity(
-            resp, healthy=None, degraded=0, critical=0, damaged=0,
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
             err_margin=test_cfg["err_margin"],
             total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
         self.log.info("-----------------------Step 1 Ends--------------------------")
-        self.log.info("Get the value of K for the given cluster.")
-        resp = self.ha_obj.get_config_value(self.master)
-        if resp[0]:
-            self.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
-        else:
-            self.log.info("Failed to get parity value, will use 1.")
-            self.kvalue = 1
         self.log.info("Get pod name to be deleted")
         deploy_name = self.master.get_deployment_name(self.num_nodes)
         self.log.info("Get deployment names")
@@ -2510,7 +2469,7 @@ class TestSystemCapacity():
             self.log.info("#########Test Completed########")
 
     # pylint: disable-msg=too-many-statements
-    @pytest.mark.skip("EOS-30810")
+    @pytest.mark.skip("Feature Not Ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2527,13 +2486,13 @@ class TestSystemCapacity():
             "[Start] Fetch degraded capacity on Consul with 0 Node failure")
         resp = self.csm_obj.get_capacity_consul()
         cap_df = self.csm_obj.get_dataframe_failure_recovery(self.num_worker)
-        test_cfg = self.csm_conf["test_39924"]
+        test_cfg = self.csm_conf["test_39923"]
         total_written = resp["healthy"]
         cap_df.loc["No failure"]["consul_healthy"] = resp["healthy"]
         cap_df.loc["No failure"]["consul_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["consul_critical"] = resp["critical"]
         cap_df.loc["No failure"]["consul_damaged"] = resp["damaged"]
-        assert self.csm_obj.verify_degraded_capacity(resp, healthy=None, degraded=0,
+        assert self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
                                                      critical=0, damaged=0,
                                                      err_margin=test_cfg["err_margin"])
         self.log.info(
@@ -2546,7 +2505,7 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["hctl_critical"] = resp["critical"]
         cap_df.loc["No failure"]["hctl_damaged"] = resp["damaged"]
         assert self.csm_obj.verify_degraded_capacity(
-            resp, healthy=None, degraded=0, critical=0, damaged=0,
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
             err_margin=test_cfg["err_margin"],
             total=total_written)
         self.log.info(
@@ -2559,21 +2518,13 @@ class TestSystemCapacity():
         cap_df.loc["No failure"]["csm_degraded"] = resp["degraded"]
         cap_df.loc["No failure"]["csm_critical"] = resp["critical"]
         cap_df.loc["No failure"]["csm_damaged"] = resp["damaged"]
-        healthy_count = resp["healthy"]
         assert self.csm_obj.verify_degraded_capacity(
-            resp, healthy=None, degraded=0, critical=0, damaged=0,
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
             err_margin=test_cfg["err_margin"],
             total=total_written)
         self.log.info(
             "[End] Fetch degraded capacity on CSM with 0 Node failure")
         self.log.info("-----------------------Step 1 Ends--------------------------")
-        self.log.info("Get the value of K for the given cluster.")
-        resp = self.ha_obj.get_config_value(self.master)
-        if resp[0]:
-            self.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
-        else:
-            self.log.info("Failed to get parity value, will use 1.")
-            self.kvalue = 1
         self.log.info("Get pod name to be deleted")
         deploy_name = self.master.get_deployment_name(self.num_nodes)
         self.log.info("Get deployment names")
@@ -2632,10 +2583,21 @@ class TestSystemCapacity():
                    "[End] Fetch degraded capacity on CSM with 1 Node failure")
                 self.log.info("-----------------------Step 3 Ends--------------------------")
                 self.log.info("-----------------------Step 4 Starts--------------------------")
-                io_bucket_name = "test-39923-pre-reset-{}".format(perf_counter_ns())
-                self.s3_ios(bucket=io_bucket_name, log_prefix="test_39923_ios",
-                            obj_size=test_cfg["test_39923"]["obj_size"],
-                            duration="0h1m")
+                bucket = "test-39923-pre-reset-{}".format(perf_counter_ns())
+                resp = s3bench.s3bench(
+                         self.akey,
+                         self.skey,
+                         bucket=bucket,
+                         end_point=S3_CFG["s3_url"],
+                         num_clients=test_cfg["num_clients"],
+                         num_sample=test_cfg["num_sample"],
+                         obj_name_pref=test_cfg["obj_name_pref"],
+                         obj_size=obj_size,
+                         duration=duration,
+                         log_file_prefix=log_file_prefix,
+                         validate_certs=S3_CFG["validate_certs"])
+                self.log.info(resp)
+                assert_utils.assert_true(os.path.exists(resp[1])
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 4 Ends--------------------------")
                 self.log.info("-----------------------Step 5 Starts--------------------------")
@@ -2681,9 +2643,9 @@ class TestSystemCapacity():
                 self.log.info(
                   "[End] Fetch degraded capacity on CSM with 1 Node failure")
                 self.log.info("-----------------------Step 5 Ends--------------------------")
-                self.log.info("Check ended for k=1, i.e N1 pod failure")
+                self.log("[END] Creating %s failure", self.kvalue - node)
             elif node==0:
-                self.log.info("Check started for k=0, i.e N2 pod failure")
+                self.log("Creating %s failure", self.kvalue - node)
                 self.log.info("[Start] Shutdown the data pod safely by making replicas=0")
                 resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name[1])
                 assert_utils.assert_false(resp[0],
@@ -2692,7 +2654,7 @@ class TestSystemCapacity():
                      deploy_name)
                 self.log.info("-----------------------Step 6 Starts--------------------------")
                 self.log.info(
-                 "[Start] Fetch degraded capacity on Consul with 2 Node failure")
+                 "[Start] Fetch degraded capacity on Consul with {} Node failure".format(self.kvalue - node))
                 resp = self.csm_obj.get_capacity_consul()
                 row_temp1 = "N{} fail beforeIO"
                 index = row_temp1.format(node)
@@ -2705,9 +2667,9 @@ class TestSystemCapacity():
                 resp, healthy=0, degraded=write_bytes_mb, critical=healthy_count, damaged=0, err_margin=10,
                  total=total_written)
                 self.log.info(
-                 "[End] Fetch degraded capacity on Consul with 2 Node failure")
+                 "[End] Fetch degraded capacity on Consul with {} Node failure",format(self.kvalue - node))
                 self.log.info(
-                 "[Start] Fetch degraded capacity on HCTL with 2 Node failure")
+                 "[Start] Fetch degraded capacity on HCTL with {} Node failure".format(self.kvalue - node))
 
                 resp = self.hlth_master.hctl_status_json()["bytecount"]
                 cap_df.loc[index]["hctl_healthy"] = resp["healthy"]
@@ -2718,9 +2680,9 @@ class TestSystemCapacity():
                    resp, healthy=0, degraded=write_bytes_mb, critical=healthy_count, damaged=0, err_margin=10,
                      total=total_written)
                 self.log.info(
-                   "[End] Fetch degraded capacity on HCTL with 2 Node failure")
+                   "[End] Fetch degraded capacity on HCTL with {} Node failure".format(self.kvalue - node))
 
-                self.log.info("[Start] Fetch degraded capacity on CSM with 2 Node failure")
+                self.log.info("[Start] Fetch degraded capacity on CSM with {} Node failure".format(self.kvalue - node))
                 resp = self.csm_obj.get_degraded_capacity()
                 assert resp.status_code == HTTPStatus.OK, "Status code check failed."
                 resp = resp.json()["bytecount"]
@@ -2732,13 +2694,24 @@ class TestSystemCapacity():
                     resp, healthy=0, degraded=write_bytes_mb, critical=healthy_count, damaged=0, err_margin=10,
                         total=total_written)
                 self.log.info(
-                   "[End] Fetch degraded capacity on CSM with 2 Node failure")
+                   "[End] Fetch degraded capacity on CSM with {} Node failure".format(self.kvalue - node))
                 self.log.info("-----------------------Step 6 Ends--------------------------")
                 self.log.info("-----------------------Step 7 Starts--------------------------")
-                io_bucket_name = "test-39923-pre-reset-{}".format(perf_counter_ns())
-                self.s3_ios(bucket=io_bucket_name, log_prefix="test_39923_ios",
-                            obj_size=test_cfg["test_39923"]["obj_size"],
-                            duration="0h1m")
+                bucket = "test-39923-pre-reset-{}".format(perf_counter_ns())
+                resp = s3bench.s3bench(
+                         self.akey,
+                         self.skey,
+                         bucket=bucket,
+                         end_point=S3_CFG["s3_url"],
+                         num_clients=test_cfg["num_clients"],
+                         num_sample=test_cfg["num_sample"],
+                         obj_name_pref=test_cfg["obj_name_pref"],
+                         obj_size=obj_size,
+                         duration=duration,
+                         log_file_prefix=log_file_prefix,
+                         validate_certs=S3_CFG["validate_certs"])
+                self.log.info(resp)
+                assert_utils.assert_true(os.path.exists(resp[1])
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 7 Ends--------------------------")
                 self.log.info("-----------------------Step 8 starts------------------------")
@@ -2844,10 +2817,21 @@ class TestSystemCapacity():
                     "[End] Fetch degraded capacity on CSM after 1 node is up")
                 self.log.info("-----------------------Step 10 Ends--------------------------")
                 self.log.info("-----------------------Step 11 Starts--------------------------")
-                io_bucket_name = "test-39923-pre-reset-{}".format(perf_counter_ns())
-                self.s3_ios(bucket=io_bucket_name, log_prefix="test_39923_ios",
-                            obj_size=test_cfg["test_39923"]["obj_size"],
-                            duration="0h1m")
+                bucket = "test-39923-pre-reset-{}".format(perf_counter_ns())
+                resp = s3bench.s3bench(
+                         self.akey,
+                         self.skey,
+                         bucket=bucket,
+                         end_point=S3_CFG["s3_url"],
+                         num_clients=test_cfg["num_clients"],
+                         num_sample=test_cfg["num_sample"],
+                         obj_name_pref=test_cfg["obj_name_pref"],
+                         obj_size=obj_size,
+                         duration=duration,
+                         log_file_prefix=log_file_prefix,
+                         validate_certs=S3_CFG["validate_certs"])
+                self.log.info(resp)
+                assert_utils.assert_true(os.path.exists(resp[1])
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 10 Ends--------------------------")
                 self.log.info("-----------------------Step 11 Starts--------------------------")
