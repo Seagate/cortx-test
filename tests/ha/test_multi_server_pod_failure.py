@@ -2581,7 +2581,7 @@ class TestMultiServerPodFailure:
     @CTFailOn(error_handler)
     def test_reads_during_kserver_pods_down(self):
         """
-        This test READs while pods are failing till K server pods down - unsafe shutdown
+        This test tests READs while pods are failing till K server pods down - unsafe shutdown
         """
         LOGGER.info("STARTED: Test to verify READs during %s (K) "
                     "server pods down - unsafe shutdown", self.kvalue)
