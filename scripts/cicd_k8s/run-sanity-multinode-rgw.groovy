@@ -151,7 +151,6 @@ deactivate
                         if (len(rlines) > len(lines)) {
                             echo "Regression Test Failed"
                             env.Regression_Failed = true
-                            currentBuild.result = 'UNSTABLE'
                         }
                     }
 				    if ( status != 0 ) {
@@ -197,7 +196,6 @@ deactivate
                         if (len(ilines) > len(rlines)) {
                             echo "IO_PATH_TEST Test Failed"
                             env.Io_Path_Failed = true
-                            currentBuild.result = 'UNSTABLE'
                         }
                     }
 				    if ( status != 0 ) {
@@ -243,7 +241,6 @@ deactivate
                         if (len(flines) > len(ilines)) {
                             echo "FAILURE DOMAIN Test Failed"
                             env.Failure_Domain_Failed = true
-                            currentBuild.result = 'UNSTABLE'
                         }
                     }
 				    if ( status != 0 ) {
