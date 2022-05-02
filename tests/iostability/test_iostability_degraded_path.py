@@ -366,5 +366,5 @@ class TestIOWorkloadDegradedPath:
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Deletion completed.")
         self.test_completed = True
-        self.log.info("STARTED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
+        self.log.info("ENDED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
                       "and perform Object CRUD(40% write,Read,20% delete) operation(degraded mode)")
