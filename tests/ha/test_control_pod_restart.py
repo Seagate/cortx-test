@@ -27,6 +27,7 @@ import os
 import secrets
 import threading
 import time
+from http import HTTPStatus
 from multiprocessing import Queue
 
 import pytest
@@ -118,6 +119,7 @@ class TestControlPodRestart:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
+        self.random_time = int(time.time())
         self.restore_node = False
         self.deploy = False
         self.s3_clean = dict()
@@ -129,6 +131,7 @@ class TestControlPodRestart:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         self.s3acc_name = "{}_{}".format("ha_s3acc", self.random_time)
+        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         if not os.path.exists(self.test_dir_path):
@@ -307,7 +310,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 7: Verified all IAM users %s are persistent across control pod "
@@ -684,5 +687,45 @@ class TestControlPodRestart:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
         LOGGER.info("Step 5: Successfully created bucket, did multipart upload and downloaded "
                     "5GB object")
+
+        LOGGER.info("Step 6: Create new user and perform multipart upload and download for size "
+                    "5GB.")
+        LOGGER.info("Step 6.1: Creating IAM user...")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        self.s3_clean.update(users)
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        bucket_name = f"new_bkt_{self.random_time}"
+        object_name = f"new_obj_{self.random_time}"
+        LOGGER.info("Step 6.1: Successfully created IAM user")
+        LOGGER.info("Step 6.2: Perform multipart upload for size 5GB.")
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=bucket_name,
+                                                         object_name=object_name,
+                                                         file_size=file_size,
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp)
+        result = s3_test_obj.object_info(bucket_name, object_name)
+        obj_size = result[1]["ContentLength"]
+        LOGGER.debug("Uploaded object info for %s is %s", object_name, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        upload_checksum2 = str(resp[2])
+        LOGGER.info("Step 6.2: Successfully performed multipart upload for size 5GB.")
+        LOGGER.info("Step 6.3: Download the uploaded object and verify checksum")
+        resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum2 = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                              compare=False)[0]
+        assert_utils.assert_equal(upload_checksum1, download_checksum1,
+                                  f"Failed to match checksum: {upload_checksum1},"
+                                  f" {download_checksum1}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum2, download_checksum2)
+        LOGGER.info("Step 6.3: Successfully downloaded the uploaded object and verify checksum")
+        LOGGER.info("Step 6: Successfully created new user, created bucket, did multipart upload "
+                    "and downloaded 5GB object")
 
         LOGGER.info("ENDED: Verify multipart upload before and after control pod failover")
