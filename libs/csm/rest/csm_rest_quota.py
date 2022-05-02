@@ -23,7 +23,7 @@ import json
 import math
 from random import SystemRandom
 from string import Template
-
+from http import HTTPStatus
 from commons.constants import Rest as const
 from config import CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
