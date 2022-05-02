@@ -111,6 +111,7 @@ class EnableProcPathStatsCollection:
                             retry += 1
                     if retry >= 2:
                         return False
+        return True, "setup installation completed."
 
     def start_collection(self):
         """trigger command for collection stats"""
@@ -149,11 +150,13 @@ class EnableProcPathStatsCollection:
 
     def get_stat_files_to_local(self):
         """function to collect generated logs and copy them back to local"""
+        file_paths = dict()
         for file_name, worker in self.worker_stat_files_dict.items():
             if not worker.path_exists(file_name):
-                return False, "log files are missing"
+                file_paths[worker] = "files are missing"
             else:
                 file_path = os.path.join(self.log_path, file_name)
                 resp = worker.copy_file_to_local(remote_path=file_name, local_path=file_path)
                 LOGGER.info(resp)
-        return True, "log files are copied to local machine"
+                file_paths[worker] = file_path
+        return True, file_paths
