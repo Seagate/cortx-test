@@ -41,7 +41,6 @@ from libs.s3 import SECRET_KEY
 
 
 class TestIOWorkloadDegradedPath:
-
     """Test Class for IO Stability in Degraded path."""
 
     @classmethod
@@ -101,7 +100,7 @@ class TestIOWorkloadDegradedPath:
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0,"
                       "check degraded status.")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                            self.hlth_master_list[0])
+                                                             self.hlth_master_list[0])
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
@@ -136,47 +135,38 @@ class TestIOWorkloadDegradedPath:
         self.log.info("Step 1: calculating byte count for required percentage")
         resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
                                                      memory_percent=95)
-        if resp[1] != 0:
-            self.log.info("Need to add %s for required percentage", resp[1])
-            self.log.info("Step 2: performing writes till we reach required percentage")
-            s3userinfo = dict()
-            s3userinfo['accesskey'] = ACCESS_KEY
-            s3userinfo['secretkey'] = SECRET_KEY
-            bucket_prefix = "testbkt"
-            ret = DiskFailureRecoveryLib.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                                      user_data_writes=int(resp[1]),
-                                                                      bucket_prefix=bucket_prefix,
-                                                                      client=20)
-            if ret[0]:
-                assert False, "Errors in write operations."
-            else:
-                self.log.debug("write operation data: %s", ret)
-                self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
-                              "check degraded status.")
-                resp = self.ha_obj.delete_single_pod_setting_replica_0(self.master_node_list[0],
-                                                                       self.hlth_master_list[0],
-                                                                       POD_NAME_PREFIX)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deleted pod : %s", resp[1])
-                self.log.info("Step 3: performing read operations.")
-                end_time = datetime.now() + timedelta(days=7)
-                loop = 1
-                while datetime.now() < end_time:
-                    self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-                    read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
-                        s3userinfo=s3userinfo,
-                        workload_info=ret[1],
-                        skipread=False,
-                        validate=True,
-                        skipcleanup=True)
-                    self.log.info("%s interation is done", loop)
-                    loop += 1
-                    if read_ret[0]:
-                        assert False, "Errors in read operations"
-                self.log.info("Step 4: performing delete operations.")
-                del_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
-                    s3userinfo=s3userinfo, workload_info=ret[1], skipread=True, validate=False,
-                    skipcleanup=False)
-                if del_ret[0]:
-                    assert False, "Errors in delete operations"
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Need to add %s for required percentage", resp[1])
+        self.log.info("Step 2: performing writes till we reach required percentage")
+        s3userinfo = dict()
+        s3userinfo['accesskey'] = ACCESS_KEY
+        s3userinfo['secretkey'] = SECRET_KEY
+        bucket_prefix = "testbkt"
+        ret = DiskFailureRecoveryLib.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                  user_data_writes=int(resp[1]),
+                                                                  bucket_prefix=bucket_prefix,
+                                                                  client=20)
+        assert_utils.assert_true(ret[0], ret[1])
+        self.log.debug("write operation data: %s", ret)
+        self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
+                      "check degraded status.")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
+                                                             self.hlth_master_list[0])
+        assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
+        self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
+        self.log.info("Step 3: performing read operations.")
+        end_time = datetime.now() + timedelta(days=7)
+        loop = 1
+        while datetime.now() < end_time:
+            loop += 1
+            self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
+            read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                s3userinfo=s3userinfo,
+                workload_info=ret[1],
+                skipread=False,
+                validate=True,
+                skipcleanup=True)
+            self.log.info("%s interation is done", loop)
+            assert_utils.assert_true(read_ret[0], read_ret[1])
+        # To Do delete operation, will be enabled after support from cortx
         self.log.info("ENDED: Perform disk storage near full once and read in loop for 7 days")
