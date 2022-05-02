@@ -24,12 +24,10 @@ HA test suite for Control Pod Restart
 
 import logging
 import os
-import random
 import secrets
 import threading
 import time
 from multiprocessing import Queue
-from time import perf_counter_ns
 
 import pytest
 
@@ -130,7 +128,7 @@ class TestControlPodRestart:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
-        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
+        self.s3acc_name = "{}_{}".format("ha_s3acc", self.random_time)
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         if not os.path.exists(self.test_dir_path):
@@ -404,7 +402,7 @@ class TestControlPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.tags("TEST-40370")
+    @pytest.mark.tags("TEST-34827")
     @CTFailOn(error_handler)
     def test_rd_wr_del_during_ctrl_pod_failover(self):
         """
@@ -412,7 +410,7 @@ class TestControlPodRestart:
         """
         LOGGER.info("STARTED: Verify READs, WRITEs and DELETEs during control pod failover.")
 
-        event = threading.Event()  # Event to be used to send when data pods going down
+        event = threading.Event()  # Event to be used to send when control pod failing over
         wr_bucket = HA_CFG["s3_bucket_data"]["no_bck_background_deletes"]
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes on %s buckets "
                     "for parallel DELETEs.", wr_bucket)
@@ -425,7 +423,7 @@ class TestControlPodRestart:
         uids = list(users.keys())
         del_access_key = list(users.values())[0]['accesskey']
         del_secret_key = list(users.values())[0]['secretkey']
-        test_prefix_del = 'test-delete-40370'
+        test_prefix_del = 'test-delete-34827'
         s3_test_obj = S3TestLib(access_key=del_access_key, secret_key=del_secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
@@ -444,7 +442,7 @@ class TestControlPodRestart:
                     "buckets for parallel DELETEs.", wr_bucket)
 
         LOGGER.info("Step 2: Perform WRITEs with variable object sizes for parallel READs")
-        test_prefix_read = 'test-read-40370'
+        test_prefix_read = 'test-read-34827'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[1],
                                                     log_prefix=test_prefix_read, skipread=True,
                                                     skipcleanup=True, nclients=50, nsamples=50)
@@ -465,7 +463,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 3: Successfully started DELETEs in background for %s buckets", del_bucket)
 
         LOGGER.info("Step 4: Perform WRITEs with variable object sizes in background")
-        test_prefix_write = 'test-write-40370'
+        test_prefix_write = 'test-write-34827'
         args = {'s3userinfo': list(users.values())[1], 'log_prefix': test_prefix_write,
                 'nclients': 5, 'nsamples': 50, 'skipread': True, 'skipcleanup': True,
                 'output': wr_output}
@@ -520,6 +518,8 @@ class TestControlPodRestart:
         thread_wr.join()
         thread_rd.join()
         thread_del.join()
+        LOGGER.info("Step 8: Verify status for In-flight READs/WRITEs/DELETEs during control "
+                    "pod failover to %s", failover_node)
         LOGGER.info("Step 8.1: Verify status for In-flight DELETEs during control pod "
                     "failover to %s", failover_node)
         del_resp = tuple()
@@ -544,9 +544,10 @@ class TestControlPodRestart:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in wr_resp["pass_res"])
         fail_logs = list(x[1] for x in wr_resp["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        LOGGER.debug("Logs during control pod failover: %s\nLogs after control pod failover: %s",
+                     pass_logs, fail_logs)
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8.2: Verified status for In-flight WRITEs during control pod %s "
                     "failover", failover_node)
@@ -558,9 +559,10 @@ class TestControlPodRestart:
             rd_resp = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in rd_resp["pass_res"])
         fail_logs = list(x[1] for x in rd_resp["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        LOGGER.debug("Logs during control pod failover: %s\nLogs after control pod failover: %s",
+                     pass_logs, fail_logs)
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8.3: Verified status for In-flight READs/Verify DI during control pod"
                     " failover to %s", failover_node)
@@ -655,7 +657,7 @@ class TestControlPodRestart:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
+        LOGGER.info("Step 5: Create new bucket and do multipart upload and download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
         object_name = "mp-obj-{}".format(self.random_time)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -680,7 +682,7 @@ class TestControlPodRestart:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 5: Successfully created bucket and did multipart upload and download "
-                    "with 5GB object")
+        LOGGER.info("Step 5: Successfully created bucket, did multipart upload and downloaded "
+                    "5GB object")
 
         LOGGER.info("ENDED: Verify multipart upload before and after control pod failover")
