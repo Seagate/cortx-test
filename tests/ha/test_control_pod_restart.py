@@ -23,6 +23,7 @@ HA test suite for Control Pod Restart
 """
 
 import logging
+import os
 import random
 import secrets
 import threading
@@ -37,15 +38,17 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
+from config.s3 import S3_CFG
+from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
@@ -266,7 +269,7 @@ class TestControlPodRestart:
             "pod_eviction_time"])
         time.sleep(HA_CFG["common_params"]["pod_eviction_time"])
         data_pod_list.remove(data_pod_name)
-        running_pod = random.sample(data_pod_list, 1)[0]
+        running_pod = self.system_random.sample(data_pod_list, 1)[0]
         server_list.remove(serverpod_name)
 
         LOGGER.info("Step 3: Check cluster status is in degraded state.")
@@ -452,7 +455,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 3: Start Continuous DELETEs in background on random %s buckets",
                     del_bucket)
         bucket_list = list(s3_data.keys())
-        get_random_buck = random.sample(bucket_list, del_bucket)
+        get_random_buck = self.system_random.sample(bucket_list, del_bucket)
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': del_output}
         thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
@@ -487,8 +490,8 @@ class TestControlPodRestart:
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
 
-        failover_node = random.choice([ele for ele in self.host_worker_list if ele !=
-                                       self.control_node])
+        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
+                                                   self.control_node])
         LOGGER.debug("Fail over node is: %s", failover_node)
 
         event.set()
@@ -612,8 +615,8 @@ class TestControlPodRestart:
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
 
-        failover_node = random.choice([ele for ele in self.host_worker_list if ele !=
-                                       self.control_node])
+        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
+                                                   self.control_node])
         LOGGER.debug("Fail over node is: %s", failover_node)
 
         LOGGER.info("Step 2: Failover control pod %s to node %s and check cluster status",
