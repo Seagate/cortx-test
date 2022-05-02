@@ -273,7 +273,7 @@ class DiskFailureRecoveryLib:
 
     @staticmethod
     def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str,
-                                     client: int) -> tuple:
+                                     client: int = 10) -> tuple:
         """
         Perform write operation till the memory is filled to given percentage
         :param s3userinfo: S3user dictionary with access/secret key
