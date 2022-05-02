@@ -292,6 +292,7 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
+    @staticmethod
     def search_list_of_dict(self, search_key:str, search_val:str, search_in: list):
         """
         Search for {<search_key>:<search_val>} in [{<search_key>:<search_val>,..}, {}, {}...]
