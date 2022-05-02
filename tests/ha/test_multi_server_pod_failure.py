@@ -1928,6 +1928,8 @@ class TestMultiServerPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
+        LOGGER.info("Waiting for %s seconds for multipart upload of 5GB object in"
+                    " background ", HA_CFG["common_params"]["60sec_delay"])
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
         LOGGER.info("Step 2: Shutdown %s (K) server pods one by one while continuous multipart "
@@ -1977,9 +1979,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 4: Services of server pods are in offline state")
+        LOGGER.info("Step 4: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -1989,7 +1991,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 5: Services on remaining pods are in online state")
         event.clear()
 
-        LOGGER.info("Step 6: Checking response from background process")
+        LOGGER.info("Step 6: Checking response from background multipart upload process")
         thread.join()
         responses = tuple()
         while len(responses) < 4:
@@ -2008,8 +2010,8 @@ class TestMultiServerPodFailure:
         if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             LOGGER.info("All the parts are uploaded successfully")
         elif failed_parts:
-            assert_utils.assert_true(False, "Failed to upload parts when cluster has some "
-                                            f"failures.Failed parts: {failed_parts}")
+            assert_utils.assert_true(False, "Failed to upload parts when some server pods are "
+                                            f"down in cluster .Failed parts: {failed_parts}")
         elif exp_failed_parts:
             LOGGER.info("Step 6.1: Upload expected failed remaining parts")
             resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
@@ -2065,15 +2067,6 @@ class TestMultiServerPodFailure:
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 9: Successfully downloaded the object and verified the checksum")
-
-        LOGGER.info("Step 10: Perform WRITEs-READs-Verify-DELETEs with variable object sizes.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40585-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0], nsamples=2,
-                                                    log_prefix=self.test_prefix, nclients=2)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 10: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("COMPLETED: Test to verify multipart upload during server pods failure "
                     "till K pods by delete deployment")
@@ -2136,11 +2129,11 @@ class TestMultiServerPodFailure:
                                   kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Step 6: Successfully started background process for copy object")
+        LOGGER.info("Step 2: Successfully started background process for copy object")
         # While loop to sync this operation with background thread to achieve expected scenario
         LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
         bkt_list = list()
-        timeout = time.time() + 60 * 3
+        timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
         while len(bkt_list) < bkt_cnt:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
             bkt_list = s3_test_obj.bucket_list()[1]
@@ -2158,13 +2151,13 @@ class TestMultiServerPodFailure:
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         LOGGER.info("Combine data and server pods names")
         server_data_pod_list = pod_list + data_pod_list
+        event.set()
         for count, pod_name in enumerate(self.pod_name_list):
             count += 1
             pod_data = list()
             pod_data.append(
                 self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
             LOGGER.info("Deleting %s server pod %s", count, pod_name)
-            event.set()
             resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_false(resp[0], f"Failed to delete {count} server pod {pod_name}"
@@ -2176,7 +2169,6 @@ class TestMultiServerPodFailure:
             self.pod_dict[pod_name] = pod_data
             LOGGER.info("Deleted %s server pod %s by deleting deployment "
                         "(unsafe)", count, pod_name)
-            event.clear()
         LOGGER.info("Step 3: Successfully deleted %s server pods", self.kvalue)
 
         LOGGER.info("Step 4: Check cluster status")
@@ -2195,9 +2187,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 5: Services of server pods are in offline state")
+        LOGGER.info("Step 5: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2205,6 +2197,7 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of remaining pods are in online state")
+        event.clear()
 
         LOGGER.info("Step 7: Checking responses from background process")
         thread.join()
@@ -2236,6 +2229,7 @@ class TestMultiServerPodFailure:
                                                       bkt_op=False, put_etag=put_etag)
             assert_utils.assert_true(resp[0], f"copy object failed buckets are: {resp[1]}")
             put_etag = resp[1]
+        LOGGER.info("Step 7: Checked responses from background process")
 
         LOGGER.info("Step 8: Download the uploaded objects & verify etags")
         for key, val in bkt_obj_dict.items():
@@ -2260,10 +2254,10 @@ class TestMultiServerPodFailure:
                                                   bkt_op=False)
         assert_utils.assert_true(resp[0], f"Already created/uploaded copy "
                                           f"object failed buckets are: {resp[1]}")
-        LOGGER.info("Step 8: Performed copy of %s from already created/uploaded %s to %s and "
+        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
                     "verified copy object etags", self.object_name, self.bucket_name, bucketnew)
 
-        LOGGER.info("Step 9: Download the uploaded %s on %s & "
+        LOGGER.info("Step 10: Download the uploaded %s on %s & "
                     "verify etags.", objectnew, bucketnew)
         resp = s3_test_obj.get_object(bucket=bucketnew, key=objectnew)
         LOGGER.info("Get object response: %s", resp)
@@ -2271,7 +2265,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG "
                                                       f"for object {objectnew} of bucket "
                                                       f"{bucketnew}.")
-        LOGGER.info("Step 9: Downloaded the uploaded %s on %s & verified etags.",
+        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.",
                     objectnew, bucketnew)
 
         LOGGER.info("COMPLETED: Verify copy object during server pods failure "
@@ -2370,7 +2364,6 @@ class TestMultiServerPodFailure:
                         " (unsafe)", count, pod_name)
         LOGGER.info("Step 3: Successfully shutdown %s (K) server pods one by one while "
                     "continuous DELETEs in background", self.kvalue)
-        event.clear()
 
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -2388,9 +2381,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 5: Services of server pods are in offline state")
+        LOGGER.info("Step 5: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2398,6 +2391,7 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of remaining pods are in online state")
+        event.clear()
 
         LOGGER.info("Step 7: Verify status for In-flight DELETEs while %s (K) server pods were"
                     "going down", self.kvalue)
