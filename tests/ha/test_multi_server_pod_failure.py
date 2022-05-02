@@ -1141,8 +1141,8 @@ class TestMultiServerPodFailure:
 
         LOGGER.info("Step 7: Create new bucket again and do multipart upload. "
                     "Download the object & verify checksum.")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        bucket_name = f"mp-bkt-{self.random_time}"
+        object_name = f"mp-obj-{self.random_time}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -1380,6 +1380,7 @@ class TestMultiServerPodFailure:
 
     # pylint: disable=C0321
     # pylint: disable=too-many-locals
+    # pylint: disable=unused-argument
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40577")
@@ -1595,6 +1596,7 @@ class TestMultiServerPodFailure:
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
+    # pylint: disable=unused-argument
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40570")
