@@ -1789,13 +1789,13 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Multipart upload and then download 5GB object")
+        LOGGER.info("Step 7: Do Multipart upload and then download 5GB object")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Creating new bucket for new upload")
-            bucket_name = "mp-bkt-{}".format(self.random_time)
+            bucket_name = "mp-bkt-{}".format(perf_counter_ns())
         else:
             bucket_name = self.bucket_name
-        object_name = "mp-obj-{}".format(self.random_time)
+        object_name = "mp-obj-{}".format(perf_counter_ns())
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -1919,13 +1919,13 @@ class TestPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 7: Multipart upload and then download 5GB object")
+        LOGGER.info("Step 7: Do Multipart upload and then download 5GB object")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Creating new bucket for new upload")
-            bucket_name = "mp-bkt-{}".format(self.random_time)
+            bucket_name = "mp-bkt-{}".format(perf_counter_ns())
         else:
             bucket_name = self.bucket_name
-        object_name = "mp-obj-{}".format(self.random_time)
+        object_name = "mp-obj-{}".format(perf_counter_ns())
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -2565,8 +2565,9 @@ class TestPodFailure:
             object3 = f"ha-obj3-{int((perf_counter_ns()))}"
             bkt_obj_dict.clear()
             bkt_obj_dict[bucket3] = object3
-            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                        "copy object etags", self.object_name, self.bucket_name, bucket3)
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
+                        "and verify copy object etags",
+                        self.object_name, self.bucket_name, bucket3)
             resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                       bucket_name=self.bucket_name,
                                                       object_name=self.object_name,
@@ -2580,9 +2581,11 @@ class TestPodFailure:
             resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                          f"for object {object3} of bucket {bucket3}.")
-            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {object3} "
+                                                          f"of bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
+                        object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
                     "(make replicas=0) ")
@@ -2686,8 +2689,9 @@ class TestPodFailure:
             object3 = f"ha-obj3-{int((perf_counter_ns()))}"
             bkt_obj_dict.clear()
             bkt_obj_dict[bucket3] = object3
-            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s and verify "
-                        "copy object etags", self.object_name, self.bucket_name, bucket3)
+            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
+                        "and verify copy object etags",
+                        self.object_name, self.bucket_name, bucket3)
             resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                       bucket_name=self.bucket_name,
                                                       object_name=self.object_name,

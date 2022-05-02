@@ -491,13 +491,8 @@ class HAK8s:
                                             secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
 
         LOGGER.info("Checking if bucket %s already exists", bucket_name)
-        bkt_flag = True
         resp = s3_test_obj.bucket_list()
-        for bucket in resp[1]:
-            if bucket == bucket_name:
-                LOGGER.info("Bucket %s already exists.", bucket_name)
-                bkt_flag = False
-                break
+        bkt_flag = False if bucket_name in resp[1] else True
         if bkt_flag:
             LOGGER.info("Creating a bucket with name : %s", bucket_name)
             res = s3_test_obj.create_bucket(bucket_name)
