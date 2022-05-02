@@ -269,9 +269,10 @@ class Health(Host):
                 pod_name = node["name"]
                 services = node["svcs"]
                 for service in services:
-                    if service["status"] != "started":
-                        LOG.error("%s service not started on pod %s", service["name"], pod_name)
-                        return False
+                    if service["name"] != const.MOTR_CLIENT:
+                        if service["status"] != "started":
+                            LOG.error("%s service not started on pod %s", service["name"], pod_name)
+                            return False
                 if not services:
                     LOG.critical("No service found on pod %s", pod_name)
                     return False
