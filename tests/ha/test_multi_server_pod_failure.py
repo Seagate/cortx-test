@@ -370,7 +370,7 @@ class TestMultiServerPodFailure:
                                                                hostname=hostname)
             assert_utils.assert_true(resp[0], resp[1])
             server_data_pod_list.remove(pod_name)
-            LOGGER.info("Step 5: Services of server pod %s are in offline state", pod_name)
+            LOGGER.info("Step 5: Services of deleted server pod %s are in offline state", pod_name)
 
             LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
             resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2515,7 +2515,6 @@ class TestMultiServerPodFailure:
                         "(unsafe)", count, pod_name)
         LOGGER.info("Step 2: Successfully shutdown %s (K) server pods one by one during WRITEs in "
                     "background", self.kvalue)
-        event.clear()
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -2533,9 +2532,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 4: Services of server pods are in offline state")
+        LOGGER.info("Step 4: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2543,15 +2542,20 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
+        event.clear()
 
-        LOGGER.info("Step 6: Verify status for In-flight WRITEs while %s (K) server pods going "
-                    "down should be failed/error.", self.kvalue)
+        LOGGER.info("Joining background thread. Waiting for %s seconds to "
+                    "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        LOGGER.info("Step 6: Verify status for In-flight WRITEs while %s (K) server pods going "
+                    "down should be failed/error.", self.kvalue)
         pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
+        LOGGER.debug("Failed logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
@@ -2635,7 +2639,6 @@ class TestMultiServerPodFailure:
                         "(unsafe)", count, pod_name)
         LOGGER.info("Step 3: Successfully shutdown %s (K) server pods one by one during "
                     "READs/VerifyDI on written data in background", self.kvalue)
-        event.clear()
 
         LOGGER.info("Step 4: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -2653,9 +2656,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 5: Services of server pods are in offline state")
+        LOGGER.info("Step 5: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 6: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2663,15 +2666,20 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 6: Services of remaining pods are in online state")
+        event.clear()
 
-        LOGGER.info("Step 7: Verify status for In-flight READs/Verify DI while %s (K) "
-                    "server pods going down should be failed/error.", self.kvalue)
+        LOGGER.info("Joining background thread. Waiting for %s seconds to "
+                    "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        LOGGER.info("Step 7: Verify status for In-flight READs/Verify DI while %s (K) "
+                    "server pods going down should be failed/error.", self.kvalue)
         pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
@@ -2751,7 +2759,6 @@ class TestMultiServerPodFailure:
                         "(unsafe)", count, pod_name)
         LOGGER.info("Step 2: Shutdown %s (K) server pods one by one while continuous IOs in "
                     "background", self.kvalue)
-        event.clear()
 
         LOGGER.info("Step 3: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -2769,9 +2776,9 @@ class TestMultiServerPodFailure:
             LOGGER.debug("Services status on %s : %s", pod_name, resp)
             if not resp[0]:
                 counter += 1
-            pod_list.remove(pod_name)
+            server_data_pod_list.remove(pod_name)
         assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
-        LOGGER.info("Step 4: Services of server pods are in offline state")
+        LOGGER.info("Step 4: Services of deleted server pods are in offline state")
 
         LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
@@ -2779,17 +2786,20 @@ class TestMultiServerPodFailure:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of remaining pods are in online state")
+        event.clear()
 
         LOGGER.info("Joining background thread. Waiting for %s seconds to "
                     "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight IOs while %s (K) server pods going "
                     "down should be failed/error.", self.kvalue)
         pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]),
                                   f"Expected all pass, But Logs which contain failures: {resp[1]}")
