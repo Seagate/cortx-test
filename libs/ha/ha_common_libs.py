@@ -28,6 +28,7 @@ from multiprocessing import Process
 from commons import commands as common_cmd
 from commons import errorcodes as err
 from commons import pswdmanager
+from commons import constants as common_const
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
@@ -510,13 +511,13 @@ class HALibs:
             # For stopped node, service should be in stopped state
             if node_data['name'] == checknode:
                 for svcs in node_data['svcs']:
-                    if svcs['name'] != "m0_client" and svcs['status'] == 'started':
+                    if svcs['name'] != common_const.MOTR_CLIENT and svcs['status'] == 'started':
                         temp_svc['service'] = svcs['name']
                         temp_svc['status'] = svcs['status']
                         hctl_srvs[node_data['name']].append(temp_svc)
             else:
                 for svcs in node_data['svcs']:
-                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                    if svcs['name'] != common_const.MOTR_CLIENT and svcs['status'] != 'started':
                         temp_svc['service'] = svcs['name']
                         temp_svc['status'] = svcs['status']
                         hctl_srvs[node_data['name']].append(temp_svc)

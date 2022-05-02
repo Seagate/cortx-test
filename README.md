@@ -557,6 +557,8 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
                         to S3 endpoint needs to be validated or not.
    -s USE_SSL,  --use_ssl
                      Option whether HTTPS/SSL connection for S3 endpoint should be used or not.
+   -csm CSM_CHECKS,  --csm_checks
+                     Execute tests with error code & msg check enabled.
    -hc HEALTH_CHECK --health_check
                      Decide whether to do health check (on server) or not with tests execution.
   ```

@@ -538,9 +538,9 @@ class TestS3user():
 
         self.log.debug("Verifying the response returned %s", response)
         assert response.status_code, const.FORBIDDEN
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         self.log.debug("Verified that expected status code %s and expected response "
@@ -647,11 +647,11 @@ class TestS3user():
             user_data.update({"secret_key": secret_key})
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             if CSM_REST_CFG["msg_check"] == "enable":
+                err_msg = test_cfg["response_msg"]
+                err = resp.json()
+                self.log.info("Verifying error code...")
+                assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
                 self.log.info("Verifying message id...")
                 assert err["message_id"] == err_msg["message_id"], "Message id check failed."
                 self.log.info("Verifying message...")
@@ -694,11 +694,11 @@ class TestS3user():
             user_data.update({"access_key": access_key})
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             if CSM_REST_CFG["msg_check"] == "enable":
+                err_msg = test_cfg["response_msg"]
+                err = resp.json()
+                self.log.info("Verifying error code...")
+                assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
                 self.log.info("Verifying message id...")
                 assert err["message_id"] == err_msg["message_id"], "Message id check failed."
                 self.log.info("Verifying message...")
@@ -721,11 +721,11 @@ class TestS3user():
         result, resp = self.s3user.create_verify_s3_custom(
             "missing_access", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")
@@ -747,11 +747,11 @@ class TestS3user():
         result, resp = self.s3user.create_verify_s3_custom(
             "missing_secret", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")
@@ -773,11 +773,11 @@ class TestS3user():
         result, resp = self.s3user.create_verify_s3_custom(
             "duplicate_user", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")
@@ -800,11 +800,11 @@ class TestS3user():
         result, resp = self.s3user.create_verify_s3_custom(
             "duplicate_email", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")
@@ -827,11 +827,11 @@ class TestS3user():
         result, resp = self.s3user.create_verify_s3_custom(
             "duplicate_access", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")
@@ -933,11 +933,11 @@ class TestS3user():
         assert len(s3_users) == const.MAX_S3_USERS, err_msg
         result, resp = self.s3user.\
             create_verify_s3_custom("valid", expected_response=HTTPStatus.FORBIDDEN.value)
-        err_msg = test_cfg["response_msg"]
-        err = resp.json()
-        self.log.info("Verifying error code...")
-        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
             self.log.info("Verifying message...")

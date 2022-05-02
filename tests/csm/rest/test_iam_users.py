@@ -2800,8 +2800,8 @@ class TestIamUserRGW():
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         add_resp = self.csm_obj.add_key_to_iam_user(uid=None, access_key=valid_key)
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
-        assert_utils.assert_true(add_resp.json()["error_code"] == "4099", "Response failed")
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(add_resp.json()["error_code"] == "4099", "Response failed")
             assert_utils.assert_true(add_resp.json()["message"] ==
                                      self.rest_resp_conf[4099]['empty key'][2]
                                      , "Response failed")
@@ -3032,8 +3032,8 @@ class TestIamUserRGW():
         payload.update({"display_name":(uid+"1")})
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
-        assert response.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == resp_error_code, "Error code check failed."
             assert response.json()["message"] == msg , "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("STEP 4: Perform get iam users to verify new display name")
@@ -4026,8 +4026,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
@@ -4042,8 +4042,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)

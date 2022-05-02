@@ -33,7 +33,7 @@ HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 HA_CONSUL_STR = 'consul kv get ' \
-                '-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 ' \
+                '-http-addr=consul-server:8500 ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
@@ -529,7 +529,9 @@ GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
                       "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
                       "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
-
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
