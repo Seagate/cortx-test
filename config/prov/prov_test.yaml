@@ -123,12 +123,15 @@ k8s_cortx_deploy:
     memory: 16
   clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
+  mnt_path: "/mnt/fs-local-volume/local-path-provisioner/"
   3rd_party_data_dir: "/var/data/3rd-party/"
   3rd_party_dir: "/etc/3rd-party/"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
+  sleep_time: 60
   namespace: "cortx"
+  max_size_namespace: 63
   https_protocol: "https://{}"
   https_port: 30443
   http_port: 30080

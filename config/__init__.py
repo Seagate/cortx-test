@@ -55,6 +55,7 @@ pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
 pytest_args = split_args(pytest_args)  # sanitize
+CSM_CHECKS = False
 if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_args:
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
@@ -82,15 +83,24 @@ elif proc_name in ["testrunner.py", "testrunner"]:
 else:
     target = None
 if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
-    _use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else None
-    use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1] if _use_ssl else True
+    _use_ssl = ('-s' if '-s' in pytest_args else (
+         '--use_ssl' if '--use_ssl' in pytest_args else None))
+    use_ssl = pytest_args[
+        pytest_args.index(_use_ssl) + 1] if _use_ssl else True
     os.environ["USE_SSL"] = str(use_ssl)
 
-    _validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else None
+    _csm_checks = ('-csm' if '-csm' in pytest_args else (
+        '--csm_checks' if '--csm_checks' in pytest_args else None))
+    CSM_CHECKS = pytest_args[
+        pytest_args.index(_csm_checks) + 1] if _csm_checks else False
+    data = {'True': True, 'False': False , True : True , False : False }
+    CSM_CHECKS = data.get(CSM_CHECKS)
+
+    _validate_certs = ('-c' if '-c' in pytest_args else (
+        '----validate_certs' if '----validate_certs' in pytest_args else None))
     validate_certs = pytest_args[
         pytest_args.index(_validate_certs) + 1] if _validate_certs else True
     os.environ["VALIDATE_CERTS"] = str(validate_certs)
-
 
 def build_s3_endpoints() -> dict:
     """This function will create s3/iam url based on certificates availability and ssl usages."""
@@ -131,7 +141,11 @@ if PROD_FAMILY_LC == CMN_CFG["product_family"]:
 else:
     CSM_REST_CFG = configmanager.get_config_wrapper(
         fpath=CSM_CONFIG, config_key="Restcall", target=target, target_key="csm")
+
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
+if CSM_CHECKS:
+    CSM_REST_CFG["msg_check"] = "enable"
+    CSM_CFG["Restcall"]["msg_check"] = "enable"
 RAS_VAL = configmanager.get_config_wrapper(
     fpath=RAS_CONFIG_PATH, target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)

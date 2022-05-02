@@ -1558,15 +1558,14 @@ class HAK8s:
         return True, modified_yaml, yaml_path
 
     @staticmethod
-    def failover_pod(pod_obj, pod_list, failover_node):
+    def change_pod_node(pod_obj, pod_node):
         """
-        Function to failover given pod
+        Function to change the node of given pod list (NodeSelector)
         :param pod_obj: Object of the pod
-        :param pod_list: List of the pods to be failed over
-        :param failover_node: Node to which pod is to be failed over
+        :param pod_node: Dict of the pod: failover_node (Node to which pod is to be failed over)
         :return: bool, str (status, response)
         """
-        for pod in pod_list:
+        for pod, failover_node in pod_node.items():
             pod_prefix = '-'.join(pod.split("-")[:2])
             cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
             LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
@@ -1617,7 +1616,7 @@ class HAK8s:
                     LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
                     time.sleep(HA_CFG["common_params"]["30sec_delay"])
             if validate_set:
-                LOGGER.inf("Validating nodes/pods status is SET as expected.")
+                LOGGER.info("Validating nodes/pods status is SET as expected.")
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
@@ -1701,3 +1700,49 @@ class HAK8s:
         if status != exp_sts:
             return False
         return True
+
+    @staticmethod
+    def get_rc_node(node_obj):
+        """
+        To get the primary cortx node name (RC node)
+        :param node_obj: object for master node
+        :return: Primary(RC) node name in the cluster
+        :rtype: str
+        """
+        data_pod = node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
+        cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
+        rc_node = node_obj.send_k8s_cmd(operation="exec", pod=data_pod,
+                                        namespace=common_const.NAMESPACE,
+                                        command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                        f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}", decode=True)
+        return rc_node
+
+    def failover_pod(self, pod_obj, pod_yaml, failover_node):
+        """
+        Helper function to delete, recreate and failover pod
+        :param pod_obj: Object of the pod
+        :param pod_yaml: Dict containing pod name and yaml file to be used for recreation
+        :param failover_node: Node FQDN to which pod is to be failed over
+        :return: bool, tuple
+        """
+        for pod, yaml_f in pod_yaml.items():
+            LOGGER.info("Deleting deployment for pod %s", pod)
+            resp = pod_obj.delete_deployment(pod_name=pod)
+            if resp[0]:
+                return False, f"Failed to delete pod {pod} by deleting deployment"
+            deploy = resp[2]
+            LOGGER.info("Recreating deployment for pod %s using yaml file %s", pod, yaml_f)
+            resp = pod_obj.recover_deployment_k8s(yaml_f, deploy)
+            if not resp[0]:
+                return resp
+            new_pod = pod_obj.get_recent_pod_name(deployment_name=deploy)
+            LOGGER.info("Changing host node of pod %s to %s", pod, failover_node)
+            resp = self.change_pod_node(pod_obj, pod_node={new_pod: failover_node})
+            if not resp[0]:
+                return resp
+            LOGGER.info("Check cluster status")
+            resp = self.poll_cluster_status(pod_obj)
+            if not resp[0]:
+                return resp
+
+        return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
