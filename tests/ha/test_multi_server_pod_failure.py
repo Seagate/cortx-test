@@ -1460,6 +1460,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 4: Successfully started WRITEs with variable sizes objects"
                     " in background")
 
+        LOGGER.info("Waiting for %s seconds to perform some WRITEs",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
@@ -1473,6 +1475,8 @@ class TestMultiServerPodFailure:
         thread_rd.start()
         LOGGER.info("Step 5: Successfully started READs and verified DI on the written data in "
                     "background")
+        LOGGER.info("Waiting for %s seconds to perform  READs",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 6: Shutdown %s (K) server pods one by one while continuous IOs in "
@@ -1566,10 +1570,10 @@ class TestMultiServerPodFailure:
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
         LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain pass: {resp[1]}")
+                                 f"WRITEs logs which contain pass: {resp[1]}")
         LOGGER.info("Step 10.2: Verified status for In-flight WRITEs while %s (K) server pods "
                     "going down.", self.kvalue)
 
@@ -1583,10 +1587,10 @@ class TestMultiServerPodFailure:
         fail_logs = list(x[1] for x in responses_rd["fail_res"])
         LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), f"Reads logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain pass: {resp[1]}")
+                                 f"Reads logs which contain pass: {resp[1]}")
         LOGGER.info("Step 10.3: Verified status for In-flight READs/Verify DI while %s (K)"
                     " server pods going down.", self.kvalue)
         LOGGER.info("Step 10: Verified status for In-flight READs/WRITEs/DELETEs while %s (K)"
@@ -1623,6 +1627,8 @@ class TestMultiServerPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 1: Successfully started WRITEs-READs-verify in background")
+        LOGGER.info("Waiting for %s seconds to perform some READ/WRITEs",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown the %s (K) server pods by making "
@@ -1757,6 +1763,8 @@ class TestMultiServerPodFailure:
         thread.start()
 
         LOGGER.info("Step 2: Successfully started chuck upload in background")
+        LOGGER.info("Waiting for %s seconds to start chunk upload",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 3: Shutdown the %s (K) server pods by deleting deployment"
