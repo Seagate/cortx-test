@@ -29,11 +29,11 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.csm.rest.csm_rest_system_health import SystemHealth
-
+from libs.csm.rest.csm_rest_quota import GetSetQuota
 
 class RESTInterface(AccountCapacity, SystemAlerts, RestAuditLogs, RestS3Bucket, SystemCapacity,
-                    RestCsmCluster, RestCsmUser, RestIamUser, RestS3user, SystemStats, SystemHealth
-                    ):
+                    RestCsmCluster, RestCsmUser, RestIamUser, RestS3user, SystemStats, SystemHealth,
+                    GetSetQuota):
     """
     Derived class all the rest api class in the lib dir. These has all the functionality available
     from csm libs.
