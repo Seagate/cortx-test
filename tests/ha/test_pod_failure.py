@@ -1207,9 +1207,11 @@ class TestPodFailure:
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix)
         else:
-            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object sizes on degraded cluster")
+            LOGGER.info("Step 6: Perform WRITEs-READs-Verify with variable object sizes on "
+                        "degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix, skipcleanup=True)
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
@@ -2609,8 +2611,10 @@ class TestPodFailure:
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                          f"for object {object3} of bucket {bucket3}.")
-            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+                                                          f"for object {object3} of "
+                                                          f"bucket {bucket3}.")
+            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
+                        object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - "
                     "pod unsafe shutdown (by deleting deployment) ")
@@ -2695,9 +2699,11 @@ class TestPodFailure:
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix)
         else:
-            LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes on degraded cluster")
+            LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes on "
+                        "degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix, skipcleanup=True)
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
