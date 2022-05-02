@@ -19,6 +19,8 @@
 """Test Suite for IO stability Happy Path workloads."""
 import logging
 import os
+from datetime import datetime
+from datetime import timedelta
 
 import pytest
 
@@ -30,9 +32,12 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils, support_bundle_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
+from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.iostability.iostability_lib import IOStabilityLib
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 
 
 class TestIOWorkloadDegradedPath:
@@ -59,6 +64,7 @@ class TestIOWorkloadDegradedPath:
             else:
                 cls.worker_node_list.append(node_obj)
         cls.ha_obj = HAK8s()
+        cls.dfr = DiskFailureRecoveryLib()
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/iostability_test.yaml")
         cls.setup_type = CMN_CFG["setup_type"]
         cls.s3t_obj = S3TestLib()
@@ -116,3 +122,61 @@ class TestIOWorkloadDegradedPath:
         self.test_completed = True
         self.log.info("ENDED: Test for Object CRUD operations in degraded mode in loop using "
                       "S3bench for 7 days")
+
+    @pytest.mark.lc
+    @pytest.mark.io_stability
+    @pytest.mark.tags("TEST-40173")
+    def test_disk_near_full_read_in_degraded_s3bench(self):
+        """
+        Perform disk storage near full once in healthy cluster and read in degraded cluster in loop
+        for 7 days.
+        """
+        self.log.info("STARTED: Perform disk storage near full once in healthy cluster and "
+                      "read in degraded cluster in loop for 7 days.")
+        self.log.info("Step 1: calculating byte count for required percentage")
+        resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
+                                                     memory_percent=95)
+        if resp[1] != 0:
+            self.log.info("Need to add %s for required percentage", resp[1])
+            self.log.info("Step 2: performing writes till we reach required percentage")
+            s3userinfo = dict()
+            s3userinfo['accesskey'] = ACCESS_KEY
+            s3userinfo['secretkey'] = SECRET_KEY
+            bucket_prefix = "testbkt"
+            ret = DiskFailureRecoveryLib.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                      user_data_writes=int(resp[1]),
+                                                                      bucket_prefix=bucket_prefix,
+                                                                      client=20)
+            if ret[0]:
+                assert False, "Errors in write operations."
+            else:
+                self.log.debug("write operation data: %s", ret)
+                self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
+                              "check degraded status.")
+                resp = self.ha_obj.delete_single_pod_setting_replica_0(self.master_node_list[0],
+                                                                       self.hlth_master_list[0],
+                                                                       POD_NAME_PREFIX)
+                assert_utils.assert_true(resp[0], resp[1])
+                self.log.info("Deleted pod : %s", resp[1])
+                self.log.info("Step 3: performing read operations.")
+                end_time = datetime.now() + timedelta(days=7)
+                loop = 1
+                while datetime.now() < end_time:
+                    self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
+                    read_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                        s3userinfo=s3userinfo,
+                        workload_info=ret[1],
+                        skipread=False,
+                        validate=True,
+                        skipcleanup=True)
+                    self.log.info("%s interation is done", loop)
+                    loop += 1
+                    if read_ret[0]:
+                        assert False, "Errors in read operations"
+                self.log.info("Step 4: performing delete operations.")
+                del_ret = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                    s3userinfo=s3userinfo, workload_info=ret[1], skipread=True, validate=False,
+                    skipcleanup=False)
+                if del_ret[0]:
+                    assert False, "Errors in delete operations"
+        self.log.info("ENDED: Perform disk storage near full once and read in loop for 7 days")
