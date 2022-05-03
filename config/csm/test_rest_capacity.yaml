@@ -46,3 +46,18 @@ test_34698:
   object_size:
     start_range: 10
     stop_range: 100
+test_40600:
+  max_size: 1024000000000000
+  max_objects: 1000
+test_40601:
+  max_size: 1024000000000000
+  max_objects: 1000
+test_40602:
+  max_size: 1024000000000000
+  max_objects: 1000
+test_40603:
+  max_size: 1024000000000000
+  max_objects: 1000
+test_40604:
+  max_size: 1024000000000000
+  max_objects: 1000
