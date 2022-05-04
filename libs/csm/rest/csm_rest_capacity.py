@@ -40,7 +40,7 @@ class SystemCapacity(RestTestLib):
     def __init__(self):
         """
         """
-        super().__init__()
+        super(SystemCapacity, self).__init__()
         self.row_temp = "N{} failure"
 
     @RestTestLib.authenticate_and_login
