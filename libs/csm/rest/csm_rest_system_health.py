@@ -38,7 +38,7 @@ class SystemHealth(RestTestLib):
         """
         Initialize the rest api
         """
-        super().__init__()
+        super(SystemHealth, self).__init__()
         self.main_conf = config_utils.read_yaml(
             "config\\common_config.yaml")[1]
 
