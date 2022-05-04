@@ -42,6 +42,7 @@ from time import perf_counter_ns
 from libs.s3 import S3H_OBJ, s3_test_lib
 from config.s3 import S3_CFG
 from multiprocessing import Process
+from config import CSM_REST_CFG
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -62,11 +63,11 @@ class TestSystemCapacity():
         cls.s3_user = ""
         cls.bucket = ""
         cls.row_temp = "N{} failure"
-        cls.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
-        cls.s3_obj = s3_test_lib.S3TestLib()
         cls.node_list = []
         cls.host_list = []
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
+        cls.s3_obj = s3_test_lib.S3TestLib()
         for node in CMN_CFG["nodes"]:
             if node["node_type"] == "master":
                 cls.log.debug("Master node : %s", node["hostname"])
@@ -118,6 +119,7 @@ class TestSystemCapacity():
         else:
             self.log.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
+
 
     def teardown_method(self):
         """
@@ -2709,7 +2711,7 @@ class TestSystemCapacity():
                          log_file_prefix=log_file_prefix,
                          validate_certs=S3_CFG["validate_certs"])
                 self.log.info(resp)
-                assert_utils.assert_true(os.path.exists(resp[1])
+                assert_utils.assert_true(os.path.exists(resp[1]))
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 7 Ends--------------------------")
                 self.log.info("-----------------------Step 8 starts------------------------")
@@ -2829,7 +2831,7 @@ class TestSystemCapacity():
                          log_file_prefix=log_file_prefix,
                          validate_certs=S3_CFG["validate_certs"])
                 self.log.info(resp)
-                assert_utils.assert_true(os.path.exists(resp[1])
+                assert_utils.assert_true(os.path.exists(resp[1]))
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 10 Ends--------------------------")
                 self.log.info("-----------------------Step 11 Starts--------------------------")
@@ -2920,6 +2922,7 @@ class TestSystemCapacity():
                     total=total_written)
                 self.log.info(
                     "[End] Fetch degraded capacity on HCTL after 1 node is up")
+                
                 self.log.info("[Start] Fetch degraded capacity on CSM after 1 node is up")
                 resp = self.csm_obj.get_degraded_capacity()
                 assert resp.status_code == HTTPStatus.OK, "Status code check failed."
@@ -2938,4 +2941,4 @@ class TestSystemCapacity():
                 self.log.info("-----------------------Step 12 Ends--------------------------")
                 self.log.info(
                     "[End] Fetch degraded capacity on CSM after 1 node is up after IOs")
-            self.log.info("#########Test Completed########")     
+            self.log.info("#########Test Completed########")
