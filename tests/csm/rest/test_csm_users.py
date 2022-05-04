@@ -3908,8 +3908,9 @@ class TestCsmUser():
         incorrect_password = test_cfg["password"]
         status_code = test_cfg["status_code"]
         resp_error_code = test_cfg["error_code"]
-        msg = test_cfg["message"]
         resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
 
         self.log.info("Step 1: Verifying with incorrect password")
         response = self.csm_obj.custom_rest_login(
@@ -3921,7 +3922,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with incorrect password")
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Step 2: Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message"], msg)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
 
