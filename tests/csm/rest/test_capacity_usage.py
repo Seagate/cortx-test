@@ -2181,7 +2181,7 @@ class TestSystemCapacity():
                   "[End] Fetch degraded capacity on CSM with 1 Node failure")
                 self.log.info("-----------------------Step 5 Ends--------------------------")
                 self.log.info("Check ended for k=1, i.e N1 pod failure")
-        elif node==0:
+            elif node==0:
                 self.log.info("Check started for k=0, i.e N2 pod failure")
                 self.log.info("[Start] Shutdown the data pod safely by making replicas=0")
                 resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name[1])
