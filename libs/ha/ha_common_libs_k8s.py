@@ -874,12 +874,13 @@ class HAK8s:
 
         return resp
 
-    def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
-                           output=None):
+    def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
+                           skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
+                           nclients=10, output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
+        :param setup_s3bench: Flag to setup or not s3bench
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run if True
@@ -898,11 +899,12 @@ class HAK8s:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         # Flag to store next workload status after/while event gets clear from test function
         event_clear_flg = False
-        resp = s3bench.setup_s3bench()
-        if not resp:
-            status = (resp, "Couldn't setup s3bench on client machine.")
-            output.put(status)
-            sys.exit(1)
+        if setup_s3bench:
+            resp = s3bench.setup_s3bench()
+            if not resp:
+                status = (resp, "Couldn't setup s3bench on client machine.")
+                output.put(status)
+                sys.exit(1)
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
