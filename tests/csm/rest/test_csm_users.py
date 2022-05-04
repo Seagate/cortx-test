@@ -3922,7 +3922,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with incorrect password")
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Step 2: Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message"], msg)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
 
