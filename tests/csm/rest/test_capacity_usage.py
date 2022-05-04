@@ -2595,7 +2595,7 @@ class TestSystemCapacity():
                          log_file_prefix=log_file_prefix,
                          validate_certs=S3_CFG["validate_certs"])
                 self.log.info(resp)
-                assert_utils.assert_true(os.path.exists(resp[1])
+                assert_utils.assert_true(os.path.exists(resp[1]))
                 self.log.info("[End] Start some IOs")
                 self.log.info("-----------------------Step 4 Ends--------------------------")
                 self.log.info("-----------------------Step 5 Starts--------------------------")
