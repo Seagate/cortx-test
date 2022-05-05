@@ -21,15 +21,15 @@
 
 import json
 import math
+import time
+from http import HTTPStatus
 from random import SystemRandom
 from string import Template
-from http import HTTPStatus
+
 from commons.constants import Rest as const
-from config import CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3 import s3_misc
-
 
 class GetSetQuota(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
@@ -40,9 +40,13 @@ class GetSetQuota(RestTestLib):
         self.iam_user = None
         self.csm_user = RestCsmUser()
         self.cryptogen = SystemRandom()
+        self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
+        self.obj_name_prefix = "created_obj"
+        #self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
+        self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
 
     @RestTestLib.authenticate_and_login
-    def get_user_quota(self, uid, quota_type, **kwargs):
+    def get_user_quota(self, uid, **kwargs):
         """
         Get user or bucket quota
         :param uid: userid
@@ -51,7 +55,7 @@ class GetSetQuota(RestTestLib):
         :return: response
         """
         self.log.info("Get IAM user request....")
-        if "headers" in kwargs.keys():
+        if "headers" in kwargs.items():
             header = kwargs["headers"]
         else:
             header = self.headers
@@ -62,15 +66,20 @@ class GetSetQuota(RestTestLib):
         self.log.info("Get user quota request successfully sent...")
         return response
 
-    def iam_user_quota_payload(self):
+    def iam_user_quota_payload(self): #pylint disable=no-self-use
         """
         Create IAM user quota payload
         """
         payload = {}
+        quota_type = "user"
+        enabled = True
+        max_size = "5G"
+        max_objects = 1000
         payload.update({"quota_type": quota_type})
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})
         payload.update({"max_objects" : max_objects})
+        self.log.info("Payload: %s", payload)
         return payload
 
     @RestTestLib.authenticate_and_login
@@ -83,7 +92,7 @@ class GetSetQuota(RestTestLib):
         :return: response
         """
         self.log.info("Get IAM user request....")
-        if "headers" in kwargs.keys():
+        if "headers" in kwargs.items():
             header = kwargs["headers"]
         else:
             header = self.headers
@@ -116,7 +125,7 @@ class GetSetQuota(RestTestLib):
                     if key in ("enabled","max_size","max_objects","check_on_raw"):
                         continue
                     if key == "max_size_kb":
-                        payload.update({"max_size_kb":max_size/1000})
+                        payload.update({"max_size_kb":get_response["max_size"]/1000})
                     self.log.info("Actual response for %s: %s", key, payload[key])
                     if value != payload[key]:
                         self.log.error("Actual and expected response for %s didnt match", key)
@@ -124,24 +133,24 @@ class GetSetQuota(RestTestLib):
         else:
             self.log.error("Status code check failed.")
             result = False
-        return result, resp
+        return result, get_response
 
-    def verify_max_size(self, max_size):
+    def verify_max_size(self, max_size, akey, skey):
         """
         Perform put operation with 1 object and then perform put
         of random size and check if that fails
         """
         self.log.info("Perform Put operation for 1 object of max size")
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=max_size)
-        assert_utils.assert_true(resp, "Put object Failed")
+                                          akey, skey, object_size=max_size)
+        assert resp, "Put object Failed"
         self.log.info("Perform Put operation of Random size and 1 object")
         random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
-        assert_utils.assert_false(resp, "Put object did not fail")
+                                          akey, skey, object_size=random_size)
+        assert resp, "Put object did not fail"
 
-    def verify_max_objects(self, max_size, max_objects):
+    def verify_max_objects(self, max_size, max_objects, akey, skey):
         """
         Perform put operation of N object of max_size/obj_cnt and
         check if one more put fails
@@ -150,9 +159,10 @@ class GetSetQuota(RestTestLib):
         small_size = math.floor(max_size / max_objects)
         for _ in range(0, max_objects):
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=small_size)
-            assert_utils.assert_true(resp, "Put object Failed")
+                                              akey, skey, object_size=small_size)
+            assert resp, "Put object Failed"
         self.log.info("Perform Put operation of Random size and 1 object")
+        random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
-        assert_utils.assert_false(resp, "Put object did not fail")
+                                          akey, skey, object_size=random_size)
+        assert resp, "Put object did not fail"

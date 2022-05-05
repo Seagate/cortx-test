@@ -77,11 +77,7 @@ class TestCapacityQuota():
         resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
         self.log.info("Printing response %s", resp1)
         assert_utils.assert_true(resp1[0], resp1[1])
-        self.akey = resp.json()["access_key"]
-        self.skey = resp.json()["secret_key"]
         self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
-        self.obj_name_prefix = "created_obj"
-        self.obj_name = "{0}{1}".format(self.obj_name_prefix, perf_counter_ns())
         self.display_name = "iam-display-name-" + str(int(time.time_ns()))
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
@@ -179,12 +175,12 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size)
+        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform put objects of small size")
-        self.csm_obj.verify_max_objects(max_size, max_objects)
+        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -214,12 +210,12 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size)
+        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform put objects of small size")
-        self.csm_obj.verify_max_objects(max_size, max_objects)
+        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -251,12 +247,12 @@ class TestCapacityQuota():
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 3: Perform put object of max size")
-            self.csm_obj.verify_max_size(max_size)
+            self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
             self.log.info("Step 4: Delete object")
             assert s3_misc.delete_object(
                 self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
             self.log.info("Step 5: Perform put objects of small size")
-            self.csm_obj.verify_max_objects(max_size, max_objects)
+            self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -287,12 +283,12 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size)
+        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform put objects of small size")
-        self.csm_obj.verify_max_objects(max_size, max_objects)
+        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
@@ -338,12 +334,12 @@ class TestCapacityQuota():
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 4: Perform put object of max size")
-            self.csm_obj.verify_max_size(max_size)
+            self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
             self.log.info("Step 5: Delete object")
             assert s3_misc.delete_object(
                 self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
             self.log.info("Step 6: Perform put objects of small size")
-            self.csm_obj.verify_max_objects(max_size, max_objects)
+            self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -588,7 +584,7 @@ class TestCapacityQuota():
         assert_utils.assert_in(self.obj_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Step 5: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size)
+        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         self.log.info("Step 6: Abort Multipart upload S3 operations")
         res = self.s3_mp_test_obj.abort_multipart_upload(
             self.bucket,
@@ -601,7 +597,7 @@ class TestCapacityQuota():
         self.log.info(
             "Aborted multipart upload with upload ID: %s", mpu_id)
         self.log.info("Step 7: Perform put object of max size")
-        self.csm_obj.verify_max_size(max_size)
+        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         self.log.info("Step 8: Perform put objects of small size")
-        self.csm_obj.verify_max_objects(max_size, max_objects)
+        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         self.log.info("##### Test ended -  %s #####", test_case_name)
