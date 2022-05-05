@@ -1289,8 +1289,7 @@ class HAK8s:
         """
         :param node_obj: Object for node
         :param source: Source of the event | monitor, ha, hare, etc.
-        :param resource_status: recovering, online, failed, un
-        nown, degraded, repairing,
+        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
         :param node_type: Type of the node (data, server)
@@ -1451,7 +1450,8 @@ class HAK8s:
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1,
-                                          down_method=common_const.RESTORE_SCALE_REPLICAS):
+                                          down_method=common_const.RESTORE_SCALE_REPLICAS,
+                                          event=None):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status.
@@ -1460,6 +1460,8 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type).
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param event: Thread event to set/clear before/after pods/nodes
+        shutdown with parallel IOs
         return : tuple
         """
         if pod_prefix is None:
@@ -1480,6 +1482,9 @@ class HAK8s:
             remaining.extend(master_node_obj.get_all_pods(pod_prefix=ptype))
 
         LOGGER.info("Delete %s by %s method", delete_pods, down_method)
+        if event is not None:
+            LOGGER.debug("Setting the Thread event")
+            event.set()
         for pod in delete_pods:
             hostname = master_node_obj.get_pod_hostname(pod_name=pod)
             LOGGER.info("Deleting pod %s by %s method", pod, down_method)
@@ -1498,6 +1503,9 @@ class HAK8s:
                 pod_info[pod]['deployment_name'] = resp[2]
             pod_info[pod]['method'] = down_method
             pod_info[pod]['hostname'] = hostname
+            if event is not None:
+                LOGGER.debug("Clearing the Thread event")
+                event.clear()
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
