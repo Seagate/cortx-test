@@ -40,6 +40,7 @@ class GetSetQuota(RestTestLib):
         self.iam_user = None
         self.csm_user = RestCsmUser()
         self.cryptogen = SystemRandom()
+        self.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         self.obj_name_prefix = "created_obj"
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
@@ -54,7 +55,7 @@ class GetSetQuota(RestTestLib):
         :return: response
         """
         self.log.info("Get IAM user request....")
-        if "headers" in kwargs.items():
+        if "headers" in kwargs.keys():
             header = kwargs["headers"]
         else:
             header = self.headers
@@ -65,15 +66,16 @@ class GetSetQuota(RestTestLib):
         self.log.info("Get user quota request successfully sent...")
         return response
 
-    def iam_user_quota_payload(self): #pylint disable=no-self-use
+    #pylint disable=no-self-use
+    def iam_user_quota_payload(self):
         """
         Create IAM user quota payload
         """
         payload = {}
-        quota_type = "user"
-        enabled = True
-        max_size = "5G"
-        max_objects = 1000
+        quota_type = self.csm_conf["test_values"]["quota_type"]
+        enabled = self.csm_conf["test_values"]["enabled"]
+        max_size = self.csm_conf["test_values"]["max_size"]
+        max_objects = self.csm_conf["test_values"]["max_objects"]
         payload.update({"quota_type": quota_type})
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})
@@ -82,7 +84,7 @@ class GetSetQuota(RestTestLib):
         return payload
 
     @RestTestLib.authenticate_and_login
-    def set_user_quota(self, uid, payload, **kwargs):
+    def set_user_quota(self, uid, payload: dict, **kwargs):
         """
         Set user or bucket quota
         :param uid: userid
@@ -91,7 +93,7 @@ class GetSetQuota(RestTestLib):
         :return: response
         """
         self.log.info("Get IAM user request....")
-        if "headers" in kwargs.items():
+        if "headers" in kwargs.keys():
             header = kwargs["headers"]
         else:
             header = self.headers
@@ -103,7 +105,7 @@ class GetSetQuota(RestTestLib):
         self.log.info("Set user quota request successfully sent...")
         return response
 
-    def verify_get_set_user_quota(self, uid, payload, verify_response=False,
+    def verify_get_set_user_quota(self, uid: str, payload: dict, verify_response=False,
                                   expected_response = HTTPStatus.CREATED):
         """
         Verify get and set user quota
@@ -134,7 +136,7 @@ class GetSetQuota(RestTestLib):
             result = False
         return result, get_response
 
-    def verify_max_size(self, max_size, akey, skey):
+    def verify_max_size(self, max_size: int, akey: str, skey: str):
         """
         Perform put operation with 1 object and then perform put
         of random size and check if that fails
@@ -147,9 +149,9 @@ class GetSetQuota(RestTestLib):
         random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           akey, skey, object_size=random_size)
-        assert resp, "Put object did not fail"
+        assert not resp, "User is able to perform put object after exceeding max_size"
 
-    def verify_max_objects(self, max_size, max_objects, akey, skey):
+    def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str):
         """
         Perform put operation of N object of max_size/obj_cnt and
         check if one more put fails
@@ -164,4 +166,4 @@ class GetSetQuota(RestTestLib):
         random_size = self.cryptogen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           akey, skey, object_size=random_size)
-        assert resp, "Put object did not fail"
+        assert not resp, "User is able to perform put object after exceeding max_objects"

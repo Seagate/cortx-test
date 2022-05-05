@@ -76,3 +76,8 @@ test_40639:
 test_40640:
   max_size: 5G
   max_objects: 10
+test_values:
+  quota_type: "user"
+  enabled: True
+  max_size: 5G
+  max_objects: 1000
