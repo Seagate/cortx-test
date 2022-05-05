@@ -762,3 +762,25 @@ nodes_15:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
+
+nodes_25:
+  config_1:
+    sns_data: 20
+    sns_parity: 5
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 24
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
+
+nodes_36:
+  config_1:
+    sns_data: 30
+    sns_parity: 6
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 35
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
