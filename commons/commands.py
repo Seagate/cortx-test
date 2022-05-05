@@ -497,10 +497,10 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
-DEPLOYMENT_CMD = "kubectl get deployment"
 
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_DEPLOYMENT = "kubectl get deployment"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
 KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'

@@ -484,11 +484,11 @@ class LogicalNode(Host):
         """
         Get deployment name from the master node
         """
-        resp_node = self.execute_cmd(cmd=commands.DEPLOYMENT_CMD,
+        resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT,
                                             read_lines=True,
                                             exc=False)
         deploy_list = []
         for i in range(0, num_nodes):
-            resp = resp_node[i + 2].split(' ')
+            resp = resp_node[i + const.NODE_INDEX].split(' ')
             deploy_list.append(resp[0])
         return deploy_list
