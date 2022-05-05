@@ -42,7 +42,6 @@ class GetSetQuota(RestTestLib):
         self.cryptogen = SystemRandom()
         self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         self.obj_name_prefix = "created_obj"
-        #self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
 
     @RestTestLib.authenticate_and_login
