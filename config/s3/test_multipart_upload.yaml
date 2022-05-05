@@ -194,7 +194,6 @@ test_28535:
     - part_size: 20
       count: 1
 
-
 test_28530:
     file_size: 150
     total_parts: 5
@@ -229,7 +228,6 @@ test_28526:
             count: 7
           - part_size: 824
             count: 1
-
 
 test_28528:
   file_size: 50300
@@ -327,3 +325,13 @@ test_32702_2:
           count: 1
         - part_size: 29.5
           count: 1
+
+test_40265:
+  file_size: 6
+  chunk_size: 1048576
+  part_sizes:
+    - part_size: 5
+      count: 1
+    - part_size: 1
+      count: 1
+

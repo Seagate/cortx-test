@@ -416,6 +416,9 @@ class TestCsmUser():
         assert response, "Status code check has failed check has failed."
         self.log.info("Verified the response for invalid value for sort_by")
 
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -444,10 +447,10 @@ class TestCsmUser():
             sort_by="",
             return_actual_response=True)
 
-        self.log.info("Verifying error response...")
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -687,11 +690,11 @@ class TestCsmUser():
             csm_list_user_param="dir",
             return_actual_response=True)
 
-        self.log.info("Verifying the error response returned status code: %s, response : %s",
-                      response.status_code, response.json())
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying the error response returned status code: %s, response : %s",
+                        response.status_code, response.json())
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1626,9 +1629,9 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.FORBIDDEN)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code["code_4101"]))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code["code_4101"]))
             assert_utils.assert_equals(response.json()["message"],
                                        resp_msg["message_11"])
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1813,9 +1816,9 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1847,9 +1850,9 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1882,9 +1885,9 @@ class TestCsmUser():
             "Verifying response returned for user %s", username)
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1933,13 +1936,13 @@ class TestCsmUser():
         self.log.info("Verifying response code: %s and response returned: %s",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        (msg + " " + username))
-        assert_utils.assert_equals(response.json()["message_id"],
-                                   resp_msg_id)
+            assert_utils.assert_equals(response.json()["message_id"],
+                                    resp_msg_id)
         self.log.info("Verified response returned")
 
         self.log.info(
@@ -1966,9 +1969,9 @@ class TestCsmUser():
         self.log.info("Verifying response code: %s and response returned: %s",
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        (msg + " " + username))
         assert_utils.assert_equals(response.json()["message_id"],
@@ -1996,9 +1999,9 @@ class TestCsmUser():
 
         self.log.info("Verifying response")
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   resp_error_code)
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    resp_error_code)
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -2023,9 +2026,9 @@ class TestCsmUser():
 
         self.log.info("Verifying response")
         assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   resp_error_code)
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    resp_error_code)
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
         assert_utils.assert_equals(response.json()["message_id"],
@@ -2175,15 +2178,15 @@ class TestCsmUser():
                                    const.BAD_REQUEST)
         self.log.info("Verified the status code returned")
 
-        self.log.info(
-            "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info(
+                "Verifying the response message returned : %s", response.json())
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        msg)
-        assert_utils.assert_equals(response.json()["message_id"],
-                                   resp_msg_id)
+            assert_utils.assert_equals(response.json()["message_id"],
+                                    resp_msg_id)
         self.log.info(
             "Verified the response message returned")
 
@@ -2234,11 +2237,11 @@ class TestCsmUser():
                                    const.METHOD_NOT_FOUND)
         self.log.info("Verified the status code returned")
 
-        self.log.info(
-            "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info(
+                "Verifying the response message returned : %s", response.json())
+            assert_utils.assert_equals(response.json()["error_code"],
+                                    str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        (msg + " " + userid))
         assert_utils.assert_equals(response.json()["message_id"],
@@ -2290,11 +2293,11 @@ class TestCsmUser():
                                    const.METHOD_NOT_FOUND)
         self.log.info("Verified the status code returned")
 
-        self.log.info(
-            "Verifying the response message returned : %s", response.json())
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info(
+                "Verifying the response message returned : %s", response.json())
+            assert_utils.assert_equals(response.json()["error_code"],
+                                        str(resp_error_code))
             assert_utils.assert_equals(response.json()["message"],
                                        (msg + " " + userid))
         assert_utils.assert_equals(response.json()["message_id"],
@@ -2345,8 +2348,9 @@ class TestCsmUser():
                           " %s ", response.status_code, response.json())
             assert response.status_code == const.BAD_REQUEST, "Response code mismatch."
             print(i)
-            assert_utils.assert_equals(
-                response.json(), data[f'invalid_password_resp_{str(i)}'], "Error message mismatch.")
+            if CSM_REST_CFG["msg_check"] == "enable":
+                assert_utils.assert_equals(response.json(), data[f'invalid_password_resp_{str(i)}'],
+                                 "Error message mismatch.")
 
         self.log.info(
             "Step 1: Verified that PATCH API returns 400 response code and "
@@ -2369,7 +2373,9 @@ class TestCsmUser():
                       response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(), data["invalid_role_resp"])
+
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json(), data["invalid_role_resp"])
 
         self.log.info(
             "Step 2: Verified that PATCH API returns 400 response code and  "
@@ -3229,32 +3235,32 @@ class TestCsmUser():
                                                user=CSM_REST_CFG["csm_admin_user"]["username"],
                                                role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]), (
                                                                 "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Verfying edit user functionality for manage user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor", user="csm_user_manage",
                                                role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             "csm_user_manage"), (
                                                             "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 5: Verfying edit user functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor", user=username,
                                                role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             username), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
             "Sending request to delete csm user %s", username)
         response = self.csm_obj.delete_csm_user(user_id)
@@ -3297,25 +3303,25 @@ class TestCsmUser():
                                                password=CSM_REST_CFG["csm_admin_user"]["password"],
                                                current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]), (
                                                                 "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Verifying edit user functionality for manage user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor",
                                                user=CSM_REST_CFG["csm_user_manage"]["username"],
                                                password=CSM_REST_CFG["csm_user_manage"]["password"],
                                                current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             "csm_user_manage"), (
                                                             "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
 
         self.log.info("Step 5: Verifying edit user functionality for other monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor",
@@ -3325,11 +3331,11 @@ class TestCsmUser():
                                                    "password"],
                                                current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_monitor",
                                                             username), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 6: Verifying edit user functionality for self monitor user")
         response = self.csm_obj.edit_csm_user(login_as=new_monitor_user,
                                                user=username,
@@ -3380,41 +3386,41 @@ class TestCsmUser():
                                                user=CSM_REST_CFG["csm_admin_user"]["username"],
                                                email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-            "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+                "Error code check failed.")
             assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
                                                                             "admin"), (
                                                                             "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+            assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("Step 4: Verifying edit email functionality for manage user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor",
                                                user=CSM_REST_CFG["csm_user_manage"]["username"],
                                                email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-            "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+                "Error code check failed.")
             assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
                                                                             "csm_user_manage"), (
                                                                             "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+            assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("Step 5: Verifying edit email functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor", user=username,
                                                email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
-            "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(test_cfg["error_code"]), (
+                "Error code check failed.")
             assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
                                                                             username), (
                                                                             "Message check failed.")
-        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+            assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("Step 6: Verifying edit email functionality for self monitor user")
         new_user = {}
         new_user['username'] = username
         new_user['password'] = password
-        self.log.info("new user is", new_user)
+        self.log.info("new user is ", new_user)
         response = self.csm_obj.edit_csm_user(login_as=new_user,
                                                user=username,
                                                email=test_cfg["email_id"])
@@ -3462,8 +3468,8 @@ class TestCsmUser():
         response = self.csm_obj.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin",
                                                             "admin"), "Message check failed."
         self.log.info("Step 2: Verify create manage user functionality for manage user")
@@ -3504,13 +3510,13 @@ class TestCsmUser():
                                                password=CSM_REST_CFG["csm_admin_user"]["password"],
                                                current_password=test_cfg["current_password"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_manage",
                                                             CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]), (
                                                                 "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -3544,10 +3550,11 @@ class TestCsmUser():
                                                user=CSM_REST_CFG["csm_admin_user"]["username"],
                                                email=test_cfg["email_id"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
-        assert response.json()["message"] == resp_msg.format("csm_user_manage",
-                                                             "cortxadmin"), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
+            assert response.json()["message"] == resp_msg.format("csm_user_manage",
+                                                                "cortxadmin"), "Message check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Verifying edit monitor user email id functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_manage",
                                                user=CSM_REST_CFG["csm_user_monitor"]["username"],
@@ -3596,23 +3603,23 @@ class TestCsmUser():
         response = self.csm_obj.edit_csm_user(user=CSM_REST_CFG["csm_admin_user"]["username"],
                                                role="manage")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Verify if last admin user"
                       "is not able to edit the self role to monitor")
         response = self.csm_obj.edit_csm_user(user=CSM_REST_CFG["csm_admin_user"]["username"],
                                                role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Creating csm user")
         password = CSM_REST_CFG["csm_admin_user"]["password"]
         response = self.csm_obj.create_csm_user(user_type="valid",
@@ -3700,12 +3707,12 @@ class TestCsmUser():
         self.log.info("Step 1: Verify delete last admin user functionality")
         response = self.csm_obj.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -3749,34 +3756,34 @@ class TestCsmUser():
         response = self.csm_obj.delete_csm_user(login_as="csm_user_manage",
                                                  user_id=CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Verify delete other monitor user functionality for manage user")
         response = self.csm_obj.delete_csm_user(login_as="csm_user_manage",
                                                  user_id=user_id)
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg1, (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Removing user from list if delete is successful")
         self.created_users.remove(userid)
         self.log.info("Step 3: Verify delete other manage user functionality for manage user")
         response = self.csm_obj.delete_csm_user(login_as="csm_user_manage",
                                                  user_id=userid)
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg1, (
                 "Message check failed.")
             self.log.info("Msg check successful!!!!")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Removing user from list if delete is successful")
         self.created_users.remove(user_id)
         self.log.info(
@@ -3821,28 +3828,28 @@ class TestCsmUser():
         response = self.csm_obj.delete_csm_user(login_as="csm_user_monitor",
                                                  user_id=CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), (
                 "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Verify delete manage user functionality for monitor user")
         response = self.csm_obj.delete_csm_user(login_as="csm_user_monitor",
                                                  user_id=CSM_REST_CFG["csm_user_manage"][
                                                      "username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg1, "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 5: Verify delete monitor user functionality for monitor user")
         response = self.csm_obj.delete_csm_user(login_as="csm_user_monitor",
                                                  user_id=username)
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg1, "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 6: Verify delete monitor email functionality for self monitor user")
         response = self.csm_obj.delete_csm_user(login_as=new_user,
                                                  user_id=username)
@@ -3900,9 +3907,10 @@ class TestCsmUser():
         test_cfg = self.csm_conf["test_28513"]
         incorrect_password = test_cfg["password"]
         status_code = test_cfg["status_code"]
-        # resp_error_code = test_cfg["error_code"]
-        # msg = test_cfg["message"]
-        # resp_msg_id = test_cfg["message_id"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        msg = resp_data[0]
 
         self.log.info("Step 1: Verifying with incorrect password")
         response = self.csm_obj.custom_rest_login(
@@ -3912,15 +3920,11 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert response.status_code == status_code, "Unexpected status code"
         self.log.info("Step 1: Verified with incorrect password")
-        #  TODO check response msg
-        # self.log.info("Step 2: Verifying error response...")
-        # assert_utils.assert_equals(response.json()["error_code"],
-        #                            str(resp_error_code))
-        # if CSM_REST_CFG["msg_check"] == "enable":
-        #     assert_utils.assert_equals(response.json()["message"],
-        #                                msg)
-        # assert_utils.assert_equals(response.json()["message_id"],
-        #                            resp_msg_id)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Step 2: Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
 
         self.log.info(
             "Verified that Login API returns error Response Code 401 "
@@ -4822,11 +4826,11 @@ class TestCsmUser():
         response = self.csm_obj.edit_csm_user(login_as=new_user, user=csm_username,
                                                role="monitor")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format(username,
                                                             username), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Change role of second manage user from manage to monitor")
         response = self.csm_obj.edit_csm_user(login_as=new_user,
                                                user=users[1],
@@ -4841,22 +4845,22 @@ class TestCsmUser():
         response = self.csm_obj.edit_csm_user(login_as=new_user, user=users[3],
                                                role="admin")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_manage",
                                                             "csm_user_manage"), (
                                                             "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 4: Change role of fifth manage user from manage to admin")
         response = self.csm_obj.edit_csm_user(login_as=new_user, user=users[4],
                                                role="admin")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("csm_user_manage",
                                                             "csm_user_manage"), (
                                                             "Message check failed.")
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr
@@ -4926,8 +4930,8 @@ class TestCsmUser():
         self.log.info("Step 4: Sending request to delete self admin user")
         response = self.csm_obj.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == str(resp_error_code), "Error code check failed."
             assert response.json()["message"] == msg.format("admin"), "Message check failed."
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 6: Perform GET users operation")

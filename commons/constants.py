@@ -151,6 +151,7 @@ CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
+NODE_INDEX = 2
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"

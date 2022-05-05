@@ -221,7 +221,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(int(self.num_pods))]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -490,11 +490,15 @@ class HAK8s:
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
                                             secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = s3_test_obj.create_bucket(bucket_name)
-        if not res[0] or res[1] != bucket_name:
-            return res, "Failed in bucket creation"
-        LOGGER.info("Created a bucket with name : %s", bucket_name)
+        LOGGER.info("Checking if bucket %s already exists", bucket_name)
+        resp = s3_test_obj.bucket_list()
+        bkt_flag = bucket_name not in resp[1]
+        if bkt_flag:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                return res, "Failed in bucket creation"
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
         res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
         if not res[0]:
@@ -833,6 +837,7 @@ class HAK8s:
         :param timeout: Timeout value
         :return: bool, response
         """
+        resp = False
         LOGGER.info("Polling cluster status")
         start_time = int(time.time())
         while timeout > int(time.time()) - start_time:
@@ -855,6 +860,7 @@ class HAK8s:
         :param restore_params: Dict which has parameters required to restore pods
         :return: Bool, response
         """
+        resp = False
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
 
@@ -868,12 +874,13 @@ class HAK8s:
 
         return resp
 
-    def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
-                           output=None):
+    def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
+                           skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
+                           nclients=10, output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
+        :param setup_s3bench: Flag to setup or not s3bench
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run if True
@@ -892,11 +899,12 @@ class HAK8s:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         # Flag to store next workload status after/while event gets clear from test function
         event_clear_flg = False
-        resp = s3bench.setup_s3bench()
-        if not resp:
-            status = (resp, "Couldn't setup s3bench on client machine.")
-            output.put(status)
-            sys.exit(1)
+        if setup_s3bench:
+            resp = s3bench.setup_s3bench()
+            if not resp:
+                status = (resp, "Couldn't setup s3bench on client machine.")
+                output.put(status)
+                sys.exit(1)
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
@@ -1441,48 +1449,78 @@ class HAK8s:
         LOGGER.info("Resource IDs for %s are: %s", r_type, resp)
         return resp
 
-    def delete_single_pod_setting_replica_0(self, master_node_obj, health_obj,
-                                            pod_prefix=common_const.POD_NAME_PREFIX):
+    def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
+                                          pod_prefix=None, kvalue=1,
+                                          down_method=common_const.RESTORE_SCALE_REPLICAS):
         """
-        Delete Single pod by setting replica set to 0. Check service status is in degraded mode.
+        Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
+        status, cluster status.
         :param master_node_obj: Master node object list
         :param health_obj: Health object
-        :param pod_prefix: Pod prefix to be deleted.
+        :param pod_prefix: Pod prefix to be deleted (Expected List type).
+        :param down_method: Pod shutdown/delete method.
+        :param kvalue: Number of pod to be shutdown/deleted.
         return : tuple
         """
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = master_node_obj.get_all_pods(pod_prefix=pod_prefix)
-        pod_name = random.sample(pod_list, 1)[0]
-        hostname = master_node_obj.get_pod_hostname(pod_name=pod_name)
+        if pod_prefix is None:
+            pod_prefix = [common_const.POD_NAME_PREFIX]
+        pod_info = dict()
+        total_pod_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
+        pod_data = {"method": None, "deployment_name": None, "deployment_backup": None,
+                    "hostname": None}
+        delete_pods = list()
+        remaining = list()
+        for ptype in pod_prefix:
+            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+            # Get the list of Kvalue pods to be deleted for given pod_prefix list
+            delete_pods.extend(random.sample(pod_list, kvalue))
 
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod_name)
-        if resp[0]:
-            return False, f"Failed to delete pod {pod_name} by making replicas=0"
-        LOGGER.info("Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        LOGGER.info("Get the list of all pods of total pod types.")
+        for ptype in total_pod_type:
+            remaining.extend(master_node_obj.get_all_pods(pod_prefix=ptype))
+
+        LOGGER.info("Delete %s by %s method", delete_pods, down_method)
+        for pod in delete_pods:
+            hostname = master_node_obj.get_pod_hostname(pod_name=pod)
+            LOGGER.info("Deleting pod %s by %s method", pod, down_method)
+            if down_method == common_const.RESTORE_SCALE_REPLICAS:
+                resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
+                if resp[0]:
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['deployment_name'] = resp[1]
+            elif down_method == common_const.RESTORE_DEPLOYMENT_K8S:
+                resp = master_node_obj.delete_deployment(pod_name=pod)
+                if resp[0]:
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['deployment_backup'] = resp[1]
+                pod_info[pod]['deployment_name'] = resp[2]
+            pod_info[pod]['method'] = down_method
+            pod_info[pod]['hostname'] = hostname
+            LOGGER.info("Check services status that were running on pod %s", pod)
+            resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
+                                                 hostname=pod_info[pod]['hostname'])
+            LOGGER.debug("Response: %s", resp)
+            if not resp[0]:
+                return False, pod_info
+        LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False, resp
-        LOGGER.info("Cluster is in degraded state")
+            return False, pod_info
+        LOGGER.info("Cluster has failures as pod %s has been shutdown", delete_pods)
 
-        LOGGER.info(" Check services status that were running on pod %s", pod_name)
-        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
+        # Get the remaining pods except deleted one, to check it's service status not affected
+        remaining_pods = list(set(remaining) - set(delete_pods))
+        LOGGER.info("Check services status on remaining pods %s", remaining_pods)
+        resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False, resp
-
-        LOGGER.info("Services of pod are in offline state")
-        pod_list.remove(pod_name)
-
-        LOGGER.info("Check services status on remaining pods %s", pod_list)
-        resp = health_obj.get_pod_svc_status(pod_list=pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        if not resp[0]:
-            return False, resp
-        LOGGER.info("Services of pod are in online state")
-        return True, pod_name
+            return False, pod_info
+        LOGGER.info("Services of remaining pods are in online state")
+        return True, pod_info
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
@@ -1558,15 +1596,14 @@ class HAK8s:
         return True, modified_yaml, yaml_path
 
     @staticmethod
-    def failover_pod(pod_obj, pod_list, failover_node):
+    def change_pod_node(pod_obj, pod_node):
         """
-        Function to failover given pod
+        Function to change the node of given pod list (NodeSelector)
         :param pod_obj: Object of the pod
-        :param pod_list: List of the pods to be failed over
-        :param failover_node: Node to which pod is to be failed over
+        :param pod_node: Dict of the pod: failover_node (Node to which pod is to be failed over)
         :return: bool, str (status, response)
         """
-        for pod in pod_list:
+        for pod, failover_node in pod_node.items():
             pod_prefix = '-'.join(pod.split("-")[:2])
             cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
             LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
@@ -1617,7 +1654,7 @@ class HAK8s:
                     LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
                     time.sleep(HA_CFG["common_params"]["30sec_delay"])
             if validate_set:
-                LOGGER.inf("Validating nodes/pods status is SET as expected.")
+                LOGGER.info("Validating nodes/pods status is SET as expected.")
                 return self.get_validate_resource_status(rsc_info=pod_info)
             return True, pod_info, f"{pod_list} marked as failed"
         return False, f"Mark failure for {rsc} is not supported yet"
@@ -1717,3 +1754,33 @@ class HAK8s:
                                         command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                         f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}", decode=True)
         return rc_node
+
+    def failover_pod(self, pod_obj, pod_yaml, failover_node):
+        """
+        Helper function to delete, recreate and failover pod
+        :param pod_obj: Object of the pod
+        :param pod_yaml: Dict containing pod name and yaml file to be used for recreation
+        :param failover_node: Node FQDN to which pod is to be failed over
+        :return: bool, tuple
+        """
+        for pod, yaml_f in pod_yaml.items():
+            LOGGER.info("Deleting deployment for pod %s", pod)
+            resp = pod_obj.delete_deployment(pod_name=pod)
+            if resp[0]:
+                return False, f"Failed to delete pod {pod} by deleting deployment"
+            deploy = resp[2]
+            LOGGER.info("Recreating deployment for pod %s using yaml file %s", pod, yaml_f)
+            resp = pod_obj.recover_deployment_k8s(yaml_f, deploy)
+            if not resp[0]:
+                return resp
+            new_pod = pod_obj.get_recent_pod_name(deployment_name=deploy)
+            LOGGER.info("Changing host node of pod %s to %s", pod, failover_node)
+            resp = self.change_pod_node(pod_obj, pod_node={new_pod: failover_node})
+            if not resp[0]:
+                return resp
+            LOGGER.info("Check cluster status")
+            resp = self.poll_cluster_status(pod_obj)
+            if not resp[0]:
+                return resp
+
+        return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
