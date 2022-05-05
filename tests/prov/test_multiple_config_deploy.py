@@ -898,3 +898,23 @@ class TestMultipleConfDeploy:
         Deployment- 15node config_6
         """
         self.multiple_node_deployment(15, 6)
+
+    @pytest.mark.lc
+    @pytest.mark.twentyfive_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-40500")
+    def test_40500(self):
+        """
+        Deployment- 25node config_1
+        """
+        self.multiple_node_deployment(25, 1)
+
+    @pytest.mark.lc
+    @pytest.mark.thirtysix_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-40502")
+    def test_40502(self):
+        """
+        Deployment- 36node config_1
+        """
+        self.multiple_node_deployment(36, 1)
