@@ -48,6 +48,9 @@
     - "User already exists:"
   EmailExists:
     - "Provided email address exists"
+4113:
+  HttpError:
+    - 'Unauthorized'
 39401:
   users_already_exists:
     - "User already exists:"
@@ -61,4 +64,3 @@
     - 'Provided access key exists and belongs to another user.'
   InvalidCapability:
     - "Attempt to grant invalid admin capability."
-
