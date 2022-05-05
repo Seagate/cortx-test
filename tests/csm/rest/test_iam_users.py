@@ -3114,7 +3114,6 @@ class TestIamUserRGW():
         self.log.info("[END]Update request with uid and generate-key")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Needs test fix")
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
