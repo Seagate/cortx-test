@@ -99,24 +99,27 @@ class TestIOWorkload:
     def test_disk_near_full_s3bench(self):
         """Perform disk storage near full once and read in loop for 30 days."""
         self.log.info("STARTED: Perform disk storage near full once and read in loop for 30 days.")
-        self.log.info("Step 1: calculating byte count for required percentage")
-        resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
-                                                     memory_percent=95)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Need to add %s for required percentage", resp[1])
-        self.log.info("Step 2: performing writes till we reach required percentage")
         s3userinfo = dict()
         s3userinfo['accesskey'] = ACCESS_KEY
         s3userinfo['secretkey'] = SECRET_KEY
         bucket_prefix = "testbkt"
+        duration_in_days = self.test_cfg['happy_path_duration_days']
+        client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
+        percentage = self.test_cfg['test_40041']['nearfull_memory_percetange']
+        self.log.info("Step 1: calculating byte count for required percentage")
+        resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
+                                                     memory_percent=percentage)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Need to add %s bytes for required percentage", resp[1])
+        self.log.info("Step 2: performing writes till we reach required percentage")
         ret = DiskFailureRecoveryLib.perform_near_full_sys_writes(s3userinfo=s3userinfo,
                                                                   user_data_writes=int(resp[1]),
                                                                   bucket_prefix=bucket_prefix,
-                                                                  client=20)
+                                                                  client=client)
         assert_utils.assert_true(ret[0], ret[1])
         self.log.debug("write operation data: %s", ret)
         self.log.info("Step 3: performing read operations.")
-        end_time = datetime.now() + timedelta(days=30)
+        end_time = datetime.now() + timedelta(days=duration_in_days)
         loop = 1
         while datetime.now() < end_time:
             loop += 1
