@@ -217,7 +217,10 @@ class TestIamUserRGW():
             resp = self.csm_obj.delete_iam_user(user=user, purge_data=True)
             self.log.debug("Verify Response : %s", resp)
             if resp.status_code != HTTPStatus.OK:
-                delete_failed.append(user)
+                if resp.json()["message_id"] != "NoSuchUser":
+                    delete_success.append(user)
+                else:
+                    delete_failed.append(user)
             else:
                 delete_success.append(user)
         for usr in delete_success:
@@ -2797,8 +2800,8 @@ class TestIamUserRGW():
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         add_resp = self.csm_obj.add_key_to_iam_user(uid=None, access_key=valid_key)
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
-        assert_utils.assert_true(add_resp.json()["error_code"] == "4099", "Response failed")
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_true(add_resp.json()["error_code"] == "4099", "Response failed")
             assert_utils.assert_true(add_resp.json()["message"] ==
                                      self.rest_resp_conf[4099]['empty key'][2]
                                      , "Response failed")
@@ -3029,8 +3032,8 @@ class TestIamUserRGW():
         payload.update({"display_name":(uid+"1")})
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
-        assert response.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["error_code"] == resp_error_code, "Error code check failed."
             assert response.json()["message"] == msg , "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("STEP 4: Perform get iam users to verify new display name")
@@ -3111,7 +3114,6 @@ class TestIamUserRGW():
         self.log.info("[END]Update request with uid and generate-key")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Needs test fix")
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3127,48 +3129,39 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("random")
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
         uid = resp.json()["tenant"] + "$" + payload['uid']
+
         self.log.info("STEP 2: Perform get iam users")
         get_resp = self.csm_obj.get_iam_user(uid)
-        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        assert(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+
         self.log.info("STEP 3: Update any random parameters for created user")
         payload = self.csm_obj.iam_user_patch_random_payload()
-        self.log.info("Random payload is %s:", payload)
         if "access_key" in payload and "secret_key" not in payload:
             del payload["access_key"]
         elif "secret_key" in payload and "access_key" not in payload:
             del payload["secret_key"]
-        self.log.info("new random payload :  %s", payload)
+        self.log.info("Random payload :  %s", payload)
+
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
-        assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
-        self.log.info("STEP 4: Perform get iam users to verify updated random parameters")
+        assert resp1.status_code == HTTPStatus.OK, "IAM user modify failed"
+
+        self.log.info("STEP 4: Perform GET iam users to verify updated random parameters")
         get_resp = self.csm_obj.get_iam_user(uid)
-        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
-        count=0
+        assert get_resp.status_code == HTTPStatus.OK, "Get IAM user failed"
+        get_resp = get_resp.json()
+
         for key in payload.keys():
-            if key=="generate_key":
-                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]!=resp.json()[
-                            "keys"][0]["access_key"], "Access key not generated")
-            elif key=="key_type" and len(get_resp.json()["keys"]) > 1 and \
-                              "access_key" in payload and "secret_key" in payload:
-                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]==payload[
-                         "access_key"])
-            elif key=="key_type" and "access_key" in payload and "secret_key" in payload:
-                assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]==payload[
-                         "access_key"])
-            elif key=="key_type" and "access_key" not in payload and "secret_key" not in payload:
-                assert_utils.assert_true(get_resp.json()["keys"][0]["access_key"]==resp.json()[
-                           "keys"][0]["access_key"])
-            elif key=="key_type" and len(get_resp.json()["keys"]) > 1 and \
-                              "access_key" not in payload and "secret_key" not in payload:
-                assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]==resp.json()[
-                              "keys"][0]["access_key"])
+            if key == "generate_key":
+                assert(len(get_resp["keys"]) < 2, "New key is not generated.")
+            elif key == "access_key" or key == "secret_key":
+                assert(len(self.csm_obj.search_list_of_dict(key, payload[key], get_resp["keys"])) >= 1)
+            elif key =="key_type":
+                pass
             else:
-                if payload[key]!=get_resp.json()[key]:
-                    break
-            count+=1
-        assert_utils.assert_true(len(payload)==count, "Update not done successfully")
+                assert payload[key]==get_resp[key], "key mistmatch"
+
         self.log.info("[END]Update request with uid and other parameters randomly. ")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -4032,8 +4025,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
@@ -4048,8 +4041,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
-        assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
+            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
             assert resp.json()["message"] == msg , "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)

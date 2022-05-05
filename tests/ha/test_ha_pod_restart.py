@@ -47,7 +47,6 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
@@ -109,7 +108,6 @@ class TestPodRestart:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        cls.motr_obj = MotrCoreK8s()
 
     def setup_method(self):
         """
@@ -2415,7 +2413,7 @@ class TestPodRestart:
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
         server_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
 
-        rc_node = self.motr_obj.get_primary_cortx_node().split("svc-")[1]
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0]).split("svc-")[1]
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         self.node_name = list(rc_info.values())[0]
         LOGGER.info("RC Node is running on %s node", self.node_name)
@@ -2468,7 +2466,7 @@ class TestPodRestart:
         LOGGER.info("Step 4: Checked services status on remaining pods are in online state")
 
         LOGGER.info("Step 5: Check for RC node failed over node.")
-        rc_node = self.motr_obj.get_primary_cortx_node()
+        rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
         assert_utils.assert_true(len(rc_node), "Couldn't find new RC failover node")
         rc_info = self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
         LOGGER.info("Step 5: RC node has been failed over to %s node", list(rc_info.values())[0])

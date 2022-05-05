@@ -228,6 +228,10 @@ def pytest_addoption(parser):
         help="Decide whether to update Jira."
     )
     parser.addoption(
+        "--csm_checks", action="store", default=False,
+        help="Execute tests with error code & msg check enabled."
+    )
+    parser.addoption(
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
     )

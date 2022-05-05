@@ -497,8 +497,10 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
+
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_DEPLOYMENT = "kubectl get deployment"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
 KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'
@@ -529,7 +531,9 @@ GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
                       "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
                       "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
-
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""

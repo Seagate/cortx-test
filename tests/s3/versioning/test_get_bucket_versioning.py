@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""GET Object test module for Object Versioning."""
+"""GET Bucket Versioning test module for Object Versioning."""
 
 import logging
 import os
@@ -36,28 +36,23 @@ from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
-from libs.s3.cortxcli_test_lib import CSMAccountOperations
+from libs.s3.s3_versioning_common_test_lib import create_s3_user_get_s3lib_object
 
 
 class TestGetBucketVersioning:
-    """Test Get Object API with Object Versioning"""
+    """Test GET Bucket Versioning API"""
 
     # pylint:disable=attribute-defined-outside-init
     # pylint:disable-msg=too-many-instance-attributes
     def setup_method(self):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test steps if any.
-        """
+        """Function to perform setup prior to each test."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_ver_test_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3_obj = CSMAccountOperations()
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.account_name = "s3getbucketversioning_user"
-        self.email_id = f"{self.account_name}_email@seagate.com"
+        self.user_name = "s3getbucketver-user-{}".format(time.perf_counter_ns())
+        self.email_id = f"{self.user_name}_email@seagate.com"
 
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestGetBucketVersioning")
         if not path_exists(self.test_dir_path):
@@ -70,11 +65,7 @@ class TestGetBucketVersioning:
         self.log.info("Created a bucket with name : %s", self.bucket_name)
 
     def teardown_method(self):
-        """
-        Function will be invoked after each test case.
-
-        It will clean up resources which are getting created during test case execution.
-        """
+        """Function to perform teardown after each test."""
         self.log.info("STARTED: Teardown operations")
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
@@ -86,48 +77,27 @@ class TestGetBucketVersioning:
             res = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(res[0], res[1])
 
-    def create_s3account(self):
-        """Create s3 account"""
-        resp = self.s3_obj.csm_user_create_s3account(
-            self.account_name, self.email_id, self.s3acc_password)
-        assert resp[0], resp[1]
-        access_key = resp[1]['access_key']
-        secret_key = resp[1]['secret_key']
-        return access_key, secret_key
-
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32715')
     @CTFailOn(error_handler)
-    def test_get_object_unversioned_32715(self):
-        """Verify bucket owner received 200 ok when versioning is not enabled
-
-        Create bucket.
-        Perform GET Bucket Versioning on created bucket
-        """
-        self.log.info("STARTED: Verify bucket owner received 200 ok when versioning is not enabled")
+    def test_get_bucket_versioning_unversioned_32715(self):
+        """Verify bucket owner receives 200 OK when versioning is not enabled."""
+        self.log.info("STARTED: Verify bucket owner response in unversioned bucket")
         self.log.info("Step 1: GET Bucket Versioning on created bucket")
-        res = self.s3_ver_test_obj.get_bucket_versioning(
-            bucket_name=self.bucket_name)
+        res = self.s3_ver_test_obj.get_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_equal(200, res[1]['ResponseMetadata']['HTTPStatusCode'])
         assert_utils.assert_not_in('Status', res[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32716')
     @CTFailOn(error_handler)
-    def test_get_object_enabled_suspended_32716(self):
-        """Verify that bucket versioning status is not returned to non-owner user.
-
-        Create bucket.
-        PUT Bucket Versioning with status=Enabled
-        Perform GET Bucket Versioning API by non bucket owner/user.
-        PUT Bucket Versioning with status=Suspended
-        Perform GET Bucket Versioning API by non bucket owner/user.
-        """
-        self.log.info("STARTED : Verify bucket versioning status is not returned to non-owner user")
+    def test_get_bucket_versioning_enabled_suspended_32716(self):
+        """Verify that bucket versioning status is not returned to non-owner user."""
+        self.log.info("STARTED: Verify bucket versioning status is not returned to non-owner user")
         self.log.info("Prerequisite: New S3 account creation for non-owner user actions")
-        access_key, secret_key = self.create_s3account()
-        s3_new_test_obj = S3VersioningTestLib(
-            access_key=access_key, secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
+                                                                email=self.email_id,
+                                                                password=self.s3acc_password)
         err_message = errmsg.ACCESS_DENIED_ERR_KEY
         self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -139,7 +109,7 @@ class TestGetBucketVersioning:
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
             self.log.debug(res)
-            assert err_message in error.message, error.message
+            assert_utils.assert_in(err_message, error.message, error.message)
         self.log.info("Step 3: PUT Bucket Versioning with status=Suspended")
         res = self.s3_ver_test_obj.put_bucket_versioning(
             bucket_name=self.bucket_name, status="Suspended")
@@ -151,7 +121,7 @@ class TestGetBucketVersioning:
             assert_utils.assert_not_in('Status', res[1])
         except CTException as error:
             self.log.debug(error.message)
-            assert err_message in error.message, error.message
-        self.log.info("ENDED : Delete newly added S3 Test account")
-        resp = self.s3_obj.csm_user_delete_s3account(self.account_name)
-        assert resp[0], resp[1]
+            assert_utils.assert_in(err_message, error.message, error.message)
+        self.log.info("ENDED : Delete newly added user")
+        resp = self.rest_obj.delete_s3_account(self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
