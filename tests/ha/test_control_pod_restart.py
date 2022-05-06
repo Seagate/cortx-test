@@ -161,17 +161,19 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
-        if self.restore_pod:
-            LOGGER.info("Restoring control pod to its original state using yaml file %s",
-                        self.original_backup)
-            control_pod_name = self.node_master_list[0].get_all_pods(
-                const.CONTROL_POD_NAME_PREFIX)[0]
-            pod_yaml = {control_pod_name: self.original_backup}
-            resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-                                            failover_node=self.original_control_node)
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], "Failed to restore control pod to original state")
-            LOGGER.info("Successfully restored control pod to original state")
+        # TODO: Uncomment following code after getting confirmation from Rick on control pod
+        #  restoration
+        # if self.restore_pod:
+            # LOGGER.info("Restoring control pod to its original state using yaml file %s",
+            #             self.original_backup)
+            # control_pod_name = self.node_master_list[0].get_all_pods(
+            #     const.CONTROL_POD_NAME_PREFIX)[0]
+            # pod_yaml = {control_pod_name: self.original_backup}
+            # resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
+            #                                 failover_node=self.original_control_node)
+            # LOGGER.debug("Response: %s", resp)
+            # assert_utils.assert_true(resp[0], "Failed to restore control pod to original state")
+            # LOGGER.info("Successfully restored control pod to original state")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
@@ -373,7 +375,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 2: Successfully failed over control pod to %s. Cluster is in good state",
                     failover_node)
 
-        self.restore_pod = True
+        self.restore_pod = self.deploy = True
         LOGGER.info("Step 3: Verify if IAM users %s are persistent across control pod failover",
                     uids)
         for user in uids:
@@ -506,7 +508,7 @@ class TestControlPodRestart:
                     failover_node)
 
         event.clear()
-        self.restore_pod = True
+        self.restore_pod = self.deploy = True
         LOGGER.info("Step 7: Verify if IAM users %s are persistent across control pod failover",
                     uids)
         for user in uids:
@@ -633,7 +635,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 2: Successfully failed over control pod to %s. Cluster is in good state",
                     failover_node)
 
-        self.restore_pod = True
+        self.restore_pod = self.deploy = True
         LOGGER.info("Step 3: Verify if IAM users %s are persistent across control pod failover",
                     uids)
         for user in uids:
@@ -729,3 +731,303 @@ class TestControlPodRestart:
                     "and downloaded 5GB object")
 
         LOGGER.info("ENDED: Verify multipart upload before and after control pod failover")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-40387")
+    @CTFailOn(error_handler)
+    def test_ctrl_pod_failover_loop(self):
+        """
+        Verify control pod failover in loop
+        """
+        LOGGER.info("STARTED: Verify control pod failover in loop")
+
+        total_buckets = HA_CFG["s3_bucket_data"]["no_bck_background_deletes"]
+        event = threading.Event()
+        output = Queue()
+
+        LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with variable object"
+                    " sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-40387'
+        self.s3_clean = users
+        uids = list(users.keys())
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+
+        LOGGER.info("Create %s buckets and put variable size objects and perform read-DI check.",
+                    total_buckets)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipdel': True, 'bkts_to_wr': total_buckets, 'di_check': True, 'output': output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = tuple()
+        while len(wr_resp) != 3:
+            wr_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets), total_buckets, f"Failed to create {total_buckets} "
+                                                               f"number of buckets. Created "
+                                                               f"{len(buckets)} number of buckets")
+        LOGGER.info("Successfully created %s buckets & perform WRITEs with variable size "
+                    "objects.", total_buckets)
+
+        rd_resp = tuple()
+        while len(rd_resp) != 4:
+            rd_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt), "Expected pass in read and di check "
+                                                     "operations. Found failures in READ: "
+                                                     f"{fail_bkt_get} {event_bkt_get}"
+                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Successfully performed READs on the all buckets.")
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
+
+        LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
+
+        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
+                                                   self.control_node])
+        LOGGER.debug("Fail over node is: %s", failover_node)
+
+        LOGGER.info("Step 3: Failover control pod %s to node %s and check cluster status",
+                    self.control_pod_name, failover_node)
+        pod_yaml = {self.control_pod_name: self.modified_yaml}
+        resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
+                                        failover_node=failover_node)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good state",
+                    failover_node)
+
+        for cnt in range(HA_CFG["common_params"]["loop_count"]):
+            control_pods = self.node_master_list[0].get_pods_node_fqdn(
+                const.CONTROL_POD_NAME_PREFIX)
+            control_pod_name = list(control_pods.keys())[0]
+            control_node = control_pods.get(control_pod_name)
+            LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, control_node)
+
+            failover_node = self.system_random.choice([ele for ele in self.host_worker_list if
+                                                       ele != control_node])
+            LOGGER.debug("Fail over node is: %s", failover_node)
+
+            LOGGER.info("Step 4: Failover control pod %s to node %s by changing its NodeSelector "
+                        "and check cluster status", control_pod_name, failover_node)
+            resp = self.ha_obj.change_pod_node(self.node_master_list[0],
+                                               pod_node={control_pod_name: failover_node})
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Check cluster status")
+            resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 4: Successfully failed over control pod to %s. Cluster is in good "
+                        "state", failover_node)
+
+            self.restore_pod = self.deploy = True
+            LOGGER.info("Step 5: Verify if IAM users %s are persistent across control pod failover",
+                        uids)
+            for user in uids:
+                resp = self.rest_iam_user.get_iam_user(user)
+                assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+                                          f"Couldn't find user {user} after control pod failover")
+                LOGGER.info("User %s is persistent: %s", user, resp)
+            LOGGER.info("Step 5: Verified all IAM users %s are persistent across control pod "
+                        "failover", uids)
+
+            LOGGER.info("Step 6: Read-Verify already written data and delete some buckets")
+            buckets = s3_test_obj.bucket_list()[1]
+            del_bucket = 20
+            args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                    'skipput': True, 's3_data': s3_data, 'di_check': True,
+                    'bkts_to_del': del_bucket, 'output': output}
+
+            self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+            rd_resp = tuple()
+            while len(rd_resp) != 4:
+                rd_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            event_bkt_get = rd_resp[0]
+            fail_bkt_get = rd_resp[1]
+            event_di_bkt = rd_resp[2]
+            fail_di_bkt = rd_resp[3]
+
+            # Above four lists are expected to be empty as all pass expected
+            assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                      len(event_di_bkt), "Expected pass in read and di check "
+                                                         "operations. Found failures in READ: "
+                                                         f"{fail_bkt_get} {event_bkt_get}"
+                                                         f"or DI_CHECK: {fail_di_bkt} "
+                                                         f"{event_di_bkt}")
+            LOGGER.info("Successfully performed READs on the remaining %s buckets.", buckets)
+
+            del_resp = tuple()
+            while len(del_resp) != 2:
+                del_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            remain_bkt = s3_test_obj.bucket_list()[1]
+            assert_utils.assert_equal(len(remain_bkt), len(buckets) - del_bucket,
+                                      f"Failed to delete {del_bucket} number of buckets from "
+                                      f"{buckets}. Remaining {len(remain_bkt)} number of buckets")
+
+            LOGGER.info("Successfully performed DELETEs on random %s buckets", del_bucket)
+
+            LOGGER.info("Step 6: Successfully performed Read-Verify on already written data and "
+                        "deleted some buckets")
+
+        LOGGER.info("Step 7: Again create IAM user and perform WRITEs-READs-Verify-DELETE with "
+                    "variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-40387-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETE with variable sizes objects.")
+
+        LOGGER.info("ENDED: Verify control pod failover in loop")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-40389")
+    @CTFailOn(error_handler)
+    def test_iam_bkt_cruds_during_ctrl_pod_failover(self):
+        """
+        Verify IAM user and bucket operations while control pod is failing over
+        """
+        LOGGER.info("STARTED: Verify IAM user and bucket operations while control pod is failing "
+                    "over")
+        event = threading.Event()
+        iam_output = Queue()
+        bkt_output = Queue()
+        num_users = HA_CFG["s3_operation_data"]["iam_users"]
+        num_bkts = HA_CFG["s3_bucket_data"]["no_bck_background_deletes"]
+
+        LOGGER.info("Step 1: Create IAM user.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users
+        uids = list(users.keys())
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        s3_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                           endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Step 1: Created IAM user successfully")
+
+        LOGGER.info("Step 2: Perform IAM user and bucket creation/deletion in background")
+        args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': s3_obj,
+                'output': iam_output}
+        thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event, ), kwargs=args)
+        thread1.daemon = True  # Daemonize thread
+        thread1.start()
+
+        args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
+                'output': bkt_output}
+        thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event, ), kwargs=args)
+        thread2.daemon = True  # Daemonize thread
+        thread2.start()
+        LOGGER.info("Step 2: Successfully started IAM user and bucket creation/deletion in "
+                    "background")
+        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+
+        LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
+        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
+                                                   self.control_node])
+        LOGGER.debug("Fail over node is: %s", failover_node)
+        event.set()
+        LOGGER.info("Step 3: Failover control pod %s to node %s and check cluster status",
+                    self.control_pod_name, failover_node)
+        pod_yaml = {self.control_pod_name: self.modified_yaml}
+        resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
+                                        failover_node=failover_node)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good state",
+                    failover_node)
+        event.clear()
+
+        self.restore_pod = self.deploy = True
+        LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
+                    uids)
+        for user in uids:
+            resp = self.rest_iam_user.get_iam_user(user)
+            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+                                      f"Couldn't find user {user} after control pod failover")
+            LOGGER.info("User %s is persistent: %s", user, resp)
+        LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
+                    "failover", uids)
+
+        LOGGER.info("Waiting for threads to join")
+        thread1.join()
+        thread2.join()
+        LOGGER.info("Step 5: Verifying responses from background processes")
+        LOGGER.info("Checking background process for IAM user CRUDs")
+        iam_resp = tuple()
+        while len(iam_resp) != 3:
+            iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
+                                            "operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        if failed:
+            assert_utils.assert_true(False, "Failures observed in background process for IAM "
+                                            f"user CRUD operations. \nFailed buckets: {failed}")
+        elif exp_fail:
+            LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_fail)
+            LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
+            for i in user_del_failed:
+                self.s3_clean.update(i)
+
+        LOGGER.info("Checking background process for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = bkt_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Background process failed to do bucket CRUD "
+                                            "operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in background process for bucket "
+                                  f"CRUD operations. \nIn-flight Failed buckets: {exp_fail}"
+                                  f"\nFailed buckets: {failed}")
+        LOGGER.info("Step 5: Successfully verifyied responses from background processes")
+
+        LOGGER.info("Step 6: Create %s new IAM users and %s buckets in loop", num_users, num_bkts)
+        output = Queue()
+        args = {'user_crud': True, 'bkt_crud': True, 'num_users': num_users,
+                'num_bkts': num_bkts, 's3_obj': s3_obj, 'output': output}
+        self.ha_obj.iam_bucket_cruds(event, **args)
+        LOGGER.info("Checking responses for IAM user CRUD operations")
+        iam_resp = tuple()
+        while len(iam_resp) != 3:
+            iam_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Failed to do IAM user CRUD operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
+                                                                "operations. \nFailed users: "
+                                                                f"{failed} and \n{exp_fail}")
+
+        LOGGER.info("Checking responses for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Failed to do bucket CRUD operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in background process for bucket "
+                                  f"CRUD operations. \nFailed buckets: {exp_fail}(exp_fail) and "
+                                  f"\n{failed}(failed)")
+        LOGGER.info("Step 6: Successfully created %s new IAM users and %s buckets in loop",
+                    num_users, num_bkts)
+
+        LOGGER.info("ENDED: Verify IAM user and bucket operations while control pod is failing "
+                    "over")
