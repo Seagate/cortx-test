@@ -35,7 +35,7 @@ class GetSetQuota(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 
     def __init__(self):
-        super.__init__()
+        super(GetSetQuota, self).__init__()
         self.template_payload = Template(const.IAM_USER_DATA_PAYLOAD)
         self.iam_user = None
         self.csm_user = RestCsmUser()

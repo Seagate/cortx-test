@@ -76,3 +76,12 @@ test_40639:
 test_40640:
   max_size: 5G
   max_objects: 10
+test_39924:
+  err_margin: 0
+  obj_size: 12288
+test_39923:
+  err_margin: 0
+  obj_size: 12288
+  num_clients: 2
+  num_sample: 5
+  obj_name_pref: "load_gen"
