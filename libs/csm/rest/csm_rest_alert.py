@@ -38,7 +38,7 @@ class SystemAlerts(RestTestLib):
         Initialize the rest api
         :param: node_obj is required if create_alert and resolve_alert functions are used.
         """
-        super().__init__()
+        super(SystemAlerts, self).__init__()
         self.node_obj = node_obj
 
     @RestTestLib.authenticate_and_login
