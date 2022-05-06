@@ -376,7 +376,7 @@ class ProvDeployK8sCortxLib:
         pre_check_resp = self.pre_check(master_node_list[0])
         LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
-        log_file = self.deploy_cfg['log_file']
+        LOGGER.debug("deploy resp is %s", resp)
         matches = [re.compile(pat) for pat in self.patterns]
         if not (m.match(resp[1]) for m in matches):
             LOGGER.info("Setting the current namespace")
@@ -384,9 +384,11 @@ class ProvDeployK8sCortxLib:
                 cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
                 read_lines=True)
             LOGGER.debug("response is %s,", resp_ns)
-            local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER, log_file)
-            remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
-            master_node_list[0].copy_file_to_local(remote_path, local_path)
+            local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER,
+                                      self.deploy_cfg['log_file'])
+            # remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
+            master_node_list[0].copy_file_to_local(self.deploy_cfg['log_file'],
+                                                   local_path)
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
