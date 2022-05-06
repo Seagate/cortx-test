@@ -422,7 +422,6 @@ class ProvDeployK8sCortxLib:
                                              self.deploy_cfg["DEPLOY_HA_TIMEOUT_VAL"])
         node_obj.execute_cmd(cmd=cmd)
 
-
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
         """
