@@ -789,7 +789,8 @@ class TestControlPodRestart:
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Successfully performed READs on the all buckets.")
-        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
+        LOGGER.info("Step 1: Successfully create IAM user and performed WRITEs-READs-Verify with "
+                    "variable sizes objects.")
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
 
@@ -797,13 +798,13 @@ class TestControlPodRestart:
                                                    self.control_node])
         LOGGER.debug("Fail over node is: %s", failover_node)
 
-        LOGGER.info("Step 3: Failover control pod %s to node %s and check cluster status",
+        LOGGER.info("Step 2: Failover control pod %s to node %s and check cluster status",
                     self.control_pod_name, failover_node)
         pod_yaml = {self.control_pod_name: self.modified_yaml}
         resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
                                         failover_node=failover_node)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good state",
+        LOGGER.info("Step 2: Successfully failed over control pod to %s. Cluster is in good state",
                     failover_node)
 
         for cnt in range(HA_CFG["common_params"]["loop_count"]):
@@ -817,29 +818,30 @@ class TestControlPodRestart:
                                                        ele != control_node])
             LOGGER.debug("Fail over node is: %s", failover_node)
 
-            LOGGER.info("Step 4: Failover control pod %s to node %s by changing its NodeSelector "
-                        "and check cluster status", control_pod_name, failover_node)
+            LOGGER.info("Step 3: Failover control pod %s to node %s by changing its NodeSelector "
+                        "and check cluster status. \nFailover count: %s", control_pod_name,
+                        failover_node, cnt)
             resp = self.ha_obj.change_pod_node(self.node_master_list[0],
                                                pod_node={control_pod_name: failover_node})
             assert_utils.assert_true(resp[0], resp)
             LOGGER.info("Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Step 4: Successfully failed over control pod to %s. Cluster is in good "
+            LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good "
                         "state", failover_node)
 
             self.restore_pod = self.deploy = True
-            LOGGER.info("Step 5: Verify if IAM users %s are persistent across control pod failover",
+            LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
                         uids)
             for user in uids:
                 resp = self.rest_iam_user.get_iam_user(user)
                 assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
                                           f"Couldn't find user {user} after control pod failover")
                 LOGGER.info("User %s is persistent: %s", user, resp)
-            LOGGER.info("Step 5: Verified all IAM users %s are persistent across control pod "
+            LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
                         "failover", uids)
 
-            LOGGER.info("Step 6: Read-Verify already written data and delete some buckets")
+            LOGGER.info("Step 5: Read-Verify already written data and delete some buckets")
             buckets = s3_test_obj.bucket_list()[1]
             del_bucket = 20
             args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -874,10 +876,10 @@ class TestControlPodRestart:
 
             LOGGER.info("Successfully performed DELETEs on random %s buckets", del_bucket)
 
-            LOGGER.info("Step 6: Successfully performed Read-Verify on already written data and "
+            LOGGER.info("Step 5: Successfully performed Read-Verify on already written data and "
                         "deleted some buckets")
 
-        LOGGER.info("Step 7: Again create IAM user and perform WRITEs-READs-Verify-DELETE with "
+        LOGGER.info("Step 6: Again create IAM user and perform WRITEs-READs-Verify-DELETE with "
                     "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40387-1'
@@ -885,7 +887,7 @@ class TestControlPodRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs-READs-Verify-DELETE with variable sizes objects.")
+        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETE with variable sizes objects.")
 
         LOGGER.info("ENDED: Verify control pod failover in loop")
 
@@ -981,6 +983,9 @@ class TestControlPodRestart:
             LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
             for i in user_del_failed:
                 self.s3_clean.update(i)
+        else:
+            assert_utils.assert_true(False, "IAM user CRUD operations are expected to be failed "
+                                            "during control pod failover")
 
         LOGGER.info("Checking background process for bucket CRUD operations")
         bkt_resp = tuple()
@@ -1012,7 +1017,8 @@ class TestControlPodRestart:
         failed = iam_resp[1]
         assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
                                                                 "operations. \nFailed users: "
-                                                                f"{failed} and \n{exp_fail}")
+                                                                f"\nexp_fail: {exp_fail} and "
+                                                                f"\nfailed: {failed}")
 
         LOGGER.info("Checking responses for bucket CRUD operations")
         bkt_resp = tuple()
@@ -1023,11 +1029,11 @@ class TestControlPodRestart:
         exp_fail = bkt_resp[0]
         failed = bkt_resp[1]
         assert_utils.assert_false(len(exp_fail) or len(failed),
-                                  "Failures observed in background process for bucket "
-                                  f"CRUD operations. \nFailed buckets: {exp_fail}(exp_fail) and "
-                                  f"\n{failed}(failed)")
+                                  "Failures observed in bucket CRUD operations. "
+                                  f"\nFailed buckets: \nexp_fail: {exp_fail} and "
+                                  f"\nfailed: {failed}")
         LOGGER.info("Step 6: Successfully created %s new IAM users and %s buckets in loop",
                     num_users, num_bkts)
 
-        LOGGER.info("ENDED: Verify IAM user and bucket operations while control pod is failing "
-                    "over")
+        LOGGER.info("ENDED: Verify IAM user and bucket CRUD operations while control pod is "
+                    "failing over")
