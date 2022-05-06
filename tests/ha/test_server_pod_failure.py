@@ -229,7 +229,9 @@ class TestServerPodFailure:
     @pytest.mark.tags("TEST-39903")
     @CTFailOn(error_handler)
     def test_degraded_reads_unsafe_server_pod_shutdown(self):
-        """Following test steps tests degraded READs after server pod down - unsafe shutdown."""
+        """
+        Following test steps tests degraded READs after server pod down - unsafe shutdown.
+        """
         LOGGER.info("STARTED: Test to verify degraded reads after unsafe server pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
@@ -274,7 +276,6 @@ class TestServerPodFailure:
 
         LOGGER.info("ENDED: Test to verify degraded reads after unsafe server pod shutdown.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39904")
@@ -355,8 +356,7 @@ class TestServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully created IAM user with multiple buckets and ran IOs.",
-                    pod_name)
+        LOGGER.info("Step 5: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify degraded reads during server pod is going down.")
 
     @pytest.mark.ha
@@ -364,7 +364,9 @@ class TestServerPodFailure:
     @pytest.mark.tags("TEST-39905")
     @CTFailOn(error_handler)
     def test_degraded_writes_safe_server_pod_shutdown(self):
-        """Following test steps tests degraded writes after safe server pod shutdown."""
+        """
+        Following test steps tests degraded writes after safe server pod shutdown.
+        """
         LOGGER.info("STARTED: Test to verify degraded writes after safe server pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
@@ -517,12 +519,12 @@ class TestServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.",
-                    pod_name)
+        LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.",)
 
         LOGGER.info("ENDED: Test to verify WRITEs during server pod down by delete deployment.")
 
     # pylint: disable-msg=too-many-locals
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39908")
@@ -640,7 +642,6 @@ class TestServerPodFailure:
 
         LOGGER.info("COMPLETED: Test to verify degraded DELETEs after safe server pod shutdown.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39912")
@@ -798,7 +799,6 @@ class TestServerPodFailure:
         LOGGER.info("ENDED: Test to verify WRITEs and DELETEs during server pod down by "
                     "delete deployment.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39913")
@@ -983,7 +983,6 @@ class TestServerPodFailure:
         LOGGER.info("ENDED: Test to verify READs and DELETEs during server pod down "
                     "by delete deployment.")
 
-    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39909")
@@ -1101,7 +1100,6 @@ class TestServerPodFailure:
                     "the same.", remain_bkt)
         LOGGER.info("COMPLETED: Test to verify degraded deletes after unsafe server pod shutdown.")
 
-    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39910")
@@ -1711,8 +1709,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 4: Create new bucket and perform multipart upload and "
                     "then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(int(perf_counter_ns()))
-        object_name = "mp-obj-{}".format(int(perf_counter_ns()))
+        bucket_name = f"mp-bkt-{int(perf_counter_ns())}"
+        object_name = f"mp-obj-{int(perf_counter_ns())}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -1819,8 +1817,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 4: Create new bucket and perform multipart upload and "
                     "then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(int(perf_counter_ns()))
-        object_name = "mp-obj-{}".format(int(perf_counter_ns()))
+        bucket_name = f"mp-bkt-{int(perf_counter_ns())}"
+        object_name = f"mp-obj-{int(perf_counter_ns())}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
