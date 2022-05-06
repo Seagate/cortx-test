@@ -377,8 +377,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
         LOGGER.debug("deploy resp is %s", resp)
-        matches = [re.compile(pat) for pat in self.patterns]
-        if not (m.match(resp[1]) for m in matches):
+        if not resp[1]:
             LOGGER.info("Setting the current namespace")
             resp_ns = master_node_list[0].execute_cmd(
                 cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
