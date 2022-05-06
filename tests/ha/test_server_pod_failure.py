@@ -330,7 +330,7 @@ class TestServerPodFailure:
                     "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
-        LOGGER.info("Thread has joined back.")
+        LOGGER.info("Thread has joined.")
         LOGGER.info("Step 4: Complete READs & verified DI on the written data in background")
         responses = {}
         while len(responses) != 2:
@@ -491,7 +491,7 @@ class TestServerPodFailure:
                     "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
-        LOGGER.info("Thread has joined back.")
+        LOGGER.info("Thread has joined.")
         responses = {}
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -1171,7 +1171,7 @@ class TestServerPodFailure:
                     "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
-        LOGGER.debug("Thread has joined back.")
+        LOGGER.debug("Thread has joined.")
         del_resp = tuple()
         LOGGER.info(
             "Step 4: Verify status for In-flight DELETEs while server pod %s going down", pod_name)
@@ -1217,23 +1217,51 @@ class TestServerPodFailure:
         LOGGER.info("STARTED: Test to verify READs/WRITEs during server pod down by "
                     "delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users
+
         LOGGER.info("Step 1: Perform READs/WRITEs with variable object sizes during "
                     "server pod down by delete deployment.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-39911'
-        self.s3_clean = users
-        output = Queue()
+        LOGGER.info("Step 1.1: Perform WRITEs with variable object sizes for parallel READs")
+        test_prefix_read = 'test-read-39911'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_read, skipread=True,
+                                                    skipcleanup=True, nclients=5, nsamples=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1.1: Performed WRITEs with variable sizes objects for parallel READs.")
 
-        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 10, 'skipcleanup': True, 'output': output}
+        LOGGER.info("Step 1.2: Start WRITEs with variable object sizes in background")
+        test_prefix_write = 'test-write-39911'
+        output_wr = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
+                'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'output': output_wr, 'setup_s3bench': False}
+        thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                      kwargs=args)
+        thread_wri.daemon = True  # Daemonize thread
+        thread_wri.start()
+        LOGGER.info("Waiting for %s seconds to perform some WRITEs",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 1.2: Successfully started WRITEs with variable sizes objects"
+                    " in background")
 
-        thread = threading.Thread(target=self.ha_obj.event_s3_operation,
-                                  args=(event,), kwargs=args)
-        thread.daemon = True  # Daemonize thread
-        thread.start()
+        LOGGER.info("Step 1.3: Start READs and verify DI on the written data in background")
+        output_rd = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
+                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'output': output_rd, 'setup_s3bench': False}
+        thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                     kwargs=args)
+        thread_rd.daemon = True  # Daemonize thread
+        thread_rd.start()
+        LOGGER.info("Step 1.3: Successfully started READs and verified DI on the written data in "
+                    "background")
+        LOGGER.info("Waiting for %s seconds to perform some READs",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 1: Successfully started READs & WRITES in background. Sleeping for %s "
                     "sec for s3bench setup check.", HA_CFG["common_params"]["30sec_delay"])
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown random server pod safely by deleting deployment and "
                     "verify cluster & remaining pods status")
@@ -1251,26 +1279,44 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s safely. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-        thread.join()
-        LOGGER.debug("Thread has joined back")
+        thread_rd.join()
+        thread_wri.join()
+        LOGGER.debug("Threads has joined")
 
-        responses = {}
-        while len(responses) != 2:
-            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        LOGGER.info("Step 3: Verify status for In-flight READs & WRITEs while server pod %s is "
-                    "going down should be failed/error.", pod_name)
-        pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.info("Step 3.1: Verify status for In-flight WRITEs while %s server pod going "
+                    "down should be failed/error.", pod_name)
+        responses_wr = dict()
+        while len(responses_wr) != 2:
+            responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_wr["pass_res"])
         LOGGER.debug("Pass logs list: %s", pass_logs)
-        fail_logs = list(x[1] for x in responses["fail_res"])
+        fail_logs = list(x[1] for x in responses_wr["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"WRITEs logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 3.1: Verified status for In-flight WRITEs while %s server pod "
+                    "going down.", pod_name)
+
+        LOGGER.info("Step 3.2: Verify status for In-flight READs/Verify DI while %s"
+                    " server pod going down should be failed/error.", pod_name)
+        responses_rd = dict()
+        while len(responses_rd) != 2:
+            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_rd["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
+        fail_logs = list(x[1] for x in responses_rd["fail_res"])
         LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]),
-                                  f"Expected all pass, But Logs which contain failures: {resp[1]}")
+                                  f"READs/VerifyDI logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
-        LOGGER.info("Step 3: Verified status for In-flight READs & WRITEs while server pod %s is "
-                    "going down is failed/error.", pod_name)
+                                 f"READs/VerifyDI logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 3.2: Verified status for In-flight READs/VerifyDI while %s "
+                    " server pod going down.", pod_name)
 
         LOGGER.info("Step 4: Create IAM user with multiple buckets and run IOs when cluster has "
                     "some failures due to server pod %s going down.", pod_name)
