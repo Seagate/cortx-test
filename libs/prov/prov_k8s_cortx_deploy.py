@@ -1266,15 +1266,14 @@ class ProvDeployK8sCortxLib:
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
             LOGGER.info("Step to Perform Cortx Cluster Deployment")
-            resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
-                                             worker_node_list, system_disk_dict,
-                                             self.git_script_tag, namespace)
+            deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
+                                                    worker_node_list, system_disk_dict,
+                                                    self.git_script_tag, namespace)
             if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
                     bool(re.findall(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
                 assert_utils.assert_false(resp[0], resp[1])
-            matches = [re.compile(pat) for pat in self.patterns]
-            if not (m.match(resp[1]) for m in matches):
+            if not deploy_resp[1]:
                 LOGGER.info("Step to Check  ALL service status")
                 time.sleep(self.deploy_cfg["sleep_time"])
                 service_status = self.check_service_status(master_node_list[0])
