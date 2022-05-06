@@ -26,8 +26,8 @@ from http import HTTPStatus
 from random import SystemRandom
 from string import Template
 
+from commons import configmanager
 from commons.constants import Rest as const
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3 import s3_misc
 
@@ -38,7 +38,6 @@ class GetSetQuota(RestTestLib):
         super(GetSetQuota, self).__init__()
         self.template_payload = Template(const.IAM_USER_DATA_PAYLOAD)
         self.iam_user = None
-        self.csm_user = RestCsmUser()
         self.cryptogen = SystemRandom()
         self.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
@@ -111,11 +110,14 @@ class GetSetQuota(RestTestLib):
         Verify get and set user quota
         """
         set_response = self.set_user_quota(uid, payload)
-        get_response = self.get_user_quota(uid)
+        result = True
         if set_response.status_code == expected_response:
             self.log.info("SET response check passed.")
         else:
             self.log.error("SET response check failed")
+            result = False
+            return result, set_response
+        get_response = self.get_user_quota(uid)
         if get_response.status_code == expected_response:
             result = True
             get_response = get_response.json()

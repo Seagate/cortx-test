@@ -206,7 +206,8 @@ class TestCapacityQuota():
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
         payload = self.csm_obj.iam_user_quota_payload()
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
-                                                               verify_response=True)
+                                                               verify_response=True,
+                                                               login_as="csm_user_manage")
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform put object of max size")
