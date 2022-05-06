@@ -371,7 +371,7 @@ class ProvDeployK8sCortxLib:
             each.join()
 
         self.prereq_git(master_node_list[0], git_tag)
-        self.checkout_update_deploy_script(master_node_list[0], self.git_script_tag)
+        self.update_deploy_script(master_node_list[0])
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         pre_check_resp = self.pre_check(master_node_list[0])
         LOGGER.debug("pre-check result %s", pre_check_resp)
@@ -413,28 +413,15 @@ class ProvDeployK8sCortxLib:
         return self.deploy_cfg["solution_file"]
 
     # this will be reverted once the bug CORTX-29667 is Resolved.
-    def checkout_update_deploy_script(self, node_obj: LogicalNode, git_tag):
+    def update_deploy_script(self, node_obj: LogicalNode):
         """
-        This method edits the deploy script to update the workarounds
-        returns the Path of the updated file
+        This method sets the timeout value for pod deployment
         params: node_obj: node obj of master node.
-        params: git_tag: Services release tag
         """
-        url = self.deploy_cfg["git_k8_repo_file"].format(git_tag,
-                                                         self.deploy_cfg["deploy_file"])
-        cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["deploy_file"], url)
-        system_utils.execute_cmd(cmd=cmd)
-        # Update deploy file
-        string_to_replace = "waitForAllDeploymentsAvailable 120s"
-        new_string = "waitForAllDeploymentsAvailable 500s"
-        update_line = common_cmd.LINUX_REPLACE_STRING.format(string_to_replace, new_string,
-                                                             self.deploy_cfg['deploy_file'])
-        system_utils.execute_cmd(update_line)
-        remote_path = os.path.join(self.deploy_cfg['k8s_dir'], self.deploy_cfg['deploy_file'])
-        if system_utils.path_exists(self.deploy_cfg['deploy_file']):
-            node_obj.copy_file_to_remote(self.deploy_cfg['deploy_file'], remote_path)
-            return True, f"Files copied at {remote_path}"
-        return False, f"Failed to find the file on {self.deploy_cfg['deploy_file']}"
+        cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["DEPLOY_HA_TIMEOUT_KEY"],
+                                             self.deploy_cfg["DEPLOY_HA_TIMEOUT_VAL"])
+        node_obj.execute_cmd(cmd=cmd)
+
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
