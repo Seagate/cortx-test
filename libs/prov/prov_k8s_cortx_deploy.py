@@ -1273,8 +1273,6 @@ class ProvDeployK8sCortxLib:
                     bool(re.findall(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
                 assert_utils.assert_false(resp[0], resp[1])
-            else:
-                assert_utils.assert_true(resp[0], resp[1])
             matches = [re.compile(pat) for pat in self.patterns]
             if not (m.match(resp[1]) for m in matches):
                 LOGGER.info("Step to Check  ALL service status")
