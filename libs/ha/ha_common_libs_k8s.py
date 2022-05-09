@@ -1785,7 +1785,7 @@ class HAK8s:
 
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
-    def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=None,
+    def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
                          num_bkts=None, output=None):
         """
         Function to perform iam user and bucket crud operations in loop (To be used for background)
@@ -1806,7 +1806,14 @@ class HAK8s:
             for i in range(num_users):
                 try:
                     LOGGER.debug("Creating %s user", i)
+                    user = None
                     user = self.mgnt_ops.create_account_users(nusers=1)
+                    if user is None:
+                        if event.is_set():
+                            exp_fail.append(user)
+                        else:
+                            failed.append(user)
+                        break
                     LOGGER.debug("Deleting %s user", i)
                     resp = self.delete_s3_acc_buckets_objects(user)
                     if not resp[0]:
@@ -1817,7 +1824,7 @@ class HAK8s:
                             failed.append(user)
                     else:
                         LOGGER.debug("Created and deleted %s user successfully", i)
-                except Exception as error:
+                except BaseException as error:
                     LOGGER.error("Error: %s", error)
                     if event.is_set():
                         exp_fail.append(user)
@@ -1838,6 +1845,7 @@ class HAK8s:
                             exp_fail.append(bucket_name)
                         else:
                             failed.append(bucket_name)
+                        break
                     s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
                     LOGGER.debug("Created and deleted %s bucket successfully", i)
                 except CTException as error:

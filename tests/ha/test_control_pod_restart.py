@@ -380,7 +380,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 3: Verified all IAM users %s are persistent across control pod "
@@ -513,7 +513,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 7: Verified all IAM users %s are persistent across control pod "
@@ -640,7 +640,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 3: Verified all IAM users %s are persistent across control pod "
@@ -769,7 +769,7 @@ class TestControlPodRestart:
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(buckets), total_buckets, f"Failed to create {total_buckets} "
-                                                               f"number of buckets. Created "
+                                                               "number of buckets. Created "
                                                                f"{len(buckets)} number of buckets")
         LOGGER.info("Successfully created %s buckets & perform WRITEs with variable size "
                     "objects.", total_buckets)
@@ -835,7 +835,7 @@ class TestControlPodRestart:
                         uids)
             for user in uids:
                 resp = self.rest_iam_user.get_iam_user(user)
-                assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+                assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                           f"Couldn't find user {user} after control pod failover")
                 LOGGER.info("User %s is persistent: %s", user, resp)
             LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
@@ -955,7 +955,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
@@ -1002,7 +1002,8 @@ class TestControlPodRestart:
                                   f"\nFailed buckets: {failed}")
         LOGGER.info("Step 5: Successfully verifyied responses from background processes")
 
-        LOGGER.info("Step 6: Create %s new IAM users and %s buckets in loop", num_users, num_bkts)
+        LOGGER.info("Step 6: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
+                    num_users, num_bkts)
         output = Queue()
         args = {'user_crud': True, 'bkt_crud': True, 'num_users': num_users,
                 'num_bkts': num_bkts, 's3_obj': s3_obj, 'output': output}
