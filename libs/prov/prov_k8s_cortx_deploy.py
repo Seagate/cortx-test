@@ -385,9 +385,10 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("response is %s,", resp_ns)
             local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER,
                                       self.deploy_cfg['log_file'])
-            # remote_path = os.path.join(self.deploy_cfg["k8s_dir"], log_file)
-            master_node_list[0].copy_file_to_local(self.deploy_cfg['log_file'],
-                                                   local_path)
+            remote_path = os.path.join(self.deploy_cfg["k8s_dir"],
+                                       self.deploy_cfg['log_file'])
+            LOGGER.debug("remote path is %s", remote_path)
+            master_node_list[0].copy_file_to_local(remote_path, local_path)
             pod_status = master_node_list[0].execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                                          read_lines=True)
             LOGGER.debug("\n=== POD STATUS ===\n")
@@ -396,10 +397,6 @@ class ProvDeployK8sCortxLib:
                 with open(local_path, 'r') as file:
                     lines = file.read()
                     LOGGER.debug(lines)
-            if resp[0]:
-                LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
-                resp = self.validate_cluster_status(master_node_list[0],
-                                                    self.deploy_cfg["k8s_dir"])
         return resp
 
     def checkout_solution_file(self, git_tag):
@@ -1268,6 +1265,14 @@ class ProvDeployK8sCortxLib:
             deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                                     worker_node_list, system_disk_dict,
                                                     self.git_script_tag, namespace)
+            LOGGER.debug("DEPLOY resp %s", deploy_resp)
+            # Run status-cortx-cloud.sh script to fetch the status of all resources.
+            if deploy_resp[0]:
+                LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
+                resp = self.validate_cluster_status(master_node_list[0],
+                                                    self.deploy_cfg["k8s_dir"])
+                assert_utils.assert_true(resp[0], resp[1])
+
             if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
                     bool(re.findall(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
