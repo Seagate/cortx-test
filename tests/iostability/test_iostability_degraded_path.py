@@ -138,7 +138,7 @@ class TestIOWorkloadDegradedPath:
         bucket_prefix = "testbkt"
         duration_in_days = self.test_cfg['degraded_path_durations_days']
         client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
-        percentage = self.test_cfg['test_40173']['nearfull_memory_percetange']
+        percentage = self.test_cfg['nearfull_memory_percentage']
         self.log.info("Step 1: calculating byte count for required percentage")
         resp = self.dfr.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
                                                      memory_percent=percentage)
@@ -151,6 +151,9 @@ class TestIOWorkloadDegradedPath:
                                                                   bucket_prefix=bucket_prefix,
                                                                   client=client)
         assert_utils.assert_true(ret[0], ret[1])
+        for each in ret:
+            each["num_clients"] = (len(self.worker_node_list) - 1) \
+                                  * self.test_cfg['sessions_per_node_vm']
         self.log.debug("write operation data: %s", ret)
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
                       "check degraded status.")

@@ -17,8 +17,4 @@ degraded_path_durations_days: 7
 test_40172:
   bucket_creation_healthy_mode: True
 
-test_40041:
-  nearfull_memory_percetange: 95
-
-test_40173:
-  nearfull_memory_percetange: 95
+nearfull_memory_percentage: 95
