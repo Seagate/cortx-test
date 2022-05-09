@@ -280,7 +280,10 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path, self.deploy_cfg['log_file'])
+        export_cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["deploy_ha_timeout_key"],
+                                                    self.deploy_cfg["deploy_ha_timeout_val"])
+        cmd = export_cmd + " && " + common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path,
+                                                                         self.deploy_cfg['log_file'])
         try:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                         timeout=self.deploy_cfg['timeout']['deploy'])
@@ -841,6 +844,7 @@ class ProvDeployK8sCortxLib:
             nodes_data = cluster_status["nodes"]
             for node_data in nodes_data:
                 services = node_data["svcs"]
+                LOGGER.debug(services)
                 for svc in services:
                     if svc["status"] != "started":
                         return False, "Service {} not started.".format(svc["name"])
@@ -1278,20 +1282,19 @@ class ProvDeployK8sCortxLib:
                 resp = self.validate_cluster_status(master_node_list[0],
                                                     self.deploy_cfg["k8s_dir"])
                 assert_utils.assert_true(resp[0], resp[1])
-
-            if not deploy_resp[1]:
-                LOGGER.info("Step to Check  ALL service status")
-                time.sleep(self.deploy_cfg["sleep_time"])
-                service_status = self.check_service_status(master_node_list[0])
-                LOGGER.info("service resp is %s", service_status)
-                assert_utils.assert_true(service_status[0], service_status[1])
-                row.append(service_status[-1])
-                if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
-                    if self.cortx_server_image:
-                        resp = self.verfiy_installed_rpms(master_node_list,
-                                                          common_const.RGW_CONTAINER_NAME,
-                                                          self.deploy_cfg["rgw_rpm"])
-                        assert_utils.assert_true(resp[0], resp[1])
+                if not deploy_resp[1]:
+                    LOGGER.info("Step to Check  ALL service status")
+                    time.sleep(self.deploy_cfg["sleep_time"])
+                    service_status = self.check_service_status(master_node_list[0])
+                    LOGGER.info("service resp is %s", service_status)
+                    assert_utils.assert_true(service_status[0], service_status[1])
+                    row.append(service_status[-1])
+                    if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
+                        if self.cortx_server_image:
+                            resp = self.verfiy_installed_rpms(master_node_list,
+                                                              common_const.RGW_CONTAINER_NAME,
+                                                              self.deploy_cfg["rgw_rpm"])
+                            assert_utils.assert_true(resp[0], resp[1])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
                 LOGGER.info("Setting the current namespace")

@@ -176,7 +176,7 @@ k8s_cortx_deploy:
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
   deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
-  deploy_ha_timeout_val: 1000
+  deploy_ha_timeout_val: 1000s
   timeout:
     pre-req: 120
     deploy: 7200
