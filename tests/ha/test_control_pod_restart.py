@@ -1285,9 +1285,9 @@ class TestControlPodRestart:
             resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                          f"for object {object3} of bucket"
-                                                          f" {bucket3}.")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get"
+                                                          f" Etag for object {object3} of "
+                                                          f"bucket {bucket3}.")
             LOGGER.info("Step 6: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
 
