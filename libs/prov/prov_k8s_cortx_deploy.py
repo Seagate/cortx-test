@@ -416,8 +416,8 @@ class ProvDeployK8sCortxLib:
         This method sets the timeout value for pod deployment
         params: node_obj: node obj of master node.
         """
-        cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["DEPLOY_HA_TIMEOUT_KEY"],
-                                             self.deploy_cfg["DEPLOY_HA_TIMEOUT_VAL"])
+        cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["deploy_ha_timeout_key"],
+                                             self.deploy_cfg["deploy_ha_timeout_val"])
         node_obj.execute_cmd(cmd=cmd)
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,

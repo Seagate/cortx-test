@@ -175,8 +175,8 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
-  DEPLOY_HA_TIMEOUT_KEY: "CORTX_DEPLOY_HA_TIMEOUT"
-  DEPLOY_HA_TIMEOUT_VAL: 1000
+  deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
+  deploy_ha_timeout_val: 1000
   timeout:
     pre-req: 120
     deploy: 7200
