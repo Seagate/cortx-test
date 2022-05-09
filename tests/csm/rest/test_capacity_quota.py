@@ -221,7 +221,7 @@ class TestCapacityQuota():
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform max object verification")
-        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -254,13 +254,13 @@ class TestCapacityQuota():
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 3: Perform max size verification")
-            self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+            res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
             assert res[0], res[1]
             self.log.info("Step 4: Delete object")
             assert s3_misc.delete_object(
                 self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
             self.log.info("Step 5: Perform max objects verification")
-            self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+            res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
             assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -292,13 +292,13 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform max size verification")
-        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
             self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform max objects verification")
-        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -345,13 +345,13 @@ class TestCapacityQuota():
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 4: Perform max size verification")
-            self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+            res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
             assert res[0], res[1]
             self.log.info("Step 5: Delete object")
             assert s3_misc.delete_object(
                 self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
             self.log.info("Step 6: Perform max object verification")
-            self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+            res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
             assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -597,7 +597,7 @@ class TestCapacityQuota():
         assert_utils.assert_in(self.obj_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Step 5: Perform max size verification")
-        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("Step 6: Abort Multipart upload S3 operations")
         res = self.s3_mp_test_obj.abort_multipart_upload(
@@ -611,9 +611,9 @@ class TestCapacityQuota():
         self.log.info(
             "Aborted multipart upload with upload ID: %s", mpu_id)
         self.log.info("Step 7: Perform max size verification")
-        self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("Step 8: Perform max objects verification")
-        self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
