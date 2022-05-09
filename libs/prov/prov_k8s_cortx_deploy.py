@@ -374,7 +374,6 @@ class ProvDeployK8sCortxLib:
             each.join()
 
         self.prereq_git(master_node_list[0], git_tag)
-        self.update_deploy_script(master_node_list[0])
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
         pre_check_resp = self.pre_check(master_node_list[0])
         LOGGER.debug("pre-check result %s", pre_check_resp)
@@ -412,16 +411,6 @@ class ProvDeployK8sCortxLib:
         system_utils.execute_cmd(cmd=cmd)
         shutil.copyfile(self.deploy_cfg["new_file_path"], self.deploy_cfg['solution_file'])
         return self.deploy_cfg["solution_file"]
-
-    # this will be reverted once the bug CORTX-29667 is Resolved.
-    def update_deploy_script(self, node_obj: LogicalNode):
-        """
-        This method sets the timeout value for pod deployment
-        params: node_obj: node obj of master node.
-        """
-        cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["deploy_ha_timeout_key"],
-                                             self.deploy_cfg["deploy_ha_timeout_val"])
-        node_obj.execute_cmd(cmd=cmd)
 
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
