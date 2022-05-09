@@ -178,16 +178,16 @@ test_7362:
   password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='
 
 test_25278:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
 test_25280:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the password for {}"
     message_id: "update_not_allowed"
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25282:
-    error_code: 4101
+    error_code: 4104
     message: "{} can not update the email id for {}"
     message_id: "update_not_allowed"
     email_id: "testuser@seagate.com"
