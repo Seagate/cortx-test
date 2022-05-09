@@ -139,19 +139,26 @@ class GetSetQuota(RestTestLib):
         return result, get_response
 
     def verify_max_size(self, max_size: int, akey: str, skey: str):
-        """
-        Perform put operation with 1 object and then perform put
-        of random size and check if that fails
-        """
-        self.log.info("Perform Put operation for 1 object of max size")
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          akey, skey, object_size=max_size)
-        assert resp, "Put object Failed"
-        self.log.info("Perform Put operation of Random size and 1 object")
-        random_size = self.cryptogen.randrange(1, max_size)
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          akey, skey, object_size=random_size)
-        assert not resp, "User is able to perform put object after exceeding max_size"
+	"""
+	Verify put object of random size fails after exceeding max size limit
+	"""
+	err_msg = ""
+	self.log.info("Perform Put operation for 1 object of max size")
+	res = s3_misc.create_put_objects(self.obj_name, self.bucket, akey, skey, object_size=max_size)
+	if res:
+	   self.log.info("Perform Put operation of Random size and 1 object")
+           random_size = self.cryptogen.randrange(1, max_size)
+           try:
+               resp = s3_misc.create_put_objects(self.obj_name, self.bucket,akey, skey, object_size=random_size)
+               res = False
+               err_msg = "Put operation passed for object size above max size"
+           except ClientError as error:
+               self.log.info("Expected exception received %s", error)
+               res = resp['Error']['Code'] == "......." 
+               err_msg = "Message check verification failed for object size above max size"
+	else:
+           err_msg = "Put operation failed for less than max size"
+	return res, err_msg
 
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str):
         """
@@ -160,12 +167,22 @@ class GetSetQuota(RestTestLib):
         """
         self.log.info("Perform Put operation of small size and N object")
         small_size = math.floor(max_size / max_objects)
-        for _ in range(0, max_objects):
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+        err_msg = ""
+        for i in range(0, max_objects):
+            res = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               akey, skey, object_size=small_size)
-            assert resp, "Put object Failed"
-        self.log.info("Perform Put operation of Random size and 1 object")
-        random_size = self.cryptogen.randrange(1, max_size)
-        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+        if res:
+           self.log.info("Perform Put operation of Random size and 1 object")
+           random_size = self.cryptogen.randrange(1, max_size)
+           try:
+               resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           akey, skey, object_size=random_size)
-        assert not resp, "User is able to perform put object after exceeding max_objects"
+               res = False
+               err_msg = "Put operation passed for object size above random size"
+           except ClientError as error:
+               self.log.info("Expected exception received %s", error)
+               res = resp['Error']['Code'] == "......." #TODO
+               err_msg = "Message check verification failed for objects more than max objects"
+        else:
+            err_msg = "Put operation failed for less than max objects"
+        return res, err_msg      
