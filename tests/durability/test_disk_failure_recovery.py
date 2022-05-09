@@ -35,6 +35,7 @@ from config import CMN_CFG, HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.prefill.near_full_data_storage import DiskNearFullStorage
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -541,18 +542,18 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
                     self.near_full_percent)
-        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             self.near_full_percent)
+        resp = DiskNearFullStorage.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                                self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                                 user_data_writes=resp[1],
-                                                                 bucket_prefix=
-                                                                 self.test_prefix[-1])
+            resp = DiskNearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                    user_data_writes=resp[1],
+                                                                    bucket_prefix=
+                                                                    self.test_prefix[-1])
             assert_utils.assert_true(resp[0], resp[1])
             workload_info = resp[1]
 
@@ -641,8 +642,8 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
-                                                              workload_info=workload_info)
+            DiskNearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                 workload_info=workload_info)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
                     "are less than K(parity units)")
@@ -666,18 +667,18 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("Step 1: Perform Write operations till overall disk space is filled %s",
                     self.near_full_percent)
-        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             self.near_full_percent)
+        resp = DiskNearFullStorage.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                                self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                                          user_data_writes=resp[1],
-                                                                          bucket_prefix=
-                                                                          self.test_prefix[-1])
+            resp = DiskNearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                    user_data_writes=resp[1],
+                                                                    bucket_prefix=
+                                                                    self.test_prefix[-1])
             assert_utils.assert_true(resp[0], resp[1])
             workload_info = resp[1]
 
@@ -762,8 +763,8 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
-                                                              workload_info=workload_info)
+            resp = DiskNearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                        workload_info=workload_info)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
                     "are equal to K(parity units)")
@@ -885,18 +886,18 @@ class TestDiskFailureRecovery:
 
         LOGGER.info("Step 1: PerformWrite operations till overall disk space is filled %s",
                     self.near_full_percent)
-        resp = self.dsk_rec_obj.get_user_data_space_in_bytes(self.node_master_list[0],
-                                                             self.near_full_percent)
+        resp = DiskNearFullStorage.get_user_data_space_in_bytes(self.node_master_list[0],
+                                                                self.near_full_percent)
         assert_utils.assert_true(resp[0], resp[1])
 
         if not resp[1]:
             LOGGER.info("Current Memory usage is already more than expected memory usage,"
                         " skipping write operation")
         else:
-            resp = self.dsk_rec_obj.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                                          user_data_writes=resp[1],
-                                                                          bucket_prefix=
-                                                                          self.test_prefix[-1])
+            resp = DiskNearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                                    user_data_writes=resp[1],
+                                                                    bucket_prefix=
+                                                                    self.test_prefix[-1])
             assert_utils.assert_true(resp[0], resp[1])
             workload_info = resp[1]
 
@@ -981,8 +982,8 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            resp = self.dsk_rec_obj.perform_near_full_sys_operations(s3userinfo=s3userinfo,
-                                                              workload_info=workload_info)
+            resp = DiskNearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                        workload_info=workload_info)
             assert_utils.assert_true(resp[0],resp[1])
         LOGGER.info("COMPLETED: Validate SNS repair works fine on near full system with failed "
                     "disks on same cvg are equal to K(parity units)")
