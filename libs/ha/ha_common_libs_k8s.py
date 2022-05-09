@@ -586,7 +586,7 @@ class HAK8s:
                 parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
             return True, mpu_id, multipart_obj_path, parts_etag
-        except CTException as error:
+        except BaseException as error:
             LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
 
@@ -745,7 +745,7 @@ class HAK8s:
             LOGGER.info("Response: %s", res)
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        except CTException as error:
+        except (BaseException, CTException) as error:
             LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
