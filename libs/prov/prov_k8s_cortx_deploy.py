@@ -839,8 +839,7 @@ class ProvDeployK8sCortxLib:
                     if svc["status"] != "started":
                         if svc["name"] == common_const.MOTR_CLIENT:
                             continue
-                        else:
-                            return False, "Service {} not started.".format(svc["name"])
+                        return False, "Service {} not started.".format(svc["name"])
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
 
