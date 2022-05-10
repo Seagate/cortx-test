@@ -1,4 +1,3 @@
-#
 # Copyright (c) 2021 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
@@ -35,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: "Enable the permissions"
+        run: |
+          sudo chown -R root:root $GITHUB_WORKSPACE
+
       - uses: Seagate/action-alex@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
