@@ -32,7 +32,6 @@ class TestRestApiRgw:
     REST API Test cases for IAM users.
     IAM CRUD operations.
     """
-    # no blank line allowed here
     @classmethod
     def setup_class(cls):
         """Function will be invoked before running each test case."""
