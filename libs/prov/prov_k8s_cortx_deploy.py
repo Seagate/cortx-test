@@ -282,8 +282,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Deploy Cortx cloud")
         export_cmd = common_cmd.LINUX_EXPORT.format(self.deploy_cfg["deploy_ha_timeout_key"],
                                                     self.deploy_cfg["deploy_ha_timeout_val"])
-        cmd = export_cmd + " && " + common_cmd.DEPLOY_CLUSTER_CMD.format(remote_code_path,
-                                                                         self.deploy_cfg['log_file'])
+        cmd = export_cmd + " && " + common_cmd.DEPLOY_CLUSTER_CMD.format(
+            remote_code_path, self.deploy_cfg['log_file'])
         try:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                         timeout=self.deploy_cfg['timeout']['deploy'])
