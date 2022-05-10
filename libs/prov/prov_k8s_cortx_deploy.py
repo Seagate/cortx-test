@@ -378,7 +378,7 @@ class ProvDeployK8sCortxLib:
         pre_check_resp = self.pre_check(master_node_list[0])
         LOGGER.debug("pre-check result %s", pre_check_resp)
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["k8s_dir"])
-        LOGGER.debug("deploy resp is %s", resp)
+        LOGGER.debug("Deploy script response %s", resp)
         if not resp[1]:
             LOGGER.info("Setting the current namespace")
             resp_ns = master_node_list[0].execute_cmd(
@@ -1258,7 +1258,7 @@ class ProvDeployK8sCortxLib:
             deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                                     worker_node_list, system_disk_dict,
                                                     self.git_script_tag, namespace)
-            LOGGER.debug("DEPLOY resp %s", deploy_resp)
+            LOGGER.debug("Deploy execution response %s", deploy_resp)
 
             if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
                     bool(re.findall(r'\w*[A-Z]\w*', namespace)):
@@ -1275,7 +1275,7 @@ class ProvDeployK8sCortxLib:
                     LOGGER.info("Step to Check  ALL service status")
                     time.sleep(self.deploy_cfg["sleep_time"])
                     service_status = self.check_service_status(master_node_list[0])
-                    LOGGER.info("service resp is %s", service_status)
+                    LOGGER.info("All service resp is %s", service_status)
                     assert_utils.assert_true(service_status[0], service_status[1])
                     row.append(service_status[-1])
                     if self.deployment_type != self.deploy_cfg["deployment_type_data"]:

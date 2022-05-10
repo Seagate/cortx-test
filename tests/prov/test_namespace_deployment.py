@@ -146,7 +146,8 @@ class TestNamespaceDeployment:
          name of custom namespace upto max length
         """
 
-        custom_namespace = self.deploy_lc_obj.namespace_name_generator(21)
+        custom_namespace = self.deploy_lc_obj.namespace_name_generator(
+            self.deploy_conf["max_size_namespace"])
         self.log.info("NAMESPACE is %s", custom_namespace)
         config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)
