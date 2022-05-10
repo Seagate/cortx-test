@@ -66,15 +66,12 @@ class GetSetQuota(RestTestLib):
         return response
 
     #pylint disable=no-self-use
-    def iam_user_quota_payload(self):
+    def iam_user_quota_payload(self,quota_type: str, enabled: str,
+                        max_size: int, max_objects: int):
         """
         Create IAM user quota payload
         """
         payload = {}
-        quota_type = self.csm_conf["test_values"]["quota_type"]
-        enabled = self.csm_conf["test_values"]["enabled"]
-        max_size = self.csm_conf["test_values"]["max_size"]
-        max_objects = self.csm_conf["test_values"]["max_objects"]
         payload.update({"quota_type": quota_type})
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})

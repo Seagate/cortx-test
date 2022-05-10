@@ -169,9 +169,11 @@ class TestCapacityQuota():
         assert bucket_created, "Failed to create bucket"
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
         test_cfg = self.csm_conf["test_40632"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload()
+        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
@@ -205,10 +207,12 @@ class TestCapacityQuota():
         bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
         assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40633"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
-        payload = self.csm_obj.iam_user_quota_payload()
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True,
                                                                login_as="csm_user_manage")
@@ -243,12 +247,14 @@ class TestCapacityQuota():
         bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
         assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40634"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
         for num in range(0, test_cfg["num_iterations"]):
             self.log.info("Perform get set api for iteration: %s", num)
             self.log.info("Step 2: Perform PUT API to set user level quota")
-            payload = self.csm_obj.iam_user_quota_payload()
             result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
             assert result, "Verification for get set user failed."
@@ -283,10 +289,12 @@ class TestCapacityQuota():
         bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
         assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40635"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
-        payload = self.csm_obj.iam_user_quota_payload()
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
@@ -336,10 +344,12 @@ class TestCapacityQuota():
             bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
             assert bucket_created, "Failed to create bucket"
             test_cfg = self.csm_conf["test_40636"]
+            quota_type = test_cfg["quota_type"]
+            enabled = test_cfg["enabled"]
             max_size = test_cfg["max_size"]
             max_objects = test_cfg["max_objects"]
+            payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
             self.log.info("Step 3: Perform PUT API to set user level quota with max values")
-            payload = self.csm_obj.iam_user_quota_payload()
             result, resp = self.csm_obj.verify_get_set_user_quota(uid, payload,
                                                                verify_response=True)
             assert result, "Verification for get set user failed."
