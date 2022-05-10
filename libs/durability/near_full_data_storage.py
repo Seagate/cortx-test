@@ -31,9 +31,9 @@ from scripts.s3_bench import s3bench
 LOGGER = logging.getLogger(__name__)
 
 
-class DiskNearFullStorage:
+class NearFullStorage:
     """
-    This class contains common utility methods for near full storage of data disk
+    This class contains common utility methods to create pre filled near full storage.
     """
 
     @staticmethod
@@ -74,17 +74,17 @@ class DiskNearFullStorage:
 
     @staticmethod
     def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str,
-                                     client: int = 10) -> tuple:
+                                     **kwargs) -> tuple:
         """
         Perform write operation till the memory is filled to given percentage
         :param s3userinfo: S3user dictionary with access/secret key
         :param user_data_writes: Write operation to be performed for specific bytes
         :param bucket_prefix: Bucket prefix for the data written
-        :param client: number of clients
         :return : list of dictionary
-                format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients': client,
-                     'obj_size': obj_size, 'num_sample': sample}]
+                format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients':
+                client, 'obj_size': obj_size, 'num_sample': sample}]
         """
+        client = kwargs.get("client", 10)
         workload = [1, 16, 128, 256, 512]  # workload in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend([1024, 2048, 3072, 4096])

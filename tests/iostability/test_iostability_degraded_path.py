@@ -32,12 +32,12 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils, support_bundle_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
-from libs.prefill.near_full_data_storage import DiskNearFullStorage
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.iostability.iostability_lib import IOStabilityLib
-from libs.s3.s3_test_lib import S3TestLib
+from libs.durability.near_full_data_storage import NearFullStorage
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestIOWorkloadDegradedPath:
@@ -139,16 +139,16 @@ class TestIOWorkloadDegradedPath:
         client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
         percentage = self.test_cfg['nearfull_storage_percentage']
         self.log.info("Step 1: calculating byte count for required percentage")
-        resp = DiskNearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
-                                                                memory_percent=percentage)
+        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
+                                                            memory_percent=percentage)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Need to add %s bytes for required percentage", resp[1])
         self.log.info("Step 2: performing writes till we reach required percentage")
 
-        ret = DiskNearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
-                                                               user_data_writes=int(resp[1]),
-                                                               bucket_prefix=bucket_prefix,
-                                                               client=client)
+        ret = NearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                           user_data_writes=int(resp[1]),
+                                                           bucket_prefix=bucket_prefix,
+                                                           client=client)
         assert_utils.assert_true(ret[0], ret[1])
         for each in ret[1]:
             each["num_clients"] = (len(self.worker_node_list) - 1) \
@@ -166,11 +166,11 @@ class TestIOWorkloadDegradedPath:
         while datetime.now() < end_time:
             loop += 1
             self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-            read_ret = DiskNearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
-                                                                            workload_info=ret[1],
-                                                                            skipread=False,
-                                                                            validate=True,
-                                                                            skipcleanup=True)
+            read_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                        workload_info=ret[1],
+                                                                        skipread=False,
+                                                                        validate=True,
+                                                                        skipcleanup=True)
             self.log.info("%s interation is done", loop)
             assert_utils.assert_true(read_ret[0], read_ret[1])
         # To Do delete operation, will be enabled after support from cortx
