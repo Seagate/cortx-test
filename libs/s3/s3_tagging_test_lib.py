@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -25,13 +24,14 @@
 import os
 import base64
 import logging
-from time import sleep
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import Tagging
+from commons.utils.s3_utils import poll
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_tagging import Tagging
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,12 +39,13 @@ LOGGER = logging.getLogger(__name__)
 class S3TaggingTestLib(Tagging):
     """Initialising s3 connection and including methods for bucket, object tagging operations."""
 
-    def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
-                 endpoint_url: str = S3_CFG["s3_url"],
-                 s3_cert_path: str = S3_CFG["s3_cert_path"],
-                 **kwargs) -> None:
+    def __init__(
+            self,
+            access_key: str = ACCESS_KEY,
+            secret_key: str = SECRET_KEY,
+            endpoint_url: str = S3_CFG["s3_url"],
+            s3_cert_path: str = S3_CFG["s3_cert_path"],
+            **kwargs) -> None:
         """
         The method initializes members of S3TaggingTestLib and its parent class.
 
@@ -59,6 +60,7 @@ class S3TaggingTestLib(Tagging):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        self.sync_delay = S3_CFG["sync_delay"]
         super().__init__(
             access_key,
             secret_key,
@@ -93,8 +95,7 @@ class S3TaggingTestLib(Tagging):
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["set_bkt_tag"])
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,
                          error)
@@ -111,12 +112,12 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting bucket tagging")
-            bucket_tagging = self.get_bucket_tagging(bucket_name)
+            bucket_tagging = poll(self.get_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.debug(bucket_tagging)
             tag_set = bucket_tagging["TagSet"]
             for tag in tag_set:
                 LOGGER.info(tag)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_bucket_tags.__name__,
                          error)
@@ -133,10 +134,9 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Deleting bucket tagging")
-            response = super().delete_bucket_tagging(bucket_name)
+            response = poll(super().delete_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["del_bkt_tag"])
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_bucket_tagging.__name__,
                          error)
@@ -173,8 +173,7 @@ class S3TaggingTestLib(Tagging):
             tags = {"TagSet": tag_set}
             response = self.put_object_tagging(bucket_name, obj_name, tags)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["set_obj_tag"])
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_object_tag.__name__,
                          error)
@@ -182,8 +181,7 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def get_object_tags(self, bucket_name: str = None,
-                        obj_name: str = None) -> tuple:
+    def get_object_tags(self, bucket_name: str = None, obj_name: str = None) -> tuple:
         """
         Return the tag-set of an object.
 
@@ -193,12 +191,12 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting object tags")
-            obj_tagging = self.get_object_tagging(
-                bucket_name, obj_name)
+            obj_tagging = poll(self.get_object_tagging,
+                               bucket_name, obj_name, timeout=self.sync_delay)
             LOGGER.debug(obj_tagging)
             tag_set = obj_tagging["TagSet"]
             LOGGER.info(tag_set)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_object_tags.__name__,
                          error)
@@ -219,11 +217,10 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Deleting object tagging")
-            response = super().delete_object_tagging(
-                bucket_name, obj_name)
+            response = poll(super().delete_object_tagging,
+                            bucket_name, obj_name, timeout=self.sync_delay)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["del_obj_tag"])
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_object_tagging.__name__,
                          error)
@@ -250,7 +247,7 @@ class S3TaggingTestLib(Tagging):
                 Bucket=bucket_name, Key=obj_name, Tagging=tag)
             mpu_id = response["UploadId"]
             LOGGER.info("Upload id : %s", str(mpu_id))
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 S3TaggingTestLib.create_multipart_upload_with_tagging.__name__,
@@ -293,7 +290,7 @@ class S3TaggingTestLib(Tagging):
                     response = super().put_object_with_tagging(
                         bucket_name, object_name, data=data, tag=tag)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.put_object_with_tagging.__name__,
                          error)
@@ -326,7 +323,7 @@ class S3TaggingTestLib(Tagging):
             response = super().set_bucket_tags(
                 bucket_name, tag_set={"TagSet": tag_set})
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 S3TaggingTestLib.set_bucket_tag_duplicate_keys.__name__,
@@ -361,7 +358,7 @@ class S3TaggingTestLib(Tagging):
                 "Put bucket tagging with invalid TagSet: %s", str(tag_set))
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag_invalid_char.__name__,
                          error)
@@ -369,12 +366,13 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def set_duplicate_object_tags(self,
-                                  bucket_name: str = None,
-                                  obj_name: str = None,
-                                  key: str = None,
-                                  value: str = None,
-                                  **kwargs) -> tuple:
+    def set_duplicate_object_tags(
+            self,
+            bucket_name: str = None,
+            obj_name: str = None,
+            key: str = None,
+            value: str = None,
+            **kwargs) -> tuple:
         """
         Set the duplicate tag-set to an object that already exists in a bucket.
 
@@ -402,7 +400,7 @@ class S3TaggingTestLib(Tagging):
             response = super().put_object_tagging(
                 bucket_name, obj_name, tags={'TagSet': tag_set})
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_duplicate_object_tags.__name__,
                          error)
@@ -439,7 +437,7 @@ class S3TaggingTestLib(Tagging):
             response = super().put_object_tagging(
                 bucket_name, obj_name, tags={'TagSet': tag_set, })
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_object_tag_invalid_char.__name__,
                          error)
@@ -460,9 +458,10 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting object with tag key: %s", key)
-            response = self.s3_client.get_object(Bucket=bucket_name, Key=key)
+            response = poll(
+                self.s3_client.get_object, Bucket=bucket_name, Key=key, timeout=self.sync_delay)
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.get_object_with_tagging.__name__,
                          error)

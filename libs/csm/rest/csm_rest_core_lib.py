@@ -1,31 +1,33 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """ This is the core module for REST API. """
 
-import logging
 import json
-import requests
+import logging
 
+import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from commons import constants
 from commons.constants import Rest as const
+from config import CMN_CFG
 
 
 class RestClient:
@@ -48,8 +50,10 @@ class RestClient:
             self._config["mgmt_vip"], str(self._config["port"]))
         self._json_file_path = self._config[
             "jsonfile"] if 'jsonfile' in self._config else const.JOSN_FILE
+        self.secure_connection = self._config["secure"]
 
-    def rest_call(self, request_type, endpoint, secure_connection=True,
+    # pylint: disable=too-many-arguments
+    def rest_call(self, request_type, endpoint=None,
                   data=None, headers=None, params=None, json_dict=None,
                   save_json=False):
         """
@@ -64,14 +68,22 @@ class RestClient:
         :return: response of the request
         """
         # Building final endpoint request url
-        set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
-        request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
+        set_secure = const.SSL_CERTIFIED if self.secure_connection else const.NON_SSL
+        if endpoint is None:
+            request_url = "{}{}".format(set_secure, self._base_url)
+        else:
+            request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
         self.log.debug("Request URL : %s", request_url)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)
-        self.log.debug("Data : %s", data)
         self.log.debug("Parameters : %s", params)
-        self.log.debug("json_dict: %s", json_dict)
+        self.log.debug("json_dict: %s", json.dumps(json_dict))
+        # TODO: Need to be verified and fix by CSM team. Temporary fix for s3 failures
+        if CMN_CFG.get("product_family") == constants.PROD_FAMILY_LC:
+            # To Resolve {'error_code': '4099', 'message': 'Invalid request message received.',
+            # 'error_format_args': 'Request body missing'}
+            data = json.dumps(data) if isinstance(data, dict) else data
+        self.log.debug("Data : %s", data)
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,

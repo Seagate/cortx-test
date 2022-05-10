@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -25,8 +24,9 @@ from __future__ import absolute_import
 import argparse
 import time
 import json
+import re
 import configparser
-from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons import commands as cmn_cmd
 
 # Global Constants
@@ -44,15 +44,15 @@ def install_docker(*hostname, username, password):
     Function to install docker
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
-        print("Installing docker on host\n")
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
+        print("Installing docker on host\n", host)
         cmd = "yum install -y yum-utils && " \
               "yum-config-manager -y" \
               " --add-repo https://download.docker.com/linux/centos/docker-ce.repo && " \
               "yum install -y docker-ce docker-ce-cli containerd.io"
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
         if resp:
-            print("docker is Installed on host\n")
+            print("docker is Installed on host\n", host)
             print("enabling docker \n")
             nd_obj.execute_cmd(cmd="systemctl enable docker", read_lines=True)
             print("starting docker \n")
@@ -64,7 +64,7 @@ def configure_iptables(*hostname, username, password):
     Configure iptables
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Configuring iptables \n")
         cmd = "cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf\n"\
               "br_netfilter\n"\
@@ -82,7 +82,7 @@ def create_daemon_file(*hostname, username, password):
     Create file etc/docker/daemon.json
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Creating daemon.json \n")
 
         daemon_json = {
@@ -101,7 +101,7 @@ def configure_k8s_repo(*hostname, username, password):
     test configure repo
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Disabling SELINUX \n")
         resp = nd_obj.execute_cmd(cmd="setenforce 0", read_lines=True, exc=False)
         if resp:
@@ -147,7 +147,7 @@ def initialize_k8s(host, username, password):
     """
     Test function to initialize the kubeadm
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     cmd = "kubeadm init --pod-network-cidr=192.168.0.0/16"
     print("Initialize the kubeadm\n")
     result = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
@@ -170,7 +170,7 @@ def create_network(host, username, password):
     """
     Test function to create the pod network
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     cmd = "curl https://docs.projectcalico.org/manifests/calico.yaml -O &&"\
           "kubectl apply -f calico.yaml"
     resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
@@ -181,7 +181,7 @@ def get_node_status(host, username, password):
     """
     This function fetches the node status
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     count = 1
     while count <= 6:
         resp_node = nd_obj.execute_cmd(cmd="kubectl get nodes |cut -d ' ' -f 4",
@@ -190,11 +190,37 @@ def get_node_status(host, username, password):
         resp_node = resp_node.decode() if isinstance(resp_node, bytes) else resp_node
         nodes_status = resp_node.strip().split("\n")
         print("The output of get nodes is %s", nodes_status)
-        status = all(element == nodes_status[0] for element in nodes_status)
+        status = all(element == "Ready" for element in nodes_status)
         if status:
             return nodes_status
         count += 1
         time.sleep(10)
+        if "NotReady" in nodes_status:
+            cmd = "kubectl get pods -n kube-system"
+            result = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=True)
+            for res in result:
+                print(res.strip())
+                if re.search(r'ImagePullBackOff', res):
+                    return nodes_status
+
+
+def troubleshoot(*hostname, username, password, status):
+    """
+    This Functions troubleshoots the calico issue
+    """
+    if "NotReady" in status:
+        for host in hostname:
+            nd_obj = LogicalNode(hostname=host, username=username, password=password)
+            cmd = "wget https://github.com/projectcalico/calico/releases/" \
+                  "download/v3.20.0/release-v3.20.0.tgz && "\
+                  "tar -xvf release-v3.20.0.tgz && "\
+                  "cd release-v3.20.0/images && "\
+                  "docker load -i calico-node.tar && "\
+                  "docker load -i calico-kube-controllers.tar && "\
+                  "docker load -i calico-cni.tar && "\
+                  "docker load -i calico-pod2daemon-flexvol.tar \n"
+            result = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+            print("The result is", result)
 
 
 def join_cluster(*hostname, username, password, cmd):
@@ -202,7 +228,7 @@ def join_cluster(*hostname, username, password, cmd):
     Test function to join the worker nodes to master node
     """
     for host in hostname[1:]:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
         print("The join cmd o/p is %s", resp)
 
@@ -222,7 +248,7 @@ def main(args):
 
     if not k8s_input['hosts_ip']:
         for host in k8s_input['nodes']:
-            nd_obj = Node(hostname=host, username=k8s_input['username'],
+            nd_obj = LogicalNode(hostname=host, username=k8s_input['username'],
                           password=k8s_input['password'])
             result = nd_obj.execute_cmd(cmd="ifconfig eth0", read_lines=True)
             test_list = result[1].split(" ")
@@ -237,7 +263,7 @@ def main(args):
         print("The hostname and ip dict is %s", host_ip_dict)
 
     for host in k8s_input['nodes']:
-        nd_obj = Node(hostname=host, username=k8s_input['username'],
+        nd_obj = LogicalNode(hostname=host, username=k8s_input['username'],
                       password=k8s_input['password'])
         nd_obj.copy_file_to_local(REMOTE_HOSTS_ORG, LOCAL_COPY_HOSTS)
         with open(LOCAL_COPY_HOSTS, "a") as file:
@@ -252,28 +278,37 @@ def main(args):
     configure_iptables(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     create_daemon_file(*k8s_input['nodes'], username=k8s_input['username'],
-                          password=k8s_input['password'])
+                       password=k8s_input['password'])
     configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
                             password=k8s_input['password'])
-    print("The token is %s", result[1])
+    print("The token is ", result[1])
     create_network(k8s_input['nodes'][0], username=k8s_input['username'],
                    password=k8s_input['password'])
     status = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
                              password=k8s_input['password'])
-    print("The stat is %s", status)
+    print("The stat is ", status)
     if "Ready" in status:
         print("Adding the worker node to master node")
         join_cluster(*k8s_input['nodes'], username=k8s_input['username'],
                      password=k8s_input['password'], cmd=result[1])
+    else:
+        print("To troubleshoot run cmd: kubectl get pods -n kube-system \n")
+        troubleshoot(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], status=status)
+        join_cluster(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], cmd=result[1])
+
     status_all = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
                                  password=k8s_input['password'])
     if "NotReady" in status_all:
         print("Please check after some time,"
-              "the nodes status is %s", status_all)
+              "the nodes status is", status_all)
+        troubleshoot(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], status=status_all)
     print("Successfully deployed the k8s ,"
-          "Please run \"kubectl get nodes cmd\"")
+          "Please run \"kubectl get nodes cmd\" on ", k8s_input['nodes'][0])
 
 
 def parse_args():

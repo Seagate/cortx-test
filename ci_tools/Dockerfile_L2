@@ -1,12 +1,15 @@
 FROM ghcr.io/cortx-admin/cortx-test-l1:latest
 
-# Enter PAT of your github account
-ARG GIT_TOKEN
+ARG GIT_USERNAME
+ARG GIT_REPO
+ARG GIT_ID
+ARG GIT_PASSWORD
+ARG GIT_BRANCH
 
-RUN git clone --branch dev https://$GIT_TOKEN@github.com/Seagate/cortx-test.git
+RUN git clone --branch $GIT_BRANCH https://$GIT_ID:$GIT_PASSWORD@github.com/$GIT_USERNAME/$GIT_REPO
 
 RUN mkdir -p /etc/ssl/stx-s3-clients/s3/
-COPY ca.crt /etc/ssl/stx-s3-clients/s3/
+COPY ci_tools/ca.crt /etc/ssl/stx-s3-clients/s3/
 
 RUN mkdir /root/.aws
 WORKDIR /cortx-test
@@ -41,4 +44,11 @@ ENV PYTHON_VAR=python3.7
 ENV PLATFORM=VM_HW
 ENV TEST_EXECUTION_NUMBER=000
 ENV TEST_TYPES=ALL
+ENV PRODUCT_FAMILY=LC
+ENV HEALTH_CHECK=True
+ENV USE_SSL=True
+ENV CSM_CHECKS=False
+ENV VALIDATE_CERTS=True
+ENV DATA_INTEGRITY_CHECK=False
+ENV LOG_LEVEL=10
 COPY secrets.json .

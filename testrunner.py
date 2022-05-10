@@ -1,3 +1,25 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+"""Test bot or worker which filters the tests based on Jira Test Plan or Kafka Message.
+Runs test sequentially or in parallel and report the results to DB and Jira.
+"""
 import os
 import sys
 import subprocess
@@ -37,6 +59,8 @@ def parse_args():
     parser.add_argument("-u", "--jira_update", type=str_to_bool,
                         default=True,
                         help="Update Jira. Can be false in case Jira is down")
+    parser.add_argument("-csm", "--csm_checks", type=str_to_bool, default=False,
+                        help="Execute tests with error code & msg check enabled.")
     parser.add_argument("-te", "--te_ticket", type=str,
                         help="jira xray test execution id")
     parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
@@ -69,6 +93,16 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
+    parser.add_argument("--stop_on_first_error", "-x", dest="stop_on_first_error",
+                        action="store_true", help="Stop test execution on first failure")
+    parser.add_argument("-pf", "--product_family", type=str, default='LC',
+                        help="Product family LR or LC.")
+    parser.add_argument("-c", "--validate_certs", type=str_to_bool, default=True,
+                        help="Validate HTTPS/SSL certificate to S3 endpoint.")
+    parser.add_argument("-s", "--use_ssl", type=str_to_bool, default=True,
+                        help="Use HTTPS/SSL connection for S3 endpoint.")
+    parser.add_argument("-hc", "--health_check", type=str_to_bool, default=True,
+                        help="Decide whether to do health check.")
     return parser.parse_args()
 
 
@@ -124,23 +158,25 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         te_id = str(args.te_ticket) + "_"
     if re_execution:
         te_tag = None
-        report_name = "--html=log/re_non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')\
-                      + args.html_report
+        report_name = "--html=log/re_non_parallel_" + te_id +\
+                      datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
     else:
         if parallel_exe and not args.force_serial_run:
-            report_name = "--html=log/parallel_" + te_id + args.html_report
+            report_name = "--html=log/parallel_" + te_id + \
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, '-d', "--tx",
                         prc_cnt, force_serial_run]
         elif parallel_exe and args.force_serial_run:
-            report_name = "--html=log/parallel_" + te_id + args.html_report
+            report_name = "--html=log/parallel_" + te_id + \
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
         else:
-            report_name = "--html=log/non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f') \
-                          + args.html_report
+            report_name = "--html=log/non_parallel_" + te_id +\
+                          datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S-%f') + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
 
@@ -172,8 +208,16 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         else:
             cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
-    cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
-                           '--tp_ticket=' + args.test_plan]
+    if args.stop_on_first_error:
+        cmd_line = cmd_line + ["-x"]
+
+    cmd_line = cmd_line + ['--build=' + str(build), '--build_type=' + str(build_type),
+                           '--tp_ticket=' + args.test_plan,
+                           '--product_family=' + args.product_family,
+                           '--validate_certs=' + str(args.validate_certs),
+                           '--use_ssl=' + str(args.use_ssl),
+                           '--csm_checks=' + str(args.csm_checks),
+                           '--health_check=' + str(args.health_check)]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
@@ -430,6 +474,10 @@ def trigger_tests_from_te(args):
             thread_io, event = runner.start_parallel_io(args)
 
         _env = os.environ.copy()
+        te_label = tp_metadata['te_meta']['te_label']
+        if te_label is not None and "stop_on_first_error" in te_label:
+            args.stop_on_first_error = True
+
         if not args.force_serial_run:
             # First execute all tests with parallel tag which are mentioned in given tag.
             run_pytest_cmd(args, te_tag, True, env=_env)

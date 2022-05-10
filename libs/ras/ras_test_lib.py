@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -29,6 +28,8 @@ import re
 import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
+
+from commons.helpers.node_helper import Node
 from libs.ras.ras_core_lib import RASCoreLib
 from commons.utils.config_utils import get_config, update_cfg_based_on_separator
 from commons.utils import system_utils as sys_utils
@@ -183,13 +184,10 @@ class RASTestLib(RASCoreLib):
         """
         path = RAS_VAL["ras_sspl_alert"]["file"]["sspl_conf_filename"]
         backup_path = filename
-
+        node = Node(hostname=self.host, username=self.username, password=self.pwd)
         if restore:
-            res = self.s3obj.is_s3_server_path_exists(path=backup_path,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
-            if res[0]:
+            res = node.path_exists(path=backup_path)
+            if res:
                 LOGGER.info("Restoring the sspl.conf file")
                 self.node_utils.rename_file(old_filename=backup_path,
                                             new_filename=path)
@@ -199,11 +197,8 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Removing sspl.conf file")
                 self.node_utils.remove_file(filename=path)
         else:
-            res = self.s3obj.is_s3_server_path_exists(path=path,
-                                                      host=self.host,
-                                                      user=self.username,
-                                                      pwd=self.pwd)
-            if res[0]:
+            res = node.path_exists(path=path)
+            if res:
                 LOGGER.info("Retaining the %s file", path)
                 self.cp_file(path, backup_path)
 

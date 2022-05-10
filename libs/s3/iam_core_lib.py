@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -22,54 +21,80 @@
 
 """Python Library using boto3 module to perform account and user operations."""
 
+import os
 import logging
+from typing import Union
 import boto3
 
-from commons import commands
-from commons.utils.system_utils import run_local_cmd
+from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
 
-class IamLib:
-    """Class initialising s3 connection and including functions for account and user operations."""
+# pylint: disable=too-few-public-methods
+class IAMRest:
+    """Library for creating BOTO3 IAM Rest Library."""
 
     def __init__(
             self,
             access_key: str = None,
             secret_key: str = None,
             endpoint_url: str = None,
-            iam_cert_path: str = None,
+            iam_cert_path: Union[str, bool] = None,
             **kwargs) -> None:
         """
         Method initializes members of IamLib.
 
+        Different instances need to be create as per different parameter values like access_key,
+        secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        debug = kwargs.get("debug", False)
-
+        init_iam_connection = kwargs.get("init_iam_connection", True)
+        debug = kwargs.get("debug", S3_CFG["debug"])
+        self.use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        self.iam_cert_path = iam_cert_path if val_cert else False
+        if val_cert and not os.path.exists(S3_CFG['iam_cert_path']):
+            raise IOError(f'Certificate path {S3_CFG["iam_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
         try:
-            self.iam = boto3.client("iam", verify=iam_cert_path,
-                                    aws_access_key_id=access_key,
-                                    aws_secret_access_key=secret_key,
-                                    endpoint_url=endpoint_url)
-            self.iam_resource = boto3.resource(
-                "iam",
-                verify=iam_cert_path,
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-                endpoint_url=endpoint_url)
-        except Exception as err:
-            if "unreachable network" not in str(err):
-                LOGGER.critical(err)
+            if init_iam_connection:
+                self.iam = boto3.client("iam",
+                                        use_ssl=self.use_ssl,
+                                        verify=self.iam_cert_path,
+                                        aws_access_key_id=access_key,
+                                        aws_secret_access_key=secret_key,
+                                        endpoint_url=endpoint_url)
+                self.iam_resource = boto3.resource("iam",
+                                                   use_ssl=self.use_ssl,
+                                                   verify=self.iam_cert_path,
+                                                   aws_access_key_id=access_key,
+                                                   aws_secret_access_key=secret_key,
+                                                   endpoint_url=endpoint_url)
+            else:
+                LOGGER.info("Skipped: create iam client, resource object with boto3.")
+        except Exception as error:
+            if "unreachable network" not in str(error):
+                LOGGER.critical(error)
+
+    def __del__(self):
+        """Destroy all core objects."""
+        try:
+            del self.iam
+            del self.iam_resource
+        except NameError as error:
+            LOGGER.warning(error)
+
+
+class IamLib(IAMRest):
+    """Class initialising s3 connection and including functions for account and user operations."""
 
     def create_user(self, user_name: str = None) -> dict:
         """
@@ -249,532 +274,294 @@ class IamLib:
 
         return response
 
-
-class S3IamCli:
-    """Class for performing S3iamcli operations."""
-
-    @staticmethod
-    def list_accounts_s3iamcli(
-            ldap_user_id: str = None,
-            ldap_password: str = None) -> tuple:
+    def delete_user_login_profile(self, user_name):
         """
-        Listing accounts using aws s3iamcli.
+        Delete the password for the specified IAM user.
 
-        :param ldap_user_id: ldap user id.
-        :param ldap_password: ldap password.
-        :return: list account s3iamcli response.
+        :param user_name: The name of the user whose password you want to delete.
         """
-        cmd = commands.CMD_LIST_ACC.format(ldap_user_id, ldap_password)
-        LOGGER.info("List accounts s3iamcli = %s", str(cmd))
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
-
-        return result
-
-    @staticmethod
-    def list_users_s3iamcli(
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
-        """
-        Listing users using aws s3iamcli.
-
-        :param access_key: s3 user access key.
-        :param secret_key: s3 user secret key.
-        :return: list users s3iamcli response.
-        """
-        cmd = commands.CMD_LST_USR.format(access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.info("output = %s", str(result))
-
-        return result
-
-    @staticmethod
-    def create_account_s3iamcli(
-            account_name: str = None,
-            email_id: str = None,
-            ldap_user_id: str = None,
-            ldap_password: str = None) -> tuple:
-        """
-        Creating new account using aws s3iamcli.
-
-        :param account_name: s3 account name.
-        :param email_id: s3 user mail id.
-        :param ldap_user_id: ldap user id.
-        :param ldap_password: ldap password.
-        :return: create account s3iamcli response.
-        """
-        cmd = commands.CMD_CREATE_ACC.format(
-            account_name, email_id, ldap_user_id, ldap_password)
-        LOGGER.info(cmd)
-        response = run_local_cmd(cmd, flg=True)
+        response = self.iam.delete_login_profile(UserName=user_name)
         LOGGER.debug(response)
 
         return response
 
-    @staticmethod
-    def delete_account_s3iamcli(
-            account_name: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            force: bool = True) -> tuple:
+    def change_password(self, old_password: str = None, new_password: str = None):
         """
-        Deleting account using aws s3iamcli.
+        Change the password of the IAM user with the IAM user.
 
-        :param account_name: s3 account name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param force: forceful delete s3 account True/False.
-        :return:
+        boto3.client object requesting for the password change. IAM object should be created with
+        Access and Secret key of IAM user which is requesting for the password change.
+        :param old_password: Old user password.
+        :param new_password: New user password.
+        :return: None
         """
-        if force:
-            cmd = commands.CMD_DEL_ACC_FORCE.format(
-                account_name, access_key, secret_key)
-        else:
-            cmd = commands.CMD_DEL_ACC.format(
-                account_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        self.iam.change_password(OldPassword=old_password, NewPassword=new_password)
 
-        return result
 
-    @staticmethod
-    def create_user_login_profile_s3iamcli(
-            user_name: str = None,
-            password: str = None,
-            password_reset: bool = False,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+class IamPolicy(IAMRest):
+    """Class initialising s3 connection and including functions for iam policy operations."""
+
+    def create_policy(self, policy_name: str = None,
+                      policy_document: str = None, **kwargs) -> object:
         """
-        Create user login profile using aws s3iamcli.
+        Create a policy as per policy document.
 
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :param password_reset:
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: create user login profile s3iamcli response.
+        :param policy_name: The name of the policy to create.
+        :param policy_document: The policy document.
         """
-        if password_reset:
-            cmd = commands.CREATE_USR_PROFILE_PWD_RESET.format(
-                user_name, password, access_key, secret_key)
-        else:
-            cmd = commands.CREATE_USR_PROFILE_NO_PWD_RESET.format(
-                user_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam_resource.create_policy(PolicyName=policy_name,
+                                                   PolicyDocument=policy_document, **kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def create_account_login_profile_s3iamcli(
-            acc_name: str = None,
-            password: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            password_reset: bool = False) -> tuple:
+    def delete_policy(self, policy_arn: str = None) -> dict:
         """
-        Create account login profile using s3iamcli.
+        Delete a policy.
 
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param password_reset: password reset True/False.
-        :return: create account login profile s3iamcli response.
+        :param policy_arn: The ARN of the policy to delete.
         """
-        if password_reset:
-            cmd = commands.CREATE_ACC_PROFILE_PWD_RESET.format(
-                acc_name, password, access_key, secret_key)
-        else:
-            cmd = commands.CREATE_ACC_RROFILE_NO_PWD_RESET.format(
-                acc_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam_resource.Policy(policy_arn).delete()
 
-        return result
+        return response
 
-    @staticmethod
-    def update_account_login_profile_s3iamcli(
-            acc_name: str = None,
-            password: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            password_reset: bool = False) -> tuple:
+    def get_policy(self, policy_arn: str = None) -> dict:
         """
-        Update account login profile using s3iamcli.
+        Retrieve information about the specified managed policy.
 
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param password_reset: password reset True/False.
-        :return: update account login profile s3iamcli response.
+        :param policy_arn: The ARN of the policy to get.
         """
-        if password_reset:
-            cmd = commands.UPDATE_ACC_PROFILE_RESET.format(
-                acc_name, password, access_key, secret_key)
-        else:
-            cmd = commands.UPDATE_ACC_PROFILE_NO_RESET.format(
-                acc_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.get_policy(PolicyArn=policy_arn)
 
-        return result
+        return response
 
-    @staticmethod
-    def get_account_login_profile_s3iamcli(
-            acc_name: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def list_policies(self, **kwargs) -> dict:
         """
-        Get account login profile using s3iamcli.
+        List all the managed policies that are available in account.
 
-        :param acc_name: s3 account name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: get account login profile s3iamcli response.
+        # :param scope: The scope to use for filtering the results.
+        # :param only_attached: A flag to filter the results to only the attached policies.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param policy_usage_filter: The policy usage method to use for filtering the results.
+        # :param max_items:Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
-        cmd = commands.GET_ACC_PROFILE.format(acc_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_policies(**kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def update_user_login_profile_s3iamcli(
-            user_name: str = None,
-            password: str = None,
-            password_reset: bool = False,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def attach_group_policy(self, group_name: str = None, policy_arn: str = None):
         """
-        Update user login profile using s3iamcli.
+        Attache the specified managed policy to the specified IAM group.
 
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :param password_reset: password reset.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: update user login profile s3iamcli response.
+        :param group_name: The name(friendly name, not ARN) of the group to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
-        if password_reset:
-            cmd = commands.UPDATE_USR_PROFILE_RESET.format(
-                user_name, password, access_key, secret_key)
-        else:
-            cmd = commands.UPDATE_ACC_PROFILE.format(
-                user_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.attach_group_policy(GroupName=group_name, PolicyArn=policy_arn)
 
-        return result
+        return response
 
-    @staticmethod
-    def get_user_login_profile_s3iamcli(
-            user_name: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def detach_group_policy(self, group_name: str = None, policy_arn: str = None):
         """
-        Get user login profile using s3iamcli.
+        Remove the specified managed policy from the specified IAM group.
 
-        :param user_name: s3 user name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: get user login profile s3iamcli response.
+        :param group_name: The name(friendly, not ARN) of the IAM group to detach the policy from.
+        :param policy_arn: The Resource Name (ARN) of the IAM policy you want to detach.
         """
-        cmd = commands.GET_USRLOGING_PROFILE.format(
-            user_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.detach_group_policy(GroupName=group_name, PolicyArn=policy_arn)
 
-        return result
+        return response
 
-    @staticmethod
-    def create_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name: str = None,
-            password: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            both_reset_options: bool = False) -> tuple:
+    def list_attached_group_policies(self, group_name: str = None, **kwargs) -> list:
         """
-        Create user login profile using s3iamcli with both reset options.
+        List all managed policies that are attached to the specified IAM group.
 
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param both_reset_options: reset both options.
-        :return: create user login profile s3iamcli with both reset options response.
+        :param group_name: The name(friendly, not ARN) of the group to list attached policies for.
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
+        :Returns: A list of Policy resources.
         """
-        LOGGER.info(both_reset_options)
-        if both_reset_options:
-            cmd = commands.CREATE_USR_LOGIN_PROFILE_NO_RESET.format(
-                user_name, password, access_key, secret_key)
-        else:
-            cmd = commands.CREATE_USR_LOGIN_PROFILE.format(
-                user_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_attached_group_policies(GroupName=group_name, **kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def reset_account_access_key_s3iamcli(
-            account_name: str = None,
-            ldap_user_id: str = None,
-            ldap_password: str = None) -> tuple:
+    def attach_user_policy(self, user_name: str = None, policy_arn: str = None):
         """
-        Reset account access key using aws s3iamcli.
+        Attache the specified managed policy to the specified user.
 
-        :param account_name: s3 account name.
-        :param ldap_user_id: s3 ldap user id.
-        :param ldap_password: s3 ldap password.
-        :return: reset account access key s3iamcli response.
+        :param user_name: The name(friendly name, not ARN) of the IAM user to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
-        cmd = commands.RESET_ACCESS_ACC.format(
-            account_name, ldap_user_id, ldap_password)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug(result)
+        response = self.iam.attach_user_policy(UserName=user_name, PolicyArn=policy_arn)
 
-        return result
+        return response
 
-    @staticmethod
-    def create_user_using_s3iamcli(
-            user_name: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def detach_user_policy(self, user_name: str = None, policy_arn: str = None):
         """
-        Creating user using s3iamcli.
+        Remove the specified managed policy from the specified user.
 
-        :param user_name: s3 user name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: create user using s3iamcli response.
+        :param user_name: The name(friendly name, not ARN) of the IAM user to detach the policy from
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
         """
-        cmd = commands.CREATE_ACC_USR_S3IAMCLI.format(
-            user_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.detach_user_policy(
+            UserName=user_name,
+            PolicyArn=policy_arn)
 
-        return result
+        return response
 
-    @staticmethod
-    def create_account_login_profile_both_reset_options(
-            acc_name: str = None, password: str = None, access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def list_attached_user_policies(self, user_name: str = None, **kwargs) -> dict:
         """
-        Create account login profile using s3iamcli.
+        List all managed policies that are attached to the specified IAM user.
 
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: create account login profile both reset options.
+        :param user_name: The name(friendly name, not ARN) of the user to list attached policies for
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
-        cmd = commands.CREATE_ACC_RROFILE_WITH_BOTH_RESET.format(
-            acc_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_attached_user_policies(UserName=user_name, **kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def create_acc_login_profile_without_both_reset_options(
-            acc_name: str = None, password: str = None,
-            access_key: str = None, secret_key: str = None) -> tuple:
+    def validate_policy(self,
+                        policy_document: str = None,
+                        validate_policy_resource_type: str = None,
+                        policy_type: str = None,
+                        next_token: str = None,
+                        **kwargs) -> dict:
         """
-        Create account login profile using s3iamcli.
+        Request the validation of a policy and returns a list of findings.
 
-        :param acc_name: s3 account name.
-        :param password: s3 password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: create acc login profile without both reset options response.
+        The findings help you identify issues and provide actionable recommendations to resolve the
+        issue and enable you to author functional policies that meet security best practices.
+        #:param locale: The locale to use for localizing the findings.
+        #:param max_results: The maximum number of results to return in the response.
+        :param next_token: A token used for pagination of results returned.
+        :param policy_document: The JSON policy document to use as the content for the policy.
+        :param policy_type: The type of policy to validate. Identity policies grant permissions to
+         IAM principals.
+        :param validate_policy_resource_type: The type of resource to attach to your resource policy
         """
-        cmd = commands.CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET.format(
-            acc_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        locale = kwargs.get("locale", "DE")
+        max_result = kwargs.get("max_results", 123)
+        response = self.iam.validate_policy(
+            locale=locale, maxResults=max_result, nextToken=next_token,
+            policyDocument=policy_document, policyType=policy_type,
+            validatePolicyResourceType=validate_policy_resource_type)
 
-        return result
+        return response
 
-    @staticmethod
-    def update_account_login_profile_both_reset_options(
-            acc_name: str = None,
-            access_key: str = None,
-            secret_key: str = None,
-            password: str = None) -> tuple:
+
+class IamRole(IAMRest):
+    """Class initialising s3 connection and including functions for iam role operations."""
+
+    def create_role(self, assume_role_policy_document: str = None,
+                    role_name: str = None, **kwargs) -> dict:
         """
-        Update account login profile using s3iamcli.
+        create a role name and attaches a trust policy to it that is provided as a Policy Document.
 
-        :param acc_name: s3 account name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :param password: s3 password.
-        :return: update account login profile both reset options response.
+        :param assume_role_policy_document: The trust relationship policy document that grants an
+         entity permission to assume the role.
+        :param role_name: The name of the role to create.
+        # :param tags: A list of tags that you want to attach to the new role.
         """
-        if password:
-            cmd = commands.UPDATE_ACC_PROFILE_BOTH_RESET.format(
-                acc_name, password, access_key, secret_key)
-        else:
-            cmd = commands.UPDATE_ACC_LOGIN_PROFILE.format(
-                acc_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.create_role(AssumeRolePolicyDocument=assume_role_policy_document,
+                                        RoleName=role_name, **kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def update_user_login_profile_without_password_and_reset_option(
-            user_name: str = None, access_key: str = None, secret_key: str = None) -> tuple:
+    def delete_role(self, role_name: str = None):
         """
-        Update user login profile using s3iamcli without password and reset options.
+        Delete the specified role. The role must not have any policies attached.
 
-        :param user_name: s3 user name.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: update user login profile without password and reset option response.
+        :param role_name: The name of the role to delete.
         """
-        cmd = commands.UPDATE_USR_LOGIN_PROFILE.format(
-            user_name, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.delete_role(RoleName=role_name)
 
-        return result
+        return response
 
-    @staticmethod
-    def get_temp_auth_credentials_account(
-            account_name: str = None,
-            account_password: str = None,
-            duration: int = None) -> tuple:
+    def delete_role_policy(self, role_name: str = None, policy_name: str = None):
         """
-        Retrieving the temporary auth credentials for the given account.
+        Delete the specified inline policy that is embedded in the specified IAM role.
 
-        :param account_name: s3 account name.
-        :param account_password: s3 account password.
-        :param duration:
-        :return: get temp auth credentials account response.
+        :param role_name: The name(friendly name, not ARN) identifying the role that the policy
+        is embedded in.
+        :param policy_name: The name of the inline policy to delete from the specified IAM role.
         """
-        if duration is not None:
-            cmd = commands.GET_TEMP_ACC_DURATION.format(
-                account_name, account_password, duration)
-        else:
-            cmd = commands.GET_TEMP_ACC.format(account_name, account_password)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
 
-        return result
+        return response
 
-    @staticmethod
-    def get_temp_auth_credentials_user(
-            account_name: str = None,
-            user_name: str = None,
-            password: str = None,
-            duration: int = None) -> tuple:
+    def list_role_policies(self, **kwargs) -> dict:
         """
-        Retrieving the temporary auth credentials for the given user.
+        List the names of the inline policies that are embedded in the specified IAM role.
 
-        :param account_name: s3 account name.
-        :param user_name: s3 user name.
-        :param password: s3 password.
-        :param duration:
-        :return: get temp auth credentials user response.
+        # :param role_name: The name of the role to list policies for.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        #  a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
-        if duration is not None:
-            cmd = commands.GET_TEMP_USR_DURATION.format(
-                account_name, user_name, password, duration)
-        else:
-            cmd = commands.GET_TEMP_USR.format(
-                account_name, user_name, password)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_role_policies(**kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def change_user_password(
-            old_pwd: str = None,
-            new_pwd: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def list_roles(self, **kwargs):
         """
-        Change password for IAM user.
+        List the IAM roles that have the specified path prefix.
 
-        :param old_pwd: old password.
-        :param new_pwd: new password.
-        :param access_key: s3 access key.
-        :param secret_key: s3 secret key.
-        :return: change user password response.
+        If there are none, the operation returns an empty list.
+        # :param path_prefix: The path prefix for filtering the results.
+        #  For example, the prefix /application_abc/component_xyz/ gets all roles whose path starts
+        #  with /application_abc/component_xyz/. This parameter is optional.
+        #  If it is not included, it defaults to a slash (/), listing all roles.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        #  items you want in the response.
         """
-        cmd = commands.CMD_CHANGE_PWD.format(
-            old_pwd, new_pwd, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_roles(**kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def update_user_login_profile_s3iamcli_with_both_reset_options(
-            user_name: str = None, password: str = None, access_key: str = None,
-            secret_key: str = None) -> tuple:
+    def list_attached_role_policies(self, role_name: str = None, **kwargs) -> dict:
         """
-        Update user login profile using both password reset options.
+        List all managed policies that are attached to the specified IAM role.
 
-        :param user_name: Name of user.
-        :param password: User password.
-        :param access_key: Access key of user.
-        :param secret_key: Secret key of user.
-        :return: update user login profile s3iamcli with both reset options response.
+        :param role_name: The name(friendly name, not ARN) of the role to list attached policies for
+        # :param path_prefix: The path prefix for filtering the results. This parameter is optional.
+        # If it is not included, it defaults to a slash (/), listing all policies.
+        # :param marker: Use this parameter only when paginating results and only after you receive
+        # a response indicating that the results are truncated.
+        # :param max_items: Use this only when paginating results to indicate the maximum number of
+        # items you want in the response.
         """
-        cmd = commands.UPDATE_USR_PROFILE_BOTH_RESET.format(
-            user_name, password, access_key, secret_key)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.list_attached_role_policies(RoleName=role_name, **kwargs)
 
-        return result
+        return response
 
-    @staticmethod
-    def delete_account_s3iamcli_using_temp_creds(account_name: str = None,
-                                                 access_key: str = None,
-                                                 secret_key: str = None,
-                                                 session_token: str = None,
-                                                 force: bool = False) -> tuple:
+    def attach_role_policy(self, role_name: str = None, policy_arn: str = None):
         """
-        Deleting a specified account using it's temporary credentials.
+        Attach the specified managed policy to the specified IAM role.
 
-        :param account_name: Name of an account to be deleted.
-        :param access_key: Temporary access key of an account.
-        :param secret_key: Temporary secret key of an account.
-        :param session_token: Temporary session token of an account.
-        :param force: --force option used while deleting an account.
-        :return: Delete account response.
+        :param role_name: The name(friendly name, not ARN) of the role to attach the policy to.
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to attach.
         """
-        if force:
-            cmd = commands.DEL_ACNT_USING_TEMP_CREDS_FORCE.format(
-                account_name, access_key, secret_key, session_token)
-        else:
-            cmd = commands.DEL_ACNT_USING_TEMP_CREDS.format(
-                account_name, access_key, secret_key, session_token)
-        LOGGER.info(cmd)
-        result = run_local_cmd(cmd, flg=True)
-        LOGGER.debug("output = %s", str(result))
+        response = self.iam.attach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
 
-        return result
+        return response
+
+    def detach_role_policy(self, role_name: str = None, policy_arn: str = None):
+        """
+        Remove the specified managed policy from the specified role.
+
+        :param role_name: role_name: str = None, policy_arn: str = None):
+        :param policy_arn: The Amazon Resource Name (ARN) of the IAM policy you want to detach.
+        """
+        response = self.iam.detach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
+
+        return response

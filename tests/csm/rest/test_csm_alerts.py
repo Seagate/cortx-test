@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -22,12 +21,16 @@
 """
 import logging
 import random
+
 import pytest
+
+from commons import configmanager
+from commons import constants as consts
 from commons import cortxlogging
 from commons.constants import Rest as const
-from commons.utils import assert_utils
-from commons import configmanager
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
+from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -43,9 +46,15 @@ class TestCsmAlerts():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
-                            username=CMN_CFG["nodes"][0]["username"],
-                            password=CMN_CFG["nodes"][0]["password"])
+        if CMN_CFG["product_family"] == consts.PROD_FAMILY_LR and \
+                CMN_CFG["product_type"] == consts.PROD_TYPE_NODE:
+            cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                username=CMN_CFG["nodes"][0]["username"],
+                                password=CMN_CFG["nodes"][0]["password"])
+        else:
+            cls.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                username=CMN_CFG["nodes"][0]["username"],
+                                password=CMN_CFG["nodes"][0]["password"])
         cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_alert.yaml")

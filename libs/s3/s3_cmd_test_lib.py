@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -24,45 +23,18 @@
 import os
 import shutil
 import logging
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import S3LibCmd
+from config.s3 import S3_CFG
+from libs.s3.s3_awscli import S3LibCmd
 
 LOGGER = logging.getLogger(__name__)
 
 
 class S3CmdTestLib(S3LibCmd):
     """Class initialising s3 connection and including methods for s3 using CLI."""
-
-    def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
-                 endpoint_url: str = S3_CFG["s3_url"],
-                 s3_cert_path: str = S3_CFG["s3_cert_path"],
-                 **kwargs) -> None:
-        """
-        Method to initializes members of S3CmdTestLib and its parent class.
-
-        :param access_key: access key.
-        :param secret_key: secret key.
-        :param endpoint_url: endpoint url.
-        :param s3_cert_path: s3 certificate path.
-        :param region: region.
-        :param aws_session_token: aws_session_token.
-        :param debug: debug mode.
-        """
-        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
-        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        super().__init__(
-            access_key,
-            secret_key,
-            endpoint_url,
-            s3_cert_path,
-            **kwargs)
 
     def object_upload_cli(
             self,
@@ -96,7 +68,7 @@ class S3CmdTestLib(S3LibCmd):
                 return status, upload_res
 
             return False, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.object_upload_cli.__name__,
                          error)
@@ -136,7 +108,7 @@ class S3CmdTestLib(S3LibCmd):
                 return status, response
 
             return False, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.upload_folder_cli.__name__,
                          error)
@@ -159,10 +131,11 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.info("Downloading folder from bucket using cli.")
             status, response = super().download_bucket_cli(
                 bucket_name, folder_path, profile_name)
+
             LOGGER.info(response)
 
             return status, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.download_bucket_cli.__name__,
                          error)

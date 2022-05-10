@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -37,9 +36,9 @@ S3AccessKey
 import logging
 import time
 
+from config import CMN_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
-
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
@@ -54,6 +53,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def __init__(self, session_obj: object = None):
         """Constructor for s3 account operations."""
+        if CMN_CFG["product_type"] != "node":
+            raise Exception("cortxcli command not supported in the k8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 
@@ -94,7 +95,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_update_role(self, user_name, password, role):
         """
-        This function will update role of user.
+        Function will update role of user.
 
         :param user_name: Name of a csm user whose role to be updated.
         :param role: Role to be updated.
@@ -145,7 +146,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         return True/False, Response s3 accounts dict.
         """
         try:
-            accounts = dict()
+            accounts = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -166,7 +167,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_show_s3accounts(self, csm_user=None, passwd=None):
         """
-        s3accounts using csm user(default with admin role).
+        Show s3accounts using csm user(default with admin role).
 
         :param csm_user: Name of the csm user.
         :param passwd: password of the csm user.
@@ -181,7 +182,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.debug(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -193,7 +194,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, accounts
 
-    def csm_user_create_s3account(self, s3_user, email, s3_passwd, csm_user=None, passwd=None):
+    def csm_user_create_s3account(self, s3_user, email, s3_passwd, **kwargs):
         """
         Create s3 account user using csm user(default with admin role).
 
@@ -204,8 +205,10 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         :param s3_passwd: Password of the s3 account user.
         return True/False, Response.
         """
+        csm_user = kwargs.get("csm_user", None)
+        passwd = kwargs.get("passwd", None)
         try:
-            acc_details = dict()
+            acc_details = {}
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -270,7 +273,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             if status:
                 accounts = response["users"]
             else:
-                accounts = dict()
+                accounts = {}
             LOGGER.info(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -387,7 +390,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         :param account_name: s3 account name.
         :return: create account cortxcli response.
         """
-        acc_details = dict()
+        acc_details = {}
         try:
             start = time.perf_counter()
             self.login_cortx_cli()
@@ -427,7 +430,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
             else:
-                accounts = dict()
+                accounts = {}
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.list_accounts_cortxcli.__name__,
@@ -529,7 +532,7 @@ class _IamUser(CortxCliIamUser):
         :return: (Boolean/Response)
         :return: create user using cortxcli response.
         """
-        user_details = dict()
+        user_details = {}
         confirm_password = confirm_password if confirm_password else password
         try:
             kwargs.setdefault("sleep_time", 10)
@@ -572,8 +575,8 @@ class _IamUser(CortxCliIamUser):
                                         iamuser_name: str,
                                         new_password: str) -> tuple:
         """
-        This function will update password for specified s3
-        iam user to new_password using CORTX CLI.
+        Update iam user password to new password using CORTX CLI.
+
         :param iamuser_name: IAM user name for which password should be updated
         :param new_password: New password for IAM user
         :return: True/False and Response returned by CORTX CLI
@@ -827,6 +830,8 @@ class CortxCliTestLib(_S3AccountOperations,
         :param object session_obj: session object of host connection if already established.
         This class establish the session as soon as object is created.
         """
+        if CMN_CFG["product_type"] != "node":
+            raise Exception("cortxcli command not supported in the k8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 

@@ -1,3 +1,20 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -8,6 +25,7 @@ import shutil
 import logging
 import pytest
 
+from commons import error_messages as errmsg
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file
 from libs.s3 import iam_test_lib, s3_test_lib, s3_acl_test_lib
@@ -71,7 +89,7 @@ class TestS3ACLTestLib:
         self.log.info(
             "Delete created account with prefix: %s",
             self.acc_name_prefix)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = IAM_OBJ.list_accounts(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
@@ -100,7 +118,7 @@ class TestS3ACLTestLib:
         self.log.info(
             "Delete created account with prefix: %s",
             self.acc_name_prefix)
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = IAM_OBJ.list_accounts(
             self.ldap_user,
             self.ldap_pwd)[1]
         self.log.debug("Listing account %s", acc_list)
@@ -108,7 +126,7 @@ class TestS3ACLTestLib:
                    for acc in acc_list if self.acc_name_prefix in acc["AccountName"]]
         if all_acc:
             for acc in all_acc:
-                resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
+                resp = IAM_TEST_OBJ.reset_account_access_key(
                     acc, self.ldap_user, self.ldap_pwd)
                 access_key = resp[1]["AccessKeyId"]
                 secret_key = resp[1]["SecretKey"]
@@ -126,7 +144,7 @@ class TestS3ACLTestLib:
                     assert resp[0], resp[1]
                     self.log.info("Deleted all buckets")
                 self.log.info("Deleting IAM accounts...")
-                resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                resp = IAM_TEST_OBJ.reset_access_key_and_delete_account(
                     acc)
                 assert resp[0], resp[1]
         pref_list = [
@@ -154,7 +172,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_object_acl(
                 self.dummy_bucket, "ut-obj-01")
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_02_get_bucket_acl(self):
@@ -167,12 +185,12 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl(
                 self.dummy_bucket)
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_03_get_bucket_acl_using_iam_credentials(self):
         """Test get bucket acl using iam credentials."""
-        op_val0 = IAM_OBJ.create_account_s3iamcli(
+        op_val0 = IAM_OBJ.create_account(
             "ut-accnt-03",
             self.mail.format("ut-accnt-03"),
             self.ldap_user,
@@ -190,8 +208,7 @@ class TestS3ACLTestLib:
             S3_ACL_OBJ.get_bucket_acl_using_iam_credentials(
                 "dummyAccKey", "dummySecKey", "ut-bkt-03")
         except CTException as error:
-            assert "InvalidAccessKeyId" in str(
-                error.message), error.message
+            assert errmsg.INVALID_ACCESSKEY_ERR_KEY in str(error.message), error.message
 
     @pytest.mark.s3unittest
     def test_04_put_object_acl(self):
@@ -206,7 +223,7 @@ class TestS3ACLTestLib:
             "ut-obj-04",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_im = IAM_OBJ.create_account_s3iamcli(
+        op_im = IAM_OBJ.create_account(
             "ut-accnt-04",
             self.mail.format("ut-accnt-04"),
             self.ldap_user,
@@ -232,7 +249,7 @@ class TestS3ACLTestLib:
             "ut-obj-05",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_val = IAM_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account(
             "ut-accnt-63",
             self.mail.format("ut-accnt-05"),
             self.ldap_user,
@@ -267,7 +284,7 @@ class TestS3ACLTestLib:
             "ut-obj-06",
             self.test_file_path)
         assert op_val[0], op_val[1]
-        op_val = IAM_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account(
             "ut-accnt-06",
             self.mail.format("ut-accnt-06"),
             self.ldap_user,
@@ -295,7 +312,7 @@ class TestS3ACLTestLib:
     @pytest.mark.s3unittest
     def test_07_create_bucket_with_acl(self):
         """Test create bucket with acl."""
-        op_val = IAM_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account(
             "ut-accnt-07",
             self.mail.format("ut-accnt-07"),
             self.ldap_user,
@@ -320,7 +337,7 @@ class TestS3ACLTestLib:
         op_val = S3_ACL_OBJ.put_bucket_acl(
             "ut-bkt-08", acl="private")
         assert op_val[0], op_val[1]
-        op_val = IAM_OBJ.create_account_s3iamcli(
+        op_val = IAM_OBJ.create_account(
             "ut-accnt-08",
             self.mail.format("ut-accnt-08"),
             self.ldap_user,
@@ -332,4 +349,4 @@ class TestS3ACLTestLib:
                 acl="private",
                 grant_read_acp=self.cid_key.format(can_id))
         except CTException as error:
-            assert "NoSuchBucket" in str(error.message), error.message
+            assert errmsg.NO_BUCKET_OBJ_ERR_KEY in str(error.message), error.message

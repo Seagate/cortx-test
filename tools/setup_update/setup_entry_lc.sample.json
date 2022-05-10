@@ -1,0 +1,202 @@
+{
+"setupname":"ssc-vm-g3-rhev4-2587_3n_k8s",
+"setup_type":"VM",
+"setup_in_useby": "",
+"in_use_for_parallel": false,
+"parallel_client_cnt": 0,
+"is_setup_free": true,
+"product_family": "LC",
+"s3_engine": 2,
+"product_type": "k8s",
+"lb": "192.168.60.166",
+"nodes":[
+    {
+        "host": "srv-node-0",
+        "hostname": "ssc-vm-g3-rhev4-2587",
+        "ip": "192.168.60.166",
+        "fqdn": "ssc-vm-g3-rhev4-2587.<domain>",
+        "username": "root",
+        "password": "",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"master",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
+    },
+    {
+        "host": "srv-node-1",
+        "hostname": "ssc-vm-g3-rhev4-2590",
+        "ip": "192.168.63.38",
+        "fqdn": "ssc-vm-g3-rhev4-2590.<domain>",
+        "username": "root",
+        "password": "",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"worker",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
+    },
+    {
+        "host": "srv-node-2",
+        "hostname": "ssc-vm-g3-rhev4-2591",
+        "ip": "192.168.59.106",
+        "fqdn": "ssc-vm-g3-rhev4-2591.<domain>",
+        "username": "root",
+        "password": "",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"worker",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+        }
+    },
+    {
+        "host": "srv-node-3",
+        "hostname": "ssc-vm-g3-rhev4-2592",
+        "ip": "192.168.52.159",
+        "fqdn": "ssc-vm-g3-rhev4-2592.<domain>",
+        "username": "root",
+        "password": "",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"worker",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+        }
+    }
+],
+
+"csm":
+{
+  "mgmt_vip": "FQDN",
+  "port": "31169",
+  "csm_admin_user":{
+    "username": "cortxadmin",
+    "password": ""
+  }
+},
+"bmc":
+{
+    "username": "",
+    "password": ""
+},
+"s3endpoints":
+{
+    "s3_io": "fqdn:port",
+    "s3_auth": "fqdn:port"
+}
+}

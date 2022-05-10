@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -39,7 +38,7 @@ class SystemHealth(RestTestLib):
         """
         Initialize the rest api
         """
-        super().__init__()
+        super(SystemHealth, self).__init__()
         self.main_conf = config_utils.read_yaml(
             "config\\common_config.yaml")[1]
 
@@ -584,3 +583,97 @@ class SystemHealth(RestTestLib):
         self.log.info("cluster status operation response = %s",
                       response.json())
         return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def cluster_operation_signal(
+            self,
+            operation: str,
+            resource: str,
+            negative_resp=None,
+            expected_response=HTTPStatus.OK):
+        """
+        Helper method to send the cluster operation signal before operation performed.
+        :param operation: Operation to be performed
+        :param resource: resource on which operation needs to be performed
+        :param negative_resp: Invalid data for negative test scenario verification
+        :param expected_response: Expected status code
+        :return: boolean, response for POST
+        """
+        # Building request url to perform cluster operation
+        self.log.info("Performing operation on %s ...", resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info("Endpoint for cluster operation is %s", endpoint)
+        data_val = {"operation": operation, "arguments": {}}
+        copy_auth_token = None
+        if negative_resp:
+            # Update the Authorization token to verify negative test scenario
+            copy_auth_token = headers["Authorization"]
+            headers.update({"Authorization":negative_resp})
+        # Fetching api response
+        response = self.restapi.rest_call("post", endpoint=endpoint,
+                                          data=json.dumps(data_val), headers=headers)
+        if negative_resp:
+            # Update the valid token value for rest logout call
+            headers.update({"Authorization":copy_auth_token})
+        if response.status_code != expected_response:
+            self.log.error("%s operation on %s POST REST API response : %s",
+                           operation, resource, response)
+            return False, response
+        self.log.info("%s operation on %s POST REST API response : %s",
+                      operation, resource, response)
+        return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def set_resource_signal(
+            self,
+            req_body: dict,
+            resource: str):
+        """
+        This method POST resource failure/shutdown signal to cluster
+        :param req_body: POST operation request body
+        :param resource: Resource type (eg. node)
+        :return: bool, POST API response
+        """
+        # Building request url to POST resource failure signal
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info("POST REST API Endpoint :", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call("post", endpoint=endpoint, data=json.dumps(req_body),
+                                          headers=headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("POST REST API response : %s", response)
+            return False, response
+        self.log.info("POST REST API response : %s", response.json())
+        return True, response.json()
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def get_resource_status(
+            self,
+            resource_id: str,
+            resource: str = "node"):
+        """
+        This method GETs resource status
+        :param resource: Resource type (eg. node)
+        :param resource_id: Resource ID for which user wants to fetch status
+        :return: bool, GET API response
+        """
+        # Building request url to GET resource status
+        self.log.info("GET the status for %s", resource)
+        endpoint = "{}/{}/{}".format(self.config["cluster_status_endpoint"], resource, resource_id)
+        self.log.info("GET REST API Endpoint: %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(request_type="get",
+                                          endpoint=endpoint, headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            return False, response
+        self.log.info("GET API %s status response = %s", resource, response.json())
+        return True, response.json()

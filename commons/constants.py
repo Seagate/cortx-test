@@ -1,27 +1,27 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
 """All common constants from cortx-test."""
-from commons import const
+import tempfile
 
+from commons import const
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
@@ -29,6 +29,45 @@ NWORKERS = 32
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will
 # run in parallel.
 NGREENLETS = 32
+
+# SB contansts
+MIN = 800000
+MAX = 1300000
+
+# Product Family and versions
+PROD_FAMILY_LC = "LC"
+PROD_FAMILY_LR = "LR"
+PROD_TYPE_K8S = "k8s"
+PROD_TYPE_NODE = "node"
+
+# S3 Engine Type and versions
+S3_ENGINE = "MGW"
+S3_ENGINE_CORTX = 1
+S3_ENGINE_RGW = 2
+
+# K8s for cortx
+POD_NAME_PREFIX = "cortx-data"
+SERVER_POD_NAME_PREFIX = "cortx-server"
+HA_POD_NAME_PREFIX = "cortx-ha"
+HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
+HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"
+HA_HEALTH_MONITOR_CONTAINER_NAME = "cortx-ha-health-monitor"
+HAX_CONTAINER_NAME = "cortx-hax"
+RGW_CONTAINER_NAME = "cortx-rgw"
+HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_monitor.log"]
+NAMESPACE = "cortx"
+CONTROL_POD_NAME_PREFIX = "cortx-control"
+CLIENT_POD_NAME_PREFIX = "cortx-client"
+HA_SHUTDOWN_SIGNAL_PATH = "scripts/server_scripts/ha_shutdown_signal.py"
+MOCK_MONITOR_REMOTE_PATH = "/root/mock_health_event_publisher.py"
+MOCK_MONITOR_LOCAL_PATH = "scripts/server_scripts/mock_health_event_publisher.py"
+HA_CONSUL_VERIFY = "cortx>ha>v1>cluster_stop_key:1"
+HA_CONSUL_NOKEY = "NotFound"
+HA_TMP = "/root"
+HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
+HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
+HA_CONFIG_FILE = "/root/config.json"
+MOTR_CLIENT="motr_client"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -46,7 +85,7 @@ RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
-                        "/storage_enclosure.sls"
+                         "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
@@ -65,14 +104,18 @@ IEM_DIRECTORY = "/opt/seagate/cortx/iem/iec_mapping"
 SSPL_LOG_FILE_PATH = "/var/log/cortx/sspl/sspl.log"
 COMMON_CONFIG_PATH = "config/common_config.yaml"
 TELNET_OP_PATH = "scripts/server_scripts/telnet_operations.py"
+RECEIVER_OP_PATH = "scripts/server_scripts/test_receiver.py"
+DAEMON_OP_PATH = "scripts/server_scripts/daemon.py"
 CSM_CONF = "config/csm/csm_config.yaml"
 REMOTE_TELNET_PATH = "/root/telnet_operations.py"
+REMOTE_RECEIVER_PATH = "/root/test_receiver.py"
+REMOTE_DAEMON_PATH = "/root/daemon.py"
 CTRL_LOG_PATH = "/root/telnet.xml"
 SELINUX_FILE_PATH = "/etc/selinux/config"
 HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
                             "Accept": "text/plain"}
 URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
-                      "/api/public/v1/get_tripw"
+                       "/api/public/v1/get_tripw"
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
@@ -98,10 +141,22 @@ SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
+AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
+LOCAL_COPY_PATH = tempfile.gettempdir() + "/authserver.properties"
+LOCAL_CONF_PATH = tempfile.gettempdir() + "/cluster.conf"
+LOCAL_SOLUTION_PATH = tempfile.gettempdir() + "/solution.yaml"
+CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
+CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
+CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
+CORTX_CSM_POD = "cortx-csm-agent"
+LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
+SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
+NODE_INDEX = 2
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.S3_CONFIG_K8s = "/etc/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
@@ -124,6 +179,9 @@ const.S3_LOG_PATH = "/var/log/seagate/s3"
 const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
 const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
 const.LOG_MSG_PATH = "/var/log/messages"
+const.S3_DI_WRITE_CHECK = "S3_WRITE_DATA_INTEGRITY_CHECK"
+const.S3_DI_READ_CHECK = "S3_READ_DATA_INTEGRITY_CHECK"
+const.S3_METADATA_CHECK = "S3_METADATA_INTEGRITY_CHECK"
 
 
 class Rest:
@@ -176,6 +234,19 @@ class Rest:
                                   "\"Principal\": {\"AWS\":\"$principal\"}}]}"
     SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
                     " user_type, created_time, updated_time.\']}"
+    CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
+    S3_ACCESS_UL = 128
+    S3_ACCESS_LL = 16
+    S3_SECRET_UL = 40
+    S3_SECRET_LL = 8
+    IAM_ACCESS_UL = 128
+    IAM_ACCESS_LL = 16
+    IAM_SECRET_UL = 40
+    IAM_SECRET_LL = 8
+    MAX_S3_USERS = 1000
+    MAX_BUCKETS = 1000
+    MAX_IAM_USERS = 1000
+    MAX_CSM_USERS = 100
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -199,6 +270,29 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+    PERF_STAT_METRICS = ["throughput_read",
+                         "throughput_write",
+                         "iops_read_object",
+                         "latency_create_object",
+                         "iops_write_object",
+                         "iops_read_bucket",
+                         "iops_write_bucket"]
+
+
+# aws cli errors
+AWS_CLI_ERROR = ["ServiceUnavailable",
+                 "MalformedPolicy",
+                 "InvalidRequest",
+                 "Forbidden",
+                 "Conflict",
+                 "InternalError",
+                 "InvalidArgument",
+                 "AccessDenied",
+                 "Failed:",
+                 "An error occurred",
+                 "S3 error: ",
+                 "Read timeout"
+                 "Connection was closed"]
 
 # cortxcli constants
 S3BUCKET_HELP = [
@@ -228,12 +322,12 @@ S3BUCKET_DELETE_HELP = [
     "optional arguments:",
     "-h, --help   show this help message and exit"]
 S3ACCOUNT_HELP_CMDS = [
-        "s3iamusers",
-        "support_bundle",
-        "system",
-        "s3buckets",
-        "s3accounts",
-        "s3bucketpolicy"]
+    "s3iamusers",
+    "support_bundle",
+    "system",
+    "s3buckets",
+    "s3accounts",
+    "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
                   "{show,create,reset_password}",
                   "show                Displays S3 Accounts On the cli",
@@ -262,7 +356,7 @@ JSON_LIST_FORMAT = "json"
 TABLE_LIST_FORMAT = "table"
 XML_LIST_FORMAT = "xml"
 SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
-CSM_USER_HELP =[
+CSM_USER_HELP = [
     "support_bundle",
     "alerts",
     "s3accounts",
@@ -276,18 +370,19 @@ TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 PIP_CONFIG = "/etc/pip.conf"
 
-#Locking server
+# Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
 
+
 class SwAlerts:
     SVCS_3P = [
-#        "elasticsearch.service", # brings down the csm
-#        "hare-consul-agent.service", # Disabled on VM EOS-20861
-#        "slapd.service", # brings down the csm
+        # "elasticsearch.service", # brings down the csm
+        # "hare-consul-agent.service", # Disabled on VM EOS-20861
+        # "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-#        "lnet.service", brings down motr-io service
+        # "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
@@ -303,6 +398,7 @@ class SwAlerts:
     SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
 
     SVC_LOAD_TIMEOUT_SEC = 30
+
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
@@ -319,8 +415,62 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
+    GB = MB * KB
+
+
+KB = 1024
+MB = KB * KB
+GB = MB * MB
+
+# Removing 0Byte File Size for now.
+NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB, 1 * MB, 4 * MB, 8 * MB,
+                       16 * MB, 32 * MB, 64 * MB, 128 * MB]
+
+MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
+                          128 * MB, 256 * MB, 512 * MB, 1024 * MB]
+
+OFFSET = 1 * KB  # Offset for mis aligned sizes
+
+NORMAL_UPLOAD_SIZES_IN_MB = [1, 4, 8, 16, 32, 64, 128]
+
+MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
-                "manifest", "uds", "elasticsearch", "utils", "HA"]
+                                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["rgw", "hare", "utils"],
+                                    CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
+                                    HA_POD_NAME_PREFIX: ["utils"]}
+SB_EXTRACTED_PATH = "/etc/cortx/log/"
+
+# K8s env
+K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
+K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
+K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
+K8S_PRE_DISK = "/dev/sdb"
+K8S_PEM_FILE_PATH = "/root/deploy-scripts/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/" \
+                    "ssl-cert/s3.seagate.com.pem"
+
+# haproxy.cfg dummy file Path
+HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
+HAPROXY_DUMMY_RGW_CONFIG = "scripts/cicd_k8s/haproxy_rgw_dummy.cfg"
+
+# Pod restore methods
+RESTORE_SCALE_REPLICAS = "scale_replicas"
+RESTORE_DEPLOYMENT_K8S = "k8s"
+RESTORE_DEPLOYMENT_HELM = "helm"
+
+# log rotation
+LOG_PATH_CSM = "/etc/cortx/log/csm"
+MAX_LOG_FILE_SIZE_CSM_MB = 17
+LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5,
+                            "/etc/cortx/log/auth/{}/server/":20,
+                            "/etc/cortx/log/s3/{}/haproxy/":5}
+LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/iem/":5,
+                               "/etc/cortx/log/utils/{}/message_bus/":5}
+LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
+LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
+                              "/etc/cortx/log/motr/{}/trace/":17}
+MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}

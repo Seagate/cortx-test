@@ -233,75 +233,65 @@ test_562:
         Resource: "arn:aws:s3:::{}/*"
 
 test_566:
-  bucket_name: "bkt-policybkt-5661"
-  error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bkt-policybkt-5661/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bkt-policybkt-5661/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_569:
-  bucket_name: "bktpolicybkt-5691"
-  error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5691/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5691/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_570:
-  bucket_name: "bktpolicybkt-5701"
-  error_message: "AccessDenied"
   id_str: "id={}"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5701/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5701/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_574:
-  bucket_name: "bktpolicybkt-5741"
-  error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5741/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5741/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_582:
-  bucket_name: "bktpolicybkt-5821"
-  error_message: "AccessDenied"
   bucket_policy:
     Statement:
       - Effect: "Allow"
         Principal: "*"
         Action: "s3:GetObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5821/*"
+        Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
-        Resource: "arn:aws:s3:::bktpolicybkt-5821/*"
+        Resource: "arn:aws:s3:::{}/*"
 
 test_583:
   bucket_policy:
@@ -555,7 +545,6 @@ test_554:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
-        Principal: "*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"
@@ -988,7 +977,6 @@ test_365:
         Resource: "arn:aws:s3:::{}/*"
 
 test_366:
-  error_message: "AccessDenied"
   bucket_permission: "READ"
   bucket_policy:
     Statement:
@@ -1002,7 +990,6 @@ test_366:
         Resource: "arn:aws:s3:::{}/*"
 
 test_367:
-  error_message: "AccessDenied"
   bucket_permission: "WRITE"
   bucket_policy:
     Statement:
@@ -1016,7 +1003,6 @@ test_367:
         Resource: "arn:aws:s3:::{}/*"
 
 test_368:
-  error_message: "AccessDenied"
   bucket_permission: "READ_ACP"
   bucket_policy:
     Statement:
@@ -1030,7 +1016,6 @@ test_368:
         Resource: "arn:aws:s3:::{}/*"
 
 test_369:
-  error_message: "AccessDenied"
   bucket_permission: "WRITE_ACP"
   bucket_policy:
     Statement:
@@ -1044,7 +1029,6 @@ test_369:
         Resource: "arn:aws:s3:::{}/*"
 
 test_370:
-  error_message: "AccessDenied"
   bucket_permission: "FULL_CONTROL"
   bucket_policy:
     Statement:
@@ -1203,7 +1187,6 @@ test_4183:
         Principal: "*"
 
 test_4502:
-  error_message: "AccessDenied"
   date_condition: "DateEquals"
   bucket_policy:
     Statement:
@@ -1217,7 +1200,6 @@ test_4502:
           AWS: ""
 
 test_4504:
-  error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
     Statement:
@@ -1231,7 +1213,6 @@ test_4504:
           AWS: ""
 
 test_4505:
-  error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
     Statement:
@@ -1245,7 +1226,6 @@ test_4505:
           AWS: ""
 
 test_4506:
-  error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
   bucket_policy:
     Statement:
@@ -1259,7 +1239,6 @@ test_4506:
           AWS: ""
 
 test_4507:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
     Statement:
@@ -1273,7 +1252,6 @@ test_4507:
           AWS: ""
 
 test_4508:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThanEquals"
   bucket_policy:
     Statement:
@@ -1287,7 +1265,6 @@ test_4508:
           AWS: ""
 
 test_4509:
-  error_message: "AccessDenied"
   date_condition: "DateEquals"
   bucket_policy:
     Statement:
@@ -1301,7 +1278,6 @@ test_4509:
           AWS: ""
 
 test_4510:
-  error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
     Statement:
@@ -1315,7 +1291,6 @@ test_4510:
           AWS: ""
 
 test_4511:
-  error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
     Statement:
@@ -1329,7 +1304,6 @@ test_4511:
           AWS: ""
 
 test_4512:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
     Statement:
@@ -1343,7 +1317,6 @@ test_4512:
           AWS: ""
 
 test_4513:
-  error_message: "AccessDenied"
   date_condition: "DateNotEquals"
   bucket_policy:
     Statement:
@@ -1357,7 +1330,6 @@ test_4513:
           AWS: ""
 
 test_4514:
-  error_message: "AccessDenied"
   date_condition: "DateLessThan"
   bucket_policy:
     Statement:
@@ -1371,7 +1343,6 @@ test_4514:
           AWS: ""
 
 test_4515:
-  error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
   bucket_policy:
     Statement:
@@ -1385,7 +1356,6 @@ test_4515:
           AWS: ""
 
 test_4516:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
   bucket_policy:
     Statement:
@@ -1399,7 +1369,6 @@ test_4516:
           AWS: ""
 
 test_4517:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThanEquals"
   bucket_policy:
     Statement:
@@ -1479,7 +1448,6 @@ test_270:
         Resource: "arn:aws:s3:::{}/*"
 
 test_5770:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThanIfExists"
   bucket_policy:
     Statement:
@@ -1493,7 +1461,6 @@ test_5770:
           AWS: ""
 
 test_5831:
-  error_message: "AccessDenied"
   date_condition: "DateNotEqualsIfExists"
   bucket_policy:
     Statement:
@@ -1507,7 +1474,6 @@ test_5831:
           AWS: ""
 
 test_5832:
-  error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
     Statement:
@@ -1534,7 +1500,6 @@ test_5778:
           AWS: ""
 
 test_5740:
-  error_message: "AccessDenied"
   date_condition: "DateEqualsIfExists"
   bucket_policy:
     Statement:
@@ -1548,7 +1513,6 @@ test_5740:
           AWS: ""
 
 test_5751:
-  error_message: "AccessDenied"
   date_condition: "DateNotEqualsIfExists"
   bucket_policy:
     Statement:
@@ -1562,7 +1526,6 @@ test_5751:
           AWS: ""
 
 test_5773:
-  error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
     Statement:
@@ -1588,7 +1551,6 @@ test_5764:
           AWS: ""
 
 test_5758:
-  error_message: "AccessDenied"
   date_condition: "DateLessThanIfExists"
   bucket_policy:
     Statement:
@@ -1620,7 +1582,6 @@ test_5925:
           AWS: "{}"
 
 test_5926:
-  error_message: "AccessDenied"
   date_condition: "DateGreaterThanIfExists"
   bucket_policy:
     Statement:
@@ -3124,11 +3085,23 @@ test_22292:
         Resource: "arn:aws:s3:::{}/*"
 
 test_22299:
-  bucket_policy:
+  bucket_policy_1:
     Statement:
       - Effect: "Allow"
         Principal:
          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
+  bucket_policy_2:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"
@@ -3136,3 +3109,39 @@ test_22299:
           CanonicalUser: "{}"
         Action: "s3:PutObjectAcl"
         Resource: "arn:aws:s3:::{}/*"
+
+test_32278:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32279:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"
+
+test_32695:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{0}/*"
+      - Effect: "Allow"
+        Principal: "*"
+        Action: "s3:ListBucket"
+        Resource: "arn:aws:s3:::{0}"

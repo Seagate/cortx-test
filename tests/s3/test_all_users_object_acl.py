@@ -1,19 +1,18 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -25,13 +24,15 @@ import logging
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import path_exists
-from config import S3_CFG
+from commons.utils.s3_utils import poll
+from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
@@ -40,6 +41,7 @@ from libs.s3 import s3_acl_test_lib
 class TestAllUsersObjectAcl:
     """All Users Object ACL Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked before running each test case.
@@ -56,7 +58,7 @@ class TestAllUsersObjectAcl:
             endpoint_url=S3_CFG["s3_url"])
         self.iam_test_obj = iam_test_lib.IamTestLib(
             endpoint_url=S3_CFG["iam_url"])
-        self.err_msg = "Access Denied"
+        self.err_msg = errmsg.ACCESS_DENIED_ERR_KEY
         self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
         self.test_file = "{}{}".format("all_users_obj_acl", time.perf_counter_ns())
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAllUsersObjectAcl")
@@ -151,6 +153,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_without_auth_695(self):
@@ -168,10 +172,10 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("READ")
         self.log.info(
             "Step 3: Uploading same object into bucket using unsigned account")
-        resp = self.no_auth_obj.put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path)
+        resp = poll(self.no_auth_obj.put_object,
+                    self.bucket_name,
+                    self.obj_name,
+                    self.test_file_path)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Uploaded same object into bucket successfully")
@@ -181,6 +185,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
     def test_delete_object_without_authentication_697(self):
@@ -198,7 +204,7 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("READ")
         self.log.info(
             "Step 3: Deleting an object from bucket using unsigned account")
-        resp = self.no_auth_obj.delete_object(self.bucket_name, self.obj_name)
+        resp = poll(self.no_auth_obj.delete_object, self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 3: Deleted an object from bucket using unsigned account successfully")
@@ -208,6 +214,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6014")
     @CTFailOn(error_handler)
     def test_read_object_acl_without_auth_698(self):
@@ -239,6 +247,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6011")
     @CTFailOn(error_handler)
     def test_update_object_acl_without_auth_699(self):
@@ -271,6 +280,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6009")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_without_authentication_700(self):
@@ -302,6 +312,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6006")
     @CTFailOn(error_handler)
     def test_delete_obj_without_auth_701(self):
@@ -330,6 +341,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6004")
     @CTFailOn(error_handler)
     def test_read_obj_acl_without_auth_702(self):
@@ -359,6 +371,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6002")
     @CTFailOn(error_handler)
     def test_update_obj_write_permission_without_auth_703(self):
@@ -389,6 +402,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-6001")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_read_acp_704(self):
@@ -421,6 +435,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5970")
     @CTFailOn(error_handler)
     def test_get_object_without_authentication_read_permission_757(self):
@@ -450,6 +465,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5968")
     @CTFailOn(error_handler)
     def test_get_allusers_object_without_auth_758(self):
@@ -484,6 +500,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5999")
     @CTFailOn(error_handler)
     def test_get_object_read_acp_705(self):
@@ -519,6 +536,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5997")
     @CTFailOn(error_handler)
     def test_read_obj_without_auth_read_acp_706(self):
@@ -548,6 +566,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5995")
     @CTFailOn(error_handler)
     def test_update_obj_without_auth_read_acp_707(self):
@@ -579,6 +598,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5993")
     @CTFailOn(error_handler)
     def test_put_object_without_auth_write_acp_708(self):
@@ -609,6 +629,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5986")
     @CTFailOn(error_handler)
     def test_get_object_without_auth_write_acp_709(self):
@@ -641,6 +662,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5984")
     @CTFailOn(error_handler)
     def test_read_object_without_auth_write_acp_710(self):
@@ -673,6 +695,7 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
     @pytest.mark.tags("TEST-5982")
     @CTFailOn(error_handler)
     def test_update_object_without_auth_write_acp_711(self):
@@ -699,6 +722,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_full_control_712(self):
@@ -718,10 +743,10 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: upload same object in that bucket using unsigned account")
-        resp = self.no_auth_obj.put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path)
+        resp = poll(self.no_auth_obj.put_object,
+                    self.bucket_name,
+                    self.obj_name,
+                    self.test_file_path)
         assert resp[0], resp[1]
         self.log.info(
             "ENDED:Put an object with same name in bucket without Autentication "
@@ -729,6 +754,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
     def test_get_object_without_auth_full_control_713(self):
@@ -748,9 +775,9 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: Get object from that bucket using unsigned account")
-        resp = self.no_auth_obj.get_object(
-            self.bucket_name,
-            self.obj_name)
+        resp = poll(self.no_auth_obj.get_object,
+                    self.bucket_name,
+                    self.obj_name)
         assert resp[0], resp[1]
         self.log.info(
             "ENDED:GET an object from bucket without Authentication "
@@ -758,6 +785,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
     def test_read_object_without_auth_full_control_714(self):
@@ -777,7 +806,8 @@ class TestAllUsersObjectAcl:
         self.verify_obj_acl_edit("FULL_CONTROL")
         self.log.info(
             "Step 3: Get object acl from that bucket using unsigned account")
-        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
+        resp = poll(self.acl_obj.get_object_acl, self.bucket_name, self.obj_name,
+                    condition="{}[1]['Grants'][0]['Permission']=='FULL_CONTROL'")
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == "FULL_CONTROL", resp[1]
         self.log.info(
@@ -786,6 +816,8 @@ class TestAllUsersObjectAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
     def test_update_object_without_auth_full_control_715(self):
@@ -809,7 +841,8 @@ class TestAllUsersObjectAcl:
         self.log.info(
             "Step 3: Changed object's acl to FULL_CONTROL for all users")
         self.log.info("Step 4: Verifying that object's acl is changed")
-        resp = self.acl_obj.get_object_acl(self.bucket_name, self.obj_name)
+        resp = poll(self.acl_obj.get_object_acl, self.bucket_name, self.obj_name,
+                    condition="{}[1]['Grants'][0]['Permission']=='WRITE_ACP'")
         assert resp[0], resp[1]
         assert resp[1]["Grants"][0]["Permission"] == "WRITE_ACP", resp[1]
         self.log.info("Step 4: Verified that object's acl is changed")

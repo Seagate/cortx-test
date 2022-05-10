@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -36,13 +35,17 @@ from commons.helpers.node_helper import Node
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
-from libs.s3 import S3H_OBJ, S3_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 
+#pylint: disable-msg=too-many-public-methods
 class TestAuditLogs:
     """Audit logs test suite."""
+
+    # pylint: disable-msg=attribute-defined-outside-init
 
     @classmethod
     def setup_class(cls):
@@ -107,7 +110,7 @@ class TestAuditLogs:
         self.test_cfg = {}
         if system_utils.path_exists(self.lcl_path):
             system_utils.remove_file(self.lcl_path)
-        resp = S3H_OBJ.copy_s3server_file(self.rem_path, self.lcl_path)
+        resp = self.node_obj.copy_file_to_local(self.rem_path, self.lcl_path)
         assert_utils.assert_true(resp[0], resp[1])
         audit_config = read_yaml(self.lcl_path)[1]
         self.log.info(audit_config)
@@ -157,21 +160,21 @@ class TestAuditLogs:
         if self.old_value != new_value:
             for node in range(len(self.nodes)):
                 host_name = CMN_CFG["nodes"][node]["host"]
-                resp = S3H_OBJ.copy_s3server_file(
-                    self.rem_path, self.lcl_path, host=host_name)
-                assert_utils.assert_true(resp[0], resp)
+                node_obj = Node(hostname=host_name,
+                                username=self.uname,
+                                password=self.passwd)
+                resp = node_obj.copy_file_to_local(
+                    self.rem_path, self.lcl_path)
+                assert_utils.assert_true(resp[0], resp[1])
                 resp = update_cfg_based_on_separator(
                     self.lcl_path,
                     self.key,
                     self.old_value,
                     new_value)
                 assert_utils.assert_true(resp[0], resp[1])
-                node_obj = Node(
-                    hostname=host_name, username=self.uname, password=self.passwd)
                 node_obj.copy_file_to_remote(
                     self.lcl_path,
                     self.rem_path
-
                 )
                 system_utils.remove_file(self.lcl_path)
             self.log.info(
@@ -194,20 +197,23 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             folder = "audit"
             audit_path = "{}/{}/{}".format(
                 S3_CFG["s3_logs"],
                 folder,
                 "audit.log")
             self.log.debug(audit_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(audit_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(audit_path)
             if resp:
                 cmd = f"grep {value} {audit_path}"
                 status, res = system_utils.run_remote_cmd(
                     cmd,
                     host_name,
-                    CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    username,
+                    password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res
@@ -231,15 +237,16 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             log_msg_path = const.LOG_MSG_PATH
             self.log.debug(log_msg_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                log_msg_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(log_msg_path)
             if resp:
                 cmd = f"grep {value} {log_msg_path}"
                 status, res = system_utils.run_remote_cmd(
-                    cmd, host_name, CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    cmd, host_name, username, password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res
@@ -397,6 +404,7 @@ class TestAuditLogs:
         assert_utils.assert_true(result[0], result[1])
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8012')
     @CTFailOn(error_handler)
     def test_5248(self):
@@ -425,6 +433,7 @@ class TestAuditLogs:
                       "if we set audit logger policy to disabled")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8013')
     @CTFailOn(error_handler)
     def test_5236(self):
@@ -447,6 +456,7 @@ class TestAuditLogs:
             "Multipart upload with Syslog logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8014')
     @CTFailOn(error_handler)
     def test_5235(self):
@@ -468,6 +478,7 @@ class TestAuditLogs:
             "Object operations with syslog logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8015')
     @CTFailOn(error_handler)
     def test_5231(self):
@@ -489,6 +500,7 @@ class TestAuditLogs:
             "Bucket operations with syslog logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8016')
     @CTFailOn(error_handler)
     def test_5228(self):
@@ -510,6 +522,7 @@ class TestAuditLogs:
             "Object operations with log4cxx logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8018')
     @CTFailOn(error_handler)
     def test_5209(self):
@@ -531,6 +544,7 @@ class TestAuditLogs:
             "Bucket operations with log4cxx logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8017')
     @CTFailOn(error_handler)
     def test_5213(self):
@@ -553,6 +567,7 @@ class TestAuditLogs:
             "Multipart upload with log4cxx logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8010')
     @CTFailOn(error_handler)
     def test_6253(self):
@@ -601,6 +616,7 @@ class TestAuditLogs:
             " the audit server logs post any bucket operation.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8011')
     @CTFailOn(error_handler)
     def test_6255(self):
@@ -660,6 +676,7 @@ class TestAuditLogs:
             " the audit server logs post any object operation.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8726')
     @CTFailOn(error_handler)
     def test_5238(self):
@@ -707,6 +724,7 @@ class TestAuditLogs:
             "operations with 'rsyslog-tcp' logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8727')
     @CTFailOn(error_handler)
     def test_5240(self):
@@ -765,6 +783,7 @@ class TestAuditLogs:
             "operations with 'rsyslog-tcp' logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8728')
     @CTFailOn(error_handler)
     def test_5246(self):

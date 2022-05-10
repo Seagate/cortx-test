@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -43,10 +42,11 @@ from _pytest.main import Session
 from filelock import FileLock
 from strip_ansi import strip_ansi
 
-from commons import Globals, s3_dns
+from commons import Globals
 from commons import cortxlogging
 from commons import params
 from commons import report_client
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -58,6 +58,7 @@ from core.runner import get_db_credential
 from core.runner import get_jira_credential
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
+from libs.di.fi_adapter import S3FailureInjection
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -227,8 +228,24 @@ def pytest_addoption(parser):
         help="Decide whether to update Jira."
     )
     parser.addoption(
+        "--csm_checks", action="store", default=False,
+        help="Execute tests with error code & msg check enabled."
+    )
+    parser.addoption(
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
+    )
+    parser.addoption(
+        "--product_family", action="store", default='LC',
+        help="Product Type LR or LC."
+    )
+    parser.addoption(
+        "--validate_certs", action="store", default=True,
+        help="Decide whether to Validate HTTPS/SSL certificate to S3 endpoint."
+    )
+    parser.addoption(
+        "--use_ssl", action="store", default=True,
+        help="Decide whether to use HTTPS/SSL connection for S3 endpoint."
     )
 
 
@@ -698,6 +715,8 @@ def pytest_runtest_makereport(item, call):
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
                              str(exception), test_id)
     if report.when == 'teardown':
+        mode = "a"  # defaults
+        current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
         if item.rep_setup.failed or item.rep_teardown.failed:
             current_file = fail_file
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
@@ -711,6 +730,9 @@ def pytest_runtest_makereport(item, call):
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         elif item.rep_setup.skipped and (item.rep_teardown.skipped or item.rep_teardown.passed):
+            current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
+            mode = "a" if os.path.exists(current_file) else "w"
+        elif item.rep_setup.skipped or item.rep_call.skipped or item.rep_teardown.skipped:
             current_file = os.path.join(os.getcwd(), LOG_DIR, 'latest', current_file)
             mode = "a" if os.path.exists(current_file) else "w"
         with open(current_file, mode) as f:
@@ -730,8 +752,11 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
     if log == 'csm_gui':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
-    else:
+    elif log == 's3bench':
         support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    else:
+        support_logs = glob.glob(f"{LOG_DIR}/latest/logs-cortx-cloud-*")
+    LOGGER.debug("support logs is %s", support_logs)
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -739,6 +764,9 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
                                                    local_path=support_log)
         if resp[0]:
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
+            if os.path.isfile(support_log):
+                os.remove(support_log)
+                LOGGER.info("Removed the files from local path after uploading to NFS share")
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
@@ -748,6 +776,9 @@ def check_cortx_cluster_health():
     LOGGER.info("Check cluster status for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -761,9 +792,12 @@ def check_cortx_cluster_health():
 
 def check_cluster_storage():
     """Checks nodes storage and accepts till 98 % occupancy."""
-    LOGGER.info("Check cluster status for all nodes.")
+    LOGGER.info("Check cluster storage for all nodes.")
     nodes = CMN_CFG["nodes"]
     for node in nodes:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            if node["node_type"].lower() != "master":
+                continue
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -814,9 +848,7 @@ def pytest_runtest_logstart(nodeid, location):
     # Check health status of target
     target = Globals.TARGET
     h_chk = Globals.HEALTH_CHK
-    if not Globals.LOCAL_RUN and not skip_health_check:
-        check_health(target)
-    elif Globals.LOCAL_RUN and h_chk and not skip_health_check:
+    if h_chk and not skip_health_check:
         check_health(target)
 
 
@@ -890,6 +922,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
+        upload_supporting_logs(test_id, remote_path, "")
         upload_supporting_logs(test_id, remote_path, "csm_gui")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(os.path.join(resp[1], name))
@@ -996,22 +1029,17 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=False)
-def get_db_cfg(request):
-    from config import S3_CFG
-    if request.config.getoption('--target'):
-        setup_query = {"setupname": request.config.getoption('--target')}
-        from commons.configmanager import get_config_db
-        setup_details = get_config_db(
-            setup_query=setup_query)[request.config.getoption("--target")]
-        if "lb" in setup_details.keys() and setup_details.get(
-                'lb') not in [None, '', "FQDN without protocol(http/s)"]:
-            if "s3_url" in S3_CFG.keys():
-                S3_CFG["s3_url"] = f"https://{setup_details.get('lb')}"
-                S3_CFG["iam_url"] = f"https://{setup_details.get('lb')}:9443"
-        if "s3_dns" in setup_details.keys() and setup_details.get('s3_dns'):
-            if request.config.getoption("--nodes"):
-                node_count = len(request.config.getoption("--nodes"))
-            else:
-                node_count = len(setup_details["nodes"])
-            s3_dns.dns_rr(S3_CFG, node_count, setup_details)
+@pytest.fixture(scope="class", autouse=False)
+def restart_s3server_with_fault_injection(request):
+    """Fixture to restart s3 server with fault injection."""
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("Restart S3 Server with Fault Injection option")
+    request.cls.log.info("Enable Fault Injection")
+    fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
+    resp = fi_adapter.set_fault_injection(flag=True)
+    request.cls.fault_injection = True
+    assert resp[0], resp[1]
+    yield
+    resp = fi_adapter.set_fault_injection(flag=False)
+    request.cls.fault_injection = False
+    assert resp[0], resp[1]

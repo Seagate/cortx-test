@@ -1,7 +1,25 @@
+#
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
 """
 JIRA Access Utility Class
 """
 import json
+import sys
 import traceback
 import requests
 from requests.adapters import HTTPAdapter
@@ -163,6 +181,39 @@ class JiraTask:
             return response.json()
         return response.text
 
+    @staticmethod
+    def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
+        """
+        Args:
+            test_plan (str): Test plan number in JIRA
+            username (str): JIRA Username
+            password (str): JIRA Password
+
+        Returns:
+            List of dictionaries
+            Each dict will have id, key, latestStatus keys
+            [{'id': 265766, 'key': 'TEST-4871', 'latestStatus': 'PASS'},
+             {'id': 271956, 'key': 'TEST-6930', 'latestStatus': 'PASS'}]
+        """
+        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/test'
+        responses = []
+        i = 0
+        while True:
+            i = i + 1
+            query = {'limit': 100, 'page': i}
+            response = requests.get(jira_url, auth=(username, password), params=query)
+            if response.status_code == HTTPStatus.OK and response.json():
+                responses.extend(response.json())
+            elif response.status_code == HTTPStatus.OK and not response.json():
+                break
+            else:
+                LOGGER.info("get_test_list GET on %s failed", jira_url)
+                LOGGER.info("RESPONSE=%s\n",response.text)
+                LOGGER.info("HEADERS=%s\n", response.request.headers)
+                LOGGER.info("BODY=%s", response.request.body)
+                sys.exit(1)
+        return responses
+
     def get_issue_details(self, issue_id: str, auth_jira: JIRA = None) -> Issue:
         """
         Get issue details from Jira.
@@ -277,7 +328,7 @@ class JiraTask:
         Add comment to the mentioned jira id.
         """
         try:
-            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(test_run_id)
+            url = f"https://jts.seagate.com/rest/raven/1.0/api/testrun/{test_run_id}/comment"
 
             response = requests.request("PUT", url, data=comment,
                                         auth=(self.jira_id, self.jira_password),

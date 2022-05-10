@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -22,6 +21,7 @@
 Locust tasks set for put object, get object and delete object from bucket
 with step users and constant object size
 """
+import glob
 import os
 import math
 import logging
@@ -57,28 +57,27 @@ class LocustUser(HttpUser):
         LOGGER.info("Starting test setup with %s %s", kwargs.get('--u'), kwargs.get('--t'))
         UTILS_OBJ.create_buckets(BUCKET_COUNT)
 
-    @task(1)
+    @task(2)
     def put_object(self):
         for bucket in BUCKET_LIST:
             self.utils.put_object(bucket, OBJECT_SIZE)
 
     @task(1)
     def get_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.download_object(bucket)
+        self.utils.download_object()
 
     @task(1)
     def delete_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.delete_object(bucket)
+        self.utils.delete_object()
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         LOGGER.info("Starting test cleanup.")
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
-        for local_obj in (
-                locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
-            UTILS_OBJ.delete_local_obj(local_obj)
+        for object_files in glob.glob(f"{locust_utils.OBJ_NAME}*"):
+            UTILS_OBJ.delete_local_obj(object_files)
+        for object_files in glob.glob(f"{locust_utils.GET_OBJ_PATH}*"):
+            UTILS_OBJ.delete_local_obj(object_files)
         LOGGER.info("Log path: %s", kwargs.get('--logfile'))
         LOGGER.info("HTML path: %s", kwargs.get('--html'))
 
@@ -100,6 +99,7 @@ class StepLoadShape(LoadTestShape):
             'SPAWN_RATE',
             LOCUST_CFG['default']['HATCH_RATE']))
     time_limit = int(os.getenv('DURATION', step_time * 2))
+    max_user = int(os.getenv('MAX_USERS', 30))
 
     def tick(self):
         run_time = self.get_run_time()
@@ -108,4 +108,8 @@ class StepLoadShape(LoadTestShape):
             return None
 
         current_step = math.floor(run_time / self.step_time) + 1
-        return current_step * self.step_load, self.spawn_rate
+        total_new_users = current_step * self.step_load
+        if total_new_users > self.max_user:
+            total_new_users = self.max_user
+
+        return total_new_users, self.spawn_rate

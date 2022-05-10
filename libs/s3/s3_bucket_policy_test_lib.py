@@ -1,19 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
@@ -21,12 +20,13 @@
 """Python library contains methods for bucket policy."""
 
 import logging
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
+from commons.utils.s3_utils import poll
 from commons.exceptions import CTException
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import BucketPolicy
-from time import sleep
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_bucket_policy import BucketPolicy
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        self.sync_delay = S3_CFG["sync_delay"]
         super().__init__(
             access_key,
             secret_key,
@@ -72,9 +73,9 @@ class S3BucketPolicyTestLib(BucketPolicy):
         """
         try:
             LOGGER.info("getting bucket policy for the bucket")
-            response = super().get_bucket_policy(bucket_name)
+            response = poll(super().get_bucket_policy, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.get_bucket_policy.__name__,
                          error)
@@ -97,8 +98,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["put_bkt_policy"])
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
                          error)
@@ -115,10 +115,9 @@ class S3BucketPolicyTestLib(BucketPolicy):
         """
         try:
             LOGGER.info("Deletes any policy applied to the bucket")
-            response = super().delete_bucket_policy(bucket_name)
+            response = poll(super().delete_bucket_policy, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response["BucketName"])
-            sleep(S3_CFG["delay"]["del_bkt_policy"])
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,
                          error)
