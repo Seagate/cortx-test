@@ -26,6 +26,7 @@ from http import HTTPStatus
 from random import SystemRandom
 from string import Template
 
+from botocore.exceptions import ClientError
 from commons import configmanager
 from commons.constants import Rest as const
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -102,7 +103,8 @@ class GetSetQuota(RestTestLib):
         return response
 
     def verify_get_set_user_quota(self, uid: str, payload: dict, verify_response=False,
-                                  expected_response = HTTPStatus.CREATED):
+                                  expected_response = HTTPStatus.CREATED,
+                                  login_as="csm_admin_user"):
         """
         Verify get and set user quota
         """
@@ -141,20 +143,22 @@ class GetSetQuota(RestTestLib):
         """
         err_msg = ""
         self.log.info("Perform Put operation for 1 object of max size")
-        res = s3_misc.create_put_objects(self.obj_name, self.bucket, akey, skey, object_size=max_size)
+        res = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                       akey, skey, object_size=max_size)
         if res:
-           self.log.info("Perform Put operation of Random size and 1 object")
-           random_size = self.cryptogen.randrange(1, max_size)
-           try:
-               resp = s3_misc.create_put_objects(self.obj_name, self.bucket,akey, skey, object_size=random_size)
-               res = False
-               err_msg = "Put operation passed for object size above max size"
-           except ClientError as error:
-               self.log.info("Expected exception received %s", error)
-               res = resp['Error']['Code'] == "......." 
-               err_msg = "Message check verification failed for object size above max size"
+            self.log.info("Perform Put operation of Random size and 1 object")
+            random_size = self.cryptogen.randrange(1, max_size)
+            try:
+                resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                      akey, skey, object_size=random_size)
+                res = False
+                err_msg = "Put operation passed for object size above max size"
+            except ClientError as error:
+                self.log.info("Expected exception received %s", error)
+                res = resp['Error']['Code'] == "....."
+                err_msg = "Message check verification failed for object size above max size"
         else:
-           err_msg = "Put operation failed for less than max size"
+            err_msg = "Put operation failed for less than max size"
         return res, err_msg
 
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str):
@@ -164,21 +168,21 @@ class GetSetQuota(RestTestLib):
         self.log.info("Perform Put operation of small size and N object")
         small_size = math.floor(max_size / max_objects)
         err_msg = ""
-        for i in range(0, max_objects):
+        for _ in range(0, max_objects):
             res = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               akey, skey, object_size=small_size)
         if res:
-           self.log.info("Perform Put operation of Random size and 1 object")
-           random_size = self.cryptogen.randrange(1, max_size)
-           try:
-               resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+            self.log.info("Perform Put operation of Random size and 1 object")
+            random_size = self.cryptogen.randrange(1, max_size)
+            try:
+                resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           akey, skey, object_size=random_size)
-               res = False
-               err_msg = "Put operation passed for object size above random size"
-           except ClientError as error:
-               self.log.info("Expected exception received %s", error)
-               res = resp['Error']['Code'] == "......." #TODO
-               err_msg = "Message check verification failed for objects more than max objects"
+                res = False
+                err_msg = "Put operation passed for object size above random size"
+            except ClientError as error:
+                self.log.info("Expected exception received %s", error)
+                res = resp['Error']['Code'] == "......."#TODO
+                err_msg = "Message check verification failed for objects more than max objects"
         else:
             err_msg = "Put operation failed for less than max objects"
-        return res, err_msg      
+        return res, err_msg
