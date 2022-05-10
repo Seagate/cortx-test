@@ -70,7 +70,7 @@ class TestRestApiRgw:
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36622')
     def test_user_create_36622(self):
-        """Create new IAM user."""
+        """Test create iam user specifying uid and display name."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create iam user specifying uid and display name.")
@@ -91,12 +91,12 @@ class TestRestApiRgw:
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info("END: Test create iam user specifying uid and display name. : %s",test_case_name)
-       
+        self.log.info("END : %s",test_case_name)
+    
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36630')
     def test_user_create_36630(self):
-        """Create new IAM user."""
+        """Test create iam user specifying uid and display name and email."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create iam user specifying uid and display name and email.")
@@ -119,12 +119,12 @@ class TestRestApiRgw:
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info("END: Test create iam user specifying uid and display name and email. : %s",test_case_name)
+        self.log.info("END: %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36632')
     def test_user_create_36632(self):
-        """Create new IAM user."""
+        """Test create iam user specifying just uid."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create iam user specifying just uid .")
@@ -138,12 +138,12 @@ class TestRestApiRgw:
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.BAD_REQUEST, "Able to create user with just uid. Test Failed"
         #self.created_users.append(user_params)
-        self.log.info("END: Test create iam user specifying just uid . : %s",test_case_name)
+        self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36633')
     def test_user_create_36633(self):
-        """Create new IAM user."""
+        """Test create using uid which already exist."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create using uid which already exist.")
@@ -169,12 +169,12 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
-        self.log.info("END: Test create using uid which already exist. : %s",test_case_name)
+        self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36636')
     def test_user_create_36636(self):
-        """Create new IAM user."""
+        """Test create user using display name which already exist."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create user using display name which already exist.")
@@ -212,12 +212,12 @@ class TestRestApiRgw:
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params2)
-        self.log.info("END: Test create using uid which already exist. : %s",test_case_name)
+        self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36664')
     def test_user_create_36664(self):
-        """Create new IAM user."""
+        """Test create using email which already exist."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create using email which already exist.")
@@ -251,12 +251,12 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
-        self.log.info("END: Test create using uid which already exist. : %s",test_case_name)
+        self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-36665')
     def test_user_create_36665(self):
-        """Create new IAM user."""
+        """Test create user with uid containing special characters."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create user with uid containing special characters.")
@@ -277,5 +277,5 @@ class TestRestApiRgw:
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info("END: Test create user with uid containing special characters. : %s",test_case_name)
+        self.log.info("END : %s",test_case_name)
 
