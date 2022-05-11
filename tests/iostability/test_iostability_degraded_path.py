@@ -65,8 +65,8 @@ class TestIOWorkloadDegradedPath:
         cls.iolib = IOStabilityLib()
         cls.test_completed = False
 
-    def teardown_class(self):
-        """Teardown class method."""
+    def teardown_method(self):
+        """Teardown method."""
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
