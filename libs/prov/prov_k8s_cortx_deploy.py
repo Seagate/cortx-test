@@ -537,9 +537,10 @@ class ProvDeployK8sCortxLib:
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
         # Update the solution yaml file with images
-        resp_image = self.update_image_section_sol_file(filepath, cortx_image,
-                                                        third_party_images_dict,
-                                                        cortx_server_image, cortx_data_image)
+        resp_image = self.update_image_section_sol_file(filepath, third_party_images_dict,
+                                                        cortx_image=cortx_image,
+                                                        cortx_server_image=cortx_server_image,
+                                                        cortx_data_image=cortx_data_image)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -674,8 +675,8 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict,
-                                      cortx_server_image, cortx_data_image):
+    def update_image_section_sol_file(self, filepath, third_party_images_dict,
+                                      **kwargs):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
@@ -686,6 +687,11 @@ class ProvDeployK8sCortxLib:
         """
         cortx_im = dict()
         image_default_dict = {}
+
+        cortx_image = kwargs.get("cortx_image")
+        cortx_server_image = kwargs.get("cortx_server_image")
+        cortx_data_image = kwargs.get("cortx_data_image")
+
         image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
@@ -1263,7 +1269,7 @@ class ProvDeployK8sCortxLib:
                                                     self.git_script_tag, namespace)
             LOGGER.debug("Deploy execution response %s", deploy_resp)
 
-            if len(namespace) >= self.deploy_cfg["max_size_namespace"] or \
+            if len(namespace) > self.deploy_cfg["max_char_limit"] or \
                     bool(re.findall(r'\w*[A-Z]\w*', namespace)):
                 LOGGER.debug("Negative Test Scenario")
                 assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
@@ -1287,43 +1293,43 @@ class ProvDeployK8sCortxLib:
                                                               common_const.RGW_CONTAINER_NAME,
                                                               self.deploy_cfg["rgw_rpm"])
                             assert_utils.assert_true(resp[0], resp[1])
-        if self.deployment_type not in self.exclusive_pod_list:
-            if setup_client_config_flag:
-                LOGGER.info("Setting the current namespace")
-                resp_ns = master_node_list[0].execute_cmd(
-                    cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
-                    read_lines=True)
-                LOGGER.debug("response is %s,", resp_ns)
-                resp = system_utils.execute_cmd(
-                    common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
-                eth1_ip = resp[1].strip("'\\n'b'")
-                if self.service_type == "NodePort":
-                    resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                    self.deploy_cfg['iface'])
-                    if not resp[0]:
-                        LOGGER.debug("Did not get expected response: %s", resp)
-                    ext_ip = resp[1]
-                    port = resp[2]
-                    ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
-                                  ":{}".format(port)
-                    LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
-                else:
-                    LOGGER.info("Configure HAproxy on client")
-                    ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
-                                                               master_node_list[0].username,
-                                                               master_node_list[0].password,
-                                                               eth1_ip, self.deploy_cfg['iface'])
-                    ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
-                LOGGER.info("Step to Create S3 account and configure credentials")
-                if self.s3_engine == 2:
-                    resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-                    assert_utils.assert_true(resp[0], resp[1])
-                    access_key, secret_key = S3H_OBJ.get_local_keys()
+            if self.deployment_type not in self.exclusive_pod_list:
+                if setup_client_config_flag:
+                    LOGGER.info("Setting the current namespace")
+                    resp_ns = master_node_list[0].execute_cmd(
+                        cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
+                        read_lines=True)
+                    LOGGER.debug("response is %s,", resp_ns)
+                    resp = system_utils.execute_cmd(
+                        common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+                    eth1_ip = resp[1].strip("'\\n'b'")
                     if self.service_type == "NodePort":
-                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                            endpoint_url=ext_port_ip)
+                        resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
+                                                                        self.deploy_cfg['iface'])
+                        if not resp[0]:
+                            LOGGER.debug("Did not get expected response: %s", resp)
+                        ext_ip = resp[1]
+                        port = resp[2]
+                        ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
+                                      ":{}".format(port)
+                        LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
                     else:
-                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+                        LOGGER.info("Configure HAproxy on client")
+                        ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                                   master_node_list[0].username,
+                                                                   master_node_list[0].password,
+                                                                   eth1_ip, self.deploy_cfg['iface'])
+                        ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
+                    LOGGER.info("Step to Create S3 account and configure credentials")
+                    if self.s3_engine == 2:
+                        resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+                        assert_utils.assert_true(resp[0], resp[1])
+                        access_key, secret_key = S3H_OBJ.get_local_keys()
+                        if self.service_type == "NodePort":
+                            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                                endpoint_url=ext_port_ip)
+                        else:
+                            s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
 
                 if run_basic_s3_io_flag:
                     LOGGER.info("Step to Perform basic IO operations")
@@ -1394,9 +1400,12 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_not_equal(len(server_pod_list), 0, "No cortx-server Pods found")
             pod_count = len(server_pod_list)
             LOGGER.debug("THE SERVER POD LIST ARE %s", server_pod_list)
-
+        sleep_val = self.deploy_cfg["service_delay"]
+        if len(data_pod_list) > self.deploy_cfg["node_count"]:
+            sleep_val = self.deploy_cfg["service_delay_scale"]
         start_time = int(time.time())
-        end_time = start_time + 70 * (pod_count*2)  # max 32 mins timeout
+        end_time = start_time + sleep_val * (pod_count*2)  # max 32 mins timeout
+        LOGGER.debug("END TIME is %s", end_time)
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
