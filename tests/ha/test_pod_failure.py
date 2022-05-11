@@ -58,7 +58,7 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=R0902
 # pylint: disable=R0904
-class TestPodFailure:
+class TestDataPodFailure:
     """
     Test suite for Data Pod Failure
     """
