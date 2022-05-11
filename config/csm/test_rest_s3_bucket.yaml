@@ -5,4 +5,4 @@ test_578:
   response_msg:
     error_code: 4099
     message_id: "invalid body msg_id"
-    message: "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"    
+    message_index: 0

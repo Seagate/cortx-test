@@ -2,10 +2,13 @@ test_5001:
   invalid_sortby: "roles"
   response_msg:
     error_code: 4099
-    message_id: "{'sort_by': ['Must be one of: user_id, username, user_type, alert_notification, email, created_time, updated_time.']}"
-    message: "Invalid Parameter for user"
+    message_id: "Invalid parameter for user"
+    message_index : 2 
 test_5004:
   invalid_sortdir: "abc"
+  error_code: 4099
+  message_id: "Invalid parameter for user"
+  message_index: 1
 test_5000:
   valid_sortby: 
     - "username"
@@ -65,7 +68,7 @@ test_7422:
   response_manage:
     error_code: 4101
     message_id: "user_permission_denied"
-    message: "Non super user cannot change roles for self"
+    message_index: 1
     error_format_args: ""
 test_7412:
   payload:
@@ -76,7 +79,7 @@ test_7412:
   response_admin:
     error_code: 4101
     message_id: "user_permission_denied"
-    message: "Cannot change roles for super user"
+    message_index: 0
     error_format_args: ""
 test_7408:
   payload:
@@ -85,20 +88,20 @@ test_7408:
   response_mesg:
     error_code: 4099
     message_id: "invalid request parameter"
-    message: "username cannot be modified"
+    message_index: 0
 test_6220:
   response_duplicate_csm_manage_user:
     error_code: 4103
     message_id: "users_already_exists"
-    message: "User already exists:"
+    message_index: 0
   response_duplicate_csm_monitor_user:
     error_code: 4103
     message_id: "users_already_exists"
-    message: "User already exists:"
+    message_index: 0
   response_duplicate_s3_account:
     error_code: 12288
     message_id: "EntityAlreadyExists"
-    message: "The request was rejected because it attempted to create an account that already exists."
+    message_index: 0
     error_format_args: 
       account_name: ""
 test_5021:
@@ -107,18 +110,18 @@ test_5021:
 test_5005:
   response_msg:
     error_code: 4099
-    message_id: "{'dir': ['Must be one of: desc, asc.']}"
-    message: "Invalid parameter for user"
+    message_id: "Invalid parameter for user"
+    message_index: 1
 test_5002:
   response_msg:
     error_code: 4099
-    message_id: "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}"
-    message: "Invalid Parameter for user"
+    message_id: "Invalid parameter for user"
+    message_index: 2
 test_5020:
   response_msg:
     error_code: 4099
     message_id: "invalid request parameter"
-    message: "Insufficient information in request body"
+    message_index: 1
 test_5017:
   invalid_user_id: "invaliduser123"
   payload:
@@ -127,13 +130,13 @@ test_5017:
   response_msg:
     error_code: 4101
     message_id: "users_not_found"
-    message: "User does not exist:"
+    message_index: 0
 test_5010:
   invalid_user_id: "invaliduser123"
   response_msg:
     error_code: 4101
     message_id: "users_not_found"
-    message: "User does not exist:"
+    message_index: 0
 test_5018:
   range:
     - 4
@@ -149,23 +152,29 @@ test_5018:
     role: "abc"
     password: 'UJC4S6AjJFIr4RkqLuER6O+cK4fxLny8WyTUcxaVrtQ='
   invalid_password_resp_1:
-    error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 8
   invalid_password_resp_2:
-    error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 9
   invalid_password_resp_3:
-    error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 10
   invalid_role_resp:
-    error_code: "4099"
-    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 11
   invalid_password_role_resp_1:
-    error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 12
   invalid_password_role_resp_2:
-    error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 13
 test_1173:
   data: 
     - "Testuser@12345"
@@ -176,62 +185,69 @@ test_1172:
   status_code: 401
 test_7362:
   password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='
-
 test_25278:
-    error_code: 4101
-    message: "{} can not update the role for {}"
+    error_code: 4104
     message_id: "update_not_allowed"
+    message_index: 4
 test_25280:
-    error_code: 4101
-    message: "{} can not update the password for {}"
+    error_code: 4104
     message_id: "update_not_allowed"
+    message_index: 1
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25282:
-    error_code: 4101
-    message: "{} can not update the email id for {}"
+    error_code: 4104
     message_id: "update_not_allowed"
+    message_index: 4
     email_id: "testuser@seagate.com"
 test_25275:
     error_code: 4104
-    message: "Only {} user can create other {} users"
     message_id: "Cannot create other users"
+    message_index: 0
 test_25279:
     error_code: 4104
-    message: "{} can not update the password for {}"
     message_id: "update_not_allowed"
+    message_index: 1
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_25281:
     error_code: 4104
-    message: "{} can not update the email id for {}"
     message_id: "update_not_allowed"
+    message_index: 4
     email_id: "testuser@seagate.com"
 test_25277:
     error_code: 4104
-    message: "Cannot change role for the last {} user"
     message_id: "update_not_allowed"
+    message_index: 3
 test_25276:
-    error_code: 4101
-    message: "Only {} user can create other {} users"
-    message_id: "user_permission_denied"
+    error_code: 4104
+    message_id: "Cannot create other users"
+    message_index: 0
 test_25286:
     error_code: 4104
-    message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
+    message_index: 2
 test_25283:
     error_code: 4104
-    message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
+    message_index_1: 2
+    message_index_2: 3
 test_25285:
     error_code: 4104
-    message1: "Cannot delete the last {} user"
-    message2: "Normal user cannot delete other user"
     message_id: "user_permission_denied"
+    message_index_1: 2
+    message_index_2: 3
 test_28501:
     new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
     reset_password: True
+test_28502:
+    error_code: 4099
+    message_id: "invalid parameter msg_id"
+    message_index: 0
 test_28505:
     new_password: "D1wkl0ge5mqvq+6Ioah57QHUCdjbn2CarpIqocu2PkQ="
     reset_password: True
+    error_code: 4099
+    message_id: "invalid parameter msg_id"
+    message_index: 0
 test_28517:
     new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
     reset_password: True
@@ -241,27 +257,50 @@ test_28513:
     status_code: 401
     error_code: 4113
     message_id : "HttpError"
+    message_index: 0
 test_28512:
     username: "incorrectuser123ABC"
     status_code: 401
+    error_code: 4113
+    message_id: "HttpError"
+    message_index: 0
 test_28515:
     password: "7uY5HlnrQgqcNMg1dG2AdUcU/344qPhx70zTTytHqPc="
     status_code: 401
+    error_code: 4113
+    message_id: "HttpError"
+    message_index: 0
 test_28514:
     username: "123"
     status_code: 401
+    error_code: 4113
+    message_id: "HttpError"
+    message_index: 0
 test_28511:
     status_code: 400
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 7
 test_28510:
     status_code: 400
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 7
 test_28509:
     status_code: 400
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 7
 test_28508:
     status_code: 400
+    error_code: 4099
+    message_id: "MalformedRequest"
+    message_index: 7
 test_32171:
     error_code: 4104
-    message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
+    message_index_1: 0
+    message_index_2: 5
 test_32174:
     new_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
 test_32178:
@@ -269,7 +308,7 @@ test_32178:
     email_id: "test@seagate.com"
 test_32180:
     error_code: 4104
-    message: "Cannot delete the last {} user"
     message_id: "user_permission_denied"
+    message_index: 2
 test_32181:
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="

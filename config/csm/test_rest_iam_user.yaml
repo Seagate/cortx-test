@@ -8,6 +8,7 @@ test_36448:
 test_38088:
   error_code: 12288
   message_id: "NoSuchUser"  
+  message_index: 0
 test_38914:
   payloads:
     - {"system":null}
@@ -18,16 +19,74 @@ test_38914:
     - {"admin":"false"}
     - {"random":"acbv"}
   error_code: 4099
-  message_id: "empty key"  
+  message_id: "MalformedRequest"
+  message_index: 6
 test_38092:
   error_code: 4099
-  message_id: "empty key"
+  message_id: "MalformedRequest"
+  message_index: 4
 test_38969:
   error_code: 12288
   message_id: "KeyExists"
-test_38971:
-  error_code: 12288
-  message_id: "KeyExists"
+  message_index: 0
 test_39028:
   error_code: 12288
   message_id: "InvalidCapability"
+  message_index: 0
+test_37778:
+  error_code: 4099
+  message_id: "empty key"
+  message_index_1: 0
+  message_index_2: 1
+test_37777:
+  error_code: 12288
+  message_id: "KeyExists"
+  message_index: 0
+test_37782:
+  error_code: 4104
+  message_id: "PermissionDenied"
+  message_index: 0
+test_37783:
+  error_code: 4104
+  message_id: "PermissionDenied"
+  message_index: 0
+test_37779:
+  error_code: 4099
+  message_id: "empty key"
+  message_index: 2
+test_38093:
+  error_code: 4099
+  message_id: "empty key"
+  message_index_1: 1
+  message_index_2: 0
+test_38095:
+  error_code: 4099
+  message_id: "MalformedRequest"
+  message_index_1: 1
+  message_index_2: 2
+test_38097:
+  error_code: 4099
+  message_id: "MalformedRequest"
+  message_index_1: 1
+  message_index_2: 3
+test_38103:
+  error_code: 4099
+  message_id: "MalformedRequest"
+  message_index_1: 4
+  message_index_2: 5
+test_38107:
+  error_code: 12288
+  message_id: "EmailExists"
+  message_index: 0
+test_38091:
+  error_code: 4099
+  message_id: "empty key"
+  message_index: 1
+test_38094:
+  error_code: 4099
+  message_id: "empty key"
+  message_index: 1
+test_39401:
+  error_code: 12288
+  message_id: "UserAlreadyExists"
+  message_index: 0

@@ -14,7 +14,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests various operations on IAM users using REST API
+"""
+Tests various operations on IAM users using REST API
 NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
@@ -41,8 +42,9 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import s3_misc
 
 class TestIamUser():
-    """REST API Test cases for IAM users"""
-
+    """
+    REST API Test cases for IAM users
+    """
     @classmethod
     def setup_class(cls):
         """
@@ -63,7 +65,8 @@ class TestIamUser():
         cls.log.info("Initiating Rest Client ...")
 
     def teardown_method(self):
-        """Teardown method which run after each function.
+        """
+        Teardown method which run after each function.
         """
         self.log.info("Teardown started")
         for user in self.created_iam_users:
@@ -71,13 +74,15 @@ class TestIamUser():
                 login_as="s3account_user", user=user)
         self.log.info("Teardown ended")
 
+
     @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10732')
     def test_1133(self):
-        """Test that IAM users are not permitted to login
-          """
+        """
+        Test that IAM users are not permitted to login
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         status_code = self.csm_conf["test_1133"]
@@ -89,12 +94,14 @@ class TestIamUser():
                 self.rest_iam_user.iam_user_login(user=user_name) == status_code["status_code"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14749')
     def test_1041(self):
-        """Test that S3 account should have access to create IAM user from back end
+        """
+        Test that S3 account should have access to create IAM user from back end
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -114,6 +121,7 @@ class TestIamUser():
                       self.rest_iam_user.config["s3account_user"]["username"], response)
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
@@ -230,6 +238,7 @@ class TestIamUserRGW():
         assert len(delete_failed) == 0, "Delete failed for IAM users"
         self.log.info("Teardown ended")
 
+
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -265,6 +274,7 @@ class TestIamUserRGW():
             "Status code check failed for empty uid and display name"
         self.log.info("[END] Testing with empty UID and display name")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -304,6 +314,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing with missing UID and display name")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.sanity
     @pytest.mark.cluster_user_ops
@@ -332,6 +343,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with all parameters")
         self.created_iam_users.add(resp['tenant'] + "$" + resp['user_id'])
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -391,6 +403,7 @@ class TestIamUserRGW():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -411,6 +424,7 @@ class TestIamUserRGW():
         self.log.info("TODO Verify Response : %s", resp)
         self.log.info("[END]Creating IAM user with basic parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -456,6 +470,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing with duplicate uid and email")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -476,6 +491,7 @@ class TestIamUserRGW():
         # TODO: Verified manually.
         self.log.info("[END] Testing with server error")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -511,6 +527,7 @@ class TestIamUserRGW():
         assert res_dict["keys"][0]["secret_key"] != "", "Secret key check failed for user creation"
         self.log.info("[END] Testing with generated keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -549,6 +566,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing with existing access keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -581,6 +599,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing with generate key")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -603,6 +622,7 @@ class TestIamUserRGW():
         assert res_dict["suspended"] == 1, "User key check failed for user creation"
         self.log.info("[END] Testing IAM user with suspended user state")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -638,6 +658,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing Get IAM user info with uid")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -663,6 +684,7 @@ class TestIamUserRGW():
         assert resp_dict["suspended"] == 1, "Suspended user key value not matched in response."
         self.log.info("[END] Testing Get IAM user info with uid for suspended user")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -695,6 +717,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing Get IAM user info with invalid parameters.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -720,6 +743,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing Get IAM user info with restricted user.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -742,6 +766,7 @@ class TestIamUserRGW():
         # TODO: Verified manually.
         self.log.info("[END] Testing get IAM user with server error")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -770,6 +795,7 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.NOT_FOUND, "Status code check failed for user info"
         self.log.info("[END] Testing delete IAM user by uid.")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -814,6 +840,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing delete IAM user by uid ad purge-data.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -852,6 +879,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing delete IAM user by invalid uid and token.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -880,6 +908,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing delete suspended IAM user by uid.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -905,6 +934,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing delete IAM user by restricted user.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.skip(reason="Not ready")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -928,6 +958,7 @@ class TestIamUserRGW():
         ##TODO Verified manually
         self.log.info("[END] Testing delete IAM user with server error")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -985,6 +1016,7 @@ class TestIamUserRGW():
         assert resp[0]["secret_key"] == secret_key, "Secret key not created"
         self.log.info("[END] Testing create IAM user keys with UID")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1045,6 +1077,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing create IAM user keys with keys_type and generate_key")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1083,6 +1116,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing create IAM user keys with invalid keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1107,6 +1141,7 @@ class TestIamUserRGW():
             "create user keys with Monitor user check failed."
         self.log.info("[END] Testing create IAM user keys with csm monitor user")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1156,6 +1191,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing delete IAM user keys with access keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1189,6 +1225,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing user can’t delete Keys using invalid Access Key")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1220,6 +1257,7 @@ class TestIamUserRGW():
             "Delete user kes with Monitor user check failed."
         self.log.info("[END] Testing csm monitor user can’t delete Keys.")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1286,6 +1324,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that user can modify the fields with valid inputs.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1335,6 +1374,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing user can’t modify the fields with empty parameters.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1370,6 +1410,7 @@ class TestIamUserRGW():
         assert response.status_code == HTTPStatus.CONFLICT, "Status code check failed for creating user keys."
         self.log.info("[END] Testing user can not modify the fields with already exiting values.")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1408,6 +1449,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that user can modify the fields with invalid inputs.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1437,6 +1479,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing user can not modify the fields with invalid UID.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1461,6 +1504,7 @@ class TestIamUserRGW():
         assert response.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed for creating user keys."
         self.log.info("[END] Testing user can not modify the fields with invalid/empty authentication token.")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1489,6 +1533,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing csm monitor user can not modify the fields.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1496,7 +1541,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-39121')
     def test_39121(self):
         """
-            Test that IAM user can add read/write admin capabilities.
+        Test that IAM user can add read/write admin capabilities.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -1548,6 +1593,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that IAM user can add read/write admin capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1555,7 +1601,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-39123')
     def test_39123(self):
         """
-            Test that IAM user can add bucket read/write capabilities.
+        Test that IAM user can add bucket read/write capabilities.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -1606,6 +1652,7 @@ class TestIamUserRGW():
         assert resp_dict["caps"][1]['perm'] == '*', "caps perm not matched in response."
         self.log.info("[END] Testing that IAM user can add bucket read/write capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1660,6 +1707,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that IAM user can remove read/write admin capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1667,7 +1715,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-39125')
     def test_39125(self):
         """
-            Test that IAM user can remove bucket read/write capabilities.
+        Test that IAM user can remove bucket read/write capabilities.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -1716,6 +1764,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that IAM user can remove bucket read/write capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1749,6 +1798,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that IAM user can not add invalid capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1756,7 +1806,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-39127')
     def test_39127(self):
         """
-            Test that IAM user can not remove invalid capabilities.
+        Test that IAM user can not remove invalid capabilities.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -1786,6 +1836,7 @@ class TestIamUserRGW():
         self.log.info("[END] Testing that IAM user can not remove invalid capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1813,6 +1864,7 @@ class TestIamUserRGW():
         self.log.info("Verified Response")
         self.log.info("[END]Creating IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1844,6 +1896,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("[END]Creating Max IAM user with random selection of optional parameters")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     # pylint: disable=too-many-statements
     @pytest.mark.lc
@@ -1889,6 +1942,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1932,6 +1986,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp)
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     # pylint: disable=too-many-statements
     @pytest.mark.lc
@@ -1978,6 +2033,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.s3_ops
@@ -2019,6 +2075,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     # pylint: disable=broad-except
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -2057,6 +2114,7 @@ class TestIamUserRGW():
             self.log.info("Expected exception received %s", error)
         self.log.info("[END]Creating IAM user with suspended")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -2107,6 +2165,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with max bucket %s", max_buckets)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.skip("Bug CORTX-30999")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -2155,6 +2214,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM user with max buckets")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2182,6 +2242,7 @@ class TestIamUserRGW():
                 assert_utils.assert_true(False, "access and secret keys available in response")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -2212,6 +2273,7 @@ class TestIamUserRGW():
         self.log.info("Create bucket failed for user")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2231,6 +2293,7 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
             "Status code check failed for user"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -2259,6 +2322,7 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED
         self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.sanity
@@ -2323,6 +2387,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.NOT_FOUND, "Deleted user exists")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2382,6 +2447,7 @@ class TestIamUserRGW():
         # CORTX-29180 Need to add Check for buckets and objects created by users are deleted
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2411,6 +2477,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2439,6 +2506,7 @@ class TestIamUserRGW():
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], "Value mismatch found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2476,6 +2544,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], "Value mismatch found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2503,6 +2572,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(get_resp, payload)
         assert_utils.assert_true(resp[0], "Value mismatch found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
@@ -2566,6 +2636,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2627,6 +2698,7 @@ class TestIamUserRGW():
         resp = s3_obj.get_object(bucket_name, test_file)
         assert_utils.assert_true(resp[0], resp)
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     # pylint: disable-msg=too-many-locals
     @pytest.mark.csmrest
@@ -2690,6 +2762,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2702,6 +2775,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_37777"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uids = []
         access_keys = []
         for user in range(2):
@@ -2725,15 +2804,18 @@ class TestIamUserRGW():
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uids[0], access_key=access_keys[1])
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.CONFLICT, "Status Failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["message"] ==
-                                     self.rest_resp_conf[12288]['EntityAlreadyExists'][1]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(add_resp.json()["message"], msg)
+
         for user in range(2):
             get_resp = self.csm_obj.get_iam_user(user=uids[user])
             assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
             access_key = get_resp.json()["keys"][0]['access_key']
             assert_utils.assert_true(access_key == access_keys[user], "Access key is changed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2746,6 +2828,14 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_37778"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         self.log.info("[START] Creating IAM user")
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
@@ -2761,19 +2851,24 @@ class TestIamUserRGW():
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, access_key="")
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["message"] ==
-                                     self.rest_resp_conf[4099]['empty key'][0]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(add_resp.json()["message"], msg_1)
+
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, secret_key="")
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["message"] ==
-                                     self.rest_resp_conf[4099]['empty key'][1]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(add_resp.json()["message"], msg_2)
+
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(len(get_resp.json()["keys"]) == 1, "Keys are modified")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2786,6 +2881,12 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_37779"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("[START] Creating IAM user")
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
@@ -2801,11 +2902,13 @@ class TestIamUserRGW():
         add_resp = self.csm_obj.add_key_to_iam_user(uid=None, access_key=valid_key)
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["error_code"] == "4099", "Response failed")
-            assert_utils.assert_true(add_resp.json()["message"] ==
-                                     self.rest_resp_conf[4099]['empty key'][2]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(add_resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2853,6 +2956,7 @@ class TestIamUserRGW():
                                  "Access key is not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2886,6 +2990,7 @@ class TestIamUserRGW():
                                  "Access key is not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -2898,6 +3003,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_37782"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -2915,14 +3026,17 @@ class TestIamUserRGW():
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Remove key status failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(rem_resp.json()["message"] ==
-                                     self.rest_resp_conf[4101]['Access denied for account'][1]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(rem_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(rem_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(rem_resp.json()["message"], msg)
+
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == get_resp.json()["keys"][0]['access_key'],
                                  "Access key is not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2936,6 +3050,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_37783"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -2952,9 +3072,11 @@ class TestIamUserRGW():
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Add key status failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(add_resp.json()["message"] ==
-                                     self.rest_resp_conf[4101]['Access denied for account'][1]
-                                     , "Response failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(add_resp.json()["message"], msg)
+
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == get_resp.json()["keys"][0]['access_key'],
@@ -2962,6 +3084,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(len(get_resp.json()["keys"]) == 1,
                                  "Number of Access keys are not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -2999,6 +3122,7 @@ class TestIamUserRGW():
         self.log.info("[END]Update User with display name, correct uid in request.")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3014,7 +3138,8 @@ class TestIamUserRGW():
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("Print resp_data[0] %s", resp_data[0])
         self.log.info("[START] STEP 1: Creating IAM user with basic parameters")
         payload = self.csm_obj.iam_user_payload_rgw("random")
@@ -3033,9 +3158,11 @@ class TestIamUserRGW():
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert response.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert response.json()["message"] == msg , "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
+
         self.log.info("STEP 4: Perform get iam users to verify new display name")
         get_resp = self.csm_obj.get_iam_user(uid)
         self.log.info("Print user info %s", get_resp.json())
@@ -3045,6 +3172,7 @@ class TestIamUserRGW():
                                  "Display Name updated")
         self.log.info("[END]Update User with display name, non existing uid in request")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.csmrest
@@ -3114,6 +3242,7 @@ class TestIamUserRGW():
         self.log.info("[END]Update request with uid and generate-key")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3165,6 +3294,7 @@ class TestIamUserRGW():
         self.log.info("[END]Update request with uid and other parameters randomly. ")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3176,6 +3306,14 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_38093"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         self.log.info("[START] Creating IAM user")
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
@@ -3197,10 +3335,18 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
             if CSM_REST_CFG["msg_check"] == "enable":
-                assert_utils.assert_true(resp.json()["message"] ==
-                                         self.rest_resp_conf[4099]['InvalidKeyType'][0]
-                                         , "Response message check failed")
+                self.log.info("Verifying error response...")
+                if key_value is None:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"], msg_1)
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"], msg_2)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3214,6 +3360,14 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38095"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3234,10 +3388,20 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
             if CSM_REST_CFG["msg_check"] == "enable":
-                assert_utils.assert_true(resp.json()["message"] ==
-                                         self.rest_resp_conf[4099]['InvalidKeyType'][1]
-                                          , "Response message check failed")
+                self.log.info("Verifying error response...")
+                if key_value is None:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                msg_1.format("max_buckets").lower())
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                msg_2.format("max_buckets").lower())
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3251,6 +3415,14 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38097"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3271,10 +3443,21 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
             if CSM_REST_CFG["msg_check"] == "enable":
-                assert_utils.assert_true(resp.json()["message"] ==
-                                         self.rest_resp_conf[4099]['InvalidKeyType'][2]
-                                         , "Response message check failed")
+                self.log.info("Verifying error response...")
+                if key_value is None:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                msg_1.format("suspended").lower())
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                msg_2.format("suspended").lower())
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3287,6 +3470,14 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38103"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3308,10 +3499,21 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
             if CSM_REST_CFG["msg_check"] == "enable":
-                assert_utils.assert_true(resp.json()["message"] ==
-                                         self.rest_resp_conf[4099]['InvalidKeyType'][3]
-                                         , "Response message check failed")
+                self.log.info("Verifying error response...")
+                if key_value is "":
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                    msg_1.format(
+                                                                    "_schema","op_mask").lower())
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                                msg_2.format("op_mask").lower())
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3325,6 +3527,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38107"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3353,10 +3561,13 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.CONFLICT,
                                  "Patch request status code failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(resp.json()["message"] ==
-                                     self.rest_resp_conf[4103]['EmailExists'][0]
-                                     , "Response message check failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3388,6 +3599,8 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Patch request status code failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3400,6 +3613,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38091"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3417,7 +3636,14 @@ class TestIamUserRGW():
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                      "Patch request status code failed")
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying error response...")
+                assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                assert_utils.assert_equals(resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3431,6 +3657,12 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Creating IAM user")
+        test_cfg = self.csm_conf["test_38094"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         uid = "iam_user_1_" + str(int(time.time_ns()))
         self.log.info("Creating new iam user %s", uid)
         payload = self.csm_obj.iam_user_payload_rgw("loaded")
@@ -3450,10 +3682,13 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
                                  "Patch request status code failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(resp.json()["message"] ==
-                                     self.rest_resp_conf[4099]['empty key'][1]
-                                     , "Response message check failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3504,6 +3739,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
                                      "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3562,6 +3798,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are updated for another user")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3600,6 +3837,7 @@ class TestIamUserRGW():
         self.log.info("Difference in capabilities %s", diff_items)
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3649,6 +3887,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(len(diff_items) == 0, "Capabilities are not updated properly")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3675,6 +3914,7 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed"
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3686,6 +3926,12 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_38969"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("Step-1: Creating IAM user 1")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
         resp = self.csm_obj.create_iam_user_rgw(payload)
@@ -3709,16 +3955,14 @@ class TestIamUserRGW():
                     "secret_key":usr1["keys"][0]["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(uid2, payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "PATCH status code check failed"
-        resp = resp.json()
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_code = self.csm_conf["test_38969"]["error_code"]
-            assert int(resp["error_code"]) == err_code, "Error code check failed"
-            msg_id = self.csm_conf["test_38969"]["message_id"]
-            assert resp["message_id"] == msg_id, "Message id check failed"
-            msg = self.rest_resp_conf[err_code][msg_id][0]
-            assert resp["message"] == msg, "Message check failed"
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
 
     @pytest.mark.csmrest
@@ -3767,6 +4011,7 @@ class TestIamUserRGW():
             assert "SignatureDoesNotMatch" in err.message, "Error message check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3778,6 +4023,12 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_38914"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("Step-1: Creating IAM user 1")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
         resp = self.csm_obj.create_iam_user_rgw(payload)
@@ -3789,16 +4040,15 @@ class TestIamUserRGW():
         for payload in payloads:
             resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
-            resp = resp.json()
             if CSM_REST_CFG["msg_check"] == "enable":
-                err_code = self.csm_conf["test_38092"]["error_code"]
-                assert int(resp["error_code"]) == err_code, "Error code check failed"
-                msg_id = self.csm_conf["test_38092"]["message_id"]
-                assert resp["message_id"] == msg_id, "Message id check failed"
-                msg = self.rest_resp_conf[err_code][msg_id][3].format(list(payload.keys())[0])
-                assert resp["message"].lower() == msg.lower(), "Message check failed"
+                self.log.info("Verifying error response...")
+                assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                assert_utils.assert_equals(resp.json()["message"].lower(),
+                                                      msg.format(list(payload.keys())[0]).lower())
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
 
     @pytest.mark.csmrest
@@ -3812,6 +4062,12 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_38092"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("Step-1: Creating IAM user")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
         resp = self.csm_obj.create_iam_user_rgw(payload)
@@ -3825,15 +4081,15 @@ class TestIamUserRGW():
                     "secret_key":usr["keys"][0]["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
-        resp = resp.json()
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_code = self.csm_conf["test_38092"]["error_code"]
-            assert int(resp["error_code"]) == err_code, "Error code check failed"
-            msg_id = self.csm_conf["test_38092"]["message_id"]
-            assert resp["message_id"] == msg_id, "Message id check failed"
-            msg = self.rest_resp_conf[err_code][msg_id][0]
-            assert resp["message"] == msg , "Message check failed"
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"],
+                                                        msg.format("_schema","access_key").lower())
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -3885,6 +4141,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Bucket deleted successfully")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.lc
@@ -3991,6 +4248,7 @@ class TestIamUserRGW():
         self.log.info("Bucket deleted successfully")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4005,7 +4263,8 @@ class TestIamUserRGW():
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info(
             "Step 1: Login using csm user and create a user with some capabilities")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
@@ -4026,9 +4285,11 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert resp.json()["message"] == msg , "Message check failed."
-        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Verify added capabilities")
@@ -4042,15 +4303,18 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
                                      "Invalid caps added"
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert resp.json()["message"] == msg , "Message check failed."
-        assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Verify original capabilities are intact")
         assert_utils.assert_true(get_resp.json()["caps"] == resp1.json()["caps"],
                                  "Original caps are not intact")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -4063,6 +4327,12 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_39401"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         self.log.info("[START]Try Creating IAM users with same UID")
         user_id = const.IAM_USER + str(int(time.time_ns()))
         tenant = "tenant_" + str(int(time.time_ns()))
@@ -4090,11 +4360,14 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp3.status_code == HTTPStatus.CONFLICT,
                                  "Patch request status code failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_true(resp3.json()["message"] ==
-                                     self.rest_resp_conf[39401]['users_already_exists'][0]
-                                     , "Response message check failed")
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp3.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp3.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp3.json()["message"], msg)
+
         self.log.info("[END]Try Creating IAM users with same UID")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -4139,6 +4412,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4170,6 +4444,7 @@ class TestIamUserRGW():
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4200,6 +4475,7 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest

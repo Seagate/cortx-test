@@ -16,8 +16,11 @@
     - "{} can not update the email id for {}"
     - "Cannot change role for the last {} user"
     - "{} can not update {}"
+    - "Can not update role to admin"
   Cannot create other users:
     - "Only {} user can create other {} users"
+  PermissionDenied:
+    - 'Access to the requested resource is forbidden'
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
@@ -27,12 +30,10 @@
   invalid request parameter:
     - "username cannot be modified"
     - "Insufficient information in request body"
-  "{'sort_by': ['Must be one of: user_id, username, user_type, alert_notification, email, created_time, updated_time.']}":
-    - "Invalid parameter for user"
-  "{'dir': ['Must be one of: desc, asc.']}":
-    - "Invalid parameter for user"
-  "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}":
-    - "Invalid parameter for user"
+  Invalid parameter for user:
+     - "{'sort_by': ['Must be one of: user_id, username, user_type, alert_notification, email, created_time, updated_time.']}":
+     - "{'dir': ['Must be one of: desc, asc.']}":
+     - "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}":
   empty key:
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
@@ -43,17 +44,27 @@
     - "Max_buckets: Not a valid integer."
     - "Suspended: Not a valid boolean."
     - "Op_mask: Invalid value."
+  MalformedRequest:
+    - "{}: Must be one of: {}"
+    - "{}: Field may not be null."
+    - "{}: Not a valid integer."
+    - "{}: Not a valid boolean."
+    - "{}: Empty value for {}"
+    - "{}: Invalid value."
+    - "{}: Unknown field."
+    - "Invalid request."
+    - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
+    - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
 4103:
   users_already_exists:
     - "User already exists:"
-  EmailExists:
-    - "Provided email address exists"
 4113:
   HttpError:
     - 'Unauthorized'
-39401:
-  users_already_exists:
-    - "User already exists:"
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
@@ -64,3 +75,7 @@
     - 'Provided access key exists and belongs to another user.'
   InvalidCapability:
     - "Attempt to grant invalid admin capability."
+  UserAlreadyExists:
+    - "Attempt to create existing user."
+  EmailExists:
+    - "Provided email address exists."
