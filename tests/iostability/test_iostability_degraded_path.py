@@ -65,8 +65,8 @@ class TestIOWorkloadDegradedPath:
         cls.iolib = IOStabilityLib()
         cls.test_completed = False
 
-    def teardown_class(self):
-        """Teardown class method."""
+    def teardown_method(self):
+        """Teardown method."""
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
@@ -94,11 +94,10 @@ class TestIOWorkloadDegradedPath:
 
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0,"
                       "check degraded status.")
-        resp = self.ha_obj.delete_single_pod_setting_replica_0(self.master_node_list[0],
-                                                               self.hlth_master_list[0],
-                                                               POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Deleted pod : %s",resp[1])
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
+                                                            self.hlth_master_list[0])
+        assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
+        self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
         self.log.info("Step 3: Perform IO's using S3bench")
         duration_in_days = self.test_cfg['degraded_path_durations_days']

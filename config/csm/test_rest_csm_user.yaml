@@ -239,6 +239,8 @@ test_28517:
 test_28513:
     password: "1oa2EwRk/urr4oKeEiO6jCg8e74EVStVfw8WVZyw0An1fW0ingjZANtJ51xljjY4"
     status_code: 401
+    error_code: 4113
+    message_id : "HttpError"
 test_28512:
     username: "incorrectuser123ABC"
     status_code: 401
