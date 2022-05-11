@@ -1090,10 +1090,10 @@ class TestControlPodRestart:
                                                     multipart_obj_size=file_size,
                                                     total_parts=total_parts,
                                                     multipart_obj_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         mpu_id = resp[1]
         object_path = resp[2]
         parts_etag1 = resp[3]
-        assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 1: Successfully completed partial multipart upload for %s parts out of "
                     "total %s", part_numbers, total_parts)
 
@@ -1125,7 +1125,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(resp.status_code, HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
@@ -1143,7 +1143,7 @@ class TestControlPodRestart:
                                                     total_parts=total_parts,
                                                     multipart_obj_path=object_path)
 
-        assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+        assert_utils.assert_true(resp[0], f"Failed to upload remaining parts {resp[1]}")
         parts_etag2 = resp[3]
         LOGGER.info("Step 5: Successfully uploaded remaining parts")
 
@@ -1215,18 +1215,16 @@ class TestControlPodRestart:
                                     'user_name': self.s3acc_name}}
 
         LOGGER.info("Step 1: Create and list buckets and perform upload and copy "
-                    "object from %s bucket to other buckets, download objects "
-                    "and verify etags", self.bucket_name)
+                    "object from %s bucket to other buckets, ", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
                                                   file_path=self.multipart_obj_path)
-        assert_utils.assert_true(resp[0], f"failed buckets are: {resp[1]}")
+        assert_utils.assert_true(resp[0], f"Create Bucket copy object failed with: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 1: successfully create and list buckets and perform upload and copy"
-                    "object from %s bucket to other buckets, download objects "
-                    "and verify etags", self.bucket_name)
+                    "object from %s bucket to other buckets, ", self.bucket_name)
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name,
                     self.control_node)
@@ -1249,7 +1247,7 @@ class TestControlPodRestart:
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
-            assert_utils.assert_equal(resp.status_code, const.Rest.SUCCESS_STATUS,
+            assert_utils.assert_equal(resp.status_code, HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 3: Verified all IAM users %s are persistent across control pod "
