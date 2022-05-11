@@ -866,7 +866,6 @@ class TestMultipartUploadGetPut:
         res = self.s3_test_obj.object_list(self.bucket_name)
         if self.object_name not in res[1]:
             self.log.error("Failed to list the uploaded object")
-        self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
