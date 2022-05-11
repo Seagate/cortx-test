@@ -249,7 +249,7 @@ class TestRestApiRgw:
         self.log.info(
             "Step 3: Creating another IAM user with same email %s", str(email))
         loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
         self.log.info("END : %s",test_case_name)
 
