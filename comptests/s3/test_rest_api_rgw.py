@@ -137,6 +137,7 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.BAD_REQUEST, "Able to create user with just uid. Test Failed"
+        self.log.info("Get user info output: %s",user_info)
         #self.created_users.append(user_params)
         self.log.info("END : %s",test_case_name)
 
@@ -169,6 +170,7 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
+        self.log.info("Create user output: %s",user_info)
         self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
@@ -251,6 +253,7 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
+        self.log.info("Create user output: %s",user_info)
         self.log.info("END : %s",test_case_name)
 
     @pytest.mark.api_user_ops
