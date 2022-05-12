@@ -19,6 +19,8 @@
 """Test Suite for IO stability Happy Path workloads."""
 import logging
 import os
+from datetime import datetime
+from datetime import timedelta
 
 import pytest
 
@@ -30,6 +32,9 @@ from commons.utils import support_bundle_utils, assert_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
 from libs.iostability.iostability_lib import IOStabilityLib
+from libs.durability.near_full_data_storage import NearFullStorage
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 
 
 class TestIOWorkload:
@@ -87,3 +92,50 @@ class TestIOWorkload:
         self.test_completed = True
         self.log.info(
             "ENDED: Test for Bucket and  Object CRUD operations in loop using S3bench for 30 days")
+
+    @pytest.mark.lc
+    @pytest.mark.io_stability
+    @pytest.mark.tags("TEST-40041")
+    def test_disk_near_full_s3bench(self):
+        """Perform disk storage near full once and read in loop for 30 days."""
+        self.log.info("STARTED: Perform disk storage near full once and read in loop for 30 days.")
+        s3userinfo = dict()
+        s3userinfo['accesskey'] = ACCESS_KEY
+        s3userinfo['secretkey'] = SECRET_KEY
+        bucket_prefix = "testbkt"
+        duration_in_days = self.test_cfg['happy_path_duration_days']
+        client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
+        percentage = self.test_cfg['nearfull_storage_percentage']
+        self.log.info("Step 1: calculating byte count for required percentage")
+        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
+                                                            memory_percent=percentage)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Need to add %s bytes for required percentage", resp[1])
+        self.log.info("Step 2: performing writes till we reach required percentage")
+        ret = NearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                           user_data_writes=int(resp[1]),
+                                                           bucket_prefix=bucket_prefix,
+                                                           client=client)
+        assert_utils.assert_true(ret[0], ret[1])
+        self.log.debug("write operation data: %s", ret)
+        self.log.info("Step 3: performing read operations.")
+        end_time = datetime.now() + timedelta(days=duration_in_days)
+        loop = 1
+        while datetime.now() < end_time:
+            loop += 1
+            self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
+            read_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                        workload_info=ret[1],
+                                                                        skipread=False,
+                                                                        validate=True,
+                                                                        skipcleanup=True)
+            self.log.info("%s interation is done", loop)
+            assert_utils.assert_true(read_ret[0], read_ret[1])
+        self.log.info("Step 4: performing delete operations.")
+        del_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                   workload_info=ret[1],
+                                                                   skipread=True,
+                                                                   validate=False,
+                                                                   skipcleanup=False)
+        assert_utils.assert_true(del_ret[0], del_ret[1])
+        self.log.info("ENDED: Perform disk storage near full once and read in loop for 30 days")
