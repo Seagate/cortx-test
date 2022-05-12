@@ -156,3 +156,25 @@ class GetSetQuota(RestTestLib):
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_false(resp, "Put object did not fail")
+
+    @RestTestLib.authenticate_and_login
+    def get_capacity_usage(self, uid, resource, **kwargs):
+        """
+        Get user or bucket quota
+        :param uid: User ID in case of /api/v2/capacity/s3/
+                    Cluster ID in case of /api/v2/capacity/system/
+        :param resource: The resource whose capacity usage need to check
+        :login_as: for logging in using csm user
+        :return: response
+        """
+        self.log.info("Get IAM user request....")
+        if "headers" in kwargs.keys():
+            header = kwargs["headers"]
+        else:
+            header = self.headers
+        endpoint = self.config["get_user_capacity_usage"]
+        endpoint = endpoint.format(resource, uid)
+        response = self.restapi.rest_call("get", endpoint=endpoint,
+                                          headers=header, login_as="csm_admin_user")
+        self.log.info("Get user quota request successfully sent...")
+        return response

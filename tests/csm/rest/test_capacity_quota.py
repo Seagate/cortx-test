@@ -20,6 +20,7 @@
 """Tests System capacity scenarios using REST API
 """
 import logging
+import math
 import os
 import time
 from http import HTTPStatus
@@ -28,10 +29,12 @@ from time import perf_counter_ns
 
 import pytest
 
+from commons import commands
 from commons import configmanager
 from commons import cortxlogging
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils.system_utils import run_local_cmd
 from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_misc
@@ -604,4 +607,242 @@ class TestCapacityQuota():
         self.csm_obj.verify_max_size(max_size)
         self.log.info("Step 8: Perform put objects of small size")
         self.csm_obj.verify_max_objects(max_size, max_objects)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41127')
+    def test_41127(self):
+        """
+        Test GET capacity stats for create IAM user and Put objects using admin users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41127"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size/random_size)
+        self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 2: Perform GET API to get capacity usage stats using - Admin")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        self.log.info("Step 3: Verify above count matches aws response")
+        status, output = run_local_cmd(commands.CMD_AWSCLI_READABLE.format(self.bucket), 
+                                    chk_stderr=True)
+        assert status, "list objects operation failed"
+        # Verify the above count matches AWS response
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41746')
+    def test_41746(self):
+        """
+        Test GET capacity stats for create IAM user and Put objects using manage users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41746"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size / random_size)
+        self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 2: Perform GET API to get capacity usage stats using - manage")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        self.log.info("Step 3: Verify above count matches aws response")
+        status, output = run_local_cmd(commands.CMD_AWSCLI_READABLE.format(self.bucket), 
+                          chk_stderr=True)
+        assert status, "list objects operation failed"
+        # Verify the above count matches AWS response
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41750')
+    def test_41750(self):
+        """
+        Test GET capacity stats for create IAM user and Put objects using monitor users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41750"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size / random_size)
+        self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 2: Perform GET API to get capacity usage stats using - monitor")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        self.log.info("Step 3: Verify above count matches aws response")
+        status, output = run_local_cmd(commands.CMD_AWSCLI_READABLE.format(self.bucket), 
+                         chk_stderr=True)
+        assert status, "list objects operation failed"
+        # Verify the above count matches AWS response
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41757')
+    def test_41757(self):
+        """
+        Test GET capacity stats for delete IAM , Purge False user using admin users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Pre-condition: Create multiple objects (N) on 1 bucket")
+        test_cfg = self.csm_conf["test_41757"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size / random_size)
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 1: Delete iam user")
+        self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                      self.user_id, self.akey, self.skey)
+        purge_data = False
+        response = self.csm_obj.delete_iam_user_rgw(self.user_id, purge_data)
+        assert response.status_code == HTTPStatus.OK, \
+                           "Status code check failed for user deletion"
+        self.log.info("Step 2: Perform GET API to get capacity usage stats")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+                           "Status code check failed for user deletion"
+        #TODO: Error code and message check part
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41758')
+    def test_41758(self):
+        """
+        Test GET capacity stats for delete IAM , Purge True user using admin users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Pre-condition: Create multiple objects (N) on 1 bucket")
+        test_cfg = self.csm_conf["test_41127_3"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size / random_size)
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 1: Delete iam user")
+        self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                      self.user_id, self.akey, self.skey)
+        purge_data = True
+        response = self.csm_obj.delete_iam_user_rgw(self.user_id, purge_data)
+        assert response.status_code == HTTPStatus.OK, \
+            "Status code check failed for user deletion"
+        self.log.info("Step 2: Perform GET API to get capacity usage stats")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for user deletion"
+        # TODO: Error code and message check part
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41128')
+    def test_41128(self):
+        """
+        Test GET capacity stats for delete IAM , Purge True user using admin users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_40634"]
+        max_size = test_cfg["max_size"]
+        self.log.info("Step 2: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload()
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 3: Perform max size verification")
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        assert res[0], res[1]
+        self.log.info("Step 4: Perform GET API to get capacity usage stats using - monitor")
+        resp = self.csm_obj.get_capacity_usage(self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        self.log.info("Step 5: Verify above count matches aws response")
+        status, output = run_local_cmd(commands.CMD_AWSCLI_READABLE.format(self.bucket), 
+                         chk_stderr=True)
+        assert status, "list objects operation failed"
+        # Verify the above count matches AWS response
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41151')
+    def test_41151(self):
+        """
+        Test GET capacity stats for create IAM user and Put objects using manage users
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41151"]
+        max_size = test_cfg["max_size"]
+        random_size = self.cryptogen.randrange(1, max_size)
+        num_objects = math.floor(max_size / random_size)
+        self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        for _ in range(0, num_objects):
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 2: Perform GET API to get capacity usage "
+                      "with empty key Parameters id and resource")
+        uid = ""
+        resource = ""
+        resp = self.csm_obj.get_capacity_usage(resource, uid)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for get capacity"
+        # TODO: Error code and message check part
+        self.log.info("Step 3: Perform GET API to get capacity usage "
+                      "with invalid key Parameters id and resource")
+        resource = uid = self.user_id
+        resp = self.csm_obj.get_capacity_usage(resource, uid)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
+            "Status code check failed for get capacity"
+        # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
