@@ -745,7 +745,7 @@ class HAK8s:
             LOGGER.info("Response: %s", res)
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        except (BaseException, CTException) as error:
+        except CTException as error:
             LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
