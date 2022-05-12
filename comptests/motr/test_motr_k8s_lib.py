@@ -16,7 +16,10 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-#
+
+"""
+Test class that contains unittests for MOTR lib.
+"""
 
 import logging
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s

@@ -560,7 +560,7 @@ class MotrCoreK8s():
             obj_dict = self.run_motr_io(node, block_count, run_m0cat, delete_objs)
             return_dict[node] = obj_dict
             return return_dict
-        except BaseException as exc:
+        except (OSError, AssertionError, IOError) as exc:
             return_dict[node] = exc
             return return_dict
 
@@ -578,6 +578,6 @@ class MotrCoreK8s():
         try:
             self.m0crate_run(local_file_path, remote_file_path, cortx_node)
             return return_dict
-        except BaseException as exc:
+        except (OSError, AssertionError, IOError) as exc:
             return_dict[cortx_node] = exc
             return return_dict
