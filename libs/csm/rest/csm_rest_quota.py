@@ -51,7 +51,6 @@ class GetSetQuota(RestTestLib):
         Get user or bucket quota
         :param uid: userid
         :param header: header for api authentication
-        :param quota_type: Can be set to user or bucket
         :return: response
         """
         self.log.info("Get IAM user request....")
@@ -108,7 +107,7 @@ class GetSetQuota(RestTestLib):
         """
         Verify get and set user quota
         """
-        set_response = self.set_user_quota(uid, payload)
+        set_response = self.set_user_quota(uid, payload, login_as=login_as)
         result = True
         if set_response.status_code == expected_response:
             self.log.info("SET response check passed.")
@@ -116,7 +115,7 @@ class GetSetQuota(RestTestLib):
             self.log.error("SET response check failed")
             result = False
             return result, set_response
-        get_response = self.get_user_quota(uid)
+        get_response = self.get_user_quota(uid, login_as=login_as)
         if get_response.status_code == expected_response:
             result = True
             get_response = get_response.json()

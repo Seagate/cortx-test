@@ -54,6 +54,11 @@ class TestCapacityQuota():
         cls.buckets_created = []
         cls.user_id = None
         cls.display_name = None
+        cls.akey = None
+        cls.skey = None
+        cls.bucket = None
+        cls.obj_name = None
+        cls.obj_name_prefix = None
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "mp_obj"
