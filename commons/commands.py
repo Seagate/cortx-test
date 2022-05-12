@@ -610,3 +610,7 @@ SNS_REPAIR_CMD = "hctl repair {}"
 CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
                                "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
                                "\"state\" : \"status_val\"}'"
+
+# Procpath Collection
+PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
+           "record -i 45 -d {} -p $pid"
