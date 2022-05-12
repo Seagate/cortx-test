@@ -219,7 +219,7 @@ test_25277:
     message_index: 3
 test_25276:
     error_code: 4104
-    message_id: "Cannot create other users"
+    message_id: "PermissionDenied"
     message_index: 0
 test_25286:
     error_code: 4104

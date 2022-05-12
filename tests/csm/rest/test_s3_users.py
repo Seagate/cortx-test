@@ -700,7 +700,8 @@ class TestS3user():
                 assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                 assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                 assert_utils.assert_equals(resp.json()["message"].lower(),
-                                                        msg.format("_schema","access_key").lower())
+                                           Template(msg).substitute(A="_schema",
+                                                                    B="access_key").lower())
 
             self.log.info("[END] Access Key : %s", access_key)
 

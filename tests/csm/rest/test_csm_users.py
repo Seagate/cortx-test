@@ -24,6 +24,7 @@ import json
 import logging
 import random
 import re
+from string import Template
 import time
 from http import HTTPStatus
 
@@ -3188,8 +3189,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            CSM_REST_CFG["csm_admin_user"][
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
         self.log.info("Step 4: Verfying edit user functionality for manage user")
@@ -3199,8 +3201,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            "csm_user_manage"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B="csm_user_manage"))
 
         self.log.info("Step 5: Verfying edit user functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor", user=username,
@@ -3209,8 +3212,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            username))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor", B=username))
 
         self.log.info(
             "Sending request to delete csm user %s", username)
@@ -3259,8 +3262,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            CSM_REST_CFG["csm_admin_user"][
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
         self.log.info("Step 4: Verifying edit user functionality for manage user")
@@ -3272,9 +3276,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            "csm_user_manage"), (
-                                                            "Message check failed."))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B="csm_user_manage"))
 
         self.log.info("Step 5: Verifying edit user functionality for other monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor",
@@ -3287,8 +3291,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            username))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor", B=username))
 
         self.log.info("Step 6: Verifying edit user functionality for self monitor user")
         response = self.csm_obj.edit_csm_user(login_as=new_monitor_user,
@@ -3349,8 +3353,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            CSM_REST_CFG["csm_admin_user"][
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
         self.log.info("Step 4: Verifying edit email functionality for manage user")
@@ -3361,8 +3366,9 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                            "csm_user_manage"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B="csm_user_manage"))
 
         self.log.info("Step 5: Verifying edit email functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_monitor", user=username,
@@ -3371,8 +3377,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_monitor",
-                                                                            username))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor", B=username))
 
         self.log.info("Step 6: Verifying edit email functionality for self monitor user")
         new_user = {}
@@ -3431,7 +3437,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin", "admin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="admin", B="admin"))
 
         self.log.info("Step 2: Verify create manage user functionality for manage user")
         response = self.csm_obj.create_csm_user(login_as="csm_user_manage",
@@ -3475,9 +3482,10 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_manage",
-                                                                    CSM_REST_CFG["csm_admin_user"][
-                                                                    "username"]))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B=CSM_REST_CFG["csm_admin_user"][
+                                                                "username"]))
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -3517,8 +3525,10 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("csm_user_manage",
-                                                                "cortxadmin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="csm_user_monitor",
+                                                                B=CSM_REST_CFG["csm_admin_user"][
+                                                                "username"]))
 
         self.log.info("Step 2: Verifying edit monitor user email id functionality for monitor user")
         response = self.csm_obj.edit_csm_user(login_as="csm_user_manage",
@@ -3573,7 +3583,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="admin"))
 
         self.log.info("Step 2: Verify if last admin user"
                       "is not able to edit the self role to monitor")
@@ -3583,7 +3594,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="admin"))
 
         self.log.info("Creating csm user")
         password = CSM_REST_CFG["csm_admin_user"]["password"]
@@ -3677,7 +3689,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin")) 
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="admin"))
             self.log.info("Msg check successful!!!!")
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -3728,7 +3741,8 @@ class TestCsmUser():
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg_1.format("admin")) 
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg_1).substitute(A="admin")) 
             self.log.info("Msg check successful!!!!")
 
         self.log.info("Step 2: Verify delete other monitor user functionality for manage user")
@@ -3804,7 +3818,8 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg_1.format("admin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg_1).substitute(A="admin"))
 
         self.log.info("Step 4: Verify delete manage user functionality for monitor user")
         response = self.csm_obj.delete_csm_user(login_as="csm_user_monitor",
@@ -3863,7 +3878,7 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin", "admin"))
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info("Step 2: Verify create manage user functionality for monitor user")
         response = self.csm_obj.create_csm_user(login_as="csm_user_monitor",
@@ -3873,8 +3888,7 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin/manage",
-                                                                              "manage"))
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info("Step 3: Verify create monitor user functionality for monitor user")
         response = self.csm_obj.create_csm_user(login_as="csm_user_monitor",
@@ -3884,8 +3898,7 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin/manage",
-                                                                              "monitor"))
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
@@ -4930,9 +4943,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg_1.format(
-                                                                            new_user['username'],
-                                                                            csm_username))
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg_1).substitute(A=new_user['username'],
+                                                                  B=csm_username))
 
         self.log.info("Step 2: Change role of second manage user from manage to monitor")
         response = self.csm_obj.edit_csm_user(login_as=new_user,
@@ -5040,7 +5053,8 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg.format("admin"))
+            assert_utils.assert_equals(response.json()["message"],
+                                        Template(msg).substitute(A="admin")) 
 
         self.log.info("Step 6: Perform GET users operation")
         response = self.csm_obj.list_csm_users(

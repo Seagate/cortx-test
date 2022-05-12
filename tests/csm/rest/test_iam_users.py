@@ -19,6 +19,7 @@ Tests various operations on IAM users using REST API
 NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
+from string import Template
 import time
 from http import HTTPStatus
 import os
@@ -3505,13 +3506,13 @@ class TestIamUserRGW():
                     assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
-                                                                    msg_1.format(
-                                                                    "_schema","op_mask").lower())
+                                            Template(msg_1).substitute(A="_schema",
+                                                                       B="op_mask").lower())
                 else:
                     assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
-                                                                msg_2.format("op_mask").lower())
+                                            Template(msg_2).substitute(A="op_mask").lower())
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -4045,8 +4046,9 @@ class TestIamUserRGW():
                 self.log.info("Verifying error response...")
                 assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                 assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-                assert_utils.assert_equals(resp.json()["message"].lower(),
-                                                      msg.format(list(payload.keys())[0]).lower())
+                assert_utils.assert_equals(
+                    resp.json()["message"].lower(),
+                    Template(msg).substitute(A=list(payload.keys())[0]).lower())
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -4087,7 +4089,7 @@ class TestIamUserRGW():
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"],
-                                                        msg.format("_schema","access_key").lower())
+                                       Template(msg).substitute(A="_schema", B="access_key"))
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 

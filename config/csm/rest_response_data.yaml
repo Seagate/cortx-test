@@ -8,17 +8,17 @@
   user_permission_denied:
     - "Cannot change roles for super user"
     - "Non super user cannot change roles for self"
-    - "Cannot delete the last {} user"
+    - "Cannot delete the last $A user"
     - "Normal user cannot delete other user"
   update_not_allowed:
-    - "{} can not update the role for {}"
-    - "{} can not update the password for {}"
-    - "{} can not update the email id for {}"
-    - "Cannot change role for the last {} user"
-    - "{} can not update {}"
+    - "$A can not update the role for $B"
+    - "$A can not update the password for $B"
+    - "$A can not update the email id for $B"
+    - "Cannot change role for the last $B user"
+    - "$A can not update $B"
     - "Can not update role to admin"
   Cannot create other users:
-    - "Only {} user can create other {} users"
+    - "Only $A user can create other $B users"
   PermissionDenied:
     - 'Access to the requested resource is forbidden'
 4099:
@@ -38,20 +38,19 @@
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
     - "Uid: Field may not be null."
-    - "{}: Unknown field."
   InvalidKeyType:
     - "Invalid key type specified. Must be one of S3, shift"
     - "Max_buckets: Not a valid integer."
     - "Suspended: Not a valid boolean."
     - "Op_mask: Invalid value."
   MalformedRequest:
-    - "{}: Must be one of: {}"
-    - "{}: Field may not be null."
-    - "{}: Not a valid integer."
-    - "{}: Not a valid boolean."
-    - "{}: Empty value for {}"
-    - "{}: Invalid value."
-    - "{}: Unknown field."
+    - "$A: Must be one of: $B"
+    - "$A: Field may not be null."
+    - "$A: Not a valid integer."
+    - "$A: Not a valid boolean."
+    - "$A: Empty value for $B"
+    - "$A: Invalid value."
+    - "$A: Unknown field."
     - "Invalid request."
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
