@@ -32,9 +32,9 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils, support_bundle_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
-from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.iostability.iostability_lib import IOStabilityLib
 from libs.durability.near_full_data_storage import NearFullStorage
+from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.iostability.iostability_lib import IOStabilityLib, MailNotification
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -68,15 +68,33 @@ class TestIOWorkloadDegradedPath:
         cls.s3t_obj = S3TestLib()
         cls.iolib = IOStabilityLib()
         cls.test_completed = False
+        cls.duration_in_days = int(os.getenv("DURATION_OF_TEST_IN_DAYS",
+                                         cls.test_cfg['happy_path_duration_days']))
+
+        cls.clients = int(os.getenv("CLIENT_SESSIONS_PER_WORKER_NODE", "0"))
+        if cls.clients == 0:
+            if cls.setup_type == 'HW':
+                cls.clients = cls.test_cfg['sessions_per_node_hw']
+            else:
+                cls.clients = cls.test_cfg['sessions_per_node_vm']
+        cls.mail_id = os.getenv("MAIL_ID", None)
+        cls.start_time = datetime.datetime.now()
+        cls.mail_notify = MailNotification(sender="priyanka.borawake@seagate.com",
+                                           receiver=cls.mail_id)
+        cls.mail_notify.mail_thread.start()
 
     def teardown_method(self):
         """Teardown method."""
+        self.log.info("Teardown method")
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
+            self.mail_notify.event_fail.set()
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
+        else:
+            self.mail_notify.event_pass.set()
 
     @pytest.mark.lc
     @pytest.mark.io_stability
@@ -84,7 +102,7 @@ class TestIOWorkloadDegradedPath:
     def test_object_crud_single_pod_failure(self):
         """Perform Object CRUD operations in degraded mode in loop using S3bench for 7 days."""
         self.log.info("STARTED: Test for Object CRUD operations in degraded mode in loop using "
-                      "S3bench for 7 days")
+                      "S3bench for %s days", self.duration_in_days)
 
         self.log.info("Step 1: Create 50 buckets in healthy mode ")
         bucket_creation_healthy_mode = self.test_cfg['test_40172']['bucket_creation_healthy_mode']
@@ -104,22 +122,18 @@ class TestIOWorkloadDegradedPath:
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
         self.log.info("Step 3: Perform IO's using S3bench")
-        duration_in_days = self.test_cfg['degraded_path_durations_days']
         workload_distribution = self.test_cfg['workloads_distribution']
-
-        clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_vm']
+        clients = (len(self.worker_node_list) - 1) * self.clients
         total_obj = 10000
-        if self.setup_type == 'HW':
-            clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_hw']
         self.iolib.execute_workload_distribution(distribution=workload_distribution,
                                                  clients=clients,
                                                  total_obj=total_obj,
-                                                 duration_in_days=duration_in_days,
+                                                 duration_in_days=self.duration_in_days,
                                                  log_file_prefix='test-40172',
                                                  buckets_created=bucket_list)
         self.test_completed = True
         self.log.info("ENDED: Test for Object CRUD operations in degraded mode in loop using "
-                      "S3bench for 7 days")
+                      "S3bench for %s days", self.duration_in_days)
 
     @pytest.mark.lc
     @pytest.mark.io_stability
@@ -130,21 +144,19 @@ class TestIOWorkloadDegradedPath:
         for 7 days.
         """
         self.log.info("STARTED: Perform disk storage near full once in healthy cluster and "
-                      "read in degraded cluster in loop for 7 days.")
-        s3userinfo = dict()
-        s3userinfo['accesskey'] = ACCESS_KEY
-        s3userinfo['secretkey'] = SECRET_KEY
-        bucket_prefix = "testbkt"
-        duration_in_days = self.test_cfg['degraded_path_durations_days']
-        client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
+                      "read in degraded cluster in loop for %s days.", self.duration_in_days)
+        s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
+        bucket_prefix = "testbkt-40173"
+        client = len(self.worker_node_list) * self.clients
         percentage = self.test_cfg['nearfull_storage_percentage']
-        self.log.info("Step 1: calculating byte count for required percentage")
+
+        self.log.info("Step 1: Calculating byte count for required percentage")
         resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
                                                             memory_percent=percentage)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Need to add %s bytes for required percentage", resp[1])
-        self.log.info("Step 2: performing writes till we reach required percentage")
 
+        self.log.info("Step 2: Performing writes till we reach required percentage")
         ret = NearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
                                                            user_data_writes=int(resp[1]),
                                                            bucket_prefix=bucket_prefix,
@@ -153,15 +165,17 @@ class TestIOWorkloadDegradedPath:
         for each in ret[1]:
             each["num_clients"] = (len(self.worker_node_list) - 1) \
                                   * self.test_cfg['sessions_per_node_vm']
-        self.log.debug("write operation data: %s", ret)
-        self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
+        self.log.debug("Write operation data: %s", ret)
+
+        self.log.info("Step 3: Shutdown the data pod safely by making replicas=0, "
                       "check degraded status.")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
                                                              self.hlth_master_list[0])
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
-        self.log.info("Step 3: performing read operations.")
-        end_time = datetime.now() + timedelta(days=duration_in_days)
+
+        self.log.info("Step 4: Performing read operations.")
+        end_time = datetime.now() + timedelta(days=self.duration_in_days)
         loop = 1
         while datetime.now() < end_time:
             loop += 1
@@ -174,4 +188,5 @@ class TestIOWorkloadDegradedPath:
             self.log.info("%s interation is done", loop)
             assert_utils.assert_true(read_ret[0], read_ret[1])
         # To Do delete operation, will be enabled after support from cortx
-        self.log.info("ENDED: Perform disk storage near full once and read in loop for 7 days")
+        self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
+                      self.duration_in_days)
