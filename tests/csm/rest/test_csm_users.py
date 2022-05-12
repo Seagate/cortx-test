@@ -55,7 +55,7 @@ class TestCsmUser():
     @classmethod
     def setup_class(cls):
         """
-        This is method is for test suite set-up
+        Setup operations for test suite set-up
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
@@ -240,8 +240,7 @@ class TestCsmUser():
                 time.sleep(30)
         if not pod_up:
             assert pod_up, "Pod is not up so cannot proceed. Test Failed"
-        assert response1.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, (
-                                                    "Account creation failed.")
+        assert response1.status_code == HTTPStatus.SERVICE_UNAVAILABLE, "Account creation failed."
         self.log.info("Step 8: Create s3account s3acc.")
         response = self.csm_obj.create_s3_account(user_type="valid")
         username = response.json()["account_name"]
