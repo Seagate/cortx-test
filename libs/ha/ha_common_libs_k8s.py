@@ -1801,6 +1801,7 @@ class HAK8s:
         exp_fail = list()
         failed = list()
         user_del_failed = list()
+        user = bucket_name = None
         if user_crud:
             LOGGER.info("Create and delete %s IAM users in loop", num_users)
             for i in range(num_users):
