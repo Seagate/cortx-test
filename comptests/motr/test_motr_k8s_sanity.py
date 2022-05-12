@@ -25,6 +25,8 @@ Test class that contains MOTR K8s tests.
 import os
 import csv
 import time
+import shutil
+import uuid
 import logging
 import multiprocessing
 from random import SystemRandom
@@ -67,18 +69,6 @@ class TestExecuteK8Sanity:
     def teardown_class(self):
         """Teardown of Node object"""
         del self.motr_obj
-
-    def test_motr_k8s_lib(self):
-        """
-        Sample test
-        """
-        # TODO: This a sample test for the usage, need to delete it later
-        logger.info(self.motr_obj.get_node_pod_dict())
-        logger.info(self.motr_obj.profile_fid)
-        logger.info(self.motr_obj.node_dict)
-        logger.info(self.motr_obj.cortx_node_list)
-        logger.info(self.motr_obj.get_primary_cortx_node())
-        logger.info(self.motr_obj.get_cortx_node_endpoints())
 
     @pytest.mark.tags("TEST-14925")
     @pytest.mark.motr_sanity
@@ -240,21 +230,53 @@ class TestExecuteK8Sanity:
             self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
 
-    @pytest.mark.tags("TEST-29706", "TEST-29709")
+    @pytest.mark.tags("TEST-29709")
     @pytest.mark.motr_sanity
     def test_cluster_shutdown_with_intrupted_motr_io(self):
         """
         This test will run the motr io on all the nodes in parallel and
         verify the services after cluster shutdown
         """
-        try:
-            for node in self.motr_obj.cortx_node_list:
-                node_process = multiprocessing.Process(target=self.motr_obj.run_motr_io,
-                    args=[node, [4], False, True])
-                node_process.start()
-        except (OSError, IOError, AssertionError) as exc:
-            logger.exception("Ignoring exception %s as this is expected to fail during shutdown",
-                exc)
+        return_dict = multiprocessing.Manager().dict()
+        for node in self.motr_obj.cortx_node_list:
+            node_process = multiprocessing.Process(target=self.motr_obj.run_io_in_parallel,
+                args=[node, [4], False, True, return_dict])
+            node_process.start()
         logger.info("Let the motr IO run on all the nodes for 120 sec")
         time.sleep(120)
         self.motr_obj.shutdown_cluster()
+        for exc in return_dict.values():
+            if isinstance(exc, Exception) and not isinstance(exc, AssertionError):
+                raise exc
+
+
+    @pytest.mark.tags("TEST-29706")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_intruppted_m0crate(self):
+        """
+        This will test cluster health after cluster shutdown during the m0crate run
+        """
+        try:
+            temp_files = []
+            return_dict = multiprocessing.Manager().dict()
+            config_file = os.path.join(os.getcwd(), "config/motr/test_29706_m0crate_workload.yaml")
+            path, yaml_file = config_file.rsplit("/", 1)
+            remote_file = TEMP_PATH + yaml_file
+            for node in self.motr_obj.cortx_node_list:
+                bkup_file = path + "/" + uuid.uuid4().hex[0:4] + "_" + yaml_file
+                temp_files.append(bkup_file)
+                shutil.copy(config_file, bkup_file)
+                self.motr_obj.update_m0crate_config(bkup_file, node)
+                node_process = multiprocessing.Process(target=self.motr_obj.run_m0crate_in_parallel,
+                    args=[bkup_file, remote_file, node, return_dict])
+                node_process.start()
+            logger.info("Let the motr IO run on all the nodes for 30 sec")
+            time.sleep(30)
+            self.motr_obj.shutdown_cluster()
+            for exc in return_dict.values():
+                if not isinstance(exc, AssertionError):
+                    raise exc
+        finally:
+            if temp_files:
+                for file in temp_files:
+                    os.remove(file)
