@@ -540,6 +540,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="s3 account login")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -884,6 +885,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="list s3 accounts")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -995,6 +997,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="list s3 accounts")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1981,66 +1984,6 @@ class TestCsmUser():
         self.log.info(
             "Step 2: Verified that csm manage user is not able to create duplicate csm user")
 
-        test_cfg2 = data["response_duplicate_s3_account"]
-        resp_error_code = test_cfg2["error_code"]
-        resp_msg_id = test_cfg2["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
-        s3account = self.csm_obj.config["s3account_user"]["username"]
-        data["response_duplicate_s3_account"]["error_format_args"]["account_name"] = s3account
-        self.log.info(
-            "Step 3: Verifying that csm admin user should not be able to create"
-            " duplicate s3 account")
-
-        self.log.info(
-            "Logging in as csm admin user to create duplicate s3 account %s", s3account)
-        response = self.csm_obj.create_s3_account(
-            user_type="pre-define", login_as="csm_admin_user")
-
-        self.log.info("Verifying response")
-        assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_equals(response.json()["error_code"],
-                                    resp_error_code)
-            assert_utils.assert_equals(response.json()["message"],
-                                       msg)
-        assert_utils.assert_equals(response.json()["message_id"],
-                                   resp_msg_id)
-
-        self.log.info("Verified response returned is: %s, %s",
-                      response, response.json())
-
-        self.log.info(
-            "Step 3: Verified that csm admin user is not able to create "
-            "duplicate s3 account")
-
-        self.log.info(
-            "Step 4: Verifying that csm manage user should not be able to "
-            "create duplicate s3 account")
-
-        self.log.info(
-            "Logging in as csm manage user to create duplicate s3 account %s",
-            s3account)
-        response = self.csm_obj.create_s3_account(
-            user_type="pre-define", login_as="csm_user_manage")
-
-        self.log.info("Verifying response")
-        assert_utils.assert_equals(response.status_code, const.CONFLICT)
-        if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_equals(response.json()["error_code"],
-                                    resp_error_code)
-            assert_utils.assert_equals(response.json()["message"],
-                                       msg)
-        assert_utils.assert_equals(response.json()["message_id"],
-                                   resp_msg_id)
-
-        self.log.info("Verified response returned is: %s, %s",
-                      response, response.json())
-
-        self.log.info(
-            "Step 4: Verified that csm manage user is not able to create "
-            "duplicate s3 account")
-
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -2100,6 +2043,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="s3 account login")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2654,6 +2598,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="get iam users not supported")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -3004,6 +2949,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="s3 account login")
     @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

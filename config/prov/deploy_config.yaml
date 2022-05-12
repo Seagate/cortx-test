@@ -765,8 +765,8 @@ nodes_15:
 
 nodes_25:
   config_1:
-    sns_data: 20
-    sns_parity: 5
+    sns_data: 15
+    sns_parity: 10
     sns_spare: 0
     dix_data: 1
     dix_parity: 24
@@ -776,8 +776,8 @@ nodes_25:
 
 nodes_36:
   config_1:
-    sns_data: 30
-    sns_parity: 6
+    sns_data: 24
+    sns_parity: 12
     sns_spare: 0
     dix_data: 1
     dix_parity: 35
