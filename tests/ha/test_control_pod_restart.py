@@ -933,6 +933,8 @@ class TestControlPodRestart:
         thread2.start()
         LOGGER.info("Step 2: Successfully started IAM user and bucket creation/deletion in "
                     "background")
+        LOGGER.info("Waiting for %s sec for background operations to start",
+                    HA_CFG["common_params"]["10sec_delay"])
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
 
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
