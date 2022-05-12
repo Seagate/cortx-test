@@ -2599,7 +2599,8 @@ class TestIamUserRGW():
         self.created_iam_users.add(uid)
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
-        valid_key = self.csm_conf["test_36448"]["valid_key"] + "123"
+        valid_key = self.csm_conf["test_36448"]["valid_key"]
+        valid_key = valid_key + system_utils.random_string_generator(5)
         self.log.info("Adding key to user")
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, access_key=valid_key)
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.OK, "Add key failed")
