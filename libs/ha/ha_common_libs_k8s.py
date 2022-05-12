@@ -1825,7 +1825,7 @@ class HAK8s:
                             failed.append(user)
                     else:
                         LOGGER.debug("Created and deleted %s user successfully", i)
-                except BaseException as error:
+                except CTException as error:
                     LOGGER.error("Error: %s", error)
                     if event.is_set():
                         exp_fail.append(user)

@@ -1035,7 +1035,7 @@ class TestControlPodRestart:
                                   "Failures observed in bucket CRUD operations. "
                                   f"\nFailed buckets: \nexp_fail: {exp_fail} and "
                                   f"\nfailed: {failed}")
-        LOGGER.info("Step 6: Successfully created %s new IAM users and %s buckets in loop",
+        LOGGER.info("Step 6: Successfully created/deleted %s new IAM users and %s buckets in loop",
                     num_users, num_bkts)
 
         LOGGER.info("ENDED: Verify IAM user and bucket CRUD operations while control pod is "
