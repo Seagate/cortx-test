@@ -613,7 +613,7 @@ class TestDataPodFailure:
         This test tests degraded reads while pod is going down
         """
         LOGGER.info("STARTED: Test to verify degraded reads during pod is going down.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
 
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -776,7 +776,7 @@ class TestDataPodFailure:
         This test tests DELETEs during data pod down by deleting deployment
         """
         LOGGER.info("STARTED: Test to verify DELETEs during data pod down by deleting deployment.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
         LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -919,7 +919,7 @@ class TestDataPodFailure:
         This test tests WRITEs during data pod down (delete deployment)
         """
         LOGGER.info("STARTED: Test to verify WRITEs during data pod down by delete deployment.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes during data pod down by "
                     "delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1071,7 +1071,7 @@ class TestDataPodFailure:
         """
         LOGGER.info("STARTED: Test to verify READs and WRITEs during data pod down by delete "
                     "deployment.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
         LOGGER.info("Step 1: Perform READs and WRITEs with variable object sizes during data pod "
                     "down by delete deployment.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1177,7 +1177,7 @@ class TestDataPodFailure:
         """
         LOGGER.info("STARTED: Test to verify WRITEs and DELETEs during data pod down "
                     "by delete deployment.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         wr_output = Queue()
@@ -1354,7 +1354,7 @@ class TestDataPodFailure:
         """
         LOGGER.info("STARTED: Test to verify READs and DELETEs during data pod down "
                     "by delete deployment.")
-        event = threading.Event()  # Event to be used to send intimation of pod deletion
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         wr_output = Queue()
@@ -1867,7 +1867,7 @@ class TestDataPodFailure:
         parts_etag = list()
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
-        event = threading.Event()  # Event to be used to send intimation of pod shutdown
+        event = threading.Event()  # Event to be used to send intimation of data pod shutdown
 
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
