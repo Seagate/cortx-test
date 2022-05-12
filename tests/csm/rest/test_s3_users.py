@@ -25,6 +25,7 @@ Tests operations on S3 Users using REST API
 
 import json
 import string
+from string import Template
 import logging
 from http import HTTPStatus
 import pytest
