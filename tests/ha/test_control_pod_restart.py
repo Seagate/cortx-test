@@ -1491,7 +1491,7 @@ class TestControlPodRestart:
         # While loop to sync this operation with background thread to achieve expected scenario
         LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
         bkt_list = list()
-        timeout = time.time() + HA_CFG["common_params"]["60sec_delay"]
+        timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
         while len(bkt_list) < bkt_cnt:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
             bkt_list = s3_test_obj.bucket_list()[1]
