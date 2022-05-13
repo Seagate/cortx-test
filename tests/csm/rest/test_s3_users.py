@@ -19,10 +19,13 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # pylint: disable-msg=too-many-statements
-"""Tests operations on S3 Users using REST API"""
+"""
+Tests operations on S3 Users using REST API
+"""
 
 import json
 import string
+from string import Template
 import logging
 from http import HTTPStatus
 import pytest
@@ -41,11 +44,15 @@ from config import CSM_REST_CFG
 
 # pylint: disable-msg=too-many-public-methods
 class TestS3user():
-    """S3 user test class"""
+    """
+    S3 user test class
+    """
 
     @classmethod
     def setup_class(cls):
-        """This is method is for test suite set-up"""
+        """
+        This is method is for test suite set-up
+        """
         cls.log = logging.getLogger(__name__)
         cls.log.info("[STARTED] ######### Setup class #########")
         cls.log.info("Initializing test setups ......")
@@ -119,9 +126,9 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10744")
     def test_276(self):
-        """Initiating the test case for the verifying success rest alert
+        """
+        Initiating the test case for the verifying success rest alert
         response.
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -143,8 +150,8 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10746")
     def test_290(self):
-        """Initiating the test case for the verifying success rest alert response
-
+        """
+        Initiating the test case for the verifying success rest alert response
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -161,8 +168,8 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10747")
     def test_291(self):
-        """Initiating the test case for the verifying success rest alert response
-
+        """
+        Initiating the test case for the verifying success rest alert response
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -179,8 +186,8 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10749")
     def test_293(self):
-        """Initiating the test case for the verifying success rest alert response
-
+        """
+        Initiating the test case for the verifying success rest alert response
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -198,8 +205,8 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10748")
     def test_292(self):
-        """Initiating the test case for the verifying success rest alert response
-
+        """
+        Initiating the test case for the verifying success rest alert response
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -216,9 +223,9 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10750")
     def test_294(self):
-        """Initiating the test case for unauthorized user try to create
+        """
+        Initiating the test case for unauthorized user try to create
         s3account user.
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -234,8 +241,8 @@ class TestS3user():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-10752")
     def test_586(self):
-        """Initiating the test case for the verifying success rest alert response
-
+        """
+        Initiating the test case for the verifying success rest alert response
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -256,8 +263,6 @@ class TestS3user():
         """
         Initiating the test case for REST API to update S3
         account/non_existing_user using PATCH request.
-
-        :return:
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -276,7 +281,6 @@ class TestS3user():
     def test_587(self):
         """
         Initiating the test case for user Does not update secret/access key
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -296,7 +300,6 @@ class TestS3user():
     def test_592(self):
         """
         Initiating the test case for Sender has no permission to update s3 account
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -316,7 +319,6 @@ class TestS3user():
     def test_615(self):
         """
         Initiating the test case for user Does not update secret/access key
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -335,7 +337,6 @@ class TestS3user():
     def test_598(self):
         """
         Initiating the test case for user only reset access key value False
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -354,7 +355,6 @@ class TestS3user():
     def test_595(self):
         """
         Initiating the test case for user only reset access key value
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -373,7 +373,6 @@ class TestS3user():
     def test_606(self):
         """
         Initiating the test case for user only password field
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -392,7 +391,6 @@ class TestS3user():
     def test_488(self):
         """
         Initiating the test case for Successful delete account user
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -409,7 +407,6 @@ class TestS3user():
     def test_491(self):
         """
         Initiating the test case for delete non existing s3account user
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -427,7 +424,6 @@ class TestS3user():
     def test_492(self):
         """
         Initiating the test case for delete s3account user without permission
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -447,7 +443,6 @@ class TestS3user():
     def test_493(self):
         """
         Initiating the test case for delete s3account without account name
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -467,7 +462,6 @@ class TestS3user():
     def test_1914(self):
         """
         Initiating the test to test that error is returned when payload is incorrect
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -506,7 +500,6 @@ class TestS3user():
     def test_1915(self):
         """
         Test that error should be returned when s3 user enters some other s3 user's account name
-
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -516,9 +509,10 @@ class TestS3user():
             " other s3 user's account name")
         test_cfg = self.csm_conf["test_1915"]["response_msg"]
         resp_error_code = test_cfg["error_code"]
-        resp_msg = test_cfg["message_id"]
-        data = self.rest_resp_conf[resp_error_code][resp_msg]
-        msg = data[0]
+        resp_msg_id = test_cfg["message_id"]
+        data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = data[resp_msg_index]
         self.log.info("Creating new S3 account for test purpose")
         response = self.s3user.create_s3_account()
 
@@ -539,10 +533,11 @@ class TestS3user():
         self.log.debug("Verifying the response returned %s", response)
         assert response.status_code, const.FORBIDDEN
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_equals(response.json()["error_code"],
-                                    str(resp_error_code))
-            assert_utils.assert_equals(response.json()["message"],
-                                       msg)
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
+
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())
 
@@ -627,7 +622,12 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28924"]
+        test_cfg = self.csm_conf["test_28924"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         secret_keys = []
         self.log.info("Key 1: Empty Secret key")
         secret_keys.append("")
@@ -648,15 +648,13 @@ class TestS3user():
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
             if CSM_REST_CFG["msg_check"] == "enable":
-                err_msg = test_cfg["response_msg"]
-                err = resp.json()
-                self.log.info("Verifying error code...")
-                assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-                self.log.info("Verifying message id...")
-                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-                self.log.info("Verifying message...")
-                assert err["message"] == err_msg["message"], "Message check failed."
+                self.log.info("Verifying error response...")
+                assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                assert_utils.assert_equals(resp.json()["message"], msg)
+
             self.log.info("[END] Secret Key : %s", secret_key)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -670,9 +668,13 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28773"]
+        test_cfg = self.csm_conf["test_28773"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         access_keys = []
-
         self.log.info("Key 1: Empty Access key")
         access_keys.append("")
 
@@ -695,15 +697,15 @@ class TestS3user():
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
             if CSM_REST_CFG["msg_check"] == "enable":
-                err_msg = test_cfg["response_msg"]
-                err = resp.json()
-                self.log.info("Verifying error code...")
-                assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-                self.log.info("Verifying message id...")
-                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-                self.log.info("Verifying message...")
-                assert err["message"] == err_msg["message"], "Message check failed."
-                self.log.info("[END] Access Key : %s", access_key)
+                self.log.info("Verifying error response...")
+                assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                assert_utils.assert_equals(resp.json()["message"].lower(),
+                                           Template(msg).substitute(A="_schema",
+                                                                    B="access_key").lower())
+
+            self.log.info("[END] Access Key : %s", access_key)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -717,19 +719,21 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28925"]
+        test_cfg = self.csm_conf["test_28925"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         result, resp = self.s3user.create_verify_s3_custom(
             "missing_access", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -743,19 +747,21 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28926"]
+        test_cfg = self.csm_conf["test_28926"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         result, resp = self.s3user.create_verify_s3_custom(
             "missing_secret", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -769,19 +775,21 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28927"]
+        test_cfg = self.csm_conf["test_28927"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        # verify_err_args=True not working for RGW yet
         result, resp = self.s3user.create_verify_s3_custom(
-            "duplicate_user", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+            "duplicate_user", expected_response=HTTPStatus.CONFLICT.value)
         assert result, "Status code check or error arg check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -796,19 +804,21 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28928"]
+        test_cfg = self.csm_conf["test_28928"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        # verify_err_args=True not working for RGW yet
         result, resp = self.s3user.create_verify_s3_custom(
-            "duplicate_email", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+            "duplicate_email", expected_response=HTTPStatus.CONFLICT.value)
         assert result, "Status code check or error arg check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -823,19 +833,21 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28929"]
+        test_cfg = self.csm_conf["test_28929"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        # verify_err_args=True not working for RGW yet
         result, resp = self.s3user.create_verify_s3_custom(
-            "duplicate_access", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+            "duplicate_access", expected_response=HTTPStatus.CONFLICT.value)
         assert result, "Status code check or error arg check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -900,7 +912,12 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_28931"]
+        test_cfg = self.csm_conf["test_28931"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         resp = self.s3user.list_all_created_s3account()
         assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
         user_data = resp.json()
@@ -934,14 +951,11 @@ class TestS3user():
         result, resp = self.s3user.\
             create_verify_s3_custom("valid", expected_response=HTTPStatus.FORBIDDEN.value)
         if CSM_REST_CFG["msg_check"] == "enable":
-            err_msg = test_cfg["response_msg"]
-            err = resp.json()
-            self.log.info("Verifying error code...")
-            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+
         # add pre-defined user to the created_user
         # create loop
         for created_user in created_users:
