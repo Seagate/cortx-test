@@ -16,7 +16,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """All the constants are alphabetically arranged."""
-CREATE_FILE = "dd if={} of={} bs={} count={}"
+CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
