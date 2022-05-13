@@ -282,4 +282,3 @@ class TestRestApiRgw:
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
         self.log.info("END : %s",test_case_name)
-
