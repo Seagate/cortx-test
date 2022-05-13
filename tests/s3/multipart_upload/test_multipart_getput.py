@@ -222,10 +222,7 @@ class TestMultipartUploadGetPut:
         self.log.info("Get the uploaded object")
         status, res = self.s3_test_obj.get_object(bucket_name, object_name)
         assert_utils.assert_true(status, res)
-        get_etag = res['ETag']
-        self.log.info("Uploaded ETag is %s", upload_checksum)
-        self.log.info("get object ETag is %s", res["ETag"])
-        self.compare_checksums(upload_checksum, get_etag)
+        self.compare_checksums(upload_checksum, res['ETag'])
 
     def list_parts_completempu(self, mpu_id, bucket_name, **kwargs,):
         """
@@ -236,7 +233,6 @@ class TestMultipartUploadGetPut:
         res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
-        self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
                 mpu_id, all_parts, bucket_name, obj_name)
@@ -371,10 +367,10 @@ class TestMultipartUploadGetPut:
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28539_s3bench_ios", duration="0h2m")
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        status, put_etag = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
+        status, put_res = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
                                                        self.mp_obj_path)
-        assert_utils.assert_true(status, put_etag)
-        self.log.info("Put object ETag: %s", put_etag)
+        assert_utils.assert_true(status, put_res)
+        self.log.info("Put object ETag: %s", put_res["ETag"])
         parts = get_precalculated_parts(self.mp_obj_path, mp_config["part_sizes"],
                                         chunk_size=mp_config["chunk_size"])
         keys = list(parts.keys())
@@ -382,6 +378,10 @@ class TestMultipartUploadGetPut:
         _, resp = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
                                                          parts=parts, is_part_upload=True,
                                                          is_lst_complete_mpu=True)
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1]:
+            self.log.error("Failed to list the uploaded object")
+        self.log.info("Check that ETag is for multipart uploaded object")
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
@@ -552,12 +552,10 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG['test_28535']
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
-        uploaded_parts, _, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(mp_config, self.mp_obj_path,
-                                                             log_prefix="TEST-28535_s3bench_ios",
-                                                             duration="0h2m",
-                                                             s3_test_lib_obj=self.s3_test_obj)
-        mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
+        mpu_id, uploaded_parts, _, s3_background_io = \
+            self.s3_mpu_test_obj.create_mpu_get_precalc_parts(
+            mp_config, self.mp_obj_path, self.bucket_name, self.object_name,
+            log_prefix="TEST-28535_s3bench_ios", duration="0h2m", s3_test_lib_obj=self.s3_test_obj)
         all_parts = []
         pool = multiprocessing.Pool(processes=8)
         all_parts = pool.starmap(self.multiprocess_uploads,
@@ -729,11 +727,15 @@ class TestMultipartUploadGetPut:
                                                               is_part_upload=True, parts=parts,
                                                               is_lst_complete_mpu=True)
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
-        status, put_etag = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
+        status, put_res = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
                                                        self.mp_obj_path)
-        assert_utils.assert_true(status, put_etag)
-        self.log.info("Put object ETag: %s", put_etag)
-        self.compare_checksums(put_etag, resp[1]["ETag"])
+        assert_utils.assert_true(status, put_res)
+        self.log.info("Put object ETag: %s", put_res["ETag"])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1]:
+            self.log.error("Failed to list the uploaded object")
+        self.log.info("Check that ETag is for simple uploaded object")
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, put_res["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -825,8 +827,6 @@ class TestMultipartUploadGetPut:
         process_mpu.join()
         process_put.join()
         res = self.s3_test_obj.object_list(self.bucket_name)
-        if self.object_name not in res[1] or object_put not in res[1]:
-            self.log.info("Failed to list the uploaded objects")
         if self.object_name not in res[1] or object_put not in res[1]:
             self.log.error("Failed to list the uploaded objects")
         self.log.info("Stop and validate parallel S3 IOs")
