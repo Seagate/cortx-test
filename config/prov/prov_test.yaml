@@ -187,14 +187,14 @@ k8s_cortx_deploy:
     destroy: 900
     status: 120
   thirdparty_resource:
-    server:
+    server:   #consul_server
       requests:
         mem: '200Mi'
         cpu: '200m'
       limits:
         mem: '500Mi'
         cpu: '500m'
-    client:
+    client:  #consul_client
       requests:
         mem: '200Mi'
         cpu: '200m'

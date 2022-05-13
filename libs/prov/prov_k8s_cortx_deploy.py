@@ -1814,18 +1814,18 @@ class ProvDeployK8sCortxLib:
             consul_list = ['server', 'client']
             third_party_resource = self.deploy_cfg['thirdparty_resource']
             # updating the consul server /client request and limit resources
-            for elem in consul_list:
-                for res_type in type_list:
+            for res_type in type_list:
+                zookeeper[res_type]['memory'] = \
+                    third_party_resource['zookeeper'][res_type]['mem']
+                zookeeper[res_type]['cpu'] = \
+                    third_party_resource['zookeeper'][res_type]['cpu']
+                kafka[res_type]['memory'] = third_party_resource['kafka'][res_type]['mem']
+                kafka[res_type]['cpu'] = third_party_resource['kafka'][res_type]['cpu']
+                for elem in consul_list:
                     consul[elem]['resources'][res_type]['memory'] = \
                         third_party_resource[elem][res_type]['mem']
                     consul[elem]['resources'][res_type]['cpu'] = \
                         third_party_resource[elem][res_type]['cpu']
-                    zookeeper[res_type]['memory'] = \
-                        third_party_resource['zookeeper'][res_type]['mem']
-                    zookeeper[res_type]['cpu'] = \
-                        third_party_resource['zookeeper'][res_type]['cpu']
-                    kafka[res_type]['memory'] = third_party_resource['kafka'][res_type]['mem']
-                    kafka[res_type]['cpu'] = third_party_resource['kafka'][res_type]['cpu']
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
