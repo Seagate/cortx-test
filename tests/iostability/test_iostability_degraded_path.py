@@ -19,11 +19,13 @@
 """Test Suite for IO stability Happy Path workloads."""
 import logging
 import os
+from datetime import datetime
+from datetime import timedelta
 
 import pytest
 
 from commons import configmanager
-from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX
+from commons.constants import K8S_SCRIPTS_PATH
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -32,11 +34,13 @@ from config import CMN_CFG
 from conftest import LOG_DIR
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.iostability.iostability_lib import IOStabilityLib
+from libs.durability.near_full_data_storage import NearFullStorage
+from libs.s3 import ACCESS_KEY
+from libs.s3 import SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestIOWorkloadDegradedPath:
-
     """Test Class for IO Stability in Degraded path."""
 
     @classmethod
@@ -65,8 +69,8 @@ class TestIOWorkloadDegradedPath:
         cls.iolib = IOStabilityLib()
         cls.test_completed = False
 
-    def teardown_class(self):
-        """Teardown class method."""
+    def teardown_method(self):
+        """Teardown method."""
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
@@ -95,7 +99,7 @@ class TestIOWorkloadDegradedPath:
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0,"
                       "check degraded status.")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                            self.hlth_master_list[0])
+                                                             self.hlth_master_list[0])
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
@@ -116,3 +120,58 @@ class TestIOWorkloadDegradedPath:
         self.test_completed = True
         self.log.info("ENDED: Test for Object CRUD operations in degraded mode in loop using "
                       "S3bench for 7 days")
+
+    @pytest.mark.lc
+    @pytest.mark.io_stability
+    @pytest.mark.tags("TEST-40173")
+    def test_disk_near_full_read_in_degraded_s3bench(self):
+        """
+        Perform disk storage near full once in healthy cluster and read in degraded cluster in loop
+        for 7 days.
+        """
+        self.log.info("STARTED: Perform disk storage near full once in healthy cluster and "
+                      "read in degraded cluster in loop for 7 days.")
+        s3userinfo = dict()
+        s3userinfo['accesskey'] = ACCESS_KEY
+        s3userinfo['secretkey'] = SECRET_KEY
+        bucket_prefix = "testbkt"
+        duration_in_days = self.test_cfg['degraded_path_durations_days']
+        client = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
+        percentage = self.test_cfg['nearfull_storage_percentage']
+        self.log.info("Step 1: calculating byte count for required percentage")
+        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
+                                                            memory_percent=percentage)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Need to add %s bytes for required percentage", resp[1])
+        self.log.info("Step 2: performing writes till we reach required percentage")
+
+        ret = NearFullStorage.perform_near_full_sys_writes(s3userinfo=s3userinfo,
+                                                           user_data_writes=int(resp[1]),
+                                                           bucket_prefix=bucket_prefix,
+                                                           client=client)
+        assert_utils.assert_true(ret[0], ret[1])
+        for each in ret[1]:
+            each["num_clients"] = (len(self.worker_node_list) - 1) \
+                                  * self.test_cfg['sessions_per_node_vm']
+        self.log.debug("write operation data: %s", ret)
+        self.log.info("Step 2: Shutdown the data pod safely by making replicas=0, "
+                      "check degraded status.")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
+                                                             self.hlth_master_list[0])
+        assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
+        self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
+        self.log.info("Step 3: performing read operations.")
+        end_time = datetime.now() + timedelta(days=duration_in_days)
+        loop = 1
+        while datetime.now() < end_time:
+            loop += 1
+            self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
+            read_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+                                                                        workload_info=ret[1],
+                                                                        skipread=False,
+                                                                        validate=True,
+                                                                        skipcleanup=True)
+            self.log.info("%s interation is done", loop)
+            assert_utils.assert_true(read_ret[0], read_ret[1])
+        # To Do delete operation, will be enabled after support from cortx
+        self.log.info("ENDED: Perform disk storage near full once and read in loop for 7 days")
