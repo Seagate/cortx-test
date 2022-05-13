@@ -588,22 +588,6 @@ class Provisioner:
             valid_disk_count = int(sns_data) + int(sns_parity) + int(sns_spare)
             sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
-            LOGGER.info("Configuring SNS pool : %s", sns)
-            for key, value in sns.items():
-                config_utils.update_config_ini(
-                    config_file,
-                    section="srvnode_default",
-                    key="storage.durability.sns.{}".format(key),
-                    value=value,
-                    add_section=False)
-            LOGGER.info("Configuring DIX pool  : %s", dix)
-            for key, value in dix.items():
-                config_utils.update_config_ini(
-                    config_file,
-                    section="srvnode_default",
-                    key="storage.durability.dix.{}".format(key),
-                    value=value,
-                    add_section=False)
             for node_count, node_obj in enumerate(node_obj_list, start=1):
                 LOGGER.info("Configuring CVG for %s", node_obj.hostname)
                 node = "srvnode-{}".format(node_count)
@@ -640,25 +624,13 @@ class Provisioner:
                     for count in range(0, count):
                         data_devices.append(",".join(data_devices_f[count]))
 
-                config_utils.update_config_ini(
-                    config_file, node, key="hostname", value=hostname, add_section=False)
-                for cvg in range(0, cvg_count):
-                    LOGGER.info("CVG : %s", cvg)
-                    LOGGER.info("Updating Data Devices: %s", data_devices[cvg])
-                    config_utils.update_config_ini(
-                        config_file,
-                        node,
-                        key="storage.cvg.{}.data_devices".format(cvg),
-                        value=data_devices[cvg],
-                        add_section=False)
-                    LOGGER.info("Updating Metadata Devices: %s", metadata_devices[cvg])
-                    config_utils.update_config_ini(
-                        config_file,
-                        node,
-                        key="storage.cvg.{}.metadata_devices".format(cvg),
-                        value=metadata_devices[cvg],
-                        add_section=False)
-
+                resp = Provisioner.update_conf_file(config_file, node, hostname=hostname,
+                                                    data_devices=data_devices,
+                                                    metadata_devices=metadata_devices,
+                                                    cvg_count=cvg_count, sns=sns,
+                                                    dix=dix)
+                if resp[0]:
+                    LOGGER.info("Updated the config ini file %s", resp[1])
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -716,3 +688,60 @@ class Provisioner:
             LOGGER.error("Unable to set new password due to - {}".format(str(error)))
             return False, error
         return True, "Password change Successful!!"
+
+    @staticmethod
+    def update_conf_file(config_file, node, **kwargs):
+        """
+        This method is to update the file with CVG details
+        Params: config_file: ini file used for deployment
+        node: Host object of all the nodes in a cluster
+        hostname: server hostname
+        cvg_count: No. of cvg to be created on all the nodes in a cluster
+        metadata_devices: metadata devices used for CVG
+        data_devices data devices used for CVG
+        returns True and config file path
+        """
+        hostname = kwargs.get("hostname")
+        cvg_count = kwargs.get("cvg_count")
+        metadata_devices = kwargs.get("metadata_devices")
+        data_devices = kwargs.get("data_devices")
+        sns = kwargs.get("sns")
+        dix = kwargs.get("dix")
+
+        LOGGER.info("Configuring SNS pool : %s", sns)
+        for key, value in sns.items():
+            config_utils.update_config_ini(
+                config_file,
+                section="srvnode_default",
+                key="storage.durability.sns.{}".format(key),
+                value=value,
+                add_section=False)
+        LOGGER.info("Configuring DIX pool  : %s", dix)
+        for key, value in dix.items():
+            config_utils.update_config_ini(
+                config_file,
+                section="srvnode_default",
+                key="storage.durability.dix.{}".format(key),
+                value=value,
+                add_section=False)
+        config_utils.update_config_ini(config_file, node,
+                                       key="hostname",
+                                       value=hostname,
+                                       add_section=False)
+        for cvg in range(0, cvg_count):
+            LOGGER.info("CVG : %s", cvg)
+            LOGGER.info("Updating Data Devices: %s", data_devices[cvg])
+            config_utils.update_config_ini(
+                config_file,
+                node,
+                key="storage.cvg.{}.data_devices".format(cvg),
+                value=data_devices[cvg],
+                add_section=False)
+            LOGGER.info("Updating Metadata Devices: %s", metadata_devices[cvg])
+            config_utils.update_config_ini(
+                config_file,
+                node,
+                key="storage.cvg.{}.metadata_devices".format(cvg),
+                value=metadata_devices[cvg],
+                add_section=False)
+        return True, config_file
