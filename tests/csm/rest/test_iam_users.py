@@ -1,4 +1,4 @@
-#Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -39,6 +39,7 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import s3_misc
+
 
 class TestIamUser():
     """REST API Test cases for IAM users"""
@@ -1790,6 +1791,688 @@ class TestIamUserRGW():
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41858')
+    def test_41858(self):
+        """
+        Test that user policy capability is added with(*, read/write/read, write) capability.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user policy capability is added with(*, read/write/read, write)")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability for above user i.e.{'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user without user capability.")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability i.e.{'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user without user capability.")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability i.e.{'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user without user capability.")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability i.e.{'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("[END] Testing that user policy capability is added with(*, read/write/read, write)")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41859')
+    def test_41859(self):
+        """
+        Test that user policy capability is added on user creation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user policy capability is added on user creation.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email,
+                   "user_caps": "user-policy=*"}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user with {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with{'user_caps':'user-policy=read, write'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name,
+                   "user_caps": "user-policy=read, write"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with {'user_caps':'user-policy=read'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name,
+                   "user_caps": "user-policy=read"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with{'user_caps':'user-policy=write'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name,
+                   "user_caps": "user-policy=write"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("[END] Testing that user policy capability is added on user creation.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41860')
+    def test_41860(self):
+        """
+        Test that user policy capability is added on tenant-user creation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user policy capability is added on tenant-user creation.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "tenant": user_id,
+                   "user_caps": "user-policy=*"}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create tenant-user with {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        tenant_uid = user_id + "$" + user_id
+        response = self.csm_obj.get_iam_user(tenant_uid)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with{'user_caps':'user-policy=read, write'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name, "tenant": user_id,
+                   "user_caps": "user-policy=read, write"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        tenant_uid = user_id + "$" + user_id
+        response = self.csm_obj.get_iam_user(tenant_uid)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with {'user_caps':'user-policy=read'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name, "tenant": user_id,
+                   "user_caps": "user-policy=read"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        tenant_uid = user_id + "$" + user_id
+        response = self.csm_obj.get_iam_user(tenant_uid)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
+        self.log.info("Perform POST API to create user with{'user_caps':'user-policy=write'}")
+        user_id, display_name = self.get_IAM_user_payload()
+        payload = {"uid": user_id, "display_name": display_name, "tenant": user_id,
+                   "user_caps": "user-policy=write"}
+        self.log.info("payload :  %s", payload)
+        res = self.csm_obj.create_iam_user_rgw(payload)
+        assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform Get API for user.")
+        tenant_uid = user_id + "$" + user_id
+        response = self.csm_obj.get_iam_user(tenant_uid)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("[END] Testing that user policy capability is added on tenant-user creation.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41861')
+    def test_41861(self):
+        """
+        Test that user-policy capability can be removed.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user-policy capability can be removed.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability for above user i.e.{'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
+        self.log.info("Perform PUT request to add capability for above user {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("Perform PUT request to add capability for above user i.e.{'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert len(resp_dict["caps"]) == 0, "caps type not matched in response."
+        self.log.info("Perform PUT request to add capability for above user i.e.{'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert len(resp_dict["caps"]) == 0, "caps not matched in response."
+        self.log.info("[END] Testing that user-policy capability can be removed.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41862')
+    def test_41862(self):
+        """
+        Test that user-policy capability can be removed, added on user creation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user-policy capability can be removed, added on user creation.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email,
+                   "user_caps": "user-policy=*"}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user with cap {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        payload = {"uid": user_id}
+        response = self.csm_obj.get_iam_user(payload['uid'])
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert len(resp_dict["caps"]) == 0, "caps not matched in response."
+        self.log.info("[END] Testing that user-policy capability can be removed, added on user creation.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41863')
+    def test_41863(self):
+        """
+        Test that user policy capability can be removed, added on tenant-user creation.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user policy capability can be removed, added on tenant-user creation")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email,
+                   "user_caps": "user-policy=*", "tenant": user_id}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create tenant-user with caps {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        tenant_id = user_id + "$" + user_id
+        response = self.csm_obj.remove_user_caps_rgw(tenant_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        response = self.csm_obj.get_iam_user(tenant_id)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert resp_dict["caps"][0]['type'] == 'user-policy', "caps type not matched in response."
+        assert resp_dict["caps"][0]['perm'] == 'write', "caps perm not matched in response."
+        self.log.info("Perform DELETE API to remove user capability {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.remove_user_caps_rgw(tenant_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform Get API for user.")
+        response = self.csm_obj.get_iam_user(tenant_id)
+        resp_dict = response.json()
+        self.log.info("IAM user info: %s", resp_dict)
+        self.log.info("Verify user info parameters in response.")
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
+        assert len(resp_dict["caps"]) == 0, "caps not matched in response."
+        self.log.info("[END] Testing that user policy capability can be removed, added on tenant-user creation")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41864')
+    def test_41864(self):
+        """
+        Test that user can not add invalid user-policy capabilities.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user can not add invalid user-policy capabilities.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add invalid capability {'user_caps':'user-policy=*;random=*'}")
+        payload = {"user_caps": "user-policy=*;random=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for add capability."
+        self.log.info("Perform PUT request to add invalid capability {'user_caps':'user-policy=random'}")
+        payload = {"user_caps": "user-policy=random"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform PUT request to add invalid format caps {'user_caps':'user-policy=read,users=*'}")
+        payload = {"user_caps": "user-policy=read,users=*"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform PUT request to add invalid format caps {'user_caps':'user-policy=Write,read'}")
+        payload = {"user_caps": "user-policy=Write,read"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("[END] Testing that user can not add invalid user-policy capabilities.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41865')
+    def test_41865(self):
+        """
+        Test that user can not remove invalid capabilities.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user can not remove invalid capabilities.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add capability {'user_caps':'user-policy=read,write'}")
+        payload = {"user_caps": "user-policy=read,write"}
+        response = self.csm_obj.add_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid capability {'user_caps':'random=*'}")
+        payload = {"user_caps": "random=*"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid caps value {'user_caps':'user-policy=random'}")
+        payload = {"user_caps": "user-policy=random"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid format caps {'user_caps':'user-policy=read,users=*'}")
+        payload = {"user_caps": "user-policy=read,users=*"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("[END] Testing that user can not remove invalid capabilities.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41866')
+    def test_41866(self):
+        """
+        Test that user can not remove capabilities when not added.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that user can not remove capabilities when not added.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform DELETE request to remove invalid capability {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid capability {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid caps value {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("Perform DELETE request to remove invalid format caps {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
+        self.log.info("[END] Testing that user can not remove capabilities when not added.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41867')
+    def test_41867(self):
+        """
+        Test that monitor user can not add/remove capabilities.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that monitor user can not add/remove capabilities.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user without user capability.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform PUT request to add {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        resp = self.csm_obj.add_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform PUT request to add {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        resp = self.csm_obj.add_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform PUT request to add {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        resp = self.csm_obj.add_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform PUT request to add {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        resp = self.csm_obj.add_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("[END] Testing that monitor user can not add/remove capabilities.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41868')
+    def test_41868(self):
+        """
+        Test that monitor user can not remove capabilities on user creation
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that monitor user can not remove capabilities on user creation.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email,
+                   "user_caps": "user-policy=*"}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create user with caps {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        resp = self.csm_obj.remove_user_caps_rgw(user_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("[END] Testing that monitor user can not remove capabilities on user creation.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41869')
+    def test_41869(self):
+        """
+        Test that monitor user can not remove capabilities on tenant user creation
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Testing that monitor user can not remove capabilities on tenant user creation")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name, email = self.get_IAM_user_payload("email")
+        payload = {"uid": user_id, "display_name": display_name, "email": email,
+                   "tenant": user_id, "user_caps": "user-policy=*"}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Perform POST API to create tenant-user with caps {'user_caps':'user-policy=*'}")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=*'}")
+        payload = {"user_caps": "user-policy=*"}
+        tenant_id = user_id + "$" + user_id
+        resp = self.csm_obj.remove_user_caps_rgw(tenant_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read'}")
+        payload = {"user_caps": "user-policy=read"}
+        resp = self.csm_obj.remove_user_caps_rgw(tenant_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=write'}")
+        payload = {"user_caps": "user-policy=write"}
+        resp = self.csm_obj.remove_user_caps_rgw(tenant_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("Perform DELETE request to remove {'user_caps':'user-policy=read, write'}")
+        payload = {"user_caps": "user-policy=read, write"}
+        resp = self.csm_obj.remove_user_caps_rgw(tenant_id, payload, login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "PUT caps with Monitor user check failed."
+        self.log.info("[END] Testing that monitor user can not remove capabilities on tenant user creation.")
+        self.log.info("##### Test ended - %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
     @pytest.mark.tags('TEST-35929')
     def test_35929(self):
         """
@@ -1881,7 +2564,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 self.test_file_path, self.file_size)
+                                                   self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -1925,7 +2608,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 self.test_file_path, self.file_size)
+                                                   self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -1970,7 +2653,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 self.test_file_path, self.file_size)
+                                                   self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -2011,7 +2694,7 @@ class TestIamUserRGW():
             self.log.info("Step: Verified no bucket present in new account")
             self.log.info("Create bucket and perform IO")
             resp = s3_obj.create_bucket_put_object(self.bucket_name, self.test_file,
-                                 self.test_file_path, self.file_size)
+                                                   self.test_file_path, self.file_size)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Verify get object.")
             resp = s3_obj.get_object(self.bucket_name, self.test_file)
@@ -2084,8 +2767,8 @@ class TestIamUserRGW():
         self.created_iam_users.add(resp1.json()['tenant'] + "$" + uid)
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         assert_utils.assert_true(resp[0], resp[1])
-        access_key=resp1.json()["keys"][0]["access_key"]
-        secret_key=resp1.json()["keys"][0]["secret_key"]
+        access_key = resp1.json()["keys"][0]["access_key"]
+        secret_key = resp1.json()["keys"][0]["secret_key"]
         test_file = "test-object.txt"
         for bucket_cnt in range(max_buckets):
             bucket_name = "iam-user-bucket-" + str(bucket_cnt) + str(int(time.time_ns()))
@@ -2095,7 +2778,7 @@ class TestIamUserRGW():
             bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
             assert bucket_created, "Failed to create bucket"
             resp = s3_misc.create_put_objects(
-            test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
+                test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
             assert_utils.assert_true(resp, "Put object Failed")
         try:
             self.log.info("Create one more than allowed bucket")
@@ -2130,8 +2813,8 @@ class TestIamUserRGW():
         self.log.info("Printing response %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         # Create bucket with bucket_name and perform IO
-        access_key=resp1.json()["keys"][0]["access_key"]
-        secret_key=resp1.json()["keys"][0]["secret_key"]
+        access_key = resp1.json()["keys"][0]["access_key"]
+        secret_key = resp1.json()["keys"][0]["secret_key"]
         test_file = "test-object.txt"
         for bucket_cnt in range(const.MAX_BUCKETS):
             self.log.info("[START] Iteration %s", bucket_cnt)
@@ -2142,7 +2825,7 @@ class TestIamUserRGW():
             bucket_created = s3_misc.create_bucket(bucket_name, access_key, secret_key)
             assert bucket_created, "Failed to create bucket"
             resp = s3_misc.create_put_objects(
-            test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
+                test_file, bucket_name, access_key, secret_key, object_size=self.file_size)
             assert_utils.assert_true(resp, "Put object Failed")
             self.log.info("[END] Iteration %s", bucket_cnt)
         try:
@@ -2172,7 +2855,7 @@ class TestIamUserRGW():
         payload.update({"generate_key": False})
         self.log.info(payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("printing resp %s:",resp.json())
+        self.log.info("printing resp %s:", resp.json())
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
                                  "IAM user creation failed")
         self.created_iam_users.add(resp.json()['tenant'] + "$" + payload["uid"])
@@ -2197,7 +2880,7 @@ class TestIamUserRGW():
             "Step 1: Login using csm user and create a user with read capabilities")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
         user_cap = "users=read"
-        payload.update({"user_caps":user_cap})
+        payload.update({"user_caps": user_cap})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED, \
@@ -2244,13 +2927,13 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Login using csm user")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
-        #Uncomment this code when invalid access key combination is found
-        #self.log.info("Step 1: Create a user with invalid access key")
-        #invalid_key = self.csm_conf["test_36448"]["invalid_key"]
-        #payload.update({"access_key": invalid_key})
-        #self.log.info("payload :  %s", payload)
-        #resp = self.csm_obj.create_iam_user_rgw(payload)
-        #assert resp.status_code == HTTPStatus.BAD_REQUEST
+        # Uncomment this code when invalid access key combination is found
+        # self.log.info("Step 1: Create a user with invalid access key")
+        # invalid_key = self.csm_conf["test_36448"]["invalid_key"]
+        # payload.update({"access_key": invalid_key})
+        # self.log.info("payload :  %s", payload)
+        # resp = self.csm_obj.create_iam_user_rgw(payload)
+        # assert resp.status_code == HTTPStatus.BAD_REQUEST
         self.log.info("Step 2: create user with valid access key")
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         payload.update({"access_key": valid_key})
@@ -2986,7 +3669,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Send patch request to update display name")
         payload = {}
-        payload.update({"display_name":(uid+"1")})
+        payload.update({"display_name": (uid + "1")})
         resp1 = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.OK, "IAM user modify failed")
         self.log.info("STEP 4: Perform get iam users to verify new display name")
@@ -2994,7 +3677,7 @@ class TestIamUserRGW():
         self.log.info("Print user info %s", get_resp.json())
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 5: Check if update is done successfully")
-        assert_utils.assert_true((get_resp.json()["display_name"] == uid+"1"),
+        assert_utils.assert_true((get_resp.json()["display_name"] == uid + "1"),
                                  "Display Name not updated")
         self.log.info("[END]Update User with display name, correct uid in request.")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -3027,14 +3710,14 @@ class TestIamUserRGW():
         get_resp = self.csm_obj.get_iam_user(uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Send request with wrong uid in request to update display name")
-        uid1 = uid+"1"
+        uid1 = uid + "1"
         payload = {}
-        payload.update({"display_name":(uid+"1")})
+        payload.update({"display_name": (uid + "1")})
         response = self.csm_obj.modify_iam_user_rgw(uid1, payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             assert response.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert response.json()["message"] == msg , "Message check failed."
+            assert response.json()["message"] == msg, "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("STEP 4: Perform get iam users to verify new display name")
         get_resp = self.csm_obj.get_iam_user(uid)
@@ -3063,7 +3746,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
-                                     "IAM user creation failed")
+                                 "IAM user creation failed")
         uid = resp1.json()["tenant"] + "$" + payload['uid']
         self.created_iam_users.add(uid)
         self.log.info("STEP 2: Perform get iam users")
@@ -3071,7 +3754,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 3: Send request to update uid and generate-key")
         payload = {}
-        payload.update({"generate_key":True})
+        payload.update({"generate_key": True})
         resp = self.csm_obj.modify_iam_user_rgw(uid, payload)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user modify failed")
         self.log.info("STEP 4: Perform get iam users to verify newly created keys")
@@ -3081,10 +3764,10 @@ class TestIamUserRGW():
         self.log.info("STEP 5: Check if keys are generated successfully")
         if len(get_resp.json()["keys"]) > 1:
             self.log.info("second pair of keys generated")
-        assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"]!=resp.json()[
-                            "keys"][0]["access_key"], "Access key not generated")
-        assert_utils.assert_true(get_resp.json()["keys"][1]["secret_key"]!=resp.json()[
-                            "keys"][0]["secret_key"], "Secret key not generated")
+        assert_utils.assert_true(get_resp.json()["keys"][1]["access_key"] != resp.json()[
+            "keys"][0]["access_key"], "Access key not generated")
+        assert_utils.assert_true(get_resp.json()["keys"][1]["secret_key"] != resp.json()[
+            "keys"][0]["secret_key"], "Secret key not generated")
         self.log.info("STEP 6: Create bucket and put object")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=resp1.json()["keys"][0]["access_key"],
@@ -3104,7 +3787,7 @@ class TestIamUserRGW():
             system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         system_utils.create_file(file_path_upload, self.file_size)
         resp = s3_obj.put_object(bucket_name=bucket_name, object_name=test_file,
-                                         file_path=file_path_upload)
+                                 file_path=file_path_upload)
         self.log.info("Removing uploaded object from a local path.")
         os.remove(file_path_upload)
         assert_utils.assert_true(resp[0], resp[1])
@@ -3129,12 +3812,12 @@ class TestIamUserRGW():
         payload = self.csm_obj.iam_user_payload_rgw("random")
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
-        assert(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert (resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
         uid = resp.json()["tenant"] + "$" + payload['uid']
 
         self.log.info("STEP 2: Perform get iam users")
         get_resp = self.csm_obj.get_iam_user(uid)
-        assert(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        assert (get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
 
         self.log.info("STEP 3: Update any random parameters for created user")
         payload = self.csm_obj.iam_user_patch_random_payload()
@@ -3154,13 +3837,13 @@ class TestIamUserRGW():
 
         for key in payload.keys():
             if key == "generate_key":
-                assert(len(get_resp["keys"]) < 2, "New key is not generated.")
+                assert (len(get_resp["keys"]) < 2, "New key is not generated.")
             elif key == "access_key" or key == "secret_key":
-                assert(len(self.csm_obj.search_list_of_dict(key, payload[key], get_resp["keys"])) >= 1)
-            elif key =="key_type":
+                assert (len(self.csm_obj.search_list_of_dict(key, payload[key], get_resp["keys"])) >= 1)
+            elif key == "key_type":
                 pass
             else:
-                assert payload[key]==get_resp[key], "key mistmatch"
+                assert payload[key] == get_resp[key], "key mistmatch"
 
         self.log.info("[END]Update request with uid and other parameters randomly. ")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -3236,7 +3919,7 @@ class TestIamUserRGW():
             if CSM_REST_CFG["msg_check"] == "enable":
                 assert_utils.assert_true(resp.json()["message"] ==
                                          self.rest_resp_conf[4099]['InvalidKeyType'][1]
-                                          , "Response message check failed")
+                                         , "Response message check failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
@@ -3275,6 +3958,7 @@ class TestIamUserRGW():
                                          self.rest_resp_conf[4099]['InvalidKeyType'][2]
                                          , "Response message check failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3388,6 +4072,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
                                  "Patch request status code failed")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3706,7 +4391,7 @@ class TestIamUserRGW():
 
         self.log.info("Step-3: Edit IAM user with access key of user 1")
         payload = {"access_key": usr1["keys"][0]["access_key"],
-                    "secret_key":usr1["keys"][0]["secret_key"]}
+                   "secret_key": usr1["keys"][0]["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(uid2, payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "PATCH status code check failed"
         resp = resp.json()
@@ -3719,7 +4404,6 @@ class TestIamUserRGW():
             assert resp["message"] == msg, "Message check failed"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
-
 
     @pytest.mark.csmrest
     @pytest.mark.lc
@@ -3744,7 +4428,7 @@ class TestIamUserRGW():
         bucket = "testbucket"
         test_file = "test-object.txt"
 
-        s3_obj = S3TestLib(access_key = akey, secret_key=skey)
+        s3_obj = S3TestLib(access_key=akey, secret_key=skey)
         resp = s3_obj.create_bucket(bucket)
         size = SystemRandom().randrange(10, 100)
         file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
@@ -3752,16 +4436,16 @@ class TestIamUserRGW():
             os.remove(file_path_upload)
         system_utils.create_file(file_path_upload, size)
         resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
-                    file_path=file_path_upload)
+                                 file_path=file_path_upload)
         new_skey = config_utils.gen_rand_string(length=const.S3_ACCESS_LL)
         payload = {"access_key": usr["keys"][0]["access_key"],
-                    "secret_key":new_skey}
+                   "secret_key": new_skey}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.OK, "PATCH request failed."
         resp = resp.json()
         try:
             resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
-                        file_path=file_path_upload)
+                                     file_path=file_path_upload)
             assert True, "Put object passed with old keys."
         except CTException as err:
             assert "SignatureDoesNotMatch" in err.message, "Error message check failed."
@@ -3800,7 +4484,6 @@ class TestIamUserRGW():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
@@ -3822,7 +4505,7 @@ class TestIamUserRGW():
 
         self.log.info("Step-2: Modify IAM user with invalid access key")
         payload = {"access_key": "",
-                    "secret_key":usr["keys"][0]["secret_key"]}
+                   "secret_key": usr["keys"][0]["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
         resp = resp.json()
@@ -3832,7 +4515,7 @@ class TestIamUserRGW():
             msg_id = self.csm_conf["test_38092"]["message_id"]
             assert resp["message_id"] == msg_id, "Message id check failed"
             msg = self.rest_resp_conf[err_code][msg_id][0]
-            assert resp["message"] == msg , "Message check failed"
+            assert resp["message"] == msg, "Message check failed"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -3942,19 +4625,19 @@ class TestIamUserRGW():
         resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
-                                     "Remove cap request status code failed")
+                                 "Remove cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("Step 5: Verify removed capabilities")
         assert_utils.assert_true(len(get_resp.json()["caps"]) == 0,
-                                     "Capabilities are not updated properly")
+                                 "Capabilities are not updated properly")
         user_cap = "buckets=*"
         payload.update({"user_caps": user_cap})
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.add_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK,
-                                     "Add cap request status code failed")
+                                 "Add cap request status code failed")
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         self.log.info("STEP 6: Verify added capabilities")
@@ -4024,10 +4707,10 @@ class TestIamUserRGW():
         resp = self.csm_obj.add_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-                                     "Invalid caps added"
+            "Invalid caps added"
         if CSM_REST_CFG["msg_check"] == "enable":
             assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert resp.json()["message"] == msg , "Message check failed."
+            assert resp.json()["message"] == msg, "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
@@ -4040,10 +4723,10 @@ class TestIamUserRGW():
         resp = self.csm_obj.remove_user_caps_rgw(uid, payload)
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-                                     "Invalid caps added"
+            "Invalid caps added"
         if CSM_REST_CFG["msg_check"] == "enable":
             assert resp.json()["error_code"] == resp_error_code, "Error code check failed."
-            assert resp.json()["message"] == msg , "Message check failed."
+            assert resp.json()["message"] == msg, "Message check failed."
         assert resp.json()["message_id"] == resp_msg_id, "Message ID check failed."
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
@@ -4074,7 +4757,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
-                                "IAM user creation failed")
+                                 "IAM user creation failed")
         self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         self.log.info("Printing response %s", resp)
@@ -4118,7 +4801,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
-                                    "IAM user creation failed")
+                                 "IAM user creation failed")
         self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         self.log.info("Printing response %s", resp)
@@ -4131,7 +4814,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(optional_payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
-                                    "IAM user creation failed")
+                                 "IAM user creation failed")
         self.created_iam_users.add(resp.json()['tenant'] + "$" + optional_payload['uid'])
         resp = self.csm_obj.compare_iam_payload_response(resp, optional_payload)
         self.log.info("Printing response %s", resp)
