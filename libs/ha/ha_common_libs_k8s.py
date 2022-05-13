@@ -1785,7 +1785,6 @@ class HAK8s:
 
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
-    # flake8: noqa: C901
     def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
                          num_bkts=None, output=None):
         """
@@ -1802,7 +1801,7 @@ class HAK8s:
         exp_fail = list()
         failed = list()
         user_del_failed = list()
-        user = bucket_name = None
+        user = None
         if user_crud:
             LOGGER.info("Create and delete %s IAM users in loop", num_users)
             for i in range(num_users):
@@ -1835,27 +1834,41 @@ class HAK8s:
 
             result = (exp_fail, failed, user_del_failed)
             output.put(result)
+        elif bkt_crud:
+            self.bucket_cruds(event, s3_obj, num_bkts=num_bkts, output=output)
 
-        if bkt_crud:
-            LOGGER.info("Create and delete %s buckets in loop", num_bkts)
-            for i in range(num_bkts):
-                try:
-                    bucket_name = f"bkt-loop-{i}"
-                    res = s3_obj.create_bucket(bucket_name)
-                    if res[1] != bucket_name:
-                        if event.is_set():
-                            exp_fail.append(bucket_name)
-                        else:
-                            failed.append(bucket_name)
-                        break
-                    s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
-                    LOGGER.debug("Created and deleted %s bucket successfully", i)
-                except CTException as error:
-                    LOGGER.error("Error: %s", error)
+    @staticmethod
+    def bucket_cruds(event, s3_obj, num_bkts=None, output=None):
+        """
+        Function to perform iam user and bucket crud operations in loop (To be used for background)
+        :param event: event to intimate thread about main thread operations
+        :param s3_obj: s3 test lib object
+        :param num_bkts: Number of buckets to be created and deleted
+        :param output: Output queue in which results should be put
+        :return: Queue containing output lists
+        """
+        LOGGER.info("Create and delete %s buckets in loop", num_bkts)
+        exp_fail = list()
+        failed = list()
+        bucket_name = None
+        for i in range(num_bkts):
+            try:
+                bucket_name = f"bkt-loop-{i}"
+                res = s3_obj.create_bucket(bucket_name)
+                if res[1] != bucket_name:
                     if event.is_set():
                         exp_fail.append(bucket_name)
                     else:
                         failed.append(bucket_name)
+                    break
+                s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+                LOGGER.debug("Created and deleted %s bucket successfully", i)
+            except CTException as error:
+                LOGGER.error("Error: %s", error)
+                if event.is_set():
+                    exp_fail.append(bucket_name)
+                else:
+                    failed.append(bucket_name)
 
-            result = (exp_fail, failed)
-            output.put(result)
+        result = (exp_fail, failed)
+        output.put(result)
