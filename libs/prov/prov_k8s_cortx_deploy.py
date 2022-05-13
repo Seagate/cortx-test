@@ -1321,7 +1321,8 @@ class ProvDeployK8sCortxLib:
                                                                eth1_ip, self.deploy_cfg['iface'])
                     ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
                 LOGGER.info("Step to Create S3 account and configure credentials")
-                if self.s3_engine == 2:
+                if self.s3_engine == 2:  # "s3_engine flag is used for picking up the configuration
+                    # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
                     resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
                     assert_utils.assert_true(resp[0], resp[1])
                     access_key, secret_key = S3H_OBJ.get_local_keys()
