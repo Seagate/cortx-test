@@ -130,10 +130,10 @@ class TestControlPodRestart:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
-        self.s3acc_name = "{}_{}".format("ha_s3acc", self.random_time)
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
-        self.object_name = "ha-mp-obj-{}".format(self.random_time)
+        self.s3acc_name = f"ha_s3acc_{self.random_time}"
+        self.s3acc_email = f"{self.s3acc_name}@seagate.com"
+        self.bucket_name = f"ha-mp-bkt-{self.random_time}"
+        self.object_name = f"ha-mp-obj-{self.random_time}"
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
@@ -663,8 +663,8 @@ class TestControlPodRestart:
         sysutils.remove_file(download_path)
 
         LOGGER.info("Step 5: Create new bucket and do multipart upload and download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        bucket_name = f"mp-bkt-{self.random_time}"
+        object_name = f"mp-obj-{self.random_time}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -891,6 +891,7 @@ class TestControlPodRestart:
 
         LOGGER.info("ENDED: Verify control pod failover in loop")
 
+    # pylint: disable=too-many-branches
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40389")
