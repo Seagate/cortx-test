@@ -1406,7 +1406,6 @@ class ProvDeployK8sCortxLib:
             sleep_val = self.deploy_cfg["service_delay_scale"]
         start_time = int(time.time())
         end_time = start_time + sleep_val * (pod_count*2)  # max 32 mins timeout
-        LOGGER.debug("END TIME is %s", end_time)
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
@@ -1415,14 +1414,16 @@ class ProvDeployK8sCortxLib:
                     resp = self.get_hctl_status(master_node_obj, pod_name)
                     hctl_status.update({pod_name: resp[0]})
                     LOGGER.debug("Service time taken from data pod is %s",
-                                 end_time-int(time.time()))
+                                 end_time - int(time.time()))
+                LOGGER.debug(hctl_status)
             if self.deployment_type in self.server_only_list:
                 for server_pod_name in server_pod_list:
                     resp = self.get_hctl_status(master_node_obj, server_pod_name)
                     hctl_status.update({server_pod_name: resp[0]})
                     LOGGER.debug("Service time taken from server pod is %s",
-                                 end_time-int(time.time()))
-            LOGGER.debug("services status is %s", resp[0])
+                                 end_time - int(time.time()))
+                LOGGER.debug(hctl_status)
+            LOGGER.debug("services status is %s, End Time is %s", resp[0], end_time)
             status = all(element is True for element in list(hctl_status.values()))
             if status:
                 time_taken = time.time() - start_time
