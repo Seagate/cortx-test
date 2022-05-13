@@ -672,7 +672,12 @@ class RestS3user(RestTestLib):
             s3_response.status_code = 201
             s3_response._content = json.dumps(resp_dict).encode("utf-8")
         else:
-            s3_response.status_code = 400
-            s3_response._content = json.dumps(
-                {"error":"Failed to create S3 account."}).encode("utf-8")
+            s3_response.status_code = resp.status_code
+            resp = resp.json()
+            resp_dict = {"error_code": resp["error_code"],
+                        "message": resp["message"],
+                        "message_id": resp["message_id"],
+                        "error":"Failed to create S3 account."}
+            s3_response._content = json.dumps(resp_dict).encode("utf-8")
+
         return s3_response
