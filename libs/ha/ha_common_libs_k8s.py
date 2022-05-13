@@ -1785,6 +1785,7 @@ class HAK8s:
 
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
+    # flake8: noqa: C901
     def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
                          num_bkts=None, output=None):
         """
