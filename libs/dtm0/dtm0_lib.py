@@ -80,12 +80,11 @@ class DTM0TestLib:
                 workload.append({'bucket': bucket_name, 'obj_name_pref': object_name,
                                  'num_clients': clients, 'obj_size': size,
                                  'num_sample': samples})
-        res = set(results)
-        if not res:
+        if all(results):
+            queue.put(True, workload)
+        else:
             queue.put(False, f"S3bench workload for failed."
                              f" Please read log file {log_path}")
-        else:
-            queue.put(True, workload)
 
     def perform_read_op(self, workload_info: list, queue, skipread: bool = True,
                         validate: bool = True, skipcleanup: bool = False, loop=1):
@@ -126,12 +125,12 @@ class DTM0TestLib:
                     break
                 else:
                     results.append(True)
-        res = set(results)
-        if not res:
+
+        if all(results):
+            queue.put(True, f"S3bench workload is successful. Last read log file {log_path}")
+        else:
             queue.put(False, f"S3bench workload for failed."
                              f" Please read log file {log_path}")
-        else:
-            queue.put(True, f"S3bench workload is successful. Please read log file {log_path}")
 
     def process_restart(self, master_node, pod_prefix, container_prefix, process,
                         recover_time: int = 30):
