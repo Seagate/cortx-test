@@ -185,3 +185,41 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max objects"
         return res, err_msg
+
+    @RestTestLib.authenticate_and_login
+    def get_capacity_usage(self, uid, resource, **kwargs):
+        """
+        Get user or bucket quota
+        :param uid: User ID in case of /api/v2/capacity/s3/
+                    Cluster ID in case of /api/v2/capacity/system/
+        :param resource: The resource whose capacity usage need to check
+        :login_as: for logging in using csm user
+        :return: response
+        """
+        self.log.info("Get IAM user request....")
+        if "headers" in kwargs.keys():
+            header = kwargs["headers"]
+        else:
+            header = self.headers
+        endpoint = self.config["get_user_capacity_usage"]
+        endpoint = endpoint.format(resource, uid)
+        response = self.restapi.rest_call("get", endpoint=endpoint,
+                                          headers=header, login_as="csm_admin_user")
+        self.log.info("Get user quota request successfully sent...")
+        return response
+
+    def get_objects_and_size(self, result):
+        """
+        Get total objects and total size from aws
+        """
+        op = result.split("\\n")
+        print(op)
+        for element in op:
+            if "Total Objects" in element:
+                n = element.split(":")
+                total_objects = n[1].strip()
+                return total_objects
+            if "Total Size" in element:
+                s = element.split(":")
+                total_size = s[1].strip()
+                return total_size
