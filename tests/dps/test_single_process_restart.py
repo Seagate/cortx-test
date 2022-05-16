@@ -35,7 +35,7 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import support_bundle_utils, assert_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
-from libs.dtm0.dtm0_lib import DTM0TestLib
+from libs.dps.dtm0_lib import DTM0TestLib
 
 
 class TestSingleProcessRestart:
