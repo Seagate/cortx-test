@@ -1562,32 +1562,31 @@ class TestControlPodRestart:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully download the uploaded objects & verify etags")
 
-        if CMN_CFG["dtm0_disabled"]:
-            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-            bkt_obj_dict.clear()
-            bkt_obj_dict[bucket3] = object3
-            LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
-                        "and verify copy object etags",
-                        self.object_name, self.bucket_name, bucket3)
-            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                      bucket_name=self.bucket_name,
-                                                      object_name=self.object_name,
-                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                      bkt_op=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
-                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
+        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+        bkt_obj_dict.clear()
+        bkt_obj_dict[bucket3] = object3
+        LOGGER.info("Step 7: Perform copy of %s from already created/uploaded %s to %s "
+                    "and verify copy object etags",
+                    self.object_name, self.bucket_name, bucket3)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                  bkt_op=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed copy of %s from already created/uploaded %s to %s and "
+                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
 
-            LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-            LOGGER.info("Get object response: %s", resp)
-            get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
-                                                          f"Etag for object {object3} of "
-                                                          f"bucket {bucket3}.")
-            LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
-                        object3, bucket3)
+        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object3, bucket3)
+        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                      f"Etag for object {object3} of "
+                                                      f"bucket {bucket3}.")
+        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.",
+                    object3, bucket3)
 
         LOGGER.info("ENDED: Verify copy object during control pod restart ")
 
@@ -1689,19 +1688,14 @@ class TestControlPodRestart:
                                   f" {download_checksum}")
         LOGGER.info("Step 6: Successfully downloaded object and verified checksum")
 
-        if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 7: Create IAM user, buckets and upload objects on"
-                        " control pod restart ")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.test_prefix = 'test-40386-1'
-            self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix)
-        else:
-            LOGGER.info("Perform IOs with variable object sizes ")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean,
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True)
+        LOGGER.info("Step 7: Create IAM user, buckets and upload objects on"
+                    " control pod restart ")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-40386-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    nclients=2, nsamples=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully completed IOs.")
 
