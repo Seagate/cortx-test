@@ -657,7 +657,7 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41172"]
-        max_size = test_cfg["max_size"]
+        available_size = test_cfg["available_size"]
         min_users = test_cfg["min_users"]
         max_users = test_cfg["max_users"]
         random_users = self.csm_obj.random_gen.randrange(min_users, max_users)
@@ -686,19 +686,19 @@ class TestCapacityQuota():
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
-            random_size = self.csm_obj.random_gen.randrange(1, max_size)
-            num_objects = math.floor(max_size/random_size)
+            random_size = self.csm_obj.random_gen.randrange(1, available_size)
+            num_objects = math.floor(available_size/random_size)
             data_size = num_objects * random_size
             self.log.info("Step 3: Create %s objects of Random size totals to %s bytes",
                           num_objects, data_size)
             for obj in range(0, num_objects):
+                self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 akey, skey, object_size=random_size)
                 assert(resp, "Put object Failed %s", obj)
 
             self.log.info("Step 3: Get capacity count from AWS")
-            total_objects = s3_misc.get_objects_count(bucket, akey, skey)
-            total_size = s3_misc.get_objects_size(bucket, akey, skey)
+            total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_capacity_usage("user", user_id)
@@ -732,7 +732,7 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41173"]
-        max_size = test_cfg["max_size"]
+        available_size = test_cfg["available_size"]
         min_bucket = test_cfg["min_bucket"]
         max_bucket = test_cfg["max_bucket"]
         random_bucket = self.csm_obj.random_gen.randrange(min_bucket, max_bucket)
@@ -750,19 +750,20 @@ class TestCapacityQuota():
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
-            random_size = self.csm_obj.random_gen.randrange(1, max_size)
-            num_objects = math.floor(max_size/random_size)
+            random_size = self.csm_obj.random_gen.randrange(1, available_size)
+            num_objects = math.floor(available_size/random_size)
             bucket_data_size = num_objects * random_size
             self.log.info("Step 2: Create %s objects of Random size totals to %s bytes",
                           num_objects, bucket_data_size)
             for obj in range(0, num_objects):
+                self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 self.akey, self.skey, object_size=random_size)
                 assert(resp, "Put object Failed %s", obj)
 
             self.log.info("Step 3: Get capacity count from AWS")
-            bucket_objects = s3_misc.get_objects_count(bucket, self.akey, self.skey)
-            bucket_size = s3_misc.get_objects_size(bucket, self.akey, self.skey)
+            (total_objects, total_size) = \
+                                    s3_misc.get_objects_size_bucket(bucket, self.akey, self.skey)
 
             assert_utils.assert_equals(bucket_objects, num_objects, "Number of objects not equal")
             assert_utils.assert_equal(bucket_size, bucket_data_size, "Total Size mismatch found")
@@ -803,7 +804,7 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41156"]
-        max_size = test_cfg["max_size"]
+        available_size = test_cfg["available_size"]
         min_users = test_cfg["min_users"]
         max_users = test_cfg["max_users"]
         random_users = self.csm_obj.random_gen.randrange(min_users, max_users)
@@ -835,19 +836,19 @@ class TestCapacityQuota():
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
-            random_size = self.csm_obj.random_gen.randrange(1, max_size)
-            num_objects = math.floor(max_size/random_size)
+            random_size = self.csm_obj.random_gen.randrange(1, available_size)
+            num_objects = math.floor(available_size/random_size)
             data_size = num_objects * random_size
             self.log.info("Step 3: Create %s objects of Random size totals to %s bytes",
                           num_objects, data_size)
             for obj in range(0, num_objects):
+                self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                                 akey, skey, object_size=random_size)
                 assert(resp, "Put object Failed %s", obj)
 
             self.log.info("Step 3: Get capacity count from AWS")
-            total_objects = s3_misc.get_objects_count(self.bucket, akey, skey)
-            total_size = s3_misc.get_objects_size(self.bucket, akey, skey)
+            total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, akey, skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_capacity_usage("user", user_id)
