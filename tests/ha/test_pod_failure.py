@@ -980,8 +980,7 @@ class TestDataPodFailure:
         responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        LOGGER.info("Step 6: Verify status for In-flight WRITEs while pod is going down "
-                    "should be failed/error.")
+        LOGGER.info("Step 6: Verify status for In-flight WRITEs while pod going down is failed.")
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -990,8 +989,7 @@ class TestDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
-        LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod is going down is "
-                    "failed/error.")
+        LOGGER.info("Step 6: Verified status for In-flight WRITEs while pod going down is failed.")
 
         LOGGER.info("STEP 7: Perform IOs with variable object sizes on degraded cluster")
         if CMN_CFG["dtm0_disabled"]:
@@ -1132,8 +1130,8 @@ class TestDataPodFailure:
         responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        LOGGER.info("Step 6: Verify status for In-flight READs and WRITEs while pod is going down "
-                    "should be failed/error.")
+        LOGGER.info("Step 6: Verify status for In-flight READs & WRITEs while pod going down is "
+                    "failed.")
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
@@ -1142,8 +1140,8 @@ class TestDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
-        LOGGER.info("Step 6: Verified status for In-flight READs and WRITEs while pod is going "
-                    "down is failed/error.")
+        LOGGER.info("Step 6: Verified status for In-flight READs &WRITEs while pod going down is "
+                    "failed.")
 
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("STEP 7: Create new user and perform WRITEs-READs-Verify-DELETEs with "
