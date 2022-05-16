@@ -60,14 +60,17 @@ class Versioning(S3Lib):
         return response
 
     def list_object_versions(self,
-                             bucket_name: str = None) -> dict:
+                             bucket_name: str = None,
+                             optional_params: dict = None) -> dict:
         """
         List all the versions and delete markers present in a bucket.
 
         :param bucket_name: Target bucket for the List Object Versions call.
+        :param optional_params: Optional parameters for the List Object Versions call
+            Delimiter, EncodingType, KeyMarker, MaxKeys, Prefix, VersionIdMarker
         :return: response
         """
-        response = self.s3_client.list_object_versions(Bucket=bucket_name)
+        response = self.s3_client.list_object_versions(Bucket=bucket_name, **optional_params)
         LOGGER.debug(response)
 
         return response
