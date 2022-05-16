@@ -99,12 +99,7 @@ IFS=$OLDIFS
 deactivate
 '''	)
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Sanity due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
                         if (lines) {
@@ -113,6 +108,11 @@ deactivate
                             currentBuild.result = 'FAILURE'
                         }
                     }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Sanity due to bad health of deployment')
+                    }
 				}
 			}
 		}
@@ -120,7 +120,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Regression_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -145,6 +145,14 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def rlines = failures.readLines()
+                        if ( len(rlines) > len(lines) ) {
+                            echo "Regression Test Failed"
+                            env.Regression_Failed = true
+                        }
+                    }
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
@@ -157,7 +165,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Io_Path_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -182,6 +190,14 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def ilines = failures.readLines()
+                        if ( len(ilines) > len(rlines) ) {
+                            echo "IO_PATH_TEST Test Failed"
+                            env.Io_Path_Failed = true
+                        }
+                    }
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
@@ -194,7 +210,7 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Failure_Domain_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
@@ -219,6 +235,14 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def flines = failures.readLines()
+                        if ( len(flines) > len(ilines) ) {
+                            echo "FAILURE DOMAIN Test Failed"
+                            env.Failure_Domain_Failed = true
+                        }
+                    }
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
@@ -278,7 +302,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}

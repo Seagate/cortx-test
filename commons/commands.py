@@ -16,7 +16,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """All the constants are alphabetically arranged."""
-CREATE_FILE = "dd if={} of={} bs={} count={}"
+CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
@@ -72,6 +72,7 @@ CMD_TOUCH_FILE = "touch {}"
 LSSCSI_CMD = "lsscsi > {}"
 LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
 LINUX_REPLACE_STRING = "sed -i 's/{}/{}/g' {}"
+LINUX_EXPORT = "export {}={}"
 LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
@@ -497,8 +498,10 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
+
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_DEPLOYMENT = "kubectl get deployment"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
 KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'
@@ -529,7 +532,9 @@ GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
                       "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
                       "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
-
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
@@ -547,7 +552,7 @@ CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
-DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
+DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
@@ -605,3 +610,7 @@ SNS_REPAIR_CMD = "hctl repair {}"
 CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
                                "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
                                "\"state\" : \"status_val\"}'"
+
+# Procpath Collection
+PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
+           "record -i 45 -d {} -p $pid"

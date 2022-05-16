@@ -17,7 +17,8 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests S3 buckets using REST API
+"""
+Tests S3 buckets using REST API
 """
 import logging
 import pytest
@@ -34,7 +35,9 @@ class TestS3Bucket():
     """ S3 bucket test cases"""
     @classmethod
     def setup_class(cls):
-        """ This is method is for test suite set-up """
+        """
+        This is method is for test suite set-up
+        """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
@@ -55,7 +58,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10764')
     def test_573(self):
-        """Initiating the test case for the verifying response of create bucket rest
+        """
+        Initiating the test case for the verifying response of create bucket rest
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -68,7 +72,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10765')
     def test_575(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest with bucket name less than three
         """
         test_case_name = cortxlogging.get_frame()
@@ -82,7 +87,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10766')
     def test_576(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest with bucket name more than 63
         """
         test_case_name = cortxlogging.get_frame()
@@ -96,7 +102,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10767')
     def test_577(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest invalid initial letter of bucket
         """
         test_case_name = cortxlogging.get_frame()
@@ -118,7 +125,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-14750')
     def test_578(self):
-        """Initiating the test to test RESP API to create bucket with bucketname
+        """
+        Initiating the test to test RESP API to create bucket with bucketname
         having special or alphanumeric character
         """
         test_case_name = cortxlogging.get_frame()
@@ -129,7 +137,8 @@ class TestS3Bucket():
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
         data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = data[0]
+        resp_msg_index = test_cfg["message_index"]
+        msg = data[resp_msg_index]
         self.log.info(
             "Step 1: Verifying creating bucket with bucket name containing special characters")
         response = self.s3_buckets.create_invalid_s3_bucket(
@@ -141,10 +150,11 @@ class TestS3Bucket():
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
-        assert_utils.assert_equals(response.json()["message_id"],
-                                  resp_msg_id)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing special characters")
@@ -158,13 +168,11 @@ class TestS3Bucket():
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
-            assert_utils.assert_equals(response.json()["message"],
-                                  msg)
-        assert_utils.assert_equals(response.json()["message_id"],
-                                  resp_msg_id)
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing alphanumeric characters")
@@ -178,7 +186,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10768')
     def test_579(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest for ip address as bucket name
         """
         test_case_name = cortxlogging.get_frame()
@@ -192,7 +201,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10769')
     def test_580(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest with unauthorized user login
         """
         test_case_name = cortxlogging.get_frame()
@@ -207,7 +217,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10770')
     def test_581(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest with duplicate user
         """
         test_case_name = cortxlogging.get_frame()
@@ -221,7 +232,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10771')
     def test_589(self):
-        """Initiating the test case for the verifying response of create bucket
+        """
+        Initiating the test case for the verifying response of create bucket
         rest with invalid data
         """
         test_case_name = cortxlogging.get_frame()
@@ -235,7 +247,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10772')
     def test_591(self):
-        """Initiating the test case for the verifying response of list bucket rest
+        """
+        Initiating the test case for the verifying response of list bucket rest
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -249,7 +262,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10773')
     def test_593(self):
-        """Initiating the test case for the verifying response of bucket rest
+        """
+        Initiating the test case for the verifying response of bucket rest
         for newly created s3 account
         """
         test_case_name = cortxlogging.get_frame()
@@ -264,7 +278,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10774')
     def test_594(self):
-        """Initiating the test case for the verifying response of list bucket
+        """
+        Initiating the test case for the verifying response of list bucket
         rest with unauthorized user login
         """
         test_case_name = cortxlogging.get_frame()
@@ -279,7 +294,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10775')
     def test_596(self):
-        """Initiating the test case for the verifying response of delete bucket rest
+        """
+        Initiating the test case for the verifying response of delete bucket rest
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -292,7 +308,8 @@ class TestS3Bucket():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10777')
     def test_597(self):
-        """Initiating the test case for the verifying response of delete bucket that does not exist
+        """
+        Initiating the test case for the verifying response of delete bucket that does not exist
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
