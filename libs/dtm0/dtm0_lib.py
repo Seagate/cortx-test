@@ -81,10 +81,10 @@ class DTM0TestLib:
                                  'num_clients': clients, 'obj_size': size,
                                  'num_sample': samples})
         if all(results):
-            queue.put(True, workload)
+            queue.put([True, workload])
         else:
-            queue.put(False, f"S3bench workload for failed."
-                             f" Please read log file {log_path}")
+            queue.put([False, f"S3bench workload for failed."
+                             f" Please read log file {log_path}"])
 
     def perform_read_op(self, workload_info: list, queue, skipread: bool = True,
                         validate: bool = True, skipcleanup: bool = False, loop=1):
@@ -127,10 +127,10 @@ class DTM0TestLib:
                     results.append(True)
 
         if all(results):
-            queue.put(True, f"S3bench workload is successful. Last read log file {log_path}")
+            queue.put([True, f"S3bench workload is successful. Last read log file {log_path}"])
         else:
-            queue.put(False, f"S3bench workload for failed."
-                             f" Please read log file {log_path}")
+            queue.put([False, f"S3bench workload for failed."
+                              f" Please read log file {log_path}"])
 
     def process_restart(self, master_node, pod_prefix, container_prefix, process,
                         recover_time: int = 30):
@@ -143,15 +143,15 @@ class DTM0TestLib:
         :param recover_time: Wait time for process to recover
         """
         pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
-        pod_selected = random.randint(1, len(pod_list) - 1)
+        pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
         self.log.info("Pod selected for m0d process restart : %s", pod_selected)
         container_list = master_node.get_container_of_pod(pod_name=pod_selected,
                                                           container_prefix=container_prefix)
-        container = random.randint(1, len(container_list))
+        container = container_list[random.randint(0, len(container_list)-1)]
         self.log.info("Container selected : %s", container)
         self.log.info("Perform m0d restart")
         resp = master_node.kill_process_in_container(pod_name=pod_selected,
-                                                     container=container,
+                                                     container_name=container,
                                                      process_name=process)
         self.log.debug("resp : %s", resp)
         time.sleep(recover_time)
