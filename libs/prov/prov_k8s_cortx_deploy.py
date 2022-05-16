@@ -32,7 +32,7 @@ import string
 import time
 from threading import Thread
 from typing import List
-
+from string import Template
 import requests.exceptions
 import yaml
 
@@ -280,8 +280,8 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = common_cmd.DEPLOY_CLUSTER_CMD.format(
-            remote_code_path, self.deploy_cfg['log_file'])
+        cmd = Template(common_cmd.DEPLOY_CLUSTER_CMD).substitute(path=remote_code_path,
+                                                                 log=self.deploy_cfg['log_file'])
         try:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                         timeout=self.deploy_cfg['timeout']['deploy'])
