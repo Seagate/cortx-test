@@ -21,7 +21,6 @@ pipeline {
 		Enclosure_Type = '5U84'
 		DB_Update = false
 		Current_TP = "None"
-		Sanity_Failed = true
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -111,6 +110,7 @@ deactivate
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Sanity_Failed = true
                         error('Aborted Sanity due to bad health of deployment')
                     }
 				}
@@ -125,6 +125,7 @@ deactivate
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -148,7 +149,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def rlines = failures.readLines()
-                        if ( len(rlines) > len(lines) ) {
+                        if (rlines) {
                             echo "Regression Test Failed"
                             env.Regression_Failed = true
                         }
@@ -156,6 +157,7 @@ deactivate
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Regression_Failed = true
                         error('Aborted Regression due to bad health of deployment')
                     }
 				}
@@ -170,6 +172,7 @@ deactivate
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -193,7 +196,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def ilines = failures.readLines()
-                        if ( len(ilines) > len(rlines) ) {
+                        if (ilines) {
                             echo "IO_PATH_TEST Test Failed"
                             env.Io_Path_Failed = true
                         }
@@ -201,6 +204,7 @@ deactivate
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Io_Path_Failed = true
                         error('Aborted IO Path due to bad health of deployment')
                     }
 				}
@@ -215,6 +219,7 @@ deactivate
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -238,7 +243,7 @@ deactivate
 				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def flines = failures.readLines()
-                        if ( len(flines) > len(ilines) ) {
+                        if (flines) {
                             echo "FAILURE DOMAIN Test Failed"
                             env.Failure_Domain_Failed = true
                         }
@@ -246,6 +251,7 @@ deactivate
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Failure_Domain_Failed = true
                         error('Aborted Failure Domain Path due to bad health of deployment')
                     }
 				}
@@ -275,11 +281,13 @@ deactivate
                       env.failcount = testcount[0][2]
                       env.skipcount = testcount[0][3]
                       env.todocount = testcount[0][4]
+                      env.abortcount = testcount[0][5]
                       echo "Total : ${totalcount}"
                       echo "Pass : ${passcount}"
                       echo "Fail : ${failcount}"
                       echo "Skip : ${skipcount}"
                       echo "Todo : ${todocount}"
+                      echo "Aborted : ${abortcount}"
  }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
