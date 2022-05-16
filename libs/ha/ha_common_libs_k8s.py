@@ -360,7 +360,8 @@ class HAK8s:
             skipcleanup: bool = False,
             nsamples: int = 10,
             nclients: int = 10,
-            large_workload: bool = False):
+            large_workload: bool = False,
+            setup_s3bench: bool = True):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW.
@@ -372,15 +373,17 @@ class HAK8s:
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :param large_workload: Flag to start large workload IOs
+        :param setup_s3bench: Flag if s3bench need to be setup
         :return: bool/operation response
         """
         workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
-        resp = s3bench.setup_s3bench()
-        if not resp:
-            return resp, "Couldn't setup s3bench on client machine."
+        if setup_s3bench:
+            resp = s3bench.setup_s3bench()
+            if not resp:
+                return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
