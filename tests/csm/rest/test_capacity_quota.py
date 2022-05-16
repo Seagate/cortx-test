@@ -762,7 +762,7 @@ class TestCapacityQuota():
                 assert(resp, "Put object Failed %s", obj)
 
             self.log.info("Step 3: Get capacity count from AWS")
-            (total_objects, total_size) = \
+            (bucket_objects, bucket_size) = \
                                     s3_misc.get_objects_size_bucket(bucket, self.akey, self.skey)
 
             assert_utils.assert_equals(bucket_objects, num_objects, "Number of objects not equal")
