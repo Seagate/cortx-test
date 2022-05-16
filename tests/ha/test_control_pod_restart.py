@@ -1606,7 +1606,6 @@ class TestControlPodRestart:
         download_path = os.path.join(self.test_dir_path, download_file)
         chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
         output = Queue()
-        event = threading.Event()
 
         LOGGER.info("Step 1: Perform setup steps for jclient")
         jc_obj = JCloudClient()
@@ -1644,7 +1643,7 @@ class TestControlPodRestart:
         failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
                                                    self.control_node])
         LOGGER.debug("Fail over node is: %s", failover_node)
-        event.set()
+
         LOGGER.info("Step 3: Failover control pod %s to node %s and check cluster status",
                     self.control_pod_name, failover_node)
         pod_yaml = {self.control_pod_name: self.modified_yaml}
@@ -1653,7 +1652,6 @@ class TestControlPodRestart:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good state",
                     failover_node)
-        event.clear()
 
         self.restore_pod = self.deploy = True
         LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
