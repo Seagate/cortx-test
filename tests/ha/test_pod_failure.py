@@ -1084,6 +1084,7 @@ class TestDataPodFailure:
         thread_wri.join()
         LOGGER.debug("Threads has joined")
 
+        LOGGER.info("Step 3: Verify responses from WRITEs & READs/VerifyDI background processes")
         LOGGER.info("Step 3.1: Verify status for In-flight WRITEs while %s data pod going "
                     "down should be failed/error.", pod_name)
         responses_wr = dict()
@@ -1118,6 +1119,7 @@ class TestDataPodFailure:
                                  f"READs/VerifyDI logs which contain pass: {resp[1]}")
         LOGGER.info("Step 3.2: Verified status for In-flight READs/VerifyDI while %s "
                     " data pod going down.", pod_name)
+        LOGGER.info("Step 3: Verified responses from WRITEs & READs/VerifyDI background processes")
 
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 4: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
@@ -1235,6 +1237,7 @@ class TestDataPodFailure:
         assert_utils.assert_false(len(fail_put_bkt), "No WRITEs failure expected when event was "
                                                      f"clear {fail_put_bkt}.")
         LOGGER.info("Failed buckets while in-flight WRITEs operation : %s", event_put_bkt)
+        LOGGER.info("Step 3.1: Verified responses from WRITEs background process")
 
         LOGGER.info("Step 3.2: Verifying responses from DELETEs background process")
         del_resp = tuple()
@@ -1247,6 +1250,7 @@ class TestDataPodFailure:
         assert_utils.assert_false(len(fail_del_bkt), "No DELETEs failure expected when event was "
                                                      f"clear {fail_del_bkt}.")
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
+        LOGGER.info("Step 3.2: Verified responses from DELETEs background process")
         LOGGER.info("Step 3: Verified responses from WRITEs and DELETEs background processes")
 
         rd_output = Queue()
@@ -1428,6 +1432,7 @@ class TestDataPodFailure:
 
         LOGGER.info("Failed buckets while in-flight READs operation : %s", event_bkt_get)
         LOGGER.info("Failed buckets while in-flight DI check operation : %s", event_di_bkt)
+        LOGGER.info("Step 3.1: Verified responses from READs background process")
 
         LOGGER.info("Step 3.2: Verifying responses from DELETEs background process")
         del_resp = tuple()
@@ -1442,6 +1447,7 @@ class TestDataPodFailure:
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
                                                      f"DELETEs: {fail_del_bkt}.")
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
+        LOGGER.info("Step 3.2: Verified responses from DELETEs background process")
         LOGGER.info("Step 3: Verified responses from READs and DELETEs background processes")
 
         remain_bkts = list(set(written_bck) - set(get_random_buck))
