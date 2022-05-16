@@ -1200,7 +1200,8 @@ class TestDataPodFailure:
                 'bkts_to_del': del_bucket, 'output': del_output}
         thread2 = threading.Thread(target=self.ha_obj.put_get_delete,
                                    args=(event, s3_test_obj,), kwargs=args)
-        thread1.daemon = thread2.daemon = True  # Daemonize thread
+        thread2.daemon = True  # Daemonize thread
+        thread1.daemon = True  # Daemonize thread
         thread2.start()
         thread1.start()
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
