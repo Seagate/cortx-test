@@ -81,8 +81,8 @@ class TestSingleProcessRestart:
     @pytest.mark.dtm0
     @pytest.mark.tags("TEST-41204")
     def test_read_during_m0d_restart(self):
-        """Verify READ during m0d restart using pkill -9."""
-        self.log.info("STARTED: Verify READ during m0d restart using pkill -9")
+        """Verify READ during m0d restart using pkill."""
+        self.log.info("STARTED: Verify READ during m0d restart using pkill")
         bucket_name = 'bucket-test-41204'
         object_name = 'object-test-41204'
         test_41204_cfg = self.test_cfg['test_41204']
@@ -90,17 +90,17 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 1: Perform write Operations :")
         self.dtm0_obj.perform_write_op(bucket_prefix=bucket_name,
-                                       object_name=object_name,
-                                       clients=test_41204_cfg['clients'],
-                                       samples=test_41204_cfg['samples'],
-                                       size=test_41204_cfg['size'],
+                                       object_prefix=object_name,
+                                       no_of_clients=test_41204_cfg['clients'],
+                                       no_of_samples=test_41204_cfg['samples'],
+                                       obj_size=test_41204_cfg['size'],
                                        log_file_prefix=test_41204_cfg['log_file_prefix'], queue=que)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
         self.log.info("Step 2: Perform Read Operations :")
-        proc_read_op = multiprocessing.Process(target=self.dtm0_obj.perform_read_op,
+        proc_read_op = multiprocessing.Process(target=self.dtm0_obj.perform_ops,
                                                args=(workload_info, que,
                                                      True,
                                                      True,
@@ -122,14 +122,14 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
-        self.log.info("ENDED: Verify READ during m0d restart using pkill -9")
+        self.log.info("ENDED: Verify READ during m0d restart using pkill")
 
     @pytest.mark.lc
     @pytest.mark.dtm0
     @pytest.mark.tags("TEST-41219")
     def test_write_during_m0d_restart(self):
-        """Verify WRITE during m0d restart using pkill -9."""
-        self.log.info("STARTED: Verify WRITE during m0d restart using pkill -9")
+        """Verify WRITE during m0d restart using pkill."""
+        self.log.info("STARTED: Verify WRITE during m0d restart using pkill")
         bucket_name = 'bucket-test-41219'
         object_name = 'object-test-41219'
         test_41219_cfg = self.test_cfg['test_41219']
@@ -161,9 +161,9 @@ class TestSingleProcessRestart:
         workload_info = resp[1]
 
         self.log.info("Step 5: Perform Read Operations :")
-        self.dtm0_obj.perform_read_op(workload_info, que, True, True, True)
+        self.dtm0_obj.perform_ops(workload_info, que, True, True, True)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
-        self.log.info("ENDED: Verify READ during m0d restart using pkill -9")
+        self.log.info("ENDED: Verify READ during m0d restart using pkill")

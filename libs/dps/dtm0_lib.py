@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Library Methods for DTM0 delivery testing
+Library Methods for DTM0 testing
 """
 import logging
 import random
@@ -41,7 +41,7 @@ class DTM0TestLib:
         cls.access_key = access_key
         cls.secret_key = secret_key
 
-    def perform_write_op(self, bucket_prefix, object_name, clients, samples, size,
+    def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
                          log_file_prefix, queue, loop=1):
         """
         Perform Write operations
@@ -57,19 +57,20 @@ class DTM0TestLib:
         results = list()
         workload = list()
         log_path = None
-        for i in range(loop):
+        for iter_cnt in range(loop):
+            self.log.info("Iteration count: %s",iter_cnt)
             self.log.info("Perform Write Operations : ")
             bucket_name = bucket_prefix + str(int(time.time()))
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
-                                   num_clients=clients, num_sample=samples,
-                                   obj_name_pref=object_name, obj_size=size,
+                                   num_clients=no_of_clients, num_sample=no_of_samples,
+                                   obj_name_pref=object_prefix, obj_size=obj_size,
                                    skip_cleanup=True, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"])
             self.log.info("Workload: %s objects of %s with %s parallel clients.",
-                          samples, size, clients)
+                          no_of_samples, obj_size, no_of_clients)
             self.log.info("Log Path %s", resp[1])
             log_path = resp[1]
             if s3bench.check_log_file_error(resp[1]):
@@ -77,16 +78,16 @@ class DTM0TestLib:
                 break
             else:
                 results.append(True)
-                workload.append({'bucket': bucket_name, 'obj_name_pref': object_name,
-                                 'num_clients': clients, 'obj_size': size,
-                                 'num_sample': samples})
+                workload.append({'bucket': bucket_name, 'obj_name_pref': object_prefix,
+                                 'num_clients': no_of_clients, 'obj_size': obj_size,
+                                 'num_sample': no_of_samples})
         if all(results):
             queue.put([True, workload])
         else:
             queue.put([False, f"S3bench workload for failed."
-                             f" Please read log file {log_path}"])
+                              f" Please read log file {log_path}"])
 
-    def perform_read_op(self, workload_info: list, queue, skipread: bool = True,
+    def perform_ops(self, workload_info: list, queue, skipread: bool = True,
                         validate: bool = True, skipcleanup: bool = False, loop=1):
         """
         Perform read operations
@@ -99,7 +100,8 @@ class DTM0TestLib:
         """
         results = list()
         log_path = None
-        for i in range(loop):
+        for iter_cnt in range(loop):
+            self.log.info("Iteration count: %s",iter_cnt)
             for workload in workload_info:
                 resp = s3bench.s3bench(self.access_key,
                                        self.secret_key,
