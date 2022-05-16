@@ -109,7 +109,7 @@ class HAK8s:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    LOGGER.info(f"Unable to get VM power status for {vm_name}")
+                    LOGGER.error("Unable to get VM power status for %s", vm_name)
                     return False
                 data = vm_info[1].split("\\n")
                 pw_state = ""
@@ -257,18 +257,17 @@ class HAK8s:
                         response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
                         LOGGER.debug("Delete multiple objects response %s", response)
                 return True, "Successfully performed Objects Delete operation"
-            else:
-                for details in s3_data.values():
-                    s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
-                                       access_key=details['accesskey'],
-                                       secret_key=details['secretkey'])
-                    response = s3_del.delete_all_buckets()
-                    if not response[0]:
-                        return response
-                    response = self.s3_rest_obj.delete_s3_account(details['user_name'])
-                    if not response[0]:
-                        return response
-                return True, "Successfully performed S3 operation clean up"
+            for details in s3_data.values():
+                s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
+                                   access_key=details['accesskey'],
+                                   secret_key=details['secretkey'])
+                response = s3_del.delete_all_buckets()
+                if not response[0]:
+                    return response
+                response = self.s3_rest_obj.delete_s3_account(details['user_name'])
+                if not response[0]:
+                    return response
+            return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
@@ -403,7 +402,7 @@ class HAK8s:
         LOGGER.info("Start the cluster")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
                                    read_lines=True, exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp))
+        LOGGER.debug("Cluster start response: %s", resp)
         if resp[0]:
             return True, resp
         return False, resp
@@ -679,12 +678,12 @@ class HAK8s:
         LOGGER.info("Start copy object to buckets: %s", list(bkt_obj_dict.keys()))
         for bkt_name, obj_name in bkt_obj_dict.items():
             try:
-                status, response = s3_test_obj.copy_object(source_bucket=bucket_name,
-                                                           source_object=object_name,
-                                                           dest_bucket=bkt_name,
-                                                           dest_object=obj_name)
-                LOGGER.info("Response: %s", response)
-                copy_etag = response['CopyObjectResult']['ETag']
+                response = s3_test_obj.copy_object(source_bucket=bucket_name,
+                                                   source_object=object_name,
+                                                   dest_bucket=bkt_name,
+                                                   dest_object=obj_name)
+                LOGGER.info("Response: %s", response[1])
+                copy_etag = response[1]['CopyObjectResult']['ETag']
                 if put_etag == copy_etag:
                     LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
                                 object_name, bkt_name, obj_name)
@@ -746,7 +745,7 @@ class HAK8s:
             LOGGER.info("Response: %s", res)
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        except (Exception, CTException) as error:
+        except CTException as error:
             LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
@@ -768,7 +767,7 @@ class HAK8s:
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
                 LOGGER.info("Uploaded part %s", i)
-            except BaseException as error:
+            except CTException as error:
                 LOGGER.error("Error: %s", error)
                 if event.is_set():
                     exp_failed_parts.append(i)
@@ -1245,9 +1244,12 @@ class HAK8s:
         if not resp[0]:
             LOGGER.error("Error: Failed to copy cluster.conf to local")
             return False, resp
-        conf_fd = open(local_conf, 'r')
-        data = yaml.safe_load(conf_fd)
-
+        try:
+            with open(local_conf, "r", encoding="utf-8") as file_data:
+                data = yaml.safe_load(file_data)
+        except IOError as error:
+            LOGGER.error("Error: Not able to read local config file")
+            return False, error
         return True, data
 
     @staticmethod
@@ -1289,17 +1291,17 @@ class HAK8s:
         """
         :param node_obj: Object for node
         :param source: Source of the event | monitor, ha, hare, etc.
-        :param resource_status: recovering, online, failed, un
-        nown, degraded, repairing,
+        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
         :param node_type: Type of the node (data, server)
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
-        :param delay: Delay between two events (Optional)
-        :param specific_info: Dictionary with Key-value pairs e.g. "generation_id": "xxxx"(Optional)
-        :param node_id: node_id of the pod (Optional)
-        :param resource_id: resource_id of the pod (Optional)
+        :keyword delay: Delay between two events (Optional)
+        :keyword specific_info: Dictionary with Key-value pairs e.g.
+        "generation_id": "xxxx"(Optional)
+        :keyword node_id: node_id of the pod (Optional)
+        :keyword resource_id: resource_id of the pod (Optional)
         Format of events file:
         {
         "events":
@@ -1375,7 +1377,7 @@ class HAK8s:
                 config_dict["events"][f"{count}"]["specific_info"] = specific_info
         if delay:
             config_dict["delay"] = delay
-        with open(config_json_file, "w") as outfile:
+        with open(config_json_file, "w", encoding="utf-8") as outfile:
             json.dump(config_dict, outfile)
         LOGGER.info("Publishing mock events: %s", config_dict)
         LOGGER.info("Get HA pod name for publishing event")
@@ -1451,7 +1453,8 @@ class HAK8s:
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1,
-                                          down_method=common_const.RESTORE_SCALE_REPLICAS):
+                                          down_method=common_const.RESTORE_SCALE_REPLICAS,
+                                          event=None):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status.
@@ -1460,6 +1463,8 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type).
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param event: Thread event to set/clear before/after pods/nodes
+        shutdown with parallel IOs
         return : tuple
         """
         if pod_prefix is None:
@@ -1482,6 +1487,9 @@ class HAK8s:
         LOGGER.info("Delete %s by %s method", delete_pods, down_method)
         for pod in delete_pods:
             hostname = master_node_obj.get_pod_hostname(pod_name=pod)
+            if event is not None:
+                LOGGER.debug("Setting the Thread event")
+                event.set()
             LOGGER.info("Deleting pod %s by %s method", pod, down_method)
             if down_method == common_const.RESTORE_SCALE_REPLICAS:
                 resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
@@ -1498,6 +1506,9 @@ class HAK8s:
                 pod_info[pod]['deployment_name'] = resp[2]
             pod_info[pod]['method'] = down_method
             pod_info[pod]['hostname'] = hostname
+            if event is not None:
+                LOGGER.debug("Clearing the Thread event")
+                event.clear()
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
