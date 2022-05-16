@@ -447,7 +447,7 @@ class TestClusterShutdownStart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = self.random_time.sample(range(1, total_parts+1), total_parts//2)
+        part_numbers = self.system_random.sample(range(1, total_parts+1), total_parts//2)
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
         if os.path.exists(self.multipart_obj_path):
@@ -653,7 +653,7 @@ class TestClusterShutdownStart:
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts+1))
-        self.random_time.shuffle(part_numbers)
+        self.system_random.shuffle(part_numbers)
         output = Queue()
         parts_etag = list()
         download_file = self.test_file + "_download"
