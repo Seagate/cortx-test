@@ -38,13 +38,12 @@ from comptests.s3.exceptions.s3_client_exception import S3ClientException
 
 class HttpClient:
     '''
-    Base HTTP client for CORTX utils.
-
-    Enable user to asynchronously send HTTP requests.
+     Base HTTP client for CORTX utils.
+     Enable user to asynchronously send HTTP requests.
     '''
     #pylint: disable-msg=too-many-arguments
     def __init__(
-        self, host: str = 'localhost', port: int = 8000,
+        self, host: str = 'localhost', port: int = 30080,
         tls_enabled: bool = False, ca_bundle: str = '',
         timeout: int = 5
     ) -> None:
@@ -63,7 +62,6 @@ class HttpClient:
         self._url = f"{'https' if tls_enabled else 'http'}://{host}:{port}"
         self._ssl_ctx = ssl.create_default_context(cafile=ca_bundle) if ca_bundle else False
         self._timeout = timeout
-
     @classmethod
     def http_date(cls) -> str:
         """
@@ -73,7 +71,6 @@ class HttpClient:
 
         now = gmtime()
         return strftime("%a, %d %b %Y %H:%M:%S +0000", now)
-
     #pylint: disable-msg=too-many-arguments
     async def request(
         self, verb: str, path: Optional[str] = None,
@@ -87,7 +84,7 @@ class HttpClient:
         :param path: server's URI to send the request to (e.g. /admin/user).
         :param headers: HTTP headers of the request.
         :param query_params: request parameters to be added into the query.
-        :param request_params: requst parameters to be added into the body.
+        :param request_params: request parameters to be added into the body.
         :returns: HTTP status and the body of the response.
         """
 
@@ -158,7 +155,6 @@ class S3Client(HttpClient):
         signature_bytes = base64.b64encode(secret_key_hmac).strip()
         signature = f"AWS {self._access_key_id}:{signature_bytes.decode('UTF-8')}"
         return signature
-
     #pylint: disable-msg=too-many-arguments
     async def signed_http_request(
         self, verb: str, path: str, headers: Dict[str, str] = None,
@@ -204,7 +200,6 @@ class RestApiRgw:
     SECRET_KEY = CMN_CFG["rgw_admin"]["secret_key"]
     HOST = CMN_CFG["nodes"][0]["hostname"]
     PORT = CMN_CFG["rgw_admin"]["port"]
-
     async def create_user(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
         Illustrate S3Client signed_http_request work.
@@ -218,7 +213,6 @@ class RestApiRgw:
             'PUT', params.IAM_USER, query_params=user_params)
         user_info = json.loads(body)
         return status, user_info
-
     async def delete_user(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
         Illustrate S3Client signed_http_request work.
@@ -228,6 +222,19 @@ class RestApiRgw:
 
         rgwcli = S3Client(
             self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
-        status, user_info = await rgwcli.signed_http_request(
+        status = await rgwcli.signed_http_request(
             'DELETE', params.IAM_USER, query_params=user_params)
+        return status
+
+    async def get_user_info(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
+        """
+        Illustrate S3Client signed_http_request work.
+        Create IAM user by specifying parameters, HTTP method and path.
+        :returns: HTTP status code and user information as parsed json.
+        """
+
+        rgwcli = S3Client(
+            self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
+        status, user_info = await rgwcli.signed_http_request(
+            'GET', params.IAM_USER, query_params=user_params)
         return status, user_info
