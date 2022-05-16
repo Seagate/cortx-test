@@ -533,6 +533,10 @@ class ProvDeployK8sCortxLib:
                                                       client_instance=self.client_instance)
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
+        # Update resources for thirdparty
+        resource_resp = self.update_resource_limit_thirdparty(filepath)
+        if not resource_resp:
+            return False, "Failed to update the resources for thirdparty"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, third_party_images_dict,
                                                         cortx_image=cortx_image,
@@ -1793,3 +1797,43 @@ class ProvDeployK8sCortxLib:
         string_alpha = generated_string[:string_len] + "-" + generated_string[string_len:]
         LOGGER.info("The string is %s and length is %s", string_alpha, len(string_alpha))
         return string_alpha
+
+    def update_resource_limit_thirdparty(self, filepath):
+        """
+        This Method is used to update the resource limits for third party services
+        file: solution.yaml file
+        returns True
+        """
+
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            common = parent_key['common']
+            resource = common['resource_allocation']
+            consul = resource['consul']
+            zookeeper = resource['zookeeper']['resources']
+            kafka = resource['kafka']['resources']
+            type_list = ['requests', 'limits']
+            consul_list = ['server', 'client']
+            third_party_resource = self.deploy_cfg['thirdparty_resource']
+            # updating the consul server /client request and limit resources
+            for res_type in type_list:
+                zookeeper[res_type]['memory'] = \
+                    third_party_resource['zookeeper'][res_type]['mem']
+                zookeeper[res_type]['cpu'] = \
+                    third_party_resource['zookeeper'][res_type]['cpu']
+                kafka[res_type]['memory'] = third_party_resource['kafka'][res_type]['mem']
+                kafka[res_type]['cpu'] = third_party_resource['kafka'][res_type]['cpu']
+                for elem in consul_list:
+                    consul[elem]['resources'][res_type]['memory'] = \
+                        third_party_resource[elem][res_type]['mem']
+                    consul[elem]['resources'][res_type]['cpu'] = \
+                        third_party_resource[elem][res_type]['cpu']
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, filepath
