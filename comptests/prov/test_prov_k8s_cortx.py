@@ -22,15 +22,30 @@
 
 import logging
 import pytest
+from http import HTTPStatus
+import os
+import time
+from requests.models import Response
+from random import SystemRandom
+from string import Template
 
 from commons import configmanager
 from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils import ext_lbconfig_utils
+from commons.utils import system_utils
+from commons.constants import Rest as const
 from config import CMN_CFG, PROV_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
+from libs.s3 import s3_misc
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_test_lib import S3TestLib
+from libs.csm.csm_interface import csm_api_factory
+from botocore.exceptions import ClientError
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
@@ -48,10 +63,15 @@ class TestProvK8Cortx:
     def setup_class(cls):
         """Setup class"""
         LOGGER.info("STARTED: Setup Module operations")
+        cls.log = logging.getLogger(__name__)
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.ha_obj = HAK8s()
         cls.dir_path = common_const.K8S_SCRIPTS_PATH
+        cls.s3_engine = int(os.getenv("S3_ENGINE", CMN_CFG["s3_engine"]))
+        cls.service_type = os.getenv("SERVICE_TYPE", cls.deploy_cfg["service_type"])
+        cls.created_iam_users = set()
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_iam_user.yaml")
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -65,6 +85,15 @@ class TestProvK8Cortx:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        LOGGER.info("checking")
+        cls.csm_obj = csm_api_factory("rest")
+        cls.cryptogen = SystemRandom()
+        cls.bucket_name = None
+        cls.user_id = None
+        cls.display_name = None
+        cls.test_file = None
+        cls.test_file_path = None
+        cls.file_size = cls.cryptogen.randrange(10, 100)
         LOGGER.info("Done: Setup operations finished.")
 
     # pylint: disable=R0915
@@ -420,3 +449,61 @@ class TestProvK8Cortx:
                                            data_disk_per_cvg=config['data_disk_per_cvg'],
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.master_node_list)
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-41569")
+    def test_41569(self, **kwargs):
+        run_basic_s3_io_flag = \
+            kwargs.get("run_basic_s3_io_flag", self.deploy_cfg['run_basic_s3_io_flag'])
+        run_s3bench_workload_flag = \
+            kwargs.get("run_s3bench_workload_flag",
+                       self.deploy_cfg['run_s3bench_workload_flag'])
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Get Access and Secret Key.")
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_ACCESS_KEY, read_lines=True)
+        access_key = "".join(resp).replace("\\n", "\n")
+        LOGGER.info(access_key)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_SECRET_KEY, read_lines=True)
+        secret_key = "".join(resp).replace("\\n", "\n")
+        LOGGER.info(secret_key)
+        LOGGER.info("Step 2: Fetch Interface IP, HTTP and HTTPS Ports.")
+        resp = system_utils.execute_cmd(cmd=commands.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+        LOGGER.info(resp)
+        eth1_ip = resp[1].strip("'\\n'b'")
+        LOGGER.info(eth1_ip)
+        if self.service_type == "NodePort":
+            resp = ext_lbconfig_utils.configure_nodeport_lb(self.master_node_list[0],
+                                                            self.deploy_cfg['iface'])
+            LOGGER.info(resp)
+            if not resp[0]:
+                LOGGER.debug("Did not get expected response: %s", resp)
+            ext_ip = resp[1]
+            LOGGER.info(ext_ip)
+            port = resp[2]
+            ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
+                                  ":{}".format(port)
+            LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
+        else:
+            LOGGER.info("Configure HAproxy on client")
+            ext_lbconfig_utils.configure_haproxy_rgwlb(self.master_node_list[0].hostname,
+                                                       self.master_node_list[0].username,
+                                                    self.master_node_list[0].password,
+                                                            eth1_ip, self.deploy_cfg['iface'])
+            ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
+            LOGGER.info("Configure AWS on Client")
+        resp = ProvDeployK8sCortxLib.aws_configure(s3_engine,endpoint,self.master_node_obj)
+        LOGGER.info(resp)
+
+        # resp = system_utils.execute_cmd(cmd=commands.CMD_AWS_INSTALL)
+        # LOGGER.debug("resp : %s", resp)
+        # if s3_engine == common_const.S3_ENGINE_RGW:
+        #     LOGGER.info("Configure AWS keys on Client %s", s3_engine)
+        #     resp = system_utils.execute_cmd(
+        #                     cmd=commands.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
+        #     LOGGER.debug("resp : %s", resp)
+        # else:
+        #     LOGGER.info("Configure AWS keys on Client %s")
+        #     resp = system_utils.execute_cmd(
+        #                     cmd=commands.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+        #     LOGGER.debug("resp : %s", resp)

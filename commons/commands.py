@@ -264,7 +264,8 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
-
+CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | head -1 | xargs -I{} kubectl exec -t {} -c cortx-rgw -- cat /etc/cortx/cluster.conf | grep auth_admin | head -2 | tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
+CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml | grep s3_auth_admin_secret: | cut -d ':' -f2"
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
 CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
