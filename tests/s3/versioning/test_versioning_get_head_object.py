@@ -36,7 +36,6 @@ from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import s3_utils
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
-from config.s3 import S3_VER_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
@@ -113,7 +112,8 @@ class TestVersioningGetHeadObject:
         self.log.info("STARTED: Test GET/HEAD Object for pre-existing object in versioned bucket.")
         versions = []
         self.log.info("Step 1: Upload object before enabling versioning and check object content")
-        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                          object_name=self.object_name,
                                           file_path=self.file_path1)
         assert_utils.assert_true(res[0], res[1])
         versions.append({"VersionId": "null", "ETag": res[1]["ETag"]})
@@ -346,7 +346,7 @@ class TestVersioningGetHeadObject:
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 3: Check GET/HEAD Object with non existent version id returns error")
         check_get_head_object_version(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                      object_name=self.object_name, 
+                                      object_name=self.object_name,
                                       version_id=non_existent_version_id,
                                       get_error_msg=errmsg.S3_VERSION_NOT_FOUND_GET_OBJ,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)

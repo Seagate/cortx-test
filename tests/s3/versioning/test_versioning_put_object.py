@@ -38,7 +38,6 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_versioning_common_test_lib import check_list_objects
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
-from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import upload_version
 
 

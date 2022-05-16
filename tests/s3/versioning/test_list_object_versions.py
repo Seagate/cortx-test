@@ -402,12 +402,12 @@ class TestListObjectVersions:
                           "non-existent key-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"KeyMarker": "nonexistent",
-                                                    "VersionIdMarker"=version_id},
+                                                    "VersionIdMarker": version_id},
                                        expected_versions={})
             self.log.info("Step 6: Test List Object Versions with valid version-id-marker and "
                           "valid key-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"KeyMarker": self.object_name1,
-                                                    "VersionIdMarker"=version_id},
+                                                    "VersionIdMarker": version_id},
                                        expected_versions=expected_versions)
         self.log.info("ENDED: Test List Object Versions with version-id-marker request parameter")

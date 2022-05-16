@@ -116,7 +116,7 @@ class S3VersioningTestLib(Versioning):
         List all the versions and delete markers present in a bucket.
 
         :param bucket_name: Target bucket for the List Object Versions call.
-        :param kwargs: Optional query args that can be supplied to the List Object Versions call 
+        :param kwargs: Optional query args that can be supplied to the List Object Versions call
             delimiter, encoding_type, key_marker, max_keys, prefix, version_id_marker
         :return: response
         """

@@ -38,7 +38,6 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_versioning_common_test_lib import create_s3_user_get_s3lib_object
-from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 
 
 class TestGetBucketVersioning:
