@@ -103,4 +103,15 @@ test_39923:
   num_clients: 2
   num_sample: 5
   obj_name_pref: "load_gen"
-
+test_41172:
+  min_users: 1
+  max_users: 1
+  max_size: 1024
+test_41173:
+  min_bucket: 1
+  max_bucket: 1
+  max_size: 1024
+test_41156:
+  min_users: 1
+  max_users: 1
+  max_size: 1024
