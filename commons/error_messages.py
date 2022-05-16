@@ -54,6 +54,10 @@ CORTX_ERR_COPY_OBJ_METADATA = ("An error occurred (InvalidRequest) when calling 
                                "storage class, website redirect location or encryption attributes.")
 RGW_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
 CORTX_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
+CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the GetObject operation: "
+                           "The requested range is not satisfiable")
+RGW_INVALD_BYTERANGE =("An error occurred (InvalidRange) when calling the GetObject operation: "
+                       "Unknown")
 
 ACCOUNT_ERR = "attempted to create an account that already exists"
 ACCESS_DENIED_ERR_KEY = "AccessDenied"
