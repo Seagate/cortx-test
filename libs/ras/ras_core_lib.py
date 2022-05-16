@@ -371,9 +371,9 @@ class RASCoreLib:
 
             LOGGER.debug("Failed to write data for %s", field)
             return False
-        else:
-            LOGGER.info("Please check path of storage_enclosure.sls")
-            return False
+
+        LOGGER.info("Please check path of storage_enclosure.sls")
+        return False
 
     def update_threshold_values(self, kv_store_path: str, field: str, value,
                                 update: bool = True) -> bool:
@@ -518,8 +518,8 @@ class RASCoreLib:
             return True, time_str
         elif int(time_lst[0][0]) < 3:
             return True, time_str
-        else:
-            return False, time_str
+
+        return False, time_str
 
     def restart_service(self, service_name: str) -> Tuple[bool, str]:
         """
@@ -641,7 +641,7 @@ class RASCoreLib:
         _ = self.node_utils.copy_file_to_local(remote_path=remote_file_path,
                                                local_path=local_path)
         for pattern in pattern_lst:
-            if pattern in open(local_path).read():
+            if pattern in open(local_path, encoding="utf-8").read():
                 response = pattern
             else:
                 LOGGER.info("Match not found : %s", pattern)

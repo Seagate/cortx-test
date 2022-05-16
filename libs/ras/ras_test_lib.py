@@ -90,9 +90,9 @@ class RASTestLib(RASCoreLib):
                                                            sspl_pass=sspl_pass)
             LOGGER.debug(cmd_output)
             return cmd_output
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
     def start_message_bus_reader_cmd(self) -> bool:
@@ -107,9 +107,9 @@ class RASTestLib(RASCoreLib):
             cmd_output = super().start_message_bus_reader_cmd()
             LOGGER.debug(cmd_output)
             return cmd_output
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
     def check_sspl_event_generated(self) -> Tuple[bool, Any]:
@@ -127,9 +127,9 @@ class RASTestLib(RASCoreLib):
             res = self.node_utils.execute_cmd(
                 cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
             LOGGER.info(res)
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.check_sspl_event_generated.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.check_sspl_event_generated.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return res
@@ -145,9 +145,9 @@ class RASTestLib(RASCoreLib):
         try:
             LOGGER.info("Check sspl status file")
             response = super().check_status_file()
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASCoreLib.check_status_file.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASCoreLib.check_status_file.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, response
@@ -166,9 +166,9 @@ class RASTestLib(RASCoreLib):
         try:
             LOGGER.info("Put expected value of %s in KV store", field)
             response = super().put_kv_store(username, pwd, field)
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASCoreLib.put_kv_store.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASCoreLib.put_kv_store.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return response
@@ -252,9 +252,9 @@ class RASTestLib(RASCoreLib):
             response = super().update_threshold_values(kv_store_path, field,
                                                        value, update=update)
             LOGGER.info(response)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.update_threshold_values.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.update_threshold_values.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True
@@ -276,9 +276,9 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Copy file resp : %s", res)
             res = self.truncate_file(file_path)
             LOGGER.info("Reset file resp : %s", res)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.reset_log_file.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.reset_log_file.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True
@@ -294,9 +294,9 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Getting the SSPL state")
             response = super().get_sspl_state()
             LOGGER.info(response)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_sspl_state.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_sspl_state.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return response
@@ -400,9 +400,9 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Disk fault generation status: %s", status)
                 time.sleep(common_cfg["one_min_delay"])
 
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.generate_disk_full_alert.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.generate_disk_full_alert.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return status, current_disk_usage
@@ -462,9 +462,9 @@ class RASTestLib(RASCoreLib):
 
             LOGGER.info(resp)
             return resp
-        except BaseException as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.list_alert_validation.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.list_alert_validation.__name__, error)
             return False, error
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
@@ -483,34 +483,25 @@ class RASTestLib(RASCoreLib):
             resp = self.health_obj.get_cpu_usage()
 
             current_cpu_usage = resp
-            LOGGER.info(
-                "Current cpu usage of server node %s is %s", self.host,
-                current_cpu_usage)
-            new_threshold_cpu_usage = float(
-                "{:.1f}".format(sum([resp, delta_cpu_usage])))
-            LOGGER.info(
-                "Setting new value of cpu_usage_threshold to %s on node "
-                "%s", new_threshold_cpu_usage, self.host)
+            LOGGER.info("Current cpu usage of server node %s is %s", self.host, current_cpu_usage)
+            new_threshold_cpu_usage = float("{:.1f}".format(sum([resp, delta_cpu_usage])))
+            LOGGER.info("Setting new value of cpu_usage_threshold to %s on node %s",
+                        new_threshold_cpu_usage, self.host)
 
-            resp = self.update_threshold_values(
-                cmn_cons.KV_STORE_DISK_USAGE,
-                cmn_cons.CPU_USAGE_KEY,
-                new_threshold_cpu_usage)
+            resp = self.update_threshold_values(cmn_cons.KV_STORE_DISK_USAGE,
+                                                cmn_cons.CPU_USAGE_KEY, new_threshold_cpu_usage)
 
-            LOGGER.info("Updated server cpu_usage_threshold to %s",
-                        new_threshold_cpu_usage)
+            LOGGER.info("Updated server cpu_usage_threshold to %s", new_threshold_cpu_usage)
 
             LOGGER.info("Restarting sspl service on node %s", self.host)
-            self.health_obj.restart_pcs_resource(
-                common_cfg["sspl_resource_id"])
-            LOGGER.info(
-                "Sleeping for %s seconds after restarting sspl service",
-                common_cfg["sleep_val"])
+            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            LOGGER.info("Sleeping for %s seconds after restarting sspl service",
+                        common_cfg["sleep_val"])
             time.sleep(common_cfg["sleep_val"])
 
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.generate_cpu_usage_alert.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.generate_cpu_usage_alert.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return resp
@@ -532,39 +523,29 @@ class RASTestLib(RASCoreLib):
         try:
             common_cfg = RAS_VAL["ras_sspl_alert"]
             host = host if host else self.host
-            LOGGER.info(
-                "Fetching memory usage from server node %s", host)
+            LOGGER.info("Fetching memory usage from server node %s", host)
             resp = self.health_obj.get_memory_usage()
 
             current_mem_usage = resp
-            LOGGER.info(
-                "Current memory usage of server node %s is %s", host,
-                current_mem_usage)
-            new_threshold_mem_usage = float(
-                "{:.1f}".format(sum([resp, delta_mem_usage])))
-            LOGGER.info(
-                "Setting new value of host_memory_usage_threshold to %s on "
-                "node %s", new_threshold_mem_usage, host)
+            LOGGER.info("Current memory usage of server node %s is %s", host, current_mem_usage)
+            new_threshold_mem_usage = float("{:.1f}".format(sum([resp, delta_mem_usage])))
+            LOGGER.info("Setting new value of host_memory_usage_threshold to %s on node %s",
+                        new_threshold_mem_usage, host)
 
-            resp = self.update_threshold_values(
-                cmn_cons.KV_STORE_DISK_USAGE,
-                cmn_cons.MEM_USAGE_KEY,
-                new_threshold_mem_usage)
+            resp = self.update_threshold_values(cmn_cons.KV_STORE_DISK_USAGE,
+                                                cmn_cons.MEM_USAGE_KEY, new_threshold_mem_usage)
 
-            LOGGER.info("Updated server host_memory_usage_threshold to "
-                        "%s", new_threshold_mem_usage)
+            LOGGER.info("Updated server host_memory_usage_threshold to %s", new_threshold_mem_usage)
 
             LOGGER.info("Restarting sspl service on node %s", host)
-            self.health_obj.restart_pcs_resource(
-                common_cfg["sspl_resource_id"])
-            LOGGER.info(
-                "Sleeping for %s seconds after restarting sspl service",
-                common_cfg["sleep_val"])
+            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            LOGGER.info("Sleeping for %s seconds after restarting sspl service",
+                        common_cfg["sleep_val"])
             time.sleep(common_cfg["sleep_val"])
 
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.generate_cpu_usage_alert.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.generate_cpu_usage_alert.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return resp
@@ -587,11 +568,11 @@ class RASTestLib(RASCoreLib):
             self.node_utils.write_remote_file_to_local_file(
                 mdadm_conf_path,
                 local_path)
-            with open(local_path, "r") as f_pointer:
+            with open(local_path, "r", encoding="utf-8") as f_pointer:
                 mdadm_conf = f_pointer.read()
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.update_mdadm_config.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.update_mdadm_config.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return mdadm_conf
@@ -616,8 +597,7 @@ class RASTestLib(RASCoreLib):
         if not disks:
             return False, "Please provide disk from RAID device e.g., /dev/sd??"
         try:
-            create_mdraid_cmd = common_commands.MDADM_CREATE_ARRAY.format(
-                md_device, len(disks))
+            create_mdraid_cmd = common_commands.MDADM_CREATE_ARRAY.format(md_device, len(disks))
             mdadm_args = [create_mdraid_cmd]
             for disk in disks:
                 mdadm_args.append(disk)
@@ -627,21 +607,18 @@ class RASTestLib(RASCoreLib):
             LOGGER.info(md_stat)
             if os.path.basename(
                     md_device) in md_stat["devices"] and md_device in mdadm_conf:
-                md_stat_disks = md_stat["devices"][os.path.basename(
-                    md_device)]["disks"]
-                disk_flag = [
-                    True for disk in disks if os.path.basename(disk) in md_stat_disks]
+                md_stat_disks = md_stat["devices"][os.path.basename(md_device)]["disks"]
+                disk_flag = [True for disk in disks if os.path.basename(disk) in md_stat_disks]
                 if all(disk_flag):
                     return True, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.create_mdraid_disk_array.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.create_mdraid_disk_array.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return False, md_stat
 
-    def assemble_mdraid_device(
-            self, md_device: str) -> Tuple[bool, Union[str, dict]]:
+    def assemble_mdraid_device(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method re-assembles/restarts the given MDRAID device on the given host.
 
@@ -649,9 +626,7 @@ class RASTestLib(RASCoreLib):
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
-        LOGGER.info(
-            "Assembling the MDRAID device %s on the host %s", md_device,
-            self.host)
+        LOGGER.info("Assembling the MDRAID device %s on the host %s", md_device, self.host)
         try:
             assemble_arg = common_commands.MDADM_ASSEMBLE
             mdadm_args = [assemble_arg, md_device]
@@ -660,16 +635,14 @@ class RASTestLib(RASCoreLib):
             LOGGER.info(md_stat)
             if os.path.basename(md_device) in md_stat["devices"]:
                 return True, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.assemble_mdraid_device.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.assemble_mdraid_device.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return False, md_stat
 
-    def stop_mdraid_device(
-            self,
-            md_device: str) -> Tuple[bool, Union[str, dict]]:
+    def stop_mdraid_device(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method stops the given MDRAID device on the given host.
 
@@ -677,9 +650,7 @@ class RASTestLib(RASCoreLib):
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
-        LOGGER.info(
-            "Stopping the MDRAID device %s on the host %s", md_device,
-            self.host)
+        LOGGER.info("Stopping the MDRAID device %s on the host %s", md_device, self.host)
         try:
             stop_arg = common_commands.MDADM_STOP
             mdadm_args = [stop_arg, md_device]
@@ -688,17 +659,14 @@ class RASTestLib(RASCoreLib):
             LOGGER.info(md_stat)
             if os.path.basename(md_device) in md_stat["devices"]:
                 return False, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.stop_mdraid_device.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.stop_mdraid_device.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, md_stat
 
-    def fail_disk_mdraid(
-            self,
-            md_device: str,
-            disk: str) -> Tuple[bool, Union[str, dict]]:
+    def fail_disk_mdraid(self, md_device: str, disk: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method simulates disk failure from a given MRAID device.
 
@@ -708,8 +676,7 @@ class RASTestLib(RASCoreLib):
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
-        LOGGER.info(
-            "Declaring Disk %s from RAID device %s as faulty", disk, md_device)
+        LOGGER.info("Declaring Disk %s from RAID device %s as faulty", disk, md_device)
         try:
             manage_arg = common_commands.MDADM_MANAGE
             fail_arg = common_commands.MDADM_FAIL
@@ -720,17 +687,14 @@ class RASTestLib(RASCoreLib):
             if md_stat["devices"][os.path.basename(
                     md_device)]["disks"][os.path.basename(disk)]["faulty"]:
                 return True, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.fail_disk_mdraid.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.fail_disk_mdraid.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return False, md_stat
 
-    def remove_faulty_disk(
-            self,
-            md_device: str,
-            disk: str) -> Tuple[bool, Union[str, dict]]:
+    def remove_faulty_disk(self, md_device: str, disk: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method removes given faulty disk from the given MRAID device.
 
@@ -739,8 +703,7 @@ class RASTestLib(RASCoreLib):
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
-        LOGGER.info(
-            "Removing Disk %s from RAID device %s", disk, md_device)
+        LOGGER.info("Removing Disk %s from RAID device %s", disk, md_device)
         try:
             manage_arg = common_commands.MDADM_MANAGE
             remove_arg = common_commands.MDADM_REMOVE
@@ -752,17 +715,14 @@ class RASTestLib(RASCoreLib):
             if os.path.basename(
                     disk) in md_stat["devices"][os.path.basename(md_device)]["disks"]:
                 return False, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.remove_faulty_disk.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.remove_faulty_disk.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, md_stat
 
-    def add_disk_mdraid(
-            self,
-            md_device: str,
-            disk: str) -> Tuple[bool, dict]:
+    def add_disk_mdraid(self, md_device: str, disk: str) -> Tuple[bool, dict]:
         """
         Method adds new disk to the given MRAID device.
 
@@ -771,8 +731,7 @@ class RASTestLib(RASCoreLib):
         :return: True/False and mdstat response
         :rtype: bool, dict
         """
-        LOGGER.info(
-            "Adding Disk %s to the RAID device %s", disk, md_device)
+        LOGGER.info("Adding Disk %s to the RAID device %s", disk, md_device)
         try:
             manage_arg = common_commands.MDADM_MANAGE
             add_arg = common_commands.MDADM_ADD
@@ -784,15 +743,14 @@ class RASTestLib(RASCoreLib):
             if os.path.basename(
                     disk) in md_stat["devices"][os.path.basename(md_device)]["disks"]:
                 return True, md_stat
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.add_disk_mdraid.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.add_disk_mdraid.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return False, md_stat
 
-    def remove_mdraid_disk_array(
-            self, md_device: str) -> Tuple[bool, Union[str, dict]]:
+    def remove_mdraid_disk_array(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method removes given MDRAID array device anc cleanup all the disks
          from array
@@ -808,19 +766,16 @@ class RASTestLib(RASCoreLib):
             if os.path.basename(md_device) not in md_stat["devices"]:
                 return False, f"{md_device} device not found: {md_stat}"
 
-            disks = md_stat["devices"][os.path.basename(
-                md_device)]["disks"].keys()
-            LOGGER.info(
-                "Removing MDRAID array device %s with disks %s on the host "
-                "%s", md_device, disks, self.host)
+            disks = md_stat["devices"][os.path.basename(md_device)]["disks"].keys()
+            LOGGER.info("Removing MDRAID array device %s with disks %s on the host %s",
+                        md_device, disks, self.host)
             stop_device = self.stop_mdraid_device(md_device)
             if not stop_device[0]:
                 return stop_device
             mdadm_conf = self.update_mdadm_config()
 
-            LOGGER.info(
-                "Performing cleanup and deleting superblock from disks %s on "
-                "the host %s", disks, self.host)
+            LOGGER.info("Performing cleanup and deleting superblock from disks %s on the host %s",
+                        disks, self.host)
             for disk in disks:
                 disk_path = f"/dev/{disk}"
                 LOGGER.info("Deleting superblock from disk %s", disk_path)
@@ -835,9 +790,9 @@ class RASTestLib(RASCoreLib):
                 time.sleep(RAS_VAL["ras_sspl_alert"]["disk_clean_time"])
                 self.node_utils.kill_remote_process(
                     common_commands.KILL_WIPE_DISK_PROCESS)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.remove_mdraid_disk_array.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.remove_mdraid_disk_array.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, mdadm_conf
@@ -853,9 +808,9 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Getting the SSPL state")
             response = super().get_sspl_state_pcs()
             LOGGER.info(response)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_sspl_state.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_sspl_state.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return response
@@ -871,24 +826,21 @@ class RASTestLib(RASCoreLib):
             status_file = RAS_VAL["ras_sspl_alert"]["file"]["selinux_status"]
             local_path = status_file
             cmd = common_commands.SELINUX_STATUS_CMD.format(status_file)
-            resp = self.node_utils.execute_cmd(
-                cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
+            resp = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
             LOGGER.info(resp)
-            self.node_utils.copy_file_to_local(remote_path=status_file,
-                                               local_path=local_path)
-
+            self.node_utils.copy_file_to_local(remote_path=status_file, local_path=local_path)
             LOGGER.info(resp)
 
-            f_pointer = open(local_path, "r")
+            f_pointer = open(local_path, "r", encoding="utf-8")
             string = ""
             for line in f_pointer:
                 if "SELinux status" in line:
                     string = line.split()[-1]
                     if string == "enabled":
                         status = True
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_string_from_file.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_string_from_file.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return status, string
@@ -915,9 +867,9 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Copy modified Selinux file to remote.")
             self.node_utils.copy_file_to_remote(
                 local_path=local_path, remote_path=cmn_cons.SELINUX_FILE_PATH)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.modify_selinux_file.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.modify_selinux_file.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, "Modified file successfully"
@@ -930,9 +882,9 @@ class RASTestLib(RASCoreLib):
         """
         try:
             return super().get_fan_name()
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_fan_name.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_fan_name.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
     def check_sspl_log(self, exp_string: str, filepath: str) -> bool:
@@ -1046,7 +998,7 @@ class RASTestLib(RASCoreLib):
             resp_lst.append(False)
             return resp_lst
         # Read the remote file contents
-        with open(local_file_path, "r") as f_pointer:
+        with open(local_file_path, "r", encoding="utf-8") as f_pointer:
             for line in f_pointer:
                 if any(x in line for x in pattern_lst):
                     resp_lst.append(True)
@@ -1059,7 +1011,7 @@ class RASTestLib(RASCoreLib):
 
         return resp_lst
 
-    def sspl_log_collect(self) -> Tuple[bool, str]:
+    def sspl_log_collect(self) -> Tuple[bool, tuple]:
         """
         Function starts the collection of SSPl logs.
 
@@ -1075,15 +1027,14 @@ class RASTestLib(RASCoreLib):
                                                 password=self.pwd,
                                                 read_lines=True, shell=False)
             LOGGER.info("Started collection of sspl logs")
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_fan_name.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_fan_name.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, response
 
-    def update_enclosure_values(
-            self, enclosure_vals: dict) -> Tuple[bool, dict]:
+    def update_enclosure_values(self, enclosure_vals: dict) -> Tuple[bool, dict]:
         """
         This will update values for enclosure in yaml/json file using conf store
         :param enclosure_vals: dict of {field: value}
@@ -1098,17 +1049,15 @@ class RASTestLib(RASCoreLib):
             enclosure_vals['CONF_SECONDARY_IP'] = CMN_CFG["enclosure"]["secondary_enclosure_ip"]
             enclosure_vals['CONF_SECONDARY_PORT'] = 80
             enclosure_vals['CONF_ENCL_USER'] = CMN_CFG["enclosure"]["enclosure_user"]
-            secret_key = self.encrypt_password_secret(
-                CMN_CFG["enclosure"]["enclosure_pwd"])[1]
+            secret_key = self.encrypt_password_secret(CMN_CFG["enclosure"]["enclosure_pwd"])[1]
             enclosure_vals['CONF_ENCL_SECRET'] = secret_key
 
             self.set_conf_store_vals(url=url, encl_vals=enclosure_vals)
-            controller_vals = self.get_conf_store_enclosure_vals(
-                field='controller')
+            controller_vals = self.get_conf_store_enclosure_vals(field='controller')
             LOGGER.info("Updated values are : %s", controller_vals)
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.update_enclosure_values.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.update_enclosure_values.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0]) from error
 
         return True, controller_vals
@@ -1183,6 +1132,7 @@ class RASTestLib(RASCoreLib):
 
         return c_dict
 
+    # pylint: disable=too-many-return-statements
     def get_node_drive_details(self, check_drive_count: bool = False):
         """
         Function to get details of the drives connected to node
@@ -1243,9 +1193,9 @@ class RASTestLib(RASCoreLib):
             resp = os.popen(cmd=cmd).read()
             drive_name = resp.strip()
             return True, drive_name, host_num, drive_count
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_node_drive_details.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_node_drive_details.__name__, error)
             return False, error
         finally:
             if os.path.exists(localpath):
@@ -1284,9 +1234,9 @@ class RASTestLib(RASCoreLib):
                 return False, "Invalid Sensor Type"
 
             return True, all_types
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_ipmi_sensor_list.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_ipmi_sensor_list.__name__, error)
             return False, error
 
     def get_ipmi_sensor_states(self, sensor_name: str) -> list:
@@ -1296,15 +1246,13 @@ class RASTestLib(RASCoreLib):
         :return: List of states for given sensor
         """
         try:
-            LOGGER.info(
-                "Fetching all sensor states for sensor %s",
-                sensor_name)
+            LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
             sensor_name = f"'{sensor_name}'"
             output = super().get_ipmi_sensor_states(sensor_name)
             sensor_states = [state.strip().lower() for state in output[2:]]
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_ipmi_sensor_states.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_ipmi_sensor_states.__name__, error)
             return False, error
 
         return sensor_states
@@ -1322,9 +1270,7 @@ class RASTestLib(RASCoreLib):
         :return: response of assert or deassert sensor state
         """
         try:
-            LOGGER.info(
-                "Fetching all sensor states for sensor %s",
-                sensor_name)
+            LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
             sensor_name = f"'{sensor_name}'"
             sensor_state = f"'{sensor_state}'"
             output = super().assert_deassert_sensor_state(
@@ -1336,9 +1282,9 @@ class RASTestLib(RASCoreLib):
                 return True, event_details
 
             return False, output
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.assert_deassert_sensor_state.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.assert_deassert_sensor_state.__name__, error)
             return False, error
 
     def get_nw_infc_names(self, node_num):
@@ -1364,9 +1310,9 @@ class RASTestLib(RASCoreLib):
                     i_p)]] = infc_name
 
             return True, network_interfaces
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_nw_infc_names.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_nw_infc_names.__name__, error)
             return False, error
 
     def get_raid_arrays(self) -> Tuple[bool, list]:
@@ -1381,11 +1327,12 @@ class RASTestLib(RASCoreLib):
             arrays = list(filter(None, resp))
             LOGGER.debug("Response: %s", resp)
             return True, arrays
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_raid_arrays.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_raid_arrays.__name__, error)
             return False, error
 
+    # pylint: disable=too-many-nested-blocks
     def get_raid_array_details(self) -> Tuple[bool, dict]:
         """
         Function to get details of the raid arrays of node
@@ -1416,9 +1363,9 @@ class RASTestLib(RASCoreLib):
                     else:
                         continue
             return True, md_arrays
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_raid_array_details.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_raid_array_details.__name__, error)
             return False, error
 
     def check_raid_array_state(self) -> Tuple[bool, dict]:
@@ -1429,7 +1376,7 @@ class RASTestLib(RASCoreLib):
         'Active'}, 'md2': {'state': 'Degraded'}})
         """
         try:
-            md_arrays = {}
+            md_arrays = dict()
             LOGGER.info("Getting raid array names")
             resp = self.get_raid_arrays()
             if not resp[0]:
@@ -1446,9 +1393,9 @@ class RASTestLib(RASCoreLib):
                 else:
                     md_arrays[m_ar]["state"] = "Active"
             return True, md_arrays
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.check_raid_array_state.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.check_raid_array_state.__name__, error)
             return False, error
 
     def get_drive_partition_details(self, filepath: str, drive: str) -> \
@@ -1467,7 +1414,7 @@ class RASTestLib(RASCoreLib):
                 os.remove(local_path)
             self.node_utils.copy_file_to_local(filepath, local_path)
             LOGGER.info("Extract Linux RAID partitions of drive %s", drive)
-            f_p = open(local_path, 'r')
+            f_p = open(local_path, 'r', encoding="utf-8")
             resp = (f_p.read()).split('\n')
             resp = list(filter(None, resp))
             raid_parts = []
@@ -1481,9 +1428,9 @@ class RASTestLib(RASCoreLib):
 
             LOGGER.debug("Response: %s", raid_parts)
             return True, raid_parts
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_drive_partition_details.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_drive_partition_details.__name__, error)
             return False, error
         finally:
             if os.path.exists(local_path):
@@ -1500,11 +1447,12 @@ class RASTestLib(RASCoreLib):
             resp = self.node_utils.execute_cmd(cmd=cmd)
             drive_name = resp.decode('utf-8').replace('\n', '')
             return True, drive_name
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.get_drive_by_hostnum.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.get_drive_by_hostnum.__name__, error)
             return False, error
 
+    # pylint: disable=too-many-nested-blocks
     def add_raid_partitions(self, alert_lib_obj, alert_type, raid_parts: list,
                             md_arrays: dict) -> Tuple[bool, dict]:
         """
@@ -1542,7 +1490,7 @@ class RASTestLib(RASCoreLib):
                 return resp
             new_md_arrays = resp[1]
             return True, new_md_arrays
-        except Exception as error:
-            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
-                         RASTestLib.add_raid_partitions.__name__, error)
+        except (OSError, IOError) as error:
+            LOGGER.exception("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                             RASTestLib.add_raid_partitions.__name__, error)
             return False, error
