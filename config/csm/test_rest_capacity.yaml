@@ -103,21 +103,4 @@ test_39923:
   num_clients: 2
   num_sample: 5
   obj_name_pref: "load_gen"
-test_41127:
-  max_size: 5G
-test_41128:
-  max_size: 5G
-test_41151:
-  max_size: 5G
-test_41746:
-  max_size: 5G
-test_41750:
-  max_size: 5G
-test_41756:
-  max_size: 5G
-test_41757:
-  max_size: 5G
-test_41758:
-  max_size: 5G
-test_41954:
-  max_size: 5G
+

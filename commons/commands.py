@@ -329,7 +329,6 @@ CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACC
 CMD_AWS_CONF_KEYS_RGW = "make aws-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} " \
                         "endpoint={}"
 CMD_AWSCLI_CONF = "aws configure"
-CMD_AWSCLI_READABLE = "aws s3 ls s3://{} --recursive --human-readable --summarize"
 # Upload directory recursively to s3.
 CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
 CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
