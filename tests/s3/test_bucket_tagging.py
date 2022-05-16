@@ -555,9 +555,9 @@ class TestBucketTagging:
                 self.bucket_name, "testkey", "testval")
             self.log.info(resp)
             if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-                assert_utils.assert_false(resp[0], resp[1])
-            else:
                 assert_utils.assert_true(resp[0], resp[1])
+            else:
+                assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
             if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
