@@ -24,6 +24,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons import error_messages as errmsg
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
@@ -553,13 +554,21 @@ class TestBucketTagging:
             resp = self.tag_obj.set_bucket_tag_duplicate_keys(
                 self.bucket_name, "testkey", "testval")
             self.log.info(resp)
-            assert_utils.assert_false(resp[0], resp[1])
+            if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert_utils.assert_false(resp[0], resp[1])
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, str(error.message), error.message)
-        self.log.info(
-            "Step 2: Setting bucket tags with duplicate keys failed with %s",
-            "MalformedXML")
+            if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                self.log.error(
+                    "Step 2: Setting bucket tags with duplicate keys failed with %s",
+                    error.message)
+            else:
+                assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, str(error.message), error.message)
+                self.log.info(
+                    "Step 2: Setting bucket tags with duplicate keys failed with %s",
+                    "   MalformedXML")
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 
     @pytest.mark.parallel
