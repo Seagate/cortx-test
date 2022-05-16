@@ -704,12 +704,12 @@ class TestCapacityQuota():
             resp = self.csm_obj.get_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["user"][0]["uid"]
+            uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
             t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
             t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
             m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
 
-            assert_utils.assert_equals(user_id, uid, "uid is not equal")
+            assert_utils.assert_equals(user_id, uid, "id is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
             assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
             assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
@@ -775,7 +775,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["uid"]
+        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
         m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
@@ -853,7 +853,7 @@ class TestCapacityQuota():
             resp = self.csm_obj.get_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["user"][0]["uid"]
+            uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
             t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
             t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
             m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
