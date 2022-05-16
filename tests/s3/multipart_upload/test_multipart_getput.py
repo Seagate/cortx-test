@@ -729,11 +729,15 @@ class TestMultipartUploadGetPut:
                                                               is_part_upload=True, parts=parts,
                                                               is_lst_complete_mpu=True)
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
-        status, put_etag = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
+        status, put_res = self.s3_test_obj.put_object(self.bucket_name, self.object_name,
                                                        self.mp_obj_path)
-        assert_utils.assert_true(status, put_etag)
-        self.log.info("Put object ETag: %s", put_etag)
-        self.compare_checksums(put_etag, resp[1]["ETag"])
+        assert_utils.assert_true(status, put_res)
+        self.log.info("Put object ETag: %s", put_res["ETag"])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1]:
+            self.log.error("Failed to list the uploaded object")
+        self.log.info("Check that ETag is for simple uploaded object")
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, put_res["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -813,9 +817,10 @@ class TestMultipartUploadGetPut:
         random.shuffle(keys)
         object_put = self.object_name + "put"
         process_mpu = multiprocessing.Process(target=self.initiate_multipart,
-                                args=(self.bucket_name, self.object_name),
-                                kwargs={"parts": uploaded_parts,
-                                        "is_part_upload":True, "is_lst_complete_mpu":True})
+                                              args=(self.bucket_name, self.object_name),
+                                              kwargs={"parts": uploaded_parts,
+                                                      "is_part_upload": True,
+                                                      "is_lst_complete_mpu": True})
         process_put = multiprocessing.Process(target=self.s3_test_obj.put_object,
                                               args=(self.bucket_name, self.object_name+str("put"),
                                                     self.mp_obj_path))
