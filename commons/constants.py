@@ -474,3 +474,8 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+
+
+# Procpath Collection
+PID_WATCH_LIST = ['m0d', 'radosgw', 'hax']
+REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
