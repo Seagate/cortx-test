@@ -297,7 +297,8 @@ class TestVersioningGetHeadObject:
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[0]["ETag"])
         download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path1)
         self.log.info("Step 8: Upload a new version for the object and check object content")
-        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                          object_name=self.object_name,
                                           file_path=self.file_path2)
         assert_utils.assert_true(res[0], res[1])
         download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
