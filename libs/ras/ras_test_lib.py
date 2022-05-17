@@ -35,8 +35,10 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.helpers.node_helper import Node
 from commons.utils import system_utils as sys_utils
-from commons.utils.config_utils import get_config, update_cfg_based_on_separator
-from config import CMN_CFG, RAS_VAL
+from commons.utils.config_utils import get_config
+from commons.utils.config_utils import update_cfg_based_on_separator
+from config import CMN_CFG
+from config import RAS_VAL
 from libs.ras.ras_core_lib import RASCoreLib
 
 # Global Constants

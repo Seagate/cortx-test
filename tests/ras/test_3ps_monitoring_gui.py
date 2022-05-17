@@ -32,7 +32,8 @@ from commons.constants import SSPL_CFG_URL
 from commons.constants import SwAlerts as const
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from config import CMN_CFG, RAS_VAL
+from config import CMN_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert

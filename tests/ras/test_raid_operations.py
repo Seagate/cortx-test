@@ -29,7 +29,8 @@ import pytest
 
 from commons import commands as common_cmds
 from commons import constants as common_cons
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health

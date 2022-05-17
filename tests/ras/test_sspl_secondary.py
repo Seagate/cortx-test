@@ -32,7 +32,9 @@ from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.s3 import S3H_OBJ

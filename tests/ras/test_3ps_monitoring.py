@@ -33,7 +33,8 @@ from commons.constants import SwAlerts as const
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from config import CMN_CFG, RAS_VAL
+from config import CMN_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
@@ -269,8 +270,8 @@ class Test3PSvcMonitoring:
         """
         starttime = time.time()
         LOGGER.info("Step 1: Stopping multiple randomly selected services")
-        num_services =self.system_random.randint(0, len(self.external_svcs))
-        random_services =self.system_random.sample(self.external_svcs, num_services)
+        num_services = self.system_random.randint(0, len(self.external_svcs))
+        random_services = self.system_random.sample(self.external_svcs, num_services)
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
         LOGGER.info("Checking that %s services are in stopped state",
                     random_services)

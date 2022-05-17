@@ -28,10 +28,13 @@ import pytest
 
 from commons import constants as cons
 from commons import cortxlogging
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.constants import SwAlerts as const
 from commons.utils import config_utils
-from commons.utils.system_utils import create_file, path_exists, make_dirs
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import path_exists
 from config import CMN_CFG
 from config import RAS_TEST_CFG
 from config import RAS_VAL

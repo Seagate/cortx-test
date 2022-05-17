@@ -30,7 +30,8 @@ import pytest
 
 from commons import commands as common_cmd
 from commons import constants as cons
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.bmc_helper import Bmc
@@ -39,7 +40,9 @@ from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.s3 import S3H_OBJ
@@ -1887,8 +1890,7 @@ class TestServerFruAlerts:
             LOGGER.info("Step 6: Verifying alert logs for get alert ")
             alert_list = [test_cfg["resource_type"],
                           self.alert_types["resolved"], fault_res_desc]
-            resp = ast.literal_eval("srv{}_ras.list_alert_validation({})".format(
-                other_node, alert_list))
+            resp = ast.literal_eval(f"srv{other_node}_ras.list_alert_validation({alert_list})")
             assert_utils.assert_true(resp[0], f"Step 6: Expected alert not found. Error: {resp[1]}")
 
             LOGGER.info("Step 6: Successfully checked generated alert logs. "
