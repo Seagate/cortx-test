@@ -268,6 +268,9 @@ def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwa
     return True
 
 def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get object name and size from aws
+    """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
@@ -290,5 +293,8 @@ def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
     return return_dict
 
 def get_objects_size_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get total number of objects and total size from aws
+    """
     resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
     return len(resp.keys()), sum(resp.values())

@@ -659,15 +659,18 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size/random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
-        for _ in range(0, num_objects):
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
-        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, 
-                        self.akey, self.skey)
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                   self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
@@ -702,15 +705,18 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
-        for _ in range(0, num_objects):
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
-        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, 
-            self.akey, self.skey)
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                 self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id, 
@@ -746,15 +752,18 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
-        for _ in range(0, num_objects):
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
-        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, 
-                             self.akey, self.skey)
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                    self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id,
@@ -791,7 +800,10 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
-        for _ in range(0, num_objects):
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
@@ -806,6 +818,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                         "Status code check failed for user deletion")
+        if CSM_REST_CFG["msg_check"] == "enable":
         #TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -826,7 +839,10 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
-        for _ in range(0, num_objects):
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
@@ -841,6 +857,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                  "Status code check failed for user deletion")
+        if CSM_REST_CFG["msg_check"] == "enable":
         # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -852,7 +869,7 @@ class TestCapacityQuota():
     @pytest.mark.tags('TEST-41128')
     def test_41128(self):
         """
-        Test GET capacity stats for delete IAM , Purge True user using admin users
+        Test get capacity usage stats API for user with set quota API
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -860,6 +877,8 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size/random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 2: Perform PUT API to set user level quota")
         payload = self.csm_obj.iam_user_quota_payload()
@@ -871,8 +890,8 @@ class TestCapacityQuota():
         res = self.csm_obj.verify_max_size(available_size, self.akey, self.skey)
         assert res[0], res[1]
         self.log.info("Step 3: Get capacity count from AWS")
-        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, 
-                   self.akey, self.skey)
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
@@ -899,7 +918,7 @@ class TestCapacityQuota():
     @pytest.mark.tags('TEST-41151')
     def test_41151(self):
         """
-        Test GET capacity stats for create IAM user and Put objects using manage users
+        Test get capacity usage stats API for Invalid/empty fields.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -907,8 +926,11 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
-        for _ in range(0, num_objects):
+        for num in range(0, num_objects):
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
@@ -919,6 +941,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                               "Status code check failed for get capacity")
+        if CSM_REST_CFG["msg_check"] == "enable":
         # TODO: Error code and message check part
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
@@ -926,6 +949,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
+        if CSM_REST_CFG["msg_check"] == "enable":
         # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -945,6 +969,8 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Creating IAM users with different tenant")
         for cnt in range(test_cfg["num_tenants"]):
@@ -966,13 +992,14 @@ class TestCapacityQuota():
             bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
             assert bucket_created, "Failed to create bucket"
             self.log.info("Step 3: Create N objects of total size S")
-            for _ in range(0, num_objects):
+            for num in range(0, num_objects):
+                self.log.info("Creatinh object number %s", num)
                 resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                                   self.akey, self.skey, object_size=random_size)
                 assert resp, "Put object Failed"
             self.log.info("Step 3: Get capacity count from AWS")
-            total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, 
-                         self.akey, self.skey)
+            total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                             self.akey, self.skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_capacity_usage("user", self.user_id)
@@ -1007,15 +1034,18 @@ class TestCapacityQuota():
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1,available_size)
         num_objects = math.floor(available_size / random_size)
+        self.log.info("Random size generated is: %s", random_size)
+        self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
-        for _ in range(0, num_objects):
+        for num in range(0, num_objects):
+            self.log.info("Creatinh object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
-                         self.akey, self.skey)
+                           self.akey, self.skey)
 
         resp = self.awscli_s3api_obj.list_objects_v2(self.bucket)
         assert resp[0], resp[1]
