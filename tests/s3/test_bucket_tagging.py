@@ -24,6 +24,7 @@ import time
 import logging
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons import error_messages as errmsg
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
@@ -31,7 +32,9 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.s3_utils import assert_s3_err_msg
 from config.s3 import S3_CFG
+from config import CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 
@@ -229,9 +232,10 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in(errmsg.S3_BKT_INVALID_TAG_ERR, str(error.message),
-                                   error.message)
-        self.log.info("Step 2: Setting tag for a bucket failed with InvalidTagError")
+            assert_s3_err_msg(errmsg.S3_RGW_BKT_INVALID_TAG_ERR,
+                              errmsg.S3_CORTX_BKT_INVALID_TAG_ERR,
+                              CMN_CFG["s3_engine"], error)
+        self.log.info("Step 2: Setting tag for a bucket failed with InvalidTag Error")
         self.log.info(
             "ENDED: Create a tag whose key is more than 128 Unicode "
             "characters in length")
@@ -311,8 +315,9 @@ class TestBucketTagging:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in(errmsg.S3_BKT_INVALID_TAG_ERR, str(error.message),
-                                   error.message)
+            assert_s3_err_msg(errmsg.S3_RGW_BKT_INVALID_TAG_ERR,
+                              errmsg.S3_CORTX_BKT_INVALID_TAG_ERR,
+                              CMN_CFG["s3_engine"], error)
         self.log.info("Step 2: Setting tag for a bucket failed with %s", self.bucket_name)
         self.log.info(
             "ENDED: Create a tag having values more than 512 Unicode characters in length")
@@ -490,8 +495,9 @@ class TestBucketTagging:
                 assert_utils.assert_false(resp[0], resp[1])
             except CTException as error:
                 self.log.info(error)
-                assert_utils.assert_in(errmsg.S3_BKT_INVALID_TAG_ERR, str(error.message),
-                                       error.message)
+                assert_s3_err_msg(errmsg.S3_RGW_BKT_INVALID_TAG_ERR,
+                                  errmsg.S3_CORTX_BKT_INVALID_TAG_ERR,
+                                  CMN_CFG["s3_engine"], error)
         self.log.info("Step 2: Could not set tags for a bucket with tag keys "
                       "having invalid special characters")
         self.log.info("ENDED: Create multiple tags with tag keys having"
@@ -548,13 +554,21 @@ class TestBucketTagging:
             resp = self.tag_obj.set_bucket_tag_duplicate_keys(
                 self.bucket_name, "testkey", "testval")
             self.log.info(resp)
-            assert_utils.assert_false(resp[0], resp[1])
+            if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                assert_utils.assert_true(resp[0], resp[1])
+            else:
+                assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, str(error.message), error.message)
-        self.log.info(
-            "Step 2: Setting bucket tags with duplicate keys failed with %s",
-            "MalformedXML")
+            if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                self.log.error(
+                    "Step 2: Setting bucket tags with duplicate keys failed with %s",
+                    error.message)
+            else:
+                assert_utils.assert_in(errmsg.MALFORMED_XML_ERR, str(error.message), error.message)
+                self.log.info(
+                    "Step 2: Setting bucket tags with duplicate keys failed with %s",
+                    "   MalformedXML")
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 
     @pytest.mark.parallel
