@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Library Methods for DTM0 testing
+Library Methods for DTM recovery testing
 """
 import logging
 import random
@@ -29,7 +29,7 @@ from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
 
 
-class DTM0TestLib:
+class DTMRecoveryTestLib:
 
     def __init__(cls, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
@@ -58,7 +58,7 @@ class DTM0TestLib:
         workload = list()
         log_path = None
         for iter_cnt in range(loop):
-            self.log.info("Iteration count: %s",iter_cnt)
+            self.log.info("Iteration count: %s", iter_cnt)
             self.log.info("Perform Write Operations : ")
             bucket_name = bucket_prefix + str(int(time.time()))
             resp = s3bench.s3bench(self.access_key,
@@ -88,7 +88,7 @@ class DTM0TestLib:
                               f" Please read log file {log_path}"])
 
     def perform_ops(self, workload_info: list, queue, skipread: bool = True,
-                        validate: bool = True, skipcleanup: bool = False, loop=1):
+                    validate: bool = True, skipcleanup: bool = False, loop=1):
         """
         Perform read operations
         :param workload_info: List Workload to read/validate/delete
@@ -101,7 +101,7 @@ class DTM0TestLib:
         results = list()
         log_path = None
         for iter_cnt in range(loop):
-            self.log.info("Iteration count: %s",iter_cnt)
+            self.log.info("Iteration count: %s", iter_cnt)
             for workload in workload_info:
                 resp = s3bench.s3bench(self.access_key,
                                        self.secret_key,
@@ -149,7 +149,7 @@ class DTM0TestLib:
         self.log.info("Pod selected for m0d process restart : %s", pod_selected)
         container_list = master_node.get_container_of_pod(pod_name=pod_selected,
                                                           container_prefix=container_prefix)
-        container = container_list[random.randint(0, len(container_list)-1)]
+        container = container_list[random.randint(0, len(container_list) - 1)]
         self.log.info("Container selected : %s", container)
         self.log.info("Perform m0d restart")
         resp = master_node.kill_process_in_container(pod_name=pod_selected,

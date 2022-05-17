@@ -499,6 +499,7 @@ class LogicalNode(Host):
         :param pod_name: Pod Name
         :param container_name: Container name
         :param process_name: Process name to be killed
+        :return resp: String.
         """
         option = '-9'
         cmd = commands.PKIL_CMD.format(option+" "+process_name)

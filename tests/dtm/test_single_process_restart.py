@@ -35,7 +35,8 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import support_bundle_utils, assert_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
-from libs.dps.dtm0_lib import DTM0TestLib
+from libs.dtm.dtm_recovery import DTMRecoveryTestLib
+from scripts.s3_bench import s3bench
 
 
 class TestSingleProcessRestart:
@@ -62,10 +63,12 @@ class TestSingleProcessRestart:
         cls.health_obj = Health(cls.master_node_list[0].hostname,
                                 cls.master_node_list[0].username,
                                 cls.master_node_list[0].password)
-        cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm0_config.yaml")
+        cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
-        cls.restart_wait_time_secs = 10
-        cls.dtm0_obj = DTM0TestLib()
+        cls.dtm_obj = DTMRecoveryTestLib()
+        cls.log.info("Setup S3bench")
+        resp = s3bench.setup_s3bench()
+        assert_utils.assert_true(resp)
 
     def teardown_method(self):
         """Teardown class method."""
@@ -84,23 +87,23 @@ class TestSingleProcessRestart:
         """Verify READ during m0d restart using pkill."""
         self.log.info("STARTED: Verify READ during m0d restart using pkill")
         bucket_name = 'bucket-test-41204'
-        object_name = 'object-test-41204'
-        test_41204_cfg = self.test_cfg['test_41204']
+        object_prefix = 'object-test-41204'
+        log_file_prefix = 'test-41204'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Perform write Operations :")
-        self.dtm0_obj.perform_write_op(bucket_prefix=bucket_name,
-                                       object_prefix=object_name,
-                                       no_of_clients=test_41204_cfg['clients'],
-                                       no_of_samples=test_41204_cfg['samples'],
-                                       obj_size=test_41204_cfg['size'],
-                                       log_file_prefix=test_41204_cfg['log_file_prefix'], queue=que)
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                       object_prefix=object_prefix,
+                                       no_of_clients=self.test_cfg['clients'],
+                                       no_of_samples=self.test_cfg['samples'],
+                                       obj_size=self.test_cfg['size'],
+                                       log_file_prefix=log_file_prefix, queue=que)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 2: Perform Read Operations :")
-        proc_read_op = multiprocessing.Process(target=self.dtm0_obj.perform_ops,
+        self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que,
                                                      True,
                                                      True,
@@ -108,7 +111,7 @@ class TestSingleProcessRestart:
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
-        self.dtm0_obj.process_restart(self.master_node_list[0],
+        self.dtm_obj.process_restart(self.master_node_list[0],
                                       POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
 
         self.log.info("Step 4: Check hctl status if all services are online")
@@ -131,22 +134,23 @@ class TestSingleProcessRestart:
         """Verify WRITE during m0d restart using pkill."""
         self.log.info("STARTED: Verify WRITE during m0d restart using pkill")
         bucket_name = 'bucket-test-41219'
-        object_name = 'object-test-41219'
-        test_41219_cfg = self.test_cfg['test_41219']
+        object_prefix = 'object-test-41219'
+        log_file_prefix = 'test-41219'
+
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Start write Operations :")
-        proc_write_op = multiprocessing.Process(target=self.dtm0_obj.perform_write_op,
-                                                args=(bucket_name, object_name,
-                                                      test_41219_cfg['clients'],
-                                                      test_41219_cfg['samples'],
-                                                      test_41219_cfg['size'],
-                                                      test_41219_cfg['log_file_prefix'],
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                                args=(bucket_name, object_prefix,
+                                                      self.test_cfg['clients'],
+                                                      self.test_cfg['samples'],
+                                                      self.test_cfg['size'],
+                                                      log_file_prefix,
                                                       que))
         proc_write_op.start()
 
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
-        self.dtm0_obj.process_restart(self.master_node_list[0],
+        self.dtm_obj.process_restart(self.master_node_list[0],
                                       POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
 
         self.log.info("Step 3: Check hctl status if all services are online")
@@ -160,8 +164,8 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 5: Perform Read Operations :")
-        self.dtm0_obj.perform_ops(workload_info, que, True, True, True)
+        self.log.info("Step 5: Perform Read Operations on data written in Step 1:")
+        self.dtm_obj.perform_ops(workload_info, que, True, True, True)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
