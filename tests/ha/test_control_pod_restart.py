@@ -1390,7 +1390,8 @@ class TestControlPodRestart:
         assert_utils.assert_true(len(failed_parts) != 0, "Failed to upload parts during "
                                                          "control pod failover. Failed "
                                                          f"parts: {failed_parts}")
-        assert_utils.assert_true(len(exp_failed_parts) != 0, "Failed to upload "
+        assert_utils.assert_true(len(exp_failed_parts) != 0, "Failed to upload parts during"
+                                                             "control pod failover. Failed"
                                                              f"parts {exp_failed_parts}")
         LOGGER.info("All the parts are uploaded successfully")
         LOGGER.info("Step 4: Successfully checked background process responses")
@@ -1549,8 +1550,10 @@ class TestControlPodRestart:
         assert_utils.assert_true(len(failed_bkts) != 0, "Failed to do copy object when control "
                                                         "pod restart. Failed "
                                                         f"buckets: {failed_bkts}")
-        assert_utils.assert_true(len(exp_fail_bkt_obj_dict), f"Failed buckets "
-                                                             f"are: {exp_fail_bkt_obj_dict}")
+        assert_utils.assert_true(len(exp_fail_bkt_obj_dict) != 0, "Failed to do copy object when "
+                                                                  "control pod restart. Failed "
+                                                                  "buckets are:"
+                                                                  f" {exp_fail_bkt_obj_dict}")
         LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         LOGGER.info("Step 5: Successfully checked responses from background process.")
 
