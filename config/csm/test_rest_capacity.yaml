@@ -107,6 +107,9 @@ test_41127:
   max_size: 12288
 test_41128:
   max_size: 12288
+  max_objects: 10
+  quota_type: "user"
+  enabled: True
 test_41151:
   max_size: 12288
 test_41746:

@@ -720,8 +720,8 @@ class TestCapacityQuota():
                  self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id, 
-                                    login_as="csm_user_manage")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                         login_as="csm_user_manage")
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
         uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -817,7 +817,7 @@ class TestCapacityQuota():
                            "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                         "Status code check failed for user deletion")
         #if CSM_REST_CFG["msg_check"] == "enable":
             #TODO: Error code and message check part
@@ -856,7 +856,7 @@ class TestCapacityQuota():
             "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                  "Status code check failed for user deletion")
         #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
@@ -882,7 +882,10 @@ class TestCapacityQuota():
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 2: Perform PUT API to set user level quota")
-        payload = self.csm_obj.iam_user_quota_payload()
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
+        max_objects = test_cfg["max_objects"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,available_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
@@ -940,7 +943,7 @@ class TestCapacityQuota():
         uid = ""
         resource = ""
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
-        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                               "Status code check failed for get capacity")
         #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
@@ -948,7 +951,7 @@ class TestCapacityQuota():
                       "with invalid key Parameters id and resource")
         resource = uid = self.user_id
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
-        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
         #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
@@ -1038,7 +1041,6 @@ class TestCapacityQuota():
         num_objects = math.floor(available_size / random_size)
         self.log.info("Random size generated is: %s", random_size)
         self.log.info("Number of objects to be created are: %s", num_objects)
-        data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
         for num in range(0, num_objects):
             self.log.info("Creating object number %s", num)
