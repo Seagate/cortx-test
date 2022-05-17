@@ -202,7 +202,7 @@ class GetSetQuota(RestTestLib):
         else:
             header = self.headers
         endpoint = self.config["get_user_capacity_usage"]
-        endpoint = Template(endpoint).substitute(resource, uid)
+        endpoint = Template(endpoint).substitute(resource=resource, uid=uid)
         response = self.restapi.rest_call("get", endpoint=endpoint,
                                           headers=header)
         self.log.info("Get user quota request successfully sent...")
