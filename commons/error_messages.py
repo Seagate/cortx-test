@@ -15,7 +15,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-#!/usr/bin/python
+# !/usr/bin/python
 # -*- coding: utf-8 -*-
 
 
@@ -52,8 +52,8 @@ CORTX_ERR_COPY_OBJ_METADATA = ("An error occurred (InvalidRequest) when calling 
                                "operation: This copy request is illegal because it is trying to "
                                "copy an object to itself without changing the object's metadata, "
                                "storage class, website redirect location or encryption attributes.")
-RGW_HEAD_OBJ_ERR = ("An error occurred (404) when calling the HeadObject operation: Not Found")
-CORTX_HEAD_OBJ_ERR = ("An error occurred (404) when calling the HeadObject operation: Not Found")
+RGW_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
+CORTX_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
 CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the GetObject operation: "
                            "The requested range is not satisfiable")
 RGW_INVALD_BYTERANGE =("An error occurred (InvalidRange) when calling the GetObject operation: "
@@ -76,25 +76,26 @@ NO_SUCH_ENTITY_ERR = "NoSuchEntity"
 NOT_FOUND_ERR = "Not Found"
 MALFORMED_XML_ERR = "MalformedXML"
 
-#S3 Bucket Tagging
+# S3 Bucket Tagging
 S3_BKT_SET_TAG_ERR = "NoSuchTagSetError"
-S3_BKT_INVALID_TAG_ERR = "InvalidTagError"
+S3_CORTX_BKT_INVALID_TAG_ERR = "InvalidTagError"
+S3_RGW_BKT_INVALID_TAG_ERR = "InvalidTag"
 S3_BKT_INVALID_NAME_ERR = "InvalidBucketName"
 S3_BKT_SPECIAL_CHARACTER_ERR = "Parameter validation failed"
 S3_OBJ_ACL_INVALID_ARGUMENT_ERR = "Invalid Argument"
 S3_INVALID_ACL_ERR = "InvalidACL"
 S3_BKT_NOT_EMPTY_ERR = "BucketNotEmpty"
 
-#S3 Multipart
+# S3 Multipart
 S3_ACC_NOT_EMPTY_ERR = "AccountNotEmpty"
 S3_MAX_DUR_EXCEED_ERR = "MaxDurationIntervalExceeded"
 S3_MULTIPART_INVALID_PART_ERR = "InvalidPart"
 S3_MULTIPART_LIST_PART_LESS_ERR = "EntityTooSmall"
 S3_MULTIPART_LIST_PART_LARGE_ERR = "EntityTooLarge"
 S3_META_DATA_HEADER_EXCEED_ERR = "MetadataTooLarge"
-S3_MULTI_BUCKET_DELETE_ERR ="MaxMessageLengthExceeded"
+S3_MULTI_BUCKET_DELETE_ERR = "MaxMessageLengthExceeded"
 
-#BucketPolicy
+# BucketPolicy
 S3_BKT_POLICY_RESOURCE_ERR = "Action does not apply to any resource(s) in statement"
 S3_BKT_POLICY_INVALID_RESOURCE_ERR = "Policy has invalid resource"
 S3_BKT_POLICY_INVALID_PRINCIPAL_ERR = "Invalid principal in policy"
@@ -105,5 +106,5 @@ S3_BKT_POLICY_EMPTY_ACTION_ERR = "Action cannot be empty"
 S3_BKT_POLICY_INVALID_JSON_ERR = "This policy contains invalid Json"
 S3_BKT_POLICY_NO_SUCH_ERR = "NoSuchBucketPolicy"
 
-#S3 versioning head obj error
+# S3 versioning head obj error
 S3_VERSION_NOT_FOUND_GET_OBJ = "The specified version does not exist"
