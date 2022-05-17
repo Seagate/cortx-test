@@ -39,9 +39,6 @@ LOG = logging.getLogger(__name__)
 class Health(Host):
     """Class for health related methods."""
 
-    def __init__(self, hostname: str, username: str, password: str):
-        super().__init__(hostname, username, password)
-
     def get_ports_of_service(self, service: str) -> List[str] or None:
         """
         Find all TCP ports for given running service

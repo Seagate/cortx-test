@@ -664,8 +664,8 @@ class TestS3IOSystemLimits:
                     self.log.info(error.message)
                     assert_utils.assert_in("MetadataTooLarge", error.message, error.message)
                 else:
-                    self.log.error(f"Unable to upload object even if "
-                                   f"metadata size is {metadata} < {metadata_limit}")
+                    self.log.error("Unable to upload object even if metadata size is %s < %s",
+                                   metadata, metadata_limit)
                     assert_utils.assert_true(False, res[1])
             else:
                 if metadata <= metadata_limit:
@@ -680,8 +680,8 @@ class TestS3IOSystemLimits:
                                                res[1]["Metadata"][m_key.lower()],
                                                res[1]["Metadata"][m_key.lower()])
                 else:
-                    self.log.error(f"Could not see exception while uploading object with "
-                                   f"metadata size of {metadata} > {metadata_limit}")
+                    self.log.error("Could not see exception while uploading object with metadata "
+                                   "size of %s > %s", metadata, metadata_limit)
                     assert_utils.assert_true(False, res[1])
 
         self.log.info("Deleting bucket %s", bucket_name)
@@ -711,10 +711,10 @@ class TestS3IOSystemLimits:
             response = self.S3_MP_TEST_OBJ.upload_part(
                 data, bucket, obj_name, upload_id=mpu_id, part_number=1)
         except CTException as error:
-            self.log.error(f"{error}")
+            self.log.error("%s", error)
             assert_utils.assert_in("EntityTooLarge", error.message, error.message)
         else:
-            self.log.error(f"Response = {response}")
+            self.log.error("Response = %s", response)
             assert_utils.assert_true(False, "Could not catch exception while uploading "
                                             "part of size > 5GiB")
         self.log.info("Aborting multipart upload")
@@ -758,7 +758,7 @@ class TestS3IOSystemLimits:
             self.log.info("error : %s", error)
             assert_utils.assert_in("EntityTooSmall", error.message, error.message)
         else:
-            self.log.error(f"Response = {response}")
+            self.log.error("Response = %s", response)
             assert_utils.assert_true(False, "Could not catch exception while completing multipart "
                                             "upload with first part size of 4MB")
         self.log.info("Aborting multipart upload")
