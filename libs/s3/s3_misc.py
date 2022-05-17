@@ -288,8 +288,8 @@ def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("S3 boto resource created")
     objs = s3_resource.Bucket(bucket_name).objects.all()
     return_dict = {}
-    for object in objs:
-        return_dict.update({object.key:object.size})
+    for obj in objs:
+        return_dict.update({obj.key:obj.size})
     return return_dict
 
 def get_objects_size_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
@@ -298,3 +298,13 @@ def get_objects_size_bucket(bucket_name, access_key: str, secret_key: str, **kwa
     """
     resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
     return len(resp.keys()), sum(resp.values())
+
+def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get list of objects created
+    """
+    resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
+    obj_lst = []
+    for key, value in resp.items():
+        obj_lst.append(key)
+    return obj_lst

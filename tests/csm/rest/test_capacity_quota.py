@@ -91,6 +91,7 @@ class TestCapacityQuota():
         self.log.info("Verify Create bucket: %s", self.bucket)
         self.cryptogen = SystemRandom()
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
+        self.buckets_created.append([self.bucket, self.akey, self.skey])
 
     def teardown_method(self):
         """
@@ -111,7 +112,7 @@ class TestCapacityQuota():
 
         self.log.info("Deleting iam account %s created in test", self.created_iam_users)
         for iam_user in self.created_iam_users:
-            resp = s3_misc.delete_iam_user(iam_user[0], iam_user[1], iam_user[2])
+            resp = self.csm_obj.delete_iam_user(iam_user)
             if resp:
                 iam_deleted.append(iam_user)
             else:
@@ -671,9 +672,9 @@ class TestCapacityQuota():
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                    self.akey, self.skey)
-
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
         uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -719,7 +720,7 @@ class TestCapacityQuota():
                  self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id, 
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id, 
                                     login_as="csm_user_manage")
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
@@ -766,7 +767,7 @@ class TestCapacityQuota():
                     self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id,
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
                                  login_as="csm_user_monitor")
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
@@ -815,11 +816,11 @@ class TestCapacityQuota():
         assert response.status_code == HTTPStatus.OK, \
                            "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                         "Status code check failed for user deletion")
         if CSM_REST_CFG["msg_check"] == "enable":
-        #TODO: Error code and message check part
+            #TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -854,11 +855,11 @@ class TestCapacityQuota():
         assert response.status_code == HTTPStatus.OK, \
             "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                  "Status code check failed for user deletion")
         if CSM_REST_CFG["msg_check"] == "enable":
-        # TODO: Error code and message check part
+           # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -894,7 +895,7 @@ class TestCapacityQuota():
                             self.akey, self.skey)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
         uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -938,19 +939,19 @@ class TestCapacityQuota():
                       "with empty key Parameters id and resource")
         uid = ""
         resource = ""
-        resp = self.csm_obj.get_capacity_usage(resource, uid)
+        resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                               "Status code check failed for get capacity")
         if CSM_REST_CFG["msg_check"] == "enable":
-        # TODO: Error code and message check part
+           # TODO: Error code and message check part
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
         resource = uid = self.user_id
-        resp = self.csm_obj.get_capacity_usage(resource, uid)
+        resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
         if CSM_REST_CFG["msg_check"] == "enable":
-        # TODO: Error code and message check part
+           # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -990,6 +991,7 @@ class TestCapacityQuota():
             self.log.info("Step 2: Verify Create bucket: %s with access key: %s and secret key: %s",
                           self.bucket, self.akey, self.skey)
             bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
+            self.buckets_created.append([self.bucket, self.akey, self.skey])
             assert bucket_created, "Failed to create bucket"
             self.log.info("Step 3: Create N objects of total size S")
             for num in range(0, num_objects):
@@ -1002,7 +1004,7 @@ class TestCapacityQuota():
                              self.akey, self.skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-            resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+            resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
             uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -1039,34 +1041,35 @@ class TestCapacityQuota():
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
         for num in range(0, num_objects):
-            self.log.info("Creatinh object number %s", num)
+            self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size)
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
-                           self.akey, self.skey)
-
-        resp = self.awscli_s3api_obj.list_objects_v2(self.bucket)
-        assert resp[0], resp[1]
-        for obj in resp:
-            self.log.info("Step 3: Delete object: %s", obj)
+                      self.akey, self.skey)
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey) 
+        for obj in object_list:
+            self.log.info("Step 4: Delete object: %s", object_list[obj])
             assert s3_misc.delete_object(
-                self.bucket, obj, self.akey, self.skey), "Failed to delete bucket."
-            self.log.info("Step 4: Perform GET API to get capacity usage")
-            resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+                self.bucket, object_list[obj], self.akey, self.skey), "Failed to delete bucket."
+            self.log.info("Step 6: Get capacity count from AWS")
+            total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                         self.akey, self.skey)
+            assert_utils.assert_equals((available_size-total_size),random_size,
+                       "Total size remains same even after object deletion")
+            assert_utils.assert_equals((num_objects-total_objects),"1",
+                                                "Object count did not reduce" )
+            self.log.info("Step 5: Perform GET API to get capacity usage")
+            resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        self.log.info("Step 5: Perform GET API to get capacity usage after all"
-                      "objects are deleted")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-               "Status code check failed for get capacity"
-        self.log.info("Step 3: Get capacity count from AWS")
+        self.log.info("Step 6: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                          self.akey, self.skey)
-        self.log.info("Step 4: Perform GET API to get capacity usage")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        self.log.info("Step 7: Perform GET API to get capacity usage")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
         uid = resp.json()["capacity"]["s3"]["user"][0]["id"]

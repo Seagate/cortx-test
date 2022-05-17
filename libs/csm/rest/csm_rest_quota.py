@@ -187,12 +187,11 @@ class GetSetQuota(RestTestLib):
         return res, err_msg
 
     @RestTestLib.authenticate_and_login
-    def get_capacity_usage(self, uid, resource, login_as="csm_admin_user",
+    def get_user_capacity_usage(self, uid, resource,
                              **kwargs):
         """
         Get user or bucket quota
-        :param uid: User ID in case of /api/v2/capacity/s3/
-                    Cluster ID in case of /api/v2/capacity/system/
+        :param uid: UserID
         :param resource: The resource whose capacity usage need to check
         :login_as: for logging in using csm user
         :return: response
