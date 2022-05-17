@@ -925,7 +925,7 @@ class RestCsmUser(RestTestLib):
                 const.EXCEPTION_ERROR,
                 RestCsmUser.update_csm_account_password.__name__,
                 error))
-            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
         if response.status_code != const.SUCCESS_STATUS:
             self.log.error(f"Response code : {response.status_code}")
