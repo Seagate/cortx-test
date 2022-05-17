@@ -29,7 +29,6 @@ import logging
 import secrets
 import pytest
 from commons.utils import config_utils
-from commons import constants as common_const
 from config import CMN_CFG
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
@@ -108,8 +107,7 @@ class TestCorruptDataDetection:
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
-
-    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.tags("TEST-41739")
     @pytest.mark.motr_sanity
     def test_m0cp_m0cat_block_corruption(self):
         """
@@ -117,7 +115,7 @@ class TestCorruptDataDetection:
         """
         self.m0cp_corrupt_m0cat()
 
-    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.tags("TEST-41742")
     @pytest.mark.motr_sanity
     def test_m0cp_m0cat_checksum_corruption(self):
         """
