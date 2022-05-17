@@ -347,3 +347,44 @@ class TestSingleProcessRestart:
                       "sizes objects.")
 
         self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm0
+    @pytest.mark.tags("TEST-41223")
+    def test_delete_during_m0d_restart(self):
+        """Verify DELETE during m0d restart."""
+        self.log.info("STARTED: Verify DELETE during m0d restart.")
+        bucket_name = 'bucket-test-41223'
+        object_prefix = 'object-test-41223'
+        log_file_prefix = 'test-41223'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Perform write Operations :")
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                      object_prefix=object_prefix,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+        self.log.info("Step 2: Perform Delete Operations :")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops(),
+                                               args=(workload_info, que, True, True, False))
+        proc_read_op.start()
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        self.dtm_obj.process_restart(self.master_node_list[0],
+                                     POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
+        self.log.info("Step 4: Check hctl status if all services are online")
+        resp = self.health_obj.is_motr_online()
+        assert_utils.assert_true(resp, 'All services are not online.')
+
+        self.log.info("Step 5: Wait for Delete Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify Delete during m0d restart using pkill -9")
