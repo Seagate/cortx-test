@@ -185,3 +185,25 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max objects"
         return res, err_msg
+
+    @RestTestLib.authenticate_and_login
+    def get_user_capacity_usage(self, uid, resource,
+                             **kwargs):
+        """
+        Get user or bucket quota
+        :param uid: UserID
+        :param resource: The resource whose capacity usage need to check
+        :login_as: for logging in using csm user
+        :return: response
+        """
+        self.log.info("Get IAM user request....")
+        if "headers" in kwargs.keys():
+            header = kwargs["headers"]
+        else:
+            header = self.headers
+        endpoint = self.config["get_user_capacity_usage"]
+        endpoint = Template(endpoint).substitute(resource=resource, uid=uid)
+        response = self.restapi.rest_call("get", endpoint=endpoint,
+                                          headers=header)
+        self.log.info("Get user quota request successfully sent...")
+        return response
