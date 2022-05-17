@@ -1051,8 +1051,7 @@ class TestDataPodFailure:
         LOGGER.info("Step 1.3: Successfully started READs and verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 1: Successfully started READs & WRITES in background. Sleeping for %s "
-                    "sec for s3bench setup check.")
+        LOGGER.info("Step 1: Successfully started READs & WRITES in background.")
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
