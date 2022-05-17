@@ -500,8 +500,9 @@ class LogicalNode(Host):
         :param container_name: Container name
         :param process_name: Process name to be killed
         """
-        cmd = f"{commands.PKIL_CMD} -9 {process_name}"
+        option = '-9'
+        cmd = commands.PKIL_CMD.format(option+" "+process_name)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                         command_suffix=f"-c {container_name} -- {cmd}",
-                         decode=True)
+                                command_suffix=f"-c {container_name} -- {cmd}",
+                                decode=True)
         return resp
