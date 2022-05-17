@@ -103,6 +103,28 @@ test_39923:
   num_clients: 2
   num_sample: 5
   obj_name_pref: "load_gen"
+test_41127:
+  max_size: 12288
+test_41128:
+  max_size: 12288
+  max_objects: 10
+  quota_type: "user"
+  enabled: True
+test_41151:
+  max_size: 12288
+test_41746:
+  max_size: 12288
+test_41750:
+  max_size: 12288
+test_41156:
+  max_size: 12288
+  num_tenants: 2
+test_41757:
+  max_size: 12288
+test_41758:
+  max_size: 12288
+test_41954:
+  max_size: 12288
 test_41172:
   min_users: 5
   max_users: 100
