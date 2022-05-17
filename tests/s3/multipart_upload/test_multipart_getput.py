@@ -552,10 +552,12 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG['test_28535']
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
-        mpu_id, uploaded_parts, _, s3_background_io = \
-            self.s3_mpu_test_obj.create_mpu_get_precalc_parts(
-            mp_config, self.mp_obj_path, self.bucket_name, self.object_name,
-            log_prefix="TEST-28535_s3bench_ios", duration="0h2m", s3_test_lib_obj=self.s3_test_obj)
+        uploaded_parts, _, s3_background_io = \
+            self.s3_mpu_test_obj.start_ios_get_precalc_parts(mp_config, self.mp_obj_path,
+                                                             log_prefix="TEST-28535_s3bench_ios",
+                                                             duration="0h2m",
+                                                             s3_test_lib_obj=self.s3_test_obj)
+        mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
         all_parts = []
         pool = multiprocessing.Pool(processes=8)
         all_parts = pool.starmap(self.multiprocess_uploads,
@@ -820,7 +822,7 @@ class TestMultipartUploadGetPut:
                                                       "is_part_upload": True,
                                                       "is_lst_complete_mpu": True})
         process_put = multiprocessing.Process(target=self.s3_test_obj.put_object,
-                                              args=(self.bucket_name, self.object_name + str("put"),
+                                              args=(self.bucket_name, self.object_name+str("put"),
                                                     self.mp_obj_path))
         process_mpu.start()
         process_put.start()
@@ -871,3 +873,56 @@ class TestMultipartUploadGetPut:
         s3_background_io.cleanup()
         self.log.info("ENDED: Test parallel upload of same simple and multipart uploaded of "
                       "objects")
+
+    @pytest.mark.tags('TEST-41585')
+    @pytest.mark.s3_ops
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_41585(self):
+        """
+        This test is for get object of multipart uploaded object with range read
+        """
+        mp_config = MPART_CFG["test_28539"]
+        self.log.info("STARTED: test get object of multipart uploaded object with range read")
+        parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
+            s3_test_lib_obj=self.s3_test_obj)
+        random.shuffle(keys)
+        _, resp = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name,
+                                                         is_part_upload=True, parts=parts,
+                                                         is_lst_complete_mpu=True)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
+        self.log.info("Get object in random byte range")
+        resp_random = self.s3_mpu_test_obj.get_byte_range_of_object(self.bucket_name,
+                                                                    self.object_name,
+                                                                    100, 15728640)
+        assert_utils.assert_true(resp_random[0], resp_random[1])
+        self.log.info("Get object from first to last byte range")
+        resp_all = self.s3_mpu_test_obj.get_byte_range_of_object(self.bucket_name,
+                                                                 self.object_name,
+                                                                 0, 157286399)
+        assert_utils.assert_true(resp_all[0], resp_all[1])
+        self.log.info("Get object in first to random byte range")
+        resp_zero_random = self.s3_mpu_test_obj.get_byte_range_of_object(self.bucket_name,
+                                                                         self.object_name,
+                                                                         0, 15728640)
+        assert_utils.assert_true(resp_zero_random[0], resp_zero_random[1])
+        self.log.info("Get object in random to last byte range")
+        resp_random_last = self.s3_mpu_test_obj.get_byte_range_of_object(self.bucket_name,
+                                                                         self.object_name,
+                                                                         15728640, 157286399)
+        assert_utils.assert_true(resp_random_last[0], resp_random_last[1])
+        self.log.info("Get object in invalid byte range")
+        try:
+            resp_invalid = self.s3_mpu_test_obj.get_byte_range_of_object(self.bucket_name,
+                                                                         self.object_name,
+                                                                         157286400, 157286499)
+            assert_utils.assert_false(resp_invalid[0], resp_invalid[1])
+        except CTException as error:
+            self.log.error(error)
+            assert_s3_err_msg(errmsg.RGW_INVALD_BYTERANGE, errmsg.CORTX_INVALD_BYTERANGE,
+                              CMN_CFG["s3_engine"], error)
+            self.log.info("Reading the invalid byte range")
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_background_io.stop()
+        s3_background_io.cleanup()
+        self.log.info("ENDED: test get object of multipart uploaded object with range read")
