@@ -262,6 +262,10 @@ deactivate
 		always {
 		    junit allowEmptyResults: true, testResults: 'log/*report.xml'
 		    script {
+		          env.Regression_overall_failed = false
+		          if(env.Regression_Failed != false || env.Io_Path_Failed != false || env.Failure_Domain_Failed != false){
+                     env.Regression_overall_failed = true
+                  }
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
