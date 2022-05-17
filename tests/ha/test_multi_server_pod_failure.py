@@ -19,7 +19,7 @@
 #
 
 """
-HA test suite for Multiple (K) Server Pods Failure
+HA test suite for Multiple Server Pods Failure
 """
 
 import copy
@@ -1377,7 +1377,7 @@ class TestMultiServerPodFailure:
                     "failed till K pods and complete upload after all K server pods "
                     "down - unsafe shutdown")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     # pylint: disable=unused-argument
     @pytest.mark.ha
@@ -1880,7 +1880,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("ENDED: Test chunk upload during k server pods going down by delete "
                     "deployment (unsafe)")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2271,7 +2271,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("COMPLETED: Verify copy object during server pods failure "
                     "till K pods down - unsafe shutdown")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2810,3 +2810,314 @@ class TestMultiServerPodFailure:
 
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) server pods "
                     "were going down.", self.kvalue)
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-42054")
+    @CTFailOn(error_handler)
+    def test_ios_till_single_server_pod_running(self):
+        """
+        Test to verify IOs after each pod failure till only single server pod is running."
+        """
+        LOGGER.info("Started: Test to verify IOs after each pod failure till only "
+                    "single server pod remains running")
+
+        LOGGER.info("STEP 1: Perform IOs with variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-42054'
+        self.s3_clean = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, nsamples=1, nclients=1)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
+
+        LOGGER.info("Shutdown server pods one by one and run IOs")
+        LOGGER.info("Get server pod names to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        value = len(pod_list) - 1
+        self.pod_name_list = random.sample(pod_list, value)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
+        for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
+            LOGGER.info("Step 2: Shutdown %s server pod %s by deleting deployment (unsafe)",
+                        count, pod_name)
+            pod_data = list()
+            pod_data.append(
+                self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} server pod {pod_name} "
+                                               "by deleting deployment (unsafe)")
+            pod_data.append(resp[1])  # deployment_backup
+            pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+            self.pod_dict[pod_name] = pod_data
+            LOGGER.info("Step 2: Deleted %s server pod %s by deleting deployment (unsafe)",
+                        count, pod_name)
+
+            LOGGER.info("Step 3: Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            assert_utils.assert_false(resp[0], resp)
+            LOGGER.info("Step 3: Cluster has some failures due to %s server pods has gone down.",
+                        count)
+
+            LOGGER.info("Step 4: Check services status that were running on server pod %s which "
+                        "are deleted", pod_name)
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname)
+            assert_utils.assert_true(resp[0], resp[1])
+            server_data_pod_list.remove(pod_name)
+            LOGGER.info("Step 4: Services of deleted server pod %s are in offline state", pod_name)
+
+            LOGGER.info("Step 5: Check services status on remaining pods %s", server_data_pod_list)
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                               fail=False)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 5: Services of remaining pods are in online state")
+
+            LOGGER.info("Step 6: Perform IOs with %s server pods down", count)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True, setup_s3bench=False,
+                                                        nsamples=1, nclients=1)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 6: IOs run successfully with %s server pods down", count)
+
+        LOGGER.info("Step 7: Create new user and run IOs with %s server pods down", value)
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-42054-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    nsamples=1, nclients=1, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: IOs run successfully with new user with single server pod running.")
+
+        LOGGER.info("Completed: Test to verify IOs after each pod failure till only "
+                    "single server pod is running.")
+
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-locals
+    # pylint: disable=unused-argument
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-42053")
+    @CTFailOn(error_handler)
+    def test_conti_ios_till_single_server_pod_running(self):
+        """
+        This test tests continuous READs/WRITEs/DELETEs while server pods are failing till only one
+        server pod is running.
+        """
+        LOGGER.info("STARTED: Test continuous READs/WRITEs/DELETEs while server pods are failing "
+                    "till only one server pod is running")
+
+        event = threading.Event()  # Event to be used to send when server pods going down
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        value = len(pod_list) - 1
+        wr_bucket = value * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes on %s buckets "
+                    "for parallel DELETEs.", wr_bucket)
+        wr_output = Queue()
+        del_output = Queue()
+        remaining_bkt = 10
+        del_bucket = wr_bucket - remaining_bkt
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
+        access_key = list(users.values())[0]['accesskey']
+        secret_key = list(users.values())[0]['secretkey']
+        test_prefix_del = 'test-delete-42053'
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Create %s buckets and put variable size objects for parallel DELETEs",
+                    wr_bucket)
+        args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = tuple()
+        while len(wr_resp) != 3:
+            wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        buckets = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
+                                                           f"of buckets. Created {len(buckets)} "
+                                                           "number of buckets")
+        s3_data = wr_resp[0]
+        LOGGER.info("Step 1: Successfully performed WRITEs with variable object sizes on %s "
+                    "buckets for parallel DELETEs.", wr_bucket)
+
+        LOGGER.info("Step 2: Perform WRITEs with variable object sizes for parallel READs")
+        test_prefix_read = 'test-read-42053'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_read, skipread=True,
+                                                    skipcleanup=True, nclients=5, nsamples=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Performed WRITEs with variable sizes objects for parallel READs.")
+
+        LOGGER.info("Starting three independent background threads for READs, WRITEs & DELETEs.")
+        LOGGER.info("Step 3: Start Continuous DELETEs in background on random %s buckets",
+                    del_bucket)
+        bucket_list = list(s3_data.keys())
+        get_random_buck = random.sample(bucket_list, del_bucket)
+        args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': get_random_buck,
+                'output': del_output}
+        thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
+                                      args=(event, s3_test_obj,), kwargs=args)
+        thread_del.daemon = True  # Daemonize thread
+        thread_del.start()
+        LOGGER.info("Step 3: Successfully started DELETEs in background for %s buckets",
+                    del_bucket)
+
+        LOGGER.info("Step 4: Perform WRITEs with variable object sizes in background")
+        test_prefix_write = 'test-write-42053'
+        output_wr = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
+                'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'output': output_wr, 'setup_s3bench': False}
+        thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                      kwargs=args)
+        thread_wri.daemon = True  # Daemonize thread
+        thread_wri.start()
+        LOGGER.info("Step 4: Successfully started WRITEs with variable sizes objects"
+                    " in background")
+
+        LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
+        output_rd = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
+                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'output': output_rd, 'setup_s3bench': False}
+        thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                     kwargs=args)
+        thread_rd.daemon = True  # Daemonize thread
+        thread_rd.start()
+        LOGGER.info("Step 5: Successfully started READs and verified DI on the written data in "
+                    "background")
+        LOGGER.info("Waiting for %s seconds to perform  READs",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+
+        LOGGER.info("Step 6: Shutdown server pods one by one while continuous IOs in "
+                    "background")
+        LOGGER.info("Get server pod names to be deleted")
+        self.pod_name_list = random.sample(pod_list, value)
+        LOGGER.info("Get data pod names")
+        data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        LOGGER.info("Combine data and server pods names")
+        server_data_pod_list = pod_list + data_pod_list
+        event.set()
+        for count, pod_name in enumerate(self.pod_name_list):
+            count += 1
+            LOGGER.info("Shutdown %s server pod %s by deleting deployment"
+                        " (unsafe)", count, pod_name)
+            pod_data = list()
+            pod_data.append(
+                self.node_master_list[0].get_pod_hostname(pod_name=pod_name))  # hostname
+            resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_false(resp[0], f"Failed to delete {count} server pod {pod_name}"
+                                               f" by deleting deployment (unsafe)")
+            pod_data.append(resp[1])  # deployment_backup
+            pod_data.append(resp[2])  # deployment_name
+            self.restore_pod = self.deploy = True
+            self.restore_method = const.RESTORE_DEPLOYMENT_K8S
+            self.pod_dict[pod_name] = pod_data
+            LOGGER.info("Deleted %s server pod %s by deleting deployment"
+                        " (unsafe)", count, pod_name)
+        LOGGER.info("Step 6: Successfully shutdown %s server pods one by one while continuous "
+                    "IOs in background", value)
+
+        LOGGER.info("Step 7: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 7: Cluster has some failures due to %s server pods has gone down.",
+                    value)
+
+        LOGGER.info("Step 8: Check services status that were running on server pods "
+                    "which are deleted.")
+        counter = 0
+        for pod_name in self.pod_name_list:
+            hostname = self.pod_dict.get(pod_name)[0]
+            resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
+                                                               hostname=hostname)
+            LOGGER.debug("Services status on %s : %s", pod_name, resp)
+            if not resp[0]:
+                counter += 1
+            server_data_pod_list.remove(pod_name)
+        assert_utils.assert_equal(counter, 0, "Services on some server pods not stopped.")
+        LOGGER.info("Step 8: Services of deleted server pods are in offline state")
+
+        LOGGER.info("Step 9: Check services status on remaining pods %s", server_data_pod_list)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=server_data_pod_list,
+                                                           fail=False)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 9: Services of remaining pods are in online state")
+        event.clear()
+
+        LOGGER.info("Step 10: Verify status for In-flight READs/WRITEs/DELETEs while "
+                    "%s server pods were going down.", value)
+        LOGGER.info("Waiting for background IOs thread to join")
+        thread_wri.join()
+        thread_rd.join()
+        thread_del.join()
+        LOGGER.info("Step 10.1: Verify status for In-flight DELETEs while %s server pods were"
+                    "going down", value)
+        del_resp = tuple()
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not del_resp:
+            assert_utils.assert_true(False, "Background process failed to do deletes")
+        fail_del_bkt = del_resp[1]
+        rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_false(len(fail_del_bkt),
+                                  f"Bucket deletion failed when cluster was online {fail_del_bkt}")
+        assert_utils.assert_true(len(rem_bkts_aftr_del) < del_bucket,
+                                 "Some bucket deletion expected during pods going down")
+        LOGGER.info("Step 10.1: Verified status for In-flight DELETEs while %s server"
+                    " pods were going down", value)
+
+        LOGGER.info("Step 10.2: Verify status for In-flight WRITEs while %s server pods going "
+                    "down should be failed/error.", value)
+        responses_wr = dict()
+        while len(responses_wr) != 2:
+            responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_wr["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
+        fail_logs = list(x[1] for x in responses_wr["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"WRITEs logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 10.2: Verified status for In-flight WRITEs while %s server pods "
+                    "going down.", value)
+
+        LOGGER.info("Step 10.3: Verify status for In-flight READs/Verify DI while %s "
+                    " server pods going down should be failed/error.", value)
+        responses_rd = dict()
+        while len(responses_rd) != 2:
+            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_rd["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
+        fail_logs = list(x[1] for x in responses_rd["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"Reads logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"Reads logs which contain pass: {resp[1]}")
+        LOGGER.info("Step 10.3: Verified status for In-flight READs/Verify DI while %s "
+                    " server pods going down.", value)
+        LOGGER.info("Step 10: Verified status for In-flight READs/WRITEs/DELETEs while %s "
+                    " server pods were going down.", value)
+
+        LOGGER.info("ENDED: Test continuous READs/WRITEs/DELETEs while server pods are failing "
+                    "till only one server pod is running")
