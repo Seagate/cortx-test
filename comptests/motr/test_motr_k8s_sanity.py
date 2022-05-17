@@ -34,7 +34,8 @@ import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons import constants as common_const
-from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP
+from libs.motr import TEMP_PATH
+from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
