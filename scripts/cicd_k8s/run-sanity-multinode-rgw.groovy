@@ -263,7 +263,7 @@ deactivate
 		    junit allowEmptyResults: true, testResults: 'log/*report.xml'
 		    script {
 		          env.Regression_overall_failed = false
-		          if(env.Regression_Failed != false || env.Io_Path_Failed != false || env.Failure_Domain_Failed != false){
+		          if ( env.Regression_Failed != false || env.Io_Path_Failed != false || env.Failure_Domain_Failed != false ) {
                      env.Regression_overall_failed = true
                   }
         		  if ( fileExists('cloned_tp_info.csv') ) {
