@@ -2920,7 +2920,9 @@ class TestMultiServerPodFailure:
                     "till only one server pod is running")
 
         event = threading.Event()  # Event to be used to send when server pods going down
-        wr_bucket = self.kvalue * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        value = len(pod_list) - 1
+        wr_bucket = value * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes on %s buckets "
                     "for parallel DELETEs.", wr_bucket)
         wr_output = Queue()
@@ -3004,8 +3006,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 6: Shutdown server pods one by one while continuous IOs in "
                     "background")
         LOGGER.info("Get server pod names to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        value = len(pod_list) - 1
         self.pod_name_list = random.sample(pod_list, value)
         LOGGER.info("Get data pod names")
         data_pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
