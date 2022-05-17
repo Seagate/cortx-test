@@ -125,4 +125,15 @@ test_41758:
   max_size: 12288
 test_41954:
   max_size: 12288
-
+test_41172:
+  min_users: 5
+  max_users: 100
+  available_size: 1024
+test_41173:
+  min_bucket: 5
+  max_bucket: 1000
+  available_size: 1024
+test_41156:
+  min_users: 5
+  max_users: 100
+  available_size: 1024
