@@ -675,21 +675,14 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 4: Verified READs and DI on the written data in background")
 
+        LOGGER.info("Step 5: Run IOs with variable object sizes on a degraded cluster.")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 5: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
-                        "on degraded cluster with new user")
             users = self.mgnt_ops.create_account_users(nusers=1)
-            self.test_prefix = 'test-32444-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
-        else:
-            LOGGER.info("Step 5: Perform WRITEs-READs-Verify with variable object "
-                        "sizes on degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+            self.test_prefix = 'test-32444-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully ran IOs with variable object sizes.")
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")
@@ -934,21 +927,14 @@ class TestDataPodFailure:
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 3: Verified status for In-flight WRITEs while pod going down is failed.")
 
+        LOGGER.info("STEP 4: Perform IOs with variable object sizes on degraded cluster")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 4: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
-                        "on degraded cluster with new user")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-26441-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
-        else:
-            LOGGER.info("Step 4: Perform WRITEs-READs-Verify with variable object sizes on "
-                        "degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
@@ -1121,25 +1107,17 @@ class TestDataPodFailure:
                     " data pod going down.", pod_name)
         LOGGER.info("Step 3: Verified responses from WRITEs & READs/VerifyDI background processes")
 
+        LOGGER.info("Step 4: Run IOs with variable object sizes on a degraded cluster.")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 4: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
-                        "on degraded cluster with new user")
             users = self.mgnt_ops.create_account_users(nusers=1)
-            self.test_prefix = 'test-26442-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
-        else:
-            LOGGER.info("Step 4: Perform WRITEs-READs-Verify with variable object "
-                        "sizes on degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=test_prefix_read,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+            self.test_prefix = 'test-26442-1'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
-        LOGGER.info("ENDED: Test to verify READs and WRITEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("Step 4: Successfully ran IOs with variable object sizes.")
+        LOGGER.info("ENDED: Test to verify READs/WRITEs during data pod down by delete deployment.")
 
     # pylint: disable=C0321
     # pylint: disable=too-many-statements
