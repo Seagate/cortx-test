@@ -28,7 +28,9 @@ from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
+from config import CMN_CFG
+from config import PROV_CFG
+from config import PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 

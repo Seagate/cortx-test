@@ -479,3 +479,16 @@ class LogicalNode(Host):
         output = self.execute_cmd(cmd=cmd, read_lines=True)
         hostname = output[0].strip()
         return hostname
+
+    def get_deployment_name(self, num_nodes):
+        """
+        Get deployment name from the master node
+        """
+        resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT,
+                                            read_lines=True,
+                                            exc=False)
+        deploy_list = []
+        for i in range(0, num_nodes):
+            resp = resp_node[i + const.NODE_INDEX].split(' ')
+            deploy_list.append(resp[0])
+        return deploy_list

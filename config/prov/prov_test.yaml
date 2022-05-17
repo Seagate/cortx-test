@@ -121,14 +121,21 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
+  node_count: 15
   clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
+  mnt_path: "/mnt/fs-local-volume/local-path-provisioner/"
   3rd_party_data_dir: "/var/data/3rd-party/"
   3rd_party_dir: "/etc/3rd-party/"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
+  sleep_time: 60
+  service_delay: 240
+  service_delay_scale: 360
   namespace: "cortx"
+  max_size_namespace: 18
+  max_char_limit: 19
   https_protocol: "https://{}"
   https_port: 30443
   http_port: 30080
@@ -172,11 +179,42 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+  deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
+  deploy_ha_timeout_val: 1000
   timeout:
     pre-req: 120
     deploy: 7200
     destroy: 900
     status: 120
+  thirdparty_resource:
+    server:   #consul_server
+      requests:
+        mem: '200Mi'
+        cpu: '200m'
+      limits:
+        mem: '500Mi'
+        cpu: '500m'
+    client:  #consul_client
+      requests:
+        mem: '200Mi'
+        cpu: '200m'
+      limits:
+        mem: '500Mi'
+        cpu: '500m'
+    kafka:
+      requests:
+        mem: '1Gi'
+        cpu: '250m'
+      limits:
+        mem: '3Gi'
+        cpu: '1000m'
+    zookeeper:
+      requests:
+        mem: '256Mi'
+        cpu: '250m'
+      limits:
+        mem: '1Gi'
+        cpu: '1000m'
 test_basic_io:
   io_upper_limits:
     Kb: 130
