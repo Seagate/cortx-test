@@ -78,5 +78,5 @@ def create_timings_db_entry(payload):
     if response.status_code == HTTPStatus.OK:
         LOGGER.info("Stored timings data into database.")
     else:
-        LOGGER.error(f"POST request on {TIMING_EP} failed with "
-                     f"{response.status_code}, {response.text}.")
+        LOGGER.error("POST request on %s failed with %s, %s.", TIMING_EP,
+                     response.status_code, response.text)

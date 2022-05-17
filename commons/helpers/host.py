@@ -200,7 +200,7 @@ class Host(AbsHost):
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
-        LOGGER.debug(f"Executing {cmd}")
+        LOGGER.debug("Executing %s", cmd)
         self.connect(**kwargs)  # fn will raise an exception
         stdin, stdout, stderr = self.host_obj.exec_command(cmd, timeout=timeout)  # nosec
         # above is non blocking call and timeout is set for SSL handshake and command
