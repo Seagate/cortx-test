@@ -1387,9 +1387,9 @@ class TestControlPodRestart:
         LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
                      "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
                      failed_parts, parts_etag, mpu_id)
-        assert_utils.assert_true(len(failed_parts) != 0, "Failed to upload parts during "
-                                                         "control pod failover. Failed "
-                                                         f"parts: {failed_parts}")
+        assert_utils.assert_true(len(failed_parts) != 0, "Failed to upload parts before or after "
+                                                         "control pod failover/restart "
+                                                         f"Failed parts: {failed_parts}")
         assert_utils.assert_true(len(exp_failed_parts) != 0, "Failed to upload parts during"
                                                              "control pod failover. Failed"
                                                              f"parts {exp_failed_parts}")
@@ -1547,9 +1547,9 @@ class TestControlPodRestart:
         LOGGER.debug("Responses received from background process:\nput_etag: "
                      "%s\nexp_fail_bkt_obj_dict: %s\nfailed_bkts: %s", put_etag,
                      exp_fail_bkt_obj_dict, failed_bkts)
-        assert_utils.assert_true(len(failed_bkts) != 0, "Failed to do copy object when control "
-                                                        "pod restart. Failed "
-                                                        f"buckets: {failed_bkts}")
+        assert_utils.assert_true(len(failed_bkts) != 0, "Failed to do copy object before or after"
+                                                        " control pod failover/restart"
+                                                        f" Failed buckets: {failed_bkts}")
         assert_utils.assert_true(len(exp_fail_bkt_obj_dict) != 0, "Failed to do copy object when "
                                                                   "control pod restart. Failed "
                                                                   "buckets are:"
