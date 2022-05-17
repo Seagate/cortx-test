@@ -1279,7 +1279,7 @@ class TestDataPodFailure:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
-                                  f"Failed to DELETE buckets: {event_del_bkt} OR {fail_del_bkt}")
+                                  f"Failed to DELETE buckets: {event_del_bkt} and {fail_del_bkt}")
 
         LOGGER.info("Step 5: Successfully deleted remaining buckets.")
 
@@ -1476,7 +1476,7 @@ class TestDataPodFailure:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
-                                  f"Failed to DELETE buckets: {event_del_bkt} OR {fail_del_bkt}")
+                                  f"Failed to DELETE buckets: {event_del_bkt} and {fail_del_bkt}")
 
         LOGGER.info("Step 5: Successfully deleted remaining buckets.")
 
