@@ -16,7 +16,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """All the constants are alphabetically arranged."""
-CREATE_FILE = "dd if={} of={} bs={} count={}"
+CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
@@ -552,7 +552,7 @@ CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
-DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
+DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
@@ -610,3 +610,7 @@ SNS_REPAIR_CMD = "hctl repair {}"
 CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
                                "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
                                "\"state\" : \"status_val\"}'"
+
+# Procpath Collection
+PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
+           "record -i 45 -d {} -p $pid"
