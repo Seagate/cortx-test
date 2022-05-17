@@ -34,7 +34,7 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import support_bundle_utils, assert_utils
 from config import CMN_CFG
 from conftest import LOG_DIR
-from libs.dst.ProcPathStasCollection import EnableProcPathStatsCollection
+from libs.dtm.ProcPathStasCollection import EnableProcPathStatsCollection
 from libs.durability.near_full_data_storage import NearFullStorage
 from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notification
 from libs.s3 import ACCESS_KEY
