@@ -47,12 +47,12 @@ def setup_multipart_fixture(request):
     request.cls.log.info("STARTED: Setup test operations.")
     request.cls.secure_range = secrets.SystemRandom()
     request.cls.nodes = CMN_CFG["nodes"]
-    request.cls.M0CRATE_WORKLOAD_YML = os.path.join(
+    request.cls.m0crate_workload_yaml = os.path.join(
         os.getcwd(), "config/motr/sample_m0crate.yaml")
-    request.cls.M0CRATE_TEST_CSV = os.path.join(
+    request.cls.m0crate_test_csv = os.path.join(
         os.getcwd(), "config/motr/m0crate_tests.csv")
-    with open(request.cls.M0CRATE_TEST_CSV) as CSV_FH:
-        request.cls.CSV_DATA = [row for row in csv.DictReader(CSV_FH)]
+    with open(request.cls.m0crate_test_csv) as CSV_FH:
+        request.cls.csv_data = [row for row in csv.DictReader(CSV_FH)]
     request.cls.log.info("ENDED: Setup test suite operations.")
     yield
     request.cls.log.info("STARTED: Test suite Teardown operations")
@@ -82,7 +82,11 @@ class TestCorruptDataDetection:
         del self.motr_obj
 
     def m0cp_corrupt_m0cat(self):
-        logger.info("STARTED: Verify multiple m0cp/m0cat operation")
+        """
+        Create an object with M0CP, corrupt with M0CP and
+        validate the corruption with md5sum after M0CAT.
+        """
+        logger.info("STARTED: m0cp corrupt and m0cat workflow")
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
