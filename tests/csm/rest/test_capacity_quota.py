@@ -1051,7 +1051,7 @@ class TestCapacityQuota():
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                       self.akey, self.skey)
         object_list = s3_misc.get_objects_list(self.bucket,
-                    self.akey, self.skey) 
+                    self.akey, self.skey)
         for obj in object_list:
             self.log.info("Step 4: Delete object: %s", object_list[obj])
             assert s3_misc.delete_object(
