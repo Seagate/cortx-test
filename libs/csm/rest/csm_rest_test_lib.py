@@ -192,12 +192,11 @@ class RestTestLib:
                 self.headers = {
                     'Authorization': response.headers['Authorization']}
             else:
-                self.log.error(f"Authentication request failed in"
-                               f" {RestTestLib.authenticate_and_login.__name__}.\n"
-                               f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
+                self.log.error("Authentication request failed in %s.\nResponse code : %s",
+                               RestTestLib.authenticate_and_login.__name__, response.status_code)
+                self.log.error("Response content: %s", response.content)
+                self.log.error("Request headers : %s\nRequest body : %s",
+                               response.request.headers, response.request.body)
                 raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             return func(self, *args, **kwargs)
 
@@ -273,11 +272,11 @@ class RestTestLib:
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
             if response.status_code != const.SUCCESS_STATUS:
-                self.log.error("Authentication request failed.\n"
-                               f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
+                self.log.error("Authentication request failed.\nResponse code : %s",
+                               response.status_code)
+                self.log.error("Response content: %s", response.content)
+                self.log.error("Request headers : %s\nRequest body : %s",
+                               response.request.headers, response.request.body)
                 raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             token = response.headers['Authorization']
             headers = {'Authorization': token}
