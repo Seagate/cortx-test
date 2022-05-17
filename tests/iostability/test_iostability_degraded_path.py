@@ -16,7 +16,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-"""Test Suite for IO stability Happy Path workloads."""
+"""Test Suite for IO stability Degraded Path workloads."""
 import logging
 import os
 import time
@@ -36,8 +36,7 @@ from conftest import LOG_DIR
 from libs.dst.ProcPathStasCollection import EnableProcPathStatsCollection
 from libs.durability.near_full_data_storage import NearFullStorage
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.iostability.iostability_lib import IOStabilityLib, MailNotification, \
-    send_mail_notification
+from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notification
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
