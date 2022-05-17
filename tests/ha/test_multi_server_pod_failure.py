@@ -1377,7 +1377,7 @@ class TestMultiServerPodFailure:
                     "failed till K pods and complete upload after all K server pods "
                     "down - unsafe shutdown")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     # pylint: disable=unused-argument
     @pytest.mark.ha
@@ -1880,7 +1880,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("ENDED: Test chunk upload during k server pods going down by delete "
                     "deployment (unsafe)")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2271,7 +2271,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("COMPLETED: Verify copy object during server pods failure "
                     "till K pods down - unsafe shutdown")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
@@ -2904,7 +2904,7 @@ class TestMultiServerPodFailure:
         LOGGER.info("Completed: Test to verify IOs after each pod failure till only "
                     "single server pod is running.")
 
-    # pylint: disable=C0321
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
     # pylint: disable=unused-argument
     @pytest.mark.ha
@@ -2986,9 +2986,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 4: Successfully started WRITEs with variable sizes objects"
                     " in background")
 
-        LOGGER.info("Waiting for %s seconds to perform some WRITEs",
-                    HA_CFG["common_params"]["30sec_delay"])
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
