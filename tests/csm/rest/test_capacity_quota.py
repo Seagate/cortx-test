@@ -35,7 +35,6 @@ from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_misc
-from libs.s3.s3_awscli import AWScliS3api
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
@@ -64,7 +63,6 @@ class TestCapacityQuota():
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "mp_obj"
-        cls.awscli_s3api_obj = AWScliS3api()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUpload")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
@@ -806,8 +804,8 @@ class TestCapacityQuota():
                            "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-                           "Status code check failed for user deletion"
+        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+                        "Status code check failed for user deletion")
         #TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -841,8 +839,8 @@ class TestCapacityQuota():
             "Status code check failed for user deletion"
         self.log.info("Step 2: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-            "Status code check failed for user deletion"
+        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+                 "Status code check failed for user deletion")
         # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -919,15 +917,15 @@ class TestCapacityQuota():
         uid = ""
         resource = ""
         resp = self.csm_obj.get_capacity_usage(resource, uid)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-            "Status code check failed for get capacity"
+        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+                              "Status code check failed for get capacity")
         # TODO: Error code and message check part
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
         resource = uid = self.user_id
         resp = self.csm_obj.get_capacity_usage(resource, uid)
-        assert resp.status_code == HTTPStatus.BAD_REQUEST, \
-            "Status code check failed for get capacity"
+        assert(resp.status_code == HTTPStatus.BAD_REQUEST,
+                   "Status code check failed for get capacity")
         # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1037,5 +1035,19 @@ class TestCapacityQuota():
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                          self.akey, self.skey)
+        self.log.info("Step 4: Perform GET API to get capacity usage")
+        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
 
+        assert_utils.assert_equals(self.user_id, uid, "id is not equal")
+        assert_utils.assert_equals(t_obj, "0", "Number of objects not equal")
+        assert_utils.assert_equals(num_objects, "0", "Number of objects not equal")
+        assert_utils.assert_equal(t_size, "0", "Total Size mismatch found")
+        assert_utils.assert_equal(total_size, "0", "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, "0", "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
