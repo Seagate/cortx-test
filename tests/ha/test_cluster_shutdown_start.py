@@ -24,7 +24,7 @@ HA test suite for Cluster Shutdown: Immediate.
 
 import logging
 import os
-import random
+import secrets
 import threading
 import time
 from http import HTTPStatus
@@ -84,7 +84,7 @@ class TestClusterShutdownStart:
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
-        cls.system_random = random.SystemRandom()
+        cls.system_random = secrets.SystemRandom()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]

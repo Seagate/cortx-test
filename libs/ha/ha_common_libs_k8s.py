@@ -782,7 +782,7 @@ class HAK8s:
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
                 LOGGER.info("Uploaded part %s", i)
-            except BaseException as error:
+            except CTException as error:
                 LOGGER.error("Error: %s", error)
                 if event.is_set():
                     exp_failed_parts.append(i)
