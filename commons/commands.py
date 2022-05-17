@@ -265,6 +265,7 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
+SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
