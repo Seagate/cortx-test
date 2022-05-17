@@ -154,7 +154,7 @@ deactivate
                             env.Regression_Failed = true
                         }
                     }
-				    if ( status != 0 ) {
+                    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
                         env.Regression_Failed = true
@@ -276,12 +276,14 @@ deactivate
 }
                   if ( fileExists('total_count.csv')) {
                       def testcount = readCSV file: 'total_count.csv'
-                      env.totalcount = testcount[0][0]
-                      env.passcount = testcount[0][1]
-                      env.failcount = testcount[0][2]
-                      env.skipcount = testcount[0][3]
-                      env.todocount = testcount[0][4]
-                      env.abortcount = testcount[0][5]
+                      testcount.with {
+                          env.totalcount = testcount[0][0]
+                          env.passcount = testcount[0][1]
+                          env.failcount = testcount[0][2]
+                          env.skipcount = testcount[0][3]
+                          env.todocount = testcount[0][4]
+                          env.abortcount = testcount[0][5]
+                      }
                       echo "Total : ${totalcount}"
                       echo "Pass : ${passcount}"
                       echo "Fail : ${failcount}"
