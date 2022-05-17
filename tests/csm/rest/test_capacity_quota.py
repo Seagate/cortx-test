@@ -683,6 +683,7 @@ class TestCapacityQuota():
                           bucket, akey, skey)
             bucket_created = s3_misc.create_bucket(bucket, akey, skey)
             assert bucket_created, "Failed to create bucket"
+            self.buckets_created.append([bucket, akey, skey])
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
@@ -695,13 +696,13 @@ class TestCapacityQuota():
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 akey, skey, object_size=random_size)
-                assert(resp, "Put object Failed %s", obj)
+                assert_utils.assert_true(resp, "Put object Failed")
 
             self.log.info("Step 3: Get capacity count from AWS")
             total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-            resp = self.csm_obj.get_capacity_usage("user", user_id)
+            resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
             uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -747,6 +748,7 @@ class TestCapacityQuota():
                           bucket, self.akey, self.skey)
             bucket_created = s3_misc.create_bucket(bucket, self.akey, self.skey)
             assert bucket_created, "Failed to create bucket"
+            self.buckets_created.append([bucket, self.akey, self.skey])
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
@@ -759,7 +761,7 @@ class TestCapacityQuota():
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 self.akey, self.skey, object_size=random_size)
-                assert(resp, "Put object Failed %s", obj)
+                assert_utils.assert_true(resp, "Put object Failed")
 
             self.log.info("Step 3: Get capacity count from AWS")
             (bucket_objects, bucket_size) = \
@@ -773,7 +775,7 @@ class TestCapacityQuota():
             total_data_size = total_data_size + bucket_data_size
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
         uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
@@ -833,6 +835,7 @@ class TestCapacityQuota():
                           self.bucket, akey, skey)
             bucket_created = s3_misc.create_bucket(self.bucket, akey, skey)
             assert bucket_created, "Failed to create bucket"
+            self.buckets_created.append([self.bucket, akey, skey])
 
             obj_name_prefix = "created_obj"
             obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
@@ -845,13 +848,13 @@ class TestCapacityQuota():
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                                 akey, skey, object_size=random_size)
-                assert(resp, "Put object Failed %s", obj)
+                assert_utils.assert_true(resp, "Put object Failed")
 
             self.log.info("Step 3: Get capacity count from AWS")
             total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, akey, skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-            resp = self.csm_obj.get_capacity_usage("user", user_id)
+            resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
             uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
