@@ -819,7 +819,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                         "Status code check failed for user deletion")
-        if CSM_REST_CFG["msg_check"] == "enable":
+        #if CSM_REST_CFG["msg_check"] == "enable":
             #TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -858,7 +858,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                  "Status code check failed for user deletion")
-        if CSM_REST_CFG["msg_check"] == "enable":
+        #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -942,7 +942,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                               "Status code check failed for get capacity")
-        if CSM_REST_CFG["msg_check"] == "enable":
+        #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
@@ -950,7 +950,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert(resp.status_code == HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
-        if CSM_REST_CFG["msg_check"] == "enable":
+        #if CSM_REST_CFG["msg_check"] == "enable":
            # TODO: Error code and message check part
         self.log.info("##### Test ended -  %s #####", test_case_name)
 

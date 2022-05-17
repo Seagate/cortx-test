@@ -297,7 +297,7 @@ def get_objects_size_bucket(bucket_name, access_key: str, secret_key: str, **kwa
     Function to get total number of objects and total size from aws
     """
     resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
-    return len(resp.keys()), sum(resp.values())
+    return len(resp), sum(resp.values())
 
 def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
     """
@@ -307,4 +307,5 @@ def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
     obj_lst = []
     for key, value in resp.items():
         obj_lst.append(key)
+        LOGGER.debug("values are: %s", value)
     return obj_lst
