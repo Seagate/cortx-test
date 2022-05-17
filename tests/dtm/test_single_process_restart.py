@@ -155,6 +155,12 @@ class TestSingleProcessRestart:
             proc_read_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
         self.log.info("ENDED: Verify READ during m0d restart using pkill")
@@ -198,6 +204,12 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 4: Perform Read Operations on data written in Step 1:")
         self.dtm_obj.perform_ops(workload_info, que, True, True, True)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
@@ -390,3 +402,145 @@ class TestSingleProcessRestart:
 
         self.test_completed = True
         self.log.info("ENDED: Verify Delete during m0d restart using pkill -9")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41225")
+    def test_continuous_read_during_m0d_restart(self):
+        """Verify continuous READ during m0d restart using pkill."""
+        self.log.info("STARTED: Verify continuous READ during m0d restart using pkill")
+        bucket_name = 'bucket-test-41225'
+        object_prefix = 'object-test-41225'
+        log_file_prefix = 'test-41225'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operations :")
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                      object_prefix=object_prefix,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+        self.log.info("Step 2: Start READ Operations :")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info, que,
+                                                     True,
+                                                     True,
+                                                     True, 10))
+        proc_read_op.start()
+
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+
+        self.log.info("Step 5: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous READ during m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41226")
+    def test_continuous_write_during_m0d_restart(self):
+        """Verify continuous WRITE during m0d restart using pkill."""
+        self.log.info("STARTED: Verify continuous WRITE during m0d restart using pkill")
+        bucket_name = 'bucket-test-41226'
+        object_prefix = 'object-test-41226'
+        log_file_prefix = 'test-41226'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operations in loop:")
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                                args=(bucket_name, object_prefix,
+                                                      self.test_cfg['clients'],
+                                                      self.test_cfg['samples'],
+                                                      self.test_cfg['size'],
+                                                      log_file_prefix,
+                                                      que, 10))
+        proc_write_op.start()
+
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for Write Operation to complete.")
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.log.info("Step 5: Perform Validate and Delete Operations on data written in Step 1:")
+        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous WRITE during m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41228")
+    def test_continuous_delete_during_m0d_restart(self):
+        """Verify continuous DELETE during m0d restart using pkill."""
+        self.log.info("STARTED: Verify continuous DELETE during m0d restart using pkill")
+        bucket_name = 'bucket-test-41228'
+        object_prefix = 'object-test-41228'
+        log_file_prefix = 'test-41228'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operations :")
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                      object_prefix=object_prefix,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que, loop=10)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+        self.log.info("Step 2: Start DELETE Operations :")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info, que,
+                                                     True,
+                                                     False,
+                                                     False))
+        proc_read_op.start()
+
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for DELETE Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous DELETE during m0d restart using pkill")
