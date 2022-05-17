@@ -404,7 +404,7 @@ class HAK8s:
         cmd_path = dir_path if dir_path else self.dir_path
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(cmd_path),
                                     read_lines=True, exc=False)
-        LOGGER.info("Cluster start response: %s".format(resp))
+        LOGGER.info("Cluster start response: %s", resp)
         if resp[0]:
             return True, resp
         return False, resp
