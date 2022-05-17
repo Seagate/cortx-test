@@ -21,12 +21,17 @@
 Library Methods for DTM recovery testing
 """
 import logging
+import os
 import random
 import re
 import time
 
+from botocore.exceptions import ClientError
+
 from commons import constants as const
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
 from config import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -49,11 +54,11 @@ class DTMRecoveryTestLib:
         self.access_key = access_key
         self.secret_key = secret_key
         self.ha_obj = HAK8s()
-        self.s3_obj = S3TestLib()
+        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key)
 
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
-                         log_file_prefix, queue, loop=1):
+                         log_file_prefix, queue, loop=1, created_bucket: list = None):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
@@ -64,6 +69,7 @@ class DTMRecoveryTestLib:
         :param log_file_prefix: Log file prefix
         :param queue: Multiprocessing Queue to be used for returning values (Boolean,dict)
         :param loop: Loop count for writes
+        :param created_bucket: List of pre created buckets(Should be greater or equal to loop count)
         """
         results = list()
         workload = list()
@@ -72,6 +78,8 @@ class DTMRecoveryTestLib:
             self.log.info("Iteration count: %s", iter_cnt)
             self.log.info("Perform Write Operations : ")
             bucket_name = bucket_prefix + str(int(time.time()))
+            if created_bucket:
+                bucket_name = created_bucket[iter_cnt]
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
@@ -98,7 +106,7 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
-    def perform_ops(self, workload_info: list, queue, skipread: bool = True,
+    def perform_ops(self, workload_info: list, queue, skipread: bool = False,
                     validate: bool = True, skipcleanup: bool = False, loop=1):
         """
         Perform read operations
@@ -110,40 +118,56 @@ class DTMRecoveryTestLib:
         :param loop: Loop count for performing reads in iteration.
         """
         results = list()
-        log_path = None
         for iter_cnt in range(loop):
             self.log.info("Iteration count: %s", iter_cnt)
             for workload in workload_info:
-                resp = s3bench.s3bench(self.access_key,
-                                       self.secret_key,
-                                       bucket=workload['bucket'],
-                                       num_clients=workload['num_clients'],
-                                       num_sample=workload['num_sample'],
-                                       obj_name_pref=workload['obj_name_pref'],
-                                       obj_size=workload['obj_size'],
-                                       skip_cleanup=skipcleanup,
-                                       skip_write=True,
-                                       skip_read=skipread,
-                                       validate=validate,
-                                       log_file_prefix=f"read_workload_{workload['obj_size']}mb",
-                                       end_point=S3_CFG["s3_url"],
-                                       validate_certs=S3_CFG["validate_certs"])
-                self.log.info("Workload: %s objects of %s with %s parallel clients ",
-                              workload['num_sample'], workload['obj_size'],
-                              workload['num_clients'])
-                self.log.info("Log Path %s", resp[1])
-                log_path = resp[1]
-                if s3bench.check_log_file_error(resp[1]):
-                    results.append(False)
-                    break
-                else:
-                    results.append(True)
+                if not skipread or validate:
+                    resp = s3bench.s3bench(self.access_key,
+                                           self.secret_key,
+                                           bucket=workload['bucket'],
+                                           num_clients=workload['num_clients'],
+                                           num_sample=workload['num_sample'],
+                                           obj_name_pref=workload['obj_name_pref'],
+                                           obj_size=workload['obj_size'],
+                                           skip_cleanup=True,
+                                           skip_write=True,
+                                           skip_read=skipread,
+                                           validate=validate,
+                                           log_file_prefix=f"read_workload_{workload['obj_size']}b",
+                                           end_point=S3_CFG["s3_url"],
+                                           validate_certs=S3_CFG["validate_certs"])
+                    self.log.info("Workload: %s objects of %s with %s parallel clients ",
+                                  workload['num_sample'], workload['obj_size'],
+                                  workload['num_clients'])
+                    self.log.info("Log Path %s", resp[1])
+                    if s3bench.check_log_file_error(resp[1]):
+                        self.log.error("Error found in log path: %s", resp[1])
+                        results.append(False)
+                        break
+                    else:
+                        results.append(True)
+                if not skipcleanup:
+                    # Delete all objects from the bucket
+                    resp = self.s3t_obj.object_list(bucket_name=workload['bucket'])
+                    obj_list = resp[1]
+                    del_res = True
+                    for obj in obj_list:
+                        try:
+                            self.s3t_obj.delete_object(bucket_name=workload['bucket'], obj_name=obj)
+                        except CTException as error:
+                            self.log.error("Error while deleting object %s from bucket %s : %s",
+                                           obj, workload['bucket'], error)
+                            del_res = False
+                    results.append(del_res)
+                    if not del_res:
+                        self.log.error("Observed deletion error for bucket %s.", workload['bucket'])
+                        break
+                    self.log.info("Objects deletion completed for bucket %s", workload['bucket'])
 
         if all(results):
-            queue.put([True, f"S3bench workload is successful. Last read log file {log_path}"])
+            queue.put([True, "Workload successful."])
         else:
-            queue.put([False, f"S3bench workload for failed."
-                              f" Please read log file {log_path}"])
+            queue.put([False, "Workload failed."])
 
     # pylint: disable-msg=too-many-locals
     def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
@@ -274,6 +298,59 @@ class DTMRecoveryTestLib:
         svc = switcher[process]
         fids = fids[svc]
         return True, fids
+
+    def perform_object_overwrite(self, bucket_name, object_name, iteration, object_size, queue):
+        """
+        Function to overwrite same object with random object generated for each iteration
+        :param bucket_name : Pre created Bucket name for creating object
+        :param object_name : object name to create and overwrite
+        :param iteration: Number of time to overwrite same object
+        :param object_size : Maximum object size that can be created (size in MB)
+        :param queue: Multiprocessing Queue to be used for returning values (Boolean,str)
+        """
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists")
+            system_utils.make_dirs(TEST_DATA_FOLDER)
+
+        ret_resp = True, "Overwrites successful."
+        for _ in iteration:
+            file_size = random.SystemRandom().randint(0, object_size)  # in mb
+            file_path = os.path.join(TEST_DATA_FOLDER, object_name)
+
+            self.log.info("Creating a file with name %s", object_name)
+            system_utils.create_file(file_path, file_size, "/dev/urandom", '1M')
+
+            self.log.info("Retrieving checksum of file %s", object_name)
+            resp = system_utils.get_file_checksum(file_path)
+            if not resp[0]:
+                ret_resp = resp
+                break
+            chksm_before_put_obj = resp[1]
+
+            self.log.info("Uploading a object %s to a bucket %s", object_name, bucket_name)
+            resp = self.s3t_obj.put_object(bucket_name, object_name, file_path)
+
+            self.log.info("Removing local file from client and downloading object")
+            system_utils.remove_file(file_path)
+            resp = self.s3t_obj.get_object(bucket=bucket_name, key=object_name)
+            with open(file_path, "wb") as data:
+                data.write(resp[1]['Body'].read())
+
+            self.log.info("Verifying checksum of downloaded file")
+            resp = system_utils.get_file_checksum(file_path)
+            if not resp[0]:
+                ret_resp = resp
+                break
+
+            chksm_after_dwnld_obj = resp[1]
+            if chksm_after_dwnld_obj != chksm_before_put_obj:
+                ret_resp = False, f"Checksum does not match, Expected {chksm_before_put_obj} " \
+                                  f"Received {chksm_after_dwnld_obj}"
+                break
+
+            self.log.info("Delete downloaded file")
+            system_utils.remove_file(file_path)
+        queue.put(ret_resp)
 
     def perform_copy_objects(self, workload, que):
         """
