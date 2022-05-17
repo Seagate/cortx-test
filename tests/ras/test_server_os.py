@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -19,26 +19,32 @@
 
 """SSPL test cases: Primary Node."""
 
-import time
-import os
 import logging
+import os
+import re
+import time
+
 import pytest
-from config import CMN_CFG
-from config import RAS_VAL
-from config import RAS_TEST_CFG
-from config.s3 import S3_OBJ_TST
-from config.s3 import S3_CFG
-from commons.utils import config_utils
-from commons.constants import SwAlerts as const
+
 from commons import constants as cons
 from commons import cortxlogging
-from commons.utils.assert_utils import *
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
-from commons.utils.system_utils import create_file, path_exists, make_dirs
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
+from commons.constants import SwAlerts as const
+from commons.utils import config_utils
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import path_exists
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
+from config.s3 import S3_CFG
+from config.s3 import S3_OBJ_TST
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 from libs.s3 import s3_test_lib
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -139,6 +145,7 @@ class TestServerOS:
         self.integrity_fault = False
         LOGGER.info("Completed setup_method.")
 
+    # pylint: disable=too-many-statements
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("\n%s Performing Teardown operation %s", "*" * 50, "*" * 50)
@@ -526,6 +533,7 @@ class TestServerOS:
             "\nStep 6: Successfully verified CPU fault resolved alert on CSM REST API\n")
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-22786")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -632,6 +640,7 @@ class TestServerOS:
             "\nStep 8: Successfully verified Memory usage resolved alert on CSM REST API\n")
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-22787")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -714,6 +723,7 @@ class TestServerOS:
             LOGGER.info("[COMPLETED] : Testing for node : %s", obj.host)
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-22844")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -1155,6 +1165,9 @@ class TestServerOS:
 
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-22891")
     @pytest.mark.lr
@@ -1259,38 +1272,25 @@ class TestServerOS:
 
         # Increasing disk usage above threshold by performing IO operations
         LOGGER.info("Increasing disk usage by performing IO operations")
-        obj_name = "{0}{1}".format(
-            self.obj_name_prefix, time.perf_counter_ns())
-        folder_path_prefix = "{0}{1}".format(
-            "test_data", time.perf_counter_ns())
+        obj_name = f"{self.obj_name_prefix}{time.perf_counter_ns()}"
+        folder_path_prefix = f"test_data{time.perf_counter_ns()}"
         folder_path = os.path.join(os.getcwd(), folder_path_prefix)
-        file_name = "{0}{1}".format("obj_workflow", time.perf_counter_ns())
+        file_name = f"obj_workflow{time.perf_counter_ns()}"
         file_path = os.path.join(folder_path, file_name)
         if not path_exists(folder_path):
             resp = make_dirs(folder_path)
             LOGGER.info("Created path: %s", resp)
         disk_flag = False
         while not disk_flag:
-            bucket_name = "{0}{1}".format(
-                self.bkt_name_prefix, time.perf_counter_ns())
-            LOGGER.info(
-                "Creating a bucket with name %s", bucket_name)
+            bucket_name = f"{self.bkt_name_prefix}{time.perf_counter_ns()}"
+            LOGGER.info("Creating a bucket with name %s", bucket_name)
             resp = self.s3_test_obj.create_bucket(bucket_name)
             assert resp[0], resp[1]
             assert resp[1] == bucket_name, resp[0]
-            LOGGER.info(
-                "Created a bucket with name %s", bucket_name)
-            create_file(
-                file_path,
-                S3_OBJ_TST["s3_object"]["mb_count"])
-            LOGGER.info(
-                "Uploading an object %s to a bucket %s",
-                obj_name,
-                bucket_name)
-            resp = self.s3_test_obj.put_object(
-                bucket_name,
-                obj_name,
-                file_path)
+            LOGGER.info("Created a bucket with name %s", bucket_name)
+            create_file(file_path, S3_OBJ_TST["s3_object"]["mb_count"])
+            LOGGER.info("Uploading an object %s to a bucket %s", obj_name, bucket_name)
+            resp = self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
             assert resp[0], resp[1]
             LOGGER.info("Uploaded an object to a bucket")
             LOGGER.info("Calculating disk usage")
@@ -1389,10 +1389,10 @@ class TestServerOS:
         LOGGER.info(
             "Step 1: Create RAID Integrity fault")
         resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT,
-                    host_details= {"host":self.host,
-                                   "host_user":self.uname,
-                                   "host_password":self.passwd},
-                    input_parameters={'count': 5, 'timeout':60})
+                                                 host_details={"host": self.host,
+                                                               "host_user": self.uname,
+                                                               "host_password": self.passwd},
+                                                 input_parameters={'count': 5, 'timeout': 60})
         assert resp[0], resp[1]
         self.integrity_fault = True
         LOGGER.info("Step 1: RAID integrity fault created.")
@@ -1405,8 +1405,9 @@ class TestServerOS:
             LOGGER.info("Verified the generated alert on the SSPL")
 
         LOGGER.info("Step 3: Checking CSM REST API for RAID integrity alert")
-        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"], self.starttime,
+                                                 const.AlertType.RESOLVED, True,
+                                                 test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info(
             "Step 3: Successfully verified RAID integrity alert using CSM REST API")
@@ -1425,8 +1426,9 @@ class TestServerOS:
             LOGGER.info("Verified the generated alert on the SSPL")
 
         LOGGER.info("Step 6: Checking CSM REST API for RAID integrity resolved alert")
-        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"], self.starttime,
+                                                 const.AlertType.RESOLVED, True,
+                                                 test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 6: Successfully verified RAID integrity resolved alert using CSM"
                     " REST API")

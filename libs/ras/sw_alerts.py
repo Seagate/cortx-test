@@ -19,15 +19,16 @@
 
 """Python library which will perform ras component related and system level operations."""
 import logging
-import re
-import os
-import time
 import multiprocessing as mp
+import os
+import re
+import time
 from collections import OrderedDict
+
 from commons import commands
 from commons import constants as const
-from libs.ras.ras_core_lib import RASCoreLib
 from config import RAS_VAL
+from libs.ras.ras_core_lib import RASCoreLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +40,9 @@ class SoftwareAlert(RASCoreLib):
         super().__init__(host, username, password)
         self.svc_path = None
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list,
                              ignore_param: list = ['timestamp', 'comment'], timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
@@ -107,7 +111,8 @@ class SoftwareAlert(RASCoreLib):
         result = svc_result and monitor_svcs_result
         return result
 
-    def verify_systemctl_response(self, expected: dict, actual: dict):
+    @staticmethod
+    def verify_systemctl_response(expected: dict, actual: dict):
         """Verify systemctl status actual response against expected dictionary
 
         :param expected: Expected systemctl response dictionary
@@ -122,7 +127,8 @@ class SoftwareAlert(RASCoreLib):
                 result = False
         return result
 
-    def get_expected_systemctl_resp(self, action: str):
+    @staticmethod
+    def get_expected_systemctl_resp(action: str):
         """Find the expected response based on action performed on the service and it's previous
         state
         :param action: systemctl action like start/stop/restart/..
@@ -203,7 +209,8 @@ class SoftwareAlert(RASCoreLib):
                 inactive_list.append(svc)
         return inactive_list
 
-    def parse_systemctl_status(self, response):
+    @staticmethod
+    def parse_systemctl_status(response):
         """Parse the keywords from the systemctl response.
 
         :param response: byte response
@@ -229,7 +236,8 @@ class SoftwareAlert(RASCoreLib):
                 parsed_op.update(match.groupdict())
             if "Loaded:" in line and "vendor preset:" in line and ";" in line:
                 load_tokenizer = re.compile(
-                    r'Loaded: (?P<loaded>.*?) \((?P<path>.*?); (?P<enabled>.*); vendor preset: (?P<vendorpreset>.*)\)')
+                    r'Loaded: (?P<loaded>.*?) \((?P<path>.*?); (?P<enabled>.*); '
+                    r'vendor preset: (?P<vendorpreset>.*)\)')
                 match = re.match(load_tokenizer, line)
                 parsed_op.update(match.groupdict())
             if "Main PID:" in line:
@@ -312,16 +320,17 @@ class SoftwareAlert(RASCoreLib):
     def recover_svc(self, svc: str, attempt_start: bool = True, timeout=200):
         """
         response recovery time is with +5sec precision
+        :param svc: service name
         :param attempt_start: If True , it will try to start the stopped services.
         :param timeout: Wait for service to come up until timeout. Seconds
         :return dict: response: {svc_name1:{state:<value>,recovery_time:<value>},...}
         """
         starttime = time.time()
-        op = {}
+        op_r = {}
         time_lapsed = 0
         while time_lapsed < timeout:
             response = self.get_svc_status([svc])
-            op = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}
+            op_r = {"state": response[svc]["state"], "recovery_time": time.time() - starttime}
             LOGGER.info(svc + ":" + response[svc]["state"])
             if response[svc]["state"] == "active":
                 LOGGER.info("%s is recovered in %s seconds", svc, time_lapsed)
@@ -330,7 +339,7 @@ class SoftwareAlert(RASCoreLib):
                 self.node_utils.send_systemctl_cmd("start", [svc], exc=True)
             time.sleep(1)
             time_lapsed = time.time() - starttime
-        return op
+        return op_r
 
     def get_tmp_svc_path(self):
         """Generate the name of the temporary service configuration file.
@@ -348,13 +357,13 @@ class SoftwareAlert(RASCoreLib):
         :return [dict]: parse service file
         """
         response = self.node_utils.read_file(self.get_svc_status([svc])[svc]["path"])
-        op = OrderedDict()
+        op_r = OrderedDict()
         section = None
         for line in response.splitlines():
             if "[" in line and "]" in line:
                 section = re.sub("\\[", "", line)
                 section = re.sub("\\]", "", section)
-                op[section] = {}
+                op_r[section] = {}
             elif section is not None and "=" in line:
                 txt = line.split("=")
                 if len(txt) > 2:
@@ -362,8 +371,8 @@ class SoftwareAlert(RASCoreLib):
                     key = separator.join(txt[:-1])
                 else:
                     key = txt[0]
-                    op[section].update({key: txt[-1]})
-        return op
+                    op_r[section].update({key: txt[-1]})
+        return op_r
 
     def store_svc_config(self, svc):
         """Store the service configuration file
@@ -385,18 +394,18 @@ class SoftwareAlert(RASCoreLib):
         """
         fpath = self.get_svc_status([svc])[svc]["path"]
         self.svc_path = fpath
-        op = self.read_svc_file(svc)
+        op_r = self.read_svc_file(svc)
         LOGGER.info("Existing service configuration :")
-        LOGGER.info(op)
+        LOGGER.info(op_r)
         self.node_utils.rename_file(self.svc_path, self.get_tmp_svc_path())
         LOGGER.info("Content modified in service configuration : %s", content)
         for section, _ in content.items():
-            op[section].update(content[section])
+            op_r[section].update(content[section])
             txt = ""
-            for key, value in op.items():
+            for key, value in op_r.items():
                 txt = txt + "[" + key + "]" + "\n"
-                for k, v in value.items():
-                    txt = txt + k + "=" + v + "\n"
+                for k_k, v_v in value.items():
+                    txt = txt + k_k + "=" + v_v + "\n"
             self.node_utils.write_file(fpath, txt)
         LOGGER.info("Changed service configuration :")
         LOGGER.info(txt)
@@ -612,8 +621,8 @@ class SoftwareAlert(RASCoreLib):
 
     def gen_cpu_fault(self, faulty_cpu_id: list):
         """Generate CPU faults
-
-        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be created.
+        :param faulty_cpu_id: CPU core ID starting from 0 to number cores on which fault will be
+        created.
         :return [tuple]: bool, error message
         """
         self.set_conf_store_vals(
@@ -633,7 +642,8 @@ class SoftwareAlert(RASCoreLib):
     def resolv_cpu_fault(self, faulty_cpu_id: list):
         """Resolve the CPU faults
 
-        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be resolved
+        :param faulty_cpu_id: CPU core ID starting from 0 to number cores on which fault will be
+        resolved
         :return [type]: bool, error message
         """
         faulty_cpu_id = [int(i) for i in faulty_cpu_id]
@@ -712,8 +722,8 @@ class SoftwareAlert(RASCoreLib):
 
         :return [str]: Response from tool
         """
-        resp = self.node_utils.execute_cmd\
-            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name), inputs="yes").decode('utf-8')
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_INSTALL_TOOL.format(tool_name),
+                                           inputs="yes").decode('utf-8')
         LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
         return resp
 
@@ -726,15 +736,14 @@ class SoftwareAlert(RASCoreLib):
         """
         cmd = commands.CMD_INCREASE_MEMORY.format(vm_count, memory_size, timespan)
         resp = self.node_utils.host_obj.exec_command(cmd)
-        LOGGER.debug("%s response : %s",cmd, resp)
+        LOGGER.debug("%s response : %s", cmd, resp)
         return resp
 
     def check_memory_utilization(self):
         """Check memory utilization
         :return [str]: Response from command
         """
-        resp = self.node_utils.execute_cmd\
-            (cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
         LOGGER.debug("%s response : %s", commands.CMD_MEMORY_UTILIZATION, resp)
         return resp
 
@@ -897,7 +906,7 @@ class SoftwareAlert(RASCoreLib):
         """Enabling sspl service
         """
         LOGGER.info("Enabling sspl service")
-        resp = self.health_obj.enable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        self.health_obj.enable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
         time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
 
         result = True
@@ -908,7 +917,7 @@ class SoftwareAlert(RASCoreLib):
         """Disable sspl service
         """
         LOGGER.info("Disabling sspl service")
-        resp = self.health_obj.disable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        self.health_obj.disable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
         LOGGER.info("sspl service is disabled successfully")
         result = True
 

@@ -19,18 +19,21 @@
 
 """SSPL test cases: Primary Node."""
 
-import time
-import secrets
 import logging
+import secrets
+import time
+
 import pytest
-from config import CMN_CFG, RAS_VAL
-from commons.helpers.node_helper import Node
-from commons.constants import LOG_STORE_PATH
+
+from commons import cortxlogging
 from commons.constants import CONF_SSPL_SRV_THRS_INACT_TIME
+from commons.constants import LOG_STORE_PATH
 from commons.constants import SSPL_CFG_URL
 from commons.constants import SwAlerts as const
-from commons import cortxlogging
-from commons.utils.assert_utils import *
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from config import CMN_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
@@ -60,7 +63,8 @@ class Test3PSvcMonitoringGUI:
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
         cls.svc_path_dict = {}
         cls.sspl_cfg_url = SSPL_CFG_URL
-        cls.intrmdt_state_timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
+        cls.intrmdt_state_timeout = \
+            RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
         cls.sspl_thrs_inact_time = CONF_SSPL_SRV_THRS_INACT_TIME
         cls.thrs_inact_time_org = None
         cls.setup_type = CMN_CFG["setup_type"]
@@ -77,7 +81,6 @@ class Test3PSvcMonitoringGUI:
         """Setup operations per test."""
         LOGGER.info("############ Running setup_method ############")
         common_cfg = RAS_VAL["ras_sspl_alert"]
-        services = self.cm_cfg["service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
         LOGGER.info("Check that all the 3rd party services are active")
@@ -89,12 +92,12 @@ class Test3PSvcMonitoringGUI:
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
-            assert_true(resp, "Failed to start message bus reader")
+            assert_utils.assert_true(resp, "Failed to start message bus reader")
             LOGGER.info("Successfully started read_message_bus.py script on node")
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert_true(res[0], res[1])
+        assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
         LOGGER.info("############ Setup method completed ############")
 
@@ -104,12 +107,14 @@ class Test3PSvcMonitoringGUI:
         resp = self.ras_test_obj.get_conf_store_vals(
             url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
         if resp != self.thrs_inact_time_org:
-            LOGGER.info("Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
+            LOGGER.info("Restore threshold_inactive_time to %s", self.thrs_inact_time_org)
             self.ras_test_obj.set_conf_store_vals(
-                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
+                url=self.sspl_cfg_url,
+                encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
             resp = self.ras_test_obj.get_conf_store_vals(
                 url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
-            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time in teardown"
+            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time " \
+                                                     "in teardown"
             LOGGER.info("Successfully restored threshold_inactive_time to : %s", resp)
 
         LOGGER.info("Restore service config for all the 3rd party services")
@@ -117,7 +122,7 @@ class Test3PSvcMonitoringGUI:
             teardown_restore=True, svc_path_dict=self.svc_path_dict)
         for svc in self.external_svcs:
             response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                     timeout=const.SVC_LOAD_TIMEOUT_SEC)
             LOGGER.info("Service recovery details : %s", response)
             assert response["state"] == "active", f"Unable to recover the {svc} service"
         LOGGER.info("All 3rd party services recovered and in active state.")
@@ -129,7 +134,7 @@ class Test3PSvcMonitoringGUI:
                 kv_store_path, common_cfg["sspl_log_level_key"],
                 common_cfg["sspl_log_dval"],
                 update=True)
-            assert_true(res)
+            assert_utils.assert_true(res)
 
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
@@ -158,13 +163,16 @@ class Test3PSvcMonitoringGUI:
             LOGGER.warning(error)
         LOGGER.info("############ Successfully performed Teardown operation ############")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-21265")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21265_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : SaltStack"
+        """
+        CSM GUI: Verify Alerts for SW Service : SaltStack
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -205,7 +213,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -254,7 +262,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -274,7 +282,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21257_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : ElasticSearch-OSS"
+        """
+        CSM GUI: Verify Alerts for SW Service : ElasticSearch-OSS
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -315,7 +325,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -335,7 +345,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21256_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Consul"
+        """
+        CSM GUI: Verify Alerts for SW Service : Consul
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -376,7 +388,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -396,8 +408,10 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21258_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Scsi-network-relay"
-        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
+        """
+        CSM GUI: Verify Alerts for SW Service : Scsi-network-relay
+        """
+        assert_utils.assert_equals(self.setup_type, "HW", 'Test valid on HW only')
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -438,7 +452,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -458,7 +472,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21260_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Statsd"
+        """
+        CSM GUI: Verify Alerts for SW Service : Statsd
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -499,7 +515,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -519,8 +535,11 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21266_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : GlusterFS"
-        assert_equals(self.setup_type, "HW", 'Test valid on HW only')  # TODO: may need to update after BUG : EOS-20795
+        """
+        CSM GUI: Verify Alerts for SW Service : GlusterFS
+        """
+        assert_utils.assert_equals(self.setup_type, "HW", 'Test valid on HW only')
+        # TODO: may need to update after BUG : EOS-20795
         # TODO: verify while TE
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -562,7 +581,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -581,7 +600,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21264_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Lustre"
+        """
+        CSM GUI: Verify Alerts for SW Service : Lustre
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -622,7 +643,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -642,7 +663,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21261_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Rsyslog"
+        """
+        CSM GUI: Verify Alerts for SW Service : Rsyslog
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -689,7 +712,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -709,7 +732,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21263_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : OpenLDAP"
+        """
+        CSM GUI: Verify Alerts for SW Service : OpenLDAP
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -750,7 +775,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -770,8 +795,10 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21267_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Multipathd"
-        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
+        """
+        CSM GUI: Verify Alerts for SW Service : Multipathd
+        """
+        assert_utils.assert_equals(self.setup_type, "HW", 'Test valid on HW only')
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -812,7 +839,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -832,7 +859,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21259_3ps_monitoring_gui(self):
-        "CSM GUI: Verify Alerts for SW Service : Kafka"
+        """
+        CSM GUI: Verify Alerts for SW Service : Kafka
+        """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -878,7 +907,7 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Start the %s service again", svc)
         response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
-                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+                                                 timeout=const.SVC_LOAD_TIMEOUT_SEC)
         LOGGER.info("Service recovery details : %s", response)
         assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
@@ -902,7 +931,7 @@ class Test3PSvcMonitoringGUI:
         """
         Multiple 3rd party services monitoring and management
         """
-        secure_range  = secrets.SystemRandom()
+        secure_range = secrets.SystemRandom()
         starttime = time.time()
         # svc = "salt-master.service"
         # LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
@@ -913,8 +942,7 @@ class Test3PSvcMonitoringGUI:
         num_services = secure_range.randrange(0, len(self.external_svcs))
         random_services = secure_range.sample(self.external_svcs, num_services)
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
-        LOGGER.info("Checking that %s services are in stopped state",
-                    random_services)
+        LOGGER.info("Checking that %s services are in stopped state", random_services)
         resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                 services=random_services,
                                                 decode=True, exc=False)
@@ -923,9 +951,9 @@ class Test3PSvcMonitoringGUI:
         if stat_list:
             for i in stat_list:
                 active_list.append(random_services[i])
-            assert_true(False, f"Failed to put {active_list} services in "
-                               f"stopped/inactive state")
-        LOGGER.info(f"Successfully stopped {random_services}")
+            assert_utils.assert_true(False, f"Failed to put {active_list} services in "
+                                            "stopped/inactive state")
+        LOGGER.info("Successfully stopped %s", random_services)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
@@ -946,12 +974,11 @@ class Test3PSvcMonitoringGUI:
         if stat_list:
             for i in stat_list:
                 inactive_list.append(random_services[i])
-            assert_true(False, f"Failed to put {inactive_list} services in "
-                               f"active state")
+            assert_utils.assert_true(False, f"Failed to put {inactive_list} services in "
+                                            "active state")
         LOGGER.info("Successfully started %s", random_services)
 
         time.sleep(self.timeouts["alert_timeout"])
-        LOGGER.info("Check if fault_resolved alert is generated for %s services",
-            random_services)
+        LOGGER.info("Check if fault_resolved alert is generated for %s services", random_services)
         resp = self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, True)
         assert resp[0], resp[1]

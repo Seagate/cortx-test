@@ -21,28 +21,31 @@
 RAS test file for all the RAS tests related to RAID operations.
 """
 
+import logging
 import os
 import time
-import logging
+
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
-from commons.utils import system_utils as sys_utils
-from libs.s3 import S3H_OBJ
-from commons.helpers.health_helper import Health
-from commons.helpers.node_helper import Node
-from commons import constants as common_cons
+
 from commons import commands as common_cmds
-from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, \
-    AlertType
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons import constants as common_cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils import system_utils as sys_utils
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-instance-attributes
 class TestRAIDOperations:
     """
     Test suite for performing RAID related operations
@@ -81,16 +84,11 @@ class TestRAIDOperations:
         # Enable this flag for starting RMQ channel
         self.start_rmq = self.cm_cfg["start_rmq"]
 
-        LOGGER.info(
-            "Fetching the disks details from mdstat for RAID array %s",
-            self.md_device)
+        LOGGER.info("Fetching the disks details from mdstat for RAID array %s", self.md_device)
         md_stat = self.nd_obj.get_mdstat()
-        self.disks = md_stat["devices"][os.path.basename(
-            self.md_device)]["disks"].keys()
-        self.disk1 = RAS_VAL["raid_param"]["disk_path"].format(
-            list(self.disks)[0])
-        self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(
-            list(self.disks)[1])
+        self.disks = md_stat["devices"][os.path.basename(self.md_device)]["disks"].keys()
+        self.disk1 = RAS_VAL["raid_param"]["disk_path"].format(list(self.disks)[0])
+        self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(list(self.disks)[1])
 
         LOGGER.info("Updating transmit interval value to 10")
         res = self.ras_obj.update_threshold_values(
@@ -181,8 +179,7 @@ class TestRAIDOperations:
         self.ras_obj.kill_remote_process("/sspl/sspl.log")
 
         LOGGER.debug("Copying contents of sspl.log")
-        read_resp = self.nd_obj.read_file(filename=
-                                          self.cm_cfg["file"]["sspl_log_file"],
+        read_resp = self.nd_obj.read_file(filename=self.cm_cfg["file"]["sspl_log_file"],
                                           local_path=self.cm_cfg["file"]["local_path"])
         LOGGER.debug(
             "======================================================")
@@ -452,6 +449,7 @@ class TestRAIDOperations:
         LOGGER.info(
             "ENDED: TEST-4785 RAID: Fail a drive of array")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-16214")
