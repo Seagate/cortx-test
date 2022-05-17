@@ -429,7 +429,7 @@ class TestDataPodFailure:
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
@@ -459,7 +459,7 @@ class TestDataPodFailure:
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        del_resp = ()
+        del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
@@ -478,7 +478,7 @@ class TestDataPodFailure:
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        rd_resp = ()
+        rd_resp = tuple()
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
@@ -533,7 +533,7 @@ class TestDataPodFailure:
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = ()
+        wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         s3_data = wr_resp[0]  # Contains s3 data for passed buckets
@@ -565,7 +565,7 @@ class TestDataPodFailure:
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
 
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        del_resp = ()
+        del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
@@ -585,7 +585,7 @@ class TestDataPodFailure:
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        rd_resp = ()
+        rd_resp = tuple()
         while len(rd_resp) != 4:
             rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_bkt_get = rd_resp[0]
@@ -638,8 +638,9 @@ class TestDataPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
 
-        LOGGER.info("Step 2: Successfully started READs and verified DI on the written data in "
-                    "background. Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 2: Successfully started READs/verified-DI on the written data in "
+                    "background. ")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
@@ -821,7 +822,7 @@ class TestDataPodFailure:
         LOGGER.info("Step 4: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         thread.join()
-        del_resp = ()
+        del_resp = tuple()
         while len(del_resp) != 2:
             del_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         event_del_bkt = del_resp[0]
@@ -894,6 +895,7 @@ class TestDataPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 1: Successfully started WRITES in background")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
@@ -918,7 +920,9 @@ class TestDataPodFailure:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 3: Verify status for In-flight WRITEs while pod going down is failed.")
         pass_logs = list(x[1] for x in responses["pass_res"])
+        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
+        LOGGER.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]),
                                   f"Expected Pass, But Logs which contain failures: {resp[1]}")
@@ -1048,7 +1052,8 @@ class TestDataPodFailure:
                     "background")
 
         LOGGER.info("Step 1: Successfully started READs & WRITES in background. Sleeping for %s "
-                    "sec for s3bench setup check.", HA_CFG["common_params"]["30sec_delay"])
+                    "sec for s3bench setup check.")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
@@ -1182,6 +1187,7 @@ class TestDataPodFailure:
         thread1.daemon = True  # Daemonize thread
         thread2.start()
         thread1.start()
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Step 1: Started WRITEs and DELETEs with variable object sizes "
                     "during data pod down by delete deployment.")
@@ -1367,10 +1373,10 @@ class TestDataPodFailure:
         thread2.daemon = True  # Daemonize thread
         thread2.start()
         thread1.start()
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 1: Started READs and DELETEs with variable object sizes "
-                    "during server pod down by delete deployment. Sleeping for %s sec",
-                    HA_CFG["common_params"]["30sec_delay"])
+                    "during server pod down by delete deployment.")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
                     "verify cluster & remaining pods status")
@@ -2127,9 +2133,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {key} of bucket {val}. "
-                                                          "Put and Get Etag mismatch")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {key} of bucket {val}.")
         LOGGER.info("Step 3: Successfully downloaded the uploaded objects & verified etags")
 
         if CMN_CFG["dtm0_disabled"]:
@@ -2153,9 +2158,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
-                                                          f"Etag for object {object3} "
-                                                          f"of bucket {bucket3}.")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 5: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
 
@@ -2228,9 +2232,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {key} of bucket {val}. "
-                                                          "Put and Get Etag mismatch")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {key} of bucket {val}.")
         LOGGER.info("Step 3: Successfully download the uploaded objects & verify etags")
 
         if CMN_CFG["dtm0_disabled"]:
@@ -2255,9 +2258,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag,
-                                      "Failed in verification of Put & Get Etag for object "
-                                      f"{object3} of bucket {bucket3}.")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 5: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
 
@@ -2506,13 +2508,15 @@ class TestDataPodFailure:
         # While loop to sync this operation with background thread to achieve expected scenario
         LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
         bkt_list = list()
-        timeout = time.time() + 60 * 3
+        timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
         while len(bkt_list) < bkt_cnt:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
             bkt_list = s3_test_obj.bucket_list()[1]
             if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than 3 mins")
+                LOGGER.error("Bucket creation is taking longer than %s sec",
+                             HA_CFG["common_params"]["bucket_creation_delay"])
                 assert_utils.assert_true(False, "Please check background process logs")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
         LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
@@ -2568,9 +2572,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {key} of bucket {val}. "
-                                                          "Put and Get Etag mismatch")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {key} of bucket {val}.")
         LOGGER.info("Step 5: Successfully download the uploaded objects & verify etags")
 
         if CMN_CFG["dtm0_disabled"]:
@@ -2594,9 +2597,8 @@ class TestDataPodFailure:
             resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
-                                                          f"Etag for object {object3} of "
-                                                          f"bucket {bucket3}.")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
+                                                          f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 7: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
 
@@ -2741,6 +2743,7 @@ class TestDataPodFailure:
         thread.start()
 
         LOGGER.info("Step 2: Successfully started chuck upload in background")
+        LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
