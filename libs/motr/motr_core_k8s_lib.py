@@ -27,7 +27,7 @@ from random import SystemRandom
 
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
-from libs.motr import BSIZE_LAYOUT_MAP
+from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
 from config import CMN_CFG
 from commons.utils import system_utils
