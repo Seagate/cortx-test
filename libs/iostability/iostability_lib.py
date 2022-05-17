@@ -20,6 +20,7 @@
 """
 Utility Method for IO stability testing
 """
+import json
 import logging
 import threading
 import time
@@ -120,22 +121,22 @@ class MailNotification(threading.Thread):
         self.mail_obj = Mail(sender=sender, receiver=receiver)
         self.test_id = test_id
         self.health_obj = health_obj
-        self.interval = 4 #Mail to be sent periodically after 4 hours.
+        self.interval = 4  # Mail to be sent periodically after 4 hours.
 
     def run(self):
         """
         Send Mail notification periodically.
         """
         while not self.event_pass.is_set() and not self.event_fail.is_set():
-            status = self.health_obj.hctl_status_json()
+            status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
             subject = f"Test {self.test_id} in progress on {self.health_obj.hostname}"
             body = f"hctl Status: {status} \n"
             self.mail_obj.send_mail(subject=subject, body=body)
-            time.sleep(self.interval * 60 )
+            time.sleep(self.interval * 60 * 60)
         test_status = "Failed"
         if self.event_pass.is_set():
             test_status = "Passed"
-        status = self.health_obj.hctl_status_json()
+        status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
         subject = f"Test {self.test_id} {test_status} on {self.health_obj.hostname}"
         body = f"hctl Status: {status} \n"
         self.mail_obj.send_mail(subject=subject, body=body)
