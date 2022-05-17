@@ -32,6 +32,7 @@ from commons import configmanager
 from commons import cortxlogging
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_misc
