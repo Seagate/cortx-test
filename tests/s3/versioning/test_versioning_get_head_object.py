@@ -157,7 +157,8 @@ class TestVersioningGetHeadObject:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 12: Upload object after re-enabling versioning")
-        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name, object_name=self.object_name,
+        res = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                          object_name=self.object_name,
                                           file_path=self.file_path3)
         assert_utils.assert_true(res[0], res[1])
         versions.append({"VersionId": res[1]["VersionId"], "ETag": res[1]["ETag"]})

@@ -26,7 +26,6 @@ import time
 from collections import defaultdict
 import pytest
 
-from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER

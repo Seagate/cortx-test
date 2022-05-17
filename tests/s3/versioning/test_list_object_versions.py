@@ -25,6 +25,7 @@ import os
 import time
 import pytest
 
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
@@ -41,6 +42,8 @@ from libs.s3.s3_versioning_common_test_lib import upload_versions
 class TestListObjectVersions:
     """Test List Object Versions API with Object Versioning"""
 
+    # pylint:disable=attribute-defined-outside-init
+    # pylint:disable-msg=too-many-instance-attributes
     def setup_method(self):
         """
         Function will be perform prerequisite test steps prior to each test case.
@@ -62,7 +65,7 @@ class TestListObjectVersions:
         self.file_path3 = os.path.join(self.test_dir_path, file_name3)
         self.download_path = os.path.join(self.test_dir_path, download_file)
         self.upload_file_paths = [self.file_path1, self.file_path2, self.file_path3]
-        for file_path in upload_file_paths:
+        for file_path in self.upload_file_paths:
             create_file(file_path, 1, "/dev/urandom")
             self.log.info("Created file: %s", file_path)
         self.bucket_name = "ver-bkt-{}".format(time.perf_counter_ns())
@@ -107,7 +110,7 @@ class TestListObjectVersions:
         self.log.info("STARTED: Test List Object Versions on non-existent/empty bucket")
         self.log.info("Step 1: Test List Object Versions on a non-existent bucket")
         non_existent_bucket = "ver-bkt-{}".format(time.perf_counter_ns())
-        check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
+        check_list_object_versions(self.s3_ver_test_obj, bucket_name=non_existent_bucket,
                                    expected_error=errmsg.NO_BUCKET_OBJ_ERR_KEY)
         self.log.info("Step 2: Test List Object Versions on empty bucket")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
@@ -139,14 +142,14 @@ class TestListObjectVersions:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Setup versions in the bucket")
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", self.object_name1, 3),
-                                                        ("Enabled", self.object_name2, 3)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", self.object_name1, 3),
+                                             ("Enabled", self.object_name2, 3)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
@@ -214,14 +217,14 @@ class TestListObjectVersions:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Setup versions in the bucket")
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", self.object_name1, 3),
-                                                        ("Enabled", self.object_name2, 3)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", self.object_name1, 3),
+                                             ("Enabled", self.object_name2, 3)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
@@ -236,7 +239,7 @@ class TestListObjectVersions:
             self.log.info("Step 3: Test List Object Versions with valid encoding-type")
             flags = {"EncodingType": "url"}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                       list_params=flag, expected_flags=flags,
+                                       list_params=flags, expected_flags=flags,
                                        expected_versions=versions)
         self.log.info("ENDED: Test List Object Versions with encoding-type request parameter")
 
@@ -252,14 +255,14 @@ class TestListObjectVersions:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Setup versions in the bucket")
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", self.object_name1, 3),
-                                                        ("Enabled", self.object_name2, 3)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", self.object_name1, 3),
+                                             ("Enabled", self.object_name2, 3)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
@@ -290,13 +293,13 @@ class TestListObjectVersions:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Setup versions in the bucket")
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", self.object_name1, 1001)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", self.object_name1, 1001)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
@@ -328,14 +331,14 @@ class TestListObjectVersions:
         self.log.info("Setup versions in the bucket")
         object_name1 = "key1-name-obj-{}".format(time.perf_counter_ns())
         object_name2 = "key2-name-obj-{}".format(time.perf_counter_ns())
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", object_name1, 3),
-                                                        ("Enabled", object_name2, 3)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", object_name1, 3),
+                                             ("Enabled", object_name2, 3)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
@@ -365,14 +368,14 @@ class TestListObjectVersions:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Setup versions in the bucket")
-        versions = create_bucket_and_versions(s3_test_obj=self.s3_test_obj,
-                                              s3_ver_test_obj=self.s3_ver_test_obj,
-                                              bucket_name=self.bucket_name,
-                                              file_paths=self.upload_file_paths,
-                                              obj_list=[("Enabled", self.object_name1, 3),
-                                                        ("Enabled", self.object_name2, 3)])
+        versions = upload_versions(s3_test_obj=self.s3_test_obj,
+                                   s3_ver_test_obj=self.s3_ver_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_paths=self.upload_file_paths,
+                                   obj_list=[("Enabled", self.object_name1, 3),
+                                             ("Enabled", self.object_name2, 3)])
         for versioning_status in ["Enabled", "Suspended"]:
-            self.log.info(f"Set bucket versioning status to {versioning_status}")
+            self.log.info("Set bucket versioning status to %s" % versioning_status)
             res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                              status=versioning_status)
             assert_utils.assert_true(res[0], res[1])
