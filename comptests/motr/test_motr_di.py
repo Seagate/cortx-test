@@ -51,8 +51,8 @@ def setup_multipart_fixture(request):
         os.getcwd(), "config/motr/sample_m0crate.yaml")
     request.cls.m0crate_test_csv = os.path.join(
         os.getcwd(), "config/motr/m0crate_tests.csv")
-    with open(request.cls.m0crate_test_csv) as CSV_FH:
-        request.cls.csv_data = [row for row in csv.DictReader(CSV_FH)]
+    with open(request.cls.m0crate_test_csv) as csv_fh:
+        request.cls.csv_data = [row for row in csv.DictReader(csv_fh)]
     request.cls.log.info("ENDED: Setup test suite operations.")
     yield
     request.cls.log.info("STARTED: Test suite Teardown operations")
