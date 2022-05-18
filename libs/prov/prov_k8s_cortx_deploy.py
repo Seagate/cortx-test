@@ -686,14 +686,11 @@ class ProvDeployK8sCortxLib:
         cortx_server_image: cortx_server image name
         :returns the status, filepath
         """
-        cortx_im = dict()
-        image_default_dict = {}
-
         cortx_image = kwargs.get("cortx_image")
         cortx_server_image = kwargs.get("cortx_server_image")
         cortx_data_image = kwargs.get("cortx_data_image")
-
-        image_default_dict.update(self.deploy_cfg['third_party_images'])
+        cortx_im = dict()
+        image_default_dict = {}
 
         for image_key in self.deploy_cfg['cortx_images_key']:
             if self.cortx_server_image and image_key == "cortxserver":
@@ -702,25 +699,29 @@ class ProvDeployK8sCortxLib:
                 cortx_im[image_key] = cortx_data_image
             else:
                 cortx_im[image_key] = cortx_image
-        with open(filepath) as soln:
-            conf = yaml.safe_load(soln)
-            parent_key = conf['solution']  # Parent key
-            image = parent_key['images']  # Parent key
-            conf['solution']['images'] = image
-            image.update(cortx_im)
-            for key, value in list(third_party_images_dict.items()):
-                if key in list(self.deploy_cfg['third_party_images'].keys()):
-                    image.update({key: value})
-                    image_default_dict.pop(key)
-            image.update(image_default_dict)
-            soln.close()
-        LOGGER.debug("Images used for deployment : %s", image)
-        noalias_dumper = yaml.dumper.SafeDumper
-        noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(filepath, 'w') as soln:
-            yaml.dump(conf, soln, default_flow_style=False,
-                      sort_keys=False, Dumper=noalias_dumper)
-            soln.close()
+
+        def _update_file(cortx_im):
+            image_default_dict.update(self.deploy_cfg['third_party_images'])
+            with open(filepath) as soln:
+                conf = yaml.safe_load(soln)
+                parent_key = conf['solution']  # Parent key
+                image = parent_key['images']  # Parent key
+                conf['solution']['images'] = image
+                image.update(cortx_im)
+                for key, value in list(third_party_images_dict.items()):
+                    if key in list(self.deploy_cfg['third_party_images'].keys()):
+                        image.update({key: value})
+                        image_default_dict.pop(key)
+                image.update(image_default_dict)
+                soln.close()
+            LOGGER.debug("Images used for deployment : %s", image)
+            noalias_dumper = yaml.dumper.SafeDumper
+            noalias_dumper.ignore_aliases = lambda self, data: True
+            with open(filepath, 'w') as soln:
+                yaml.dump(conf, soln, default_flow_style=False,
+                          sort_keys=False, Dumper=noalias_dumper)
+                soln.close()
+        _update_file(cortx_im)
         return True, filepath
 
     # pylint: disable-msg=too-many-locals
