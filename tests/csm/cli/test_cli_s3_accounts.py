@@ -52,6 +52,18 @@ class TestCliS3ACC:
         cls.start_log_format = "##### Test started -  "
         cls.end_log_format = "##### Test Ended -  "
         cls.logger.info("ENDED : Setup operations at test suit level")
+        cls.s3acc_obj = None
+        cls.s3acc_obj1 = None
+        cls.s3bkt_obj = None
+        cls.csm_user_obj = None
+        cls.iam_user_obj = None
+        cls.alert_obj = None
+        cls.s3acc_name = None
+        cls.s3acc_email = None
+        cls.bucket_name = None
+        cls.csm_user_name = None
+        cls.csm_user_email = None
+        cls.csm_user_pwd = None
 
     def setup_method(self):
         """
@@ -72,13 +84,11 @@ class TestCliS3ACC:
         self.iam_user_obj = CortxCliIamUser(
             session_obj=self.s3acc_obj.session_obj)
         self.alert_obj = CortxCliAlerts(session_obj=self.s3acc_obj.session_obj)
-        self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
-        self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
-        self.bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
-        self.csm_user_name = "{0}{1}".format(
-            "auto_csm_user", str(int(time.time())))
-        self.csm_user_email = "{0}{1}".format(
-            self.csm_user_name, "@seagate.com")
+        self.s3acc_name = f"{self.s3acc_name}_{int(time.time())}"
+        self.s3acc_email = f"{self.s3acc_name}@seagate.com"
+        self.bucket_name = f"clis3bkt{int(time.time())}"
+        self.csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        self.csm_user_email = f"{self.csm_user_name}@seagate.com"
         self.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         login = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_equals(True, login[0], login[1])
@@ -151,8 +161,8 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        s3acc_name2 = "cli_s3acc_{}".format(int(time.time()))
-        s3acc_email2 = "{}@seagate.com".format(s3acc_name2)
+        s3acc_name2 = f"cli_s3acc_{int(time.time())}"
+        s3acc_email2 = f"{s3acc_name2}@seagate.com"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=s3acc_name2,
             account_email=s3acc_email2,
@@ -240,7 +250,7 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        error_msg = " invalid choice: '{}'".format(output_format)
+        error_msg = f" invalid choice: '{output_format}'"
         resp = self.s3acc_obj.show_s3account_cortx_cli(
             output_format=output_format)
         assert_utils.assert_equals(False, resp[0], resp[1])
@@ -261,7 +271,7 @@ class TestCliS3ACC:
         :avocado: tags=s3_account_user_cli
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        delete_s3acc_cmd = "s3accounts delete {}".format(self.s3acc_name)
+        delete_s3acc_cmd = f"s3accounts delete {self.s3acc_name}"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -299,8 +309,8 @@ class TestCliS3ACC:
         delete different multiple s3 accounts simultaneously
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        dummy_acc1 = "cli_s3acc_{}".format(int(time.time()))
-        dummy_acc2 = "cli_s3acc_{}".format(int(time.time()))
+        dummy_acc1 = f"cli_s3acc_{int(time.time_ns())}"
+        dummy_acc2 = f"cli_s3acc_{int(time.time_ns())}"
         error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -346,7 +356,7 @@ class TestCliS3ACC:
         incorrect/invalid account_name
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        dummy_acc = "cli_s3acc_{}".format(int(time.time()))
+        dummy_acc = f"cli_s3acc_{int(time.time())}"
         error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -412,8 +422,8 @@ class TestCliS3ACC:
         without passing username as direct parameter in command
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -509,7 +519,7 @@ class TestCliS3ACC:
         s3 account containing buckets
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        bucket_name = f"clis3bkt{int(time.time())}"
         error_msg = "Account cannot be deleted as it owns some resources"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -626,7 +636,7 @@ class TestCliS3ACC:
         while resetting account password
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        dummy_acc = "cli_s3acc_{}".format(int(time.time()))
+        dummy_acc = f"cli_s3acc_{int(time.time())}"
         error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -746,7 +756,7 @@ class TestCliS3ACC:
         to perform s3iamuser create/delete/show operations
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -785,7 +795,7 @@ class TestCliS3ACC:
         created by S3_account owner using CLI
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        bucket_name = f"clis3bkt{int(time.time())}"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -878,8 +888,8 @@ class TestCliS3ACC:
         Test User should able to perform s3 operations after login using s3 credentials on CSM Cli
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        bucket_name = f"clis3bkt{int(time.time())}"
+        iam_user_name = f"cli_iam_user{int(time.time())}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -963,7 +973,7 @@ class TestCliS3ACC:
         iam_users using CLI created by owner S3_account
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -1007,8 +1017,8 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        s3acc_name2 = "cli_s3acc_{}".format(int(time.time()))
-        s3acc_email2 = "{}@seagate.com".format(s3acc_name2)
+        s3acc_name2 = f"cli_s3acc_{int(time.time())}"
+        s3acc_email2 = f"{s3acc_name2}@seagate.com"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=s3acc_name2,
             account_email=s3acc_email2,
@@ -1027,8 +1037,8 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Access denied")
         self.logger.info(
             "Deleting different account failed with error %s", resp[1])
-        s3acc_name3 = "cli_s3acc_{}".format(int(time.time()))
-        s3acc_email3 = "{}@seagate.com".format(s3acc_name3)
+        s3acc_name3 = f"cli_s3acc_{int(time.time())}"
+        s3acc_email3 = f"{s3acc_name3}@seagate.com"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=s3acc_name3,
             account_email=s3acc_email3,
@@ -1136,8 +1146,8 @@ class TestCliS3ACC:
             username=self.s3acc_name,
             password=self.s3acc_password)
         assert_utils.assert_equals(True, login[0], login[1])
-        s3acc_name2 = "cli_s3acc_{}".format(int(time.time()))
-        s3acc_email2 = "{}@seagate.com".format(s3acc_name2)
+        s3acc_name2 = f"cli_s3acc_{int(time.time())}"
+        s3acc_email2 = f"{s3acc_name2}@seagate.com"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=s3acc_name2,
             account_email=s3acc_email2,
@@ -1241,8 +1251,8 @@ class TestCliS3ACC:
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -1348,9 +1358,8 @@ class TestCliS3ACC:
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         s3acc_name_list = []
         for i in range(2):
-            s3acc_name = "{}_{}{}".format(
-                self.s3acc_prefix, int(time.time()), i)
-            s3acc_email = "{}@seagate.com".format(s3acc_name)
+            s3acc_name = f"{self.s3acc_prefix}_{ int(time.time())}{i}"
+            s3acc_email = f"{s3acc_name}@seagate.com"
 
             resp = self.s3acc_obj.create_s3account_cortx_cli(
                 account_name=s3acc_name,
@@ -1386,8 +1395,8 @@ class TestCliS3ACC:
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -1396,8 +1405,7 @@ class TestCliS3ACC:
             role="monitor",
             password=csm_user_pwd,
             confirm_password=csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_equals(True, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", csm_user_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(

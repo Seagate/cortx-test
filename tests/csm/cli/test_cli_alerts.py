@@ -443,4 +443,3 @@ class TestCliAlert:
         assert_utils.assert_equals(resp[0], True, resp)
         self.log.info("Step 3: Listed alerts in different formats")
         self.log.info("%s %s", self.end_log, cortxlogging.get_frame())
-
