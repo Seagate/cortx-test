@@ -828,13 +828,10 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Fail if newtork alert in new alert table already present")
         self.ha_gui_obj.assert_if_network_interface_down_alert_present()
 
-        LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
         self.nw_data = [iface_list, private_ip_list]
-        LOGGER.debug("List of private data IP : %s and interfaces on all nodes: %s",
-                     private_ip_list, iface_list)
 
         for node in range(self.num_nodes):
             LOGGER.info("Make the private data interface %s down for %s",
