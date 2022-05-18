@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -19,25 +19,29 @@
 
 """SSPL test cases: Primary Node."""
 
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
+
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from commons.helpers.controller_helper import ControllerLib
-from libs.s3 import S3H_OBJ
+
+from commons import commands as common_cmd
+from commons import constants as cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons import constants as cons
-from commons import commands as common_cmd
-from commons.utils.assert_utils import *
+from commons.helpers.controller_helper import ControllerLib
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,6 +87,7 @@ class TestSSPL:
                 CMN_CFG["enclosure"]["enclosure_user"],
                 CMN_CFG["enclosure"]["enclosure_pwd"], field)
             assert res
+        cls.system_random = random.SystemRandom()
 
     def setup_method(self):
         """Setup operations per test."""
@@ -142,6 +147,7 @@ class TestSSPL:
 
         LOGGER.info("Successfully performed Setup operations")
 
+    # pylint: disable=too-many-statements
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
@@ -479,6 +485,8 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -666,11 +674,8 @@ class TestSSPL:
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
         response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating "
-                                           "Fault)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault)"
 
         LOGGER.info("Step 1: Successfully simulated fault psu state on MC "
                     "debug console")
@@ -687,11 +692,8 @@ class TestSSPL:
         LOGGER.info("Step 3: Putting in fault-resolved state")
         response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating "
-                                           "Fault-resolved)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault-resolved)"
 
         LOGGER.info("Step 3: Successfully simulated fault-resolved "
                     "psu state on MC debug console")
@@ -737,10 +739,8 @@ class TestSSPL:
                     "MC debug console")
         response = self.alert_api_obj.generate_alert(AlertType.CONTROLLER_FAULT)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating Fault)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault)"
 
         LOGGER.info("Step 1: Successfully simulated fault on controller "
                     "using MC debug console")
@@ -751,11 +751,8 @@ class TestSSPL:
         response = self.alert_api_obj.generate_alert(
             AlertType.CONTROLLER_FAULT_RESOLVED)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating "
-                                           "Fault-resolved)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault-resolved)"
 
         LOGGER.info("Step 2: Successfully simulated fault-resolved "
                     "on controller using MC debug console")
@@ -807,10 +804,8 @@ class TestSSPL:
         LOGGER.info("Step 1: Simulating fault psu state on MC debug console")
         response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating Fault)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault)"
 
         LOGGER.info("Step 1: Successfully simulated fault psu state on MC "
                     "debug console")
@@ -820,11 +815,8 @@ class TestSSPL:
         LOGGER.info("Step 2: Putting in fault-resolved state")
         response = self.alert_api_obj.generate_alert(AlertType.PSU_FAULT_RESOLVED)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating "
-                                           "Fault-resolved)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault-resolved)"
 
         LOGGER.info("Step 2: Successfully simulated fault-resolved "
                     "psu state on MC debug console")
@@ -875,10 +867,8 @@ class TestSSPL:
                     "MC debug console")
         response = self.alert_api_obj.generate_alert(AlertType.CONTROLLER_FAULT)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating Fault)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault)"
 
         LOGGER.info("Step 1: Successfully simulated fault on controller "
                     "using MC debug console")
@@ -896,11 +886,8 @@ class TestSSPL:
         response = self.alert_api_obj.generate_alert(
             AlertType.CONTROLLER_FAULT_RESOLVED)
 
-        assert response[0], "{} {}".format(response[1],
-                                           "Couldn't connect to port "
-                                           "7900. Please try on other "
-                                           "controller (Generating "
-                                           "Fault-resolved)")
+        assert response[0], f"{response[1]} Couldn't connect to port 7900. Please try on other " \
+                            "controller (Generating Fault-resolved)"
 
         LOGGER.info("Step 3: Successfully simulated fault-resolved "
                     "on controller using MC debug console")
@@ -973,6 +960,8 @@ class TestSSPL:
         LOGGER.info("ENDED: Validating EES RAS: Allow log level setting is not "
                     "changed when after restarting the SSPL service")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -1014,8 +1003,7 @@ class TestSSPL:
 
         LOGGER.info("Step 3: Collecting logs from sspl.log file")
         cmd = cons.CHECK_SSPL_LOG_FILE.format(test_cfg["test_sspl_file"])
-        response = self.node_obj.execute_cmd(cmd=cmd,
-                                             read_nbytes=cons.BYTES_TO_READ)
+        self.node_obj.execute_cmd(cmd=cmd, read_nbytes=cons.BYTES_TO_READ)
         LOGGER.info("Step 3: Started collection of sspl logs")
 
         LOGGER.info("Step 4: Updating the port numbers to 5100")
@@ -1066,6 +1054,7 @@ class TestSSPL:
             "Step 8: Successfully run ALERT API for generating fault")
 
         current_disk_usage = resp[1]
+        LOGGER.debug("Current disk usage is: %s", current_disk_usage)
         if self.start_rmq:
             LOGGER.info("Step 9: Checking the generated alert logs on RMQ "
                         "channel")
@@ -1077,7 +1066,8 @@ class TestSSPL:
             LOGGER.info("Step 9: Verified the generated alert logs")
 
         LOGGER.info("Step 10: Checking logs in sspl.log")
-        exp_string = r"WARNING Disk usage increased to \d{2}.\d%?, beyond configured threshold of \d{2}.\d%?"
+        exp_string = r"WARNING Disk usage increased to \d{2}.\d%?, beyond configured threshold" \
+                     r" of \d{2}.\d%?"
 
         self.ras_test_obj.check_sspl_log(exp_string, test_cfg["test_sspl_file"])
 
@@ -1124,8 +1114,7 @@ class TestSSPL:
 
         cmd = test_cfg["logger_cmd"]
         LOGGER.info("Step 2: Running command %s", cmd)
-        response = self.node_obj.execute_cmd(cmd=cmd,
-                                             read_nbytes=cons.BYTES_TO_READ)
+        self.node_obj.execute_cmd(cmd=cmd, read_nbytes=cons.BYTES_TO_READ)
 
         LOGGER.info("Step 2: Successfully ran command %s", cmd)
 
@@ -1143,9 +1132,8 @@ class TestSSPL:
             resp = self.node_obj.is_string_in_remote_file(
                 string=string, file_path=common_cfg["file"]["alert_log_file"])
 
-            assert resp[0], "{} : {}".format(resp[1], string)
-            LOGGER.info("Step 4: Description of generated alert is : %s",
-                        string)
+            assert resp[0], f"{resp[1]} : {string}"
+            LOGGER.info("Step 4: Description of generated alert is : %s", string)
 
         time.sleep(common_cfg["sleep_val"])
         LOGGER.info("Step 5: Checking CSM REST API for alert")
@@ -1195,8 +1183,7 @@ class TestSSPL:
 
         LOGGER.info("Step 3: Collecting logs from sspl.log file")
         cmd = cons.CHECK_SSPL_LOG_FILE.format(test_cfg["test_sspl_file"])
-        response = self.node_obj.execute_cmd(cmd=cmd,
-                                             read_nbytes=cons.BYTES_TO_READ)
+        self.node_obj.execute_cmd(cmd=cmd, read_nbytes=cons.BYTES_TO_READ)
         LOGGER.info("Step 3: Started collection of sspl logs")
 
         LOGGER.info("Step 4: Verify the warning and error in the log file")
@@ -1241,7 +1228,7 @@ class TestSSPL:
         LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
-        phy_num = random.randint(0, resp[1] - 1)
+        phy_num = self.system_random.randint(0, resp[1] - 1)
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = self.alert_api_obj.generate_alert(
@@ -1258,19 +1245,15 @@ class TestSSPL:
         LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
-            resource_id = "disk_00.0{}".format(phy_num)
+            resource_id = f"disk_00.0{phy_num}"
         else:
-            resource_id = "disk_00.{}".format(phy_num)
+            resource_id = f"disk_00.{phy_num}"
         time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Step 3: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                          test_cfg[
-                                                              "alert_type"],
-                                                          False,
-                                                          test_cfg[
-                                                              "resource_type"],
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime, test_cfg["alert_type"],
+                                                          False, test_cfg["resource_type"],
                                                           resource_id)
 
         LOGGER.info("Step 4: Clearing metadata of drive %s", phy_num)
@@ -1385,9 +1368,9 @@ class TestSSPL:
         LOGGER.info("Step 4: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
-            resource_id = "disk_00.0{}".format(phy_num)
+            resource_id = f"disk_00.0{phy_num}"
         else:
-            resource_id = "disk_00.{}".format(phy_num)
+            resource_id = f"disk_00.{phy_num}"
 
         time.sleep(common_cfg["sleep_val"])
         if self.start_rmq:
@@ -1434,7 +1417,7 @@ class TestSSPL:
         LOGGER.info(
             "Step 1 and 2: Check if files related to IEC decode exists")
         resp = self.node_obj.list_dir(cons.IEM_DIRECTORY)
-        compare(resp, test_cfg["file_name"], sequence_item_check=True)
+        assert_utils.compare(resp, test_cfg["file_name"], sequence_item_check=True)
         LOGGER.info("Step 1: Validated the respective files")
 
         LOGGER.info(

@@ -58,6 +58,7 @@ HA_SHUTDOWN_LOGS = ["k8s_resource_monitor.log", "fault_tolerance.log", "health_m
 NAMESPACE = "cortx"
 CONTROL_POD_NAME_PREFIX = "cortx-control"
 CLIENT_POD_NAME_PREFIX = "cortx-client"
+MOTR_CONTAINER_PREFIX = "cortx-motr-io"
 HA_SHUTDOWN_SIGNAL_PATH = "scripts/server_scripts/ha_shutdown_signal.py"
 MOCK_MONITOR_REMOTE_PATH = "/root/mock_health_event_publisher.py"
 MOCK_MONITOR_LOCAL_PATH = "scripts/server_scripts/mock_health_event_publisher.py"
@@ -474,3 +475,8 @@ LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
 LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
                               "/etc/cortx/log/motr/{}/trace/":17}
 MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+
+
+# Procpath Collection
+PID_WATCH_LIST = ['m0d', 'radosgw', 'hax']
+REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
