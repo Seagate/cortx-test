@@ -25,9 +25,9 @@ import random
 import time
 from http import HTTPStatus
 
+from random import SystemRandom
 import pytest
 
-from random import SystemRandom
 from commons import configmanager
 from commons.constants import CONTROL_POD_NAME_PREFIX
 from commons import cortxlogging

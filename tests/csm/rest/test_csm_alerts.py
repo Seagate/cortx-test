@@ -22,8 +22,8 @@
 import logging
 import random
 
-import pytest
 from random import SystemRandom
+import pytest
 from commons import configmanager
 from commons import constants as consts
 from commons import cortxlogging

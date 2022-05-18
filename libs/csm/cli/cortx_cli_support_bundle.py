@@ -132,7 +132,7 @@ class CortxCliSupportBundle(CortxCli):
             return False, output
 
         return True, output
-    
+ 
     # pylint-disable-message=too-many-return-statements
     # pylint: disable-msg=too-many-branches
     def support_bundle_status(
@@ -148,7 +148,7 @@ class CortxCliSupportBundle(CortxCli):
         :return: (Boolean/Response)
         """
         if output_format:
-            support_bundle_status_cmd = f"{CMD_SUPPORT_BUNDLE_STATUS} {bundle_id} -f {output_format}"
+            support_bundle_status_cmd=f"{CMD_SUPPORT_BUNDLE_STATUS} {bundle_id} -f {output_format}"
         elif help_param:
             support_bundle_status_cmd = f"{CMD_SUPPORT_BUNDLE_STATUS} -h"
         else:
