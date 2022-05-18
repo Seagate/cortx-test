@@ -21,7 +21,6 @@
 
 # pylint: disable=too-many-lines
 import logging
-import random
 import time
 import pytest
 from commons.utils import assert_utils
