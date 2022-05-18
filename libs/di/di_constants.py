@@ -22,6 +22,5 @@ Python file to maintain all constant msg, error, commands for data integrity tes
 """
 # DI feature control flags
 
-
 # DI fault injection flags
 # ref : https://github.com/Seagate/cortx-s3server/blob/cortx-1.0/docs/object-protection-testing.md
