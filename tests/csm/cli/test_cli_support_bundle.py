@@ -120,8 +120,7 @@ class TestCliSupportBundle:
             "Step 3: Verifying logs are generated for each component")
         for each in new_dict:
             for each_dir in new_dict[each]:
-                path = os.path.join("/tmp/csm_support_bundle/",
-                                            bundle_id, each_dir)
+                path = os.path.join("/tmp/csm_support_bundle/", bundle_id, each_dir)
                 obj = Node(hostname=each,
                            username=CMN_CFG["csm"]["admin_user"],
                            password=CMN_CFG["csm"]["admin_pass"])

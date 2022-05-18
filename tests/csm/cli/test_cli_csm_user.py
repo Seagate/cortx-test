@@ -2085,7 +2085,7 @@ class TestCliCSMUser:
         Test that manage user should NOT be able to delete users with admin role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info(
             "Creating csm user with manage role : %s",
@@ -2139,7 +2139,7 @@ class TestCliCSMUser:
         Test that manage user should be able to delete users with monitor role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info(
             "Creating csm user with manage role : %s",
@@ -2233,7 +2233,7 @@ class TestCliCSMUser:
         Test that manage user should be able to reset password of users with monitor role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info(
             "Creating csm user with manage role : %s",
@@ -2289,7 +2289,7 @@ class TestCliCSMUser:
         Test that monitor user should NOT be able to reset password of any user with any role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info(
             "Creating csm user with manage role : %s",
@@ -2412,7 +2412,7 @@ class TestCliCSMUser:
         role of manage user from manage role to admin role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.csm_user_conn.create_csm_user_cli(
@@ -2456,7 +2456,7 @@ class TestCliCSMUser:
         change role of monitor user from monitor role to admin role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.csm_user_conn.create_csm_user_cli(
@@ -2500,7 +2500,7 @@ class TestCliCSMUser:
         change role of monitor user from monitor role to manage role
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.csm_user_conn.create_csm_user_cli(
@@ -2623,7 +2623,7 @@ class TestCliCSMUser:
         Test that manage user should NOT be able to change role of user with any role to admin
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        username = f"auto_csm_user{random.randint(0, 10)}"
+        username = f"auto_csm_user{str(int(time.time()))}"
         email_id = f"{username}@seagate.com"
         self.logger.info("Creating csm user with name %s", self.user_name)
         resp = self.csm_user_conn.create_csm_user_cli(
