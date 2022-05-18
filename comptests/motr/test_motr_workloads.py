@@ -37,6 +37,7 @@ from libs.motr import motr_test_lib
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestExecuteWorkload:
     """Execute Workload Test suite"""
 
