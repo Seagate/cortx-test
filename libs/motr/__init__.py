@@ -19,13 +19,15 @@
 #
 #
 
+"""Motr package initializer."""
+
 from commons.utils import config_utils
 
-"""Motr package initializer."""
 CURR_LIB_VERSION=b"1.11.2"
 
 # dd tools commands.
-# Parameter in order: if:Source file path, of: Destination file path, bs(k, M, G) * count(number): Total size.
+# Parameter in order: if:Source file path, of:
+# Destination file path, bs(k, M, G) * count(number): Total size.
 CMD_DD_CREATE_FILE = "dd if=/dev/urandom of=%s bs=%s count=%s"
 CMD_DD_CREATE_128M_FILE = "dd if=/dev/urandom of=/tmp/128M bs=1M count=128"
 
