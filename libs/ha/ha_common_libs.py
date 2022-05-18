@@ -46,7 +46,8 @@ from scripts.s3_bench import s3bench
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
+# pylint: disable=too-many-instance-attributes'
+# pylint: disable=too-many-public-methods
 class HALibs:
     """
     This class contains common utility methods for HA related operations.
@@ -72,7 +73,7 @@ class HALibs:
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
         """
-        Helper function to know the node where CSM service is running.
+        Helper function to know the node where CSM service is running
         :param node_object: node object for the node to execute command
         :param srvnode_list: list of srvnode names
         :param sys_list: List of system objects
@@ -86,7 +87,7 @@ class HALibs:
             data = str(res, 'UTF-8')
             for index, srvnode in enumerate(srvnode_list):
                 if srvnode in data:
-                    LOGGER.info("CSM running on: {}".format(srvnode))
+                    LOGGER.info("CSM running on: %s", srvnode)
                     sys_obj = sys_list[index]
                     return True, sys_obj
         except IOError as error:
@@ -95,11 +96,12 @@ class HALibs:
                          HALibs.check_csm_service.__name__,
                          error)
             return False, error
+        return False, "Not able to check CSM services"
 
     @staticmethod
     def check_service_other_nodes(node_id, num_nodes, node_list):
         """
-        Helper function to get services status on nodes which are online.
+        Helper function to get services status on nodes which are online
         :param node_id: node which is down to be skipped
         :param num_nodes: number of nodes in the cluster
         :param node_list: list of nodes in the cluster
@@ -108,8 +110,8 @@ class HALibs:
         try:
             for node in range(num_nodes):
                 if node != node_id:
-                    node_name = "srvnode-{}".format(node+1)
-                    LOGGER.info("Checking services on: {}".format(node_name))
+                    node_name = "srvnode-{}".format(node + 1)
+                    LOGGER.info("Checking services on: %s", node_name)
                     res = node_list[node].execute_cmd(
                         common_cmd.CMD_PCS_GREP.format(node_name))
                     data = str(res, 'UTF-8')
@@ -204,7 +206,7 @@ class HALibs:
                      exp_resp: bool,
                      bmc_obj):
         """
-        Helper function to poll for host ping response.
+        Helper function to poll for host ping response
         :param max_timeout: Max timeout allowed for expected response from ping
         :param host: Host to ping
         :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
@@ -248,7 +250,7 @@ class HALibs:
     @staticmethod
     def get_iface_ip_list(node_list: list, num_nodes: int):
         """
-        Helper function to get ip and interfaces for private data network ports.
+        Helper function to get ip and interfaces for private data network ports
         :param node_list: List of nodes in cluster
         :param num_nodes: Number of nodes in cluster
         :return: interface list, ip list
@@ -262,14 +264,14 @@ class HALibs:
                 "Execute command to gte private data IPs for all nodes.")
             resp_ip = node_list[0].execute_cmd(
                 common_cmd.CMD_HOSTS, read_lines=True)
-            LOGGER.debug("Response for /etc/hosts: {}".format(resp_ip))
+            LOGGER.debug("Response for /etc/hosts: %s", resp_ip)
             for node in range(num_nodes):
                 for line in resp_ip:
-                    if "srvnode-{}.data.private".format(node+1) in line:
-                        ip = line.split()[0]
-                        private_ip_list.append(ip)
+                    if "srvnode-{}.data.private".format(node + 1) in line:
+                        ip_addr = line.split()[0]
+                        private_ip_list.append(ip_addr)
                         res = node_list[node].execute_cmd(
-                            common_cmd.CMD_IFACE_IP.format(ip), read_lines=True)
+                            common_cmd.CMD_IFACE_IP.format(ip_addr), read_lines=True)
                         ifname = res[0].strip(":\n")
                         iface_list.append(ifname)
             LOGGER.debug("List of private data IP : %s and interfaces on all nodes: %s",
@@ -296,7 +298,7 @@ class HALibs:
                 common_cmd.CMD_VM_POWER_ON.format(
                     self.vm_username, self.vm_password, vm_name))
             if not resp[0]:
-                raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
+                raise CTException(err.CLI_COMMAND_FAILURE, msg="VM power on command not executed")
         else:
             bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
 
@@ -320,7 +322,7 @@ class HALibs:
         if is_safe:
             LOGGER.info("Safe shutdown %s", host)
             resp = node_obj.execute_cmd(cmd="shutdown -P now", exc=False)
-            LOGGER.debug("Response for shutdown: {}".format(resp))
+            LOGGER.debug("Response for shutdown: %s", resp)
         else:
             LOGGER.info("Unsafe shutdown %s", host)
             if self.setup_type == "VM":
@@ -330,7 +332,7 @@ class HALibs:
                         self.vm_username, self.vm_password, vm_name))
                 if not resp[0]:
                     raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"VM power off command not executed")
+                                      msg="VM power off command not executed")
             else:
                 bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "off")
 
@@ -368,11 +370,9 @@ class HALibs:
             if not rest_resp[0]:
                 raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
             LOGGER.info("REST response for nodes health status. %s", rest_resp[1])
-        except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.status_nodes_online.__name__,
-                         error)
+        except CTException as error:
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.status_nodes_online.__name__, error)
 
     def status_cluster_resource_online(self, srvnode_list: list, sys_list: list, node_obj):
         """
@@ -439,7 +439,7 @@ class HALibs:
         if srvnode_list[node] == srvnode_list[-1]:
             nd_obj = node_list[0]
         else:
-            nd_obj = node_list[node+1]
+            nd_obj = node_list[node + 1]
         resp = self.check_csm_service(nd_obj, srvnode_list, sys_list)
         if not resp[0]:
             return False, "Failed to get CSM failover node"
@@ -457,12 +457,12 @@ class HALibs:
             pswd: str = None):
         """
         This function will perform node start/stop/poweroff operation on resource_id
-        :param operation: Operation to be performed (stop/poweroff/start).
+        :param operation: Operation to be performed (stop/poweroff/start)
         :param sys_obj: System object
         :param resource_id: Resource ID for the operation
         :param f_opt: If true, enables force start on node
         :param s_off: If true, The poweroff operation will be performed along
-        with powering off the storage. (Valid only with poweroff operation on node.)
+        with powering off the storage (Valid only with poweroff operation on node)
         :param user: Manage user name
         :param pswd: Manage user password
         :return: (bool, Command Response)
@@ -473,11 +473,9 @@ class HALibs:
             resp = sys_obj.node_operation(
                 operation=operation, resource_id=resource_id, force_op=f_opt, storage_off=s_off)
             return resp
-        except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.perform_node_operation.__name__,
-                         error)
+        except CTException as error:
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.perform_node_operation.__name__, error)
             return False, error
         finally:
             sys_obj.logout_cortx_cli()
@@ -492,11 +490,11 @@ class HALibs:
         """
         This function will check hctl status and if cluster is clean
         it will get the json data and check for the service's not expected status
-        and update hctl_srvs for the same.
+        and update hctl_srvs for the same
         :param hlt_obj: Health class object
         :param host_data: Dictionary of host data info
         :param hctl_srvs: Dictionary of not expected status service state
-        :param checknode: String for node to be check i.e "srvnode-x.data.private"
+        :param checknode: String for node to be checked i.e "srvnode-x.data.private"
         :return: (bool, Response)
         """
         # Get hctl status response for stopped node (Cluster not running)
@@ -533,7 +531,7 @@ class HALibs:
     def check_pcs_status_resp(self, node, node_obj, hlt_obj, csm_node):
         """
         This will get pcs status xml and hctl status response and
-        check all nodes health status after performing node stop operation on one node.
+        check all nodes health status after performing node stop operation on one node
         :param node: Node ID for which health check is required
         :param node_obj: Node object List
         :param hlt_obj: Health class object List
@@ -650,7 +648,7 @@ class HALibs:
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
-        deletes all the buckets and s3 accounts created.
+        deletes all the buckets and s3 accounts created
         :param prefix_data: Prefix data for IO Operation
         :param nusers: Number of s3 user
         :param nbuckets: Number of buckets per s3 user
@@ -709,7 +707,7 @@ class HALibs:
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
         """
         This function runs parallel async stop_io function until called again with
-        start_read with False.
+        start_read with False
         :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
         WRITEs call
         :param is_di: IF DI check is required on READ objects
@@ -743,7 +741,7 @@ class HALibs:
             nclients: int = 10):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
-        operations on VM/HW.
+        operations on VM/HW
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run if True
@@ -753,11 +751,10 @@ class HALibs:
         :param nclients: Number of clients/workers
         :return: bool/operation response
         """
-        workloads = [
-            "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
-            "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
+        workloads = ["0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
+                     "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
         if self.setup_type == "HW":
-            workloads.extend(["1GB", "2GB", "3GB" "4GB", "5GB"])
+            workloads.extend(["1GB", "2GB", "3GB", "4GB", "5GB"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
@@ -771,7 +768,7 @@ class HALibs:
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
                 return resp, f"s3bench operation failed with {resp[1]}"
-        return True, "Sucessfully completed s3bench operation"
+        return True, "Successfully completed s3bench operation"
 
     @staticmethod
     def check_cluster_health():
@@ -781,11 +778,12 @@ class HALibs:
         for node in nodes:
             hostname = node['hostname']
             health = Health(hostname=hostname,
-                        username=node['username'],
-                        password=node['password'])
+                            username=node['username'],
+                            password=node['password'])
             result = health.check_node_health()
             assert_utils.assert_true(result[0],
-                    f'Cluster Node {hostname} failed in health check. Reason: {result}')
+                                     f'Cluster Node {hostname} failed in '
+                                     f'health check. Reason: {result}')
             health.disconnect()
         LOGGER.info("Cluster status is healthy.")
 
@@ -826,7 +824,7 @@ class HALibs:
         cortx stop cluster --all
         cortx start cluster -all
         pcs resource cleanup
-        Validate health of all the nodes.
+        Validate health of all the nodes
         :param node_obj: node object for stop/start cluster
         :param hlt_obj_list: health object list for all the nodes.
         """

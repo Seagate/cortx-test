@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines'
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -56,7 +56,7 @@ from libs.s3.s3_test_lib import S3TestLib
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
+# pylint: disable=too-many-instance-attributes'
 class TestClusterShutdownStart:
     """
     Test suite for Cluster shutdown: Immediate.
@@ -212,6 +212,8 @@ class TestClusterShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
 
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29468")
@@ -269,7 +271,7 @@ class TestClusterShutdownStart:
                                       f"Failed to create {wr_bucket} number "
                                       f"of buckets. Created {len(buckets)} "
                                       f"number of buckets")
-            LOGGER.info("Step 2: Sucessfully created %s buckets & "
+            LOGGER.info("Step 2: Successfully created %s buckets & "
                         "perform WRITEs with variable size objects.", wr_bucket)
 
             LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -404,8 +406,8 @@ class TestClusterShutdownStart:
         remove_file(download_path)
 
         LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
-        bucket_name = "mp-bkt-{}".format(self.random_time)
-        object_name = "mp-obj-{}".format(self.random_time)
+        bucket_name = f"mp-bkt-{self.random_time}"
+        object_name = f"mp-obj-{self.random_time}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
@@ -430,6 +432,7 @@ class TestClusterShutdownStart:
         LOGGER.info("ENDED: Test to verify multipart upload and download with cluster restart")
 
     # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="F-20C not completely supported for RGW.")
@@ -444,7 +447,7 @@ class TestClusterShutdownStart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = random.sample(range(1, total_parts+1), total_parts//2)
+        part_numbers = self.random_time.sample(range(1, total_parts+1), total_parts//2)
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
         if os.path.exists(self.multipart_obj_path):
@@ -650,7 +653,7 @@ class TestClusterShutdownStart:
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts+1))
-        random.shuffle(part_numbers)
+        self.random_time.shuffle(part_numbers)
         output = Queue()
         parts_etag = list()
         download_file = self.test_file + "_download"
@@ -828,13 +831,13 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
         LOGGER.info("Step 4: Download the uploaded object and verify checksum")
-        for k, v in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=k, key=v)
+        for key, val in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {v} of bucket {k}. Put and Get "
-                                                          "Etag mismatch")
+                                                          f"object {val} of bucket {key}. "
+                                                          "Put and Get Etag mismatch")
 
         LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
 
@@ -863,7 +866,7 @@ class TestClusterShutdownStart:
         LOGGER.info("STARTED: Test to verify copy object to other buckets during cluster restart")
         event = threading.Event()
         bkt_obj_dict = dict()
-        bkt_obj_dict["ha-bkt-{}".format(self.random_time)] = "ha-obj-{}".format(self.random_time)
+        bkt_obj_dict[f"ha-bkt-{self.random_time}"] = f"ha-obj-{self.random_time}"
         output = Queue()
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
@@ -967,13 +970,13 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Successfully checked responses from background process.")
 
         LOGGER.info("Step 6: Download the uploaded object and verify checksum")
-        for k, v in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=k, key=v)
+        for key, val in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {v} of bucket {k}. Put and Get "
-                                                          "Etag mismatch")
+                                                          f"object {val} of bucket {key}. "
+                                                          "Put and Get Etag mismatch")
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 7: Create s3 account and perform WRITEs-READs-Verify-DELETEs with "
@@ -1185,7 +1188,7 @@ class TestClusterShutdownStart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 1: Sucessfully created %s buckets & ran IOs on variable size objects.",
+        LOGGER.info("Step 1: Successfully created %s buckets & ran IOs on variable size objects.",
                     wr_bucket)
         LOGGER.info("Step 2: Verify %s has %s buckets created", self.s3acc_name,
                     wr_bucket)
@@ -1224,7 +1227,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_equal(len(remain_bkt), r_buck,
                                   f"Failed to delete {del_bucket} number of buckets from "
                                   f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
-        LOGGER.info("Step 3: Sucessfully verified DI on objects & deleted %s buckets. Remaining "
+        LOGGER.info("Step 3: Successfully verified DI on objects & deleted %s buckets. Remaining "
                     "buckets are %s.", del_bucket, r_buck)
         LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
         resp = self.rest_hlt_obj.cluster_operation_signal(
@@ -1248,7 +1251,7 @@ class TestClusterShutdownStart:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         resp = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(resp), 0, f"Failed to delete remaining {r_buck} buckets")
-        LOGGER.info("Step 7: Sucessfully deleted %s's remaining %s buckets",
+        LOGGER.info("Step 7: Successfully deleted %s's remaining %s buckets",
                     self.s3acc_name, r_buck)
         LOGGER.info("Step 8: Create new buckets. Run IOs & verify DI. Delete created buckets.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1296,14 +1299,14 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp[1])
-        LOGGER.info("Step 3: Sucessfully shutdown the cluster and verified all pods are offline.")
+        LOGGER.info("Step 3: Successfully shutdown the cluster and verified all pods are offline.")
         LOGGER.info("Step 4: Start the cluster and verify all pods are running.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=300)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Sucessfully started the cluster and verified all pods are running.")
+        LOGGER.info("Step 4: Successfully started the cluster and verified all pods are running.")
         LOGGER.info("Step 5. Stop parallel S3 and verify the log results.")
         event.clear()
         thread.join()
