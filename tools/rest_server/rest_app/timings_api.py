@@ -84,7 +84,7 @@ class Timings(Resource):
             ret = flask.Response(status=add_result[1][0], response=add_result[1][1])
         return ret
 
-    # pylint-disable-message=too-many-return-statements
+    # pylint: disable=too-many-return-statements
     @staticmethod
     def get():
         """Get timing entry."""

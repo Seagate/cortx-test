@@ -191,7 +191,7 @@ def validate_get_timings_fields(json_data: dict) -> (bool, tuple):
     return True, None
 
 
-# pylint-disable-message=too-many-return-statements
+# pylint: disable=too-many-return-statements
 def validate_mandatory_db_fields(json_data: dict) -> (bool, tuple):
     """
     Validate format of each element
