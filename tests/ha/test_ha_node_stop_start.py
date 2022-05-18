@@ -48,7 +48,6 @@ from libs.s3.cortxcli_test_lib import CSMAccountOperations
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
 # pylint: disable=C0302
 class TestHANodeStartStop:
     """

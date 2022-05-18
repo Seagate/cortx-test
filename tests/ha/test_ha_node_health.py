@@ -411,7 +411,7 @@ class TestHANodeHealth:
         """
         LOGGER.info("Started: Test to check single node status with multiple os shutdown.")
         LOGGER.info("Get the node for multiple os shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Shutdown %s node multiple time and check status.",
                     self.srvnode_list[node_index])
