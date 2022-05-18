@@ -18,6 +18,7 @@
 #
 """Test suite for S3 account operations"""
 
+# pylint: disable=too-many-lines
 import logging
 import time
 import pytest
@@ -686,7 +687,6 @@ class TestCliS3ACC:
             new_password=new_password,
             reset_password="n")
         assert_utils.assert_equals(False, resp[0], resp[1])
-        # TODO: s3 login check
         self.logger.info(
             "Verified s3account password not updated when user selects 'No' on confirmation")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
@@ -1504,7 +1504,7 @@ class TestCliS3ACC:
         Test that S3 account user is able to reset password of it's Child IAM user
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -1543,15 +1543,14 @@ class TestCliS3ACC:
          password of IAM user who are not created under his account.
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
 
         s3acc_name_list = []
         for i in range(2):
-            s3acc_name = "{}_{}{}".format(
-                self.s3acc_prefix, int(time.time()), i)
-            s3acc_email = "{}@seagate.com".format(s3acc_name)
+            s3acc_name = f"{self.s3acc_prefix}_{int(time.time())}{i}"
+            s3acc_email = f"{s3acc_name}@seagate.com"
 
             resp = self.s3acc_obj.create_s3account_cortx_cli(
                 account_name=s3acc_name,
@@ -1600,7 +1599,7 @@ class TestCliS3ACC:
         Test that reset password for IAM user does not accept invalid password.
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         invalid_pwds = "seagate"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -1640,7 +1639,7 @@ class TestCliS3ACC:
         Test that reset password for IAM user does not accept invalid IAM user name.
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -1680,10 +1679,10 @@ class TestCliS3ACC:
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
-        iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
+        iam_user_name = f"cli_iam_user{str(int(time.time()))}"
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -1842,8 +1841,8 @@ class TestCliS3ACC:
         Test that csm Manage user should able to delete s3account user
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -1893,7 +1892,7 @@ class TestCliS3ACC:
         delete s3account user when bucket is present for s3account user
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        bucket_name = f"clis3bkt{int(time.time())}"
         self.logger.info("Creating s3 account %s", self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -2107,8 +2106,8 @@ class TestCliS3ACC:
         Test that csm manage user help option should show delete s3account operation
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -2175,8 +2174,8 @@ class TestCliS3ACC:
         for delete s3account operation without username parameter
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -2258,7 +2257,7 @@ class TestCliS3ACC:
         Verify admin should not be able to delete S3 account if it has S3 buckets
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
+        bucket_name = f"clis3bkt{int(time.time())}"
         self.logger.info("Creating s3 account %s", self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
