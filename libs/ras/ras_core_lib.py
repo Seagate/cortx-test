@@ -19,20 +19,22 @@
 #
 
 """Python library which will perform ras component related and system level operations."""
-import os
-import logging
-import time
+import ast
 import json
+import logging
+import os
+import time
 from typing import Tuple, Any, Union, List
-from commons.helpers import node_helper
-from commons import constants as cmn_cons
+
 from commons import commands as common_commands
-from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
-from config import RAS_VAL
-from commons.utils.system_utils import run_remote_cmd
+from commons import constants as cmn_cons
+from commons.helpers import node_helper
 from commons.helpers.controller_helper import ControllerLib
+from commons.helpers.health_helper import Health
+from commons.utils.system_utils import run_remote_cmd
 from config import CMN_CFG
+from config import RAS_VAL
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -268,14 +270,10 @@ class RASCoreLib:
         :param str kv_path: path to the KV store for consul
         :return: response in tupple
         """
-        LOGGER.info(
-            "Putting value %s of %s from %s", val, field, kv_path)
-        put_cmd = "{} kv put {}/{} {}" \
-            .format(cmn_cons.CONSUL_PATH,
-                    kv_path, field, val)
+        LOGGER.info("Putting value %s of %s from %s", val, field, kv_path)
+        put_cmd = f"{cmn_cons.CONSUL_PATH} kv put {kv_path}/{field} {val}"
         LOGGER.info("Running command: %s", put_cmd)
-        resp = self.node_utils.execute_cmd(
-            cmd=put_cmd, read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
+        resp = self.node_utils.execute_cmd(cmd=put_cmd, read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
         return True, resp
 
     def kv_get(self, field: str, kv_path: str) -> \
@@ -287,14 +285,14 @@ class RASCoreLib:
         :param kv_path: path to the KV store for consul
         :return:
         """
-        get_cmd = "{} kv get {}/{}" \
-            .format(cmn_cons.CONSUL_PATH,
-                    kv_path, field)
+        get_cmd = f"{cmn_cons.CONSUL_PATH} kv get {kv_path}/{field}"
         LOGGER.info("Running command: %s", get_cmd)
         response = self.node_utils.execute_cmd(
             cmd=get_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, response
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-branches
     def put_kv_store(self, username: str, pwd: str, field: str) -> bool:
         """
         This function updates the values in KV store as per the values in
@@ -345,10 +343,9 @@ class RASCoreLib:
                     return False
 
                 str_f = field.split('_')[-1]
-                cmd = "sed '/{}:/!d' {} | sed '{}d' | awk '{{print $2}}'".format(
-                    str_f, cmn_cons.STORAGE_ENCLOSURE_PATH, lin)
-                val = self.node_utils.execute_cmd(
-                    cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
+                cmd = f"sed '/{str_f}:/!d' {cmn_cons.STORAGE_ENCLOSURE_PATH} | sed '{lin}d' | " \
+                      f"awk '{{print $2}}'"
+                val = self.node_utils.execute_cmd(cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
                 val = val.decode("utf-8")
                 val = " ".join(val.split())
 
@@ -371,12 +368,12 @@ class RASCoreLib:
             if val == response:
                 LOGGER.debug("Successfully written data for %s", field)
                 return True
-            else:
-                LOGGER.debug("Failed to write data for %s", field)
-                return False
-        else:
-            LOGGER.info("Please check path of storage_enclosure.sls")
+
+            LOGGER.debug("Failed to write data for %s", field)
             return False
+
+        LOGGER.info("Please check path of storage_enclosure.sls")
+        return False
 
     def update_threshold_values(self, kv_store_path: str, field: str, value,
                                 update: bool = True) -> bool:
@@ -410,9 +407,9 @@ class RASCoreLib:
         if value == response:
             LOGGER.debug("Successfully written data for %s", field)
             return True
-        else:
-            LOGGER.debug("Failed to write data for %s", field)
-            return False
+
+        LOGGER.debug("Failed to write data for %s", field)
+        return False
 
     def run_mdadm_cmd(self, args: list) -> Tuple[Union[List[str], str, bytes]]:
         """
@@ -521,8 +518,8 @@ class RASCoreLib:
             return True, time_str
         elif int(time_lst[0][0]) < 3:
             return True, time_str
-        else:
-            return False, time_str
+
+        return False, time_str
 
     def restart_service(self, service_name: str) -> Tuple[bool, str]:
         """
@@ -614,8 +611,7 @@ class RASCoreLib:
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
         LOGGER.debug(cmd)
-        response = self.node_utils.execute_cmd(
-            cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
+        self.node_utils.execute_cmd(cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
 
         resp = self.validate_alert_msg(
             remote_file_path=common_cfg["file"]["extracted_alert_file"],
@@ -645,7 +641,7 @@ class RASCoreLib:
         _ = self.node_utils.copy_file_to_local(remote_path=remote_file_path,
                                                local_path=local_path)
         for pattern in pattern_lst:
-            if pattern in open(local_path).read():
+            if pattern in open(local_path, encoding="utf-8").read():
                 response = pattern
             else:
                 LOGGER.info("Match not found : %s", pattern)
@@ -687,16 +683,13 @@ class RASCoreLib:
         new_pid = self.get_service_pid(service)
 
         if old_pid != new_pid:
-            LOGGER.info("Service %s recovery successful:Old PID:%s, "
-                        "New PID:%s", service, old_pid, new_pid)
-
+            LOGGER.info("Service %s recovery successful:Old PID:%s, New PID:%s", service, old_pid,
+                        new_pid)
             return True
-        else:
-            LOGGER.error(
-                "ERROR : Service %s recovery failed: Old PID:%s, New PID: "
-                "%s", service, old_pid, new_pid)
 
-            return False
+        LOGGER.error("ERROR : Service %s recovery failed: Old PID:%s, New PID: %s", service,
+                     old_pid, new_pid)
+        return False
 
     def kill_services(self, service_name):
         """
@@ -724,23 +717,21 @@ class RASCoreLib:
         p_id = None
         service_pid_cmd = common_commands.GET_PID_CMD.format(service)
         LOGGER.info("Get process id, command is : %s", service_pid_cmd)
-        resp = self.node_utils.execute_cmd(
-            cmd=service_pid_cmd, read_lines=True)
+        resp = self.node_utils.execute_cmd(cmd=service_pid_cmd, read_lines=True)
         for res_str in resp:
             if "Main PID" in resp[0].strip():
                 p_id = resp[0].split()[2]
         if p_id is None:
-            LOGGER.info("Error : Could not find PID for the service %s",
-                        service)
+            LOGGER.info("Error : Could not find PID for the service %s", service)
             return p_id
-        else:
-            LOGGER.info("For Service : %s  PID is :%s", service, p_id)
-            return p_id
+
+        LOGGER.info("For Service : %s  PID is :%s", service, p_id)
+        return p_id
 
     def kill_pid(self, p_id):
         """
         This function kills the service for given PID
-        :param pid: PID if service
+        :param p_id: PID if service
         :return True/False: True if operation is successful
         :rtype: Boolean
         """
@@ -748,10 +739,10 @@ class RASCoreLib:
             kill_cmd = common_commands.KILL_CMD.format(p_id)
             LOGGER.info("Kill command using process id, command is : %s",
                         kill_cmd)
-            resp = self.node_utils.execute_cmd(cmd=kill_cmd, read_lines=True)
+            self.node_utils.execute_cmd(cmd=kill_cmd, read_lines=True)
             return True
-        else:
-            return False
+
+        return False
 
     def get_pcs_status(self, cluster_msg):
         """
@@ -761,7 +752,7 @@ class RASCoreLib:
         :rtype: tupple
         """
         for node in range(cmn_cons.NODE_RANGE_START, cmn_cons.NODE_RANGE_END):
-            host_name = "{}{}".format(cmn_cons.NODE_PREFIX, node)
+            host_name = f"{cmn_cons.NODE_PREFIX}{node}"
             result = run_remote_cmd(hostname=host_name, username=self.username,
                                     password=self.pwd,
                                     cmd=common_commands.PCS_STATUS_CMD)
@@ -838,7 +829,7 @@ class RASCoreLib:
         :return: None
         """
         for key, value in encl_vals.items():
-            k = eval(f"cmn_cons.{key}")
+            k = ast.literal_eval(f"cmn_cons.{key}")
             cmd = common_commands.CONF_SET_CMD.format(url, f"{k}={value}")
             LOGGER.info("Running command: %s", cmd)
             result = run_remote_cmd(hostname=self.host,

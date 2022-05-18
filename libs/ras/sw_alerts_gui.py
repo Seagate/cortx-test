@@ -26,14 +26,15 @@ import os
 from datetime import datetime
 
 from commons import Globals
-from robot_gui.utils.call_robot_test import trigger_robot
 from commons.utils.assert_utils import assert_true
 from config import CMN_CFG
+from robot_gui.utils.call_robot_test import trigger_robot
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SoftwareAlertGUI():
+# pylint: disable=too-many-instance-attributes
+class SoftwareAlertGUI:
     """
     This class contains common utility methods for RAS GUI related operations.
     """
@@ -54,8 +55,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_inactive_alert")
         gui_dict = dict()
-        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_init_' + svc \
-                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_init_' + svc + \
+                               "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -63,7 +64,7 @@ class SoftwareAlertGUI():
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
         gui_dict['tag'] = 'SW_SERVICE_VERIFY_INIT'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_sw_service_inactive_alert")
 
     def verify_sw_service_inactive_alert(self, svc):
@@ -81,7 +82,7 @@ class SoftwareAlertGUI():
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
         gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_sw_service_inactive_alert")
 
     def verify_sw_service_inactive_alert_resolved(self, svc):
@@ -99,7 +100,7 @@ class SoftwareAlertGUI():
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
         gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_sw_service_inactive_alert_resolved")
 
     def verify_sw_service_deactivat_alert(self, svc):
@@ -117,7 +118,7 @@ class SoftwareAlertGUI():
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
         gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_sw_service_deactivat_alert")
 
     def verify_sw_service_deactivat_alert_resolved(self, svc):
@@ -126,8 +127,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_deactivat_alert_resolved")
         gui_dict = dict()
-        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_deactivat_alert_resolved' \
-                               + svc + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_deactivat_alert_resolved' + \
+                               svc + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -135,5 +136,5 @@ class SoftwareAlertGUI():
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
         gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_sw_service_deactivat_alert_resolved")

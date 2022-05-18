@@ -265,6 +265,7 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
+SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -389,6 +390,10 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
+# m0cp -G -l 192.168.59.17@tcp:12345:34:101 -H 192.168.59.17@tcp:12345:34:1 -p 0x7000000000000001:0
+# -P 0x7200000000000000:0 -o 1048580 /var/motr/update_file -s 4096 -c 8 -L 3 -u -O 4096
+
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
