@@ -76,7 +76,7 @@ class TestHAClusterHealthGUI:
         cls.hlt_list = []
         cls.srvnode_list = []
         cls.restored = True
-
+        cls.nw_data = None
         # required for Robot_GUI
         cls.ha_gui_obj = HAGUILibs()
 
@@ -163,7 +163,7 @@ class TestHAClusterHealthGUI:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -188,10 +188,9 @@ class TestHAClusterHealthGUI:
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
             self.ha_gui_obj.verify_node_state(node, "online")
-            LOGGER.info(f"Shutting down {node_name}")
+            LOGGER.info("Shutting down %s", node_name)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the node before shutdown")
+                LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
@@ -202,8 +201,8 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp, "Host has not shutdown yet.")
             self.restored = False
 
-            LOGGER.info(
-                f"Check in cortxcli and REST that the status is changed for {node_name} to Failed")
+            LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
+                        node_name)
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -237,33 +236,26 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
-            LOGGER.info(
-                "Check that cortx services on other nodes are not affected.")
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
             resp = self.ha_obj.check_service_other_nodes(
                 node, self.num_nodes, self.node_list)
-            assert_utils.assert_true(
-                resp, "Some services are down for other nodes.")
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
 
-            LOGGER.info(f"Power on {node_name}")
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node],
-                bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(
-                resp, "Host has not powered on yet.")
-            LOGGER.info(f"{node_name} has powered on")
+            LOGGER.info("Power on %s", node_name)
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(resp, "Host has not powered on yet.")
+            LOGGER.info("%s has powered on", node_name)
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to enable stonith on the node after node came back up")
+                LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
-            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
-                                                       nd_obj)
+            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list, nd_obj)
             LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
             for hlt_obj in self.hlt_list:
                 res = hlt_obj.check_node_health()
@@ -277,12 +269,12 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
-            LOGGER.info(f"Node down/up worked fine for node: {node_name}")
+            LOGGER.info("Node down/up worked fine for node: %s", node_name)
 
         LOGGER.info(
             "Complete: Test to check cluster status one by one for all nodes with os shutdown.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -293,8 +285,7 @@ class TestHAClusterHealthGUI:
         Test to check that correct cluster status is shown in Cortx GUI when nodes goes
         offline and comes back online(one by one, unsafe shutdown)
         """
-        LOGGER.info(
-            "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
+        LOGGER.info("Started: Test to check cluster status, with unsafe shutdown nodes one by one")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -307,10 +298,9 @@ class TestHAClusterHealthGUI:
         for node in range(self.num_nodes):
             LOGGER.info("Verify if node state online")
             self.ha_gui_obj.verify_node_state(node, "online")
-            LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
+            LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the node before shutdown")
+                LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
@@ -318,14 +308,12 @@ class TestHAClusterHealthGUI:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered off.")
+            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info("%s is powered off.", self.host_list[node])
             self.restored = False
 
-            LOGGER.info(
-                f"Check in cortxcli and REST that the status is changed for "
-                f"{self.srvnode_list[node]} to Failed")
+            LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
+                        self.srvnode_list[node])
             if self.srvnode_list[node] == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -334,12 +322,10 @@ class TestHAClusterHealthGUI:
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(
                 sys_obj[0], f"{sys_obj[1]} Could not get server which has CSM service running.")
-            check_rem_node = [
-                "failed" if num == node else "online" for num in range(
-                    self.num_nodes)]
+            check_rem_node = ["failed" if num == node else "online"
+                              for num in range(self.num_nodes)]
             LOGGER.info("Verify node status via CortxCLI")
-            resp = self.ha_obj.verify_node_health_status(
-                sys_obj[1], status=check_rem_node)
+            resp = self.ha_obj.verify_node_health_status(sys_obj[1], status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
             resp = self.ha_obj.verify_csr_health_status(sys_obj[1], "degraded")
@@ -359,20 +345,15 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
-            LOGGER.info(
-                "Check that cortx services on other nodes are not affected.")
-            resp = self.ha_obj.check_service_other_nodes(
-                node, self.num_nodes, self.node_list)
-            assert_utils.assert_true(
-                resp, "Some services are down for other nodes.")
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
+            resp = self.ha_obj.check_service_other_nodes(node, self.num_nodes, self.node_list)
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
 
-            LOGGER.info(f"Power on {self.srvnode_list[node]}")
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node],
-                bmc_obj=self.bmc_list[node])
+            LOGGER.info("Power on %s", self.srvnode_list[node])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered on.")
+            LOGGER.info("%s is powered on.", self.host_list[node])
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
@@ -384,8 +365,7 @@ class TestHAClusterHealthGUI:
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
-            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
-                                                       nd_obj)
+            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list, nd_obj)
             LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
             for hlt_obj in self.hlt_list:
                 res = hlt_obj.check_node_health()
@@ -404,7 +384,7 @@ class TestHAClusterHealthGUI:
         LOGGER.info(
             "Complete: Test to check cluster status one by one for all nodes with unsafe shutdown.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -430,10 +410,9 @@ class TestHAClusterHealthGUI:
         off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
 
         for count, node in enumerate(off_nodes):
-            LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
+            LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the node before shutdown")
+                LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
@@ -443,9 +422,8 @@ class TestHAClusterHealthGUI:
                 node_obj=self.node_list[node],
                 is_safe=True
             )
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered off.")
+            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info("%s is powered off.", self.host_list[node])
             time.sleep(40)
             self.restored = False
 
@@ -458,13 +436,10 @@ class TestHAClusterHealthGUI:
                 self.ha_gui_obj.verify_cluster_state("degraded")
 
         for count, node in enumerate(off_nodes):
-            LOGGER.info(f"Power on {self.srvnode_list[node]}")
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node],
-                bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered on.")
+            LOGGER.info("Power on %s", self.srvnode_list[node])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(resp, f"{self.host_list[node]} has not powered on yet.")
+            LOGGER.info("%s is powered on.", self.host_list[node])
             time.sleep(120)
 
             LOGGER.info("Check for the node back up alert.")
@@ -473,8 +448,7 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state(node, "online")
 
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to enable stonith on the node after node came back up")
+                LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
@@ -489,10 +463,9 @@ class TestHAClusterHealthGUI:
         LOGGER.info("All nodes are online and PCS looks clean.")
 
         self.restored = True
-        LOGGER.info(
-            "Complete: Test to check cluster status two nodes off & on with os shutdown.")
+        LOGGER.info("Complete: Test to check cluster status two nodes off & on with os shutdown.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -518,10 +491,9 @@ class TestHAClusterHealthGUI:
         off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
 
         for count, node in enumerate(off_nodes):
-            LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
+            LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the node before shutdown")
+                LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
@@ -530,9 +502,8 @@ class TestHAClusterHealthGUI:
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node],
             )
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered off.")
+            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info("%s is powered off.", self.host_list[node])
 
             self.restored = False
 
@@ -545,13 +516,10 @@ class TestHAClusterHealthGUI:
                 self.ha_gui_obj.verify_cluster_state("degraded")
 
         for count, node in enumerate(off_nodes):
-            LOGGER.info(f"Power on {self.srvnode_list[node]}")
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node],
-                bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
-            LOGGER.info(f"{self.host_list[node]} is powered on.")
+            LOGGER.info("Power on %s", self.srvnode_list[node])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(resp, f"{self.host_list[node]} has not powered on yet.")
+            LOGGER.info("%s is powered on.", self.host_list[node])
 
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(node)
@@ -559,8 +527,7 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state(node, "online")
 
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to enable stonith on the node after node came back up")
+                LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
@@ -578,7 +545,7 @@ class TestHAClusterHealthGUI:
         LOGGER.info(
             "Complete: Test to check cluster status two nodes off & on with unsafe shutdown.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -603,20 +570,17 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
-        LOGGER.info(
-            "Shutdown %s node multiple time and check cluster status.",
-            self.srvnode_list[node_index])
+        LOGGER.info("Shutdown %s node multiple time and check cluster status.",
+                    self.srvnode_list[node_index])
 
         LOGGER.info("Verify if node state online")
         self.ha_gui_obj.verify_node_state(node_index, "online")
 
         for loop in range(self.loop_count):
-            LOGGER.info("Shutting down node: %s, Loop: %s",
-                        self.srvnode_list[node_index], loop)
+            LOGGER.info("Shutting down node: %s, Loop: %s", self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the %s before shutdown",
-                    self.srvnode_list[node_index])
+                LOGGER.debug("HW: Need to disable stonith on the %s before shutdown",
+                             self.srvnode_list[node_index])
                 self.node_list[node_index].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
                     read_lines=True)
@@ -625,8 +589,7 @@ class TestHAClusterHealthGUI:
                 node_obj=self.node_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
                 is_safe=True)
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
             self.restored = False
 
@@ -639,19 +602,16 @@ class TestHAClusterHealthGUI:
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj = resp[1]
-            LOGGER.info(
-                "Check resources health status in CLI and REST after shutdown %s",
-                self.srvnode_list[node_index])
+            LOGGER.info("Check resources health status in CLI and REST after shutdown %s",
+                        self.srvnode_list[node_index])
 
             check_rem_node = [
                 "failed" if num == node_index else "online" for num in range(
                     self.num_nodes)]
             LOGGER.info("Verify %s status is failed via CortxCLI", self.srvnode_list[node_index])
-            resp = self.ha_obj.verify_node_health_status(
-                sys_obj, status=check_rem_node)
+            resp = self.ha_obj.verify_node_health_status(sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verify Cluster/Site/Rack status is degraded via CortxCLI")
+            LOGGER.info("Verify Cluster/Site/Rack status is degraded via CortxCLI")
             resp = self.ha_obj.verify_csr_health_status(sys_obj, "degraded")
             assert_utils.assert_true(resp[0], resp[1])
 
@@ -669,26 +629,20 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
-            LOGGER.info(
-                "Check that cortx services on other nodes are not affected.")
-            resp = self.ha_obj.check_service_other_nodes(
-                node_index, self.num_nodes, self.node_list)
-            assert_utils.assert_true(
-                resp, "Some services are down for other nodes.")
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
+            resp = self.ha_obj.check_service_other_nodes(node_index, self.num_nodes, self.node_list)
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node_index],
-                bmc_obj=self.bmc_list[node_index])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not powered on yet.")
+            resp = self.ha_obj.host_power_on(host=self.host_list[node_index],
+                                             bmc_obj=self.bmc_list[node_index])
+            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 
             # To get all the services up and running
             time.sleep(40)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to enable stonith on the node after node came back up")
+                LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node_index].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
                     read_lines=True)
@@ -696,8 +650,7 @@ class TestHAClusterHealthGUI:
             LOGGER.info(
                 "Check all nodes, cluster, rack, site are back online in "
                 "CLI and REST after power on %s", self.srvnode_list[node_index])
-            self.ha_obj.status_cluster_resource_online(
-                self.srvnode_list, self.sys_list, nd_obj)
+            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list, nd_obj)
 
             LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
             for hlt_obj in self.hlt_list:
@@ -721,7 +674,7 @@ class TestHAClusterHealthGUI:
             "Completed: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -746,20 +699,17 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
-        LOGGER.info(
-            "Shutdown %s node multiple time and check cluster status.",
-            self.srvnode_list[node_index])
+        LOGGER.info("Shutdown %s node multiple time and check cluster status.",
+                    self.srvnode_list[node_index])
 
         LOGGER.info("Verify if node state online")
         self.ha_gui_obj.verify_node_state(node_index, "online")
 
         for loop in range(self.loop_count):
-            LOGGER.info("Shutting down node: %s, Loop: %s",
-                        self.srvnode_list[node_index], loop)
+            LOGGER.info("Shutting down node: %s, Loop: %s", self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to disable stonith on the %s before shutdown",
-                    self.srvnode_list[node_index])
+                LOGGER.debug("HW: Need to disable stonith on the %s before shutdown",
+                             self.srvnode_list[node_index])
                 self.node_list[node_index].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
                     read_lines=True)
@@ -767,8 +717,7 @@ class TestHAClusterHealthGUI:
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
                 node_obj=self.node_list[node_index])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
             self.restored = False
 
@@ -781,19 +730,16 @@ class TestHAClusterHealthGUI:
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj = resp[1]
-            LOGGER.info(
-                "Check resources health in CLI and REST after shutdown %s",
-                self.srvnode_list[node_index])
+            LOGGER.info("Check resources health in CLI and REST after shutdown %s",
+                        self.srvnode_list[node_index])
 
             check_rem_node = [
                 "failed" if num == node_index else "online" for num in range(
                     self.num_nodes)]
             LOGGER.info("Verify %s status is failed via CortxCLI", self.srvnode_list[node_index])
-            resp = self.ha_obj.verify_node_health_status(
-                sys_obj, status=check_rem_node)
+            resp = self.ha_obj.verify_node_health_status(sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verify Cluster/Site/Rack status is degraded via CortxCLI")
+            LOGGER.info("Verify Cluster/Site/Rack status is degraded via CortxCLI")
             resp = self.ha_obj.verify_csr_health_status(sys_obj, "degraded")
             assert_utils.assert_true(resp[0], resp[1])
 
@@ -811,26 +757,20 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
-            LOGGER.info(
-                "Check that cortx services on other nodes are not affected.")
-            resp = self.ha_obj.check_service_other_nodes(
-                node_index, self.num_nodes, self.node_list)
-            assert_utils.assert_true(
-                resp, "Some services are down for other nodes.")
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
+            resp = self.ha_obj.check_service_other_nodes(node_index, self.num_nodes, self.node_list)
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.ha_obj.host_power_on(
-                host=self.host_list[node_index],
-                bmc_obj=self.bmc_list[node_index])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not powered on yet.")
+            resp = self.ha_obj.host_power_on(host=self.host_list[node_index],
+                                             bmc_obj=self.bmc_list[node_index])
+            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 
             # To get all the services up and running
             time.sleep(40)
             if self.setup_type == "HW":
-                LOGGER.debug(
-                    "HW: Need to enable stonith on the node after node came back up")
+                LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node_index].execute_cmd(
                     common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
                     read_lines=True)
@@ -838,8 +778,7 @@ class TestHAClusterHealthGUI:
             LOGGER.info(
                 "Check all nodes, cluster, rack, site are back online in CLI and "
                 "REST after power on %s", self.srvnode_list[node_index])
-            self.ha_obj.status_cluster_resource_online(
-                self.srvnode_list, self.sys_list, nd_obj)
+            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list, nd_obj)
 
             LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
             for hlt_obj in self.hlt_list:
@@ -863,7 +802,7 @@ class TestHAClusterHealthGUI:
             "Completed: Test to check cluster/site/rack and node status with unsafe "
             "shutdown of single node multiple times.")
 
-    # pylint: disable=R0201
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lr
     @pytest.mark.csm_gui
@@ -890,21 +829,16 @@ class TestHAClusterHealthGUI:
         self.ha_gui_obj.assert_if_network_interface_down_alert_present()
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
-        response = self.ha_obj.get_iface_ip_list(
-            node_list=self.node_list, num_nodes=self.num_nodes)
+        response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
         self.nw_data = [iface_list, private_ip_list]
-        LOGGER.debug(
-            "List of private data IP : %s and interfaces on all nodes: %s",
-            private_ip_list,
-            iface_list)
+        LOGGER.debug("List of private data IP : %s and interfaces on all nodes: %s",
+                     private_ip_list, iface_list)
 
         for node in range(self.num_nodes):
-            LOGGER.info(
-                "Make the private data interface %s down for %s",
-                iface_list[node],
-                self.srvnode_list[node])
+            LOGGER.info("Make the private data interface %s down for %s",
+                        iface_list[node], self.srvnode_list[node])
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "down"), read_lines=True)
@@ -957,12 +891,9 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
-            LOGGER.info(
-                "Check that cortx services on other nodes are not affected.")
-            resp = self.ha_obj.check_service_other_nodes(
-                node, self.num_nodes, self.node_list)
-            assert_utils.assert_true(
-                resp, "Some services are down for other nodes.")
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
+            resp = self.ha_obj.check_service_other_nodes(node, self.num_nodes, self.node_list)
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
 
             LOGGER.info(
                 "Make the private data interface %s back up for %s",
@@ -986,8 +917,7 @@ class TestHAClusterHealthGUI:
                 "after making the private data interface %s up for %s",
                 iface_list[node],
                 self.srvnode_list[node])
-            self.ha_obj.status_cluster_resource_online(
-                self.srvnode_list, self.sys_list, nd_obj)
+            self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list, nd_obj)
 
             LOGGER.info("Checking PCS clean after making the private data interface %s down for %s",
                         iface_list[node], self.sys_list[node])
