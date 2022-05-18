@@ -235,8 +235,7 @@ class TestHANodeFailure:
         self.s3user_info = users
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
         LOGGER.info("Step 2: Poweroff %s from cluster with CORTX REST with %s user",
-            self.srvnode_list[node],
-            self.csm_user)
+                    self.srvnode_list[node], self.csm_user)
         resp = self.ha_rest.perform_cluster_operation(
             operation='poweroff',
             resource='node',
@@ -248,8 +247,7 @@ class TestHANodeFailure:
             resp, f"{self.host_list[node]} is still pinging")
         LOGGER.info("Step 2: %s server is poweroff and not pinging",
                     self.srvnode_list[node])
-        LOGGER.info("Step 3: Check for the %s down alert",
-            self.srvnode_list[node])
+        LOGGER.info("Step 3: Check for the %s down alert", self.srvnode_list[node])
         resp = self.csm_alerts_obj.verify_csm_response(
             self.starttime, self.alert_type["get"], False, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
@@ -288,9 +286,8 @@ class TestHANodeFailure:
             users.values())[0], log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed READs and verified DI on the written data")
-        LOGGER.info("Step 7: Start %s from REST with %s user",
-            self.srvnode_list[node],
-            self.csm_user)
+        LOGGER.info("Step 7: Start %s from REST with %s user", self.srvnode_list[node],
+                    self.csm_user)
         resp = self.ha_rest.perform_cluster_operation(
             operation='start',
             resource='node',
@@ -363,16 +360,14 @@ class TestHANodeFailure:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3user_info = users
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
-        LOGGER.info("Step 2: Unsafe Shutdown %s server",
-            self.srvnode_list[node])
+        LOGGER.info("Step 2: Unsafe Shutdown %s server", self.srvnode_list[node])
         resp = self.ha_obj.host_safe_unsafe_power_off(
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
         assert_utils.assert_true(resp, "Node is not shutdown and still pinging.")
         LOGGER.info("Step 2: %s server is shutdown and not pinging",
                     self.srvnode_list[node])
-        LOGGER.info("Step 3: Check for the %s down alert",
-            self.srvnode_list[node])
+        LOGGER.info("Step 3: Check for the %s down alert", self.srvnode_list[node])
         resp = self.csm_alerts_obj.verify_csm_response(
             self.starttime, self.alert_type["get"], False, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
@@ -411,8 +406,7 @@ class TestHANodeFailure:
             users.values())[0], log_prefix=self.test_prefix, skipwrite=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed READs and verified DI on the written data")
-        LOGGER.info("Step 7: Start %s from ssc-cloud/BMC",
-            self.srvnode_list[node])
+        LOGGER.info("Step 7: Start %s from ssc-cloud/BMC", self.srvnode_list[node])
         resp = self.ha_obj.host_power_on(
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
@@ -487,15 +481,14 @@ class TestHANodeFailure:
         assert_utils.assert_true(resp[0], "Failed to start parallel READ IOs.")
         self.stop_io_process = resp[1]
         LOGGER.info("Step 3: Unsafe Shutdown %s server and verify its not pinging",
-            self.srvnode_list[node])
+                    self.srvnode_list[node])
         resp = self.ha_obj.host_safe_unsafe_power_off(
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
         assert_utils.assert_true(resp, "Node is not shutdown and still pinging.")
         LOGGER.info("Step 3: %s server is shutdown and not pinging",
                     self.srvnode_list[node])
-        LOGGER.info("Step 4: Check for the %s down alert",
-            self.srvnode_list[node])
+        LOGGER.info("Step 4: Check for the %s down alert", self.srvnode_list[node])
         resp = self.csm_alerts_obj.verify_csm_response(
             self.starttime, self.alert_type["get"], False, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
@@ -529,8 +522,7 @@ class TestHANodeFailure:
         LOGGER.info(
             "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
             self.srvnode_list[node])
-        LOGGER.info("Step 7: Start %s server from ssc-cloud/BMC",
-            self.srvnode_list[node])
+        LOGGER.info("Step 7: Start %s server from ssc-cloud/BMC", self.srvnode_list[node])
         resp = self.ha_obj.host_power_on(
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
