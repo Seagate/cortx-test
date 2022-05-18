@@ -49,6 +49,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
+# pylint: disable=C0302
 class TestHANodeStartStop:
     """
     Test suite for node start stop operation tests of HA.
@@ -156,8 +157,8 @@ class TestHANodeStartStop:
             "Precondition: Health status shows all components as online & PCS looks clean.")
 
         LOGGER.info("Precondition: Create csm user having manage privileges.")
-        self.manage_user = "manage-user-{}".format(time.perf_counter_ns())
-        self.email_id = "{}@seagate.com".format(self.manage_user)
+        self.manage_user = f"manage-user-{time.perf_counter_ns()}"
+        self.email_id = f"{self.manage_user}@seagate.com"
         resp = self.csm_obj.csm_user_create(
             self.manage_user, self.email_id, self.csm_passwd, role="manage")
         assert_utils.assert_true(resp[0], resp[1])
@@ -706,11 +707,11 @@ class TestHANodeStartStop:
     @CTFailOn(error_handler)
     def test_node_poweroff_start_server_storage(self):
         """
-        Test to Power off node one by one alongwith storage and start it back
+        Test to Power off node one by one along with storage and start it back
         through cortx REST with admin/manage user.
         """
         LOGGER.info(
-            "Started: Test to Power off node one by one alongwith storage and start it back "
+            "Started: Test to Power off node one by one along with storage and start it back "
             "through cortx REST with admin/manage user.")
         for node in range(self.num_nodes):
             self.restored = False
@@ -864,7 +865,7 @@ class TestHANodeStartStop:
             self.restored = True
 
         LOGGER.info(
-            "Completed: Test to Power off node one by one alongwith storage and start it back "
+            "Completed: Test to Power off node one by one along with storage and start it back "
             "through cortx REST with admin/manage user.")
 
     @pytest.mark.ha
@@ -882,8 +883,8 @@ class TestHANodeStartStop:
         opt_user = self.system_random.choice(self.user_data)
         self.restored = False
         LOGGER.info("Create user with monitor privileges.")
-        self.monitor_user = "monitor-user-{}".format(time.perf_counter_ns())
-        email_id = "{}@seagate.com".format(self.monitor_user)
+        self.monitor_user = f"monitor-user-{time.perf_counter_ns()}"
+        email_id = f"{self.monitor_user}@seagate.com"
         resp = self.csm_obj.csm_user_create(
             self.monitor_user, email_id, self.csm_passwd, role="monitor")
         assert_utils.assert_true(resp[0], resp[1])
