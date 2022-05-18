@@ -38,6 +38,22 @@ from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 
 
+def size_verify(component_dir_name):
+    """
+    This function which is used to verify component directory has specific size limit logs
+    """
+    files = os.listdir(component_dir_name)
+    number = len(files)
+    count = 0
+    flg = False
+    for file in files:
+        if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
+            count+= 1
+    if count == number:
+        flg = True
+    return flg
+
+
 # pylint: disable-msg=too-many-public-methods
 class TestR2SupportBundle:
     """Class for R2 Support Bundle testing"""
@@ -95,21 +111,6 @@ class TestR2SupportBundle:
         system_utils.execute_cmd(tar_sb_cmd)
         return True
 
-    def size_verify(self, component_dir_name):
-        """
-        This function which is used to verify component directory has specific size limit logs
-        """
-        files = os.listdir(component_dir_name)
-        number = len(files)
-        count = 0
-        flg = False
-        for file in files:
-            if os.path.getsize(file)>=constants.MIN and os.path.getsize(file)<=constants.MAX:
-                count+= 1
-        if count == number:
-            flg = True
-        return flg
-
     def r2_verify_support_bundle(self, bundle_id, test_comp_list, size=None, services=None):
         """
         This function is used to verify support bundle content
@@ -149,7 +150,7 @@ class TestR2SupportBundle:
                     assert_utils.assert_true(
                         found, 'Component Directory in support bundle not found')
                 if size is not None:
-                    resp=self.size_verify(component_dir_name)
+                    resp = size_verify(component_dir_name)
                     if resp:
                         self.LOGGER.info("Component dir %s is with limited size logs",
                                          component_dir_name)
@@ -589,6 +590,7 @@ class TestR2SupportBundle:
         self.LOGGER.info("Successfully validated HARE rotating log files are as per "
                          "frequency configured for all pods")
 
+    # pylint: disable-msg=too-many-nested-blocks
     @pytest.mark.lc
     @pytest.mark.log_rotation
     @pytest.mark.tags("TEST-31250")
@@ -754,6 +756,8 @@ class TestR2SupportBundle:
         self.LOGGER.info("Successfully validated Motr rotating log files are as per "
                          "frequency configured for all pods")
 
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=too-many-statements
     @pytest.mark.cluster_user_ops
     @pytest.mark.lc
     @pytest.mark.support_bundle

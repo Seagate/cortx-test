@@ -37,7 +37,6 @@ def test_11733(request, capture, logger, formatter):
     """Test to measure bucket creation time"""
     start_time = datetime.now().isoformat()
     records = capture.records
-    test_tkt = request.node.own_markers[0].args[0]
     bucket_name = f"TEST-11733-bucket-{str(int(time.time()))}"
     start = time.time()
     logger.debug(f"Creating bucket {bucket_name}")
@@ -50,17 +49,14 @@ def test_11733(request, capture, logger, formatter):
     for rec in records:
         logs.append((formatter.format(rec) + '\n'))
 
-    tp_tkt = request.config.getoption("--tp_ticket")
-    build = request.config.getoption("--build")
-    te_tkt = request.config.getoption("--te_tkt")
     function_name = request.node.name
     Globals.records.update({function_name: records})
     payload = {
-        "buildNo": build,
+        "buildNo": request.config.getoption("--build"),
         "logs": logs,
-        "testID": test_tkt,
-        "testPlanID": tp_tkt,
-        "testExecutionID": te_tkt,
+        "testID": request.node.own_markers[0].args[0],
+        "testPlanID": request.config.getoption("--tp_ticket"),
+        "testExecutionID": request.config.getoption("--te_tkt"),
         "testStartTime": start_time,
         "nodeRebootTime": bucket_creation_time,
     }

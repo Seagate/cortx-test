@@ -101,19 +101,14 @@ class TestDelayedDelete:
         res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
-            res = system_utils.configure_jclient_cloud(
+            res = self.jclient_obj.configure_jclient_cloud(
                 source=S3_CFG["jClientCloud_path"]["source"],
                 destination=S3_CFG["jClientCloud_path"]["dest"],
                 nfs_path=S3_CFG["nfs_path"],
                 ca_crt_path=S3_CFG["s3_cert_path"])
             logging.info(res)
         assert_utils.assert_true(res)
-        logging.info("ENDED: Setup operations")
-
-    def setup_method(self):
-        """Create test data directory"""
-        self.log.info("STARTED: Test Setup")
-        self.update_jclient_jcloud_properties()
+        self.jclient_obj.update_jclient_jcloud_properties()
         logging.info("S3_SERVER_OBJECT_DELAYED_DELETE"
                      " value in s3config.yaml should be "
                      "set to True.")
@@ -137,6 +132,7 @@ class TestDelayedDelete:
             self.log.info("Created path: %s", resp)
         self.test_file_path = os.path.join(self.test_dir_path,
                                            self.test_file.format(str(int(time.time()))))
+        logging.info("ENDED: Setup operations")
 
     def teardown_method(self):
         """
@@ -250,10 +246,8 @@ class TestDelayedDelete:
         self.log.info("STARTED: put object using jcloudclient")
         if option == 1:
             self.log.info("Creating bucket %s", bucket_name)
-            command = self.create_cmd(
-                bucket_name,
-                "mb",
-                jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
+            command = self.jclient_obj.create_cmd(bucket_name, "mb",
+                                                  jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in(
