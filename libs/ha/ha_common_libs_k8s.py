@@ -796,14 +796,11 @@ class HAK8s:
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
-        resp = None
         try:
             cmd_path = dir_path if dir_path else self.dir_path
-            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(cmd_path),
-                                    read_lines=True, exc=False)
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(cmd_path))
         except IOError as error:
             LOGGER.error("Error: Cluster status has some failures.")
-            LOGGER.debug("Response for cluster status: %s", resp)
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
