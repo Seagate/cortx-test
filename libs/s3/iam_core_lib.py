@@ -80,6 +80,7 @@ class IAMRest:
                                                    endpoint_url=endpoint_url)
             else:
                 LOGGER.info("Skipped: create iam client, resource object with boto3.")
+        # pylint: disable=broad-except
         except Exception as error:
             if "unreachable network" not in str(error):
                 LOGGER.critical(error)
