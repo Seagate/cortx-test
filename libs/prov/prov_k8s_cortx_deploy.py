@@ -548,7 +548,7 @@ class ProvDeployK8sCortxLib:
                                                       client_instance=self.client_instance)
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
-        # Update resources for thirdparty
+        # Update resources for third_party
         resource_resp = self.update_res_limit_third_party(filepath)
         if not resource_resp:
             return False, "Failed to update the resources for thirdparty"
@@ -1182,6 +1182,7 @@ class ProvDeployK8sCortxLib:
         return True
 
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-complex
     def test_deployment(self, master_node_list,
                         worker_node_list, **kwargs):
         """
