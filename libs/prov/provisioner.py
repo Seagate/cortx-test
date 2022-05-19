@@ -26,6 +26,7 @@ import time
 import jenkins
 import re
 import numpy as np
+from string import Template
 from commons import constants as common_cnst
 from commons import commands as common_cmd
 from commons import params as prm
@@ -590,7 +591,7 @@ class Provisioner:
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
             for node_count, node_obj in enumerate(node_obj_list, start=1):
                 LOGGER.info("Configuring CVG for %s", node_obj.hostname)
-                node = "srvnode-{}".format(node_count)
+                node = Template("srvnode-$serial").substitute(serial=node_count)
                 hostname = node_obj.hostname
                 device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
                                                    read_lines=True)[0].split(",")
@@ -713,7 +714,7 @@ class Provisioner:
             config_utils.update_config_ini(
                 config_file,
                 section="srvnode_default",
-                key="storage.durability.sns.{}".format(key),
+                key=Template("storage.durability.sns.$sns").substitute(sns=key),
                 value=value,
                 add_section=False)
         LOGGER.info("Configuring DIX pool  : %s", dix)
@@ -721,7 +722,7 @@ class Provisioner:
             config_utils.update_config_ini(
                 config_file,
                 section="srvnode_default",
-                key="storage.durability.dix.{}".format(key),
+                key=Template("storage.durability.dix.$dix").substitute(dix=key),
                 value=value,
                 add_section=False)
         config_utils.update_config_ini(config_file, node,
@@ -734,14 +735,14 @@ class Provisioner:
             config_utils.update_config_ini(
                 config_file,
                 node,
-                key="storage.cvg.{}.data_devices".format(cvg),
+                key=Template("storage.cvg.$num.data_devices").substitute(num=cvg),
                 value=data_devices[cvg],
                 add_section=False)
             LOGGER.info("Updating Metadata Devices: %s", metadata_devices[cvg])
             config_utils.update_config_ini(
                 config_file,
                 node,
-                key="storage.cvg.{}.metadata_devices".format(cvg),
+                key=Template("storage.cvg.$num.metadata_devices").substitute(num=cvg),
                 value=metadata_devices[cvg],
                 add_section=False)
         return True, config_file
