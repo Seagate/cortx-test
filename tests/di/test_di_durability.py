@@ -56,7 +56,8 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
 
-# pylint: disable=too-many-instance-attributes, too-many-public-methods
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 @pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDIDurability:
     """DI Durability Test suite."""
