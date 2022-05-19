@@ -58,16 +58,15 @@ class CortxCliAlerts(CortxCli):
         help_param = kwargs.get("help_param", False)
         show_alert_cmd = "alerts show"
         if duration:
-            show_alert_cmd = "{0} -d {1}".format(show_alert_cmd, duration)
+            show_alert_cmd = f"{show_alert_cmd} -d {duration}"
         if limit:
-            show_alert_cmd = "{0} -l {1}".format(show_alert_cmd, limit)
+            show_alert_cmd = f"{show_alert_cmd} -l {limit}"
         if output_format:
-            show_alert_cmd = "{0} -f {1}".format(
-                show_alert_cmd, output_format)
+            show_alert_cmd = f"{show_alert_cmd} -f {output_format}"
         if other_param:
-            show_alert_cmd = "{0} {1}".format(show_alert_cmd, other_param)
+            show_alert_cmd = f"{show_alert_cmd} {other_param}"
         if help_param:
-            show_alert_cmd = "{0} -h".format(show_alert_cmd)
+            show_alert_cmd = f"{show_alert_cmd} -h"
 
         output = self.execute_cli_commands(cmd=show_alert_cmd, patterns=["Alert Id"])[1]
 
@@ -99,12 +98,12 @@ class CortxCliAlerts(CortxCli):
         acknowledge_alerts_cmd = "{} {}".format(
             "alerts acknowledge", alert_id)
         if ack:
-            acknowledge_alerts_cmd = "{} -ack".format(
-                acknowledge_alerts_cmd)
+            acknowledge_alerts_cmd = f"{acknowledge_alerts_cmd} -ack"
         if help_param:
-            acknowledge_alerts_cmd = "{} -h".format(acknowledge_alerts_cmd)
+            acknowledge_alerts_cmd = f"{acknowledge_alerts_cmd} -h"
 
-        output = self.execute_cli_commands(cmd=acknowledge_alerts_cmd, patterns=["[Y/n]", "usage:"])[1]
+        output = self.execute_cli_commands(cmd=acknowledge_alerts_cmd,
+                            patterns=["[Y/n]","usage:"])[1]
         if help_param:
             self.log.info("Displaying usage for acknowledge alerts")
             return True, output
@@ -132,15 +131,13 @@ class CortxCliAlerts(CortxCli):
         """
         show_alert_comment_cmd = "alerts comment show"
         if help_param:
-            show_alert_comment_cmd = "{} -h".format(show_alert_comment_cmd)
+            show_alert_comment_cmd = f"{show_alert_comment_cmd} -h"
 
         if output_format:
-            show_alert_comment_cmd = "{} -f {} {}".format(
-                show_alert_comment_cmd, output_format, alert_id)
+            show_alert_comment_cmd = f"{show_alert_comment_cmd} -f {output_format} {alert_id}"
 
         else:
-            show_alert_comment_cmd = "{} {}".format(
-                show_alert_comment_cmd, alert_id)
+            show_alert_comment_cmd = f"{show_alert_comment_cmd} {alert_id}"
 
         output = self.execute_cli_commands(cmd=show_alert_comment_cmd)[1]
 
@@ -181,14 +178,13 @@ class CortxCliAlerts(CortxCli):
         :return: (Boolean/response)
         """
         cmd = "alerts comment add"
-        add_alert_comment_cmd = "{} {} {}".format(
-            cmd, alert_id, comment_text)
+        add_alert_comment_cmd = f"{cmd} {alert_id} {comment_text}"
 
         if help_param:
-            add_alert_comment_cmd = "{} -h".format(
-                cmd)
+            add_alert_comment_cmd = "{cmd} -h"
 
-        output = self.execute_cli_commands(cmd=add_alert_comment_cmd, patterns=["usage:", "[Y/n]"])[1]
+        output = self.execute_cli_commands(cmd=add_alert_comment_cmd,
+                          patterns=["usage:","[Y/n]"])[1]
         if help_param:
             self.log.info("Displaying usage for add alert comment")
             return True, output

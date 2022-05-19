@@ -110,7 +110,7 @@ class EnableProcPathStatsCollection:
                             LOGGER.info("retrying installation of {}".format(module))
                             retry += 1
                     if retry >= 2:
-                        return False
+                        return False, "Installation of Procpath required modules failed."
         return True, "setup installation completed."
 
     def start_collection(self):

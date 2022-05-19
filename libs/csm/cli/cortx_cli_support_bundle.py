@@ -86,11 +86,7 @@ class CortxCliSupportBundle(CortxCli):
         host = kwargs.get("host", CMN_CFG["csm"]["mgmt_vip"])
         user = kwargs.get("user", CMN_CFG["csm"]["admin_user"])
         pwd = kwargs.get("pwd", CMN_CFG["csm"]["admin_pass"])
-        tar_file_name = "{0}{1}_{2}.{3}".format(
-            const.SUPPORT_BUNDLE_PATH,
-            bundle_id,
-            node,
-            const.TAR_POSTFIX)
+        tar_file_name = f"{const.SUPPORT_BUNDLE_PATH}{bundle_id}_{node}.{const.TAR_POSTFIX}"
 
         # Check if file is exists on node
         obj = node_helper.Node(hostname=host, username=user, password=pwd)
@@ -109,7 +105,7 @@ class CortxCliSupportBundle(CortxCli):
             password=pwd)
 
         # List directory
-        path = "{0}{1}/".format(dest_dir, bundle_id)
+        path = f"{dest_dir}{bundle_id}/"
         list_dir = obj.list_dir(path)
         if not list_dir:
             return False, list_dir
@@ -137,6 +133,8 @@ class CortxCliSupportBundle(CortxCli):
 
         return True, output
 
+    # pylint-disable-message=too-many-return-statements
+    # pylint: disable-msg=too-many-branches
     def support_bundle_status(
             self,
             bundle_id: str = None,
@@ -150,14 +148,11 @@ class CortxCliSupportBundle(CortxCli):
         :return: (Boolean/Response)
         """
         if output_format:
-            support_bundle_status_cmd = "{} {} -f {}".format(
-                CMD_SUPPORT_BUNDLE_STATUS, bundle_id, output_format)
+            support_bundle_status_cmd=f"{CMD_SUPPORT_BUNDLE_STATUS} {bundle_id} -f {output_format}"
         elif help_param:
-            support_bundle_status_cmd = "{} -h".format(
-                CMD_SUPPORT_BUNDLE_STATUS)
+            support_bundle_status_cmd = f"{CMD_SUPPORT_BUNDLE_STATUS} -h"
         else:
-            support_bundle_status_cmd = "{} {}".format(
-                CMD_SUPPORT_BUNDLE_STATUS, bundle_id)
+            support_bundle_status_cmd = f"{CMD_SUPPORT_BUNDLE_STATUS} {bundle_id}"
 
         output = self.execute_cli_commands(cmd=support_bundle_status_cmd)[1]
         LOGGER.info(output)

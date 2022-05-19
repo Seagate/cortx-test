@@ -20,7 +20,6 @@
 """Tests various csm related operation on Cluster user using REST API
 """
 import logging
-import time
 from http import HTTPStatus
 import pytest
 

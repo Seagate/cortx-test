@@ -92,17 +92,16 @@ class TestProvK8DataOnlyDeploy:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         resp = self.deploy_lc_obj.update_sol_for_granular_deploy(file_path=self.local_sol_path,
-                                                                 host_list=self.host_list,
-                                                                 master_node_list=self.master_node_obj,
-                                                                 image=self.cortx_data_image,
-                                                                 deployment_type=self.deploy_cfg["deployment_type_data"])
+                                                            host_list=self.host_list,
+                                            master_node_list=self.master_node_obj,
+                                            image=self.cortx_data_image,
+                                        deployment_type=self.deploy_cfg["deployment_type_data"])
 
         assert_utils.assert_true(resp[0])
         for node_obj in self.host_list:
             res = node_obj.copy_file_to_remote(local_path=resp[1],
                                                remote_path=self.prov_deploy_cfg[
-                                                               "git_remote_path"
-                                                           ] + self.deploy_cfg["solution_file"])
+                                    "git_remote_path"] + self.deploy_cfg["solution_file"])
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Step 2: Done.")
 

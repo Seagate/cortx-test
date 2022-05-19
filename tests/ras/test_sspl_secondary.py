@@ -19,21 +19,25 @@
 
 """SSPL test cases: Secondary Node."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
-from libs.ras.ras_test_lib import RASTestLib
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
-from commons import constants as cons
+
 from commons import commands as common_cmd
-from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons import constants as cons
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -184,6 +188,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -294,6 +299,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -403,6 +409,7 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.skip
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -530,8 +537,8 @@ class TestSSPLSecondary:
         LOGGER.info(
             "Step 9: Check if sspl services has swap their roles after a node "
             "reboot")
-        compare(slave_node, res["masters"].replace("srv", "eos"))
-        compare(master_node, res["slaves"].replace("srv", "eos"))
+        assert_utils.compare(slave_node, res["masters"].replace("srv", "eos"))
+        assert_utils.compare(master_node, res["slaves"].replace("srv", "eos"))
 
         assert csm_resp, "No alert should be seen in CSM REST API"
         LOGGER.info(

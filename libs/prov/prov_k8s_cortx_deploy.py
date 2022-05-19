@@ -1615,6 +1615,8 @@ class ProvDeployK8sCortxLib:
         for image in prov_deploy_cfg["images_key"]:
             if image == "cortxserver":
                 parent_key['images'][image] = image_dict['rgw_image']
+            elif image == "cortxdata":
+                parent_key['images'][image] = image_dict['data_image']
             else:
                 parent_key['images'][image] = image_dict['all_image']
         noalias_dumper = yaml.dumper.SafeDumper
@@ -1790,6 +1792,7 @@ class ProvDeployK8sCortxLib:
                 for data_disk in range(len(cvg_key)-data_disk_per_cvg):
                     cvg_key.pop("d"+str(cvg_len))
                     cvg_len = cvg_len -1
+                    LOGGER.info(data_disk)
             else:
                 storage_key.pop(cvg)
         noalias_dumper = yaml.dumper.SafeDumper

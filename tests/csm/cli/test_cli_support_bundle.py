@@ -18,6 +18,7 @@
 #
 """Test suite for support bundle operations"""
 
+import os
 import logging
 import time
 import pytest
@@ -119,8 +120,7 @@ class TestCliSupportBundle:
             "Step 3: Verifying logs are generated for each component")
         for each in new_dict:
             for each_dir in new_dict[each]:
-                path = "{0}{1}/{2}/".format("/tmp/csm_support_bundle/",
-                                            bundle_id, each_dir)
+                path = f"//tmp//csm_support_bundle//{bundle_id}//{each_dir}"
                 obj = Node(hostname=each,
                            username=CMN_CFG["csm"]["admin_user"],
                            password=CMN_CFG["csm"]["admin_pass"])
@@ -168,7 +168,7 @@ class TestCliSupportBundle:
             "Step 3: Verifying os logs are generated for each component")
         for each in new_dict:
             for each_dir in new_dict[each]:
-                path = "{0}{1}/{2}/".format(constants.SUPPORT_BUNDLE_DIR_PATH,
+                path = os.path.join(constants.SUPPORT_BUNDLE_DIR_PATH,
                                             bundle_id, each_dir)
                 obj = Node(hostname=each,
                            username=CMN_CFG["csm"]["admin_user"],

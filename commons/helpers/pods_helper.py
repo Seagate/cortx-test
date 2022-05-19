@@ -492,3 +492,18 @@ class LogicalNode(Host):
             resp = resp_node[i + const.NODE_INDEX].split(' ')
             deploy_list.append(resp[0])
         return deploy_list
+
+    def kill_process_in_container(self, pod_name, container_name, process_name):
+        """
+        Kill specific process in container
+        :param pod_name: Pod Name
+        :param container_name: Container name
+        :param process_name: Process name to be killed
+        :return resp: String.
+        """
+        option = '-9'
+        cmd = commands.PKIL_CMD.format(option+" "+process_name)
+        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                command_suffix=f"-c {container_name} -- {cmd}",
+                                decode=True)
+        return resp

@@ -92,10 +92,8 @@ def patch_db_request(payload: dict) -> None:
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
     if response.status_code != HTTPStatus.OK:
-        logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
-                     f'HEADERS={response.request.headers}\n'
-                     f'BODY={response.request.body}\n',
-                     f'RESPONSE={response.text}')
+        logger.error('%s on %s failed\nHEADERS=%s\nBODY=%s\nRESPONSE=%s', request, HOSTNAME +
+                     endpoint, response.request.headers, response.request.body, response.text)
         sys.exit(1)
 
 
@@ -115,10 +113,8 @@ def create_db_request(payload: dict) -> None:
     response = requests.request(request, HOSTNAME + endpoint, headers=headers,
                                 data=json.dumps(payload))
     if response.status_code != HTTPStatus.OK:
-        logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
-                     f'HEADERS={response.request.headers}\n'
-                     f'BODY={response.request.body}\n',
-                     f'RESPONSE={response.text}')
+        logger.error('%s on %s failed\nHEADERS=%s\nBODY=%s\nRESPONSE=%s', request, HOSTNAME +
+                     endpoint, response.request.headers, response.request.body, response.text)
         sys.exit(1)
 
 
@@ -144,10 +140,8 @@ def search_db_request(payload: dict):
         return response.json()["result"]
     if response.status_code == HTTPStatus.NOT_FOUND and "No results" in response.text:
         return None
-    logger.error(f'{request} on {HOSTNAME + endpoint} failed\n'
-                 f'HEADERS={response.request.headers}\n'
-                 f'BODY={response.request.body}\n',
-                 f'RESPONSE={response.text}')
+    logger.error('%s on %s failed\nHEADERS=%s\nBODY=%s\nRESPONSE=%s', request, HOSTNAME +
+                 endpoint, response.request.headers, response.request.body, response.text)
     sys.exit(1)
 
 
@@ -167,7 +161,7 @@ def get_latest_test_plans_from_db() -> list:
         json_response = json.loads(response.text)
         for each in json_response["result"][:5]:
             tp_list.append(each["_id"]["testPlanID"])
-    logger.info(f"Latest 5 test plans from DB: {tp_list}")
+    logger.info("Latest 5 test plans from DB: %s", tp_list)
     return tp_list
 
 
@@ -186,7 +180,7 @@ def parse_argument():
 
     args = parser.parse_args()
     if args.subcommand:
-        logger.info(f"Will sync {args.tp} test plan from JIRA to DB")
+        logger.info("Will sync %s test plan from JIRA to DB", args.tp)
         return [args.tp]
     logger.info("No options passed. Will sync last 5 test plans.")
     return None
@@ -205,7 +199,7 @@ def main():
         tp_keys = get_latest_test_plans_from_db()
 
     for tp_key in tp_keys:
-        logger.info(f"JIRA DB Sync for Test Plan ID = {tp_key}")
+        logger.info("JIRA DB Sync for Test Plan ID = %s", tp_key)
         username, password = jira_api.get_username_password()
         tp_details = jira_api.get_details_from_test_plan(tp_key, username, password)
         test_executions = jira_api.get_test_executions_from_test_plan(tp_key,
@@ -216,7 +210,7 @@ def main():
 
         # for each TE:
         for test_execution in test_executions:
-            logger.info("-Test Execution {0}".format(test_execution["key"]))
+            logger.info("-Test Execution %s", test_execution["key"])
             test_execution_issue = jira_api.get_issue_details(test_execution["key"],
                                                               username, password)
             test_execution_label = test_execution_issue.fields.labels[0] if \
@@ -228,7 +222,7 @@ def main():
                                                           username, password)
             # for each Test in TE:
             for test in tests:
-                logger.info("-Test Key {0}".format(test["key"]))
+                logger.info("-Test Key %s", test["key"])
                 if test["status"] == "TODO":
                     continue
                 query_payload = {
@@ -252,10 +246,8 @@ def main():
                 results = search_db_request(query_payload)
 
                 if not results:
-                    logger.debug("DB entry does not exist for build "
-                                 "{0} TE {1} Test {2}".format(tp_details["buildNo"],
-                                                              test_execution["key"],
-                                                              test["key"]))
+                    logger.debug("DB entry does not exist for build %s TE %s Test %s",
+                                 tp_details["buildNo"], test_execution["key"], test["key"])
                     # add one entry
                     payload = {
                         # Framework/Unknown data
@@ -295,8 +287,8 @@ def main():
                 else:
                     # if test status in db != in JIRA or no entry in db
                     if results[0]["testResult"].lower() != test["status"].lower():
-                        logger.debug("Test Result from DB & JIRA are not matching for "
-                                     "Test {0}".format(test["key"]))
+                        logger.debug("Test Result from DB & JIRA are not matching for Test %s",
+                                     test["key"])
                         feature_id = test_issue.fields.customfield_22881 if \
                             test_issue.fields.customfield_22881 else ["None"]
                         dr_id = test_issue.fields.customfield_22882 if \
@@ -352,10 +344,9 @@ def main():
                     logger.debug("TEST status is FAIL in JIRA.")
                     # Get BUG ID from JIRA
                     if len(test["defects"]) == 0:
-                        logger.warning("Failure is not mapped to any BUG in JIRA "
-                                       "TEST - {0}, Test Execution - {1}, "
-                                       "Test Plan = {2}".format(test["key"],
-                                                                test_execution["key"], tp_key))
+                        logger.warning("Failure is not mapped to any BUG in JIRA TEST - %s, Test "
+                                       "Execution - %s, Test Plan = %s",
+                                       test["key"], test_execution["key"], tp_key)
                     else:
                         defects = [defect["key"] for defect in test["defects"]]
                         if defects:
