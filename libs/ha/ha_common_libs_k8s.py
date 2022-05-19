@@ -269,10 +269,8 @@ class HAK8s:
                     return response
             return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.delete_s3_acc_buckets_objects.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HAK8s.delete_s3_acc_buckets_objects.__name__, error)
             return False, error
 
     # pylint: disable=too-many-arguments
@@ -318,10 +316,8 @@ class HAK8s:
                 return del_resp
             return True, "Di check for IOs passed successfully"
         except ValueError as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.perform_ios_ops.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HAK8s.perform_ios_ops.__name__, error)
             return False, error
 
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
@@ -806,7 +802,7 @@ class HAK8s:
             cmd_path = dir_path if dir_path else self.dir_path
             resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(cmd_path))
         except IOError as error:
-            LOGGER.error("Error: Cluster status has some failures.")
+            LOGGER.exception("Error: Cluster status has some failures.")
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:
@@ -1251,7 +1247,7 @@ class HAK8s:
         try:
             resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False)
         except IOError as error:
-            LOGGER.error("Error: Not able to get cluster config file")
+            LOGGER.exception("Error: Not able to get cluster config file")
             return False, error
         LOGGER.debug("%s response %s ", conf_cp, resp_node)
         local_conf = os.path.join(os.getcwd(), "cluster.conf")
@@ -1266,7 +1262,7 @@ class HAK8s:
             with open(local_conf, "r", encoding="utf-8") as file_data:
                 data = yaml.safe_load(file_data)
         except IOError as error:
-            LOGGER.error("Error: Not able to read local config file")
+            LOGGER.exception("Error: Not able to read local config file")
             return False, error
 
         return True, data
@@ -1299,8 +1295,8 @@ class HAK8s:
                 common_const.MOCK_MONITOR_REMOTE_PATH, ha_pod,
                 common_const.MOCK_MONITOR_REMOTE_PATH))
         except IOError as error:
-            LOGGER.error("Failed to copy %s inside ha pod %s due to error: %s",
-                         common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod, error)
+            LOGGER.exception("Failed to copy %s inside ha pod %s due to error: %s",
+                             common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod, error)
             return False
         return True
 
@@ -1420,7 +1416,7 @@ class HAK8s:
                                   namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
                                   decode=True)
         except IOError as error:
-            LOGGER.error("Failed to publish the event due to error: %s", error)
+            LOGGER.exception("Failed to publish the event due to error: %s", error)
             return False, error
 
         return True, config_dict
@@ -1465,8 +1461,8 @@ class HAK8s:
                                          command_suffix=cmd, decode=True)
             resp = literal_eval(resp)
         except IOError as error:
-            LOGGER.error("Failed to get resource IDs for %s", r_type)
-            LOGGER.error("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
+            LOGGER.exception("Failed to get resource IDs for %s", r_type)
+            LOGGER.exception("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
             raise error
 
         LOGGER.info("Resource IDs for %s are: %s", r_type, resp)
@@ -1649,8 +1645,8 @@ class HAK8s:
                 LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
                 return True, resp
             except IOError as error:
-                LOGGER.error("Failed to failover pod %s to %s due to error: %s", pod,
-                             failover_node, error)
+                LOGGER.exception("Failed to failover pod %s to %s due to error: %s", pod,
+                                 failover_node, error)
                 return False, error
 
     def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = True,

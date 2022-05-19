@@ -91,10 +91,8 @@ class HALibs:
                     sys_obj = sys_list[index]
                     return True, sys_obj
         except IOError as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.check_csm_service.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.check_csm_service.__name__, error)
             return False, error
         return False, "Not able to check CSM services"
 
@@ -120,10 +118,8 @@ class HALibs:
                             return False
             return True
         except IOError as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.check_service_other_nodes.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                         HALibs.check_service_other_nodes.__name__, error)
             return False
 
     @staticmethod
@@ -622,10 +618,8 @@ class HALibs:
                     return response
             return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.delete_s3_acc_buckets_objects.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.delete_s3_acc_buckets_objects.__name__, error)
             return False, error
 
     # pylint: disable=too-many-arguments
@@ -688,10 +682,8 @@ class HALibs:
                 raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
             return True, "Di check for IOs passed successfully"
         except (ValueError, CTException) as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.perform_ios_ops.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.perform_ios_ops.__name__, error)
             if io_data:
                 del_resp = self.delete_s3_acc_buckets_objects(io_data)
                 if not del_resp[0]:
