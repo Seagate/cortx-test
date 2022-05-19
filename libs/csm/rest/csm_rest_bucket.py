@@ -504,6 +504,7 @@ class RestS3BucketPolicy(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
+    # pylint: disable=too-many-arguments
     def create_and_verify_bucket_policy(
             self,
             expected_status_code=200,
