@@ -406,7 +406,7 @@ class HAK8s:
         LOGGER.info("Start the cluster")
         cmd_path = dir_path if dir_path else self.dir_path
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(cmd_path),
-                                    read_lines=True, exc=False)
+                                   read_lines=True, exc=False)
         LOGGER.debug("Cluster start response: %s", resp)
         if resp[0]:
             return True, resp
@@ -598,7 +598,7 @@ class HAK8s:
                 LOGGER.info("Uploaded part %s", part)
             return True, mpu_id, multipart_obj_path, parts_etag
         except CTException as error:
-            LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
+            LOGGER.exception("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
 
     @staticmethod
@@ -706,7 +706,7 @@ class HAK8s:
                     LOGGER.error("Etags don't match for copy object %s to bucket %s with object "
                                  "name %s", object_name, bkt_name, obj_name)
             except CTException as error:
-                LOGGER.error("Error: %s", error)
+                LOGGER.exception("Error: %s", error)
                 if event.is_set():
                     exp_fail_bkt_obj_dict[bkt_name] = obj_name
                     event_clear_flg = True
@@ -716,7 +716,7 @@ class HAK8s:
                         event_clear_flg = False
                         continue
                     failed_bkts.append(bkt_name)
-                LOGGER.info("Failed to copy object to bucket %s", bkt_name)
+                LOGGER.exception("Failed to copy object to bucket %s", bkt_name)
 
         if failed_bkts and not background:
             return False, failed_bkts
@@ -761,7 +761,7 @@ class HAK8s:
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         except CTException as error:
-            LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
+            LOGGER.exception("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
         LOGGER.info("Creating parts of data")
@@ -783,12 +783,12 @@ class HAK8s:
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
                 LOGGER.info("Uploaded part %s", i)
             except CTException as error:
-                LOGGER.error("Error: %s", error)
+                LOGGER.exception("Error: %s", error)
                 if event.is_set():
                     exp_failed_parts.append(i)
                 else:
                     failed_parts.append(i)
-                LOGGER.info("Failed to upload part %s", i)
+                LOGGER.exception("Failed to upload part %s", i)
 
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
@@ -1010,7 +1010,7 @@ class HAK8s:
                     upload_chm = self.cal_compare_checksum(file_list=[file_path], compare=False)[0]
                     s3_data.update({bucket_name: (object_name, upload_chm)})
                 except CTException as error:
-                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                     if event.is_set():
                         event_bkt_put.append(bucket_name)
                     else:
@@ -1035,7 +1035,7 @@ class HAK8s:
                     resp = s3_test_obj.object_download(bkt, s3_data[bkt][0], download_path)
                     LOGGER.info("Download object response: %s", resp)
                 except CTException as error:
-                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                     if event.is_set():
                         event_bkt_get.append(bkt)
                     else:
@@ -1065,7 +1065,7 @@ class HAK8s:
                     try:
                         s3_test_obj.delete_bucket(bucket_name=bucket_list[0], force=True)
                     except CTException as error:
-                        LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                        LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                         if event.is_set():
                             event_del_bkt.append(bucket_list[0])
                         else:
@@ -1262,8 +1262,12 @@ class HAK8s:
         if not resp[0]:
             LOGGER.error("Error: Failed to copy cluster.conf to local")
             return False, resp
-        conf_fd = open(local_conf, 'r')
-        data = yaml.safe_load(conf_fd)
+        try:
+            with open(local_conf, "r", encoding="utf-8") as file_data:
+                data = yaml.safe_load(file_data)
+        except IOError as error:
+            LOGGER.error("Error: Not able to read local config file")
+            return False, error
 
         return True, data
 
@@ -1477,9 +1481,9 @@ class HAK8s:
         status, cluster status
         :param master_node_obj: Master node object list
         :param health_obj: Health object
-        :param pod_prefix: Pod prefix to be deleted (Expected List type).
-        :param down_method: Pod shutdown/delete method.
-        :param kvalue: Number of pod to be shutdown/deleted.
+        :param pod_prefix: Pod prefix to be deleted (Expected List type)
+        :param down_method: Pod shutdown/delete method
+        :param kvalue: Number of pod to be shutdown/deleted
         :param event: Thread event to set/clear before/after pods/nodes
         shutdown with parallel IOs
         return : tuple
@@ -1540,7 +1544,7 @@ class HAK8s:
             return False, pod_info
         LOGGER.info("Cluster has failures as pod %s has been shutdown", delete_pods)
 
-        # Get the remaining pods except deleted one, to check it's service status not affected
+        # Get the remaining pods except deleted one, to check its service status not affected
         remaining_pods = list(set(remaining) - set(delete_pods))
         LOGGER.info("Check services status on remaining pods %s", remaining_pods)
         resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
@@ -1854,7 +1858,7 @@ class HAK8s:
                     else:
                         LOGGER.debug("Created and deleted %s user successfully", i)
                 except CTException as error:
-                    LOGGER.error("Error: %s", error)
+                    LOGGER.exception("Error: %s", error)
                     if event.is_set():
                         exp_fail.append(user)
                     else:
@@ -1892,7 +1896,7 @@ class HAK8s:
                 s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
                 LOGGER.debug("Created and deleted %s bucket successfully", i)
             except CTException as error:
-                LOGGER.error("Error: %s", error)
+                LOGGER.exception("Error: %s", error)
                 if event.is_set():
                     exp_fail.append(bucket_name)
                 else:
