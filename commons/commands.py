@@ -234,7 +234,7 @@ CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
 CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
-CMD_GET_IP_IFACE = "/sbin/ifconfig \"$iface\" | awk '/inet / {{print $2}}'"
+CMD_GET_IP_IFACE = "/sbin/ifconfig \"{}\" | awk '/inet / {{print $2}}'"
 CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
