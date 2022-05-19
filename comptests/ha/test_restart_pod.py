@@ -94,7 +94,7 @@ class TestRestartPod:
                                                                self.deployment_backup})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
-                                              f"way")
+                                              "way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -215,7 +215,7 @@ class TestRestartPod:
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting"
-                                           f" deployment (unsafe)")
+                                           " deployment (unsafe)")
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting "
                     "deployment", pod_name)
         self.deployment_backup = resp[1]
@@ -356,7 +356,7 @@ class TestRestartPod:
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting "
-                                           f"deployment (unsafe)")
+                                           "deployment (unsafe)")
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting "
                     "deployment", pod_name)
         self.deployment_backup = resp[1]
