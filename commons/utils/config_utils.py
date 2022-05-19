@@ -22,20 +22,20 @@
 Python library which have config related operations using package
 like config parser, yaml etc.
 """
-import string
-import random
+import csv
 import json
 import logging
 import os
+import random
 import re
 import shutil
-import csv
+import string
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 
 import yaml
 from defusedxml.cElementTree import parse
-from jsonschema import validate
 from jproperties import Properties
+from jsonschema import validate
 
 import commons.errorcodes as cterr
 from commons.exceptions import CTException
@@ -77,7 +77,7 @@ def write_yaml(
         fpath: str,
         write_data: dict or list,
         backup: bool = True,
-        sort_keys = True) -> tuple:
+        sort_keys=True) -> tuple:
     """
     Function overwrites the content of given yaml file with given data.
 
@@ -210,7 +210,8 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         return None
 
 
-def update_config_ini(path: str, section: str, key: str, value: str, add_section: bool = True) -> bool:
+def update_config_ini(path: str, section: str, key: str, value: str,
+                      add_section: bool = True) -> bool:
     """
     Update config file value as per the section and key.
 
@@ -293,8 +294,7 @@ def update_config_helper(filename: str, key: str, old_value: str,
                             new_data = f_in.read()
                             return True, new_data
 
-    return False, "Failed to replace Old pattern {} with new pattern {}".format(
-        old_value, new_value)
+    return False, f"Failed to replace Old pattern {old_value} with new pattern {new_value}"
 
 
 def update_cfg_based_on_separator(filename: str, key: str, old_value: str,
@@ -388,7 +388,8 @@ def update_configs(all_configs: dict) -> None:
 
 def verify_json_response(actual_result, expect_result, match_exact=False):
     """
-    This function will verify the json response with actual response
+    Verify json will verify the json response with actual response.
+
     :param actual_result: actual json response from REST call
     :param expect_result: the json response to be matched
     :param match_exact: to match actual and expect result to be exact
@@ -428,19 +429,15 @@ def read_properties_file(fpath: str):
     :param fpath: properties file path.
     :return: dict
     """
-    try:
-        prop_dict = dict()
-        configs = Properties()
-        with open(fpath, 'rb') as read_prop:
-            configs.load(read_prop)
-        for key, val in configs.items():
-            prop_dict[key] = val.data
-        LOG.info(prop_dict)
+    prop_dict = {}
+    configs = Properties()
+    with open(fpath, 'rb') as read_prop:
+        configs.load(read_prop)
+    for key, val in configs.items():
+        prop_dict[key] = val.data
+    LOG.info(prop_dict)
 
-        return prop_dict
-    except Exception as error:
-        LOG.error(error)
-        return None
+    return prop_dict
 
 
 def write_properties_file(fpath: str, prop_dict: dict):
@@ -451,39 +448,44 @@ def write_properties_file(fpath: str, prop_dict: dict):
     :param prop_dict: dict to write into properties file.
     :return: bool
     """
-    try:
-        LOG.info("properties dict: %s", prop_dict)
-        configs = Properties()
-        with open(fpath, 'wb') as write_prop:
-            configs.update(prop_dict)
-            configs.store(write_prop)
+    LOG.info("properties dict: %s", prop_dict)
+    configs = Properties()
+    with open(fpath, 'wb') as write_prop:
+        configs.update(prop_dict)
+        configs.store(write_prop)
 
-        return True
-    except Exception as error:
-        LOG.error(error)
-        return False
+    return True
 
-def convert_to_seconds(time_str:str):
-    """ Converts <num>|postfix from s/m/h/d to seconds
+
+def convert_to_seconds(time_str: str):
+    """
+    Convert <num>|postfix from s/m/h/d to seconds.
+
     :param time_str:  <num>|postfix from s/m/h/d
     :return int: time in seconds
     """
     seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
     return int(time_str[:-1]) * seconds_per_unit[time_str[-1]]
 
-def read_csv(fpath:str):
-    """Reads the csv file
+
+def read_csv(fpath: str):
+    """
+    Read the csv file.
+
     :param fpath: file path
     """
     with open(fpath, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
     return reader
 
-def write_csv(fpath:str, fieldnames:list, rows:list):
-    """ Creates and writes the csv file
+
+def write_csv(fpath: str, fieldnames: list, rows: list):
+    """
+    Create and writes the csv file.
+
     :param fpath: file path
     :param fieldnames: list of header
-    :param row_dict: list of dictionary of [{fieldname1:value,fieldname2:value},{..}]
+    :param rows: list of dictionary of [{fieldname1:value,fieldname2:value},{..}]
     """
     with open(fpath, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -491,7 +493,8 @@ def write_csv(fpath:str, fieldnames:list, rows:list):
         for row in rows:
             writer.writerow(row)
 
-def gen_rand_string(chars:list=string.ascii_uppercase, length:int=10):
+
+def gen_rand_string(chars: list = string.ascii_uppercase, length: int = 10):
     """
     Generate the random string on N characters
     :chars : list of character to generate the random string from

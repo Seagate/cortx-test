@@ -151,8 +151,8 @@ class TestShutdownStartCluster:
 
         LOGGER.info("Step 3: Shutdown the server pod by making replicas=0")
         LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods \
-            (pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
+        pod_list = \
+            self.node_master_list[0].get_all_pods(pod_prefix=common_const.SERVER_POD_NAME_PREFIX)
         pod_name = random.sample(pod_list, 1)[0]
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)

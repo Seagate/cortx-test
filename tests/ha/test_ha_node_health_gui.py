@@ -516,7 +516,7 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Get the node for multiple os shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Verify if node state online")
         self.ha_gui_obj.verify_node_state(node_index, "online")
@@ -623,7 +623,7 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Get the node for multiple unsafe shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Verify if node state online")
         # TODO: update argument if required in TE
