@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -60,6 +61,8 @@ from scripts.s3_bench import s3bench
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class ProvDeployK8sCortxLib:
     """
     This class contains utility methods for all the operations related
@@ -292,6 +295,7 @@ class ProvDeployK8sCortxLib:
         except TimeoutError as error:
             LOGGER.error(error, self.deploy_cfg['timeout']['deploy'])
             node_obj.kill_remote_process(cmd)
+            return False, str(error)
         except IOError as error:
             LOGGER.exception("The exception occurred is %s", error)
             return False, str(error)
@@ -420,6 +424,8 @@ class ProvDeployK8sCortxLib:
         shutil.copyfile(self.deploy_cfg["new_file_path"], self.deploy_cfg['solution_file'])
         return self.deploy_cfg["solution_file"]
 
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-many-return-statements
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
         """
@@ -475,71 +481,60 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Client instances are %s", self.client_instance)
         node_list = len(worker_obj)
         valid_disk_count = sns_spare + sns_data + sns_parity
+        sys_disk_pernode = {}  # empty dict
+        data_devices = []  # empty list for data disk
+        metadata_devices = []
+        for node_count, node_obj in enumerate(worker_obj, start=1):
+            LOGGER.info(node_count)
+            device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
+                                               read_lines=True)[0].split(",")
+            device_list[-1] = device_list[-1].replace("\n", "")
+            metadata_devices = device_list[1:cvg_count + 1]
+            # This will split the metadata disk list
+            # into metadata devices per cvg
+            # 2 is defined the split size based
+            # on disk required for metadata,system
+            device_list_len = len(device_list)
+            new_device_lst_len = (device_list_len - cvg_count - 1)
+            count = cvg_count
+            if data_disk_per_cvg == 0:
+                data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
 
-        def _cvg_config(data_disk_per_cvg):
-            sys_disk_pernode = {}  # empty dict
-            data_devices = []  # empty list for data disk
-            metadata_devices = []
-            for node_count, node_obj in enumerate(worker_obj, start=1):
-                LOGGER.info(node_count)
-                device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
-                                                   read_lines=True)[0].split(",")
-                device_list[-1] = device_list[-1].replace("\n", "")
-                metadata_devices = device_list[1:cvg_count + 1]
-                # This will split the metadata disk list
-                # into metadata devices per cvg
-                # 2 is defined the split size based
-                # on disk required for metadata,system
-                device_list_len = len(device_list)
-                new_device_lst_len = (device_list_len - cvg_count - 1)
-                count = cvg_count
-                if data_disk_per_cvg == 0:
-                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+            LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
+            # The condition to validate the config.
+            if not skip_disk_count_check and valid_disk_count > \
+                    (cvg_count * node_list):
+                return False, "The sum of data disks per cvg " \
+                              "is less than N+K+S count"
 
-                LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
-                # The condition to validate the config.
-                if not skip_disk_count_check and valid_disk_count > \
-                        (cvg_count * node_list):
-                    return False, "The sum of data disks per cvg " \
-                                  "is less than N+K+S count"
-
-                if new_device_lst_len < data_disk_per_cvg * cvg_count:
-                    return False, "The requested data disk is more than" \
-                                  " the data disk available on the system"
-                # This condition validated the total available disk count
-                # and split the disks per cvg.
-                data_devices_f = device_list[cvg_count + 1:]
-                if (data_disk_per_cvg * cvg_count) < new_device_lst_len:
-                    count_end = int(data_disk_per_cvg)
-                    data_devices.append(data_devices_f[0:count_end])
-                    while count:
-                        count = count - 1
-                        new_end = int(count_end + data_disk_per_cvg)
-                        if new_end > new_device_lst_len:
-                            break
-                        data_devices_ad = data_devices_f[count_end:new_end]
-                        count_end = int(count_end + data_disk_per_cvg)
-                        data_devices.append(data_devices_ad)
-                else:
-                    LOGGER.debug("Data devices : else : %s", data_devices_f)
-                    LOGGER.debug("data disk per cvg : %s", data_disk_per_cvg)
-                    data_devices = [data_devices_f[i:i + data_disk_per_cvg]
-                                    for i in range(0, len(data_devices_f), data_disk_per_cvg)]
-                # Create dict for host and disk
-                system_disk = device_list[0]
-                schema = {node_obj.hostname: system_disk}
-                sys_disk_pernode.update(schema)
-            LOGGER.info("Metadata disk %s", metadata_devices)
-            LOGGER.info("data disk %s", data_devices)
-            response = [metadata_devices, data_devices, sys_disk_pernode]
-            return True, response
-        resp = _cvg_config(data_disk_per_cvg)
-        LOGGER.debug("response of meth is %s", resp[1])
-        metadata_devices = list(resp[1][0])
-        data_devices = list(resp[1][1])
-        sys_disk_pernode = resp[1][2]
-        LOGGER.debug("inner meth is MD-%s,DD-%s, SDP-%s",metadata_devices,
-                     data_devices, sys_disk_pernode)
+            if new_device_lst_len < data_disk_per_cvg * cvg_count:
+                return False, "The requested data disk is more than" \
+                              " the data disk available on the system"
+            # This condition validated the total available disk count
+            # and split the disks per cvg.
+            data_devices_f = device_list[cvg_count + 1:]
+            if (data_disk_per_cvg * cvg_count) < new_device_lst_len:
+                count_end = int(data_disk_per_cvg)
+                data_devices.append(data_devices_f[0:count_end])
+                while count:
+                    count = count - 1
+                    new_end = int(count_end + data_disk_per_cvg)
+                    if new_end > new_device_lst_len:
+                        break
+                    data_devices_ad = data_devices_f[count_end:new_end]
+                    count_end = int(count_end + data_disk_per_cvg)
+                    data_devices.append(data_devices_ad)
+            else:
+                LOGGER.debug("Data devices : else : %s", data_devices_f)
+                LOGGER.debug("data disk per cvg : %s", data_disk_per_cvg)
+                data_devices = [data_devices_f[i:i + data_disk_per_cvg]
+                                for i in range(0, len(data_devices_f), data_disk_per_cvg)]
+            # Create dict for host and disk
+            system_disk = device_list[0]
+            schema = {node_obj.hostname: system_disk}
+            sys_disk_pernode.update(schema)
+        LOGGER.info("Metadata disk %s", metadata_devices)
+        LOGGER.info("data disk %s", data_devices)
         # Update the solution yaml file with service_type,deployment type, ports,namespace
         resp_passwd = self.update_miscellaneous_param(filepath, log_path,
                                                       nodeport_http=self.nodeport_http,
@@ -554,7 +549,7 @@ class ProvDeployK8sCortxLib:
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
         # Update resources for thirdparty
-        resource_resp = self.update_resource_limit_thirdparty(filepath)
+        resource_resp = self.update_res_limit_third_party(filepath)
         if not resource_resp:
             return False, "Failed to update the resources for thirdparty"
         # Update the solution yaml file with images
@@ -620,6 +615,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
+    # pylint: disable-msg=too-many-locals
     @staticmethod
     def update_cvg_sol_file(filepath,
                             metadata_devices: list,
@@ -670,33 +666,29 @@ class ProvDeployK8sCortxLib:
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
-
-            def _update_cvg_details():
-                for cvg_item in list(total_cvg):
-                    storage.pop(cvg_item)
-                for cvg in range(0, cvg_count):
-                    cvg_dict = {}
-                    metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
-                    data_schema = {}
-                    for disk in range(0, data_disk_per_cvg):
-                        disk_schema_upd = \
-                            {'device': data_devices[cvg][disk], 'size': size_data_disk}
-                        c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
-                        data_schema.update(c_data_device_schema)
-                    c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
-                    key_cvg_devices = {'devices': c_device_schema}
-                    cvg_name = {'name': Template('cvg-0$num').substitute(num=cvg + 1)}
-                    cvg_type_schema = {'type': cvg_type}
-                    cvg_dict.update(cvg_name)
-                    cvg_dict.update(cvg_type_schema)
-                    cvg_dict.update(key_cvg_devices)
-                    cvg_key = {Template('cvg$num').substitute(num=cvg + 1): cvg_dict}
-                    storage.update(cvg_key)
-
-            _update_cvg_details()
-            conf['solution']['storage'] = storage
-            LOGGER.debug("Storage Details : %s", storage)
-            soln.close()
+            for cvg_item in list(total_cvg):
+                storage.pop(cvg_item)
+            for cvg in range(0, cvg_count):
+                cvg_dict = {}
+                metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
+                data_schema = {}
+                for disk in range(0, data_disk_per_cvg):
+                    disk_schema_upd = \
+                        {'device': data_devices[cvg][disk], 'size': size_data_disk}
+                    c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
+                    data_schema.update(c_data_device_schema)
+                c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
+                key_cvg_devices = {'devices': c_device_schema}
+                cvg_name = {'name': Template('cvg-0$num').substitute(num=cvg + 1)}
+                cvg_type_schema = {'type': cvg_type}
+                cvg_dict.update(cvg_name)
+                cvg_dict.update(cvg_type_schema)
+                cvg_dict.update(key_cvg_devices)
+                cvg_key = {Template('cvg$num').substitute(num=cvg + 1): cvg_dict}
+                storage.update(cvg_key)
+        conf['solution']['storage'] = storage
+        LOGGER.debug("Storage Details : %s", storage)
+        soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(filepath, 'w') as soln:
@@ -844,13 +836,12 @@ class ProvDeployK8sCortxLib:
         output = Provisioner.build_job(
             k8s_deploy_cfg["cortx_job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
             k8s_deploy_cfg["jenkins_url"])
-        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        LOGGER.info("Jenkins Build URL: %s",output['url'])
         if output['result'] == "SUCCESS":
             LOGGER.info("k8s Cluster Deployment successful")
             return True, output['result']
-        else:
-            LOGGER.error(f"k8s Cluster Deployment {output['result']},please check URL")
-            return False, output['result']
+        LOGGER.error("k8s Cluster Deployment %s,please check URL", output['result'])
+        return False, output['result']
 
     @staticmethod
     def get_hctl_status(node_obj, pod_name: str) -> tuple:
@@ -1190,8 +1181,7 @@ class ProvDeployK8sCortxLib:
                 return False
         return True
 
-    # pylint: disable=R0915
-    # pylint: disable=too-many-arguments,too-many-locals
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
     def test_deployment(self, master_node_list,
                         worker_node_list, **kwargs):
         """
@@ -1844,7 +1834,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("The string is %s and length is %s", string_alpha, len(string_alpha))
         return string_alpha
 
-    def update_resource_limit_thirdparty(self, filepath):
+    def update_res_limit_third_party(self, filepath):
         """
         This Method is used to update the resource limits for third party services
         file: solution.yaml file
