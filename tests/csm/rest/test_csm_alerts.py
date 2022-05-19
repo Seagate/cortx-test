@@ -106,7 +106,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert"
         new_alerts, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Unack resolved Alerts before and after create alert is not same."
+        assert not diff_alert , "Unack resolved Alerts before and after create alert is not same."
         response = self.csm_alerts.get_alerts(
             alert_id=self.cryptogen.randrange(new_alerts))
         assert_utils.assert_equals(response.json()['severity'], alert_severity)
@@ -118,7 +118,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert"
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "Resolved and UnAcknowledged alert after alert resolve is same."
+        assert diff_resolve , "Resolved and UnAcknowledged alert after alert resolve is same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -144,7 +144,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert"
         new_alerts, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Unack resolved Alerts before and after create alert is not same."
+        assert not diff_alert , "Unack resolved Alerts before and after create alert is not same."
         response = self.csm_alerts.get_alerts(
             alert_id=random.choice(new_alerts))
         assert_utils.assert_equals(response.json()['severity'], alert_severity)
@@ -172,7 +172,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert"
         new_alerts, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert != [], "No new alert created"
+        assert diff_alert , "No new alert created"
         for alert_id in after_alerts:
             response = self.csm_alerts.get_alerts(alert_id=alert_id)
             assert_utils.assert_equals(
@@ -211,7 +211,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert"
         _, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Resolved alerts before and after alert is not same."
+        assert not diff_alert , "Resolved alerts before and after alert is not same."
         for alert_id in after_alerts:
             response = self.csm_alerts.get_alerts(alert_id=alert_id)
             assert_utils.assert_equals(
@@ -230,7 +230,7 @@ class TestCsmAlerts():
                 response.json()['resolved'], True, "Resolved check failed!")
         assert result, "Failed to resolve alert"
         diff_alert = list(set(after_resolve) - set(before_resolve))
-        assert diff_alert != [], "Resolved alerts before and after alert is not same."
+        assert diff_alert , "Resolved alerts before and after alert is not same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -257,7 +257,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert"
         _, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert != [], "No new alert created"
+        assert diff_alert , "No new alert created"
         for alert_id in after_alerts:
             response = self.csm_alerts.get_alerts(alert_id=alert_id)
             assert_utils.assert_equals(
@@ -301,7 +301,7 @@ class TestCsmAlerts():
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
             self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Resolved alerts before and after create alert is not same."
+        assert not diff_alert , "Resolved alerts before and after create alert is not same."
         self.log.info(
             "Resolving alert and checking get alert response with resolved True...")
         result = self.csm_alerts.resolve_alert(
@@ -309,7 +309,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "Alert is not resolved on CSM."
+        assert diff_resolve , "Alert is not resolved on CSM."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -337,7 +337,7 @@ class TestCsmAlerts():
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
             self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert != [], "Not resolved alerts before and after create alert is same."
+        assert diff_alert , "Not resolved alerts before and after create alert is same."
         self.log.info(
             "Resolving alert and checking get alert response with resolved False...")
         result = self.csm_alerts.resolve_alert(
@@ -345,7 +345,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "Alert is not resolved on CSM."
+        assert diff_resolve , "Alert is not resolved on CSM."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -369,7 +369,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert."
         new_alerts, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Acknowledged alerts before and after create alert is not same."
+        assert not diff_alert , "Acknowledged alerts before and after create alert is not same."
         for new_alert in new_alerts:
             self.log.info("New Alert created: %s", new_alert)
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
@@ -383,7 +383,7 @@ class TestCsmAlerts():
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
         diff_ack = list(set(ack_alerts) - set(after_alerts))
-        assert diff_ack != [], "No new alert acknowledged."
+        assert diff_ack , "No new alert acknowledged."
         self.log.info(
             "Resolving alert and checking get alert response with acknowledged True...")
         result = self.csm_alerts.resolve_alert(
@@ -391,7 +391,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert"
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "Resolved and Acknowledged alert is not moved to history."
+        assert diff_resolve , "Resolved and Acknowledged alert is not moved to history."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -416,7 +416,7 @@ class TestCsmAlerts():
         assert result, "Failed to create alert."
         new_alerts, before_alerts, after_alerts = result
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "Ack unresolved alerts before and after create alert is not same."
+        assert not diff_alert , "Ack unresolved alerts before and after create alert is not same."
         for new_alert in new_alerts:
             self.log.info("New Alert created: %s", new_alert)
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
@@ -432,7 +432,7 @@ class TestCsmAlerts():
                                    "Status code check failed.")
         ack_alerts = self.csm_alerts.extract_alert_ids(response)
         diff_ack = list(set(ack_alerts) - set(after_alerts))
-        assert diff_ack != [], "No new alert acknowledged."
+        assert diff_ack , "No new alert acknowledged."
         self.log.info("Resolving alert and checking get alert response with acknowledged True and "
                       "resolved False")
         result = self.csm_alerts.resolve_alert(
@@ -440,7 +440,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "Ack unresolved alerts before and after resolve alert is same."
+        assert diff_resolve , "Ack unresolved alerts before and after resolve alert is same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -468,14 +468,14 @@ class TestCsmAlerts():
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
             self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert != [], "UnAck Alerts before and after create alert is same."
+        assert diff_alert , "UnAck Alerts before and after create alert is same."
         self.log.info("Resolving alert and checking get alert response with acknowledged False.")
         result = self.csm_alerts.resolve_alert(self.resolve_type, self.alert_timeout,
                                                acknowledged=False)
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve == [], "UnAck Alerts before and after resolve alert is same."
+        assert not diff_resolve, "UnAck Alerts before and after resolve alert is same."
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -504,7 +504,7 @@ class TestCsmAlerts():
             response = self.csm_alerts.get_alerts(alert_id=new_alert)
             self.log.info("New Alert details : %s", response.json())
         diff_alert = list(set(after_alerts) - set(before_alerts))
-        assert diff_alert == [], "UnAck Resolved Alerts before and after create alert is not same."
+        assert not diff_alert , "UnAck Resolved Alerts before and after create alert is not same."
         self.log.info("Resolving alert and checking get alert response with acknowledged False and"
                       " resolved True")
         result = self.csm_alerts.resolve_alert(
@@ -512,7 +512,7 @@ class TestCsmAlerts():
         assert result, "Failed to resolve alert."
         before_resolve, after_resolve = result
         diff_resolve = list(set(after_resolve) - set(before_resolve))
-        assert diff_resolve != [], "UnAck Resolved Alerts before and after resolve alert is same"
+        assert diff_resolve , "UnAck Resolved Alerts before and after resolve alert is same"
         self.resolve_type = None
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
