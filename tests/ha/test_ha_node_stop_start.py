@@ -48,7 +48,7 @@ from libs.s3.cortxcli_test_lib import CSMAccountOperations
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 class TestHANodeStartStop:
     """
     Test suite for node start stop operation tests of HA.

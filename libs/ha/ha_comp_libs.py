@@ -135,8 +135,8 @@ class HAK8SCompLib:
                 return False
         return True
 
-    # pylint: disable=R0912
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
     @staticmethod
     def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool = False,
                         health_monitor: bool = False, kubectl_delete: bool = False,
