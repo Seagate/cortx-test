@@ -57,7 +57,6 @@ class Mail:
         msg["Subject"] = subject
         msg["From"] = self.sender
         msg["To"] = self.receiver
-        LOGGER.info("Sending mail :")
-        LOGGER.info("Subject : %s, Body : %s",subject,body)
+        LOGGER.info("Sending mail with Subject %s:",subject)
         with smtplib.SMTP(self.mail_host, self.port) as server:
-            server.sendmail(self.sender, self.receiver, msg.as_string())
+            server.sendmail(self.sender, self.receiver.split(','), msg.as_string())
