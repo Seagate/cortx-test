@@ -154,10 +154,8 @@ class HALibs:
                             int(item[1]) + 1, item[2])
             return True, "All node status is as expected"
         except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.verify_node_health_status.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.verify_node_health_status.__name__, error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
@@ -191,10 +189,8 @@ class HALibs:
                 LOGGER.info("%s's health status is %s", item[0], item[2])
             return True, "Cluster, site and rack health status is as expected"
         except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.verify_csr_health_status.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.verify_csr_health_status.__name__, error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
@@ -278,10 +274,8 @@ class HALibs:
                          private_ip_list, iface_list)
             return iface_list, private_ip_list
         except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HALibs.get_iface_ip_list.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HALibs.get_iface_ip_list.__name__, error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
 
     def host_power_on(self, host: str, bmc_obj=None):
