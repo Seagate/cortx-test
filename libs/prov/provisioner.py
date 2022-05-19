@@ -23,10 +23,10 @@ Provisioner utiltiy methods
 import shutil
 import logging
 import time
-import jenkins
-import re
-import numpy as np
 from string import Template
+import re
+import jenkins
+import numpy as np
 from commons import constants as common_cnst
 from commons import commands as common_cmd
 from commons import params as prm
@@ -434,11 +434,10 @@ class Provisioner:
             LOGGER.debug(f"pillar command output for {chk}'s {key}: {resp}")
             data1 = ansi_escape.sub('', resp[1])
             out = data1.strip()
-            LOGGER.info("{} for {} is {}".format(key, chk, out))
+            LOGGER.info("%s for %s is %s", key, chk, out)
             cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
             resp1 = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug(
-                f"confstore template command output for {chk}'s {key}: {resp1}")
+            LOGGER.debug("confstore template command output for %s's %s: %s", chk, key, resp1)
             if resp1:
                 return True, "Key from pillar and confstore match."
             else:
@@ -502,7 +501,7 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_GET_SYSTEM_NTP.format(chk)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug(f"pillar command output for {chk}'s system: {resp}\n")
+            LOGGER.debug("pillar command output for %s's system: %s\n", chk, resp)
             for value in resp:
                 data1.append(ansi_escape.sub('', value).strip())
             for key_val in key:
@@ -534,10 +533,8 @@ class Provisioner:
         if resp[0]:
             if resp[1][key[0]] == exp_t_srv and resp[1][key[1]] == exp_t_zone:
                 return True, resp[1]
-            else:
-                return False, f"NTP Configuration Verification Failed for srvnode-{node_id}"
-        else:
-            return resp
+            return False, ("NTP Configuration Verification Failed for srvnode-%s", node_id)
+        return resp
 
     # pylint:disable=too-many-locals,too-many-statements,too-many-branches
     @staticmethod
@@ -680,13 +677,13 @@ class Provisioner:
             time.sleep(1)
             output += node_obj.shell_obj.recv(2048).decode("utf-8")
             if output:
-                LOGGER.debug("Confirmation after setting new password is - {}".format(output))
+                LOGGER.debug("Confirmation after setting new password is - %s", output)
 
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
                 Provisioner.change_field_user_password.__name__)
-            LOGGER.error("Unable to set new password due to - {}".format(str(error)))
+            LOGGER.error("Unable to set new password due to - %s", (str(error)))
             return False, error
         return True, "Password change Successful!!"
 

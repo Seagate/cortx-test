@@ -233,11 +233,14 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Execute prereq script")
         pre_req_log = PROV_CFG['k8s_cortx_deploy']["pre_req_log"]
-        pre_req_cmd = Template(common_cmd.PRE_REQ_CMD + "> $log").substitute(dir=remote_code_path,
-                                                                             disk=system_disk, log=pre_req_log)
-        list_mnt_dir = Template(common_cmd.LS_LH_CMD).substitute(dir=self.deploy_cfg['local_path_prov'])
-        list_etc_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(dir=self.deploy_cfg['3rd_party_dir'])
-        list_data_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(dir=self.deploy_cfg['3rd_party_data_dir'])
+        pre_req_cmd = Template(common_cmd.PRE_REQ_CMD + "> $log").substitute(
+            dir=remote_code_path, disk=system_disk, log=pre_req_log)
+        list_mnt_dir = Template(common_cmd.LS_LH_CMD).substitute(dir=
+                                                                 self.deploy_cfg['local_path_prov'])
+        list_etc_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(
+            dir=self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(
+            dir=self.deploy_cfg['3rd_party_data_dir'])
         resp = node_obj.execute_cmd(pre_req_cmd, read_lines=True, recv_ready=True,
                                     timeout=self.deploy_cfg['timeout']['pre-req'])
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
@@ -669,8 +672,6 @@ class ProvDeployK8sCortxLib:
             cmn_storage_sets['durability']['dix'] = dix
 
             def _update_cvg_details():
-                LOGGER.debug("DD is %s, total_c=%s, cvg_count=%s", data_disk_per_cvg, total_cvg, cvg_count)
-                LOGGER.debug("data=%s & metadata=%s", data_devices, metadata_devices)
                 for cvg_item in list(total_cvg):
                     storage.pop(cvg_item)
                 for cvg in range(0, cvg_count):
@@ -678,7 +679,8 @@ class ProvDeployK8sCortxLib:
                     metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
                     data_schema = {}
                     for disk in range(0, data_disk_per_cvg):
-                        disk_schema_upd = {'device': data_devices[cvg][disk], 'size': size_data_disk}
+                        disk_schema_upd = \
+                            {'device': data_devices[cvg][disk], 'size': size_data_disk}
                         c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
                         data_schema.update(c_data_device_schema)
                     c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
@@ -886,10 +888,10 @@ class ProvDeployK8sCortxLib:
         param: worker node obj list
         """
         destroy_cmd = Template(common_cmd.DESTROY_CLUSTER_CMD).substitute(dir=custom_repo_path)
-        list_etc_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(dir=
-                                                                       self.deploy_cfg['3rd_party_dir'])
-        list_data_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(dir=
-                                                                        self.deploy_cfg['3rd_party_data_dir'])
+        list_etc_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(
+            dir=self.deploy_cfg['3rd_party_dir'])
+        list_data_3rd_party = Template(common_cmd.LS_LH_CMD).substitute(
+            dir=self.deploy_cfg['3rd_party_data_dir'])
         try:
             if not master_node_obj.path_exists(custom_repo_path):
                 raise Exception(f"Repo path {custom_repo_path} does not exist")
