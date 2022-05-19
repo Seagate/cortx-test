@@ -157,6 +157,8 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
 
+    # pylint: disable=no-self-argument, not-callable
+    # Codacy has trouble understanding decorator structure below
     def authenticate_and_login(func):
         """
         :type: Decorator
@@ -203,6 +205,8 @@ class RestTestLib:
 
         return create_authenticate_header
 
+    # pylint: disable=no-self-argument, not-callable
+    # Codacy has trouble understanding decorator structure below
     def rest_logout(func):
         """
         :type: Decorator
