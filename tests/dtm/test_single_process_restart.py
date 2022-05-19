@@ -370,10 +370,10 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
         self.log.info("Step 2: Perform Delete Operations :")
-        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops(),
-                                               args=(workload_info, que, True, True, False))
-        proc_read_op.start()
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        proc_del_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                              args=(workload_info, que, True, False, False))
+        proc_del_op.start()
+        self.log.info("Step 3 : Perform Single m0d Process Restart During DELETE Operations")
         self.dtm_obj.process_restart(self.master_node_list[0],
                                      POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
         self.log.info("Step 4: Check hctl status if all services are online")
@@ -381,8 +381,8 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp, 'All services are not online.')
 
         self.log.info("Step 5: Wait for Delete Operation to complete.")
-        if proc_read_op.is_alive():
-            proc_read_op.join()
+        if proc_del_op.is_alive():
+            proc_del_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
