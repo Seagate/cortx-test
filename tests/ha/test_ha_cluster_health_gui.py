@@ -407,7 +407,7 @@ class TestHAClusterHealthGUI:
         self.ha_gui_obj.verify_cluster_state("online")
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(list(range(len(self.srvnode_list))), 2)
 
         for count, node in enumerate(off_nodes):
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
@@ -488,7 +488,7 @@ class TestHAClusterHealthGUI:
         self.ha_gui_obj.verify_cluster_state("online")
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(list(range(len(self.srvnode_list))), 2)
 
         for count, node in enumerate(off_nodes):
             LOGGER.info("Shutting down %s", self.srvnode_list[node])

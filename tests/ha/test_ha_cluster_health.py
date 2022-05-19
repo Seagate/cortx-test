@@ -392,7 +392,7 @@ class TestHAClusterHealth:
         self.restored = False
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(list(range(len(self.srvnode_list))), 2)
         check_rem_node = []
         for index in range(len(self.srvnode_list)):
             if index in off_nodes:
@@ -501,7 +501,7 @@ class TestHAClusterHealth:
         self.restored = False
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(list(range(len(self.srvnode_list))), 2)
         check_rem_node = []
         for index in range(len(self.srvnode_list)):
             if index in off_nodes:
