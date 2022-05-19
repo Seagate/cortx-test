@@ -22,8 +22,8 @@
 import logging
 import random
 
+from random import SystemRandom
 import pytest
-
 from commons import configmanager
 from commons import constants as consts
 from commons import cortxlogging
@@ -61,6 +61,7 @@ class TestCsmAlerts():
         cls.resolve_type = None
         cls.alert_timeout = None
         cls.alert_type = None
+        cls.cryptogen = SystemRandom()
         cls.ras_test_obj = RASTestLib(host=CMN_CFG["nodes"][0]["hostname"],
                                       username=CMN_CFG["nodes"][0]["username"],
                                       password=CMN_CFG["nodes"][0]["password"])
@@ -107,7 +108,7 @@ class TestCsmAlerts():
         diff_alert = list(set(after_alerts) - set(before_alerts))
         assert diff_alert == [], "Unack resolved Alerts before and after create alert is not same."
         response = self.csm_alerts.get_alerts(
-            alert_id=random.choice(new_alerts))
+            alert_id=self.cryptogen.randrange(new_alerts))
         assert_utils.assert_equals(response.json()['severity'], alert_severity)
         self.log.info("Resolving alert and checking get alert response with acknowledged False and "
                       "resolved True")
@@ -763,6 +764,7 @@ class TestCsmAlerts():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable=too-many-statements
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16937')
