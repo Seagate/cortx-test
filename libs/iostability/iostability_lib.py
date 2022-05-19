@@ -136,8 +136,7 @@ class MailNotification(threading.Thread):
             while time.time() < current_time + self.interval * 60 * 60:
                 if self.event_pass.is_set() or self.event_fail.is_set():
                     break
-                else:
-                    time.sleep(60)
+                time.sleep(60)
         test_status = "Failed"
         if self.event_pass.is_set():
             test_status = "Passed"

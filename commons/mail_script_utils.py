@@ -21,11 +21,10 @@
 Module for generating email
 """
 
+import logging
 import os
 import smtplib
 from email.mime.text import MIMEText
-import logging
-
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -36,6 +35,7 @@ class Mail:
     """
     module to send mail
     """
+
     def __init__(self, sender, receiver):
         """
         Init method
@@ -47,7 +47,7 @@ class Mail:
         self.sender = sender
         self.receiver = receiver
 
-    def send_mail(self,subject, body):
+    def send_mail(self, subject, body):
         """
         function to send mail
         #param subject: subject of email
@@ -57,6 +57,6 @@ class Mail:
         msg["Subject"] = subject
         msg["From"] = self.sender
         msg["To"] = self.receiver
-        LOGGER.info("Sending mail with Subject %s:",subject)
+        LOGGER.info("Sending mail with Subject %s:", subject)
         with smtplib.SMTP(self.mail_host, self.port) as server:
             server.sendmail(self.sender, self.receiver.split(','), msg.as_string())
