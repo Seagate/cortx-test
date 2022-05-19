@@ -164,22 +164,17 @@ class Node(Host):
 
     def get_ldap_credential(self):
         """Get the ldap credential from node."""
-        try:
-            # Fetch ldap username.
-            ldap_user = self.execute_cmd(commands.LDAP_USER)
-            ldap_user = ldap_user.decode("utf-8") if isinstance(ldap_user, bytes) else ldap_user
-            ldap_user = ldap_user.split(",")[0].lstrip("cn=").strip()
-            # Fetch ldap password.
-            ldap_passwd = self.execute_cmd(commands.LDAP_PWD)
-            ldap_passwd = ldap_passwd.decode(
-                "utf-8").strip() if isinstance(ldap_passwd, bytes) else ldap_passwd
-            log.debug("LDAP USER: %s, LDAP Password: %s", ldap_user, ldap_passwd)
+        # Fetch ldap username.
+        ldap_user = self.execute_cmd(commands.LDAP_USER)
+        ldap_user = ldap_user.decode("utf-8") if isinstance(ldap_user, bytes) else ldap_user
+        ldap_user = ldap_user.split(",")[0].lstrip("cn=").strip()
+        # Fetch ldap password.
+        ldap_passwd = self.execute_cmd(commands.LDAP_PWD)
+        ldap_passwd = ldap_passwd.decode(
+            "utf-8").strip() if isinstance(ldap_passwd, bytes) else ldap_passwd
+        log.debug("LDAP USER: %s, LDAP Password: %s", ldap_user, ldap_passwd)
 
-            return ldap_user, ldap_passwd
-        except Exception as error:
-            log.error("%s %s: %s", constants.EXCEPTION_ERROR, self.get_ldap_credential.__name__,
-                      error)
-            return None, None
+        return ldap_user, ldap_passwd
 
     def make_remote_file_copy(self, path: str, backup_path: str) -> \
             Tuple[bool, Tuple[Union[List[str], str, bytes]]]:
