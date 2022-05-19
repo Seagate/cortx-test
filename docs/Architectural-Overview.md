@@ -302,23 +302,23 @@ Below diagram shows how this framework resides in any system and shows it’s us
 
 ## Benefits
 
-Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets. (
+* Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets. (
 Storage efficient)
 
-Framework will start parallel execution on multiple targets; depending on health of target, it will reschedule test
+* Framework will start parallel execution on multiple targets; depending on health of target, it will reschedule test
 execution for errored or failed tests. This will ensure complete test execution of identified test plan.
 
-Framework will have parallel execution over a single target also which will reduce the time required for test
+* Framework will have parallel execution over a single target also which will reduce the time required for test
 execution. (Time efficient)
 
-Maximum failures will get during the first few hours of execution.
+* Maximum failures will get during the first few hours of execution.
 
-Live test execution information will be available to users through dashboard and test management tool
+* Live test execution information will be available to users through dashboard and test management tool
 
-Complete history of test data will be available in database, so anyone can access any test related data at any time from
+* Complete history of test data will be available in database, so anyone can access any test related data at any time from
 dashboard.
 
-Logs will be archived on NFS share.
+* Logs will be archived on NFS share.
 
-No manual intervention is required for test configuration of different targets as the process is fully automated. 
+* No manual intervention is required for test configuration of different targets as the process is fully automated. 
 
