@@ -65,7 +65,7 @@ class CortxCliS3BucketOperations(CortxCli):
         """
         show_bkts_cmd = commands.CMD_SHOW_BUCKETS
         if op_format:
-            show_bkts_cmd = "{} -f {}".format(show_bkts_cmd, op_format)
+            show_bkts_cmd = f"{show_bkts_cmd} -f {op_format}"
         LOGGER.info("Listing buckets with cmd: %s", show_bkts_cmd)
         response = self.execute_cli_commands(cmd=show_bkts_cmd, patterns=["Bucket Name", "{", "<"])
         LOGGER.info("Response returned: \n%s", response)
@@ -101,7 +101,7 @@ class CortxCliS3BucketOperations(CortxCli):
             resp_json[1])["buckets"]
         response_dict = {"Deleted": [], "CouldNotDelete": []}
         for bucket in bucket_list:
-            LOGGER.info("Deleting the bucket {}".format(bucket))
+            LOGGER.info("Deleting the bucket %s", bucket)
             resp = self.delete_bucket_cortx_cli(
                 bucket["name"])
             if "Bucket deleted" in resp[1]:

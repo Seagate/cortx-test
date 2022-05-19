@@ -72,6 +72,9 @@ class TestCsmLoad():
         cls.csm_user = RestCsmUser()
 
     def setup_method(self):
+        """
+        Setup Method
+        """
         self.log.info("Deleting older jmeter logs : %s", self.jmx_obj.jtl_log_path)
         if os.path.exists(self.jmx_obj.jtl_log_path):
             shutil.rmtree(self.jmx_obj.jtl_log_path)
