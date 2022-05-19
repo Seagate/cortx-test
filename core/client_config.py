@@ -22,6 +22,7 @@ Utility Class for health status check and update to database
 
 import json
 import logging
+import subprocess
 from urllib.parse import quote_plus
 
 from pymongo import MongoClient
@@ -29,7 +30,6 @@ from pymongo import MongoClient
 from commons.params import DB_HOSTNAME
 from commons.params import DB_NAME
 from commons.params import SYS_INFO_COLLECTION
-from commons.utils import system_utils as sys_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +57,22 @@ class ClientConfig:
         return setup_details
 
     @staticmethod
-    def set_s3_endpoints(public_data_ip):
+    def run_cmd(cmd):
+        """
+        Execute bash commands on the host
+        :param str cmd: command to be executed
+        :return: command output
+        :rtype: string
+        """
+        print("Executing command: {}".format(cmd))
+        proc = subprocess.Popen(cmd, shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+        result = str(proc.communicate())
+        return result
+
+    def set_s3_endpoints(self, public_data_ip):
         """
         Set s3 endpoints to cluster ip in /etc/hosts
         :param str public_data_ip: IP of the cluster
@@ -70,12 +85,11 @@ class ClientConfig:
                 "sts.cloud.seagate.com\n".format(public_data_ip)
         lines = [line1, line2, line3]
 
-        sys_utils.execute_cmd(cmd="rm -f /etc/hosts")
+        self.run_cmd(cmd="rm -f /etc/hosts")
         with open("/etc/hosts", 'w') as file:
             file.writelines(lines)
 
-    @staticmethod
-    def configure_s3_tools(target):
+    def configure_s3_tools(self, target):
         """
         use makefile to configure s3 tools
         accept a target, pick access mey and secret key from file
@@ -86,7 +100,7 @@ class ClientConfig:
         access = data['AWS_ACCESS_KEY_ID']
         secret = data['AWS_SECRET_ACCESS_ID']
         cmd = "make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
-        sys_utils.execute_cmd(cmd=cmd.format(access, secret))
+        self.run_cmd(cmd=cmd.format(access, secret))
         file.close()
 
     def client_configure_for_given_target(self, acquired_target):
