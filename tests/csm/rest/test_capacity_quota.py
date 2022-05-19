@@ -39,6 +39,7 @@ from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
+# pylint: disable-msg=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
 class TestCapacityQuota():
     """System Capacity Testsuite"""
