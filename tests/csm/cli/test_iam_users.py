@@ -57,8 +57,8 @@ class TestCliIAMUser:
             session_obj=cls.iam_obj.session_obj)
         cls.access_key_obj = CortxCliS3AccessKeys(
             session_obj=cls.iam_obj.session_obj)
-        cls.s3acc_name = "{}_{}".format("cli_s3acc", int(time.time()))
-        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
+        cls.s3acc_name = f"cli_s3acc_{int(time.time())}"
+        cls.s3acc_email = f"{cls.s3acc_name}@seagate.com"
         cls.logger.info("Creating s3 account with name %s", cls.s3acc_name)
         resp = cls.s3acc_obj.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
@@ -83,7 +83,7 @@ class TestCliIAMUser:
         login = self.iam_obj.login_cortx_cli(
             username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_true(login[0], login[1])
-        self.user_name = "{0}{1}".format("iam_user", str(int(time.time())))
+        self.user_name = f"iam_user{str(int(time.time()))}"
         self.logger.info("ENDED : Setup operations for test function")
 
     def teardown_method(self):
@@ -109,6 +109,7 @@ class TestCliIAMUser:
         self.iam_obj.logout_cortx_cli()
         self.logger.info("ENDED : Teardown operations for test function")
 
+    @classmethod
     def teardown_class(cls):
         """
         This function will be invoked after test suit.
@@ -331,7 +332,6 @@ class TestCliIAMUser:
         Initiating the test case to verify IAM user should not able to login to csmcli
         """
         self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        user_name = "{0}{1}".format("iam_user", str(int(time.time())))
         self.logger.info("Creating iam user with name %s", self.user_name)
         resp = self.iam_obj.create_iam_user(
             user_name=self.user_name,
@@ -499,8 +499,8 @@ class TestCliIAMUser:
         self.logger.info("Sending keyboard interrupt signal to cli process ")
         resp = self.node_helper_obj.pgrep(process="cortxcli")
         assert_utils.assert_true(resp[0], resp[1])
-        cmd = "python3 -c 'import os; os.kill({0}, signal.SIGINT))'".format(
-            int(resp[1][0].split()[0]))
+        tmp = int(resp[1][0].split()[0])
+        cmd = f"python3 -c 'import os; os.kill({tmp}, signal.SIGINT))'"
         resp = self.node_helper_obj.execute_cmd(cmd=cmd)
         time.sleep(3)
         resp = self.iam_obj.login_cortx_cli(

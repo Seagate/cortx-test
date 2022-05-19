@@ -19,26 +19,30 @@
 
 """Test suite for storage enclosure fru related tests."""
 
-import os
-import time
-import random
 import logging
-import pytest
+import os
+import random
+import time
+
 import pandas as pd
-from libs.ras.ras_test_lib import RASTestLib
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from commons.helpers.controller_helper import ControllerLib
-from libs.s3 import S3H_OBJ
+import pytest
+
+from commons import commands as common_cmd
+from commons import constants as cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons import constants as cons
-from commons import commands as common_cmd
-from commons.utils.assert_utils import *
+from commons.helpers.controller_helper import ControllerLib
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +85,8 @@ class TestStorageAlerts:
         LOGGER.info("Putting enclosure values in CONF store")
         resp = cls.ras_test_obj.update_enclosure_values(enclosure_vals=dict(
             zip(field_list, [None]*len(field_list))))
-        assert_true(resp[0], "Successfully updated enclosure values")
+        assert_utils.assert_true(resp[0], "Successfully updated enclosure values")
+        cls.system_random = random.SystemRandom()
 
         LOGGER.info("Successfully ran setup_class")
 
@@ -106,7 +111,7 @@ class TestStorageAlerts:
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
-            assert_true(resp, "Failed to start message bus channel")
+            assert_utils.assert_true(resp, "Failed to start message bus channel")
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
@@ -138,7 +143,7 @@ class TestStorageAlerts:
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert_true(res[0], res[1])
+        assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
 
         LOGGER.info("Successfully performed Setup operations")
@@ -224,11 +229,11 @@ class TestStorageAlerts:
         resp = self.controller_obj.get_total_drive_count(
             telnet_file=common_cfg["file"]["telnet_xml"])
 
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
-        phy_num = random.randint(0, resp[1] - 1)
+        phy_num = self.system_random.randint(0, resp[1] - 1)
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = self.alert_api_obj.generate_alert(
@@ -239,15 +244,15 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault"],
                               "exp_status": test_cfg["degraded_phy_status"],
                               "telnet_file": common_cfg["file"]["telnet_xml"]})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         phy_stat = test_cfg["degraded_phy_status"]
         LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
-            resource_id = "disk_00.0{}".format(phy_num)
+            resource_id = f"disk_00.0{phy_num}"
         else:
-            resource_id = "disk_00.{}".format(phy_num)
+            resource_id = f"disk_00.{phy_num}"
         time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Step 3: Checking CSM REST API for alert")
@@ -263,7 +268,7 @@ class TestStorageAlerts:
         LOGGER.info("Step 4: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Cleared %s drive metadata successfully", drive_num)
 
         LOGGER.info("Step 5: Again enabling phy number %s", phy_num)
@@ -294,10 +299,10 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 6: Checked generated alert logs")
 
-        assert_true(resp_csm, csm_error_msg)
+        assert_utils.assert_true(resp_csm, csm_error_msg)
         LOGGER.info("Step 3: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -324,11 +329,11 @@ class TestStorageAlerts:
         resp = self.controller_obj.get_total_drive_count(
             telnet_file=common_cfg["file"]["telnet_xml"])
 
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Total number of mapped drives is %s", resp[1])
 
         LOGGER.info("Randomly picking phy to disable")
-        phy_num = random.randint(0, resp[1] - 1)
+        phy_num = self.system_random.randint(0, resp[1] - 1)
 
         LOGGER.info("Step 2: Disabling phy number %s", phy_num)
         resp = self.alert_api_obj.generate_alert(
@@ -339,7 +344,7 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault"],
                               "exp_status": test_cfg["degraded_phy_status"],
                               "telnet_file": common_cfg["file"]["telnet_xml"]})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         phy_stat = test_cfg["degraded_phy_status"]
         LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
@@ -347,7 +352,7 @@ class TestStorageAlerts:
         LOGGER.info("Step 3: Clearing metadata of drive %s", phy_num)
         drive_num = f"0.{phy_num}"
         resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cleared %s drive metadata successfully", drive_num)
 
         LOGGER.info("Step 4: Again enabling phy number %s", phy_num)
@@ -374,9 +379,9 @@ class TestStorageAlerts:
         LOGGER.info("Step 4: Successfully put phy in %s state", phy_stat)
 
         if phy_num < 10:
-            resource_id = "disk_00.0{}".format(phy_num)
+            resource_id = f"disk_00.0{phy_num}"
         else:
-            resource_id = "disk_00.{}".format(phy_num)
+            resource_id = f"disk_00.{phy_num}"
 
         time.sleep(common_cfg["sleep_val"])
         if self.start_msg_bus:
@@ -384,7 +389,7 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
                           resource_id]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 5: Checked generated alert logs")
 
         LOGGER.info("Step 6: Checking CSM REST API for alert")
@@ -395,7 +400,7 @@ class TestStorageAlerts:
                                                       test_cfg["resource_type"],
                                                       resource_id)
 
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info("Step 6: Successfully checked CSM REST API for alerts")
 
         LOGGER.info(
@@ -413,9 +418,9 @@ class TestStorageAlerts:
 
         test_cfg = RAS_TEST_CFG["test_22060"]
         disk_group = test_cfg["disk_group"]
-        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
-                          columns='Iteration0'.split())
-        df = df.assign(Iteration0='Pass')
+        d_f = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
+                           columns='Iteration0'.split())
+        d_f = d_f.assign(Iteration0='Pass')
         LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
             AlertType.DG_FAULT,
@@ -424,7 +429,7 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault"],
                               "disk_group": disk_group})
         if not resp[0]:
-            df['Iteration0']['Step1'] = 'Fail'
+            d_f['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
@@ -438,7 +443,7 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step2'] = 'Fail'
+                d_f['Iteration0']['Step2'] = 'Fail'
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -454,7 +459,7 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step3'] = 'Fail'
+        #     d_f['Iteration0']['Step3'] = 'Fail'
         #     LOGGER.error("Step 3: Expected alert not found. Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
@@ -470,7 +475,7 @@ class TestStorageAlerts:
                               "disk_group": disk_group,
                               "phy_num": drives, "poll": True})
         if not resp[0]:
-            df['Iteration0']['Step4'] = 'Fail'
+            d_f['Iteration0']['Step4'] = 'Fail'
             LOGGER.error("Step 4: Failed to resolve fault. Error: %s", resp[1])
         else:
             self.dg_failure = False
@@ -485,7 +490,7 @@ class TestStorageAlerts:
                           self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step5'] = 'Fail'
+                d_f['Iteration0']['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -500,19 +505,21 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step6'] = 'Fail'
+        #     d_f['Iteration0']['Step6'] = 'Fail'
         #     LOGGER.error("Step 6: Expected alert not found.Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 6: Successfully checked CSM REST API for "
         #                 "fault_resolved alert. Response: %s", resp)
 
-        LOGGER.info("Summary of test: %s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: %s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Test Disk group failure faults")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -527,10 +534,10 @@ class TestStorageAlerts:
 
         test_cfg = RAS_TEST_CFG["test_22060"]
         disk_group = test_cfg["disk_group"]
-        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
-                                'Step7 Step8'.split(),
-                          columns='Iteration0'.split())
-        df = df.assign(Iteration0='Pass')
+        d_f = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                 'Step7 Step8'.split(),
+                           columns='Iteration0'.split())
+        d_f = d_f.assign(Iteration0='Pass')
         LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
             AlertType.DG_FAULT,
@@ -539,7 +546,7 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault"],
                               "disk_group": disk_group})
         if not resp[0]:
-            df['Iteration0']['Step1'] = 'Fail'
+            d_f['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
@@ -553,7 +560,7 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step2'] = 'Fail'
+                d_f['Iteration0']['Step2'] = 'Fail'
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -569,7 +576,7 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step3'] = 'Fail'
+        #     d_f['Iteration0']['Step3'] = 'Fail'
         #     LOGGER.error("Step 3: Expected alert not found. Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
@@ -586,7 +593,7 @@ class TestStorageAlerts:
                 user=self.uname,
                 pwd=self.passwd)
         if resp[0]:
-            df['Iteration0']['Step4'] = 'Fail'
+            d_f['Iteration0']['Step4'] = 'Fail'
             LOGGER.error("Step 4: Failed to stop SSPL service. Error: %s",
                          resp[1])
         else:
@@ -602,7 +609,7 @@ class TestStorageAlerts:
                               "disk_group": disk_group,
                               "phy_num": drives, "poll": True})
         if not resp[0]:
-            df['Iteration0']['Step5'] = 'Fail'
+            d_f['Iteration0']['Step5'] = 'Fail'
             LOGGER.error("Step 5: Failed to resolve fault. Error: %s", resp[1])
         else:
             self.dg_failure = False
@@ -619,7 +626,7 @@ class TestStorageAlerts:
             user=self.uname,
             pwd=self.passwd)
         if not resp[0]:
-            df['Iteration0']['Step6'] = 'Fail'
+            d_f['Iteration0']['Step6'] = 'Fail'
             LOGGER.error("Step 6: Failed to start SSPL service. Error: %s",
                          resp[1])
         else:
@@ -634,7 +641,7 @@ class TestStorageAlerts:
                           self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step7'] = 'Fail'
+                d_f['Iteration0']['Step7'] = 'Fail'
                 LOGGER.error("Step 7: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -650,20 +657,22 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step8'] = 'Fail'
+        #     d_f['Iteration0']['Step8'] = 'Fail'
         #     LOGGER.error("Step 8: Expected alert not found. Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 8: Successfully checked CSM REST API for "
         #                 "fault_resolved alert. \n Response: %s", resp)
 
-        LOGGER.info("Summary of test: %s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: %s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Test persistent cache for Disk group faults "
                     "when SSPL is stopped and started")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -678,10 +687,10 @@ class TestStorageAlerts:
 
         test_cfg = RAS_TEST_CFG["test_22060"]
         disk_group = test_cfg["disk_group"]
-        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
-                                'Step7 Step8 Step9'.split(),
-                          columns='Iteration0'.split())
-        df = df.assign(Iteration0='Pass')
+        d_f = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                 'Step7 Step8 Step9'.split(),
+                           columns='Iteration0'.split())
+        d_f = d_f.assign(Iteration0='Pass')
         LOGGER.info("Step 1: Create disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
             AlertType.DG_FAULT,
@@ -690,7 +699,7 @@ class TestStorageAlerts:
                               "operation": test_cfg["operation_fault"],
                               "disk_group": disk_group})
         if not resp[0]:
-            df['Iteration0']['Step1'] = 'Fail'
+            d_f['Iteration0']['Step1'] = 'Fail'
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
@@ -704,7 +713,7 @@ class TestStorageAlerts:
             alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step2'] = 'Fail'
+                d_f['Iteration0']['Step2'] = 'Fail'
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -720,7 +729,7 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step3'] = 'Fail'
+        #     d_f['Iteration0']['Step3'] = 'Fail'
         #     LOGGER.error("Step 3: Expected alert not found. Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
@@ -736,7 +745,7 @@ class TestStorageAlerts:
                               "disk_group": disk_group,
                               "phy_num": drives, "poll": False})
         if not resp[0]:
-            df['Iteration0']['Step4'] = 'Fail'
+            d_f['Iteration0']['Step4'] = 'Fail'
             LOGGER.error("Step 4: Failed to resolve fault. Error: %s", resp[1])
         else:
             self.dg_failure = False
@@ -745,10 +754,10 @@ class TestStorageAlerts:
 
         LOGGER.info("Step 5: Polling progress of reconstruction job of disk "
                     "group")
-        dg_health, job, poll_percent = self.controller_obj.poll_dg_recon_status(
+        dg_health, _, poll_percent = self.controller_obj.poll_dg_recon_status(
             disk_group=disk_group, percent=93)
         if poll_percent == 100:
-            df['Iteration0']['Step5'] = 'Fail'
+            d_f['Iteration0']['Step5'] = 'Fail'
             LOGGER.error("Step 5: Expected reconstruction percent <100. "
                          "Actual: %s", resp[1])
         elif poll_percent < 100:
@@ -761,7 +770,7 @@ class TestStorageAlerts:
         time.sleep(self.cm_cfg["reboot_delay"])
         LOGGER.info("Step 7: Checking health state of disk group %s",
                     disk_group)
-        status, disk_group_dict = self.controller_obj.get_show_disk_group()
+        _, disk_group_dict = self.controller_obj.get_show_disk_group()
         if disk_group_dict[disk_group]['health'] == 'OK':
             LOGGER.info("Step 7: Disk group %s is in healthy state", disk_group)
         else:
@@ -776,7 +785,7 @@ class TestStorageAlerts:
             else:
                 LOGGER.error("Step 7: Failed to recover disk group %s",
                              disk_group)
-                df['Iteration0']['Step7'] = 'Fail'
+                d_f['Iteration0']['Step7'] = 'Fail'
                 LOGGER.error("Expected reconstruction percent: 100. Actual: "
                              "%s\n Expected dg health: OK, Actual: %s",
                              poll_percent, dg_health)
@@ -788,7 +797,7 @@ class TestStorageAlerts:
                           self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step8'] = 'Fail'
+                d_f['Iteration0']['Step8'] = 'Fail'
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -804,16 +813,16 @@ class TestStorageAlerts:
         #                                               test_cfg["resource_type"])
         #
         # if not resp[0]:
-        #     df['Iteration0']['Step9'] = 'Fail'
+        #     d_f['Iteration0']['Step9'] = 'Fail'
         #     LOGGER.error("Step 9: Expected alert not found. Error: %s",
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 9: Successfully checked CSM REST API for "
         #                 "fault_resolved alert. \n Response: %s", resp)
 
-        LOGGER.info("Summary of test: %s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: %s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Test persistent cache for Disk group faults "
                     "when SSPL is stopped and started")

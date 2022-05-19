@@ -168,7 +168,7 @@ def get_args():
 
     if len(args.test_plans) > 4:
         print("Please provide less than 4 space separated test plans")
-        exit(1)
+        sys.exit(1)
     else:
         test_plans = args.test_plans
         for _ in range(4 - len(args.test_plans)):
