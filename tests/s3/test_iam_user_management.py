@@ -565,7 +565,6 @@ class TestIAMUserManagement:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-27277")
     def test_27277(self):
         """use REST API call to perform CRUD operations on s3iamuser."""
@@ -757,7 +756,6 @@ class TestIAMUserManagement:
     @pytest.mark.lc
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-32397")
     def test_32397(self):
         """Test that user cant create duplicate IAM user through REST"""

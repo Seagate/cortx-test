@@ -684,7 +684,6 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-6100")
     @CTFailOn(error_handler)
     def test_261(self):
@@ -2330,7 +2329,6 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-6015")
     @CTFailOn(error_handler)
     def test_1080(self):
