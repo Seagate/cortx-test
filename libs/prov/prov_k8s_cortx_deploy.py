@@ -86,6 +86,7 @@ class ProvDeployK8sCortxLib:
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
         self.patterns = ['RFC 1123', '63 characters']
+        self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -474,6 +475,7 @@ class ProvDeployK8sCortxLib:
                                                read_lines=True)[0].split(",")
             device_list[-1] = device_list[-1].replace("\n", "")
             metadata_devices = device_list[1:cvg_count + 1]
+            LOGGER.info(metadata_devices)
             # This will split the metadata disk list
             # into metadata devices per cvg
             # 2 is defined the split size based
@@ -1744,8 +1746,8 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Installing version is not higher than installed version.")
         return installing_version
 
-    def update_sol_for_granular_deploy(self, file_path: str, host_list: list,
-                                       image: str, deployment_type: str) -> tuple:
+    def update_sol_for_granular_deploy(self, file_path: str, host_list: list,master_node_list,
+                                       image: str, deployment_type: str, **kwargs):
         """
         Helper function to update image in solution.yaml.
         :param: file_path: Filename with complete path
@@ -1754,6 +1756,8 @@ class ProvDeployK8sCortxLib:
         :param: deployment_type: Type of deployment(Standard/Data-Only)
         :return: True/False and local file
         """
+        cvg_count = kwargs.get("cvg_count", 2)
+        data_disk_per_cvg = kwargs.get("data_disk_per_cvg", 0)
         LOGGER.debug("Update nodes section with setup details.")
         prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         resp = self.update_nodes_sol_file(file_path, host_list)
@@ -1774,7 +1778,18 @@ class ProvDeployK8sCortxLib:
         for cvg in prov_deploy_cfg["cvg_config"]:
             if cvg == "cvg1":
                 cvg_key = storage_key[cvg]["devices"]["data"]
-                cvg_key.pop("d7")
+                device_list = master_node_list.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
+                                               read_lines=True)[0].split(",")
+                device_list[-1] = device_list[-1].replace("\n", "")
+                if data_disk_per_cvg == 0:
+                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+
+                LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
+                LOGGER.info(len(cvg_key))
+                cvg_len = len(cvg_key)
+                for data_disk in range(len(cvg_key)-data_disk_per_cvg):
+                    cvg_key.pop("d"+str(cvg_len))
+                    cvg_len = cvg_len -1
             else:
                 storage_key.pop(cvg)
         noalias_dumper = yaml.dumper.SafeDumper

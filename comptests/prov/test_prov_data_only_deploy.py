@@ -47,6 +47,7 @@ class TestProvK8DataOnlyDeploy:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
+        cls.cortx_image = os.getenv("CORTX_IMAGE", None)
         cls.script_remote_branch = os.getenv("SCRIPT_REMOTE_BRANCH", "cortx-test")
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
@@ -92,10 +93,10 @@ class TestProvK8DataOnlyDeploy:
         assert_utils.assert_true(solution_path[0], solution_path[1])
         resp = self.deploy_lc_obj.update_sol_for_granular_deploy(file_path=self.local_sol_path,
                                                                  host_list=self.host_list,
+                                                                 master_node_list=self.master_node_obj,
                                                                  image=self.cortx_data_image,
-                                                                 deployment_type=self.deploy_cfg[
-                                                                     "deployment_type_data"
-                                                                 ])
+                                                                 deployment_type=self.deploy_cfg["deployment_type_data"])
+
         assert_utils.assert_true(resp[0])
         for node_obj in self.host_list:
             res = node_obj.copy_file_to_remote(local_path=resp[1],
