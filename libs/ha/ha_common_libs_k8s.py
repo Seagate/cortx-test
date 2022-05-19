@@ -1461,7 +1461,7 @@ class HAK8s:
                                          command_suffix=cmd, decode=True)
             resp = literal_eval(resp)
         except IOError as error:
-            LOGGER.exception("Failed to get resource IDs for %s", r_type)
+            LOGGER.error("Failed to get resource IDs for %s", r_type)
             LOGGER.exception("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
             raise error
 
