@@ -58,14 +58,20 @@ class TestExecuteWorkload:
         LOGGER.info("ENDED: Teardown Operation")
 
     def get_batches_runs(self, tc_num):
-        """Function to create batches"""
+        """
+        Function to create batches
+        tc_num: test number for which command batch create
+        """
         batch_list = self.workload_config["workloads"][tc_num]["batch"]
         runs = self.workload_config["workloads"][tc_num]["runs"]
         return batch_list, runs
 
     @CTFailOn(error_handler)
     def execute_test(self, tc_num):
-        """Execute commands from batches"""
+        """
+        Execute commands from batches
+        tc_num: test number for which command batch runs
+        """
         batches, runs = self.get_batches_runs(tc_num)
         LOGGER.info('batches: "%s", runs: "%s"', batches, runs)
         for run in range(runs):

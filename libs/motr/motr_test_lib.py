@@ -37,7 +37,8 @@ from config import CMN_CFG
 logger = logging.getLogger(__name__)
 
 
-# pylint:disable=too-many-public-methods, too-many-instance-attributes
+# pylint:disable=too-many-public-methods
+# pylint:disable=too-many-instance-attributes
 class MotrTestLib():
     """
     This class contain Motr test related operations
