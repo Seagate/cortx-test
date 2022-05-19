@@ -30,6 +30,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from string import Template
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,11 +78,11 @@ class TestProvK8DataOnlyDeploy:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Clone cortx-k8s script repo on setup.")
-        cmd = "cd {}; {}".format(cons.HA_TMP,
-                                 commands.CMD_GIT_CLONE.
-                                 format(self.prov_deploy_cfg["git_prov_k8_repo"].format(
-                                     self.script_remote_branch
-                                 )))
+        template = Template('cd $HA_TMP; $CMD_GIT_CLONE $PATH $REPO')
+        cmd = template.substitute(HA_TMP=cons.HA_TMP,CMD_GIT_CLONE=commands.CMD_GIT_CLONE_TEMPLATE,
+                                    PATH=self.prov_deploy_cfg["git_prov_k8_repo_template"],
+                                    REPO=self.script_remote_branch)
+        LOGGER.info(cmd)
         for node_obj in self.host_list:
             node_obj.execute_cmd(cmd)
         LOGGER.info("Step 1: Done.")

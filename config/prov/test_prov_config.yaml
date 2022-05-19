@@ -1,6 +1,7 @@
 k8s_prov_cortx_deploy:
   deploy_cluster: "./deploy-cortx-cloud.sh"
   git_prov_k8_repo: "https://github.com/Seagate/cortx-k8s -b {}"
+  git_prov_k8_repo_template: "https://github.com/Seagate/cortx-k8s -b"
   git_remote_path: "/root/cortx-k8s/k8_cortx_cloud/"
   upgrade_cluster: "./upgrade-cortx-cloud.sh -p {}"
   cold_upgrade: "./upgrade-cortx-cloud.sh -cold"
