@@ -437,7 +437,7 @@ class S3Helper:
                 for line in output:
                     if "s3server" in line:
                         LOGGER.info(line.split())
-                        fid = "{}@{}".format(line.split()[1], line.split()[2])
+                        fid = f"{line.split()[1]}@{line.split()[2]}"
                         fids.append(fid)
                 LOGGER.info("Fids: %s", str(fids))
                 return status, fids
@@ -533,9 +533,9 @@ class S3Helper:
         section = section if section else self.s3_cfg["aws_cred_section"]
         try:
             if not os.path.isfile(path):
-                raise FileNotFoundError("{} file is not present. Please "
+                raise FileNotFoundError(f"{path} file is not present. Please "
                                         "configure aws in the system if you are"
-                                        " running s3 test".format(path))
+                                        " running s3 test")
             access_key = config_utils.get_config(path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
 

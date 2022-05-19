@@ -23,7 +23,6 @@ from commons.exceptions import CTException
 
 
 class CTFailOn:
-    
     """
     This class has implemented to use as a decorator.
 
