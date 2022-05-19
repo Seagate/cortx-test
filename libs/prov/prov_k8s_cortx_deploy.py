@@ -1181,8 +1181,96 @@ class ProvDeployK8sCortxLib:
                 return False
         return True
 
+    def deploy_stage(self, sol_file_path, master_node_list,
+                     worker_node_list, namespace, system_disk_dict):
+        """
+        This method is used to perform deploy,validate cluster and check services
+        param: master_node_list: master_node_obj list
+        param: worker_node_list: worker_node_obj list
+        param: namespace : custom namespace
+        param: system_disk_dict system disk dict to utilize for mounting
+         provisioner path
+        returns True, resp
+        """
+        LOGGER.info("Step to Perform Cortx Cluster Deployment")
+        deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
+                                                worker_node_list, system_disk_dict,
+                                                git_tag=self.git_script_tag,
+                                                namespace=namespace)
+        LOGGER.debug("Deploy execution response %s", deploy_resp)
+        if len(namespace) > self.deploy_cfg["max_char_limit"] or \
+                bool(re.findall(r'\w*[A-Z]\w*', namespace)):
+            LOGGER.debug("Negative Test Scenario")
+            assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
+
+        # Run status-cortx-cloud.sh script to fetch the status of all resources.
+        if deploy_resp[0]:
+            LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
+            resp = self.validate_cluster_status(master_node_list[0],
+                                                self.deploy_cfg["k8s_dir"])
+            assert_utils.assert_true(resp[0], resp[1])
+            if not deploy_resp[1]:
+                LOGGER.info("Step to Check  ALL service status")
+                time.sleep(self.deploy_cfg["sleep_time"])
+                service_status = self.check_service_status(master_node_list[0])
+                LOGGER.info("All service resp is %s", service_status)
+                assert_utils.assert_true(service_status[0], service_status[1])
+                if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
+                    if self.cortx_server_image:
+                        resp = self.verfiy_installed_rpms(master_node_list,
+                                                          common_const.RGW_CONTAINER_NAME,
+                                                          self.deploy_cfg["rgw_rpm"])
+                        assert_utils.assert_true(resp[0], resp[1])
+        return True, service_status[-1]
+
+    def client_config(self, master_node_list, namespace):
+        """
+        This method is used to setup the client
+        param: master_node_list: master_node_obj
+        param: namespace: custom namespace
+        returns True, s3t_obj, list of access,secret ksy with ext_port_ip
+        """
+        LOGGER.info("Setting the current namespace")
+        resp_ns = master_node_list[0].execute_cmd(
+            cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
+            read_lines=True)
+        LOGGER.debug("response is %s,", resp_ns)
+        resp = system_utils.execute_cmd(
+            common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+        eth1_ip = resp[1].strip("'\\n'b'")
+        if self.service_type == "NodePort":
+            resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
+                                                            self.deploy_cfg['iface'])
+            if not resp[0]:
+                LOGGER.debug("Did not get expected response: %s", resp)
+            ext_ip = resp[1]
+            port = resp[2]
+            ext_port_ip = Template(self.deploy_cfg['https_protocol']
+                                   + ":$port").substitute(ip=ext_ip, port=port)
+            LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
+        else:
+            LOGGER.info("Configure HAproxy on client")
+            ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
+                                                       master_node_list[0].username,
+                                                       master_node_list[0].password,
+                                                       eth1_ip, self.deploy_cfg['iface'])
+            ext_port_ip = Template(self.deploy_cfg['https_protocol']).substitute(ip=
+                                                                                 eth1_ip)
+        LOGGER.info("Step to Create S3 account and configure credentials")
+        if self.s3_engine == 2:  # "s3_engine flag is used for picking up the configuration
+            # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
+            resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+            assert_utils.assert_true(resp[0], resp[1])
+            access_key, secret_key = S3H_OBJ.get_local_keys()
+            if self.service_type == "NodePort":
+                s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                    endpoint_url=ext_port_ip)
+            else:
+                s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+            response = [access_key, secret_key, ext_port_ip]
+        return True, s3t_obj, response
+
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-    # pylint: disable=too-complex
     def test_deployment(self, master_node_list,
                         worker_node_list, **kwargs):
         """
@@ -1252,12 +1340,6 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("The deployment NAMESPACE is %s", namespace)
         row.append(sns)
         row.append(dix)
-        LOGGER.debug("setup_k8s_cluster_flag = %s", setup_k8s_cluster_flag)
-        LOGGER.debug("cortx_cluster_deploy_flag = %s", cortx_cluster_deploy_flag)
-        LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
-        LOGGER.debug("run_basic_s3_io_flag = %s", run_basic_s3_io_flag)
-        LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
-        LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
             resp = self.verify_k8s_cluster_exists(master_node_list, worker_node_list)
             if not resp:
@@ -1297,86 +1379,30 @@ class ProvDeployK8sCortxLib:
                     LOGGER.info(line)
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
-            LOGGER.info("Step to Perform Cortx Cluster Deployment")
-            deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
-                                                    worker_node_list, system_disk_dict,
-                                                    git_tag=self.git_script_tag,
-                                                    namespace=namespace)
-            LOGGER.debug("Deploy execution response %s", deploy_resp)
-
-            if len(namespace) > self.deploy_cfg["max_char_limit"] or \
-                    bool(re.findall(r'\w*[A-Z]\w*', namespace)):
-                LOGGER.debug("Negative Test Scenario")
-                assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
-
-            # Run status-cortx-cloud.sh script to fetch the status of all resources.
-            if deploy_resp[0]:
-                LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
-                resp = self.validate_cluster_status(master_node_list[0],
-                                                    self.deploy_cfg["k8s_dir"])
-                assert_utils.assert_true(resp[0], resp[1])
-                if not deploy_resp[1]:
-                    LOGGER.info("Step to Check  ALL service status")
-                    time.sleep(self.deploy_cfg["sleep_time"])
-                    service_status = self.check_service_status(master_node_list[0])
-                    LOGGER.info("All service resp is %s", service_status)
-                    assert_utils.assert_true(service_status[0], service_status[1])
-                    row.append(service_status[-1])
-                    if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
-                        if self.cortx_server_image:
-                            resp = self.verfiy_installed_rpms(master_node_list,
-                                                              common_const.RGW_CONTAINER_NAME,
-                                                              self.deploy_cfg["rgw_rpm"])
-                            assert_utils.assert_true(resp[0], resp[1])
+            deploy_stage_resp = self.deploy_stage(sol_file_path,
+                                                  master_node_list,
+                                                  worker_node_list,
+                                                  namespace, system_disk_dict)
+            row.append(deploy_stage_resp[1])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
-                LOGGER.info("Setting the current namespace")
-                resp_ns = master_node_list[0].execute_cmd(
-                    cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
-                    read_lines=True)
-                LOGGER.debug("response is %s,", resp_ns)
-                resp = system_utils.execute_cmd(
-                    common_cmd.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
-                eth1_ip = resp[1].strip("'\\n'b'")
-                if self.service_type == "NodePort":
-                    resp = ext_lbconfig_utils.configure_nodeport_lb(master_node_list[0],
-                                                                    self.deploy_cfg['iface'])
-                    if not resp[0]:
-                        LOGGER.debug("Did not get expected response: %s", resp)
-                    ext_ip = resp[1]
-                    port = resp[2]
-                    ext_port_ip = Template(self.deploy_cfg['https_protocol']
-                                           + ":$port").substitute(ip=ext_ip, port=port)
-                    LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
-                else:
-                    LOGGER.info("Configure HAproxy on client")
-                    ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
-                                                               master_node_list[0].username,
-                                                               master_node_list[0].password,
-                                                               eth1_ip, self.deploy_cfg['iface'])
-                    ext_port_ip = Template(self.deploy_cfg['https_protocol']).substitute(ip=
-                                                                                         eth1_ip)
-                LOGGER.info("Step to Create S3 account and configure credentials")
-                if self.s3_engine == 2:  # "s3_engine flag is used for picking up the configuration
-                    # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
-                    resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-                    assert_utils.assert_true(resp[0], resp[1])
-                    access_key, secret_key = S3H_OBJ.get_local_keys()
-                    if self.service_type == "NodePort":
-                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                            endpoint_url=ext_port_ip)
-                    else:
-                        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
-
-            if run_basic_s3_io_flag:
-                LOGGER.info("Step to Perform basic IO operations")
-                bucket_name = "bucket-" + str(int(time.time()))
-                self.basic_io_write_read_validate(s3t_obj, bucket_name)
-            if run_s3bench_workload_flag:
-                LOGGER.info("Step to Perform S3bench IO")
-                bucket_name = "bucket-" + str(int(time.time()))
-                self.io_workload(access_key=access_key, secret_key=secret_key,
-                                 bucket_prefix=bucket_name, endpoint_url=ext_port_ip)
+                client_config_res = self.client_config(master_node_list, namespace)
+                if client_config_res[0]:
+                    s3t_obj = client_config_res[1]
+                    if run_basic_s3_io_flag:
+                        LOGGER.info("Step to Perform basic IO operations")
+                        bucket_name = "bucket-" + str(int(time.time()))
+                        self.basic_io_write_read_validate(s3t_obj, bucket_name)
+                    if run_s3bench_workload_flag:
+                        LOGGER.info("Step to Perform S3bench IO")
+                        bucket_name = "bucket-" + str(int(time.time()))
+                        access_key = client_config_res[2][0]
+                        secret_key = client_config_res[2][1]
+                        ext_port_ip = client_config_res[2][2]
+                        self.io_workload(access_key=access_key,
+                                         secret_key=secret_key,
+                                         bucket_prefix=bucket_name,
+                                         endpoint_url=ext_port_ip)
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list, custom_repo_path)
