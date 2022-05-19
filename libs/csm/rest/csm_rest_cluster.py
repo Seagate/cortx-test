@@ -122,9 +122,9 @@ class RestCsmCluster(RestTestLib):
                                    'cortx-cloud-helm-pkg/cortx-configmap/'
                                    'templates/config-template.yaml')
         self.nd_objs[0].copy_file_to_local(remote_file, local_file)
-        with open(local_file, "r") as f:
-            data = f.readlines()
-        with open(local_file, "w") as f:
+        with open(local_file, "r") as fptr:
+            data = fptr.readlines()
+        with open(local_file, "w") as fptr:
             for line in data:
                 if key == 'endpoints':
                     if "https://<<.Values.cortx.io.svc>>:8081" in line and value == 'http':
@@ -133,7 +133,7 @@ class RestCsmCluster(RestTestLib):
                         line = line.replace('http', 'https')
                 elif key == 'mgmt_admin' and 'mgmt_admin: cortxadmin' in line:
                     line = line.replace('cortxadmin', value)
-                f.write(line)
+                fptr.write(line)
         self.nd_objs[0].copy_file_to_remote(local_file, remote_file)
 
     def destroy_cluster(self):

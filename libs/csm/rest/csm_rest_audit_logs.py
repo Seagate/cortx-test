@@ -72,13 +72,11 @@ class RestAuditLogs(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
-    def verify_audit_logs_csm_show(self,
-                                   params,
-                                   expected_status_code=200,
-                                   login_as="csm_admin_user",
-                                   validate_expected_response=True,
-                                   invalid_component=False
-                                   ):
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-branches
+    def verify_audit_logs_csm_show(self, params, expected_status_code=200,
+                                   login_as="csm_admin_user", validate_expected_response=True,
+                                   invalid_component=False):
         """
         This method will verify csm show audit logs
         :param params: parameters for rest call(dictonary)
@@ -181,14 +179,10 @@ class RestAuditLogs(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
-    def verify_audit_logs_csm_download(self,
-                                       params,
-                                       expected_status_code=200,
-                                       login_as="csm_admin_user",
-                                       validate_expected_response=True,
-                                       invalid_component=False,
-                                       response_type=None
-                                       ):
+    # pylint: disable=too-many-arguments
+    def verify_audit_logs_csm_download(self, params, expected_status_code=200,
+                                       login_as="csm_admin_user", validate_expected_response=True,
+                                       invalid_component=False, response_type=None):
         """
         This method will verify download csm audit logs
         :param params: parameters for rest call(dictonary)
@@ -261,13 +255,11 @@ class RestAuditLogs(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
-    def verify_audit_logs_s3_show(self,
-                                  params,
-                                  expected_status_code=200,
-                                  login_as="csm_admin_user",
-                                  validate_expected_response=True,
-                                  bucket=None
-                                  ):
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-branches
+    def verify_audit_logs_s3_show(self, params, expected_status_code=200,
+                                  login_as="csm_admin_user", validate_expected_response=True,
+                                  bucket=None):
         """
         This method will verify s3 show audit logs
         :param params: parameters for rest call(dictonary)
@@ -535,13 +527,10 @@ class RestAuditLogs(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
-    def verify_audit_logs_s3_download(self,
-                                      params,
-                                      expected_status_code=200,
-                                      login_as="csm_admin_user",
-                                      validate_expected_response=True,
-                                      response_type=None,
-                                      ):
+    # pylint: disable=too-many-arguments
+    def verify_audit_logs_s3_download(self, params, expected_status_code=200,
+                                      login_as="csm_admin_user", validate_expected_response=True,
+                                      response_type=None):
         """
         This method will verify download s3 audit logs
         :param params: parameters for rest call(dictonary)
@@ -583,6 +572,10 @@ class RestAuditLogs(RestTestLib):
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
 
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-return-statements
     def verify_audit_logs_show_download(self, audit_log_show_response, audit_log_download_response):
         """
         This function will verify the audit log show and audit log download contents match
@@ -665,9 +658,9 @@ class RestAuditLogs(RestTestLib):
                     log_content = audit_log_show_response.json(
                     )['logs'][2:audit_log_show_response.json()['total_records'] - 3]
                     result = True
-                    for x in log_content:
-                        if x['request_id'] not in extracted_file_content:
-                            self.log.error("Couldnt find %s from json in downloaded file", x)
+                    for log_line in log_content:
+                        if log_line['request_id'] not in extracted_file_content:
+                            self.log.error("Couldnt find %s from json in downloaded file", log_line)
                             result = False
 
                     # if all(x in extracted_file_content for x in log_content):

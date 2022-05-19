@@ -77,6 +77,7 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
     def custom_rest_login(self, username, password, username_key="username",
                           password_key="password", override_config=False, config_params=None):
         """
@@ -261,12 +262,12 @@ class RestTestLib:
         :return: required headers
         """
         try:
-            self.log.debug("Getting required headers for user {}".format(user_name))
+            self.log.debug("Getting required headers for user %s", user_name)
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 "username", user_name, "password", user_password)
-            self.log.debug("Payload for S3 account login is {}".format(payload))
+            self.log.debug("Payload for S3 account login is %s", payload)
 
             # Fetch user token from response
             response = self.restapi.rest_call(
