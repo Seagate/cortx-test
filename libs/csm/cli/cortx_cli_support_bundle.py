@@ -132,7 +132,7 @@ class CortxCliSupportBundle(CortxCli):
             return False, output
 
         return True, output
- 
+
     # pylint-disable-message=too-many-return-statements
     # pylint: disable-msg=too-many-branches
     def support_bundle_status(
