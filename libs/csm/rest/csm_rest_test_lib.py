@@ -26,8 +26,8 @@ from string import Template
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_core_lib import RestClient
 from config import CSM_REST_CFG
+from libs.csm.rest.csm_rest_core_lib import RestClient
 
 
 class RestTestLib:
@@ -157,8 +157,7 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
 
-    # pylint: disable=no-self-argument, not-callable
-    # Codacy has trouble understanding decorator structure below
+    @staticmethod
     def authenticate_and_login(func):
         """
         :type: Decorator
@@ -176,24 +175,16 @@ class RestTestLib:
             :return: function executables
             """
             self.headers = {}  # Initiate headers
-            self.log.debug(
-                "user is getting authorized for REST operations ...")
-
+            self.log.debug("user is getting authorized for REST operations ...")
             # Checking the type of login user
-            login_type = kwargs.pop(
-                "login_as") if "login_as" in kwargs else "csm_admin_user"
-
+            login_type = kwargs.pop("login_as") if "login_as" in kwargs else "csm_admin_user"
             # Checking the requirements to authorize
-            authorized = kwargs.pop(
-                "authorized") if "authorized" in kwargs else True
-
+            authorized = kwargs.pop("authorized") if "authorized" in kwargs else True
             # Fetching the login response
             self.log.debug("user will be logged in as %s", login_type)
             response = self.rest_login(login_as=login_type)
-
             if authorized and response.status_code == const.SUCCESS_STATUS:
-                self.headers = {
-                    'Authorization': response.headers['Authorization']}
+                self.headers = {'Authorization': response.headers['Authorization']}
             else:
                 self.log.error("Authentication request failed in %s.\nResponse code : %s",
                                RestTestLib.authenticate_and_login.__name__, response.status_code)
@@ -205,8 +196,7 @@ class RestTestLib:
 
         return create_authenticate_header
 
-    # pylint: disable=no-self-argument, not-callable
-    # Codacy has trouble understanding decorator structure below
+    @staticmethod
     def rest_logout(func):
         """
         :type: Decorator
@@ -296,7 +286,7 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def search_list_of_dict(self, search_key:str, search_val:str, search_in: list):
+    def search_list_of_dict(self, search_key: str, search_val: str, search_in: list):
         """
         Search for {<search_key>:<search_val>} in [{<search_key>:<search_val>,..}, {}, {}...]
         """
