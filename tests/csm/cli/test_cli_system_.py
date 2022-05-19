@@ -21,10 +21,10 @@
 import logging
 import time
 import pytest
+from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
-from config import CMN_CFG
 from commons.helpers import bmc_helper
 from commons.helpers.node_helper import Node
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
@@ -69,6 +69,7 @@ class TestCliSystem:
             hostname=CMN_CFG["nodes"][1]["host"],
             username=CMN_CFG["nodes"][1]["username"],
             password=CMN_CFG["nodes"][1]["password"])
+        cls.csm_cli_login = None
 
     def setup_method(self):
         """
@@ -117,7 +118,7 @@ class TestCliSystem:
             assert_utils.assert_equals(
                 True, self.csm_cli_login[0], self.csm_cli_login[1])
             resp = cli_sys_ser.start_node(self.node_stop)
-            self.log.debug(f"Node services started: {resp}")
+            self.log.debug("Node services started: %s", resp)
             assert_utils.assert_equals(True, resp[0], resp[1])
             cli_sys_ser.logout_cortx_cli()
             self.log.info("Logged out from CSMCLI console successfully")
@@ -212,7 +213,8 @@ class TestCliSystem:
     @CTFailOn(error_handler)
     def test_7021_stop_node(self):
         """
-        Test that user should able to Stop node resource using the system stop [resource_name] command.
+        Test that user should able to Stop node resource using the system stop [resource_name]
+        command.
         """
         self.log.info("Verifying system status using csmcli")
         resp = self.system_obj_node1.check_resource_status()
@@ -247,7 +249,8 @@ class TestCliSystem:
     @CTFailOn(error_handler)
     def test_7025_start_node(self):
         """
-        Test that user is able to Start node resource using the system start [resource_name] command.
+        Test that user is able to Start node resource using the system start [resource_name]
+        command.
         """
         self.log.info("Verifying system status using csmcli")
         resp = self.system_obj_node1.check_resource_status()
