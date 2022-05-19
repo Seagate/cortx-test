@@ -34,7 +34,6 @@ from config import HA_CFG
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from commons import constants as common_const
-from commons import commands as common_cmd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +129,7 @@ class TestFailureHandlingPodFailure:
     @pytest.mark.tags("TEST-30218")
     def test_delete_pod(self):
         """
-        This TC tests Publish the pod failure event to Hare - Delete pod(kubectl delete))
+        This TC tests Publish the pod failure event to Hare - Delete pod(kubectl delete)
         """
         LOGGER.info("STARTED: Publish the pod failure event in message bus to Hare - Delete pod."
                     "(kubectl delete)")
@@ -159,7 +158,7 @@ class TestFailureHandlingPodFailure:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True, status='failed')
-        resp = self.get_node_status_log(resp_dict)
+        self.get_node_status_log(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 4: Check for publish action event")
@@ -206,7 +205,7 @@ class TestFailureHandlingPodFailure:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.get_node_status_log(resp_dict)
+        self.get_node_status_log(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 4: Check for publish action event")
@@ -239,7 +238,7 @@ class TestFailureHandlingPodFailure:
         resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-        " (unsafe)")
+                                           " (unsafe)")
         LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment", pod_name)
         self.deployment_backup = resp[1]
         self.deployment_name = resp[2]
@@ -258,7 +257,7 @@ class TestFailureHandlingPodFailure:
         node_obj = self.ha_comp_obj.get_ha_node_object(self.node_master_list[0])
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True)
-        resp = self.get_node_status_log(resp_dict)
+        self.get_node_status_log(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 4: Check for publish action event")
@@ -307,7 +306,7 @@ class TestFailureHandlingPodFailure:
         resp_dict = self.ha_comp_obj.get_ha_log_prop(node_obj, common_const.HA_SHUTDOWN_LOGS[2],
                                                      kvalue=1, health_monitor=True,
                                                      kubectl_delete=True, status='failed')
-        resp = self.get_node_status_log(resp_dict)
+        self.get_node_status_log(resp_dict)
         LOGGER.info("Step 3: Successfully checked pod failed alert in health monitor log")
 
         LOGGER.info("Step 4: Check for publish action event")
