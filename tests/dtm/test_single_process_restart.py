@@ -40,18 +40,21 @@ from commons.constants import POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
-from config import DTM_CFG
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import support_bundle_utils, assert_utils, system_utils
-from config import CMN_CFG, HA_CFG
+from commons.utils import assert_utils
+from commons.utils import support_bundle_utils
+from commons.utils import system_utils
+from config import CMN_CFG
+from config import DTM_CFG
+from config import HA_CFG
 from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from scripts.s3_bench import s3bench
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 
 # pylint: disable=too-many-instance-attributes
