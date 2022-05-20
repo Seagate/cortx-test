@@ -48,8 +48,8 @@ class TestCliS3BKT:
         cls.csm_user_obj = CortxCliCsmUser(session_obj=cls.s3bkt_obj.session_obj)
         cls.bucket_prefix = "clis3bkt"
         cls.s3acc_prefix = "clis3bkt_acc"
-        cls.s3acc_name = "{}_{}".format(cls.s3acc_prefix, int(time.time()))
-        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
+        cls.s3acc_name = f"{cls.s3acc_prefix}_{int(time.time())}"
+        cls.s3acc_email = f"{cls.s3acc_name}@seagate.com"
         cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         cls.bucket_name = None
         login = cls.s3acc_obj.login_cortx_cli()
@@ -69,7 +69,7 @@ class TestCliS3BKT:
             - Initializes common variables
         """
         self.logger.info("STARTED : Setup operations at test function level")
-        self.bucket_name = "{}-{}".format(self.bucket_prefix, int(time.time()))
+        self.bucket_name = f"{self.bucket_prefix}-{int(time.time())}"
         login = self.s3bkt_obj.login_cortx_cli(
             username=self.s3acc_name,
             password=self.s3acc_password)
@@ -163,8 +163,8 @@ class TestCliS3BKT:
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.logger.info("Failed to create bucket using admin user %s", resp[1])
 
-        csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
-        csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
+        csm_user_name = f"auto_csm_user{str(int(time.time()))}"
+        csm_user_email = f"{csm_user_name}@seagate.com"
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.logger.info("Creating csm user with name %s", csm_user_name)
         resp = self.csm_user_obj.create_csm_user_cli(
@@ -341,8 +341,8 @@ class TestCliS3BKT:
         """
         Test that S3 account user can only delete buckets from his account using csm cli
         """
-        s3acc_name = "{}_{}".format(self.s3acc_prefix, int(time.time()))
-        s3acc_email = "{}@seagate.com".format(s3acc_name)
+        s3acc_name = f"{self.s3acc_prefix}_{int(time.time())}"
+        s3acc_email = f"{s3acc_name}@seagate.com"
         resp = self.s3bkt_obj.create_bucket_cortx_cli(self.bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created bucket %s", self.bucket_name)

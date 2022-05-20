@@ -19,23 +19,28 @@
 
 """Test suite for BMC IP related tests"""
 
-import os
-import time
-import random
+import ast
 import logging
+import os
+import random
+import time
+
 import pytest
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from commons.helpers.bmc_helper import Bmc
-from commons.helpers.controller_helper import ControllerLib
+
+from commons import constants as cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons import constants as cons
+from commons.helpers.bmc_helper import Bmc
+from commons.helpers.controller_helper import ControllerLib
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from commons.alerts_simulator.generate_alert_lib import \
-    GenerateAlertLib, AlertType
 from commons.utils import system_utils
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.s3 import S3H_OBJ
@@ -55,7 +60,8 @@ class TestBMCAlerts:
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
 
         LOGGER.info("Randomly picking node to create fault")
-        cls.test_node = random.randint(1, cls.node_cnt)
+        cls.system_random = random.SystemRandom()
+        cls.test_node = cls.system_random.randint(1, cls.node_cnt)
 
         LOGGER.info("Fault testing will be done on node: %s", cls.test_node)
         cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
@@ -183,6 +189,7 @@ class TestBMCAlerts:
 
         LOGGER.info("Successfully performed Setup operations")
 
+    # pylint: disable=too-many-statements
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
@@ -197,8 +204,7 @@ class TestBMCAlerts:
                 input_parameters={'device': self.mgmt_device})
 
             LOGGER.info("Response: %s", resp)
-            assert_utils.assert_true(resp[0], "{} up".format(
-                network_fault_params["error_msg"]))
+            assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
 
         if self.bmc_ip_change_fault:
             LOGGER.info("Resolving fault...")
@@ -280,6 +286,7 @@ class TestBMCAlerts:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -332,7 +339,7 @@ class TestBMCAlerts:
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
         assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -369,7 +376,7 @@ class TestBMCAlerts:
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
         assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -404,6 +411,7 @@ class TestBMCAlerts:
 
         LOGGER.info("ENDED: Test alerts when BMC IP is changed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-23729")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -439,14 +447,13 @@ class TestBMCAlerts:
             host_details=host_details,
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_utils.assert_true(resp[0], "{} down".format(
-            network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} down")
         self.bmc_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created BMC IP port fault on %s",
                     self.hostname)
 
-        wait_time = random.randint(common_params["min_wait_time"],
-                                   common_params["max_wait_time"])
+        wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                               common_params["max_wait_time"])
 
         LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
@@ -485,11 +492,9 @@ class TestBMCAlerts:
             host_details=host_details,
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_utils.assert_true(resp[0], "{} up".format(
-            network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
         self.mgmt_fault_flag = False
-        LOGGER.info("Step 2: Successfully resolved BMC IP port fault on %s",
-                    self.hostname)
+        LOGGER.info("Step 2: Successfully resolved BMC IP port fault on %s", self.hostname)
 
         wait_time = common_params["min_wait_time"]
 

@@ -29,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CortxNodeCLIResourceOps(CortxNodeCli):
-
+    """Resource operations using CORTX CLI"""
     def __init__(
             self,
             host: str = None,

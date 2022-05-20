@@ -46,6 +46,7 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 class TestMultipartUploadDelete:
     """Multipart Upload Delete Test Suite."""
 
+    # pylint: disable=too-many-instance-attributes
     def setup_method(self):
         """
         Function will be invoked prior to each test case.

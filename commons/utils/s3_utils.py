@@ -18,23 +18,24 @@
 
 """S3 utility Library."""
 import base64
+import datetime
+import hashlib
+import hmac
+import json
+import logging
 import os
 import time
 import urllib
-import hmac
-import datetime
-import hashlib
-import logging
-import json
-import xmltodict
 from hashlib import md5
+from hashlib import sha256
 from random import shuffle
 from typing import Any
-from config import S3_CFG, CMN_CFG
 
-from commons.utils import assert_utils
+import xmltodict
+
 from commons import constants as const
-
+from commons.utils import assert_utils
+from config import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ def get_timestamp(epoch_t):
 
 
 def get_canonicalized_xamz_headers(headers):
-    r"""
+    """
     Get the canonicalized xmaz headers.
 
     if x-amz-* has multiple values then value for that header should be passed as
@@ -104,7 +105,7 @@ def create_canonical_request(method, canonical_uri, body, epoch_t, host):
 
 
 def sign(key, msg):
-    """get sign key."""
+    """Get sign key."""
     return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
 
@@ -132,8 +133,8 @@ def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None,
     return string_to_sign
 
 
-def sign_request_v4(method=None, canonical_uri='/', body='',
-                    epoch_t=None, host='', **kwargs) -> str:
+def sign_request_v4(method=None, canonical_uri='/', body='', epoch_t=None, host='',
+                    **kwargs) -> str:
     """
     Calculate aws authentication headers.
 
@@ -167,7 +168,7 @@ def get_headers(request=None, endpoint=None, payload=None, **kwargs) -> dict:
     if request is None:
         LOGGER.info("method can not be null")
         raise Exception("Method is None.")
-    headers = dict()
+    headers = {}
     url_parse_result = urllib.parse.urlparse(endpoint)
     epoch_t = datetime.datetime.utcnow()
     body = urllib.parse.urlencode(payload)
@@ -191,13 +192,14 @@ def convert_xml_to_dict(xml_response) -> dict:
         json_format = json.loads(temp_dict)
 
         return json_format
-    except Exception as error:
+    except ValueError as error:
         LOGGER.error(error)
         return xml_response
 
 
+# pylint: disable=eval-used, broad-except
 def poll(target, *args, condition=None, **kwargs) -> Any:
-    """Method to wait for a function/target to return a certain expected condition."""
+    """Wait for a function/target to return a certain expected condition."""
     timeout = kwargs.pop("timeout", S3_CFG["sync_delay"])
     step = kwargs.pop("step", S3_CFG["sync_step"])
     expected = kwargs.pop("expected", dict)
@@ -206,7 +208,8 @@ def poll(target, *args, condition=None, **kwargs) -> Any:
         try:
             response = target(*args, **kwargs)
             if condition:
-                if eval(condition.format(response)):
+                # Evaluating response with string which is not supported by ast.literal_eval.
+                if eval(condition.format(response)):  # nosec
                     return response
             elif isinstance(response, expected) or response:
                 return response
@@ -219,17 +222,17 @@ def poll(target, *args, condition=None, **kwargs) -> Any:
 
 
 def calc_checksum(file_path, part_size=0):
-    """Calculating an checksum using encryption algorithm."""
+    """Calculate a checksum using encryption algorithm."""
     try:
-        hash_digests = list()
+        hash_digests = []
         with open(file_path, 'rb') as f_obj:
             if part_size and os.stat(file_path).st_size > part_size:
                 for chunk in iter(lambda: f_obj.read(part_size), b''):
-                    hash_digests.append(md5(chunk).digest())
+                    hash_digests.append(sha256(chunk).digest())
             else:
-                hash_digests.append(md5(f_obj.read()).digest())
+                hash_digests.append(sha256(f_obj.read()).digest())
 
-        return md5(b''.join(hash_digests)).hexdigest() + '-' + str(len(hash_digests))
+        return sha256(b''.join(hash_digests)).hexdigest() + '-' + str(len(hash_digests))
     except OSError as error:
         LOGGER.error(str(error))
         raise error from OSError
@@ -237,31 +240,33 @@ def calc_checksum(file_path, part_size=0):
 
 def calc_contentmd5(data) -> str:
     """
-    Calculate Content-MD5 S3 request header value
+    Calculate Content-MD5 S3 request header value.
 
     :param data: bytes literal containing the data being sent in an S3 request
     :return: String literal representing the base64 encoded MD5 checksum of the data
     """
-    return base64.b64encode(md5(data).digest()).decode('utf-8')
+    return base64.b64encode(md5(data).digest()).decode('utf-8')  # nosec - s3 ETag based on md5.
 
 
 def get_multipart_etag(parts):
     """
-    Calculate expected ETag for a multipart upload
+    Calculate expected ETag for a multipart upload.
 
     :param parts: List of dict with the format {part_number: (data_bytes, content_md5), ...}
     """
     md5_digests = []
     for part_number in sorted(parts.keys()):
-        md5_digests.append(md5(parts[part_number][0]).digest())
-    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
-    return '"%s"' % multipart_etag
+        # comparing ETag with s3 response so calculating it based on md5.
+        md5_digests.append(md5(parts[part_number][0]).digest())  # nosec
+    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))  # nosec
+    return f'"{multipart_etag}"'
 
 
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
-    """
-    Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
+    r"""
+    Get aligned parts.
 
+    Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
     https://www.gbmb.org/mb-to-bytes
     Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
     1 MB	        1,000,000 Bytes	    1,048,576 Bytes
@@ -274,22 +279,21 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
     """
     try:
         obj_size = os.stat(file_path).st_size
-        parts = dict()
+        parts = {}
         part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
-        with open(file_path, "rb") as file_pointer:
+        with open(file_path, "rb") as fptr:
             i = 1
             while True:
-                data = file_pointer.read(chunk_size * part_size)
+                data = fptr.read(chunk_size * part_size)
                 if not data:
                     break
-                LOGGER.info("data_len %s", str(len(data)))
+                LOGGER.info("data length %s", str(len(data)))
                 parts[i] = [data, calc_contentmd5(data)]
                 i += 1
         if random:
             keys = list(parts.keys())
             shuffle(keys)
             parts = {k: parts[k] for k in keys}
-
         return parts
     except OSError as error:
         LOGGER.error(str(error))
@@ -315,25 +319,24 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
     """
     try:
         obj_size = os.stat(file_path).st_size
-        parts = dict()
+        parts = {}
         part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
         unaligned = [104857, 209715, 314572, 419430, 524288,
                      629145, 734003, 838860, 943718, 1048576]
         with open(file_path, "rb") as file_pointer:
-            i = 1
+            j = 1
             while True:
                 shuffle(unaligned)
                 data = file_pointer.read((chunk_size + unaligned[0]) * part_size)
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, calc_contentmd5(data)]
-                i += 1
+                parts[j] = [data, calc_contentmd5(data)]
+                j += 1
         if random:
             keys = list(parts.keys())
             shuffle(keys)
-            parts = {k: parts[k] for k in keys}
-
+            parts = {e: parts[e] for e in keys}
         return parts
     except OSError as error:
         LOGGER.error(str(error))
@@ -353,7 +356,7 @@ def get_precalculated_parts(file_path, part_list, chunk_size=1048576) -> dict:
     for part in part_list:
         total_part_list.extend([part['part_size']] * part['count'])
     shuffle(total_part_list)
-    parts = dict()
+    parts = {}
     try:
         with open(file_path, "rb") as file_pointer:
             for i, part_size in enumerate(total_part_list, 1):
@@ -374,14 +377,15 @@ def create_multipart_json(json_path, parts_list) -> tuple:
     parts_list = sorted(parts_list, key=lambda d: d['PartNumber'])
     parts = {"Parts": parts_list}
     LOGGER.info("Parts: %s", parts)
-    with open(json_path, 'w') as file_obj:
+    with open(json_path, 'w', encoding="utf-8") as file_obj:
         json.dump(parts, file_obj)
 
     return os.path.exists(json_path), json_path
 
+
 def assert_s3_err_msg(rgw_error, cortx_error, cmn_cfg, error):
-    """Checks the s3 engine type and asserts accordingly """
+    """Check the s3 engine type and asserts accordingly."""
     if const.S3_ENGINE_RGW == cmn_cfg:
-        assert_utils.assert_equal(rgw_error, error.message, error.message)
+        assert_utils.assert_in(rgw_error, error.message, error.message)
     else:
-        assert_utils.assert_equal(cortx_error, error.message, error.message)
+        assert_utils.assert_in(cortx_error, error.message, error.message)

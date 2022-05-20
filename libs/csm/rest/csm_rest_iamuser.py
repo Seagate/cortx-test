@@ -16,7 +16,6 @@
 #
 """Test library for IAM user related operations."""
 import json
-import random
 import time
 from http import HTTPStatus
 from random import SystemRandom
@@ -33,6 +32,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
+# pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 
@@ -188,6 +188,9 @@ class RestIamUser(RestTestLib):
                 "get", endpoint=endpoint, headers=self.headers)
         return response
 
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-return-statements
     def verify_unauthorized_access_to_csm_user_api(self):
         """
         Verifying that IAM login to CSM fails and unauthorised access to CSM
@@ -470,7 +473,7 @@ class RestIamUser(RestTestLib):
             del payload["uid"]
             del payload["display_name"]
             optional_payload = payload.copy()
-            ran_sel = random.sample(range(0, len(optional_payload)),
+            ran_sel = self.cryptogen.sample(list(range(0, len(optional_payload))),
                                     self.cryptogen.randrange(0, len(optional_payload)))
             for i, (k, _) in enumerate(payload.items()):
                 if i not in ran_sel:
@@ -725,7 +728,7 @@ class RestIamUser(RestTestLib):
         del payload["tenant"]
         del payload["user_caps"]
         optional_payload = payload.copy()
-        ran_sel = random.sample(range(0, len(optional_payload)),
+        ran_sel = self.cryptogen.sample(list(range(0, len(optional_payload))),
                                     self.cryptogen.randrange(0, len(optional_payload)))
         for i, (k, _) in enumerate(payload.items()):
             if i not in ran_sel:
@@ -759,14 +762,13 @@ class RestIamUser(RestTestLib):
                 diff_items.append(i)
         return diff_items
 
-    @staticmethod
-    def get_random_caps():
+    def get_random_caps(self):
         """
         Get random capabilities
         """
         cap_keys = ['usage', 'users', 'buckets', 'info', 'metadata', 'zone']
         cap_values = ['read', 'write', 'read,write', '*']
-        random_index = random.sample(range(1, len(cap_keys)),
+        random_index = self.cryptogen.sample(list(range(1, len(cap_keys))),
                                      SystemRandom().randrange(1, len(cap_keys)))
         random_cap = ""
         for index in random_index:

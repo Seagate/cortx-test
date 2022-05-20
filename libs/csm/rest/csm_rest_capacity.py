@@ -20,7 +20,8 @@
 """Test library for capacity related operations.
    Author: Divya Kachhwaha
 """
-import random
+import ast
+from random import SystemRandom
 import json
 import pandas as pd
 from config import CMN_CFG
@@ -42,6 +43,7 @@ class SystemCapacity(RestTestLib):
         """
         super(SystemCapacity, self).__init__()
         self.row_temp = "N{} failure"
+        self.cryptogen = SystemRandom()
 
     @RestTestLib.authenticate_and_login
     def get_capacity_usage(self):
@@ -189,7 +191,7 @@ class SystemCapacity(RestTestLib):
 
         for chk in checklist:
             # pylint: disable=eval-used
-            expected = eval(chk)
+            expected = ast.literal_eval(chk)
             actual = resp[chk]
             self.log.info("Actual %s byte count : %s", chk, actual)
             expected_err = expected/(1-err_margin/100)
@@ -217,7 +219,7 @@ class SystemCapacity(RestTestLib):
                                password=CMN_CFG["nodes"][node]["password"])
         data_pods = node_obj.get_all_pods_and_ips("data")
         self.log.debug("Data pods on the setup: %s", data_pods)
-        data_pod = random.choice(list(data_pods.keys()))
+        data_pod = self.cryptogen.choice(list(data_pods.keys()))
         self.log.info("Reading the stats from data pod : %s , Container: %s", data_pod,
                       constants.HAX_CONTAINER_NAME)
         cmd_suffix = f"-c {constants.HAX_CONTAINER_NAME} -- {commands.GET_BYTECOUNT}"
@@ -310,3 +312,21 @@ class SystemCapacity(RestTestLib):
         result = (data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and
                   critical_eq and damaged_eq and repaired_eq and total_chk)
         return result
+
+    def get_dataframe_failure_recovery(self, num_nodes: int):
+        """
+        Creates dataframe for the storing degraded capacity for csm, hctl, consul
+        """
+
+        col = ["consul_healthy", "consul_degraded", "consul_critical", "consul_damaged",
+           "consul_repaired", "hctl_healthy", "hctl_degraded", "hctl_critical", "hctl_damaged",
+           "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
+           "csm_repaired"]
+        row = ["No failure"]
+        self.row_temp1 = "N{} fail beforeIO"
+        self.row_temp2 = "N{} fail afterIO"
+        for node in range(num_nodes):
+            row.append(self.row_temp1.format(node))
+            row.append(self.row_temp2.format(node))
+        cap_df = pd.DataFrame(columns=col, index=row)
+        return cap_df
