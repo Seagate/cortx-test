@@ -1795,25 +1795,4 @@ class ProvDeployK8sCortxLib:
         string_alpha = generated_string[:string_len] + "-" + generated_string[string_len:]
         LOGGER.info("The string is %s and length is %s", string_alpha, len(string_alpha))
         return string_alpha
-
-    @staticmethod
-    def aws_configure(s3_engine,endpoint,master_node_list):
-        LOGGER.info("Configure AWS on Client")
-        resp = master_node_list.execute_cmd(common_cmd.CMD_GET_ACCESS_KEY, read_lines=True)
-        access_key = "".join(resp).replace("\\n", "\n")
-        LOGGER.info(access_key)
-        resp = master_node_list.execute_cmd(common_cmd.CMD_GET_SECRET_KEY, read_lines=True)
-        secret_key = "".join(resp).replace("\\n", "\n")
-        LOGGER.info(secret_key)
-        resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
-        LOGGER.debug("resp : %s", resp)
-        if s3_engine == common_const.S3_ENGINE_RGW:
-            LOGGER.info("Configure AWS keys on Client %s", s3_engine)
-            resp = system_utils.execute_cmd(
-                    common_cmd.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
-            LOGGER.debug("resp : %s", resp)
-        else:
-            LOGGER.info("Configure AWS keys on Client %s")
-            resp = system_utils.execute_cmd(
-                    common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-            LOGGER.debug("resp : %s", resp)
+        
