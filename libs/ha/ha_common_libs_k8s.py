@@ -712,7 +712,7 @@ class HAK8s:
                         event_clear_flg = False
                         continue
                     failed_bkts.append(bkt_name)
-                LOGGER.exception("Failed to copy object to bucket %s", bkt_name)
+                LOGGER.info("Failed to copy object to bucket %s", bkt_name)
 
         if failed_bkts and not background:
             return False, failed_bkts
@@ -784,7 +784,7 @@ class HAK8s:
                     exp_failed_parts.append(i)
                 else:
                     failed_parts.append(i)
-                LOGGER.exception("Failed to upload part %s", i)
+                LOGGER.info("Failed to upload part %s", i)
 
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
