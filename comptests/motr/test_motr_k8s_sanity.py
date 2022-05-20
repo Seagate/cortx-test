@@ -24,19 +24,13 @@ Test class that contains MOTR K8s tests.
 
 import os
 import csv
-<<<<<<< HEAD
-import time
-import shutil
-import uuid
+import json
 import logging
 import multiprocessing
-from random import SystemRandom
-=======
-import json
-import time
-import logging
 import random
->>>>>>> adding sns repair test
+import shutil
+import time
+import uuid
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
