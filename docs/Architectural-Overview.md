@@ -1,4 +1,4 @@
-## Why moving from CTP and Avocado based test framework
+# Why moving from CTP and Avocado based test framework
 
 CTP OS and Avocado based test framework was used to develop automated test cases in Cortx R1/MVP. It had a binding to
 CentOS image which has Avocado and helper RPMs pre-installed for automation. Tests were written and run assuming
