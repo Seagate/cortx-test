@@ -169,7 +169,6 @@ class DTMRecoveryTestLib:
         else:
             queue.put([False, "Workload failed."])
 
-<<<<<<< HEAD
     # pylint: disable-msg=too-many-locals
     def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
                         check_proc_state: bool = False, proc_state: str = const.DTM_RECOVERY_STATE):
@@ -182,19 +181,6 @@ class DTMRecoveryTestLib:
         :param process: Process to be restarted.
         :param check_proc_state: Flag to check process state
         :param proc_state: Expected state of the process
-=======
-    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
-                        process_ids: list = None, recover_time: int = 30):
-        """
-        Restart specified Process of specific pod and container
-        :param master_node: Master node object
-        :param health_obj: Master node health object
-        :param pod_prefix: Pod Prefix
-        :param container_prefix: Container Prefix
-        :param process: Process to be restarted.
-        :param process_ids: List of Process IDs
-        :param recover_time: Wait time for process to recover
->>>>>>> 5fb4403 (initial draft)
         """
         pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
         pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
@@ -213,7 +199,6 @@ class DTMRecoveryTestLib:
                                                      container_name=container,
                                                      process_name=process)
         self.log.debug("Resp : %s", resp)
-<<<<<<< HEAD
 
         self.log.info("Polling hctl status to check if all services are online")
         resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
@@ -234,41 +219,12 @@ class DTMRecoveryTestLib:
         return True
 
     def get_process_state(self, master_node, pod_name, container_name, process_ids):
-=======
-        time.sleep(recover_time)
-
-        self.log.info("Check process states")
-        resp, process_state = self.get_process_state(master_node, pod_name=pod_selected,
-                                                     container_name=container,
-                                                     process_name=process.upper(),
-                                                     process_ids=process_ids)
-        if not resp:
-            return resp, f"Failed to get process states for process {process} with IDs " \
-                         f"{process_ids}. proccess_state dict :{process_state}"
-        for p_id, state in process_state.items():
-            if DTM_CFG['exp_state'] not in state:
-                return False, f"State of process {process} with ID {p_id} is not as expected. " \
-                              f"Expected state: {DTM_CFG['exp_state']} Actual state: {state}"
-            else:
-                self.log.info("State of process %s with ID %s is %s", process, p_id, state)
-        self.log.info("Process %s restarted successfully", process)
-
-        self.log.info("Check hctl status if all services are online")
-        resp = health_obj.is_motr_online()
-        return resp
-
-    def get_process_state(self, master_node, pod_name, container_name, process_name,
-                          process_ids: list = None):
->>>>>>> 5fb4403 (initial draft)
         """
         Function to get given process state
         :param master_node: Object of master node
         :param pod_name: Name of the pod on which container is residing
         :param container_name: Name of the container inside which process is running
-<<<<<<< HEAD
-=======
         :param process_name: Name of the process
->>>>>>> 5fb4403 (initial draft)
         :param process_ids: List of Process IDs
         :return: bool, dict
         e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
@@ -278,30 +234,16 @@ class DTMRecoveryTestLib:
                       pod_name)
         resp = master_node.get_all_container_processes(pod_name=pod_name,
                                                        container_name=container_name)
-<<<<<<< HEAD
         self.log.info("Extract list of processes having IDs %s", process_ids)
         process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
         if len(process_ids) != len(process_list):
             return False, f"All process IDs {process_ids} are not found. " \
                           f"All processes running in container are: {resp}"
-=======
-        if process_ids:
-            self.log.info("Extract list of %s processes having IDs %s", process_name, process_ids)
-            process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele
-                            and process_name in ele]
-            if len(process_ids) != len(process_list):
-                return False, f"All process IDs {process_ids} are not found. " \
-                              f"All processes running in container are: {resp}"
-        else:
-            self.log.info("Extract list of %s processes", process_name)
-            process_list = [ele for ele in resp if process_name in ele]
->>>>>>> 5fb4403 (initial draft)
         compile_exp = re.compile('"state": "(.*?)"')
         for i_i in process_list:
             process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
 
         return True, process_state
-<<<<<<< HEAD
 
     def poll_process_state(self, master_node, pod_name, container_name, process_ids,
                            status: str = const.DTM_RECOVERY_STATE, timeout: int = 300):
@@ -431,5 +373,3 @@ class DTMRecoveryTestLib:
             que.put([False, f"Copy Object operation failed for {failed_obj_name}"])
         else:
             que.put([True, "Copy Object operation successful"])
-=======
->>>>>>> 5fb4403 (initial draft)
