@@ -234,7 +234,7 @@ class TestHANodeHealthGUI:
 
             LOGGER.info("Power on %s", node_name)
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, "Host has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s has powered on", node_name)
             self.restored = True
             # To get all the services up and running
@@ -337,7 +337,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node])
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s is powered on.", self.host_list[node])
             self.restored = True
             # To get all the services up and running
@@ -563,7 +563,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
             resp = self.ha_obj.host_power_on(self.host_list[node_index], self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.srvnode_list[node_index]}.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 
@@ -670,7 +670,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
             resp = self.ha_obj.host_power_on(self.host_list[node_index], self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.srvnode_list[node_index]}.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 

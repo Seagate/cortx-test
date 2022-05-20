@@ -507,7 +507,7 @@ class TestHANodeStartStop:
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
         assert_utils.assert_true(
-            resp, f"{self.host_list[node]} has not powered on yet.")
+            resp, f"Failed to power on {self.host_list[node]}.")
         # To get all the services up and running
         time.sleep(40)
         LOGGER.info(
@@ -1104,7 +1104,7 @@ class TestHANodeStartStop:
             host=self.host_list[node],
             bmc_obj=self.bmc_list[node])
         assert_utils.assert_true(
-            resp, f"{self.host_list[node]} has not powered on yet.")
+            resp, f"Failed to power on {self.host_list[node]}.")
         LOGGER.info(
             "Step 7: Node server from BMC is started.")
         LOGGER.info(

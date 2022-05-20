@@ -202,7 +202,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
 
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, "Host has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
@@ -282,7 +282,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.check_service_other_nodes(node, self.num_nodes, self.node_list)
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
@@ -457,7 +457,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             resp = self.ha_obj.host_power_on(host=self.host_list[node_index],
                                              bmc_obj=self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node_index]}.")
             self.restored = True
 
             # To get all the services up and running
@@ -545,7 +545,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             resp = self.ha_obj.host_power_on(host=self.host_list[node_index],
                                              bmc_obj=self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node_index]}.")
             self.restored = True
 
             # To get all the services up and running
