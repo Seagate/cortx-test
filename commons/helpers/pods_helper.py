@@ -510,7 +510,10 @@ class LogicalNode(Host):
 
     def get_all_container_processes(self, pod_name, container_name):
         """
-
+        Function to get all process running on given container
+        :param pod_name: Name of the pod
+        :param container_name: Name of the container
+        :return: list (list of the processes running on container)
         """
         cmd = commands.GET_CONTAINER_PROCESSES_CMD
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,

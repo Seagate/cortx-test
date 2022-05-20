@@ -2,4 +2,4 @@ clients: 1
 samples: 500
 size: '128Mb'
 m0d_pids: ['0x4', '0x7']
-exp_m0d_state: "RECOVERED"
+exp_state: "RECOVERED"

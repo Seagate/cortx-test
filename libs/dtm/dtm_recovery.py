@@ -169,11 +169,11 @@ class DTMRecoveryTestLib:
                                                      process_ids=process_ids)
         if not resp:
             return resp, f"Failed to get process states for process {process} with IDs " \
-                         f"{DTM_CFG['m0d_pids']}. proccess_state dict :{process_state}"
+                         f"{process_ids}. proccess_state dict :{process_state}"
         for p_id, state in process_state.items():
-            if DTM_CFG['exp_m0d_state'] not in state:
+            if DTM_CFG['exp_state'] not in state:
                 return False, f"State of process {process} with ID {p_id} is not as expected. " \
-                              f"Expected state: {DTM_CFG['exp_m0d_state']} Actual state: {state}"
+                              f"Expected state: {DTM_CFG['exp_state']} Actual state: {state}"
             else:
                 self.log.info("State of process %s with ID %s is %s", process, p_id, state)
         self.log.info("Process %s restarted successfully", process)
