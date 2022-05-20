@@ -32,26 +32,30 @@ from config import DTM_CFG
 
 
 class DTMRecoveryTestLib:
+    """
+        This class contains common utility methods for DTM related operations.
+    """
 
-    def __init__(cls, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Init method
         :param access_key: Access key for S3bench operations.
         :param secret_key: Secret key for S3bench operations.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.access_key = access_key
-        cls.secret_key = secret_key
+        self.log = logging.getLogger(__name__)
+        self.access_key = access_key
+        self.secret_key = secret_key
 
+    # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
                          log_file_prefix, queue, loop=1):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
-        :param object_name: Object name
-        :param clients: No of Client session
-        :param samples: No of samples
-        :param size: Object size
+        :param object_prefix: Object name prefix
+        :param no_of_clients: No of Client session
+        :param no_of_samples: No of samples
+        :param obj_size: Object size
         :param log_file_prefix: Log file prefix
         :param queue: Multiprocessing Queue to be used for returning values (Boolean,dict)
         :param loop: Loop count for writes
@@ -119,7 +123,7 @@ class DTMRecoveryTestLib:
                                        log_file_prefix=f"read_workload_{workload['obj_size']}mb",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
-                self.log.info(f"Workload: %s objects of %s with %s parallel clients ",
+                self.log.info("Workload: %s objects of %s with %s parallel clients ",
                               workload['num_sample'], workload['obj_size'],
                               workload['num_clients'])
                 self.log.info(f"Log Path {resp[1]}")
@@ -136,6 +140,7 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
+    # pylint: disable-msg=too-many-locals
     def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
                         process_ids: list = None, recover_time: int = 30):
         """
@@ -174,8 +179,8 @@ class DTMRecoveryTestLib:
             if DTM_CFG['exp_state'] not in state:
                 return False, f"State of process {process} with ID {p_id} is not as expected. " \
                               f"Expected state: {DTM_CFG['exp_state']} Actual state: {state}"
-            else:
-                self.log.info("State of process %s with ID %s is %s", process, p_id, state)
+
+            self.log.info("State of process %s with ID %s is %s", process, p_id, state)
         self.log.info("Process %s restarted successfully", process)
 
         self.log.info("Check hctl status if all services are online")

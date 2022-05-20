@@ -44,6 +44,7 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
 
 
+# pylint: disable=R0902
 class TestSingleProcessRestart:
     """Test Class for Single Process Restart."""
 
