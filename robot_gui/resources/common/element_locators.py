@@ -193,7 +193,8 @@ CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
 CSM_USER_EDIT_XPATH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
 CSM_USER_DELETE_XAPTH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
-CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
+CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]' \
+                           '//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
@@ -238,9 +239,12 @@ PAGINATION_BAR_XPATH =  "//div[@class='v-data-footer']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 CSM_PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
 CSM_PAGINATION_BAR_XPATH = "//div[@class='container']"
-CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
-CSM_PAGINATION_PAGE_FIRST_LAST = "//*[@class='v-pagination__navigation v-pagination__navigation--disabled']"
-CSM_PAGINATION_PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"
+CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]' \
+                                    '//div[@class="cortx-dropdown-menu-item"]'
+CSM_PAGINATION_PAGE_FIRST_LAST = "//*[@class='v-pagination__navigation " \
+                                 "v-pagination__navigation--disabled']"
+CSM_PAGINATION_PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']" \
+                            "//following::button"
 
 #  IAM Users
 ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"
