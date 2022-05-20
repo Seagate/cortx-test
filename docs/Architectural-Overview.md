@@ -36,6 +36,7 @@ The Cortx-test automation project's code can logically divided into 3 loosely co
 Overview of folder structure in cortx-test repository.
 
 ## commons
+Cosists of helpers and utils.
 
 ### `helpers`
 
@@ -82,6 +83,7 @@ common fixtures used in test framework.
 
 Its a REST service which provides APIs to stores build wise test results and aggregate stats and query capabilities.
 
+Here is the diagrammatic representation:
 ```
 ├───ci_tools
 │       .pylintrc
@@ -218,7 +220,7 @@ with automatic test configuration management, parallel test execution, reporting
 
 The following diagram shows all components/modules present in framework.
 
-*  Master autobot: This module reads test execution data from test management tool. From this test execution data, it
+*  Master Corbot: This module reads test execution data from test management tool. From this test execution data, it
   identifies which tests need to be executed. It performs analytics on test data and divides test cases into different
   chunks. Those chunks are executed by individual execution autobot.
 
@@ -291,10 +293,10 @@ Test reporting data is saved by Restful Reporting Server to Mongo DB through Rep
 called at the end of pytest test run with pytest reporting hook. This data is retrieved from Reporting server for
 further analytics and presentation.
 
-## Single Auto bot's setup
+## Single corbot's setup
 
 This setup is useful when there is only one target. It is designed to be used by developers for their test
-validation/development. This setup uses a single autobot.
+validation/development. This setup uses a single corbot.
 
 ## Framework at system level
 
