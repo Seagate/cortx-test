@@ -310,8 +310,8 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Validate Cluster status")
         status_file = PROV_CFG['k8s_cortx_deploy']["status_log_file"]
-        cmd = Template(common_cmd.CLSTR_STATUS_CMD + " > $log").substitute(
-            dir=remote_code_path, log=status_file)
+        cmd = common_cmd.CLSTR_STATUS_CMD.format(remote_code_path) + \
+              Template(" > $log").substitute(log=status_file)
         resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                     timeout=PROV_CFG['k8s_cortx_deploy']['timeout']['status'])
         LOGGER.debug(resp)
@@ -424,7 +424,9 @@ class ProvDeployK8sCortxLib:
         shutil.copyfile(self.deploy_cfg["new_file_path"], self.deploy_cfg['solution_file'])
         return self.deploy_cfg["solution_file"]
 
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-return-statements
     def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
                         **kwargs):
@@ -1270,7 +1272,10 @@ class ProvDeployK8sCortxLib:
             response = [access_key, secret_key, ext_port_ip]
         return True, s3t_obj, response
 
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     def test_deployment(self, master_node_list,
                         worker_node_list, **kwargs):
         """
