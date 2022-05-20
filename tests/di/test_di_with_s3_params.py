@@ -319,7 +319,7 @@ class TestDIWithChangingS3Params:
         self.log.info(resp)
         res = self.s3obj.object_list(bucket_name_1)
         if obj_name not in res[1]:
-            return res, "object not listed in bucket {bucket_name_1}"
+            assert_utils.assert_true(False, "object not listed in bucket")
         self.log.info("Step 3: Copy object to different bucket = {bucket_name_2}")
         resp_cp = self.s3obj.copy_object(source_bucket=bucket_name_1, source_object=obj_name,
                                          dest_bucket=bucket_name_2, dest_object=obj_name)
@@ -328,7 +328,7 @@ class TestDIWithChangingS3Params:
         self.log.info("Step 3: Copy object to different bucket is successful.")
         res = self.s3obj.object_list(bucket_name_2)
         if obj_name not in res[1]:
-            return res, "object not listed in bucket"
+            assert_utils.assert_true(False, "object not listed in bucket")
         self.s3obj.delete_bucket(bucket_name_1, force=True)
         self.s3obj.delete_bucket(bucket_name_2, force=True)
         self.log.info("Step 4: Validate Etag of source and copied object.")

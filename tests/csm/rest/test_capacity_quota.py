@@ -39,6 +39,7 @@ from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
+# pylint: disable-msg=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
 class TestCapacityQuota():
     """System Capacity Testsuite"""
@@ -1082,13 +1083,13 @@ class TestCapacityQuota():
             self.buckets_created.append([bucket, akey, skey])
 
             obj_name_prefix = "created_obj"
-            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             random_size = self.csm_obj.random_gen.randrange(1, available_size)
             num_objects = math.floor(available_size/random_size)
             data_size = num_objects * random_size
             self.log.info("Step 3: Create %s objects of Random size totals to %s bytes",
                           num_objects, data_size)
             for obj in range(0, num_objects):
+                obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 akey, skey, object_size=random_size)
@@ -1109,9 +1110,12 @@ class TestCapacityQuota():
             assert_utils.assert_equals(user_id, uid, "id is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
             assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-            assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-            assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-            assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+            assert_utils.assert_equal(
+                total_size / (1024 * 1024), t_size, "Total Size mismatch found")
+            assert_utils.assert_equal(
+                total_size / (1024 * 1024), data_size, "Total Size mismatch found")
+            assert_utils.assert_greater_equal(
+                total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1136,6 +1140,7 @@ class TestCapacityQuota():
         total_objects = 0
         total_size = 0
         total_data_size = 0
+        total_num_objects = 0
 
         for bkt in range(0, random_bucket):
             self.log.info("Step 1 : Creating bucket %s", bkt)
@@ -1147,13 +1152,13 @@ class TestCapacityQuota():
             self.buckets_created.append([bucket, self.akey, self.skey])
 
             obj_name_prefix = "created_obj"
-            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             random_size = self.csm_obj.random_gen.randrange(1, available_size)
             num_objects = math.floor(available_size/random_size)
             bucket_data_size = num_objects * random_size
             self.log.info("Step 2: Create %s objects of Random size totals to %s bytes",
                           num_objects, bucket_data_size)
             for obj in range(0, num_objects):
+                obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                                 self.akey, self.skey, object_size=random_size)
@@ -1164,11 +1169,13 @@ class TestCapacityQuota():
                                     s3_misc.get_objects_size_bucket(bucket, self.akey, self.skey)
 
             assert_utils.assert_equals(bucket_objects, num_objects, "Number of objects not equal")
-            assert_utils.assert_equal(bucket_size, bucket_data_size, "Total Size mismatch found")
+            assert_utils.assert_equal(
+                bucket_size / (1024 * 1024), bucket_data_size, "Total Size mismatch found")
 
             total_objects = total_objects + bucket_objects
             total_size = total_size + bucket_size
             total_data_size = total_data_size + bucket_data_size
+            total_num_objects = total_num_objects + num_objects
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
@@ -1181,10 +1188,13 @@ class TestCapacityQuota():
 
         assert_utils.assert_equals(self.user_id, uid, "uid is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, total_data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equals(total_objects, total_num_objects, "Number of objects not equal")
+        assert_utils.assert_equal(
+            total_size / (1024 * 1024), t_size, "Total Size mismatch found")
+        assert_utils.assert_equal(
+            total_size / (1024 * 1024), total_data_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(
+            total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1234,13 +1244,13 @@ class TestCapacityQuota():
             self.buckets_created.append([self.bucket, akey, skey])
 
             obj_name_prefix = "created_obj"
-            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             random_size = self.csm_obj.random_gen.randrange(1, available_size)
             num_objects = math.floor(available_size/random_size)
             data_size = num_objects * random_size
             self.log.info("Step 3: Create %s objects of Random size totals to %s bytes",
                           num_objects, data_size)
             for obj in range(0, num_objects):
+                obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                                 akey, skey, object_size=random_size)
@@ -1261,8 +1271,11 @@ class TestCapacityQuota():
             assert_utils.assert_equals(user_id, uid, "uid is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
             assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-            assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-            assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-            assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+            assert_utils.assert_equal(
+                total_size / (1024 * 1024), t_size, "Total Size mismatch found")
+            assert_utils.assert_equal(
+                total_size / (1024 * 1024), data_size, "Total Size mismatch found")
+            assert_utils.assert_greater_equal(
+                total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)

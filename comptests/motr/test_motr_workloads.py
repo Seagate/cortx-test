@@ -18,6 +18,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+"""
+Test class that contains MOTR non K8s (R1) tests
+"""
+
 import logging
 from random import SystemRandom
 
@@ -33,6 +37,7 @@ from libs.motr import motr_test_lib
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable-msg=too-many-public-methods
 class TestExecuteWorkload:
     """Execute Workload Test suite"""
 
@@ -53,12 +58,20 @@ class TestExecuteWorkload:
         LOGGER.info("ENDED: Teardown Operation")
 
     def get_batches_runs(self, tc_num):
+        """
+        Function to create batches
+        tc_num: test number for which command batch create
+        """
         batch_list = self.workload_config["workloads"][tc_num]["batch"]
         runs = self.workload_config["workloads"][tc_num]["runs"]
         return batch_list, runs
 
     @CTFailOn(error_handler)
     def execute_test(self, tc_num):
+        """
+        Execute commands from batches
+        tc_num: test number for which command batch runs
+        """
         batches, runs = self.get_batches_runs(tc_num)
         LOGGER.info('batches: "%s", runs: "%s"', batches, runs)
         for run in range(runs):
@@ -254,9 +267,11 @@ class TestExecuteWorkload:
         """
         Test Data Integrity during Write (m0cp) & Read (m0cat) object operation.
         """
-        LOGGER.info("Start: Test Data Integrity during Write (m0cp) & Read (m0cat) object operation.")
+        LOGGER.info("Start: Test Data Integrity during "
+                    "Write (m0cp) & Read (m0cat) object operation.")
         self.execute_test('test_23197')
-        LOGGER.info("Stop: Test Data Integrity during Write (m0cp) & Read (m0cat) object operation.")
+        LOGGER.info("Stop: Test Data Integrity during "
+                    "Write (m0cp) & Read (m0cat) object operation.")
 
     @pytest.mark.tags("TEST-23198")
     @pytest.mark.motr_io_load
@@ -266,9 +281,11 @@ class TestExecuteWorkload:
         Verify m0kv command (for motr meta data) to
         generate file with several FID using option "genf"
         """
-        LOGGER.info("Start: Verify m0kv command to generate file with several FID using option genf")
+        LOGGER.info("Start: Verify m0kv command to "
+                    "generate file with several FID using option genf")
         self.execute_test('test_23198')
-        LOGGER.info("Stop: Verify m0kv command to generate file with several FID using option genf")
+        LOGGER.info("Stop: Verify m0kv command to "
+                    "generate file with several FID using option genf")
 
     @pytest.mark.tags("TEST-23199")
     @pytest.mark.motr_io_load
@@ -278,42 +295,53 @@ class TestExecuteWorkload:
         Verify motr meta data using the m0kv command to
         create index using single FID using option "index create"
         """
-        LOGGER.info("Start: Verify motr meta data using the m0kv command to create index using single FID using option index create")
+        LOGGER.info("Start: Verify motr meta data using the m0kv command to "
+                    "create index using single FID using option index create")
         self.execute_test('test_23199')
-        LOGGER.info("Stop: Verify motr meta data using the m0kv command to create index using single FID using option index create")
+        LOGGER.info("Stop: Verify motr meta data using the m0kv command to "
+                    "create index using single FID using option index create")
 
     @pytest.mark.tags("TEST-23200")
     @pytest.mark.motr_io_load
     @CTFailOn(error_handler)
     def test_23200(self):
         """
-        Verify the motr meta data using m0kv command to list existing single index using option index list
+        Verify the motr meta data using m0kv command to
+        list existing single index using option index list
         """
-        LOGGER.info("Start: Verify the motr meta data using m0kv command to list existing single index using option index list")
+        LOGGER.info("Start: Verify the motr meta data using m0kv command to "
+                    "list existing single index using option index list")
         self.execute_test('test_23200')
-        LOGGER.info("Stop: Verify the motr meta data using m0kv command to list existing single index using option index list")
+        LOGGER.info("Stop: Verify the motr meta data using m0kv command to "
+                    "list existing single index using option index list")
 
     @pytest.mark.tags("TEST-23202")
     @pytest.mark.motr_io_load
     @CTFailOn(error_handler)
     def test_23202(self):
         """
-        Verify motr meta data using the m0kv command to lookup multiple index in storage using option index lookup
+        Verify motr meta data using the m0kv command to
+        lookup multiple index in storage using option index lookup
         """
-        LOGGER.info("Start: Verify motr meta data using the m0kv command to lookup multiple index in storage using option index lookup")
+        LOGGER.info("Start: Verify motr meta data using the m0kv command to "
+                    "lookup multiple index in storage using option index lookup")
         self.execute_test('test_23202')
-        LOGGER.info("Stop: Verify motr meta data using the m0kv command to lookup multiple index in storage using option index lookup")
+        LOGGER.info("Stop: Verify motr meta data using the m0kv command to "
+                    "lookup multiple index in storage using option index lookup")
 
     @pytest.mark.tags("TEST-23203")
     @pytest.mark.motr_io_load
     @CTFailOn(error_handler)
     def test_23203(self):
         """
-        Verify motr meta data using the m0kv command to drop existing index using option index drop
+        Verify motr meta data using the m0kv command to
+        drop existing index using option index drop
         """
-        LOGGER.info("Start: Verify motr meta data using the m0kv command to drop existing index using option index drop")
+        LOGGER.info("Start: Verify motr meta data using the m0kv command to "
+                    "drop existing index using option index drop")
         self.execute_test('test_23203')
-        LOGGER.info("Stop: Verify motr meta data using the m0kv command to drop existing index using option index drop")
+        LOGGER.info("Stop: Verify motr meta data using the m0kv command to "
+                    "drop existing index using option index drop")
 
     @pytest.mark.tags("TEST-14954")
     @pytest.mark.motr_io_load
