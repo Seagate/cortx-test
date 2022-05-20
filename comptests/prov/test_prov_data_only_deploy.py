@@ -139,11 +139,11 @@ class TestProvK8DataOnlyDeploy:
     @pytest.mark.tags("TEST-39333")
     def test_39333(self):
         """
-        Verify S3 status for all pods.
+        Verify S3 status for data pods.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Check Cluster status for pods")
+        LOGGER.info("Check Cluster status for data pods")
         resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cluster is up and all services are started.")
+        LOGGER.info("Cluster is up and all services are started for data pods.")
         LOGGER.info("Test Completed.")
