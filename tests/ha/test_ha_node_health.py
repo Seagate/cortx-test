@@ -173,7 +173,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
                                                           is_safe=True)
-            assert_utils.assert_true(resp, "Host has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
 
             LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
                         node_name)
@@ -254,7 +254,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           bmc_obj=self.bmc_list[node],
                                                           node_obj=self.node_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("Check %s is in Failed state and other nodes state is not affected",
                         self.srvnode_list[node])
             LOGGER.info("Get the new node on which CSM service is running.")
@@ -428,7 +428,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node_index],
                                                           node_obj=self.node_list[node_index],
                                                           is_safe=True)
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
 
             LOGGER.info("Get the new node on which CSM service failover.")
             if self.srvnode_list[node_index] == self.srvnode_list[-1]:
@@ -515,7 +515,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node_index],
                                                           bmc_obj=self.bmc_list[node_index],
                                                           node_obj=self.node_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
 
             LOGGER.info("Get the new node on which CSM service failover.")
             if self.srvnode_list[node_index] == self.srvnode_list[-1]:

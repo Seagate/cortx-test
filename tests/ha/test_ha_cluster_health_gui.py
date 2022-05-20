@@ -192,13 +192,13 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
                                                           bmc_obj=self.bmc_list[node],
                                                           is_safe=True)
-            assert_utils.assert_true(resp, "Host has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             self.restored = False
 
             LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
@@ -251,7 +251,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
@@ -302,13 +302,13 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
             self.restored = False
 
@@ -361,7 +361,7 @@ class TestHAClusterHealthGUI:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
@@ -414,7 +414,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
@@ -422,7 +422,7 @@ class TestHAClusterHealthGUI:
                 node_obj=self.node_list[node],
                 is_safe=True
             )
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
             time.sleep(40)
             self.restored = False
@@ -450,7 +450,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
                     read_lines=True)
 
         LOGGER.info("Verify Cluster is in healthy state")
@@ -495,14 +495,14 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node],
             )
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
 
             self.restored = False
@@ -529,7 +529,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
                     read_lines=True)
 
         LOGGER.info("Verify Cluster is in healthy state")
@@ -589,7 +589,7 @@ class TestHAClusterHealthGUI:
                 node_obj=self.node_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
                 is_safe=True)
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
             self.restored = False
 
@@ -717,7 +717,7 @@ class TestHAClusterHealthGUI:
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
                 node_obj=self.node_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
             self.restored = False
 

@@ -317,11 +317,12 @@ class HALibs:
         :param is_safe: Power off host with safe/unsafe shutdown
         :rtype: boolean from polling_host() response
         """
-        LOGGER.info("Shutting down %s with is_safe method set to %s", host, is_safe)
         if is_safe:
+            LOGGER.info("Safe shutdown %s", host)
             resp = node_obj.execute_cmd(cmd="shutdown -P now", exc=False)
             LOGGER.debug("Response for shutdown: {}".format(resp))
         else:
+            LOGGER.info("Unsafe shutdown %s", host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
                 resp = system_utils.execute_cmd(

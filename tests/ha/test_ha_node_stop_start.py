@@ -487,7 +487,7 @@ class TestHANodeStartStop:
             bmc_obj=self.bmc_list[node],
             node_obj=self.node_list[node])
         assert_utils.assert_true(
-            resp, f"{self.host_list[node]} has not shutdown yet.")
+            resp, f"Failed to shutdown {self.host_list[node]}")
         LOGGER.info(
             "Step 6: Verified %s is powered off and not pinging.",
             self.host_list[node])
