@@ -85,7 +85,7 @@ class TestHAClusterHealthGUI:
             cls.uname = CMN_CFG["nodes"][node]["username"]
             cls.passwd = CMN_CFG["nodes"][node]["password"]
             cls.host_list.append(cls.host)
-            cls.srvnode_list.append(f"srvnode-{node + 1}")
+            cls.srvnode_list.append(f"srvnode-{node+1}")
             cls.node_list.append(Node(hostname=cls.host,
                                       username=cls.uname, password=cls.passwd))
             cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
@@ -138,7 +138,7 @@ class TestHAClusterHealthGUI:
                         LOGGER.debug(
                             "HW: Need to enable stonith on the node after node powered on")
                         self.node_list[node].execute_cmd(
-                            common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                            common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                             read_lines=True)
                 if self.nw_data:
                     resp = self.node_list[node].execute_cmd(
@@ -192,7 +192,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
@@ -206,7 +206,7 @@ class TestHAClusterHealthGUI:
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
-                nd_obj = self.node_list[node + 1]
+                nd_obj = self.node_list[node+1]
             sys_obj = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(
@@ -251,7 +251,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
@@ -302,7 +302,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
@@ -317,7 +317,7 @@ class TestHAClusterHealthGUI:
             if self.srvnode_list[node] == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
-                nd_obj = self.node_list[node + 1]
+                nd_obj = self.node_list[node+1]
             sys_obj = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(
@@ -361,7 +361,7 @@ class TestHAClusterHealthGUI:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
@@ -414,7 +414,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
@@ -450,7 +450,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
 
         LOGGER.info("Verify Cluster is in healthy state")
@@ -495,7 +495,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
                     read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
@@ -529,7 +529,7 @@ class TestHAClusterHealthGUI:
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
                     read_lines=True)
 
         LOGGER.info("Verify Cluster is in healthy state")
@@ -844,7 +844,7 @@ class TestHAClusterHealthGUI:
             if self.srvnode_list[node] == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
-                nd_obj = self.node_list[node + 1]
+                nd_obj = self.node_list[node+1]
             resp = nd_obj.execute_cmd(
                 common_cmds.CMD_PING.format(
                     private_ip_list[node]), read_lines=True, exc=False)

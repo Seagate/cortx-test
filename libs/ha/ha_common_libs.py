@@ -108,7 +108,7 @@ class HALibs:
         try:
             for node in range(num_nodes):
                 if node != node_id:
-                    node_name = "srvnode-{}".format(node + 1)
+                    node_name = "srvnode-{}".format(node+1)
                     LOGGER.info("Checking services on: {}".format(node_name))
                     res = node_list[node].execute_cmd(
                         common_cmd.CMD_PCS_GREP.format(node_name))
@@ -265,7 +265,7 @@ class HALibs:
             LOGGER.debug("Response for /etc/hosts: {}".format(resp_ip))
             for node in range(num_nodes):
                 for line in resp_ip:
-                    if "srvnode-{}.data.private".format(node + 1) in line:
+                    if "srvnode-{}.data.private".format(node+1) in line:
                         ip = line.split()[0]
                         private_ip_list.append(ip)
                         res = node_list[node].execute_cmd(
@@ -439,7 +439,7 @@ class HALibs:
         if srvnode_list[node] == srvnode_list[-1]:
             nd_obj = node_list[0]
         else:
-            nd_obj = node_list[node + 1]
+            nd_obj = node_list[node+1]
         resp = self.check_csm_service(nd_obj, srvnode_list, sys_list)
         if not resp[0]:
             return False, "Failed to get CSM failover node"
@@ -553,7 +553,7 @@ class HALibs:
             password=host_details["password"],
             read_lines=True)
         if not resp[0]:
-            return False, f"PCS status is {resp[1]} for srvnode-{node + 1}"
+            return False, f"PCS status is {resp[1]} for srvnode-{node+1}"
         # Get the pcs status xml to check service status for all nodes
         response = node_obj.execute_cmd(
             cmd=common_cmd.CMD_PCS_GET_XML,
