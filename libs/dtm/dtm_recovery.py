@@ -23,10 +23,12 @@ Library Methods for DTM recovery testing
 import logging
 import random
 import time
+import re
 
 from config import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
+from config import DTM_CFG
 
 
 class DTMRecoveryTestLib:
@@ -134,14 +136,16 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
-    def process_restart(self, master_node, pod_prefix, container_prefix, process,
-                        recover_time: int = 30):
+    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
+                        process_ids: list = None, recover_time: int = 30):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
+        :param health_obj: Master node health object
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
         :param process: Process to be restarted.
+        :param process_ids: List of Process IDs
         :param recover_time: Wait time for process to recover
         """
         pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
@@ -155,7 +159,58 @@ class DTMRecoveryTestLib:
         resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                      container_name=container,
                                                      process_name=process)
-        self.log.debug("resp : %s", resp)
+        self.log.debug("Resp : %s", resp)
         time.sleep(recover_time)
-        # TODO : Check if process has started
-        self.log.info("Process restarted ")
+
+        self.log.info("Check process states")
+        resp, process_state = self.get_process_state(master_node, pod_name=pod_selected,
+                                                     container_name=container,
+                                                     process_name=process.upper(),
+                                                     process_ids=process_ids)
+        if not resp:
+            return resp, f"Failed to get process states for process {process} with IDs " \
+                         f"{DTM_CFG['m0d_pids']}. proccess_state dict :{process_state}"
+        for p_id, state in process_state.items():
+            if DTM_CFG['exp_m0d_state'] not in state:
+                return False, f"State of process {process} with ID {p_id} is not as expected. " \
+                              f"Expected state: {DTM_CFG['exp_m0d_state']} Actual state: {state}"
+            else:
+                self.log.info("State of process %s with ID %s is %s", process, p_id, state)
+        self.log.info("Process %s restarted successfully", process)
+
+        self.log.info("Check hctl status if all services are online")
+        resp = health_obj.is_motr_online()
+        return resp
+
+    def get_process_state(self, master_node, pod_name, container_name, process_name,
+                          process_ids: list = None):
+        """
+        Function to get given process state
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_name: Name of the process
+        :param process_ids: List of Process IDs
+        :return: bool, dict
+        e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
+        """
+        process_state = dict()
+        self.log.info("Get processes running inside container %s of pod %s", container_name,
+                      pod_name)
+        resp = master_node.get_all_container_processes(pod_name=pod_name,
+                                                       container_name=container_name)
+        if process_ids:
+            self.log.info("Extract list of %s processes having IDs %s", process_name, process_ids)
+            process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele
+                            and process_name in ele]
+            if len(process_ids) != len(process_list):
+                return False, f"All process IDs {process_ids} are not found. " \
+                              f"All processes running in container are: {resp}"
+        else:
+            self.log.info("Extract list of %s processes", process_name)
+            process_list = [ele for ele in resp if process_name in ele]
+        compile_exp = re.compile('"state": "(.*?)"')
+        for i_i in process_list:
+            process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
+
+        return True, process_state
