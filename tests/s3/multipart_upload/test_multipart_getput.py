@@ -49,7 +49,7 @@ from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import CMN_CFG
 
-
+# pylint: disable-msg=too-many-public-methods
 class TestMultipartUploadGetPut:
     """Multipart Upload Test Suite."""
     @classmethod
@@ -646,7 +646,6 @@ class TestMultipartUploadGetPut:
         """
         This test is for uploading 5TB max size object using multipart upload
         """
-        # TODO FIX
         self.log.info("STARTED: Multipart upload of 5TB object ")
         mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
