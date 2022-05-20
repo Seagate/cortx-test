@@ -22,6 +22,7 @@
 
 import logging
 import os
+from string import Template
 import pytest
 
 from commons import commands
@@ -30,7 +31,6 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from string import Template
 
 LOGGER = logging.getLogger(__name__)
 
