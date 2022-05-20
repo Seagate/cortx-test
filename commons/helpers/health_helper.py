@@ -394,6 +394,51 @@ class Health(Host):
             result = json.loads(out)
         return result
 
+    def hctl_disk_status(self, pod_name=None, namespace: str = const.NAMESPACE):
+        """
+        This will Check disk status of the nodes
+        returns the response in json format.
+        :param pod_name: Running data pod name to fetch the hctl status
+        :param namespace: namespace name
+        :return: Json response of stdout
+        :rtype: dict
+        """
+        result = {}
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            LOG.info("Executing command for LR product family....")
+            cmd = "| sed -e '1,/Devices:/ d' -e 's/^[ \t]*//'"
+            hctl_command = commands.HCTL_DISK_STATUS + cmd
+            LOG.info("Executing Command %s on node %s",
+                     hctl_command, self.hostname)
+            result = self.execute_cmd(hctl_command, read_lines=False)
+            result = result.decode("utf-8")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            LOG.info("Executing command for LC product family....")
+            container = const.HAX_CONTAINER_NAME
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            cmd = "| sed -e '1,/Devices:/ d' -e 's/^[ \t]*//' | sed -n '/cortx-data/p;/\[/p'"
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
+            result = node.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container} -- {commands.HCTL_DISK_STATUS} {cmd}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", commands.HCTL_DISK_STATUS, result)
+        node_disks_dict = {}
+        for line in result.split("\n"):
+            if '/dev' not in line:
+                key = line.strip()
+                node_disks_dict[key] = {}
+            else:
+                status, disk = line.strip().split("  ")
+                node_disks_dict[key][disk] = status.strip("[]")
+        LOG.info("Node with Disk status %s:\n", node_disks_dict)
+        return node_disks_dict
+
     def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
         """
         Checks all the services with given name are started using hctl status

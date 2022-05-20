@@ -37,6 +37,7 @@ HA_CONSUL_STR = 'consul kv get ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
+HCTL_DISK_STATUS = "hctl status -d"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
 PCS_CLUSTER_STOP = "pcs cluster stop {}"
@@ -617,9 +618,10 @@ SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle ge
 
 # SNS repair
 SNS_REPAIR_CMD = "hctl repair {}"
-CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
-                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
-                               "\"state\" : \"status_val\"}'"
+SNS_REBALANCE_CMD = "hctl rebalance {}"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --compact-output '{node : \"cortx_nod\", "\
+                               "source_type : \"drive\",  device : \"device_val\", " \
+                               "state : \"status_val\"}')"
 
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \

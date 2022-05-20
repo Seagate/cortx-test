@@ -47,6 +47,7 @@ S3_ENGINE_RGW = 2
 
 # K8s for cortx
 POD_NAME_PREFIX = "cortx-data"
+CORTX_DATA_NODE_PREFIX = "cortx-data-headless-svc-"
 SERVER_POD_NAME_PREFIX = "cortx-server"
 HA_POD_NAME_PREFIX = "cortx-ha"
 HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
