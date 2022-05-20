@@ -151,6 +151,26 @@ MDADM_ADD = "--add"
 IPMI_SDR_TYPE_CMD = "ipmitool sdr type"
 IPMI_EVENT_CMD = "ipmitool event"
 
+#Provisioner AWS Commands
+AWS_INSTALL = "pip3 install awscli"
+AWS_PLUGIN = "pip3 install awscli-plugin-endpoint"
+AWS_VERSION = "aws --version"
+AWS_ENDPOINT = "aws configure set plugins.endpoint awscli_plugin_endpoint"
+AWS_REGION = "aws configure set default.region us-east-1"
+AWS_ACCESS_CONFIG = "aws configure set aws_access_key_id {}"
+AWS_SECRET_CONFIG = "aws configure set aws_secret_access_key {}"
+
+#IOs Opearations
+create_bucket = "aws s3 mb s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
+create_endpoint = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
+bucket_s3api = "aws s3api head-bucket --bucket test-bucket --endpoint-url http://s3.seagate.com:{}"
+file_conf = "dd if=/dev/zero of=file bs=1M count=10"
+copy_bucketfile = "aws s3 cp file s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
+get_object = "aws s3api get-object --bucket test-bucket --key file --endpoint http://s3.seagate.com:{} outfile"
+aws_url = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
+bucket_size = "aws s3 ls s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
+remove_bucket = "aws s3 rb s3://test-bucket --force --endpoint-url http://s3.seagate.com:{}"
+
 # BMC commands.
 CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
 INSTALL_IPMITOOL = "yum install ipmitool -y"

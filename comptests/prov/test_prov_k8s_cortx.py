@@ -27,7 +27,6 @@ import os
 import time
 from requests.models import Response
 from random import SystemRandom
-from string import Template
 
 from commons import configmanager
 from commons import constants as common_const
@@ -454,11 +453,6 @@ class TestProvK8Cortx:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-41569")
     def test_41569(self, **kwargs):
-        run_basic_s3_io_flag = \
-            kwargs.get("run_basic_s3_io_flag", self.deploy_cfg['run_basic_s3_io_flag'])
-        run_s3bench_workload_flag = \
-            kwargs.get("run_s3bench_workload_flag",
-                       self.deploy_cfg['run_s3bench_workload_flag'])
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get Access and Secret Key.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_ACCESS_KEY, read_lines=True)
@@ -481,6 +475,7 @@ class TestProvK8Cortx:
             ext_ip = resp[1]
             LOGGER.info(ext_ip)
             port = resp[2]
+            http_port = resp[3]
             ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
                                   ":{}".format(port)
             LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
@@ -491,19 +486,51 @@ class TestProvK8Cortx:
                                                     self.master_node_list[0].password,
                                                             eth1_ip, self.deploy_cfg['iface'])
             ext_port_ip = self.deploy_cfg['https_protocol'].format(eth1_ip)
-            LOGGER.info("Configure AWS on Client")
-        resp = ProvDeployK8sCortxLib.aws_configure(s3_engine,endpoint,self.master_node_obj)
+        LOGGER.info("Step 3:Configure AWS on Client")
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_INSTALL)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(resp)
-
-        # resp = system_utils.execute_cmd(cmd=commands.CMD_AWS_INSTALL)
-        # LOGGER.debug("resp : %s", resp)
-        # if s3_engine == common_const.S3_ENGINE_RGW:
-        #     LOGGER.info("Configure AWS keys on Client %s", s3_engine)
-        #     resp = system_utils.execute_cmd(
-        #                     cmd=commands.CMD_AWS_CONF_KEYS_RGW.format(access_key, secret_key, endpoint))
-        #     LOGGER.debug("resp : %s", resp)
-        # else:
-        #     LOGGER.info("Configure AWS keys on Client %s")
-        #     resp = system_utils.execute_cmd(
-        #                     cmd=commands.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-        #     LOGGER.debug("resp : %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_PLUGIN)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_VERSION)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ENDPOINT)
+        LOGGER.info(resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
+        LOGGER.info(resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
+                                                    read_lines=True)                                           
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
+                                                    read_lines=True)
+        LOGGER.info("Step 4:Creating bucket")
+        resp = self.master_node_obj.execute_cmd(cmd=commands.create_bucket.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Make Bucket %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.create_endpoint.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Bucket Name %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.bucket_s3api.format(http_port),
+                                                    read_lines=True)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.file_conf,
+                                                    read_lines=True)
+        LOGGER.info("File size %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.copy_bucketfile.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Upload File %s", resp)
+        LOGGER.info("Step 5:Creating get object")
+        resp = self.master_node_obj.execute_cmd(cmd=commands.get_object.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Get Object %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.aws_url.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Bucket Name %s", resp)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.bucket_size.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Bucket Size %s", resp)
+        LOGGER.info("Step 6:Removing bucket")
+        resp = self.master_node_obj.execute_cmd(cmd=commands.remove_bucket.format(http_port),
+                                                    read_lines=True)
+        LOGGER.info("Remove Bucket %s", resp)
+        LOGGER.info("Test Completed.")
