@@ -110,7 +110,7 @@ class TestProvK8DataOnlyDeploy:
         for node_obj in self.host_list:
             self.deploy_lc_obj.execute_prereq_cortx(node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
-                                                    "/dev/sdb")
+                                                    self.prov_deploy_cfg["pre_req"])
         LOGGER.info("Step 3: Done.")
 
         LOGGER.info("Step 4: Start data only cortx cluster.")
@@ -139,10 +139,10 @@ class TestProvK8DataOnlyDeploy:
     @pytest.mark.tags("TEST-39333")
     def test_39333(self):
         """
-        Verify cluster status for data only pod deployment.
+        Verify S3 status for all pods.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Check Cluster health and services.")
+        LOGGER.info("Check Cluster status for pods")
         resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
