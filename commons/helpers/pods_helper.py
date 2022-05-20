@@ -510,7 +510,7 @@ class LogicalNode(Host):
 
     def get_all_container_processes(self, pod_name, container_name):
         """
-        Function to get all process running on given container
+        Function to get all processes running on given container
         :param pod_name: Name of the pod
         :param container_name: Name of the container
         :return: list (list of the processes running on container)
