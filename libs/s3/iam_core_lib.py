@@ -25,7 +25,7 @@ import os
 import logging
 from typing import Union
 import boto3
-
+from botocore.exceptions import ClientError
 from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class IAMRest:
                                                    endpoint_url=endpoint_url)
             else:
                 LOGGER.info("Skipped: create iam client, resource object with boto3.")
-        except Exception as error:
+        except (ClientError, Exception) as error:
             if "unreachable network" not in str(error):
                 LOGGER.critical(error)
 

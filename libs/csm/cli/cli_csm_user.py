@@ -81,7 +81,8 @@ class CortxCliCsmUser(CortxCli):
             if "Confirm Password" in output:
                 output = self.execute_cli_commands(cmd=confirm_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in output:
-                    output = self.execute_cli_commands(cmd=confirm, patterns=["User created", "cortxcli"])[1]
+                    output = self.execute_cli_commands(
+                              cmd=confirm, patterns=["User created", "cortxcli"])[1]
                     if "User created" in output:
 
                         return True, output
@@ -109,7 +110,8 @@ class CortxCliCsmUser(CortxCli):
             LOG.info("Displaying usage for delete csm user")
             return True, output
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd=confirm, patterns=["User deleted", "cortxcli"])[1]
+            output = self.execute_cli_commands(cmd=confirm,
+                     patterns=["User deleted", "cortxcli"])[1]
         if "error" in output.lower() or "exception" in output.lower():
 
             return False, output
@@ -135,9 +137,7 @@ class CortxCliCsmUser(CortxCli):
         LOG.info("Updating role of CSM user")
         help_param = kwargs.get("help_param", False)
         cmd = " ".join([CMD_UPDATE_ROLE,
-                        "-h"]) if help_param else "{0} {1} -r {2}".format(CMD_UPDATE_ROLE,
-                                                                          user_name,
-                                                                          role)
+                        "-h"]) if help_param else f"{CMD_UPDATE_ROLE} {user_name} -r {role}"
         output = self.execute_cli_commands(cmd=cmd, patterns=["usage:", "Current Password"])[1]
         if help_param:
             LOG.info("Displaying usage for update role")
@@ -179,13 +179,15 @@ class CortxCliCsmUser(CortxCli):
             LOG.info("Displaying usage for reset password")
             return True, output
         if "Current Password" in output:
-            output = self.execute_cli_commands(cmd=current_password, patterns=["Password"])[1]
+            output = self.execute_cli_commands(
+                               cmd=current_password, patterns=["Password"])[1]
             if "Password" in output:
                 output = self.execute_cli_commands(cmd=new_password, patterns=["Confirm Password:"])[1]
                 if "Confirm Password:" in output:
                     output = self.execute_cli_commands(cmd=confirm_password, patterns=["[Y/n]"])[1]
                     if "[Y/n]" in output:
-                        output = self.execute_cli_commands(cmd=confirm, patterns=["Password Updated"])[1]
+                        output = self.execute_cli_commands(
+                                   cmd=confirm, patterns=["Password Updated"])[1]
                         if "Password Updated" in output:
 
                             return True, output
@@ -201,12 +203,13 @@ class CortxCliCsmUser(CortxCli):
         :return: (Boolean/response)
         """
         LOG.info("Login to csmcli using %s", username)
-        cmd = "cortxcli --username {0}".format(username)
+        cmd = f"cortxcli --username {username}"
         output = self.execute_cli_commands(cmd=cmd, patterns=["Username"])[1]
         if "Username" in output:
             output = self.execute_cli_commands(cmd=username, patterns=["Password"])[1]
             if "Password" in output:
-                output = self.execute_cli_commands(cmd=password, patterns=["CORTX Interactive Shell"])[1]
+                output = self.execute_cli_commands(
+                           cmd=password, patterns=["CORTX Interactive Shell"])[1]
                 if "CORTX Interactive Shell" in output:
                     LOG.info(
                         "Logged in CORTX CLI as user %s successfully",
@@ -244,19 +247,19 @@ class CortxCliCsmUser(CortxCli):
         op_format = kwargs.get("op_format", None)
         cmd = CMD_LIST_CSM_USERS
         if offset:
-            cmd = "{0} -o {1}".format(cmd, offset)
+            cmd = f"{cmd} -o {offset}"
         if limit:
-            cmd = "{0} -l {1}".format(cmd, limit)
+            cmd = f"{cmd} -l {limit}"
         if sort_by:
-            cmd = "{0} -s {1}".format(cmd, sort_by)
+            cmd = f"{cmd} -s {sort_by}"
         if sort_dir:
-            cmd = "{0} -d {1}".format(cmd, sort_dir)
+            cmd = f"{cmd} -d {sort_dir}"
         if op_format:
-            cmd = "{0} -f {1}".format(cmd, op_format)
+            cmd = f"{cmd} -f {op_format}"
         if other_param:
-            cmd = "{0} {1}".format(cmd, other_param)
+            cmd = f"{cmd} {other_param}"
         if help_param:
-            cmd = "{0} -h".format(CMD_LIST_CSM_USERS)
+            cmd = f"{CMD_LIST_CSM_USERS} -h"
         output = self.execute_cli_commands(cmd=cmd, patterns=["username", "Username", "usage:"])[1]
         if "error" in output.lower() or "exception" in output.lower():
 

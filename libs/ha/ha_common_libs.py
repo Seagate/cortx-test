@@ -108,7 +108,7 @@ class HALibs:
         try:
             for node in range(num_nodes):
                 if node != node_id:
-                    node_name = "srvnode-{}".format(node + 1)
+                    node_name = "srvnode-{}".format(node+1)
                     LOGGER.info("Checking services on: {}".format(node_name))
                     res = node_list[node].execute_cmd(
                         common_cmd.CMD_PCS_GREP.format(node_name))
@@ -254,6 +254,7 @@ class HALibs:
         :return: interface list, ip list
         :rtype: list,list
         """
+        LOGGER.info("Get the list of private data interfaces for all %s nodes.", num_nodes)
         try:
             iface_list = []
             private_ip_list = []
@@ -264,14 +265,15 @@ class HALibs:
             LOGGER.debug("Response for /etc/hosts: {}".format(resp_ip))
             for node in range(num_nodes):
                 for line in resp_ip:
-                    if "srvnode-{}.data.private".format(node + 1) in line:
+                    if "srvnode-{}.data.private".format(node+1) in line:
                         ip = line.split()[0]
                         private_ip_list.append(ip)
                         res = node_list[node].execute_cmd(
                             common_cmd.CMD_IFACE_IP.format(ip), read_lines=True)
                         ifname = res[0].strip(":\n")
                         iface_list.append(ifname)
-
+            LOGGER.debug("List of private data IP : %s and interfaces on all nodes: %s",
+                         private_ip_list, iface_list)
             return iface_list, private_ip_list
         except Exception as error:
             LOGGER.error("%s %s: %s",
@@ -287,7 +289,7 @@ class HALibs:
         :param bmc_obj: BMC object
         :rtype: boolean from polling_host() response
         """
-
+        LOGGER.info("Powering on %s", host)
         if self.setup_type == "VM":
             vm_name = host.split(".")[0]
             resp = system_utils.execute_cmd(
@@ -302,6 +304,7 @@ class HALibs:
         # SSC cloud is taking time to on VM host hence timeout
         resp = self.polling_host(max_timeout=self.t_power_on, host=host,
                                  exp_resp=True, bmc_obj=bmc_obj)
+        LOGGER.info("Powered on status for host %s is %s.", host, resp)
         return resp
 
     def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
@@ -315,9 +318,11 @@ class HALibs:
         :rtype: boolean from polling_host() response
         """
         if is_safe:
+            LOGGER.info("Safe shutdown %s", host)
             resp = node_obj.execute_cmd(cmd="shutdown -P now", exc=False)
             LOGGER.debug("Response for shutdown: {}".format(resp))
         else:
+            LOGGER.info("Unsafe shutdown %s", host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
                 resp = system_utils.execute_cmd(
@@ -333,6 +338,7 @@ class HALibs:
         # SSC cloud is taking time to off VM host hence timeout
         resp = self.polling_host(
             max_timeout=self.t_power_off, host=host, exp_resp=False, bmc_obj=bmc_obj)
+        LOGGER.info("Powered off status for host %s is %s.", host, resp)
         return resp
 
     def status_nodes_online(self, node_obj, srvnode_list, sys_list, no_nodes: int):
@@ -433,7 +439,7 @@ class HALibs:
         if srvnode_list[node] == srvnode_list[-1]:
             nd_obj = node_list[0]
         else:
-            nd_obj = node_list[node + 1]
+            nd_obj = node_list[node+1]
         resp = self.check_csm_service(nd_obj, srvnode_list, sys_list)
         if not resp[0]:
             return False, "Failed to get CSM failover node"
@@ -547,7 +553,7 @@ class HALibs:
             password=host_details["password"],
             read_lines=True)
         if not resp[0]:
-            return False, f"PCS status is {resp[1]} for srvnode-{node + 1}"
+            return False, f"PCS status is {resp[1]} for srvnode-{node+1}"
         # Get the pcs status xml to check service status for all nodes
         response = node_obj.execute_cmd(
             cmd=common_cmd.CMD_PCS_GET_XML,

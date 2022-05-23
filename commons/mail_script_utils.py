@@ -36,22 +36,28 @@ class Mail:
     """
     module to send mail
     """
-    def __init__(self):
+    def __init__(self, sender, receiver):
+        """
+        Init method
+        # param sender: email address of sender
+        # param receiver: email address of receiver
+        """
         self.mail_host = os.getenv("mail_host")
         self.port = os.getenv("port")
+        self.sender = sender
+        self.receiver = receiver
 
-    def send_mail(self, sender, receiver, subject, body):
+    def send_mail(self,subject, body):
         """
         function to send mail
-        #param sender: email address of sender
-        #param receiver: email address of receiver
         #param subject: subject of email
         #param body: body of email
         """
         msg = MIMEText(body)
         msg["Subject"] = subject
-        msg["From"] = sender
-        msg["To"] = receiver
-        LOGGER.info("Sending mail")
+        msg["From"] = self.sender
+        msg["To"] = self.receiver
+        LOGGER.info("Sending mail :")
+        LOGGER.info("Subject : %s, Body : %s",subject,body)
         with smtplib.SMTP(self.mail_host, self.port) as server:
-            server.sendmail(sender, receiver, msg.as_string())
+            server.sendmail(self.sender, self.receiver, msg.as_string())

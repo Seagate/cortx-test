@@ -59,7 +59,7 @@ class TestS3accountK8s:
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
         cls.csm_cluster = RestCsmCluster()
- 
+
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
@@ -84,6 +84,7 @@ class TestS3accountK8s:
                 break
         return res
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.cluster_user_ops
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -132,7 +133,7 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 secret key in output")
-        assert secret_key not in resp_str, "{} is present in the openldap".format(secret_key)
+        assert secret_key not in resp_str, f"{secret_key} is present in the openldap"
         self.log.info("##############Test Completed##############")
 
     @pytest.mark.cluster_user_ops
@@ -180,5 +181,5 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 account password in output")
-        assert s3_passwd not in resp_str, "{} is present in the openldap".format(s3_passwd)
+        assert s3_passwd not in resp_str, f"{s3_passwd} is present in the openldap"
         self.log.info("##############Test Completed##############")

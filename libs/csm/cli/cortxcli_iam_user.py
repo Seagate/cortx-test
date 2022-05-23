@@ -55,7 +55,6 @@ class CortxCliIamUser(CortxCli):
         """
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
-        sleep_time = kwargs.get("sleep_time", 10)
         if help_param:
             cmd = " ".join([CREATE_IAM_USER, "-h"])
         else:
@@ -93,7 +92,8 @@ class CortxCliIamUser(CortxCli):
         if output_format:
             list_iam_user = " ".join(
                 [list_iam_user, "-f", output_format])
-        status, output = self.execute_cli_commands(cmd=list_iam_user, patterns=["User Name", "iam_users", "usage:"])
+        status, output = self.execute_cli_commands(cmd=list_iam_user,
+                    patterns=["User Name", "iam_users", "usage:"])
         if help_param:
             LOG.info("Displaying usage for show iam users")
             return True, output
@@ -146,7 +146,7 @@ class CortxCliIamUser(CortxCli):
         response_dict = {"Deleted": [], "CouldNotDelete": []}
         if resp_json[0]:
             for iam_user in resp_json[1]["iam_users"]:
-                LOG.info("Deleting the iam users {}".format(iam_user))
+                LOG.info("Deleting the iam users %s", iam_user)
                 resp = self.delete_iam_user(
                     iam_user["user_name"])
                 if "IAM User Deleted" in resp[1]:
@@ -155,7 +155,6 @@ class CortxCliIamUser(CortxCli):
                     response_dict["CouldNotDelete"].append(iam_user)
             if response_dict["CouldNotDelete"]:
                 LOG.error("Failed to delete iam users")
-                return response_dict
             return response_dict
 
     def reset_iamuser_password(
@@ -176,11 +175,13 @@ class CortxCliIamUser(CortxCli):
         LOG.info("Resetting s3 account password to %s", new_password)
         response = self.execute_cli_commands(cmd=reset_pwd_cmd, patterns=["Password:"])[1]
         if "Password:" in response:
-            response = self.execute_cli_commands(cmd=new_password, patterns=["Confirm Password:"])[1]
+            response = self.execute_cli_commands(cmd=new_password,
+                           patterns=["Confirm Password:"])[1]
             if "Confirm Password:" in response:
                 response = self.execute_cli_commands(cmd=new_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd=reset_password, patterns=[iamuser_name])[1]
+                    response = self.execute_cli_commands(cmd=reset_password,
+                               patterns=[iamuser_name])[1]
                     if iamuser_name in response:
                         LOG.info("Response returned: \n%s", response)
                         return True, response

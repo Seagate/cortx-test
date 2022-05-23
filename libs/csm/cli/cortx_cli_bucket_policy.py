@@ -62,7 +62,8 @@ class CortxCliS3BktPolicyOperations(CortxCli):
 
         output = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd="Y", patterns=["Bucket Policy Updated Successfully"])[1]
+            output = self.execute_cli_commands(cmd="Y",
+                     patterns=["Bucket Policy Updated Successfully"])[1]
             if "Bucket Policy Updated Successfully" in output:
                 time.sleep(15)
                 return True, output
@@ -104,14 +105,14 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         show_bkt_policy = " ".join(
             [commands.CMD_SHOW_BUCKET_POLICY, bucket_name])
         if output_format:
-            show_bkt_policy = "{} -f {}".format(
-                show_bkt_policy, output_format)
+            show_bkt_policy = f"{show_bkt_policy} -f {output_format}"
         output = self.execute_cli_commands(cmd=show_bkt_policy, patterns=["Statement"])[1]
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
 
         return True, output
 
+    @classmethod
     def create_copy_json_file(
             self,
             bkt_policy: list = None,

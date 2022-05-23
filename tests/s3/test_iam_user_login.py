@@ -63,12 +63,12 @@ class TestUserLoginProfileTests:
         """Setup method."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
-        self.user_name = "{}{}".format("iamuser", int(time.perf_counter_ns()))
-        self.account_name = "iamaccount{}".format(int(time.perf_counter_ns()))
+        self.user_name = f"iamuser{int(time.perf_counter_ns())}"
+        self.account_name = f"iamaccount{int(time.perf_counter_ns())}"
         self.email_id = "@seagate.com"
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
-        self.account_list = list()
+        self.account_list = []
         self.s3acc_obj = S3AccountOperationsRestAPI()
         self.cli_obj = CortxCliTestLib() if CMN_CFG["product_type"] == "node" else None
         self.log.info("ENDED: Setup operations")
@@ -637,7 +637,7 @@ class TestUserLoginProfileTests:
         self.log.info("STARTED: Create login profiles for maximum nos of existing IAM users")
         self.log.debug("Creating 101 users")
         for cnt in range(101):
-            new_user_name = "{0}{1}".format(self.user_name, "_{}".format(cnt))
+            new_user_name = f"{self.user_name}_{cnt}"
             self.log.debug("Creating a user with name: %s", new_user_name)
             resp = self.iam_test_obj.create_user(new_user_name)
             assert_true(resp[0], resp[1])
@@ -784,7 +784,7 @@ class TestUserLoginProfileTests:
     def test_2897(self):
         """Verify password change for IAM user."""
         self.log.info("STARTED: Verify password change for IAM user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -817,7 +817,7 @@ class TestUserLoginProfileTests:
     def test_2898(self):
         """Verify password change for a non-existing IAM user."""
         self.log.info("STARTED: Verify password change for a non-existing IAM user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -826,7 +826,7 @@ class TestUserLoginProfileTests:
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name, password=self.s3acc_passwd)
         assert_true(login[0], login[1])
-        user_name = "{}{}".format("5669_iamuser", int(time.perf_counter_ns()))
+        user_name = f"5669_iamuser{int(time.perf_counter_ns())}"
         self.log.info("Change user password for a non-existing IAM user")
         try:
             status, response = self.cli_obj.reset_iamuser_password_cortxcli(
@@ -852,7 +852,7 @@ class TestUserLoginProfileTests:
     def test_2899(self):
         """Provide only six character length in password."""
         self.log.info("STARTED: Provide only six character length in password")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -888,7 +888,7 @@ class TestUserLoginProfileTests:
     def test_2849(self):
         """Provide only one character length in password."""
         self.log.info("STARTED: Provide only one character length in password")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -929,7 +929,7 @@ class TestUserLoginProfileTests:
         password should be added in quote.
         """
         self.log.info("STARTED: Password with allowed special characters ~,$,?,&,\\n,\\t,<,>")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -963,7 +963,7 @@ class TestUserLoginProfileTests:
     def test_2904(self):
         """Verify change password with old password."""
         self.log.info("STARTED: Verify change password with old password")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s", self.account_name)
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
@@ -1034,7 +1034,7 @@ class TestUserLoginProfileTests:
     def test_2929(self):
         """Get temporary credentials for valid user."""
         self.log.info("STARTED: Get temporary credentials for valid user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info(
             "Creating account with name %s and email id %s",
             self.account_name, email_id)
@@ -1072,7 +1072,7 @@ class TestUserLoginProfileTests:
     def test_2930(self):
         """Get temporary credentials for Invalid user."""
         self.log.info("STARTED: Get temporary credentials for Invalid user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s and email id %s", self.account_name, email_id)
         res = self.iam_test_obj.create_account(
             self.account_name, email_id, self.ldap_user, self.ldap_pwd)
@@ -1098,7 +1098,7 @@ class TestUserLoginProfileTests:
         """Get the temporary Credentials for user which is recently got deleted."""
         self.log.info("STARTED: Get the temporary Credentials for user which "
                       "is recently got deleted")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.log.info("Creating account with name %s and email id %s", self.account_name, email_id)
         res = self.iam_test_obj.create_account(
             self.account_name, email_id, self.ldap_user, self.ldap_pwd)
@@ -1134,7 +1134,7 @@ class TestUserLoginProfileTests:
         """Verify that by using user valid temporary credentials to perform s3 operations."""
         self.log.info("STARTED: Verify that by using user valid temporary "
                       "credentials to perform s3 operations")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name,
             self.test_cfg["test_9927"]["user_password"], user_profile=True)
@@ -1193,7 +1193,7 @@ class TestUserLoginProfileTests:
         contain the user login profile for that user."""
         self.log.info("STARTED: Verify and perform s3 operations by using "
                       "user invalid temporary credentials")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name, user_profile=False)
         self.log.info("Getting temporary credentials for user %s which "
@@ -1219,7 +1219,7 @@ class TestUserLoginProfileTests:
         """Get temporary credentials for the user which contain the user login profile."""
         self.log.info(
             "STARTED: Get temporary credentials for the user which contain the user login profile")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name,
             self.test_cfg["test_9927"]["user_password"], user_profile=True)
@@ -1242,7 +1242,7 @@ class TestUserLoginProfileTests:
         """Verify time duration of 20 mins for the Get temporary credentials for the valid user."""
         self.log.info("STARTED: Verify time duration of 20 mins for the Get"
                       " temporary credentials for the valid user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name,
             self.test_cfg["test_9927"]["user_password"], user_profile=True)
@@ -1283,7 +1283,7 @@ class TestUserLoginProfileTests:
          credentials for the valid user."""
         self.log.info("STARTED: Verify time duration less than 15 mins for "
                       "the Get temporary credentials for the valid user")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name,
             self.test_cfg["test_9927"]["user_password"], user_profile=True)
@@ -1310,7 +1310,7 @@ class TestUserLoginProfileTests:
     def test_2939(self):
         """List users By using Users get temporary credentials."""
         self.log.info("STARTED:List users By using Users get temp credentials")
-        email_id = "{0}{1}".format(self.account_name, self.email_id)
+        email_id = f"{self.account_name}{self.email_id}"
         self.create_account_and_user(
             self.account_name, email_id, self.user_name,
             self.test_cfg["test_9927"]["user_password"], user_profile=True)
