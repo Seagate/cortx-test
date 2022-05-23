@@ -175,7 +175,8 @@ def s3bench(
         verbose=False,
         region="us-east-1",
         log_file_prefix="",
-        validate_certs=True):
+        validate_certs=True,
+        **kwargs):
     """
     To run s3bench tool
     :param access_key: S3 access key
@@ -198,6 +199,8 @@ def s3bench(
     :param validate_certs: Validate SSL certificates
     :return: tuple with json response and log path
     """
+    max_retries = kwargs.get("max_retries", None)
+    response_header_timeout = kwargs.get("response_header_timeout", None)
     result = []
     # Creating log file
     log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
@@ -219,6 +222,10 @@ def s3bench(
         cmd = cmd + "-validate "
     if verbose:
         cmd = cmd + "-verbose "
+    if max_retries:
+        cmd = cmd + f"-s3MaxRetries={max_retries} "
+    if response_header_timeout:
+        cmd = cmd + f"-responseHeaderTimeout={response_header_timeout} "
     cmd = f"{cmd}>> {log_path} 2>&1"
     LOGGER.info("Workload execution started.")
     if duration:
