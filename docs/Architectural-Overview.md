@@ -1,11 +1,11 @@
-# Introduction
+## Introduction
 
 cortx-test repository hosts a test automation framework called Gliese. It has test runner entities called corbots. In
 distributed mode all corbots assume responsibility of work horses and primebot works as a producer who plans test
 execution strategy and distribute the work among multiple corbots. The framework supports testing in parallel within
 corbot context and intend to optimize execution time by conducting tests with multiple CORTX setups.
 
-# Background
+## Background
 
 For QA certification of an enterprise product, it is always a challenge to execute the test universe within a finite
 timeframe (typically a day) especially since the test universe has thousands of test cases of several types including
@@ -15,7 +15,7 @@ test executions and deploy and manage targets and complete certification of a bu
 methods mentioned in the paper explain design and implementation of test executor framework which solves this problem
 with automatic test configuration management, parallel test execution, reporting and storage efficiency.
 
-# Why move from CTP and Avocado based test framework
+## Why move from CTP and Avocado based test framework
 
 CTP OS and Avocado based test framework was used to develop automated test cases in CORTX R1/MVP. It had a binding to
 CentOS image which has Avocado and helper RPMs pre-installed for automation. Tests were written and run assuming
@@ -23,81 +23,81 @@ prerequisites Python packages were installed. There was a hard dependency on CTP
 framework was primarily aimed at testing firmware products and not for private cloud based solutions. It lacked parallel
 and distributed test execution capabilities at that point in time.
 
-# Use of Python
+## Use of Python
 
 Decision to continue with Python was based on team's expertise, speed of development and multi programming paradigms
 like OO and functional programming. Developers can use suitable programming style and associate language constructs and
 capabilities for a given job.
 
-# Use of Pytest
+## Use of Pytest
 
 Pytest framework has lot to offer in terms of testing at system or integration level. It's easier to write small test,
 yet scales to support more complex integration and system level tests. It was evaluated for all test framework
 requirement with small tests and some of which are mentioned below.
 
-* Supports parallel execution
-* Supports tagging
-* Modular fixtures for short and long-lived resources
-* Plugin architecture and 300+ community supported plugins
+*  Supports parallel execution
+*  Supports tagging
+*  Modular fixtures for short and long-lived resources
+*  Plugin architecture and 300+ community supported plugins
 
-# High level repository structure
+## High level repository structure
 
 The Cortx-test automation project's code can logically divided into 3 loosely coupled parts
 
-* Test automation framework
-* Distributed test execution framework ./core ./execution
-* Reporting framework ./reporting_service
+*  Test automation framework
+*  Distributed test execution framework ./core ./execution
+*  Reporting framework ./reporting_service
 
-## Repository structure
+### Repository structure
 
 Overview of folder structure in cortx-test repository.
 
-## commons
+### commons
 
 Cosists of helpers and utils.
 
-### `helpers`
+#### `helpers`
 
 Provides various helpers related to node operations, bmc , s3 , nfs , etc.
 
-### `utils`
+#### `utils`
 
 Utilities for different purposes and concerns. Utility names are intuitive and they don't save any state. Ideally
 generic functions or static methods.
 
-### `exceptions`
+#### `exceptions`
 
 Exception classes and error codes.
 
-## config
+### config
 
 Common config and all other component specific config. Test suite and test specific configs would be minimalistic and
 test and test suite fixtures should test data creation and distruction.
 
-## core
+### core
 
 For test execution framework codebase, hooks and common libraries.
 
-## libs
+### libs
 
 All test libraries code should go here and should be grouped by product component or features. Test libraries uses core
 libraries and utilities to achieve test actions. Test libraries are reused by multiple test modules.
 
-## tests
+### tests
 
 Part of Test Universe comprising system and end to end tests. All tests are grouped by high level product component and
 capabilities. e.g. S3, HA, Durability, etc.
 
-## comptests
+### comptests
 
 Comprises component level black box tests. All tests are grouped by high level product components like Motr, HA,
 Provisioner, etc.
 
-## `conftest`
+### `conftest`
 
 common fixtures used in test framework.
 
-## reporting_service
+### reporting_service
 
 Its a REST service which provides APIs to stores build wise test results and aggregate stats and query capabilities.
 
@@ -182,7 +182,7 @@ Here is the diagrammatic representation:
 
 ```
 
-# Hardware Configuration for test automation setup
+## Hardware Configuration for test automation setup
 
 VMs or Physical machines with Linux flavor having 16-32 GB RAM and 8-16 logical cores would be a decent configuration
 for a test machine. Minimal test machine configuration is 4 GB RAM and 2 logical cores which is suitable for development
@@ -191,68 +191,68 @@ deployment structure. The least requirement is that there should be a network co
 Form Vms, virtualization platform VMs or physical machines to the Cortx setups in labs or public cloud services like AWS
 EC2.
 
-## Abbreviations and Definitions
+### Abbreviations and Definitions
 
-* Target: A target is an application deployment under test.
+*  Target: A target is an application deployment under test.
 
-* Corbot: A program which sets up necessary environment and pre-requisites to run test automation pointing to a single
+*  Corbot: A program which sets up necessary environment and pre-requisites to run test automation pointing to a single
   target.
 
-* Test Execution Framework: Loosely coupled test framework module responsible for collecting test metadata from Jira and
+*  Test Execution Framework: Loosely coupled test framework module responsible for collecting test metadata from Jira and
   executing optimized execution ticket provided by Kafka.
 
-* Test Executor framework: Same as a test execution framework.
+*  Test Executor framework: Same as a test execution framework.
 
-* Dist Runner: Test execution framework module loosely coupled for test framework and consumer module of execution
+*  Dist Runner: Test execution framework module loosely coupled for test framework and consumer module of execution
   framework. It is responsible for collecting test metadata from Jira and creating an optimized test execution plan as
   per Jira Test Plans.
 
-* Chaos and destructive testing framework: A sub framework responsible for implementing libraries to generate
+*  Chaos and destructive testing framework: A sub framework responsible for implementing libraries to generate
   destructive test scenarios and chaos in Target deployments.
 
-* Object Store Data Integrity framework: A sub framework which stores s3 client state and provides library to test
+*  Object Store Data Integrity framework: A sub framework which stores s3 client state and provides library to test
   versioned object Store data integrity interleaved across object store version upgrade and after object store downtime.
 
-* HA Tests: High availability test cases which test Consistency, Availability and Reliability of Object Store.
+*  HA Tests: High availability test cases which test Consistency, Availability and Reliability of Object Store.
 
-* Test Client: A separate VM or Container configured with Python Environment and prerequisites Linux and Python site
+*  Test Client: A separate VM or Container configured with Python Environment and prerequisites Linux and Python site
   packages to run automated test cases.
 
-## Framework Components
+### Framework Components
 
 The following diagram shows all components/modules present in framework.
 
-* Primebot: This module reads test execution data from test management tool. From this test execution data, it
+*  Primebot: This module reads test execution data from test management tool. From this test execution data, it
   identifies which tests need to be executed. It performs analytics on test data and divides test cases into different
   chunks. Those chunks are executed by individual execution Corbot.
 
-* Distributed Kafka: This is the communication channel between Primebot and execution Corbot. Multiple approaches like
+*  Distributed Kafka: This is the communication channel between Primebot and execution Corbot. Multiple approaches like
   RPC based mechanism like XML RPC and Zero MQ were evaluated for test distribution mechanisms. Kafka provides a
   producer and multi consumer model which fits in our context.
 
-* Execution Corbot: It reads the test data from Kafka channel and using that data it schedules the test execution.
+*  Execution Corbot: It reads the test data from Kafka channel and using that data it schedules the test execution.
 
-* Dashboard: Dashboard is a web page where all test data is available to users. Dashboard gets all data from mongo dB
+*  Dashboard: Dashboard is a web page where all test data is available to users. Dashboard gets all data from mongo dB
   using dB rest interface. DB rest interface is designed to provide access of mongo dB to different components in
   framework.
 
-* Test Management Interface: This is designed to interact with any test management tool. In this framework, this
+*  Test Management Interface: This is designed to interact with any test management tool. In this framework, this
   framework interacts with JIRA X-ray test management tool, it does CRUD operation on test management tool.
 
-* Logging: Logging support is provided by framework. It captures all the required logs. After test executions, framework
+*  Logging: Logging support is provided by framework. It captures all the required logs. After test executions, framework
   stores all logs to nfs share, so that it can be accessible to user at any time.
 
-* Health Check: This module checks the health of target system. If the target system is in bad condition, then there is
+*  Health Check: This module checks the health of target system. If the target system is in bad condition, then there is
   no use of using that system for test execution. So, before starting any test, framework checks the health of the
   target system using this module. If the system is not healthy, then framework schedules the test execution on another
   healthy system.
 
-* Config Management: All the test data which is required for test execution is managed by this module. Target specific
+*  Config Management: All the test data which is required for test execution is managed by this module. Target specific
   config data is stored in MongoDB, test suite specific config data is stored in Jira/database, and test specific data
   is stored locally. This module captures and aggregates config data and makes that data/config maps available to all
   tests during execution.
 
-## Target Locking
+### Target Locking
 
 Below diagram explains the flow of target locking mechanisms. This mechanism provides two types of locks: Shared and
 exclusive. If the request is for parallel test execution, then it will search for systems with shared lock, as existing
@@ -263,11 +263,11 @@ For any parallel test execution request, priority will be system with shared loc
 then it will check availability of system with exclusive lock. This module allocates the system only if that system is
 healthy.
 
-## Framework Deployment Flow
+### Framework Deployment Flow
 
 This framework can be deployed and used in two ways. In multi Corbot setup mode and single Corbot setup mode.
 
-## Multi Corbot's setup
+### Multi Corbot's setup
 
 sequence 1 to 6 is explained below in points.
 
@@ -304,23 +304,22 @@ Below diagram shows how this framework resides in any system and shows it’s us
 
 ### Benefits
 
-* Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets. (
+*  Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets. (
   Storage efficient)
 
-* Framework will start parallel execution on multiple targets; depending on health of target, it will reschedule test
+*  Framework will start parallel execution on multiple targets; depending on health of target, it will reschedule test
   execution for errored or failed tests. This will ensure complete test execution of identified test plan.
 
-* Framework will have parallel execution over a single target also which will reduce the time required for test
+*  Framework will have parallel execution over a single target also which will reduce the time required for test
   execution. (Time efficient)
 
-* Maximum failures will get during the first few hours of execution.
+*  Maximum failures will get during the first few hours of execution.
 
-* Live test execution information will be available to users through dashboard and test management tool
+*  Live test execution information will be available to users through dashboard and test management tool
 
-* Complete history of test data will be available in database, so anyone can access any test related data at any time
+*  Complete history of test data will be available in database, so anyone can access any test related data at any time
   from dashboard.
 
-* Logs will be archived on NFS share.
+*  Logs will be archived on NFS share.
 
-* No manual intervention is required for test configuration of different targets as the process is fully automated. 
-
+*  No manual intervention is required for test configuration of different targets as the process is fully automated.
