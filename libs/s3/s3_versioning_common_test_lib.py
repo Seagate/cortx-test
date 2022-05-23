@@ -83,7 +83,7 @@ def parse_list_object_versions_response(list_response: dict) -> dict:
                 "<key_name>": {
                         "<version-id>": {
                             "is_latest": True/False
-                        }, 
+                        },
                         ...
                     },
                     ...
@@ -110,14 +110,14 @@ def parse_list_object_versions_response(list_response: dict) -> dict:
 
     if list_response[1].get("DeleteMarkers"):
         for delete_marker in list_response[1].get("DeleteMarkers"):
-            key = version["Key"]
-            version_id = version["VersionId"]
+            key = delete_marker["Key"]
+            version_id = delete_marker["VersionId"]
             if key not in deletemarkers.keys():
                 deletemarkers[key] = {}
             deletemarkers[key][version_id] = {}
-            deletemarkers[key][version_id]["is_latest"] = version["IsLatest"]
+            deletemarkers[key][version_id]["is_latest"] = delete_marker["IsLatest"]
             deletemarker_count += 1
-    
+
     response = {
         "versions": versions,
         "version_count": version_count,
@@ -128,26 +128,31 @@ def parse_list_object_versions_response(list_response: dict) -> dict:
     return response
 
 
-
+# pylint: disable-msg=too-many-locals
 def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                bucket_name: str, expected_versions: dict,
-                               expected_flags: dict = None, expected_error: str = None,
-                               list_params: dict = None) -> None:
+                               **kwargs) -> None:
     """
     List all the versions and delete markers present in a bucket and verify the output
 
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
     :param bucket_name: Bucket name for calling List Object Versions
     :param expected_versions: dict containing list of versions, delete markers and flags
-        
         Expected format of the dict -
             {"<key_name1": "versions": {"version_id1": "etag1"} ...},
                            "delete_markers": ["dm_version_id1", ...],
                            "is_latest": "version_id1",
             ...
             }
+    :param **kwargs: Optional keyword arguments
+        "expected_flags": Dictionary of List Object Versions flags to verify
+        "expected_error": Error message string to verify in case, error is expected
+        "list_params": Dictionary of query parameters to pass List Object Versions call
     """
     LOG.info("Fetching bucket object versions list")
+    expected_flags = kwargs.get("expected_flags", None)
+    expected_error = kwargs.get("expected_error", None)
+    list_params = kwargs.get("list_params", None)
     try:
         if list_params:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name,

@@ -113,7 +113,7 @@ def create_s3_acc(
     LOG.info("Step : Creating account with name %s and email_id %s",
              account_name,
              email_id)
-    s3_account = rest_obj.create_s3_account(user_name=account_name, 
+    s3_account = rest_obj.create_s3_account(user_name=account_name,
                                             email_id=email_id,
                                             passwd=password)
     del rest_obj
@@ -121,7 +121,7 @@ def create_s3_acc(
     access_key = s3_account[1]["access_key"]
     secret_key = s3_account[1]["secret_key"]
     LOG.info("Step Successfully created the s3 account")
-    
+
     response = (access_key, secret_key)
 
     return response
@@ -140,7 +140,7 @@ def create_s3_acc_get_s3testlib(
     :return tuple: It returns multiple values such as access_key,
     secret_key and S3 objects which required to perform further operations.
     """
-    access_key, secret_key = create_s3_acc(user_name=user_name, email_id=email_id,
+    access_key, secret_key = create_s3_acc(account_name=account_name, email_id=email_id,
                                            passwd=password)
     s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
                                    s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
