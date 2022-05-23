@@ -131,12 +131,12 @@ k8s_cortx_deploy:
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
   sleep_time: 60
-  service_delay: 240
+  service_delay: 120
   service_delay_scale: 360
   namespace: "cortx"
   max_size_namespace: 18
   max_char_limit: 19
-  https_protocol: "https://{}"
+  https_protocol: "https://$ip"
   https_port: 30443
   http_port: 30080
   control_port_https: 31169
@@ -147,7 +147,7 @@ k8s_cortx_deploy:
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
-  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/{}"
+  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/$tag/k8_cortx_cloud/$file"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.example.yaml"
   solution_file: "solution.yaml"
