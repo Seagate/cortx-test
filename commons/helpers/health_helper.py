@@ -400,7 +400,8 @@ class Health(Host):
         returns the response in json format.
         :param pod_name: Running data pod name to fetch the hctl status
         :param namespace: namespace name
-        :return: Json response of stdout
+        :return: disk dict{'ssc-vm-g3-rhev4-1330': {'/dev/sdb': 'online', '/dev/sdc': 'online'},
+            'ssc-vm-g3-rhev4-1331': {'/dev/sdb': 'online', '/dev/sdc':'failed'}}
         :rtype: dict
         """
         result = {}
