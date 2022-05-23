@@ -35,9 +35,8 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_bucket_policy import CortxCliS3BktPolicyOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cli_csm_user import CortxCliCsmUser
-from libs.s3 import S3H_OBJ
 
-
+# pylint: disable=R0904
 class TestCliBucketPolicy:
     """Bucket Policy Testsuite for CLI"""
 
@@ -66,8 +65,8 @@ class TestCliBucketPolicy:
         cls.email_id = None
         cls.policy_id = None
         cls.policy_sid = None
-        cls.s3acc_name = "{}_{}".format("cli_s3acc_policy", int(time.time()))
-        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
+        cls.s3acc_name = f"cli_s3acc_policy_{int(time.time())}"
+        cls.s3acc_email = f"{cls.s3acc_name}@seagate.com"
         cls.log.info("Creating s3 account with name %s", cls.s3acc_name)
         resp = cls.s3acc_obj.login_cortx_cli()
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -82,6 +81,7 @@ class TestCliBucketPolicy:
         cls.policy_file_path = os.path.join(
             str(os.getcwdb().decode()), "bkt_policy.json")
         cls.remote_file_path = "/tmp/bkt_policy.json"
+        cls.bkt_policy = None
 
     def setup_method(self):
         """
@@ -96,10 +96,9 @@ class TestCliBucketPolicy:
             username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_equals(
             login[0], True, "Server authentication check failed")
-        self.bucket_name = "{}-{}".format(self.bucket_name, int(time.time()))
-        self.user_name = "{0}{1}".format(
-            "auto_csm_user", str(int(time.time())))
-        self.email_id = "{0}{1}".format(self.user_name, "@seagate.com")
+        self.bucket_name = f"{self.bucket_name}-{int(time.time())}"
+        self.user_name = f"auto_csm_user{str(int(time.time()))}"
+        self.email_id = f"{self.user_name}@seagate.com"
         self.bkt_policy = [{
             "Sid": "{0}",
             "Action": [
@@ -556,8 +555,8 @@ class TestCliBucketPolicy:
         Initiating the test case to verify that s3 account cannot
         delete bucket policy for bucket created by some other s3 account
         """
-        s3acc_name = "{}_{}".format("cli_s3acc_policy", int(time.time()))
-        s3acc_email = "{}@seagate.com".format(s3acc_name)
+        s3acc_name = f"cli_s3acc_policy_{int(time.time())}"
+        s3acc_email = f"{s3acc_name}@seagate.com"
         self.log.info(
             "Step 1: Creating a bucket with name %s", self.bucket_name)
         self.create_verify_bucket(self.bucket_name)
@@ -804,8 +803,8 @@ class TestCliBucketPolicy:
         """
         Test that s3 account cannot see bucket policy for bucket created by another s3 account
         """
-        s3acc_name = "{}_{}".format("cli_s3acc_policy", int(time.time()))
-        s3acc_email = "{}@seagate.com".format(s3acc_name)
+        s3acc_name = f"cli_s3acc_policy_{int(time.time())}"
+        s3acc_email = f"{s3acc_name}@seagate.com"
         self.log.info(
             "Step 1: Creating a bucket with name %s", self.bucket_name)
         self.create_verify_bucket(self.bucket_name)

@@ -191,6 +191,7 @@ class RestS3user(RestTestLib):
         return all(const.ACC_NAME in key and const.ACC_EMAIL in key
                     for key in response["s3_accounts"])
 
+    # pylint: disable-msg=too-many-return-statements
     def create_and_verify_s3account(self, user, expect_status_code):
         """
         This function will create and verify the response details for s3account
@@ -317,6 +318,7 @@ class RestS3user(RestTestLib):
         return payload_values[payload_type]
 
 
+    # pylint: disable-msg=too-many-return-statements
     def edit_and_verify_s3_account_user(self, user_payload):
         """
         This function will edit and verify s3 account users
@@ -527,6 +529,7 @@ class RestS3user(RestTestLib):
             self.recently_created_s3_account_user = resp.json()
         return resp
 
+    # pylint: disable=too-many-statements
     def create_custom_s3_payload(self, user_type: str):
         """
         Create the payload for the create S3

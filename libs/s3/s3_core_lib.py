@@ -21,19 +21,20 @@
 
 """Python Library using boto3 module to perform Bucket and object Operations."""
 
-import os
 import logging
+import os
 from typing import Union
-from botocore.config import Config
 
 import boto3
-from config import S3_CFG, CMN_CFG
+from botocore.config import Config
+from botocore.exceptions import ClientError
+
 from commons.constants import S3_ENGINE_RGW
+from config import S3_CFG, CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint:disable=too-few-public-methods
 class S3Rest:
     """Basic Class for Creating Boto3 REST API Objects."""
 
@@ -44,9 +45,9 @@ class S3Rest:
                  s3_cert_path: Union[str, bool] = None,
                  **kwargs) -> None:
         """
-        method initializes members of S3Lib.
+        Initialize members of S3Lib.
 
-        Different instances need to be create as per different parameter values like access_key,
+        Different instances need to be created as per different parameter values like access_key,
         secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
@@ -72,8 +73,7 @@ class S3Rest:
         if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]):
             raise IOError(f'Certificate path {S3_CFG["s3_cert_path"]} does not exists.')
         if debug:
-            # Uncomment to enable debug
-            boto3.set_stream_logger(name="botocore")
+            self.enable_debug_mode()
         try:
             if init_s3_connection:
                 self.s3_resource = boto3.resource("s3",
@@ -96,7 +96,7 @@ class S3Rest:
                                               config=config)
             else:
                 LOGGER.info("Skipped: create s3 client, resource object with boto3.")
-        except Exception as error:
+        except ClientError as error:
             if "unreachable network" not in str(error):
                 LOGGER.critical(error)
 
@@ -108,13 +108,18 @@ class S3Rest:
         except NameError as error:
             LOGGER.warning(error)
 
+    @staticmethod
+    def enable_debug_mode():
+        """Enable the boto3 debug mode."""
+        boto3.set_stream_logger(name="botocore")
+
 
 class S3Lib(S3Rest):
     """Class initialising s3 connection and including methods for bucket and object operations."""
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """
-        Creating Bucket.
+        Create s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :return: response.
@@ -126,7 +131,7 @@ class S3Lib(S3Rest):
 
     def bucket_list(self) -> list:
         """
-        Listing all the buckets.
+        List all s3 buckets.
 
         :return: response.
         """
@@ -137,7 +142,8 @@ class S3Lib(S3Rest):
 
     def put_object_with_all_kwargs(self, **kwargs):
         """
-        Putting Object to the Bucket.
+        Put object to the s3 bucket.
+
         :return: response.
         """
         LOGGER.debug("input for put_object are: %s ", kwargs)
@@ -151,7 +157,7 @@ class S3Lib(S3Rest):
                    file_path: str = None,
                    **kwargs) -> dict:
         """
-        Putting Object to the Bucket (mainly small file).
+        Put object to the s3 bucket (mainly small file).
 
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -167,37 +173,24 @@ class S3Lib(S3Rest):
                      bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
             if m_key:
-                response = self.s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=object_name,
-                    Body=data,
-                    Metadata={
-                        m_key: m_value})
+                response = self.s3_client.put_object(Bucket=bucket_name, Key=object_name,
+                                                     Body=data, Metadata={m_key: m_value})
             elif metadata:
-                response = self.s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=object_name,
-                    Body=data,
-                    Metadata=metadata)
+                response = self.s3_client.put_object(Bucket=bucket_name, Key=object_name,
+                                                     Body=data, Metadata=metadata)
             elif content_md5:
-                response = self.s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=object_name,
-                    Body=data,
-                    ContentMD5=content_md5)
+                response = self.s3_client.put_object(Bucket=bucket_name, Key=object_name,
+                                                     Body=data, ContentMD5=content_md5)
             else:
-                response = self.s3_client.put_object(
-                    Bucket=bucket_name, Key=object_name, Body=data)
+                response = self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data)
             LOGGER.debug(response)
 
         return response
 
-    def object_upload(self,
-                      bucket_name: str = None,
-                      object_name: str = None,
+    def object_upload(self, bucket_name: str = None, object_name: str = None,
                       file_path: str = None) -> str:
         """
-        Uploading Object to the Bucket.
+        Upload object to the s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -211,7 +204,7 @@ class S3Lib(S3Rest):
 
     def object_list(self, bucket_name: str = None) -> list:
         """
-        Listing Objects.
+        List all objects from s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :return: response.
@@ -222,26 +215,21 @@ class S3Lib(S3Rest):
 
         return response_obj
 
-    def list_objects_with_prefix(
-            self,
-            bucket_name: str = None,
-            prefix: str = None,
-            maxkeys: int = None) -> list:
+    def list_objects_with_prefix(self, bucket_name: str = None, prefix: str = None,
+                                 maxkeys: int = None) -> list:
         """
-        Listing objects of a bucket having specified prefix.
+        List all objects of a s3 bucket having specified prefix.
 
         :param bucket_name: Name of the bucket
         :param prefix: Object prefix used while uploading an object to bucket
-        :param maxkeys: Sets the maximum number of keys returned in the response.
+        :param maxkeys: Sets the maximum number of keys returned to the response.
         :return: List of objects of a bucket having specified prefix.
         """
         resp = None
         if prefix:
-            resp = self.s3_client.list_objects(
-                Bucket=bucket_name, Prefix=prefix)
+            resp = self.s3_client.list_objects(Bucket=bucket_name, Prefix=prefix)
         if maxkeys:
-            resp = self.s3_client.list_objects(
-                Bucket=bucket_name, MaxKeys=maxkeys)
+            resp = self.s3_client.list_objects(Bucket=bucket_name, MaxKeys=maxkeys)
         LOGGER.debug("Resp is : %s", str(resp))
         obj_lst = [obj['Key'] for obj in resp['Contents']]
         LOGGER.debug(obj_lst)
@@ -250,13 +238,12 @@ class S3Lib(S3Rest):
 
     def head_bucket(self, bucket_name: str = None) -> dict:
         """
-        To determine if a bucket exists and you have permission to access it.
+        To determine if a bucket exists, and you have a permission to access it.
 
         :param bucket_name: Name of the bucket.
         :return: response.
         """
-        response_bucket = self.s3_resource.meta.client.head_bucket(
-            Bucket=bucket_name)
+        response_bucket = self.s3_resource.meta.client.head_bucket(Bucket=bucket_name)
         # Since we are getting http response from head bucket, we have appended
         # bucket name for validation.
         response_bucket["BucketName"] = bucket_name
@@ -264,10 +251,9 @@ class S3Lib(S3Rest):
 
         return response_bucket
 
-    def delete_object(self, bucket_name: str = None,
-                      obj_name: str = None) -> dict:
+    def delete_object(self, bucket_name: str = None, obj_name: str = None) -> dict:
         """
-        Deleting Object.
+        Delete object from s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of object.
@@ -283,14 +269,13 @@ class S3Lib(S3Rest):
 
     def bucket_location(self, bucket_name: str = None) -> dict:
         """
-        Getting Bucket Location.
+        Get the s3 bucket location.
 
         :param bucket_name: Name of the bucket.
         :return: response.
         """
         LOGGER.debug("BucketName: %s", bucket_name)
-        response = self.s3_resource.meta.client.get_bucket_location(
-            Bucket=bucket_name)
+        response = self.s3_resource.meta.client.get_bucket_location(Bucket=bucket_name)
         LOGGER.debug(response)
 
         return response
@@ -304,19 +289,15 @@ class S3Lib(S3Rest):
         :param key: Key of object.
         :return: response.
         """
-        response = self.s3_resource.meta.client.head_object(
-            Bucket=bucket_name, Key=key)
+        response = self.s3_resource.meta.client.head_object(Bucket=bucket_name, Key=key)
         LOGGER.debug(response)
 
         return response
 
-    def object_download(self,
-                        bucket_name: str = None,
-                        obj_name: str = None,
-                        file_path: str = None,
+    def object_download(self, bucket_name: str = None, obj_name: str = None, file_path: str = None,
                         **kwargs) -> str:
         """
-        Downloading Object of the required Bucket.
+        Download object of the required s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :param obj_name: Name of the object.
@@ -325,17 +306,13 @@ class S3Lib(S3Rest):
         """
         self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
         LOGGER.debug("The %s has been downloaded successfully at mentioned file path %s",
-                     obj_name,
-                     file_path)
+                     obj_name, file_path)
 
         return file_path
 
-    def delete_bucket(
-            self,
-            bucket_name: str = None,
-            force: bool = False) -> dict:
+    def delete_bucket(self, bucket_name: str = None, force: bool = False) -> dict:
         """
-        Deleting the empty bucket or deleting the buckets along with objects stored in it.
+        Delete the empty bucket or delete the bucket along with objects stored in it.
 
         :param bucket_name: Name of the bucket.
         :param force: Value for delete bucket with object or without object.
@@ -344,12 +321,11 @@ class S3Lib(S3Rest):
         bucket = self.s3_resource.Bucket(bucket_name)
         if force:
             self.object_list(bucket_name)
-            LOGGER.info(
-                "This might cause data loss as you have opted for bucket deletion with "
-                "objects in it")
+            LOGGER.info("This might cause data loss as you have opted for bucket deletion with "
+                        "objects in it")
             response = bucket.objects.all().delete()
-            LOGGER.debug(
-                "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
+            LOGGER.debug("Objects deleted successfully from bucket %s, response: %s",
+                         bucket_name, response)
             self.object_list(bucket_name)
         response = bucket.delete()
         LOGGER.debug("Bucket '%s' deleted successfully. Response: %s", bucket_name, response)
@@ -358,7 +334,7 @@ class S3Lib(S3Rest):
 
     def get_bucket_size(self, bucket_name: str = None) -> dict:
         """
-        Getting size of bucket.
+        Get size of the s3 bucket.
 
         :param bucket_name: Name of the bucket.
         :return: response.
@@ -372,7 +348,7 @@ class S3Lib(S3Rest):
 
     def get_object(self, bucket: str = None, key: str = None, ranges: str = None) -> dict:
         """
-        Getting object or byte range of the object.
+        Get object or byte range of the object.
 
         :param bucket: Name of the bucket.
         :param key: Key of object.
@@ -387,11 +363,8 @@ class S3Lib(S3Rest):
 
         return response
 
-    def put_object_with_storage_class(self,
-                                      bucket_name: str = None,
-                                      object_name: str = None,
-                                      file_path: str = None,
-                                      storage_class: str = None) -> dict:
+    def put_object_with_storage_class(self, bucket_name: str = None, object_name: str = None,
+                                      file_path: str = None, storage_class: str = None) -> dict:
         """
         Add an object to a bucket with specified storage class.
 
@@ -403,18 +376,11 @@ class S3Lib(S3Rest):
         'GLACIER'|'DEEP_ARCHIVE'
         :return: response.
         """
-        LOGGER.debug(
-            "bucket_name: %s, object_name: %s, file_path: %s, storage_class: %s",
-            bucket_name,
-            object_name,
-            file_path,
-            storage_class)
+        LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, storage_class: %s",
+                     bucket_name, object_name, file_path, storage_class)
         with open(file_path, "rb") as data:
-            response = self.s3_client.put_object(
-                Bucket=bucket_name,
-                Key=object_name,
-                Body=data,
-                StorageClass=storage_class)
+            response = self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data,
+                                                 StorageClass=storage_class)
             LOGGER.debug(response)
 
         return response

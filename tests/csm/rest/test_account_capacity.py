@@ -350,6 +350,7 @@ class TestAccountCapacity():
 
         self.log.info("##### Test Ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -431,8 +432,8 @@ class TestAccountCapacity():
                       "control to account2.")
         resp = account2_info[5].put_bucket_multiple_permission(
             bucket_name=user2_bucket1,
-            grant_full_control="id={}".format(account2_info[2]),
-            grant_write="id={}".format(account1_info[2]))
+            grant_full_control=f"id={account2_info[2]}",
+            grant_write=f"id={account1_info[2]}")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 13: From Account2 check the applied ACL in above step.")
         resp = account2_info[5].get_bucket_acl(user2_bucket1)
@@ -448,6 +449,7 @@ class TestAccountCapacity():
         self.log.info("verified capacity of account after put operations")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -470,11 +472,11 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp[0], resp)
         self.buckets_created.append([bucket, account1_info[0], account1_info[1]])
         total_cap = 0
-        self.log.info(f"creating {const.MAX_IAM_USERS} IAMs for {account1_info[3]} s3 user")
+        self.log.info("Creating %s IAMs for %s s3 user",const.MAX_IAM_USERS,account1_info[3])
         iam_users = []
         for cnt in range(const.MAX_IAM_USERS):
             iam_user = "iam_user_" + str(cnt) + "_" + str(int(time.time()))
-            self.log.info(f"Creating new iam user {iam_user}")
+            self.log.info("Creating new iam user %s", iam_user)
             iam_obj = iam_test_lib.IamTestLib(
                 access_key=account1_info[0],
                 secret_key=account1_info[1])
@@ -810,7 +812,7 @@ class TestAccountCapacity():
 
         size = SystemRandom().randrange(10, 100)
         self.log.info("Step: 3 Create a file of size %sMB", size)
-        test_file = "test-33379-{}-MB.txt".format(str(size))
+        test_file = f"test-33379-{str(size)}-MB.txt"
         file_path_upload = os.path.join(TEST_DATA_FOLDER, test_file)
         if os.path.exists(file_path_upload):
             os.remove(file_path_upload)

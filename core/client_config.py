@@ -20,12 +20,13 @@
 Utility Class for health status check and update to database
 """
 
-
+import json
 import logging
 import subprocess
-import json
 from urllib.parse import quote_plus
+
 from pymongo import MongoClient
+
 from commons.params import DB_HOSTNAME
 from commons.params import DB_NAME
 from commons.params import SYS_INFO_COLLECTION
@@ -34,7 +35,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ClientConfig:
-
     """
     Configure client for given target
     """
@@ -81,8 +81,10 @@ class ClientConfig:
         # Removing contents of /etc/hosts file and writing new contents
         line1 = "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n"
         line2 = "::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n"
-        line3 = "{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n".format(public_data_ip)
+        line3 = "{} s3.seagate.com sts.seagate.com iam.seagate.com " \
+                "sts.cloud.seagate.com\n".format(public_data_ip)
         lines = [line1, line2, line3]
+
         self.run_cmd(cmd="rm -f /etc/hosts")
         with open("/etc/hosts", 'w') as file:
             file.writelines(lines)
@@ -97,7 +99,8 @@ class ClientConfig:
         data = json.load(file)
         access = data['AWS_ACCESS_KEY_ID']
         secret = data['AWS_SECRET_ACCESS_ID']
-        self.run_cmd(cmd="make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}".format(access, secret))
+        cmd = "make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
+        self.run_cmd(cmd=cmd.format(access, secret))
         file.close()
 
     def client_configure_for_given_target(self, acquired_target):

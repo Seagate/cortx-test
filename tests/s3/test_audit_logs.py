@@ -19,33 +19,34 @@
 
 """Audit logs test module."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
 from commons.constants import const
-from commons.utils import assert_utils
-from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
-from commons.utils.config_utils import read_yaml
-from commons.utils.config_utils import update_cfg_based_on_separator
+from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
+from commons.utils.config_utils import read_yaml
+from commons.utils.config_utils import update_cfg_based_on_separator
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
-from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 
-#pylint: disable-msg=too-many-public-methods
+# pylint: disable-msg=too-many-public-methods
 class TestAuditLogs:
     """Audit logs test suite."""
 
-    # pylint: disable-msg=attribute-defined-outside-init
+    log = logging.getLogger(__name__)
 
     @classmethod
     def setup_class(cls):
@@ -54,12 +55,11 @@ class TestAuditLogs:
 
         It will perform all prerequisite test suite steps if any.
         """
-        cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.mp_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.rem_path = const.S3_CONFIG
-        cls.lcl_path = "/tmp/s3config.yaml"
+        cls.lcl_path = "/root/s3config.yaml"
         cls.common_file = "audit_test_file.txt"
         cls.test_file = "audit-obj-mp"
         cls.section = "S3_SERVER_CONFIG"
@@ -73,7 +73,7 @@ class TestAuditLogs:
             cls.log.info("Created path: %s", cls.test_dir_path)
         cls.log.info("Test file path: %s", cls.common_file_path)
         cls.old_value = "rsyslog-tcp"
-        cls.new_val = None
+        cls.new_val = cls.test_cfg = None
         cls.nodes = CMN_CFG["nodes"]
         cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]

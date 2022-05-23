@@ -20,7 +20,7 @@ CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
-LS_LH_CMD = "ls -lhR {}"
+LS_LH_CMD = "ls -lhR $dir"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
@@ -265,6 +265,7 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
+SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -272,7 +273,8 @@ CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
 CMD_ADD_REPO_CORTXISO = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
 CMD_INSTALL_JAVA = "yum install --nogpgcheck -y java-1.8.0-openjdk-headless"
 CMD_INSTALL_CORTX_PRE_REQ = "yum install --nogpgcheck -y python3 cortx-prereq sshpass"
-CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master salt-minion"
+CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master " \
+                             "salt-minion"
 CMD_INSTALL_PRVSNR_API = "yum install --nogpgcheck -y python36-cortx-prvsnr"
 CMD_RM_3RD_PARTY_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
 CMD_RM_CORTXISO_REPO = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
@@ -335,9 +337,11 @@ CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
 CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 
 # jCloud commands.
-CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
+CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass " \
+               "changeit >/dev/null`"
 # ca.crt path.
-CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
+CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore " \
+               "/etc/pki/java/cacerts -storepass changeit`"
 
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
@@ -389,6 +393,10 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
+# m0cp -G -l 192.168.59.17@tcp:12345:34:101 -H 192.168.59.17@tcp:12345:34:1 -p 0x7000000000000001:0
+# -P 0x7200000000000000:0 -o 1048580 /var/motr/update_file -s 4096 -c 8 -L 3 -u -O 4096
+
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
@@ -551,9 +559,9 @@ CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
-PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
-DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
-DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
+DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
+DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
@@ -568,7 +576,7 @@ CMD_GET_NODE = "kubectl get nodes"
 # LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
-CMD_CURL = "curl -o {} {}"
+CMD_CURL = "curl -o $file $url"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"

@@ -26,8 +26,8 @@ from string import Template
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
-from libs.csm.rest.csm_rest_core_lib import RestClient
 from config import CSM_REST_CFG
+from libs.csm.rest.csm_rest_core_lib import RestClient
 
 
 class RestTestLib:
@@ -77,6 +77,7 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
     def custom_rest_login(self, username, password, username_key="username",
                           password_key="password", override_config=False, config_params=None):
         """
@@ -156,6 +157,7 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
 
+    @staticmethod
     def authenticate_and_login(func):
         """
         :type: Decorator
@@ -173,36 +175,28 @@ class RestTestLib:
             :return: function executables
             """
             self.headers = {}  # Initiate headers
-            self.log.debug(
-                "user is getting authorized for REST operations ...")
-
+            self.log.debug("user is getting authorized for REST operations ...")
             # Checking the type of login user
-            login_type = kwargs.pop(
-                "login_as") if "login_as" in kwargs else "csm_admin_user"
-
+            login_type = kwargs.pop("login_as") if "login_as" in kwargs else "csm_admin_user"
             # Checking the requirements to authorize
-            authorized = kwargs.pop(
-                "authorized") if "authorized" in kwargs else True
-
+            authorized = kwargs.pop("authorized") if "authorized" in kwargs else True
             # Fetching the login response
             self.log.debug("user will be logged in as %s", login_type)
             response = self.rest_login(login_as=login_type)
-
             if authorized and response.status_code == const.SUCCESS_STATUS:
-                self.headers = {
-                    'Authorization': response.headers['Authorization']}
+                self.headers = {'Authorization': response.headers['Authorization']}
             else:
-                self.log.error(f"Authentication request failed in"
-                               f" {RestTestLib.authenticate_and_login.__name__}.\n"
-                               f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
+                self.log.error("Authentication request failed in %s.\nResponse code : %s",
+                               RestTestLib.authenticate_and_login.__name__, response.status_code)
+                self.log.error("Response content: %s", response.content)
+                self.log.error("Request headers : %s\nRequest body : %s",
+                               response.request.headers, response.request.body)
                 raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             return func(self, *args, **kwargs)
 
         return create_authenticate_header
 
+    @staticmethod
     def rest_logout(func):
         """
         :type: Decorator
@@ -262,22 +256,22 @@ class RestTestLib:
         :return: required headers
         """
         try:
-            self.log.debug("Getting required headers for user {}".format(user_name))
+            self.log.debug("Getting required headers for user %s", user_name)
             endpoint = self.config["rest_login_endpoint"]
             headers = self.config["Login_headers"]
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 "username", user_name, "password", user_password)
-            self.log.debug("Payload for S3 account login is {}".format(payload))
+            self.log.debug("Payload for S3 account login is %s", payload)
 
             # Fetch user token from response
             response = self.restapi.rest_call(
                 "post", endpoint, headers=headers, data=payload, save_json=False)
             if response.status_code != const.SUCCESS_STATUS:
-                self.log.error("Authentication request failed.\n"
-                               f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
+                self.log.error("Authentication request failed.\nResponse code : %s",
+                               response.status_code)
+                self.log.error("Response content: %s", response.content)
+                self.log.error("Request headers : %s\nRequest body : %s",
+                               response.request.headers, response.request.body)
                 raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             token = response.headers['Authorization']
             headers = {'Authorization': token}
@@ -292,7 +286,7 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def search_list_of_dict(self, search_key:str, search_val:str, search_in: list):
+    def search_list_of_dict(self, search_key: str, search_val: str, search_in: list):
         """
         Search for {<search_key>:<search_val>} in [{<search_key>:<search_val>,..}, {}, {}...]
         """

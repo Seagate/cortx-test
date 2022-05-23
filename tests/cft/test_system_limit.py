@@ -165,8 +165,8 @@ class TestS3IOSystemLimits:
                         "secret_key": s3_data["secret_key"],
                         "canonical_id": s3_data["canonical_id"]}
             s3_users.append(s3_block)
-            self.log.info("New S3 account created ... {}".format(s3_users))
-        self.log.info("S3 Accounts created: {}".format(s3_users))
+            self.log.info("New S3 account created ... %s", s3_users)
+        self.log.info("S3 Accounts created: %s", s3_users)
         return s3_users
 
     def create_iam_per_s3_account(self, count):
@@ -247,8 +247,8 @@ class TestS3IOSystemLimits:
         for each in response['users']:
             if each['username'].startswith("csm"):
                 created_csm_users.append(each['username'])
-        self.log.info(
-            f"Total CSM accounts listed {len(created_csm_users)} : {created_csm_users}")
+        self.log.info("Total CSM accounts listed %s : %s",
+                      len(created_csm_users), created_csm_users)
         return created_csm_users
 
     def get_created_s3_users(self):
@@ -265,8 +265,7 @@ class TestS3IOSystemLimits:
         for each in response['s3_accounts']:
             if each['account_name'].startswith("test"):
                 created_s3users.append(each['account_name'])
-        self.log.info(
-            f"Total S3 accounts listed {len(created_s3users)} :\n {created_s3users}")
+        self.log.info("Total S3 accounts listed %s :\n %s", len(created_s3users), created_s3users)
         return created_s3users
 
     def get_iam_accounts(self, access, secret):
@@ -282,19 +281,19 @@ class TestS3IOSystemLimits:
         created_iam_users = [user["UserName"]
                              for user in all_users if
                              "test" in user["UserName"]]
-        self.log.info(
-            f"Total IAM accounts listed {len(created_iam_users)} : {created_iam_users}")
+        self.log.info("Total IAM accounts listed %s : %s",
+                      len(created_iam_users), created_iam_users)
         return created_iam_users
 
     def get_buckets(self, access, secret):
         """Get buckets for given s3 account"""
-        s3TestL = S3TestLib(access_key=access, secret_key=secret)
-        resp = s3TestL.bucket_list()
+        s3_test_lib = S3TestLib(access_key=access, secret_key=secret)
+        resp = s3_test_lib.bucket_list()
         buckets_in_s3 = []
         for bucket_name in resp[1]:
             buckets_in_s3.append(bucket_name)
-        del s3TestL
-        self.log.info("Buckets of this S3 : {}".format(buckets_in_s3))
+        del s3_test_lib
+        self.log.info("Buckets of this S3 : %s", buckets_in_s3)
         return buckets_in_s3
 
     def destroy(self, s3_password):
@@ -315,7 +314,7 @@ class TestS3IOSystemLimits:
 
             # Delete all iam users from S3 account
             for iam in iam_user_in_s3:
-                self.log.info("Deleting IMA user {}...".format(iam))
+                self.log.info("Deleting IMA user %s...", iam)
                 iam_obj = iam_test_lib.IamTestLib(
                     access_key=s3_acc["access_key"],
                     secret_key=s3_acc["secret_key"])
@@ -340,11 +339,11 @@ class TestS3IOSystemLimits:
 
         created_csm_users = self.created_csm_users
         for csm in created_csm_users:
-            self.log.info("Deleting CSM user : {}".format(csm["username"]))
+            self.log.info("Deleting CSM user : %s", csm["username"])
             res = self.csm_user_obj.delete_csm_user(csm["username"])
             assert res.status_code == Const.SUCCESS_STATUS, \
                 f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
-            self.log.info("CSM user with manage role {} deleted".format(csm["username"]))
+            self.log.info("CSM user with manage role %s deleted", csm["username"])
 
         self.created_csm_users = []
         self.created_s3_users = []
@@ -362,17 +361,17 @@ class TestS3IOSystemLimits:
             "Created s3 user count != listed s3 user count "
 
         for s3_acc in created_s3users:
-            s3 = s3_acc["account_name"]
+            s3_name = s3_acc["account_name"]
             access = s3_acc["access_key"]
             secret = s3_acc["secret_key"]
-            self.log.info("Listing new S3 buckets under %s", s3)
+            self.log.info("Listing new S3 buckets under %s", s3_name)
             # Get all buckets under S3 account
             listed_buckets = self.get_buckets(access, secret)
 
-            self.log.info("List of all S3 buckets under %s account is %s", s3, listed_buckets)
+            self.log.info("List of all S3 buckets under %s account is %s", s3_name, listed_buckets)
 
             assert len(listed_buckets) >= self.cft_test_cfg[test]["bucket_count"], \
-                f"Created bucket count != listed bucket count for s3 user {s3}"
+                f"Created bucket count != listed bucket count for s3 user {s3_name}"
 
             for bucket in listed_buckets:
                 # Create bucket policy for newly created bucket
@@ -462,13 +461,13 @@ class TestS3IOSystemLimits:
             "Created s3 user count != listed s3 user count"
 
         for each_s3 in s3_accounts:
-            s3 = each_s3["account_name"]
+            s3_name = each_s3["account_name"]
             access = each_s3["access_key"]
             secret = each_s3["secret_key"]
-            self.log.info("Getting IAMs for %s", s3)
+            self.log.info("Getting IAMs for %s", s3_name)
             iam_account = self.get_iam_accounts(access, secret)
             assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"], \
-                f"Created iam user count != listed iam user count for s3 user {s3}"
+                f"Created iam user count != listed iam user count for s3 user {s3_name}"
 
         # Delete everything
         self.destroy(s3_password=self.s3_original_password)
@@ -664,8 +663,8 @@ class TestS3IOSystemLimits:
                     self.log.info(error.message)
                     assert_utils.assert_in("MetadataTooLarge", error.message, error.message)
                 else:
-                    self.log.error(f"Unable to upload object even if "
-                                   f"metadata size is {metadata} < {metadata_limit}")
+                    self.log.error("Unable to upload object even if metadata size is %s < %s",
+                                   metadata, metadata_limit)
                     assert_utils.assert_true(False, res[1])
             else:
                 if metadata <= metadata_limit:
@@ -680,8 +679,8 @@ class TestS3IOSystemLimits:
                                                res[1]["Metadata"][m_key.lower()],
                                                res[1]["Metadata"][m_key.lower()])
                 else:
-                    self.log.error(f"Could not see exception while uploading object with "
-                                   f"metadata size of {metadata} > {metadata_limit}")
+                    self.log.error("Could not see exception while uploading object with metadata "
+                                   "size of %s > %s", metadata, metadata_limit)
                     assert_utils.assert_true(False, res[1])
 
         self.log.info("Deleting bucket %s", bucket_name)
@@ -711,10 +710,10 @@ class TestS3IOSystemLimits:
             response = self.S3_MP_TEST_OBJ.upload_part(
                 data, bucket, obj_name, upload_id=mpu_id, part_number=1)
         except CTException as error:
-            self.log.error(f"{error}")
+            self.log.error("%s", error)
             assert_utils.assert_in("EntityTooLarge", error.message, error.message)
         else:
-            self.log.error(f"Response = {response}")
+            self.log.error("Response = %s", response)
             assert_utils.assert_true(False, "Could not catch exception while uploading "
                                             "part of size > 5GiB")
         self.log.info("Aborting multipart upload")
@@ -758,7 +757,7 @@ class TestS3IOSystemLimits:
             self.log.info("error : %s", error)
             assert_utils.assert_in("EntityTooSmall", error.message, error.message)
         else:
-            self.log.error(f"Response = {response}")
+            self.log.error("Response = %s", response)
             assert_utils.assert_true(False, "Could not catch exception while completing multipart "
                                             "upload with first part size of 4MB")
         self.log.info("Aborting multipart upload")
@@ -837,8 +836,8 @@ class TestS3IOSystemLimits:
 
         # Create one extra IAM user and verify limit response is 403
         gui_dict = dict()
-        gui_dict['log_path'] = Globals.CSM_LOGS + 'create_last_iam_user_verify_popup_' \
-                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'create_last_iam_user_verify_popup_' + \
+                               "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + str(s3_account),

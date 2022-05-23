@@ -31,7 +31,6 @@ from commons.exceptions import CTException
 from commons.utils.s3_utils import get_headers
 from commons.utils.s3_utils import convert_xml_to_dict
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from config.s3 import S3_CFG
 from config import CSM_REST_CFG
 
@@ -43,7 +42,7 @@ class S3AccountOperationsRestAPI(RestS3user):
 
     def __init__(self):
         """s3 account operations constructor."""
-        super(S3AccountOperationsRestAPI, self).__init__()
+        super().__init__()
         self.endpoint = CSM_REST_CFG["s3accounts_endpoint"]
 
     def create_s3_account(self, user_name, email_id, passwd) -> tuple:
@@ -117,9 +116,8 @@ class S3AccountOperationsRestAPI(RestS3user):
             response = self.delete_s3_account_user(user_name)
             if response.status_code == HTTPStatus.OK:
                 return True, "Deleted user successfully"
-            else:
-                LOGGER.debug(response.json())
-                return False, response.json()["message"]
+            LOGGER.debug(response.json())
+            return False, response.json()["message"]
         except BaseException as error:
             LOGGER.error(
                 "%s %s: %s",
@@ -139,7 +137,7 @@ class S3AccountOperationsRestAPI(RestS3user):
         """
         try:
             LOGGER.debug("Update s3accounts user : %s", user_name)
-            endpoint = "{}/{}".format(self.endpoint, user_name)
+            endpoint = f"{self.endpoint}/{user_name}"
             LOGGER.debug("Endpoint for s3 accounts is %s", endpoint)
             data = {"password": new_password,
                     "reset_access_key": "false"}
@@ -176,7 +174,7 @@ class S3AccountOperationsRestAPI(RestS3user):
         """
         try:
             LOGGER.debug("Update s3accounts user : %s", user_name)
-            endpoint = "{}/{}".format(self.endpoint, user_name)
+            endpoint = f"{self.endpoint}/{user_name}"
             LOGGER.debug("Endpoint for s3 accounts is %s", endpoint)
             data = {"password": passwd,
                     "reset_access_key": reset_access_key}

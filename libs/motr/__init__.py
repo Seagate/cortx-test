@@ -19,27 +19,29 @@
 #
 #
 
+"""Motr package initializer."""
+
+import os
+import tempfile
 from commons.utils import config_utils
 
-"""Motr package initializer."""
 CURR_LIB_VERSION=b"1.11.2"
 
 # dd tools commands.
-# Parameter in order: if:Source file path, of: Destination file path, bs(k, M, G) * count(number): Total size.
+# Parameter in order: if:Source file path, of:
+# Destination file path, bs(k, M, G) * count(number): Total size.
 CMD_DD_CREATE_FILE = "dd if=/dev/urandom of=%s bs=%s count=%s"
 CMD_DD_CREATE_128M_FILE = "dd if=/dev/urandom of=/tmp/128M bs=1M count=128"
 
 # path of directories
 SANDBOX_DIR_NAME = "sandbox"
 SANDBOX_DIR_PATH = f"tmp/{SANDBOX_DIR_NAME}"
-TEMP_PATH = "/tmp/"
+TEMP_PATH = tempfile.gettempdir()
 WORKLOAD_FILES_DIR = "config/motr"
-TEMP_128M_FILE_PATH = "/tmp/128M"
+TEMP_128M_FILE_PATH = os.path.join(tempfile.gettempdir(), '128M')
 
 #Read test workload
 WORKLOAD_CFG = config_utils.read_yaml("config/motr/test_workload.yaml")
 
 # Motr configs
-BSIZE_LAYOUT_MAP = {'4K':1, '8K':2, '16K':3, '32K':4, '64K':5, '128K':6, '256K':7,
-                      '512K':8, '1M':9, '2M':10, '4M':11, '8M':12, '16M':13, '32M':14}
 FILE_BLOCK_COUNT = [1,2]
