@@ -286,7 +286,7 @@ def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: st
                        file_path: str, download_path: str, **kwargs) -> None:
     """
     Download an object/version and verify checksum of it's contents
-    
+
     :param s3_test_obj: S3TestLib object to perform S3 calls
     :param bucket_name: Target bucket name
     :param object_name: Target object name
@@ -348,7 +348,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
                                          file_path=file_path)
             assert_utils.assert_true(res[0], res[1])
             
-    for versioning_config, obj_name, count in obj_list:
+    for versioning_config, object_name, count in obj_list:
         resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
                                                      status=versioning_config)
         assert_utils.assert_true(resp[0], resp[1])
