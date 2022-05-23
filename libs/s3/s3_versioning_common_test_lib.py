@@ -347,7 +347,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
             res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
                                          file_path=file_path)
             assert_utils.assert_true(res[0], res[1])
-            
+
     for versioning_config, object_name, count in obj_list:
         resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
                                                      status=versioning_config)
