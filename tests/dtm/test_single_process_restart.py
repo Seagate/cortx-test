@@ -255,3 +255,38 @@ class TestSingleProcessRestart:
                       "sizes objects.")
 
         self.log.info("ENDED: Verify IOs before and after RC pod m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm0
+    @pytest.mark.tags("TEST-41235")
+    def test_after_m0d_restart(self):
+        """Verify IOs after m0d restart using pkill."""
+        self.log.info("STARTED: Verify IOs after m0d restart using pkill")
+
+        self.log.info("Step 1: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(self.master_node_list[0], self.health_obj,
+                                            POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX,
+                                            self.m0d_process)
+        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+        self.log.info("Step 1: m0d restarted and recovered successfully")
+
+        self.log.info("Step 2: Create IAM user and perform WRITEs/READs-Verify/DELETEs with "
+                      "variable object sizes")
+        self.log.info("Create IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        test_prefix = 'test-41235'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+                                                    log_prefix=test_prefix,
+                                                    nclients=5, nsamples=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Successfully created IAM user and performed "
+                      "WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+
+        self.log.info("ENDED: Verify IOs after m0d restart using pkill")
