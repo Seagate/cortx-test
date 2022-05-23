@@ -782,10 +782,13 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_40265"]
         self.log.info("STARTED: Test delete 1000 multipart uploaded objects using bulk delete")
-        parts, _, s3_background_io = \
+        parts, keys, s3_background_io = \
             self.s3_mpu_test_obj.start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
                 s3_test_lib_obj=self.s3_test_obj)
+        value_list = list(parts.values())
+        parts[1] = value_list[0]
+        parts[2] = value_list[1]
         obj_list = []
         for cnt in range(1000):
             obj_list.append(self.object_name+str(cnt))
@@ -815,7 +818,7 @@ class TestMultipartUploadGetPut:
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
         object_put = self.object_name + "put"
-        process_mpu = multiprocessing.Process(target=self.initiate_multipart,
+        process_mpu = multiprocessing.Process(target=self.initiate_upload_list_complete_mpu,
                                               args=(self.bucket_name, self.object_name),
                                               kwargs={"parts": uploaded_parts,
                                                       "is_part_upload": True,
