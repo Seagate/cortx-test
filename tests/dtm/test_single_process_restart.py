@@ -279,18 +279,20 @@ class TestSingleProcessRestart:
         fail_logs = list(x[1] for x in responses["fail_res"])
         self.log.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        self.log.info("Step 4: Successfully completed READs & verified DI on the written data in "
-                      "background")
+        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before/after m0d"
+                                                f"restart. Logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_false(len(resp[1]) <= len(fail_logs),
+                                  "Expected failures in WRITEs/READs in background during m0d "
+                                  f"restart. Logs collected during m0d restart: {resp[1]}")
+        self.log.info("Step 3: Successfully completed WRITEs/READs in background")
 
-        self.log.info("Step 5: Perform READs-Verify on already written data in Step 1")
+        self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix, skipwrite=True,
                                                     skipcleanup=True, nclients=10, nsamples=30)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 5: Successfully performed READs-Verify on already written data in "
+        self.log.info("Step 4: Successfully performed READs-Verify on already written data in "
                       "Step 1")
 
         self.log.info("ENDED: Verify IOs before and after RC pod m0d restart using pkill")
