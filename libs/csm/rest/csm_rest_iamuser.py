@@ -166,16 +166,16 @@ class RestIamUser(RestTestLib):
         return response.status_code
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users(self):
+    def list_iam_users(self, max_entries = None, marker = None):
         """
         This function will list all IAM users.
+        :param max_entries: Number of users to be returned
+        :param marker: Name of user from which specified number of users to be returned
         :return: response
         :rtype: response object
         """
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+            response = self.list_iam_users_rgw(max_entries=max_entries, marker=marker)
         else:
             self.log.debug("Listing of iam users")
             endpoint = self.config["IAM_users_endpoint"]
@@ -776,3 +776,24 @@ class RestIamUser(RestTestLib):
             value = cap_values[value_index]
             random_cap = random_cap + cap_keys[index] + "=" + value + ";"
         return random_cap[:-1]
+
+    @RestTestLib.authenticate_and_login
+    def list_iam_users_rgw(self, max_entries = None, marker = None):
+        """
+        This function will list all IAM users.
+        :param max_entries: Number of users to be returned
+        :param marker: Name of user from which specified number of users to be returned
+        :return: response
+        :rtype: response object
+        """
+
+        self.log.debug("Listing of iam users")
+        endpoint = self.config["IAM_users_endpoint"]
+        self.log.debug("Endpoint for iam user is %s", endpoint)
+
+        self.headers.update(self.config["Login_headers"])
+
+        # Fetching api response
+        response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
+                                          params={"max_entries": max_entries, "marker": marker})
+        return response
