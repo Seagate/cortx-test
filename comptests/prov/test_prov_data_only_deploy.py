@@ -143,7 +143,7 @@ class TestProvK8DataOnlyDeploy:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check Cluster status for data pods")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+        resp = self.deploy_lc_obj.check_service_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started for data pods.")
         LOGGER.info("Test Completed.")
