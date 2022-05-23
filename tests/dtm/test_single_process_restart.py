@@ -24,6 +24,7 @@ Test suite for testing Single Process Restart with DTM enabled.
 import logging
 import multiprocessing
 import os
+import secrets
 import threading
 import time
 from multiprocessing import Queue
@@ -39,18 +40,18 @@ from commons.constants import POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
-from commons.utils import assert_utils
-from commons.utils import support_bundle_utils
-from config import CMN_CFG
 from config import DTM_CFG
-from config import HA_CFG
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import support_bundle_utils, assert_utils, system_utils
+from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 
 # pylint: disable=too-many-instance-attributes
@@ -87,6 +88,7 @@ class TestSingleProcessRestart:
         cls.ha_obj = HAK8s()
         cls.rest_obj = S3AccountOperations()
         cls.setup_type = CMN_CFG["setup_type"]
+        cls.system_random = secrets.SystemRandom()
 
     def setup_method(self):
         """Setup Method"""
@@ -545,3 +547,134 @@ class TestSingleProcessRestart:
 
         self.test_completed = True
         self.log.info("ENDED: Verify continuous DELETE during m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41244")
+    def test_after_m0d_restart(self):
+        """Verify multipart upload during m0d is restarted."""
+        self.log.info("STARTED: Verify multipart upload during m0d is restarted")
+
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        part_numbers = list(range(1, total_parts + 1))
+        self.system_random.shuffle(part_numbers)
+        output = Queue()
+        parts_etag = list()
+        test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestMultipartUpload")
+        system_utils.make_dirs(test_dir_path)
+        multipart_obj_path = os.path.join(test_dir_path, "test_41244_file")
+        download_path = os.path.join(test_dir_path, "test_41244_file_download")
+        event = threading.Event()  # Event to be used to send intimation of data pod shutdown
+
+        self.log.info("Creating IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=S3_CFG["s3_url"])
+        self.log.info("Successfully created IAM user with name %s", self.s3acc_name)
+        iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                               'user_name': self.s3acc_name}}
+
+        self.log.info("Step 1: Start multipart upload of 5GB object in background")
+        args = {'s3_data': iam_user, 'bucket_name': self.bucket_name,
+                'object_name': self.object_name, 'file_size': file_size, 'total_parts': total_parts,
+                'multipart_obj_path': multipart_obj_path, 'part_numbers': part_numbers,
+                'parts_etag': parts_etag, 'output': output}
+        thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        self.log.info("Step 1: Started multipart upload of 5GB object in background. Sleeping for "
+                      "%s sec", HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+
+        self.log.info("Step 2: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(self.master_node_list[0], self.health_obj,
+                                            POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX,
+                                            self.m0d_process)
+        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+        self.log.info("Step 2: m0d restarted and recovered successfully")
+
+        self.log.info("Step 3: Checking response from background process")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 4:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do multipart upload")
+
+        exp_failed_parts = responses[0]
+        failed_parts = responses[1]
+        parts_etag = responses[2]
+        mpu_id = responses[3]
+        self.log.debug("Responses received from background process:\nexp_failed_parts: "
+                       "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
+                       failed_parts, parts_etag, mpu_id)
+        if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
+            self.log.info("All the parts are uploaded successfully")
+        elif failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in degraded "
+                                            f"state. Failed parts: {failed_parts}")
+        elif exp_failed_parts:
+            self.log.info("Step 3.1: Upload remaining parts")
+            resp = self.ha_obj.partial_multipart_upload(s3_data=iam_user,
+                                                        bucket_name=self.bucket_name,
+                                                        object_name=self.object_name,
+                                                        part_numbers=exp_failed_parts,
+                                                        remaining_upload=True,
+                                                        multipart_obj_size=file_size,
+                                                        total_parts=total_parts,
+                                                        multipart_obj_path=multipart_obj_path,
+                                                        mpu_id=mpu_id)
+            assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+            parts_etag1 = resp[3]
+            parts_etag = parts_etag + parts_etag1
+            self.log.info("Step 3.1: Successfully uploaded remaining parts")
+        self.log.info("Step 3: Successfully checked background process responses")
+
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
+
+        self.log.info("Calculating checksum of file %s", multipart_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[multipart_obj_path],
+                                                           compare=False)[0]
+
+        self.log.info("Step 4: Listing parts of multipart upload")
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
+        self.log.info("Step 4: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
+
+        self.log.info("Step 5: Completing multipart upload and check upload size is %s",
+                      file_size * const.Sizes.MB)
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
+                                                       self.object_name)
+        assert_utils.assert_true(res[0], res)
+        res = s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.object_name, res[1], res)
+        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        obj_size = result[1]["ContentLength"]
+        self.log.debug("Uploaded object info for %s is %s", self.bucket_name, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        self.log.info("Step 5: Multipart upload completed and verified upload object size is %s",
+                      obj_size)
+
+        self.log.info("Step 6: Download the uploaded object and verify checksum")
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        self.log.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
+        self.log.info("Step 6: Successfully downloaded the object and verified the checksum")
+
+        self.log.info("ENDED: Verify multipart upload during m0d is restarted")
