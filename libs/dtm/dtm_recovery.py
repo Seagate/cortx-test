@@ -168,19 +168,12 @@ class DTMRecoveryTestLib:
         time.sleep(recover_time)
 
         self.log.info("Check process states")
-        resp, process_state = self.get_process_state(master_node, pod_name=pod_selected,
-                                                     container_name=container,
-                                                     process_name=process.upper(),
-                                                     process_ids=process_ids)
+        resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
+                                       container_name=container, process_name=process,
+                                       process_ids=process_ids)
         if not resp:
-            return resp, f"Failed to get process states for process {process} with IDs " \
-                         f"{process_ids}. proccess_state dict :{process_state}"
-        for p_id, state in process_state.items():
-            if DTM_CFG['exp_state'] not in state:
-                return False, f"State of process {process} with ID {p_id} is not as expected. " \
-                              f"Expected state: {DTM_CFG['exp_state']} Actual state: {state}"
+            return False, "Failed during polling status of process"
 
-            self.log.info("State of process %s with ID %s is %s", process, p_id, state)
         self.log.info("Process %s restarted successfully", process)
 
         self.log.info("Check hctl status if all services are online")
@@ -219,3 +212,41 @@ class DTMRecoveryTestLib:
             process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
 
         return True, process_state
+
+    def poll_process_state(self, master_node, pod_name, container_name, process_name,
+                           process_ids: list = None, status: str = DTM_CFG['exp_state'],
+                           timeout=300):
+        """
+        Helper function to poll the process states
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_name: Name of the process
+        :param process_ids: List of Process IDs
+        :param status: Expected status of process
+        :param timeout: Poll timeout
+        :return: Bool
+        """
+        resp = False
+        self.log.info("Polling process states")
+        start_time = int(time.time())
+        while timeout > int(time.time()) - start_time:
+            time.sleep(60)
+            resp, process_state = self.get_process_state(master_node=master_node, pod_name=pod_name,
+                                                         container_name=container_name,
+                                                         process_name=process_name.upper(),
+                                                         process_ids=process_ids)
+            if not resp:
+                self.log.info("Failed to get process states for process %s with IDs %s. "
+                              "proccess_state dict: %s", process_name, process_ids, process_state)
+                return resp
+            states = list(process_state.values())
+            resp = all(ele == status for ele in states)
+            if resp:
+                self.log.debug("Time taken by %s process to recover is %s seconds", process_name,
+                               int(time.time()) - start_time)
+                break
+
+        self.log.info("State of process %s with process ids %s is %s", process_name, process_ids,
+                      status)
+        return resp

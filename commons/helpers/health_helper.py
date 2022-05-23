@@ -989,3 +989,34 @@ class Health(Host):
             LOG.error("*ERROR* An exception occurred in %s: %s",
                       Health.get_pod_svc_status.__name__, error)
             return False, error
+
+    def hctl_status_get_svc_fids(
+            self,
+            service_name: str = None) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
+        """
+        Get FIDs for given services using hctl status command
+        :param service_name: Service name to be checked in hctl status.
+        :return: List of FIDs found
+        """
+        fid = result = None
+        pod_fids = dict()
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                for service in services:
+                    if service["name"] not in pod_fids.keys():
+                        pod_fids[service["name"]] = list()
+                    if service_name is None:
+                        fid = service["fid"]
+                        pod_fids[service["name"]].append(fid)
+                    elif service_name in service["name"]:
+                        fid = service["fid"]
+                        pod_fids[service_name].append(fid)
+                    LOG.info("%s service found on %s pod. FID: %s", service_name, pod_name, fid)
+        pod_fids = {key: value for key, value in pod_fids.items() if len(value) != 0}
+        if not pod_fids:
+            LOG.critical("No %s service found in cluster", service_name)
+            return False, result
+        return True, pod_fids
