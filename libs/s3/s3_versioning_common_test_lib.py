@@ -167,7 +167,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         assert_utils.assert_in(expected_error, list_error.message, list_error)
         # If error is expected, assert the error message and skip validation of list response
         return
-    
+
     assert_utils.assert_true(list_response[0], list_response[1])
     if expected_flags is not None:
         for flag_key, flag_value in expected_flags.items():
@@ -304,7 +304,7 @@ def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: st
     else:
         resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
     assert_utils.assert_true(resp[0], resp[1])
-    download_checksum = s3_utils.calc_checksum(self.download_path)
+    download_checksum = s3_utils.calc_checksum(download_path)
     assert_utils.assert_equal(expected_checksum, download_checksum,
                               "Mismatch in object/version contents")
 
@@ -342,8 +342,8 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     versions = {}
     if pre_obj_list:
         LOG.info("Uploading objects before setting bucket versioning state")
-        for obj_name in pre_obj_list:
-            file_path = random.choice(file_paths)
+        for object_name in pre_obj_list:
+            file_path = random.choice(file_paths) #nosec
             res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
                                          file_path=file_path)
             assert_utils.assert_true(res[0], res[1])
