@@ -49,6 +49,8 @@ class TestProvK8DataOnlyDeploy:
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         cls.cortx_image = os.getenv("CORTX_IMAGE", None)
+        cls.deployment_type = os.getenv("DEPLOYMENT_TYPE", cls.deploy_cfg["deployment_type"])
+        cls.server_only_list = ["server-only", "standard"]
         cls.script_remote_branch = os.getenv("SCRIPT_REMOTE_BRANCH", "cortx-test")
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
